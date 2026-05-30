@@ -1,0 +1,37 @@
+<%= turbo_frame_tag "modifier_modal" do %>
+  <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full text-black shadow-xl">
+      <h3 class="text-xl font-bold mb-1"><%= menu_item.name %></h3>
+      <p class="text-amber-600 font-bold mb-4"><%= format_money(menu_item.base_price_cents) %></p>
+      <%= form_with url: pos_order_items_path, method: :post, data: { turbo_stream: true, turbo_frame: "_top" } do %>
+        <%= hidden_field_tag :menu_item_id, menu_item.id %>
+        <% menu_item.modifier_groups.includes(:modifiers).each do |group| %>
+          <fieldset class="mb-4 border rounded-lg p-3">
+            <legend class="font-medium text-sm px-1">
+              <%= group.name %>
+              <% if group.required %><span class="text-red-500">*</span><% end %>
+            </legend>
+            <% group.modifiers.each do |mod| %>
+              <label class="flex items-center gap-2 py-1.5 text-sm cursor-pointer">
+                <% if group.multi_select %>
+                  <%= check_box_tag "modifier_ids[]", mod.id %>
+                <% else %>
+                  <%= radio_button_tag "modifier_ids[]", mod.id, false, required: group.required %>
+                <% end %>
+                <span class="flex-1"><%= mod.name %></span>
+                <% if mod.price_adjustment_cents != 0 %>
+                  <span class="text-gray-500"><%= format_money(mod.price_adjustment_cents) %></span>
+                <% end %>
+              </label>
+            <% end %>
+          </fieldset>
+        <% end %>
+        <%= text_field_tag :notes, nil, placeholder: "Kitchen notes (optional)", class: "w-full border border-gray-300 rounded-lg px-3 py-2 mb-4" %>
+        <div class="flex gap-2">
+          <%= submit_tag "Add to order", class: "flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2.5 rounded-lg font-medium" %>
+          <%= link_to "Cancel", pos_path, class: "flex-1 text-center border border-gray-300 py-2.5 rounded-lg", data: { turbo_frame: "_top" } %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+<% end %>

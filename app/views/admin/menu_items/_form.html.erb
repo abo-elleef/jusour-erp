@@ -1,0 +1,81 @@
+<%= form_with model: [:admin, menu_item], class: "bg-white rounded-lg shadow p-6 space-y-5 max-w-3xl", data: { controller: "nested-modifiers" } do |f| %>
+  <% if menu_item.errors.any? %>
+    <div class="text-red-700 bg-red-50 border border-red-200 rounded-lg p-3 text-sm">
+      <%= menu_item.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <%= f.label :category_id, "Category", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.collection_select :category_id, @categories, :id, :name, {}, class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+    </div>
+    <div>
+      <%= f.label :name, class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :name, class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+    </div>
+  </div>
+
+  <div>
+    <%= f.label :description, class: "block text-sm font-medium text-gray-700 mb-1" %>
+    <%= f.text_area :description, rows: 2, class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div>
+      <%= f.label :base_price_cents, "Price (cents)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.number_field :base_price_cents, min: 0, class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+      <% if menu_item.base_price_cents %>
+        <p class="text-xs text-gray-500 mt-1"><%= format_money(menu_item.base_price_cents) %></p>
+      <% end %>
+    </div>
+    <div>
+      <%= f.label :tax_category, class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.select :tax_category, MenuItem::TAX_CATEGORIES, {}, class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+    </div>
+    <div>
+      <%= f.label :position, class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.number_field :position, class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap gap-6 items-center">
+    <label class="flex items-center gap-2 text-sm">
+      <%= f.check_box :available, class: "rounded" %>
+      Available on POS
+    </label>
+    <div>
+      <%= f.label :image, class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.file_field :image, class: "text-sm" %>
+      <% if menu_item.image.attached? %>
+        <div class="mt-2"><%= image_tag menu_item.image, class: "h-20 rounded" %></div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="border-t pt-5">
+    <div class="flex justify-between items-center mb-3">
+      <h3 class="font-bold text-lg">Modifier Groups</h3>
+      <button type="button" class="text-sm text-amber-600 hover:underline" data-action="nested-modifiers#addGroup">
+        + Add group
+      </button>
+    </div>
+
+    <div data-nested-modifiers-target="groups">
+      <%= f.fields_for :modifier_groups do |mg| %>
+        <%= render "modifier_group_fields", mg: mg %>
+      <% end %>
+    </div>
+
+    <template data-nested-modifiers-target="groupTemplate">
+      <%= f.fields_for :modifier_groups, ModifierGroup.new, child_index: "NEW_GROUP" do |mg| %>
+        <%= render "modifier_group_fields", mg: mg %>
+      <% end %>
+    </template>
+  </div>
+
+  <div class="flex gap-3 pt-2 border-t">
+    <%= f.submit class: "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium" %>
+    <%= link_to "Cancel", admin_menu_items_path, class: "px-4 py-2 text-gray-600 hover:underline" %>
+  </div>
+<% end %>

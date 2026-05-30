@@ -1,0 +1,82 @@
+<div class="min-h-screen bg-gray-100 flex flex-col">
+  <header class="flex items-center justify-between px-4 py-3 border-b bg-white shrink-0">
+    <span class="font-bold text-gray-800 text-lg">Collect Payment</span>
+    <%= render "pos/pos_nav" %>
+  </header>
+
+  <div class="p-4 max-w-5xl mx-auto w-full flex-1">
+    <p class="text-sm text-gray-600 mb-4">
+      Orders sent to the kitchen that still need payment. Pickup orders are shown by default.
+    </p>
+
+    <div class="flex flex-wrap gap-2 mb-4">
+      <%= link_to "Pickup",
+            pos_orders_path(order_type: "pickup", q: params[:q]&.to_unsafe_h),
+            class: "px-4 py-2 rounded-lg text-sm font-medium #{@filter_type == 'pickup' ? 'bg-amber-500 text-white' : 'bg-white border hover:bg-gray-50'}" %>
+      <%= link_to "Table",
+            pos_orders_path(order_type: "table", q: params[:q]&.to_unsafe_h),
+            class: "px-4 py-2 rounded-lg text-sm font-medium #{@filter_type == 'table' ? 'bg-amber-500 text-white' : 'bg-white border hover:bg-gray-50'}" %>
+      <%= link_to "Delivery",
+            pos_orders_path(order_type: "delivery", q: params[:q]&.to_unsafe_h),
+            class: "px-4 py-2 rounded-lg text-sm font-medium #{@filter_type == 'delivery' ? 'bg-amber-500 text-white' : 'bg-white border hover:bg-gray-50'}" %>
+      <%= link_to "All types",
+            pos_orders_path(all: 1, q: params[:q]&.to_unsafe_h),
+            class: "px-4 py-2 rounded-lg text-sm font-medium #{@filter_type.nil? ? 'bg-amber-500 text-white' : 'bg-white border hover:bg-gray-50'}" %>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 mb-4">
+      <%= search_form_for @q, url: pos_orders_path, method: :get, class: "flex gap-2 items-end" do |f| %>
+        <%= hidden_field_tag :order_type, @filter_type if @filter_type.present? %>
+        <%= hidden_field_tag :all, 1 if @filter_type.nil? && params[:all].present? %>
+        <div class="flex-1">
+          <%= f.label :order_number_cont, "Order #", class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.search_field :order_number_cont, placeholder: "ORD-0001…", class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+        </div>
+        <%= f.submit "Search", class: "bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg" %>
+      <% end %>
+    </div>
+
+    <% if @orders.any? %>
+      <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-gray-50 border-b text-gray-600">
+            <tr>
+              <th class="p-3 font-medium">Order</th>
+              <th class="p-3 font-medium">Type</th>
+              <th class="p-3 font-medium">Status</th>
+              <th class="p-3 font-medium">Customer</th>
+              <th class="p-3 font-medium text-right">Due</th>
+              <th class="p-3 font-medium"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <% @orders.each do |order| %>
+              <tr class="hover:bg-gray-50">
+                <td class="p-3 font-bold"><%= order.order_number %></td>
+                <td class="p-3">
+                  <span class="text-xs uppercase px-2 py-0.5 rounded <%= order_type_class(order.order_type) %>">
+                    <%= order.order_type_label %>
+                  </span>
+                </td>
+                <td class="p-3 capitalize text-gray-600"><%= order.status %></td>
+                <td class="p-3 text-gray-600">
+                  <%= order.customer&.display_name || order.fulfillment_summary %>
+                </td>
+                <td class="p-3 text-right font-bold text-green-700"><%= format_money(order.amount_due_cents) %></td>
+                <td class="p-3 text-right">
+                  <%= link_to "Pay", pos_order_path(order), class: "bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-gray-500 text-sm mt-3"><%= @orders.size %> order<%= @orders.size == 1 ? "" : "s" %> awaiting payment</p>
+    <% else %>
+      <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+        <p>No unpaid orders found for this filter.</p>
+        <%= link_to "Back to register", pos_path, class: "text-amber-600 hover:underline mt-2 inline-block" %>
+      </div>
+    <% end %>
+  </div>
+</div>

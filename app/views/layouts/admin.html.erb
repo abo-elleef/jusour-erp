@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Admin — Saqr POS</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="bg-gray-50">
+    <nav class="bg-gray-900 text-white px-6 py-3 flex gap-4 items-center">
+      <span class="font-bold text-lg">Saqr Admin</span>
+      <%= link_to "Dashboard", admin_root_path, class: "hover:underline" %>
+      <%= link_to "Categories", admin_categories_path, class: "hover:underline" %>
+      <%= link_to "Menu", admin_menu_items_path, class: "hover:underline" %>
+      <%= link_to "Combos", admin_combos_path, class: "hover:underline" %>
+      <%= link_to "Discounts", admin_discount_rules_path, class: "hover:underline" %>
+      <%= link_to "Customers", admin_customers_path, class: "hover:underline" %>
+      <%= link_to "Orders", admin_orders_path, class: "hover:underline" %>
+      <%= link_to "Staff", admin_users_path, class: "hover:underline" %>
+      <%= link_to "POS", pos_path, class: "ml-auto hover:underline" %>
+      <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "hover:underline" %>
+    </nav>
+    <main class="p-6 max-w-6xl mx-auto">
+      <% if notice %><p class="text-green-700 mb-4"><%= notice %></p><% end %>
+      <% if alert %><p class="text-red-700 mb-4"><%= alert %></p><% end %>
+      <%= yield %>
+    </main>
+  </body>
+</html>

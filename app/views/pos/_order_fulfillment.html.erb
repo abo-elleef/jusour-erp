@@ -1,0 +1,39 @@
+<div id="order-fulfillment" class="p-4 border-b border-gray-700 shrink-0" data-controller="order-type">
+  <%= form_with url: pos_update_fulfillment_path, method: :patch, data: { turbo_stream: true, order_type_target: "form" } do |f| %>
+    <p class="text-xs uppercase tracking-wide text-gray-500 mb-2">Order type</p>
+    <div class="flex rounded-lg overflow-hidden border border-gray-600 text-sm font-medium">
+      <% Order::ORDER_TYPES.each do |type| %>
+        <label class="flex-1 text-center cursor-pointer">
+          <%= f.radio_button :order_type, type,
+                checked: order.order_type == type,
+                class: "sr-only peer",
+                data: { action: "order-type#selectType" } %>
+          <span class="block py-2 px-1 transition-colors peer-checked:bg-amber-500 peer-checked:text-gray-900 hover:bg-gray-700 <%= order.order_type == type ? 'bg-amber-500 text-gray-900' : 'text-gray-300' %>">
+            <%= type.humanize %>
+          </span>
+        </label>
+      <% end %>
+    </div>
+
+    <div class="mt-3 <%= 'hidden' unless order.table? %>" data-order-type-target="tableFields">
+      <%= f.label :table_number, "Table #", class: "block text-xs text-gray-400 mb-1" %>
+      <%= f.text_field :table_number,
+            placeholder: "e.g. 12",
+            class: "w-full rounded-lg px-3 py-2 text-sm bg-gray-800 border border-gray-600 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500",
+            data: { action: "blur->order-type#submitForm" } %>
+    </div>
+
+    <div class="mt-3 <%= 'hidden' unless order.delivery? %>" data-order-type-target="deliveryFields">
+      <%= f.label :delivery_address, "Delivery address", class: "block text-xs text-gray-400 mb-1" %>
+      <%= f.text_area :delivery_address,
+            rows: 2,
+            placeholder: "Street, unit, notes…",
+            class: "w-full rounded-lg px-3 py-2 text-sm bg-gray-800 border border-gray-600 text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500",
+            data: { action: "blur->order-type#submitForm" } %>
+    </div>
+
+    <% if order.errors.any? %>
+      <p class="text-red-400 text-xs mt-2"><%= order.errors.full_messages.to_sentence %></p>
+    <% end %>
+  <% end %>
+</div>

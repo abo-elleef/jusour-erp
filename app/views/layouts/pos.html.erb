@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html class="h-full">
+  <head>
+    <title>POS — Saqr</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="turbo-cache-control" content="no-cache">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+    <script src="https://js.stripe.com/v3/"></script>
+  </head>
+  <body class="h-full overflow-hidden bg-gray-900" data-turbo-cache="false">
+    <% if notice || alert %>
+      <div id="flash-messages" data-controller="flash" data-flash-dismiss-after-value="3000">
+        <% if notice %><div data-flash-message class="bg-green-600 text-white text-center text-sm py-1 px-4"><%= notice %></div><% end %>
+        <% if alert %><div data-flash-message class="bg-red-600 text-white text-center text-sm py-1 px-4"><%= alert %></div><% end %>
+      </div>
+    <% end %>
+    <%= yield %>
+  </body>
+</html>

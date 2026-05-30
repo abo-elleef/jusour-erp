@@ -1,0 +1,39 @@
+<h1 class="text-3xl font-bold mb-6">Kitchen Display</h1>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="kitchen-orders">
+  <% @orders.each do |order| %>
+    <div class="border-2 border-amber-500 rounded-lg p-4 <%= 'border-green-500' if order.ready? %>">
+      <div class="flex justify-between mb-2">
+        <span class="text-2xl font-bold"><%= order.order_number %></span>
+        <span class="text-sm uppercase bg-gray-800 px-2 py-1 rounded"><%= order.status %></span>
+      </div>
+      <p class="text-sm font-semibold text-amber-400 mb-2"><%= order.fulfillment_summary %></p>
+      <% if order.delivery? && order.delivery_address.present? %>
+        <p class="text-xs text-gray-400 mb-2"><%= order.delivery_address %></p>
+      <% end %>
+      <ul class="space-y-2 mb-4">
+        <% order.order_items.each do |item| %>
+          <li>
+            <span class="font-bold"><%= item.quantity %>×</span> <%= item.display_name %>
+            <% item.order_item_modifiers.each do |m| %>
+              <span class="text-gray-400 text-sm block">— <%= m.name %></span>
+            <% end %>
+            <% if item.notes.present? %>
+              <p class="text-yellow-400 font-bold text-lg"><%= item.notes %></p>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+      <% if order.notes.present? %>
+        <p class="text-yellow-300 mb-2">Order: <%= order.notes %></p>
+      <% end %>
+      <div class="flex gap-2">
+        <% if order.submitted? %>
+          <%= button_to "Start", kitchen_start_path(order), method: :patch, class: "flex-1 bg-blue-600 py-2 rounded" %>
+        <% end %>
+        <% if order.in_progress? %>
+          <%= button_to "Ready", kitchen_ready_path(order), method: :patch, class: "flex-1 bg-green-600 py-2 rounded" %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

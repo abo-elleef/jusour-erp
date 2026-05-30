@@ -1,0 +1,60 @@
+<div class="flex h-[calc(100vh-var(--flash-offset,0px))] min-h-0" data-controller="pos">
+  <div class="flex-1 flex flex-col bg-white min-w-0">
+    <header class="flex items-center justify-between px-4 py-2 border-b bg-gray-50 shrink-0">
+      <span class="font-bold text-gray-800">Saqr POS</span>
+      <%= render "pos/pos_nav" %>
+    </header>
+
+    <div class="flex gap-2 p-3 border-b overflow-x-auto shrink-0">
+      <button type="button" class="px-4 py-2 rounded-lg bg-amber-500 text-white font-medium shrink-0" data-action="pos#filterCategory" data-category="all">All</button>
+      <% @categories.each do |cat| %>
+        <button type="button" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 shrink-0" data-action="pos#filterCategory" data-category="<%= cat.id %>"><%= cat.name %></button>
+      <% end %>
+      <button type="button" class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 shrink-0" data-action="pos#filterCategory" data-category="combos">Combos</button>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 p-4 overflow-y-auto flex-1" id="menu-grid">
+      <% @menu_items.each do |item| %>
+        <div class="menu-card border rounded-xl p-3 hover:shadow-lg transition-shadow flex flex-col" data-category="<%= item.category_id %>">
+          <% if item.image.attached? %>
+            <%= image_tag item.image, class: "w-full h-20 object-cover rounded-lg mb-2" %>
+          <% else %>
+            <div class="w-full h-20 bg-gray-100 rounded-lg mb-2 flex items-center justify-center text-gray-400 text-xs"><%= item.category.name %></div>
+          <% end %>
+          <p class="font-semibold text-sm leading-tight flex-1"><%= item.name %></p>
+          <p class="text-amber-600 font-bold mt-1"><%= format_money(item.base_price_cents) %></p>
+          <% if item.modifier_groups.any? %>
+            <%= link_to "Customize", pos_modifier_form_path(menu_item_id: item.id), class: "mt-2 block text-center bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-sm font-medium", data: { turbo_frame: "modifier_modal" } %>
+          <% else %>
+            <%= button_to "Add", pos_order_items_path(menu_item_id: item.id), method: :post, form: pos_order_item_form_data, class: "mt-2 w-full bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-sm font-medium" %>
+          <% end %>
+        </div>
+      <% end %>
+      <% @combos.each do |combo| %>
+        <div class="menu-card border-2 border-amber-300 rounded-xl p-3 hover:shadow-lg flex flex-col" data-category="combos">
+          <div class="w-full h-20 bg-amber-100 rounded-lg mb-2 flex items-center justify-center text-amber-800 font-bold text-sm">COMBO</div>
+          <p class="font-semibold text-sm flex-1"><%= combo.name %></p>
+          <p class="text-amber-600 font-bold mt-1"><%= format_money(combo.price_cents) %></p>
+          <%= button_to "Add", pos_order_items_path(combo_id: combo.id), method: :post, form: pos_order_item_form_data, class: "mt-2 w-full bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-sm font-medium" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <aside class="w-[400px] max-w-[40vw] flex flex-col bg-gray-900 text-white shrink-0 border-l border-gray-700">
+    <div class="p-4 border-b border-gray-700 flex justify-between items-center shrink-0">
+      <%= render "pos/order_summary", order: @order %>
+      <%= button_to "New Order", pos_new_order_path, method: :post, class: "text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg" %>
+    </div>
+
+    <%= render "pos/cart_panel", order: @order %>
+  </aside>
+
+  <%= turbo_frame_tag "modifier_modal" %>
+
+  <div id="payment-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" data-pos-target="paymentModal">
+    <div id="payment-modal-content">
+      <%= render "pos/payment_modal", order: @order %>
+    </div>
+  </div>
+</div>

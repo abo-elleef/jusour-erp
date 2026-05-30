@@ -1,0 +1,124 @@
+<div class="mb-6">
+  <%= link_to "← Orders", admin_orders_path(admin_orders_filter_params), class: "text-gray-600 hover:underline text-sm" %>
+</div>
+
+<div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold"><%= @order.order_number %></h1>
+    <p class="text-gray-600 mt-1">
+      <%= @order.created_at.strftime("%B %d, %Y at %l:%M %p") %>
+      · Cashier: <%= @order.user.name %>
+      <% if @order.customer %> · Customer: <%= @order.customer.display_name %><% end %>
+    </p>
+    <p class="mt-2">
+      <span class="text-xs uppercase px-2 py-0.5 rounded <%= order_type_class(@order.order_type) %>">
+        <%= @order.fulfillment_summary %>
+      </span>
+    </p>
+  </div>
+  <span class="text-sm uppercase px-3 py-1 rounded <%= order_status_class(@order.status) %>">
+    <%= @order.status %>
+  </span>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <div class="lg:col-span-2 space-y-6">
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <h2 class="font-bold p-4 border-b bg-gray-50">Items</h2>
+      <table class="w-full text-sm">
+        <tbody class="divide-y">
+          <% @order_items.each do |item| %>
+            <tr>
+              <td class="p-3">
+                <span class="font-medium"><%= item.quantity %>× <%= item.display_name %></span>
+                <% item.order_item_modifiers.each do |mod| %>
+                  <p class="text-gray-500 text-xs">+ <%= mod.name %></p>
+                <% end %>
+                <% if item.notes.present? %>
+                  <p class="text-amber-700 text-xs mt-1">Note: <%= item.notes %></p>
+                <% end %>
+              </td>
+              <td class="p-3 text-right"><%= format_money(item.line_total_cents) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <% if @order.notes.present? %>
+        <p class="p-4 border-t text-sm text-gray-600"><strong>Order note:</strong> <%= @order.notes %></p>
+      <% end %>
+    </div>
+
+    <% if @payments.any? %>
+      <div class="bg-white rounded-lg shadow overflow-hidden">
+        <h2 class="font-bold p-4 border-b bg-gray-50">Payments</h2>
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-gray-600">
+            <tr>
+              <th class="p-3 text-left">Method</th>
+              <th class="p-3 text-left">Status</th>
+              <th class="p-3 text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            <% @payments.each do |payment| %>
+              <tr>
+                <td class="p-3 capitalize"><%= payment.payment_method %></td>
+                <td class="p-3"><%= payment.status %></td>
+                <td class="p-3 text-right"><%= format_money(payment.amount_cents) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="space-y-6">
+    <div class="bg-white rounded-lg shadow p-4 space-y-2 text-sm">
+      <div class="flex justify-between"><span>Subtotal</span><span><%= format_money(@order.subtotal_cents) %></span></div>
+      <% if @order.discount_cents.positive? %>
+        <div class="flex justify-between text-green-700"><span>Discount</span><span>-<%= format_money(@order.discount_cents) %></span></div>
+      <% end %>
+      <div class="flex justify-between"><span>Tax</span><span><%= format_money(@order.tax_cents) %></span></div>
+      <div class="flex justify-between"><span>Tip</span><span><%= format_money(@order.tip_cents) %></span></div>
+      <div class="flex justify-between font-bold text-lg pt-2 border-t"><span>Total</span><span><%= format_money(@order.total_cents) %></span></div>
+    </div>
+
+    <% if policy(@order).void? %>
+      <div class="bg-white rounded-lg shadow p-4">
+        <h3 class="font-bold text-red-700 mb-2">Void order</h3>
+        <%= form_with url: void_admin_order_path(@order), method: :post, class: "space-y-2" do %>
+          <%= text_field_tag :reason, nil, placeholder: "Reason", class: "w-full border rounded-lg px-3 py-2 text-sm" %>
+          <%= submit_tag "Void", class: "w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-sm", data: { turbo_confirm: "Void this order?" } %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if policy(@order).refund? %>
+      <div class="bg-white rounded-lg shadow p-4">
+        <h3 class="font-bold text-amber-700 mb-2">Refund</h3>
+        <%= form_with url: refund_admin_order_path(@order), method: :post, class: "space-y-2" do %>
+          <%= number_field_tag :amount_cents, @order.total_cents, class: "w-full border rounded-lg px-3 py-2 text-sm", placeholder: "Amount (cents)" %>
+          <%= text_field_tag :reason, nil, placeholder: "Reason", class: "w-full border rounded-lg px-3 py-2 text-sm" %>
+          <%= submit_tag "Process refund", class: "w-full bg-amber-600 hover:bg-amber-700 text-white py-2 rounded-lg text-sm", data: { turbo_confirm: "Process this refund?" } %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if @order_events.any? %>
+      <div class="bg-white rounded-lg shadow p-4">
+        <h3 class="font-bold mb-2">Activity</h3>
+        <ul class="text-sm space-y-2 text-gray-600">
+          <% @order_events.each do |event| %>
+            <li>
+              <span class="font-medium"><%= event.event_type %></span>
+              <% if event.user %> — <%= event.user.name %><% end %>
+              <br><span class="text-xs"><%= event.created_at.strftime("%b %d %l:%M %p") %></span>
+              <% if event.description.present? %><br><%= event.description %><% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+  </div>
+</div>

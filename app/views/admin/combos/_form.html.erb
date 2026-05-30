@@ -1,0 +1,14 @@
+<%= form_with model: [:admin, combo], class: "bg-white p-6 rounded-lg shadow space-y-4 max-w-2xl" do |f| %>
+  <%= f.label :name %><%= f.text_field :name, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :description %><%= f.text_area :description, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :price_cents %><%= f.number_field :price_cents, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :active %><%= f.check_box :active %>
+  <h3 class="font-bold">Items</h3>
+  <%= f.fields_for :combo_items do |ci| %>
+    <div class="flex gap-2">
+      <%= ci.collection_select :menu_item_id, @menu_items, :id, :name, {}, class: "flex-1 border rounded" %>
+      <%= ci.number_field :quantity, class: "w-20 border rounded" %>
+    </div>
+  <% end %>
+  <%= f.submit class: "bg-amber-500 text-white px-4 py-2 rounded" %>
+<% end %>

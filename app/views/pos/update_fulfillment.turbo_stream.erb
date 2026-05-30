@@ -1,0 +1,6 @@
+<%= turbo_stream.replace "cart" do %>
+  <%= render "pos/cart_panel", order: @order %>
+<% end %>
+<%= turbo_stream.replace "order-summary" do %>
+  <%= render "pos/order_summary", order: @order %>
+<% end %>

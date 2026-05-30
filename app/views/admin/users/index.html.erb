@@ -1,0 +1,83 @@
+<div class="flex justify-between items-center mb-6">
+  <h1 class="text-2xl font-bold">Staff</h1>
+  <% if policy(User).create? %>
+    <%= link_to "New Staff Member", new_admin_user_path, class: "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium" %>
+  <% end %>
+</div>
+
+<div class="bg-white rounded-lg shadow p-4 mb-6">
+  <%= search_form_for @q, url: admin_users_path, method: :get, class: "flex flex-wrap gap-3 items-end" do |f| %>
+    <div class="flex-1 min-w-[180px]">
+      <%= f.label :name_or_email_cont, "Search", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.search_field :name_or_email_cont, placeholder: "Name or email…", class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+    </div>
+    <div>
+      <%= f.label :role_eq, "Role", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.select :role_eq,
+            options_for_select(User::ROLES.map { |r| [r.humanize, r] }, @q.role_eq),
+            { include_blank: "All roles" },
+            class: "border border-gray-300 rounded-lg px-3 py-2" %>
+    </div>
+    <%= f.submit "Filter", class: "bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg" %>
+    <%= link_to "Clear", admin_users_path, class: "text-gray-600 hover:underline px-2" %>
+  <% end %>
+</div>
+
+<% if @users.any? %>
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-gray-50 border-b text-gray-600">
+        <tr>
+          <th class="p-3 font-medium">Name</th>
+          <th class="p-3 font-medium">Email</th>
+          <th class="p-3 font-medium">Role</th>
+          <th class="p-3 font-medium">Joined</th>
+          <th class="p-3 font-medium"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <% @users.each do |staff| %>
+          <tr class="hover:bg-gray-50">
+            <td class="p-3 font-medium">
+              <%= staff.name %>
+              <% if staff == current_user %><span class="text-xs text-gray-500">(you)</span><% end %>
+            </td>
+            <td class="p-3 text-gray-600"><%= staff.email %></td>
+            <td class="p-3">
+              <span class="text-xs uppercase px-2 py-0.5 rounded <%= user_role_class(staff.role) %>">
+                <%= staff.role_label %>
+              </span>
+            </td>
+            <td class="p-3 text-gray-500"><%= staff.created_at.strftime("%b %d, %Y") %></td>
+            <td class="p-3 text-right whitespace-nowrap">
+              <% if policy(staff).update? %>
+                <%= link_to "Edit", edit_admin_user_path(staff), class: "text-blue-600 hover:underline" %>
+              <% end %>
+              <% if policy(staff).destroy? %>
+                <%= button_to "Delete", admin_user_path(staff), method: :delete,
+                      form: { data: { turbo_confirm: "Remove #{staff.name}?" }, class: "inline" },
+                      class: "text-red-600 hover:underline ml-3" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if @pagy.pages > 1 %>
+    <nav class="mt-4 flex gap-2 text-sm">
+      <% if @pagy.previous %>
+        <%= link_to "← Previous", url_for(request.query_parameters.merge(page: @pagy.previous)), class: "px-3 py-1 border rounded hover:bg-gray-100" %>
+      <% end %>
+      <span class="text-gray-600">Page <%= @pagy.page %> of <%= @pagy.pages %></span>
+      <% if @pagy.next %>
+        <%= link_to "Next →", url_for(request.query_parameters.merge(page: @pagy.next)), class: "px-3 py-1 border rounded hover:bg-gray-100" %>
+      <% end %>
+    </nav>
+  <% end %>
+<% else %>
+  <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+    <p>No staff members match your search.</p>
+  </div>
+<% end %>

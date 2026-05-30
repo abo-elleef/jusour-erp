@@ -1,0 +1,65 @@
+# frozen_string_literal: true
+
+module Admin
+  class CategoriesController < BaseController
+    before_action :set_category, only: %i[edit update destroy]
+
+    def index
+      @categories = policy_scope(Category).order(:position, :name)
+      authorize Category
+    end
+
+    def new
+      @category = Category.new
+      authorize @category
+    end
+
+    def create
+      @category = Category.new(category_params)
+      authorize @category
+      if @category.save
+        redirect_to admin_categories_path, notice: "Category created."
+      else
+        render :new, status: :unprocessable_entity
+      end
+    end
+
+    def edit
+      authorize @category
+    end
+
+    def update
+      authorize @category
+      if @category.update(category_params)
+        redirect_to admin_categories_path, notice: "Category updated."
+      else
+        render :edit, status: :unprocessable_entity
+      end
+    end
+
+    def destroy
+      authorize @category
+      @category.destroy
+      redirect_to admin_categories_path, notice: "Category removed."
+    end
+
+    def reorder
+      authorize Category, :update?
+      positions = params[:positions].presence || JSON.parse(request.body.read).fetch("positions")
+      positions.each do |id, position|
+        Category.where(id: id).update_all(position: position.to_i)
+      end
+      head :ok
+    end
+
+    private
+
+    def set_category
+      @category = Category.find(params[:id])
+    end
+
+    def category_params
+      params.require(:category).permit(:name, :position, :active)
+    end
+  end
+end

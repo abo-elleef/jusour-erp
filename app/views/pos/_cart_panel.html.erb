@@ -1,0 +1,5 @@
+<%= turbo_frame_tag "cart", class: "flex flex-col flex-1 min-h-0" do %>
+  <%= render "pos/order_fulfillment", order: order %>
+  <%= render "pos/cart", order: order %>
+  <%= render "pos/cart_actions", order: order %>
+<% end %>

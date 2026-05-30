@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Saqr POS</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+    <script src="https://js.stripe.com/v3/"></script>
+  </head>
+  <body class="bg-gray-100 min-h-screen">
+    <% if notice %><p class="bg-green-100 text-green-800 p-2 text-center"><%= notice %></p><% end %>
+    <% if alert %><p class="bg-red-100 text-red-800 p-2 text-center"><%= alert %></p><% end %>
+    <%= yield %>
+  </body>
+</html>

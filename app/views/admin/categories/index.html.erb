@@ -1,0 +1,38 @@
+<div class="flex justify-between items-center mb-6">
+  <h1 class="text-2xl font-bold">Categories</h1>
+  <%= link_to "New Category", new_admin_category_path, class: "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium" %>
+</div>
+
+<p class="text-gray-600 text-sm mb-4">Drag rows to reorder how categories appear on the POS screen.</p>
+
+<% if @categories.any? %>
+  <ul class="bg-white rounded-lg shadow divide-y" data-controller="sortable-categories">
+    <% @categories.each do |cat| %>
+      <li
+        class="p-4 flex items-center gap-4 cursor-grab active:cursor-grabbing hover:bg-gray-50"
+        data-sortable-categories-target="item"
+        data-id="<%= cat.id %>"
+      >
+        <span class="text-gray-400 select-none" aria-hidden="true">⠿</span>
+        <div class="flex-1 min-w-0">
+          <span class="font-medium text-gray-900"><%= cat.name %></span>
+          <% unless cat.active? %>
+            <span class="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Inactive</span>
+          <% end %>
+        </div>
+        <span class="text-sm text-gray-500 tabular-nums">#<%= cat.position || "—" %></span>
+        <div class="flex gap-3 shrink-0">
+          <%= link_to "Edit", edit_admin_category_path(cat), class: "text-blue-600 hover:underline text-sm font-medium" %>
+          <% if policy(cat).destroy? %>
+            <%= button_to "Delete", admin_category_path(cat), method: :delete, form: { data: { turbo_confirm: "Delete #{cat.name}?" } }, class: "text-red-600 hover:underline text-sm font-medium" %>
+          <% end %>
+        </div>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+    <p>No categories yet.</p>
+    <%= link_to "Create your first category", new_admin_category_path, class: "text-amber-600 hover:underline mt-2 inline-block" %>
+  </div>
+<% end %>

@@ -1,0 +1,19 @@
+<h1>Saqr Chicken & Burgers</h1>
+<p>Receipt for <%= @order.order_number %></p>
+<p>Date: <%= @order.created_at.strftime("%B %d, %Y at %l:%M %p") %></p>
+<table>
+  <% @order.order_items.each do |item| %>
+    <tr>
+      <td><%= item.quantity %>× <%= item.display_name %></td>
+      <td><%= format_money(item.line_total_cents) %></td>
+    </tr>
+  <% end %>
+</table>
+<p>Subtotal: <%= format_money(@order.subtotal_cents) %></p>
+<p>Discount: <%= format_money(@order.discount_cents) %></p>
+<p>Tax: <%= format_money(@order.tax_cents) %></p>
+<p>Tip: <%= format_money(@order.tip_cents) %></p>
+<p><strong>Total: <%= format_money(@order.total_cents) %></strong></p>
+<% if @order.customer %>
+  <p>Loyalty points balance: <%= @order.customer.loyalty_points %></p>
+<% end %>

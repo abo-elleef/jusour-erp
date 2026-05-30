@@ -1,0 +1,6 @@
+<div class="flex gap-2 items-center" data-nested-modifiers-target="modifier">
+  <%= mod.hidden_field :_destroy, value: false, data: { nested_modifiers_target: "destroy" } %>
+  <%= mod.text_field :name, placeholder: "Modifier name", class: "flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm" %>
+  <%= mod.number_field :price_adjustment_cents, placeholder: "¢ adj", class: "w-24 border border-gray-300 rounded px-2 py-1.5 text-sm" %>
+  <button type="button" class="text-red-500 text-sm px-1" data-action="nested-modifiers#removeModifier" title="Remove">✕</button>
+</div>

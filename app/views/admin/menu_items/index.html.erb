@@ -1,0 +1,64 @@
+<div class="flex justify-between items-center mb-6">
+  <h1 class="text-2xl font-bold">Menu Items</h1>
+  <%= link_to "New Item", new_admin_menu_item_path, class: "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium" %>
+</div>
+
+<% if @menu_items.any? %>
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full text-left">
+      <thead class="bg-gray-50 border-b text-sm text-gray-600">
+        <tr>
+          <th class="p-3 font-medium w-16"></th>
+          <th class="p-3 font-medium">Name</th>
+          <th class="p-3 font-medium">Category</th>
+          <th class="p-3 font-medium">Price</th>
+          <th class="p-3 font-medium">Tax</th>
+          <th class="p-3 font-medium">Status</th>
+          <th class="p-3 font-medium"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <% @menu_items.each do |item| %>
+          <tr class="hover:bg-gray-50">
+            <td class="p-3">
+              <% if item.image.attached? %>
+                <%= image_tag item.image, class: "w-12 h-12 rounded object-cover" %>
+              <% else %>
+                <div class="w-12 h-12 rounded bg-gray-200 flex items-center justify-center text-gray-400 text-xs">—</div>
+              <% end %>
+            </td>
+            <td class="p-3">
+              <span class="font-medium"><%= item.name %></span>
+              <% if item.modifier_groups.any? %>
+                <p class="text-xs text-gray-500 mt-0.5"><%= item.modifier_groups.count %> modifier group(s)</p>
+              <% end %>
+            </td>
+            <td class="p-3 text-sm"><%= item.category.name %></td>
+            <td class="p-3 font-medium"><%= format_money(item.base_price_cents) %></td>
+            <td class="p-3 text-sm capitalize"><%= item.tax_category %></td>
+            <td class="p-3">
+              <% if item.available? %>
+                <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Available</span>
+              <% else %>
+                <span class="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">Unavailable</span>
+              <% end %>
+            </td>
+            <td class="p-3 text-right text-sm whitespace-nowrap">
+              <%= link_to "Edit", edit_admin_menu_item_path(item), class: "text-blue-600 hover:underline" %>
+              <% if policy(item).destroy? %>
+                <%= button_to "Delete", admin_menu_item_path(item), method: :delete,
+                      form: { data: { turbo_confirm: "Delete #{item.name}?" }, class: "inline" },
+                      class: "text-red-600 hover:underline ml-3" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+    <p>No menu items yet.</p>
+    <%= link_to "Create your first item", new_admin_menu_item_path, class: "text-amber-600 hover:underline mt-2 inline-block" %>
+  </div>
+<% end %>

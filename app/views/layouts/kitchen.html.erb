@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Kitchen Display — Saqr POS</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+    <%= action_cable_meta_tag %>
+  </head>
+  <body class="bg-black text-white min-h-screen p-4" data-controller="kitchen-display">
+    <%= turbo_stream_from "kitchen" %>
+    <%= yield %>
+  </body>
+</html>

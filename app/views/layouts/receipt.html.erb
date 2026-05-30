@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Receipt <%= @order.order_number %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+  </head>
+  <body class="bg-white p-6 max-w-md mx-auto font-mono text-sm">
+    <%= yield %>
+  </body>
+</html>

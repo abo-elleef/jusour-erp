@@ -1,0 +1,18 @@
+<div class="p-4 border-t border-gray-700 space-y-2 shrink-0">
+  <%= form_with url: pos_apply_coupon_path, method: :patch, class: "flex gap-2" do %>
+    <%= text_field_tag :code, nil, placeholder: "Coupon code", class: "flex-1 rounded-lg px-3 py-2 text-black text-sm" %>
+    <%= submit_tag "Apply", class: "bg-gray-700 hover:bg-gray-600 px-3 rounded-lg text-sm" %>
+  <% end %>
+
+  <% if order.customer&.loyalty_points.to_i >= Setting.get_int("loyalty_redeem_threshold", 100) %>
+    <%= button_to "Redeem Points (#{order.customer.loyalty_points})", pos_redeem_points_path, method: :patch, class: "w-full bg-purple-600 hover:bg-purple-700 py-2 rounded-lg text-sm font-medium" %>
+  <% end %>
+
+  <%= form_with url: pos_submit_path, method: :patch, data: { turbo_frame: "_top" } do %>
+    <%= submit_tag "Send to Kitchen", class: "w-full bg-blue-600 hover:bg-blue-700 py-3 rounded-lg font-bold", data: (order.order_items.empty? ? { turbo_confirm: "Cart is empty. Send anyway?" } : {}) %>
+  <% end %>
+
+  <button type="button" class="w-full bg-green-600 hover:bg-green-700 py-3 rounded-lg font-bold disabled:opacity-50" data-action="pos#openPayment" <%= "disabled" if order.order_items.empty? %>>
+    Charge <%= format_money(order.amount_due_cents) %>
+  </button>
+</div>

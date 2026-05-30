@@ -1,0 +1,78 @@
+<div class="flex justify-between items-center mb-6">
+  <h1 class="text-2xl font-bold">Customers</h1>
+  <%= link_to "New Customer", new_admin_customer_path, class: "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium" %>
+</div>
+
+<%= search_form_for @q, url: admin_customers_path, method: :get, class: "mb-6 flex flex-wrap gap-2 items-center" do |f| %>
+  <%= f.search_field :name_or_email_or_phone_cont,
+        placeholder: "Search by name, email, or phone…",
+        class: "border border-gray-300 rounded-lg px-3 py-2 flex-1 min-w-[200px]" %>
+  <%= f.submit "Search", class: "bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg" %>
+  <% if params[:q].present? %>
+    <%= link_to "Clear", admin_customers_path, class: "text-gray-600 hover:underline text-sm" %>
+  <% end %>
+<% end %>
+
+<% if @customers.any? %>
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full text-left">
+      <thead class="bg-gray-50 border-b text-sm text-gray-600">
+        <tr>
+          <th class="p-3 font-medium">Customer</th>
+          <th class="p-3 font-medium">Contact</th>
+          <th class="p-3 font-medium">Loyalty</th>
+          <th class="p-3 font-medium">Lifetime spend</th>
+          <th class="p-3 font-medium">Joined</th>
+          <th class="p-3 font-medium"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <% @customers.each do |c| %>
+          <tr class="hover:bg-gray-50">
+            <td class="p-3">
+              <%= link_to c.name.presence || c.phone || c.email, admin_customer_path(c), class: "text-blue-600 hover:underline font-medium" %>
+            </td>
+            <td class="p-3 text-sm text-gray-600">
+              <% if c.email.present? %><div><%= c.email %></div><% end %>
+              <% if c.phone.present? %><div><%= c.phone %></div><% end %>
+              <% if c.email.blank? && c.phone.blank? %>—<% end %>
+            </td>
+            <td class="p-3"><%= c.loyalty_points %> pts</td>
+            <td class="p-3"><%= format_money(c.total_spent_cents) %></td>
+            <td class="p-3 text-sm text-gray-500"><%= c.created_at.strftime("%b %d, %Y") %></td>
+            <td class="p-3 text-right text-sm whitespace-nowrap">
+              <%= link_to "Edit", edit_admin_customer_path(c), class: "text-blue-600 hover:underline" %>
+              <% if policy(c).destroy? %>
+                <%= button_to "Delete", admin_customer_path(c), method: :delete,
+                      form: { data: { turbo_confirm: "Delete this customer?" }, class: "inline" },
+                      class: "text-red-600 hover:underline ml-3" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <% if @pagy.pages > 1 %>
+    <nav class="mt-4 flex gap-2 text-sm" aria-label="Pagination">
+      <% if @pagy.previous %>
+        <%= link_to "← Previous", url_for(request.query_parameters.merge(page: @pagy.previous)), class: "px-3 py-1 border rounded hover:bg-gray-100" %>
+      <% end %>
+      <span class="px-3 py-1 text-gray-600">Page <%= @pagy.page %> of <%= @pagy.pages %></span>
+      <% if @pagy.next %>
+        <%= link_to "Next →", url_for(request.query_parameters.merge(page: @pagy.next)), class: "px-3 py-1 border rounded hover:bg-gray-100" %>
+      <% end %>
+    </nav>
+  <% end %>
+<% else %>
+  <div class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+    <% if params[:q].present? %>
+      <p>No customers match your search.</p>
+      <%= link_to "Clear search", admin_customers_path, class: "text-amber-600 hover:underline mt-2 inline-block" %>
+    <% else %>
+      <p>No customers yet.</p>
+      <%= link_to "Add a customer", new_admin_customer_path, class: "text-amber-600 hover:underline mt-2 inline-block" %>
+    <% end %>
+  </div>
+<% end %>

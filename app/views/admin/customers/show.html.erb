@@ -1,0 +1,79 @@
+<div class="mb-6">
+  <%= link_to "← Customers", admin_customers_path, class: "text-gray-600 hover:underline text-sm" %>
+</div>
+
+<div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+  <div>
+    <h1 class="text-2xl font-bold"><%= @customer.name.presence || "Customer" %></h1>
+    <p class="text-gray-600 mt-1">
+      <% if @customer.email.present? %><%= @customer.email %><% end %>
+      <% if @customer.email.present? && @customer.phone.present? %> · <% end %>
+      <% if @customer.phone.present? %><%= @customer.phone %><% end %>
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <% if policy(@customer).update? %>
+      <%= link_to "Edit", edit_admin_customer_path(@customer), class: "bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium" %>
+    <% end %>
+    <% if policy(@customer).destroy? %>
+      <%= button_to "Delete", admin_customer_path(@customer), method: :delete,
+            form: { data: { turbo_confirm: "Delete this customer permanently?" } },
+            class: "bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium" %>
+    <% end %>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+  <div class="bg-white rounded-lg shadow p-4">
+    <p class="text-sm text-gray-500">Loyalty balance</p>
+    <p class="text-2xl font-bold text-amber-600"><%= @customer.loyalty_points %> pts</p>
+  </div>
+  <div class="bg-white rounded-lg shadow p-4">
+    <p class="text-sm text-gray-500">Lifetime spend</p>
+    <p class="text-2xl font-bold"><%= format_money(@customer.total_spent_cents) %></p>
+  </div>
+</div>
+
+<h2 class="text-lg font-bold mb-3">Order history</h2>
+<% if @orders.any? %>
+  <div class="bg-white rounded-lg shadow overflow-hidden mb-8">
+    <table class="w-full text-left">
+      <thead class="bg-gray-50 border-b text-sm text-gray-600">
+        <tr>
+          <th class="p-3 font-medium">Order</th>
+          <th class="p-3 font-medium">Date</th>
+          <th class="p-3 font-medium">Total</th>
+          <th class="p-3 font-medium">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        <% @orders.each do |o| %>
+          <tr>
+            <td class="p-3 font-medium"><%= o.order_number %></td>
+            <td class="p-3 text-sm text-gray-600"><%= o.created_at.strftime("%b %d, %Y %l:%M %p") %></td>
+            <td class="p-3"><%= format_money(o.total_cents) %></td>
+            <td class="p-3"><span class="text-xs uppercase bg-gray-100 px-2 py-1 rounded"><%= o.status %></span></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% else %>
+  <p class="text-gray-500 mb-8">No orders yet.</p>
+<% end %>
+
+<h2 class="text-lg font-bold mb-3">Loyalty activity</h2>
+<% if @loyalty_transactions.any? %>
+  <ul class="bg-white rounded-lg shadow divide-y">
+    <% @loyalty_transactions.each do |tx| %>
+      <li class="p-3 flex justify-between text-sm">
+        <span><%= tx.description || tx.transaction_type %></span>
+        <span class="<%= tx.points.positive? ? 'text-green-600' : 'text-red-600' %> font-medium">
+          <%= tx.points.positive? ? "+" : "" %><%= tx.points %> pts
+        </span>
+      </li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-gray-500">No loyalty transactions yet.</p>
+<% end %>

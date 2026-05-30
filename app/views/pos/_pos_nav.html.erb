@@ -1,0 +1,9 @@
+<div class="flex gap-3 text-sm">
+  <%= link_to "Register", pos_path, class: "text-gray-600 hover:underline #{'font-semibold text-gray-900' if request.path == pos_path}" %>
+  <%= link_to "Collect Payment", pos_orders_path, class: "text-gray-600 hover:underline #{'font-semibold text-gray-900' if request.path.start_with?('/pos/orders')}" %>
+  <%= link_to "Kitchen", kitchen_path, class: "text-gray-600 hover:underline" %>
+  <% if current_user.admin_access? %>
+    <%= link_to "Admin", admin_root_path, class: "text-gray-600 hover:underline" %>
+  <% end %>
+  <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "text-gray-600 hover:underline" %>
+</div>

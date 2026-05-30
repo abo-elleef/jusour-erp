@@ -1,0 +1,9 @@
+<%= form_with model: [:admin, category], class: "bg-white p-6 rounded-lg shadow space-y-4 max-w-md" do |f| %>
+  <%= f.label :name %>
+  <%= f.text_field :name, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :position %>
+  <%= f.number_field :position, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :active %>
+  <%= f.check_box :active %>
+  <%= f.submit class: "bg-amber-500 text-white px-4 py-2 rounded" %>
+<% end %>

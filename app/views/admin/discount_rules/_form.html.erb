@@ -1,0 +1,10 @@
+<%= form_with model: [:admin, discount_rule], class: "bg-white p-6 rounded-lg shadow space-y-4 max-w-md" do |f| %>
+  <%= f.label :name %><%= f.text_field :name, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :code %><%= f.text_field :code, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :discount_type %><%= f.select :discount_type, DiscountRule::DISCOUNT_TYPES, {}, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :discount_value %><%= f.text_field :discount_value, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :applies_to %><%= f.select :applies_to, DiscountRule::APPLIES_TO, {}, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :minimum_order_cents %><%= f.number_field :minimum_order_cents, class: "w-full border rounded px-3 py-2" %>
+  <%= f.label :active %><%= f.check_box :active %>
+  <%= f.submit class: "bg-amber-500 text-white px-4 py-2 rounded" %>
+<% end %>

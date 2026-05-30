@@ -1,0 +1,10 @@
+<h1 class="text-2xl font-bold mb-4">Combos</h1>
+<%= link_to "New Combo", new_admin_combo_path, class: "mb-4 inline-block bg-amber-500 text-white px-4 py-2 rounded" %>
+<ul class="bg-white rounded-lg shadow divide-y">
+  <% @combos.each do |combo| %>
+    <li class="p-4 flex justify-between">
+      <span><%= combo.name %> — <%= format_money(combo.price_cents) %></span>
+      <%= link_to "Edit", edit_admin_combo_path(combo) %>
+    </li>
+  <% end %>
+</ul>
