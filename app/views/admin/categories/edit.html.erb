@@ -1,2 +1,25 @@
-<h1 class="text-2xl font-bold mb-4">Edit Category</h1>
-<%= render "form", category: @category %>
+<div class="max-w-3xl">
+  <div class="mb-4">
+    <%= link_to "← Categories", admin_categories_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+  </div>
+
+  <div class="flex flex-wrap justify-between items-start gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900">Edit <%= @category.name %></h1>
+      <p class="text-gray-600 text-sm mt-1">
+        <%= pluralize(@category.menu_items.size, "menu item") %> in this category
+      </p>
+    </div>
+    <% if @category.active? %>
+      <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full bg-green-100 text-green-800 border border-green-200">
+        Active
+      </span>
+    <% else %>
+      <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+        Inactive
+      </span>
+    <% end %>
+  </div>
+
+  <%= render "form", category: @category %>
+</div>

@@ -1,31 +1,310 @@
-# Files in the config/locales directory are used for internationalization and
-# are automatically loaded by Rails. If you want to use locales other than
-# English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t "hello"
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t("hello") %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# To learn more about the API, please read the Rails Internationalization guide
-# at https://guides.rubyonrails.org/i18n.html.
-#
-# Be aware that YAML interprets the following case-insensitive strings as
-# booleans: `true`, `false`, `on`, `off`, `yes`, `no`. Therefore, these strings
-# must be quoted to be interpreted as strings. For example:
-#
-#     en:
-#       "yes": yup
-#       enabled: "ON"
-
 en:
-  hello: "Hello world"
+  locale:
+    switcher_label: "Language"
+    en: "English"
+    ar: "العربية"
+
+  app:
+    name: "Saqr POS"
+    admin_name: "Saqr Admin"
+
+  actions:
+    save: "Save"
+    cancel: "Cancel"
+    create: "Create"
+    edit: "Edit"
+    delete: "Delete"
+    search: "Search"
+    apply: "Apply"
+    add: "Add"
+    remove: "Remove"
+    customize: "Customize"
+    export_csv: "Export CSV"
+    back: "Back"
+    pay: "Pay"
+    sign_out: "Sign out"
+    new: "New"
+    update: "Update"
+    send: "Send"
+    start: "Start"
+    ready: "Ready"
+    redeem: "Redeem"
+    close: "Close"
+    all: "All"
+    combo: "Combo"
+
+  nav:
+    dashboard: "Dashboard"
+    categories: "Categories"
+    menu: "Menu"
+    combos: "Combos"
+    discounts: "Discounts"
+    customers: "Customers"
+    orders: "Orders"
+    staff: "Staff"
+    inventory: "Inventory"
+    notifications: "Notifications"
+    pos: "POS"
+    register: "Register"
+    collect_payment: "Collect Payment"
+    kitchen: "Kitchen"
+    admin: "Admin"
+
+  order:
+    types:
+      delivery: "Delivery"
+      pickup: "Pickup"
+      table: "Table"
+    statuses:
+      draft: "Draft"
+      submitted: "Submitted"
+      in_progress: "In progress"
+      ready: "Ready"
+      completed: "Completed"
+      cancelled: "Cancelled"
+    fulfillment:
+      pickup: "Pickup"
+      delivery: "Delivery"
+      table: "Table"
+      table_number: "Table %{number}"
+    payment:
+      paid: "Paid"
+      due: "%{amount} due"
+    labels:
+      order_number: "Order #"
+      order_type: "Order type"
+      subtotal: "Subtotal"
+      discount: "Discount"
+      tax: "Tax"
+      tip: "Tip"
+      total: "Total"
+      amount_due: "Amount due"
+      paid_amount: "Paid"
+      customer: "Customer"
+      status: "Status"
+      type: "Type"
+      due: "Due"
+      items: "Order items"
+      payments: "Payments"
+      notes: "Notes"
+      table_number: "Table #"
+      delivery_address: "Delivery address"
+
+  user:
+    roles:
+      owner: "Owner"
+      manager: "Manager"
+      cashier: "Cashier"
+      kitchen: "Kitchen"
+
+  payment:
+    methods:
+      cash: "Cash"
+      card: "Card"
+      gift_card: "Gift card"
+      stripe: "Stripe"
+    title: "Payment"
+    due: "%{amount} due"
+    tip: "Tip"
+    cash_tendered: "Cash tendered (cents)"
+    pay_cash: "Pay Cash"
+    pay_card: "Pay Card (Terminal)"
+    gift_card_code: "Gift card code"
+
+  inventory:
+    stock_status:
+      out: "Out of stock"
+      low: "Low"
+      near: "Near low"
+      ok: "OK"
+    tools:
+      ingredients: "Ingredients"
+      suppliers: "Suppliers"
+      purchase_orders: "Purchase orders"
+      po_suggestions: "PO suggestions"
+      stock_takes: "Stock takes"
+      valuation: "Valuation"
+      variance: "Variance"
+
+  pos:
+    title: "Saqr POS"
+    cart:
+      empty: "Tap a menu item to start the order"
+      new_order: "New Order"
+      coupon_placeholder: "Coupon code"
+      apply_coupon: "Apply"
+      redeem_points: "Redeem Points (%{points})"
+      send_to_kitchen: "Send to Kitchen"
+      charge: "Charge %{amount}"
+      note_prefix: "Note:"
+    modifier:
+      add_to_order: "Add to order"
+      kitchen_notes: "Kitchen notes (optional)"
+      required: "required"
+    collect_payment:
+      title: "Collect Payment"
+      description: "Orders sent to the kitchen that still need payment. Pickup orders are shown by default."
+      awaiting_payment: "Awaiting payment"
+      total_due: "Total due"
+      in_range: "In selected range"
+      across_orders: "Across listed orders"
+      pickup_orders: "Pickup orders"
+      filtered_orders: "%{type} orders"
+      all_types: "All order types"
+      search_title: "Search"
+      search_hint: "Find an order by number"
+      unpaid_title: "Unpaid orders"
+      unpaid_count:
+        one: "%{count} order awaiting payment"
+        other: "%{count} orders awaiting payment"
+      empty: "No unpaid orders found for this filter."
+      back_to_register: "Back to register"
+      already_paid: "This order is already paid in full."
+      lines_count:
+        one: "%{count} line"
+        other: "%{count} lines"
+    categories:
+      combos: "Combos"
+
+  admin:
+    dashboard:
+      title: "Dashboard"
+      description: "Manage menu, discounts, customers, and orders."
+    orders:
+      title: "Orders"
+      description: "Search and review POS orders, payments, and fulfillment."
+      open_pos: "Open POS"
+    hints:
+      click_to_filter: "Click to filter"
+    categories:
+      description: "Organize your menu for the POS. Drag to set display order."
+      new_button: "New category"
+    menu_nav:
+      categories: "Categories"
+      menu_items: "Menu items"
+      combos: "Combos"
+    pages:
+      categories:
+        title: "Categories"
+        new: "New category"
+        edit: "Edit category"
+      menu_items:
+        title: "Menu items"
+        new: "New menu item"
+        edit: "Edit menu item"
+      combos:
+        title: "Combos"
+        new: "New combo"
+        edit: "Edit combo"
+      customers:
+        title: "Customers"
+        new: "New customer"
+        edit: "Edit customer"
+      users:
+        title: "Staff"
+        new: "New staff member"
+        edit: "Edit staff member"
+      discount_rules:
+        title: "Discount rules"
+        new: "New discount rule"
+        edit: "Edit discount rule"
+      notifications:
+        title: "Notifications"
+      ingredients:
+        title: "Ingredients"
+        new: "New ingredient"
+        edit: "Edit ingredient"
+        low_stock: "Low stock"
+      suppliers:
+        title: "Suppliers"
+        new: "New supplier"
+        edit: "Edit supplier"
+      purchase_orders:
+        title: "Purchase orders"
+        new: "New purchase order"
+        edit: "Edit purchase order"
+        suggestions: "PO suggestions"
+      stock_takes:
+        title: "Stock takes"
+      reports:
+        valuation_title: "Inventory valuation"
+        variance_title: "Usage variance"
+
+  kitchen:
+    title: "Kitchen Display"
+
+  flash:
+    unauthorized: "You are not authorized to perform this action."
+    access_denied: "Access denied."
+    admin_required: "Admin access required."
+    inventory_access: "Inventory access is limited to owners and managers."
+    pos_access: "POS access only for cashiers."
+    kitchen_access: "Kitchen display access only."
+    pos:
+      coupon_applied: "Coupon applied."
+      invalid_manager_pin: "Invalid manager PIN"
+      discount_applied: "Discount applied."
+      points_redeemed: "Points redeemed."
+      no_active_order: "No active order to send."
+      sent_to_kitchen: "Sent to kitchen."
+      order_split: "Order split."
+      orders_merged: "Orders merged."
+      payment_recorded: "Payment recorded."
+      already_paid: "This order is already paid in full."
+    category:
+      created: "Category created."
+      updated: "Category updated."
+      removed: "Category removed."
+    menu_item:
+      created: "Menu item created."
+      updated: "Menu item updated."
+      removed: "Menu item removed."
+    combo:
+      created: "Combo created."
+      updated: "Combo updated."
+      removed: "Combo removed."
+    customer:
+      created: "Customer created."
+      updated: "Customer updated."
+      removed: "Customer removed."
+    user:
+      created: "Staff member created."
+      updated: "Staff member updated."
+      removed: "Staff member removed."
+    discount_rule:
+      created: "Discount rule created."
+      updated: "Discount rule updated."
+      removed: "Discount rule removed."
+    order:
+      voided: "Order voided."
+      refunded: "Refund processed."
+    notification:
+      all_read: "All notifications marked as read."
+    ingredient:
+      created: "Ingredient created."
+      updated: "Ingredient updated."
+      removed: "Ingredient removed."
+      adjusted: "Stock adjusted."
+    purchase_order:
+      created: "Purchase order created."
+      updated: "Purchase order updated."
+      cancelled: "Purchase order cancelled."
+      sent: "PO sent to supplier."
+      cannot_send: "Cannot send this PO."
+    delivery:
+      recorded: "Delivery recorded."
+    recipe:
+      added: "Recipe line added."
+      removed: "Recipe line removed."
+    supplier_ingredient:
+      assigned: "Supplier assigned."
+      updated: "Supplier link updated."
+      removed: "Supplier removed."
+    supplier:
+      created: "Supplier created."
+      updated: "Supplier updated."
+      deactivated: "Supplier deactivated."
+    stock_take:
+      started: "Stock take started."
+      saved: "Counts saved."
+      completed: "Stock take completed and adjustments applied."

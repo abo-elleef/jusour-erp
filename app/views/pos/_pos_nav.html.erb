@@ -1,9 +1,11 @@
-<div class="flex gap-3 text-sm">
-  <%= link_to "Register", pos_path, class: "text-gray-600 hover:underline #{'font-semibold text-gray-900' if request.path == pos_path}" %>
-  <%= link_to "Collect Payment", pos_orders_path, class: "text-gray-600 hover:underline #{'font-semibold text-gray-900' if request.path.start_with?('/pos/orders')}" %>
-  <%= link_to "Kitchen", kitchen_path, class: "text-gray-600 hover:underline" %>
+<nav class="flex flex-wrap items-center gap-2" aria-label="<%= t("nav.pos") %>">
+  <%= render "shared/locale_switcher" %>
+  <%= link_to t("nav.register"), pos_path, class: pos_nav_link_class(request.path == pos_path) %>
+  <%= link_to t("nav.collect_payment"), pos_orders_path, class: pos_nav_link_class(request.path.start_with?("/pos/orders")) %>
+  <%= link_to t("nav.kitchen"), kitchen_path, class: pos_nav_link_class(request.path == kitchen_path) %>
   <% if current_user.admin_access? %>
-    <%= link_to "Admin", admin_root_path, class: "text-gray-600 hover:underline" %>
+    <%= link_to t("nav.admin"), admin_root_path, class: pos_nav_link_class(request.path.start_with?("/admin")) %>
   <% end %>
-  <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "text-gray-600 hover:underline" %>
-</div>
+  <%= button_to t("actions.sign_out"), destroy_user_session_path, method: :delete,
+        class: "px-3 py-1.5 rounded-xl text-sm font-semibold text-gray-600 border border-transparent hover:bg-gray-100 transition-colors" %>
+</nav>

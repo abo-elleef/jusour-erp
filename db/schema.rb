@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_05_30_200000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -110,6 +110,30 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_30_200000) do
     t.index ["code"], name: "index_gift_cards_on_code", unique: true
   end
 
+  create_table "ingredient_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "position", default: 0
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_ingredient_categories_on_name", unique: true
+  end
+
+  create_table "ingredients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "ingredient_category_id", null: false
+    t.string "name", null: false
+    t.string "unit", null: false
+    t.decimal "reorder_threshold", precision: 10, scale: 3, default: "0.0", null: false
+    t.decimal "quantity_on_hand", precision: 10, scale: 3, default: "0.0", null: false
+    t.integer "cost_per_unit_cents", default: 0, null: false
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_ingredients_on_active"
+    t.index ["ingredient_category_id"], name: "index_ingredients_on_ingredient_category_id"
+    t.index ["name"], name: "index_ingredients_on_name"
+  end
+
   create_table "loyalty_transactions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "customer_id", null: false
     t.uuid "order_id"
@@ -154,6 +178,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_30_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["modifier_group_id"], name: "index_modifiers_on_modifier_group_id"
+  end
+
+  create_table "notifications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "recipient_type", null: false
+    t.uuid "recipient_id", null: false
+    t.string "type"
+    t.jsonb "params"
+    t.datetime "read_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["read_at"], name: "index_notifications_on_read_at"
+    t.index ["recipient_type", "recipient_id"], name: "index_notifications_on_recipient"
   end
 
   create_table "order_discounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -247,6 +283,38 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_30_200000) do
     t.index ["status"], name: "index_payments_on_status"
   end
 
+  create_table "purchase_order_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "purchase_order_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.decimal "quantity_ordered", precision: 10, scale: 3, null: false
+    t.decimal "quantity_received", precision: 10, scale: 3, default: "0.0"
+    t.integer "unit_price_cents", null: false
+    t.string "status", default: "pending"
+    t.text "discrepancy_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_purchase_order_items_on_ingredient_id"
+    t.index ["purchase_order_id"], name: "index_purchase_order_items_on_purchase_order_id"
+  end
+
+  create_table "purchase_orders", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "supplier_id", null: false
+    t.uuid "user_id", null: false
+    t.string "po_number", null: false
+    t.string "status", default: "draft", null: false
+    t.date "ordered_on"
+    t.date "expected_on"
+    t.integer "total_cents", default: 0
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ordered_on"], name: "index_purchase_orders_on_ordered_on"
+    t.index ["po_number"], name: "index_purchase_orders_on_po_number", unique: true
+    t.index ["status"], name: "index_purchase_orders_on_status"
+    t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
+    t.index ["user_id"], name: "index_purchase_orders_on_user_id"
+  end
+
   create_table "receipt_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id", null: false
     t.string "delivery_method", null: false
@@ -258,12 +326,119 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_30_200000) do
     t.index ["order_id"], name: "index_receipt_logs_on_order_id"
   end
 
+  create_table "recipes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "menu_item_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.decimal "quantity_used", precision: 10, scale: 4, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_recipes_on_ingredient_id"
+    t.index ["menu_item_id", "ingredient_id"], name: "index_recipes_on_menu_item_id_and_ingredient_id", unique: true
+    t.index ["menu_item_id"], name: "index_recipes_on_menu_item_id"
+  end
+
   create_table "settings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "key", null: false
     t.text "value"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_settings_on_key", unique: true
+  end
+
+  create_table "stock_adjustments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "ingredient_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "stock_batch_id"
+    t.decimal "quantity_delta", precision: 10, scale: 3, null: false
+    t.string "adjustment_type", null: false
+    t.string "reason_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["adjustment_type"], name: "index_stock_adjustments_on_adjustment_type"
+    t.index ["created_at"], name: "index_stock_adjustments_on_created_at"
+    t.index ["ingredient_id"], name: "index_stock_adjustments_on_ingredient_id"
+    t.index ["stock_batch_id"], name: "index_stock_adjustments_on_stock_batch_id"
+    t.index ["user_id"], name: "index_stock_adjustments_on_user_id"
+  end
+
+  create_table "stock_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "ingredient_id", null: false
+    t.uuid "supplier_id"
+    t.decimal "quantity_received", precision: 10, scale: 3, null: false
+    t.decimal "quantity_remaining", precision: 10, scale: 3, null: false
+    t.integer "cost_per_unit_cents", default: 0, null: false
+    t.date "received_on", null: false
+    t.date "expires_on"
+    t.string "batch_reference"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_on"], name: "index_stock_batches_on_expires_on"
+    t.index ["ingredient_id"], name: "index_stock_batches_on_ingredient_id"
+    t.index ["received_on"], name: "index_stock_batches_on_received_on"
+    t.index ["supplier_id"], name: "index_stock_batches_on_supplier_id"
+  end
+
+  create_table "stock_take_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "stock_take_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.decimal "expected_quantity", precision: 10, scale: 3
+    t.decimal "counted_quantity", precision: 10, scale: 3
+    t.decimal "variance", precision: 10, scale: 3
+    t.boolean "adjusted", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_stock_take_items_on_ingredient_id"
+    t.index ["stock_take_id"], name: "index_stock_take_items_on_stock_take_id"
+  end
+
+  create_table "stock_takes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.string "status", default: "in_progress", null: false
+    t.datetime "started_at"
+    t.datetime "completed_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_stock_takes_on_user_id"
+  end
+
+  create_table "supplier_ingredients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "supplier_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.integer "price_cents", default: 0, null: false
+    t.boolean "preferred", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_supplier_ingredients_on_ingredient_id"
+    t.index ["supplier_id", "ingredient_id"], name: "index_supplier_ingredients_on_supplier_id_and_ingredient_id", unique: true
+    t.index ["supplier_id"], name: "index_supplier_ingredients_on_supplier_id"
+  end
+
+  create_table "supplier_price_histories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "supplier_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.integer "price_cents", null: false
+    t.date "effective_date", null: false
+    t.uuid "recorded_by_user_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_supplier_price_histories_on_ingredient_id"
+    t.index ["recorded_by_user_id"], name: "index_supplier_price_histories_on_recorded_by_user_id"
+    t.index ["supplier_id", "ingredient_id", "effective_date"], name: "index_supplier_price_histories_on_supplier_ingredient_date"
+    t.index ["supplier_id"], name: "index_supplier_price_histories_on_supplier_id"
+  end
+
+  create_table "suppliers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "contact_name"
+    t.string "email"
+    t.string "phone"
+    t.text "address"
+    t.integer "lead_time_days", default: 1
+    t.boolean "active", default: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_suppliers_on_name"
   end
 
   create_table "tax_rates", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -295,6 +470,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_30_200000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "combo_items", "combos"
   add_foreign_key "combo_items", "menu_items"
+  add_foreign_key "ingredients", "ingredient_categories"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"
   add_foreign_key "menu_items", "categories"
@@ -313,5 +489,24 @@ ActiveRecord::Schema[7.1].define(version: 2026_05_30_200000) do
   add_foreign_key "orders", "users"
   add_foreign_key "payments", "orders"
   add_foreign_key "payments", "users", column: "processed_by_user_id"
+  add_foreign_key "purchase_order_items", "ingredients"
+  add_foreign_key "purchase_order_items", "purchase_orders"
+  add_foreign_key "purchase_orders", "suppliers"
+  add_foreign_key "purchase_orders", "users"
   add_foreign_key "receipt_logs", "orders"
+  add_foreign_key "recipes", "ingredients"
+  add_foreign_key "recipes", "menu_items"
+  add_foreign_key "stock_adjustments", "ingredients"
+  add_foreign_key "stock_adjustments", "stock_batches"
+  add_foreign_key "stock_adjustments", "users"
+  add_foreign_key "stock_batches", "ingredients"
+  add_foreign_key "stock_batches", "suppliers"
+  add_foreign_key "stock_take_items", "ingredients"
+  add_foreign_key "stock_take_items", "stock_takes"
+  add_foreign_key "stock_takes", "users"
+  add_foreign_key "supplier_ingredients", "ingredients"
+  add_foreign_key "supplier_ingredients", "suppliers"
+  add_foreign_key "supplier_price_histories", "ingredients"
+  add_foreign_key "supplier_price_histories", "suppliers"
+  add_foreign_key "supplier_price_histories", "users", column: "recorded_by_user_id"
 end

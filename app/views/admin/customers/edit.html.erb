@@ -1,2 +1,21 @@
-<h1 class="text-2xl font-bold mb-6">Edit Customer</h1>
-<%= render "form", customer: @customer %>
+<div class="max-w-lg">
+  <div class="mb-4">
+    <%= link_to "← #{@customer.display_name}", admin_customer_path(@customer), class: "text-sm text-gray-600 hover:text-gray-900" %>
+  </div>
+
+  <div class="flex flex-wrap justify-between items-start gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title("edit") %></h1>
+      <p class="text-gray-600 text-sm mt-1">
+        <%= @customer.loyalty_points %> pts · <%= format_money(@customer.total_spent_cents) %> lifetime
+      </p>
+    </div>
+    <% if @customer.loyalty_points.positive? %>
+      <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200 tabular-nums">
+        <%= @customer.loyalty_points %> pts
+      </span>
+    <% end %>
+  </div>
+
+  <%= render "form", customer: @customer %>
+</div>

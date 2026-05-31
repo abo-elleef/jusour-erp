@@ -1,2 +1,13 @@
-<h1 class="text-2xl font-bold mb-4">New Menu Item</h1>
-<%= render "form", menu_item: @menu_item %>
+<div class="max-w-3xl">
+  <div class="mb-4">
+    <%= link_to "← Menu items", admin_menu_items_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+  </div>
+
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title("new") %></h1>
+    <p class="text-gray-600 text-sm mt-1">Add a product with optional modifier groups for the POS.</p>
+  </div>
+
+  <%= render "admin/menu_nav" %>
+  <%= render "form", menu_item: @menu_item %>
+</div>

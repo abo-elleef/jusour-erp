@@ -25,7 +25,7 @@ class KitchenController < ApplicationController
   def require_kitchen!
     return if current_user&.kitchen? || current_user&.admin_access?
 
-    flash[:alert] = "Kitchen display access only."
+    flash[:alert] = t("flash.kitchen_access")
     redirect_to root_path
   end
 end

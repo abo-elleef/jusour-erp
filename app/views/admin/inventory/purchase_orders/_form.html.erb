@@ -1,0 +1,117 @@
+<%# locals: purchase_order %>
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% active_lines = purchase_order.purchase_order_items.reject(&:marked_for_destruction?).select { |i| i.ingredient_id.present? } %>
+<% estimated_cents = active_lines.sum { |i| (i.quantity_ordered.to_d * i.unit_price_cents.to_i).round } %>
+
+<%= form_with model: purchase_order,
+      url: purchase_order.persisted? ? admin_inventory_purchase_order_path(purchase_order) : admin_inventory_purchase_orders_path,
+      class: "space-y-6" do |f| %>
+
+  <% if purchase_order.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <%= purchase_order.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900">Order details</h2>
+      <p class="text-xs text-gray-500 mt-0.5">Supplier and expected delivery</p>
+    </div>
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div class="sm:col-span-1">
+        <%= f.label :supplier_id, "Supplier", class: label_class %>
+        <%= f.collection_select :supplier_id, @suppliers, :id, :name,
+              { prompt: "Select supplier" },
+              class: "#{input_class} appearance-none" %>
+      </div>
+      <div class="sm:col-span-1">
+        <%= f.label :expected_on, "Expected delivery", class: label_class %>
+        <%= f.date_field :expected_on, class: input_class %>
+      </div>
+      <div class="sm:col-span-2">
+        <%= f.label :notes, "Notes", class: label_class %>
+        <%= f.text_area :notes, rows: 3,
+              placeholder: "Optional instructions for the supplier…",
+              class: "#{input_class} resize-y min-h-[5rem]" %>
+      </div>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900">Line items</h2>
+        <p class="text-xs text-gray-500 mt-0.5">Leave a row empty to skip it</p>
+      </div>
+      <% if estimated_cents.positive? %>
+        <p class="text-sm text-gray-600">
+          Est. total <span class="font-semibold text-gray-900"><%= format_money(estimated_cents) %></span>
+        </p>
+      <% end %>
+    </div>
+
+    <div id="po-lines" class="divide-y divide-gray-100">
+      <div class="hidden md:grid md:grid-cols-12 gap-3 px-5 py-3 bg-white text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <div class="md:col-span-5">Ingredient</div>
+        <div class="md:col-span-2">Quantity</div>
+        <div class="md:col-span-2">Unit price</div>
+        <div class="md:col-span-2 text-right">Line est.</div>
+        <div class="md:col-span-1"></div>
+      </div>
+
+      <%= f.fields_for :purchase_order_items do |item_f| %>
+        <% item = item_f.object %>
+        <% line_cents = item.ingredient_id.present? ? (item.quantity_ordered.to_d * item.unit_price_cents.to_i).round : 0 %>
+        <div class="px-5 py-4 md:py-3 md:grid md:grid-cols-12 md:gap-3 md:items-end space-y-3 md:space-y-0">
+          <div class="md:col-span-5">
+            <span class="md:hidden text-xs font-semibold text-gray-600 mb-1.5 block">Ingredient</span>
+            <%= item_f.collection_select :ingredient_id, @ingredients, :id, :name,
+                  { prompt: "Select ingredient" },
+                  class: "#{input_class} appearance-none" %>
+          </div>
+          <div class="md:col-span-2">
+            <span class="md:hidden text-xs font-semibold text-gray-600 mb-1.5 block">Quantity</span>
+            <%= item_f.number_field :quantity_ordered, step: 0.001, min: 0, placeholder: "0",
+                  class: input_class %>
+          </div>
+          <div class="md:col-span-2">
+            <span class="md:hidden text-xs font-semibold text-gray-600 mb-1.5 block">Unit price ($)</span>
+            <%= item_f.number_field :unit_price_dollars,
+                  value: purchase_order_item_unit_price_dollars(item),
+                  step: 0.01, min: 0, placeholder: "0.00",
+                  class: input_class %>
+          </div>
+          <div class="md:col-span-2 md:text-right flex md:block items-center justify-between gap-2">
+            <span class="md:hidden text-xs font-semibold text-gray-600">Line est.</span>
+            <span class="text-sm font-medium text-gray-700 tabular-nums">
+              <%= line_cents.positive? ? format_money(line_cents) : "—" %>
+            </span>
+          </div>
+          <div class="md:col-span-1 flex md:justify-end">
+            <% unless item.new_record? %>
+              <label class="inline-flex items-center gap-2 text-xs font-medium text-red-700 hover:bg-red-50 rounded-xl px-3 py-2 cursor-pointer transition-colors">
+                <%= item_f.check_box :_destroy, class: "rounded border-gray-300 text-red-600 focus:ring-red-500/40" %>
+                <span>Remove</span>
+              </label>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <div class="flex flex-wrap items-center gap-3 pt-2 pb-8">
+    <%= f.submit purchase_order.persisted? ? "Save changes" : "Create purchase order",
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
+    <%= link_to "Cancel",
+          purchase_order.persisted? ? admin_inventory_purchase_order_path(purchase_order) : admin_inventory_purchase_orders_path,
+          class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+    <% if estimated_cents.positive? %>
+      <p class="text-sm text-gray-500 ml-auto tabular-nums">
+        Order total <span class="font-semibold text-gray-900"><%= format_money(estimated_cents) %></span>
+      </p>
+    <% end %>
+  </div>
+<% end %>

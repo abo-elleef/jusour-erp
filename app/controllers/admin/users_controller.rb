@@ -8,6 +8,12 @@ module Admin
       authorize User
 
       @q = User.ransack(params[:q])
+      @total_count = User.count
+      @owner_count = User.where(role: "owner").count
+      @manager_count = User.where(role: "manager").count
+      @cashier_count = User.where(role: "cashier").count
+      @kitchen_count = User.where(role: "kitchen").count
+      @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
       @pagy, @users = pagy(:offset, @q.result.order(:name), limit: 25)
     end
 
@@ -21,7 +27,7 @@ module Admin
       authorize @user
 
       if @user.save
-        redirect_to admin_users_path, notice: "Staff member created."
+        redirect_to admin_users_path, notice: t("flash.user.created")
       else
         render :new, status: :unprocessable_entity
       end
@@ -37,7 +43,7 @@ module Admin
       attributes = attributes.except(:password, :password_confirmation) if attributes[:password].blank?
 
       if @user.update(attributes)
-        redirect_to admin_users_path, notice: "Staff member updated."
+        redirect_to admin_users_path, notice: t("flash.user.updated")
       else
         render :edit, status: :unprocessable_entity
       end
@@ -46,7 +52,7 @@ module Admin
     def destroy
       authorize @user
       @user.destroy
-      redirect_to admin_users_path, notice: "Staff member removed."
+      redirect_to admin_users_path, notice: t("flash.user.removed")
     end
 
     private

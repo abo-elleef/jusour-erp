@@ -1,1 +1,7 @@
 @import "tailwindcss";
+
+/* RTL layout support when locale is Arabic */
+[dir="rtl"] th,
+[dir="rtl"] td {
+  text-align: start;
+}

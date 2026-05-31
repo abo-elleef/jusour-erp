@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="<%= html_lang %>" dir="<%= html_dir %>">
   <head>
-    <title>Kitchen Display — Saqr POS</title>
+    <title><%= t("kitchen.title") %> — <%= t("app.name") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
@@ -9,6 +9,9 @@
     <%= action_cable_meta_tag %>
   </head>
   <body class="bg-black text-white min-h-screen p-4" data-controller="kitchen-display">
+    <div class="flex justify-end mb-4">
+      <%= render "shared/locale_switcher" %>
+    </div>
     <%= turbo_stream_from "kitchen" %>
     <%= yield %>
   </body>

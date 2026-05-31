@@ -1,63 +1,73 @@
-<div class="min-h-screen bg-gray-100">
-  <header class="flex items-center justify-between px-4 py-3 border-b bg-white">
-    <div class="flex items-center gap-3">
-      <%= link_to "← Orders", pos_orders_path(order_type: @order.order_type), class: "text-gray-600 hover:underline text-sm" %>
-      <span class="font-bold text-gray-800 text-lg"><%= @order.order_number %></span>
-      <span class="text-xs uppercase px-2 py-0.5 rounded <%= order_type_class(@order.order_type) %>">
+<div class="min-h-screen bg-gray-100 flex flex-col">
+  <header class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-gray-200 bg-white shrink-0">
+    <div class="flex flex-wrap items-center gap-3">
+      <%= link_to "← #{t('nav.orders')}", pos_orders_path(order_type: @order.order_type),
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors" %>
+      <span class="text-xl font-bold tracking-tight text-gray-900"><%= @order.order_number %></span>
+      <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= order_type_class(@order.order_type) %> <%= order_type_border_class(@order.order_type) %>">
         <%= @order.fulfillment_summary %>
       </span>
-      <span class="text-sm capitalize text-gray-500"><%= @order.status %></span>
+      <span class="text-xs font-semibold px-2.5 py-1 rounded-full border <%= order_status_class(@order.status) %> <%= order_status_border_class(@order.status) %>">
+        <%= order_status_label(@order.status) %>
+      </span>
     </div>
     <%= render "pos/pos_nav" %>
   </header>
 
-  <div class="p-4 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-      <h2 class="font-bold p-4 border-b bg-gray-50">Order items</h2>
-      <ul class="divide-y p-4 space-y-3">
+  <div class="p-5 max-w-6xl mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("order.labels.items") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("pos.collect_payment.lines_count", count: @order_items.size) %></p>
+      </div>
+      <ul class="divide-y divide-gray-100 px-5 py-2">
         <% @order_items.each do |item| %>
-          <li>
-            <div class="flex justify-between font-medium">
+          <li class="py-4">
+            <div class="flex justify-between gap-2 font-semibold text-gray-900">
               <span><%= item.quantity %>× <%= item.display_name %></span>
-              <span><%= format_money(item.line_total_cents) %></span>
+              <span class="tabular-nums shrink-0"><%= format_money(item.line_total_cents) %></span>
             </div>
             <% item.order_item_modifiers.each do |mod| %>
-              <p class="text-xs text-gray-500">+ <%= mod.name %></p>
+              <p class="text-xs text-gray-500 mt-0.5">+ <%= mod.name %></p>
             <% end %>
           </li>
         <% end %>
       </ul>
-      <div class="border-t p-4 text-sm space-y-1">
-        <div class="flex justify-between"><span>Subtotal</span><span><%= format_money(@order.subtotal_cents) %></span></div>
-        <div class="flex justify-between"><span>Tax</span><span><%= format_money(@order.tax_cents) %></span></div>
+      <div class="border-t border-gray-200 px-5 py-4 text-sm space-y-1.5 bg-gray-50/80">
+        <div class="flex justify-between text-gray-600"><span><%= t("order.labels.subtotal") %></span><span class="tabular-nums"><%= format_money(@order.subtotal_cents) %></span></div>
+        <div class="flex justify-between text-gray-600"><span><%= t("order.labels.tax") %></span><span class="tabular-nums"><%= format_money(@order.tax_cents) %></span></div>
         <% if @order.discount_cents.positive? %>
-          <div class="flex justify-between text-green-600"><span>Discount</span><span>-<%= format_money(@order.discount_cents) %></span></div>
+          <div class="flex justify-between text-green-700 font-medium"><span><%= t("order.labels.discount") %></span><span class="tabular-nums">-<%= format_money(@order.discount_cents) %></span></div>
         <% end %>
-        <div class="flex justify-between text-lg font-bold pt-2 border-t mt-2">
-          <span>Total</span>
-          <span><%= format_money(@order.total_cents) %></span>
+        <div class="flex justify-between text-lg font-bold pt-2 border-t border-gray-200 mt-2 text-gray-900">
+          <span><%= t("order.labels.total") %></span>
+          <span class="tabular-nums"><%= format_money(@order.total_cents) %></span>
         </div>
         <% if @order.paid_cents.positive? %>
-          <div class="flex justify-between text-gray-600"><span>Paid</span><span><%= format_money(@order.paid_cents) %></span></div>
+          <div class="flex justify-between text-gray-600"><span><%= t("order.labels.paid_amount") %></span><span class="tabular-nums"><%= format_money(@order.paid_cents) %></span></div>
         <% end %>
+        <div class="flex justify-between font-bold text-green-700 pt-1">
+          <span><%= t("order.labels.amount_due") %></span>
+          <span class="tabular-nums"><%= format_money(@order.amount_due_cents) %></span>
+        </div>
       </div>
 
       <% if @payments.any? %>
-        <div class="border-t p-4">
-          <h3 class="text-sm font-medium text-gray-700 mb-2">Payments</h3>
-          <ul class="text-sm space-y-1">
+        <div class="border-t border-gray-200 px-5 py-4 bg-white">
+          <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2"><%= t("order.labels.payments") %></h3>
+          <ul class="text-sm space-y-2">
             <% @payments.each do |payment| %>
-              <li class="flex justify-between text-gray-600">
-                <span class="capitalize"><%= payment.payment_method %></span>
-                <span><%= format_money(payment.amount_cents) %></span>
+              <li class="flex justify-between text-gray-600 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2">
+                <span class="font-medium text-gray-900"><%= payment_method_label(payment.payment_method) %></span>
+                <span class="tabular-nums font-semibold"><%= format_money(payment.amount_cents) %></span>
               </li>
             <% end %>
           </ul>
         </div>
       <% end %>
-    </div>
+    </section>
 
-    <div>
+    <div class="lg:sticky lg:top-5 lg:self-start">
       <%= render "pos/payment_modal", order: @order, checkout: true %>
     </div>
   </div>

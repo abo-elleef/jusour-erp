@@ -1,0 +1,42 @@
+<div class="max-w-5xl">
+  <div class="mb-4">
+    <%= link_to "← Inventory", admin_inventory_ingredients_path, class: "text-gray-600 hover:underline text-sm" %>
+  </div>
+  <h1 class="text-2xl font-bold mb-1"><%= admin_page_title("low_stock") %></h1>
+  <p class="text-gray-600 text-sm mb-6">Ingredients at or below their reorder threshold.</p>
+
+  <%= render "admin/inventory/tools_nav" %>
+
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <% if @ingredients.any? %>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 text-left">Ingredient</th>
+            <th class="p-3 text-left">On hand</th>
+            <th class="p-3 text-left">Reorder at</th>
+            <th class="p-3 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          <% @ingredients.each do |ingredient| %>
+            <tr class="bg-red-50/50">
+              <td class="p-3 font-medium">
+                <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient), class: "text-blue-600 hover:underline" %>
+                <span class="text-xs text-gray-500 block"><%= ingredient.ingredient_category.name %></span>
+              </td>
+              <td class="p-3 font-medium text-red-700"><%= ingredient.quantity_on_hand %> <%= ingredient.unit %></td>
+              <td class="p-3 text-gray-600"><%= ingredient.reorder_threshold %> <%= ingredient.unit %></td>
+              <td class="p-3 text-right">
+                <%= link_to "Adjust stock", admin_inventory_ingredient_path(ingredient, anchor: "adjust"),
+                      class: "text-amber-600 hover:underline text-sm font-medium" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="p-8 text-center text-gray-500">No low-stock ingredients right now.</p>
+    <% end %>
+  </div>
+</div>

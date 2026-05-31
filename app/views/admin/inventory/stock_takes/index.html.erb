@@ -1,0 +1,113 @@
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow resize-y min-h-[4rem]" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+
+<div class="max-w-6xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
+      <p class="text-gray-600 text-sm mt-1">Cycle counts to reconcile on-hand inventory with physical stock.</p>
+    </div>
+  </div>
+
+  <%= render "admin/inventory/tools_nav" %>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">In progress</p>
+      <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= @in_progress_count %></p>
+      <% if @in_progress_count.positive? %>
+        <p class="text-xs text-amber-700 mt-1.5 font-medium">Finish before starting another</p>
+      <% end %>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Completed</p>
+      <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= @completed_count %></p>
+    </div>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900">Start stock take</h2>
+      <p class="text-xs text-gray-500 mt-0.5">Snapshots expected quantities for all active ingredients</p>
+    </div>
+    <div class="p-5">
+      <% if @in_progress_count.positive? %>
+        <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
+          A stock take is already in progress. Complete it before starting a new one.
+        </p>
+      <% end %>
+      <%= form_with url: admin_inventory_stock_takes_path, method: :post, class: "space-y-4 max-w-xl" do %>
+        <div>
+          <%= label_tag :notes, "Notes (optional)", class: label_class %>
+          <%= text_area_tag :notes, nil, rows: 2, class: input_class, placeholder: "e.g. Monthly count — back room…" %>
+        </div>
+        <%= submit_tag "Start new stock take",
+              disabled: @in_progress_count.positive?,
+              class: "bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
+      <% end %>
+    </div>
+  </section>
+
+  <% if @stock_takes.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900">History</h2>
+        <p class="text-xs text-gray-500 mt-0.5">Recent cycle counts</p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm min-w-[560px]">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 pl-5">Started</th>
+              <th class="p-3">Status</th>
+              <th class="p-3">Counted by</th>
+              <th class="p-3 text-right">Items</th>
+              <th class="p-3 pr-5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @stock_takes.each do |st| %>
+              <% variances = st.stock_take_items.count { |i| i.variance.present? && !i.variance.to_d.zero? } %>
+              <tr class="hover:bg-gray-50/60 transition-colors">
+                <td class="p-3 pl-5 whitespace-nowrap">
+                  <%= link_to (st.started_at || st.created_at).strftime("%b %-d, %Y · %l:%M %p"),
+                        admin_inventory_stock_take_path(st),
+                        class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                  <% if st.completed_at %>
+                    <p class="text-xs text-gray-500 mt-0.5">Completed <%= st.completed_at.strftime("%b %-d, %Y") %></p>
+                  <% end %>
+                </td>
+                <td class="p-3">
+                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= stock_take_status_class(st.status) %> <%= stock_take_status_border_class(st.status) %>">
+                    <%= st.status.humanize %>
+                  </span>
+                </td>
+                <td class="p-3 text-gray-700"><%= st.user.name %></td>
+                <td class="p-3 text-right text-gray-600 tabular-nums">
+                  <%= st.stock_take_items.size %>
+                  <% if st.status == "completed" && variances.positive? %>
+                    <span class="text-xs text-amber-700 block"><%= variances %> variances</span>
+                  <% end %>
+                </td>
+                <td class="p-3 pr-5 text-right">
+                  <%= link_to st.status == "in_progress" ? "Continue" : "View",
+                        admin_inventory_stock_take_path(st),
+                        class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1">No stock takes yet</p>
+      <p class="text-gray-500 text-sm">Start a stock take to count all active ingredients and apply adjustments.</p>
+    </section>
+  <% end %>
+</div>

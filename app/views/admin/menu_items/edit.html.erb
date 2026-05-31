@@ -1,2 +1,24 @@
-<h1 class="text-2xl font-bold mb-4">Edit Menu Item</h1>
-<%= render "form", menu_item: @menu_item %>
+<div class="max-w-3xl">
+  <div class="mb-4">
+    <%= link_to "← Menu items", admin_menu_items_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+  </div>
+
+  <div class="flex flex-wrap justify-between items-start gap-3 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900">Edit <%= @menu_item.name %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= @menu_item.category.name %> · <%= format_money(@menu_item.base_price_cents) %></p>
+    </div>
+    <% if @menu_item.available? %>
+      <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full bg-green-100 text-green-800 border border-green-200">
+        Available
+      </span>
+    <% else %>
+      <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+        Unavailable
+      </span>
+    <% end %>
+  </div>
+
+  <%= render "admin/menu_nav" %>
+  <%= render "form", menu_item: @menu_item %>
+</div>

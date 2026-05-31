@@ -9,6 +9,10 @@ class User < ApplicationRecord
   validates :role, presence: true, inclusion: { in: ROLES }
 
   has_many :orders, dependent: :restrict_with_error
+  has_many :stock_adjustments, dependent: :nullify
+  has_many :purchase_orders, dependent: :nullify
+  has_many :stock_takes, dependent: :nullify
+  has_many :notifications, as: :recipient, dependent: :destroy
   has_many :processed_payments, class_name: "Payment", foreign_key: :processed_by_user_id, dependent: :nullify
 
   def owner?

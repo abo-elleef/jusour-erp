@@ -27,7 +27,7 @@ class PosController < ApplicationController
   def apply_coupon
     authorize @order, :update?
     Discounts::ApplyDiscountService.call(order: @order, code: params[:code])
-    redirect_to pos_path, notice: "Coupon applied."
+    redirect_to pos_path, notice: t("flash.pos.coupon_applied")
   rescue Discounts::ApplyDiscountService::InvalidDiscount => e
     redirect_to pos_path, alert: e.message
   end
@@ -35,7 +35,7 @@ class PosController < ApplicationController
   def manager_discount
     authorize @order, :update?
     unless current_user.admin_access? && params[:pin] == ENV.fetch("MANAGER_PIN", "1234")
-      return redirect_to pos_path, alert: "Invalid manager PIN"
+      return redirect_to pos_path, alert: t("flash.pos.invalid_manager_pin")
     end
 
     Discounts::ApplyDiscountService.call(
@@ -43,25 +43,25 @@ class PosController < ApplicationController
       manager_override_cents: params[:amount_cents].to_i,
       description: "Manager Override"
     )
-    redirect_to pos_path, notice: "Discount applied."
+    redirect_to pos_path, notice: t("flash.pos.discount_applied")
   end
 
   def redeem_points
     authorize @order, :update?
     Loyalty::RedeemPointsService.call(order: @order)
-    redirect_to pos_path, notice: "Points redeemed."
+    redirect_to pos_path, notice: t("flash.pos.points_redeemed")
   rescue Loyalty::RedeemPointsService::InsufficientPoints => e
     redirect_to pos_path, alert: e.message
   end
 
   def submit
     order = current_draft_order
-    return redirect_to pos_path, alert: "No active order to send.", status: :see_other unless order
+    return redirect_to pos_path, alert: t("flash.pos.no_active_order"), status: :see_other unless order
 
     authorize order, :submit?
     Orders::SubmitService.call(order)
     session.delete(:current_order_id)
-    redirect_to pos_path, notice: "Sent to kitchen.", status: :see_other
+    redirect_to pos_path, notice: t("flash.pos.sent_to_kitchen"), status: :see_other
   rescue Orders::SubmitService::InvalidFulfillment => e
     redirect_to pos_path, alert: e.message, status: :see_other
   end
@@ -109,7 +109,7 @@ class PosController < ApplicationController
     @order.recalculate_totals!
     new_order.recalculate_totals!
     session[:current_order_id] = new_order.id
-    redirect_to pos_path, notice: "Order split."
+    redirect_to pos_path, notice: t("flash.pos.order_split")
   end
 
   def merge
@@ -118,7 +118,7 @@ class PosController < ApplicationController
     other.order_items.update_all(order_id: @order.id)
     other.destroy
     @order.recalculate_totals!
-    redirect_to pos_path, notice: "Orders merged."
+    redirect_to pos_path, notice: t("flash.pos.orders_merged")
   end
 
   private
@@ -126,7 +126,7 @@ class PosController < ApplicationController
   def require_cashier!
     return if current_user&.cashier? || current_user&.admin_access?
 
-    flash[:alert] = "POS access only for cashiers."
+    flash[:alert] = t("flash.pos_access")
     redirect_to root_path
   end
 

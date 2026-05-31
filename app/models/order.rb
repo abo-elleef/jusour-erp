@@ -56,7 +56,10 @@ class Order < ApplicationRecord
 
     event :complete do
       transitions from: %i[ready submitted in_progress], to: :completed
-      after { Loyalty::AwardPointsJob.perform_later(id) }
+      after do
+        Loyalty::AwardPointsJob.perform_later(id)
+        Inventory::DeductStockService.new(self).call
+      end
     end
 
     event :cancel do
@@ -72,6 +75,18 @@ class Order < ApplicationRecord
   scope :on_date, ->(date) {
     day = date.is_a?(Date) ? date : Date.parse(date.to_s)
     where(created_at: day.beginning_of_day..day.end_of_day)
+  }
+  scope :open_orders, -> { where(status: %w[submitted in_progress ready]) }
+  scope :unpaid, -> {
+    where.not(status: %w[draft cancelled])
+      .where(
+        "orders.total_cents > COALESCE((
+          SELECT SUM(payments.amount_cents)
+          FROM payments
+          WHERE payments.order_id = orders.id
+          AND payments.status IN ('completed', 'partially_refunded')
+        ), 0)"
+      )
   }
 
   def self.ransackable_attributes(_auth_object = nil)
@@ -117,14 +132,21 @@ class Order < ApplicationRecord
   end
 
   def order_type_label
-    order_type.humanize
+    I18n.t("order.types.#{order_type}", default: order_type.humanize)
   end
 
   def fulfillment_summary
     case order_type
-    when "table" then table_number.present? ? "Table #{table_number}" : "Table"
-    when "delivery" then delivery_address.presence || "Delivery"
-    else "Pickup"
+    when "table"
+      if table_number.present?
+        I18n.t("order.fulfillment.table_number", number: table_number)
+      else
+        I18n.t("order.fulfillment.table")
+      end
+    when "delivery"
+      delivery_address.presence || I18n.t("order.fulfillment.delivery")
+    else
+      I18n.t("order.fulfillment.pickup")
     end
   end
 

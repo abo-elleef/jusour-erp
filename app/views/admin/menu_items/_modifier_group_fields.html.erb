@@ -1,15 +1,22 @@
-<div class="border border-gray-200 rounded-lg p-4 mb-3 bg-gray-50" data-nested-modifiers-target="group">
+<div class="rounded-xl border border-gray-200 bg-gray-50/80 p-4 mb-4 last:mb-0" data-nested-modifiers-target="group">
   <%= mg.hidden_field :_destroy, value: false, data: { nested_modifiers_target: "destroy" } %>
   <div class="flex justify-between items-start gap-2 mb-3">
-    <%= mg.text_field :name, placeholder: "Group name (e.g. Spice Level)", class: "flex-1 border border-gray-300 rounded-lg px-3 py-2 font-medium" %>
-    <button type="button" class="text-red-600 text-sm hover:underline shrink-0" data-action="nested-modifiers#removeGroup">Remove</button>
+    <%= mg.text_field :name, placeholder: "Group name (e.g. Spice Level)",
+          class: "flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
+    <button type="button"
+          class="text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 shrink-0 transition-colors"
+          data-action="nested-modifiers#removeGroup">
+      Remove
+    </button>
   </div>
-  <div class="flex gap-4 text-sm mb-3">
-    <label class="flex items-center gap-1">
-      <%= mg.check_box :required, class: "rounded" %> Required
+  <div class="flex flex-wrap gap-4 text-sm mb-3">
+    <label class="inline-flex items-center gap-2 cursor-pointer">
+      <%= mg.check_box :required, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+      <span class="font-medium text-gray-700">Required</span>
     </label>
-    <label class="flex items-center gap-1">
-      <%= mg.check_box :multi_select, class: "rounded" %> Multi-select
+    <label class="inline-flex items-center gap-2 cursor-pointer">
+      <%= mg.check_box :multi_select, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+      <span class="font-medium text-gray-700">Multi-select</span>
     </label>
   </div>
   <div class="space-y-2" data-nested-modifiers-target="modifiers">
@@ -17,7 +24,11 @@
       <%= render "modifier_fields", mod: mod %>
     <% end %>
   </div>
-  <button type="button" class="text-sm text-blue-600 hover:underline mt-2" data-action="nested-modifiers#addModifier">+ Add modifier</button>
+  <button type="button"
+        class="text-sm font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl mt-2 transition-colors"
+        data-action="nested-modifiers#addModifier">
+    + Add modifier
+  </button>
   <template data-nested-modifiers-target="modifierTemplate">
     <%= mg.fields_for :modifiers, Modifier.new, child_index: "NEW_MOD" do |mod| %>
       <%= render "modifier_fields", mod: mod %>

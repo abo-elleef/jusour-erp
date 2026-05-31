@@ -1,0 +1,24 @@
+<%= link_to "← POs", admin_inventory_purchase_orders_path, class: "text-sm text-gray-600" %>
+<h1 class="text-2xl font-bold mt-2"><%= @purchase_order.po_number %></h1>
+<p class="text-gray-600"><%= @purchase_order.supplier.name %> · <span class="capitalize"><%= @purchase_order.status %></span></p>
+<div class="flex gap-2 mt-4">
+  <% if @purchase_order.may_send_to_supplier? %>
+    <%= button_to "Send to supplier", send_to_supplier_admin_inventory_purchase_order_path(@purchase_order), method: :patch, class: "bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm" %>
+  <% end %>
+  <% if %w[sent partially_received].include?(@purchase_order.status) %>
+    <%= link_to "Receive delivery", new_admin_inventory_purchase_order_delivery_path(@purchase_order), class: "bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm" %>
+  <% end %>
+</div>
+<table class="w-full text-sm bg-white shadow rounded-lg mt-6">
+  <thead class="border-b bg-gray-50"><tr><th class="p-3 text-left">Ingredient</th><th>Ordered</th><th>Received</th><th>Status</th></tr></thead>
+  <tbody>
+    <% @items.each do |item| %>
+      <tr class="border-b">
+        <td class="p-3"><%= item.ingredient.name %></td>
+        <td class="p-3"><%= item.quantity_ordered %></td>
+        <td class="p-3"><%= item.quantity_received %></td>
+        <td class="p-3 capitalize"><%= item.status %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

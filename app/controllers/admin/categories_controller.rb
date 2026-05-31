@@ -5,8 +5,10 @@ module Admin
     before_action :set_category, only: %i[edit update destroy]
 
     def index
-      @categories = policy_scope(Category).order(:position, :name)
+      @categories = policy_scope(Category).includes(:menu_items).order(:position, :name)
       authorize Category
+      @active_count = @categories.count(&:active?)
+      @inactive_count = @categories.size - @active_count
     end
 
     def new
@@ -18,7 +20,7 @@ module Admin
       @category = Category.new(category_params)
       authorize @category
       if @category.save
-        redirect_to admin_categories_path, notice: "Category created."
+        redirect_to admin_categories_path, notice: t("flash.category.created")
       else
         render :new, status: :unprocessable_entity
       end
@@ -31,7 +33,7 @@ module Admin
     def update
       authorize @category
       if @category.update(category_params)
-        redirect_to admin_categories_path, notice: "Category updated."
+        redirect_to admin_categories_path, notice: t("flash.category.updated")
       else
         render :edit, status: :unprocessable_entity
       end
@@ -40,7 +42,7 @@ module Admin
     def destroy
       authorize @category
       @category.destroy
-      redirect_to admin_categories_path, notice: "Category removed."
+      redirect_to admin_categories_path, notice: t("flash.category.removed")
     end
 
     def reorder

@@ -5,9 +5,15 @@ module Admin
     before_action :set_customer, only: %i[show edit update destroy]
 
     def index
-      @q = Customer.ransack(params[:q])
-      @pagy, @customers = pagy(:offset, @q.result.order(created_at: :desc), limit: 25)
       authorize Customer
+
+      @q = Customer.ransack(params[:q])
+      @total_count = Customer.count
+      @loyalty_members_count = Customer.where("loyalty_points > 0").count
+      @total_lifetime_spend_cents = Customer.sum(:total_spent_cents)
+      @new_this_month_count = Customer.where(created_at: Time.current.all_month).count
+      @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
+      @pagy, @customers = pagy(:offset, @q.result.order(created_at: :desc), limit: 25)
     end
 
     def show
@@ -25,7 +31,7 @@ module Admin
       @customer = Customer.new(customer_params)
       authorize @customer
       if @customer.save
-        redirect_to admin_customer_path(@customer), notice: "Customer created."
+        redirect_to admin_customer_path(@customer), notice: t("flash.customer.created")
       else
         render :new, status: :unprocessable_entity
       end
@@ -38,7 +44,7 @@ module Admin
     def update
       authorize @customer
       if @customer.update(customer_params)
-        redirect_to admin_customer_path(@customer), notice: "Customer updated."
+        redirect_to admin_customer_path(@customer), notice: t("flash.customer.updated")
       else
         render :edit, status: :unprocessable_entity
       end
@@ -53,7 +59,7 @@ module Admin
       end
 
       @customer.destroy
-      redirect_to admin_customers_path, notice: "Customer removed."
+      redirect_to admin_customers_path, notice: t("flash.customer.removed")
     end
 
     private

@@ -1,0 +1,8 @@
+<nav class="flex flex-wrap gap-2 mb-6" aria-label="<%= t('nav.menu') %>">
+  <%= link_to t("admin.menu_nav.categories"), admin_categories_path,
+        class: inventory_tool_link_class(controller_name == "categories") %>
+  <%= link_to t("admin.menu_nav.menu_items"), admin_menu_items_path,
+        class: inventory_tool_link_class(controller_name == "menu_items") %>
+  <%= link_to t("admin.menu_nav.combos"), admin_combos_path,
+        class: inventory_tool_link_class(controller_name == "combos") %>
+</nav>

@@ -26,7 +26,7 @@ module Pos
 
       attach_tip_to_largest_payment(tip_cents)
       finalize_if_paid
-      redirect_after_payment(notice: "Payment recorded.")
+      redirect_after_payment(notice: t("flash.pos.payment_recorded"))
     end
 
     def stripe_intent
@@ -55,7 +55,7 @@ module Pos
     def require_pos_access!
       return if current_user&.cashier? || current_user&.admin_access?
 
-      flash[:alert] = "POS access only for cashiers."
+      flash[:alert] = t("flash.pos_access")
       redirect_to root_path
     end
 

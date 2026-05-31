@@ -40,9 +40,15 @@ gem "twilio-ruby"
 gem "simple_form"
 gem "cocoon"
 
+# i18n
+gem "rails-i18n", "~> 7.0"
+
 # Utilities
 gem "pagy"
 gem "ransack"
+gem "chartkick"
+gem "groupdate"
+gem "csv"
 gem "dotenv-rails", groups: [:development, :test]
 
 gem "tzinfo-data", platforms: %i[windows jruby]

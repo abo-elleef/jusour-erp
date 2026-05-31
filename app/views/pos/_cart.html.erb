@@ -1,39 +1,42 @@
-<div class="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+<div class="flex-1 overflow-y-auto px-5 py-4 space-y-3 min-h-0">
   <% if order.order_items.empty? %>
-    <p class="text-gray-500 text-center py-8 text-sm">Tap a menu item to start the order</p>
+    <p class="text-gray-500 text-center py-10 text-sm"><%= t("pos.cart.empty") %></p>
   <% end %>
   <% order.order_items.includes(:menu_item, :combo, :order_item_modifiers).each do |item| %>
-    <div class="bg-gray-800 rounded-lg p-3">
+    <div class="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
       <div class="flex justify-between gap-2">
-        <span class="font-medium leading-tight"><%= item.display_name %></span>
-        <span class="shrink-0"><%= format_money(item.line_total_cents) %></span>
+        <span class="font-semibold text-sm leading-tight text-gray-900"><%= item.display_name %></span>
+        <span class="shrink-0 font-semibold text-gray-900 tabular-nums"><%= format_money(item.line_total_cents) %></span>
       </div>
       <% item.order_item_modifiers.each do |mod| %>
-        <p class="text-xs text-gray-400 mt-0.5">+ <%= mod.name %><% if mod.price_adjustment_cents != 0 %> (<%= format_money(mod.price_adjustment_cents) %>)<% end %></p>
+        <p class="text-xs text-gray-500 mt-0.5">+ <%= mod.name %><% if mod.price_adjustment_cents != 0 %> (<%= format_money(mod.price_adjustment_cents) %>)<% end %></p>
       <% end %>
       <% if item.notes.present? %>
-        <p class="text-xs text-yellow-400 mt-1 font-medium">📝 <%= item.notes %></p>
+        <p class="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1 mt-2 font-medium"><%= t("pos.cart.note_prefix") %> <%= item.notes %></p>
       <% end %>
-      <div class="flex items-center gap-2 mt-2">
-        <%= button_to "−", pos_order_item_path(item), method: :patch, params: { quantity_delta: -1 }, form: pos_order_item_form_data, class: "w-8 h-8 bg-gray-600 hover:bg-gray-500 rounded" %>
-        <span class="w-6 text-center font-bold"><%= item.quantity %></span>
-        <%= button_to "+", pos_order_item_path(item), method: :patch, params: { quantity_delta: 1 }, form: pos_order_item_form_data, class: "w-8 h-8 bg-gray-600 hover:bg-gray-500 rounded" %>
-        <%= button_to "✕", pos_order_item_path(item), method: :delete, form: pos_order_item_form_data, class: "ml-auto text-red-400 hover:text-red-300 text-sm" %>
+      <div class="flex items-center gap-2 mt-3">
+        <%= button_to "−", pos_order_item_path(item), method: :patch, params: { quantity_delta: -1 }, form: pos_order_item_form_data,
+              class: "w-9 h-9 bg-white border border-gray-200 hover:bg-gray-100 rounded-xl text-lg font-semibold text-gray-700 transition-colors" %>
+        <span class="w-8 text-center font-bold tabular-nums"><%= item.quantity %></span>
+        <%= button_to "+", pos_order_item_path(item), method: :patch, params: { quantity_delta: 1 }, form: pos_order_item_form_data,
+              class: "w-9 h-9 bg-white border border-gray-200 hover:bg-gray-100 rounded-xl text-lg font-semibold text-gray-700 transition-colors" %>
+        <%= button_to t("actions.remove"), pos_order_item_path(item), method: :delete, form: pos_order_item_form_data,
+              class: "ms-auto text-xs font-semibold text-red-700 hover:text-red-800 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors" %>
       </div>
     </div>
   <% end %>
 </div>
-<div class="p-4 border-t border-gray-700 text-sm space-y-1 shrink-0 bg-gray-900">
-  <div class="flex justify-between text-gray-400"><span>Subtotal</span><span><%= format_money(order.subtotal_cents) %></span></div>
+<div class="px-5 py-4 border-t border-gray-200 text-sm space-y-1.5 shrink-0 bg-gray-50/80">
+  <div class="flex justify-between text-gray-600"><span><%= t("order.labels.subtotal") %></span><span class="tabular-nums"><%= format_money(order.subtotal_cents) %></span></div>
   <% if order.discount_cents.positive? %>
-    <div class="flex justify-between text-green-400"><span>Discount</span><span>-<%= format_money(order.discount_cents) %></span></div>
+    <div class="flex justify-between text-green-700 font-medium"><span><%= t("order.labels.discount") %></span><span class="tabular-nums">-<%= format_money(order.discount_cents) %></span></div>
   <% end %>
-  <div class="flex justify-between text-gray-400"><span>Tax</span><span><%= format_money(order.tax_cents) %></span></div>
+  <div class="flex justify-between text-gray-600"><span><%= t("order.labels.tax") %></span><span class="tabular-nums"><%= format_money(order.tax_cents) %></span></div>
   <% if order.tip_cents.positive? %>
-    <div class="flex justify-between text-gray-400"><span>Tip</span><span><%= format_money(order.tip_cents) %></span></div>
+    <div class="flex justify-between text-gray-600"><span><%= t("order.labels.tip") %></span><span class="tabular-nums"><%= format_money(order.tip_cents) %></span></div>
   <% end %>
-  <div class="flex justify-between text-xl font-bold pt-2 border-t border-gray-700 mt-2">
-    <span>Total</span>
-    <span><%= format_money(order.total_cents) %></span>
+  <div class="flex justify-between text-xl font-bold pt-2 border-t border-gray-200 mt-2 text-gray-900">
+    <span><%= t("order.labels.total") %></span>
+    <span class="tabular-nums"><%= format_money(order.total_cents) %></span>
   </div>
 </div>

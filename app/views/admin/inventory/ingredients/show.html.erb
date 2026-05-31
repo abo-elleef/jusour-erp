@@ -1,0 +1,116 @@
+<div class="mb-4">
+  <%= link_to "← Inventory", admin_inventory_ingredients_path, class: "text-gray-600 hover:underline text-sm" %>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="space-y-6">
+    <div class="bg-white rounded-lg shadow p-6">
+      <div class="flex justify-between items-start">
+        <div>
+          <h1 class="text-2xl font-bold"><%= @ingredient.name %></h1>
+          <p class="text-gray-600"><%= @ingredient.ingredient_category.name %> · <%= @ingredient.unit %></p>
+        </div>
+        <% label, badge_class = ingredient_status_badge(@ingredient) %>
+        <span class="text-xs uppercase px-2 py-1 rounded <%= badge_class %>"><%= label %></span>
+      </div>
+      <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+        <div><dt class="text-gray-500">On hand</dt><dd class="font-bold"><%= @ingredient.quantity_on_hand %> <%= @ingredient.unit %></dd></div>
+        <div><dt class="text-gray-500">Reorder at</dt><dd><%= @ingredient.reorder_threshold %></dd></div>
+        <div><dt class="text-gray-500">Cost/unit</dt><dd><%= format_money(@ingredient.cost_per_unit_cents) %></dd></div>
+        <div><dt class="text-gray-500">Stock value</dt><dd><%= format_money(@ingredient.stock_value_cents) %></dd></div>
+      </dl>
+      <div class="mt-4">
+        <%= link_to "Edit ingredient", edit_admin_inventory_ingredient_path(@ingredient), class: "text-blue-600 hover:underline text-sm" %>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6" id="adjust">
+      <h2 class="font-bold mb-3">Adjust stock</h2>
+      <%= form_with url: adjust_admin_inventory_ingredient_path(@ingredient), method: :post, class: "space-y-3" do %>
+        <div>
+          <%= label_tag :quantity_delta, "Quantity change (+ add / − remove)", class: "block text-sm font-medium" %>
+          <%= number_field_tag :quantity_delta, nil, step: 0.001, required: true, class: "w-full border rounded-lg px-3 py-2" %>
+        </div>
+        <div>
+          <%= label_tag :adjustment_type, "Type", class: "block text-sm font-medium" %>
+          <%= select_tag :adjustment_type, options_for_select(StockAdjustment::ADJUSTMENT_TYPES.map { |t| [t.humanize, t] }), class: "w-full border rounded-lg px-3 py-2" %>
+        </div>
+        <%= text_field_tag :reason_notes, nil, placeholder: "Notes", class: "w-full border rounded-lg px-3 py-2" %>
+        <%= submit_tag "Apply adjustment", class: "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg" %>
+      <% end %>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="font-bold mb-3">Recipes (menu items)</h2>
+      <% if @recipes.any? %>
+        <ul class="text-sm space-y-2 mb-4">
+          <% @recipes.each do |recipe| %>
+            <li class="flex justify-between">
+              <span><%= recipe.menu_item.name %> — <%= recipe.quantity_used %> <%= @ingredient.unit %></span>
+              <%= button_to "Remove", admin_inventory_ingredient_recipe_path(@ingredient, recipe), method: :delete, class: "text-red-600 text-xs" %>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-gray-500 text-sm mb-4">No recipes linked yet.</p>
+      <% end %>
+      <%= form_with url: admin_inventory_ingredient_recipes_path(@ingredient), class: "flex gap-2 items-end" do %>
+        <div class="flex-1">
+          <%= label_tag "recipe[menu_item_id]", "Menu item", class: "block text-xs text-gray-500" %>
+          <%= select_tag "recipe[menu_item_id]", options_from_collection_for_select(MenuItem.ordered, :id, :name), class: "w-full border rounded-lg px-2 py-1.5 text-sm" %>
+        </div>
+        <div>
+          <%= label_tag "recipe[quantity_used]", "Qty", class: "block text-xs text-gray-500" %>
+          <%= number_field_tag "recipe[quantity_used]", nil, step: 0.0001, min: 0.0001, required: true, class: "w-24 border rounded-lg px-2 py-1.5 text-sm" %>
+        </div>
+        <%= submit_tag "Add", class: "bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="font-bold mb-3">FIFO batches</h2>
+      <% if @stock_batches.any? %>
+        <table class="w-full text-sm">
+          <thead class="text-gray-500 border-b"><tr><th class="text-left pb-2">Received</th><th>Remaining</th><th>Expires</th></tr></thead>
+          <tbody>
+            <% @stock_batches.each do |batch| %>
+              <tr class="border-b">
+                <td class="py-2"><%= batch.received_on %></td>
+                <td><%= batch.quantity_remaining %> <%= @ingredient.unit %></td>
+                <td class="<%= batch.expired? ? 'text-red-600 font-medium' : '' %>"><%= batch.expires_on || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-gray-500 text-sm">No batches yet.</p>
+      <% end %>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="font-bold mb-3">Suppliers</h2>
+      <ul class="text-sm space-y-1">
+        <% @supplier_links.each do |link| %>
+          <li><%= link.supplier.name %> — <%= format_money(link.price_cents) %><%= " (preferred)" if link.preferred? %></li>
+        <% end %>
+      </ul>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="font-bold mb-3">Recent adjustments</h2>
+      <table class="w-full text-xs">
+        <tbody>
+          <% @adjustments.each do |adj| %>
+            <tr class="border-b">
+              <td class="py-1"><%= adj.created_at.strftime("%m/%d %H:%M") %></td>
+              <td class="capitalize"><%= adj.adjustment_type %></td>
+              <td class="<%= adj.quantity_delta.positive? ? 'text-green-700' : 'text-red-700' %>"><%= adj.quantity_delta %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

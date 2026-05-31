@@ -1,0 +1,310 @@
+ar:
+  locale:
+    switcher_label: "اللغة"
+    en: "English"
+    ar: "العربية"
+
+  app:
+    name: "صقر POS"
+    admin_name: "صقر — الإدارة"
+
+  actions:
+    save: "حفظ"
+    cancel: "إلغاء"
+    create: "إنشاء"
+    edit: "تعديل"
+    delete: "حذف"
+    search: "بحث"
+    apply: "تطبيق"
+    add: "إضافة"
+    remove: "إزالة"
+    customize: "اختيارات"
+    export_csv: "تصدير CSV"
+    back: "رجوع"
+    pay: "دفع"
+    sign_out: "تسجيل الخروج"
+    new: "جديد"
+    update: "تحديث"
+    send: "إرسال"
+    start: "بدء"
+    ready: "جاهز"
+    redeem: "استبدال"
+    close: "إغلاق"
+    all: "الكل"
+    combo: "وجبة"
+
+  nav:
+    dashboard: "لوحة التحكم"
+    categories: "التصنيفات"
+    menu: "القائمة"
+    combos: "الوجبات المركبة"
+    discounts: "الخصومات"
+    customers: "العملاء"
+    orders: "الطلبات"
+    staff: "الموظفون"
+    inventory: "المخزون"
+    notifications: "الإشعارات"
+    pos: "نقطة البيع"
+    register: "الكاشير"
+    collect_payment: "تحصيل الدفع"
+    kitchen: "المطبخ"
+    admin: "الإدارة"
+
+  order:
+    types:
+      delivery: "توصيل"
+      pickup: "استلام"
+      table: "طاولة"
+    statuses:
+      draft: "مسودة"
+      submitted: "مُرسَل"
+      in_progress: "قيد التحضير"
+      ready: "جاهز"
+      completed: "مكتمل"
+      cancelled: "ملغى"
+    fulfillment:
+      pickup: "استلام"
+      delivery: "توصيل"
+      table: "طاولة"
+      table_number: "طاولة %{number}"
+    payment:
+      paid: "مدفوع"
+      due: "متبقي %{amount}"
+    labels:
+      order_number: "رقم الطلب"
+      order_type: "نوع الطلب"
+      subtotal: "المجموع الفرعي"
+      discount: "الخصم"
+      tax: "الضريبة"
+      tip: "البقشيش"
+      total: "الإجمالي"
+      amount_due: "المبلغ المستحق"
+      paid_amount: "المدفوع"
+      customer: "العميل"
+      status: "الحالة"
+      type: "النوع"
+      due: "المستحق"
+      items: "عناصر الطلب"
+      payments: "المدفوعات"
+      notes: "ملاحظات"
+      table_number: "رقم الطاولة"
+      delivery_address: "عنوان التوصيل"
+
+  user:
+    roles:
+      owner: "المالك"
+      manager: "مدير"
+      cashier: "كاشير"
+      kitchen: "مطبخ"
+
+  payment:
+    methods:
+      cash: "نقدي"
+      card: "بطاقة"
+      gift_card: "بطاقة هدية"
+      stripe: "Stripe"
+    title: "الدفع"
+    due: "المستحق %{amount}"
+    tip: "البقشيش"
+    cash_tendered: "المبلغ النقدي (سنتات)"
+    pay_cash: "دفع نقدي"
+    pay_card: "دفع بالبطاقة (جهاز)"
+    gift_card_code: "رمز بطاقة الهدية"
+
+  inventory:
+    stock_status:
+      out: "نفد المخزون"
+      low: "منخفض"
+      near: "قريب من الحد"
+      ok: "جيد"
+    tools:
+      ingredients: "المكونات"
+      suppliers: "الموردون"
+      purchase_orders: "أوامر الشراء"
+      po_suggestions: "اقتراحات الشراء"
+      stock_takes: "جرد المخزون"
+      valuation: "تقييم المخزون"
+      variance: "فروقات الاستهلاك"
+
+  pos:
+    title: "صقر POS"
+    cart:
+      empty: "اضغط على صنف لبدء الطلب"
+      new_order: "طلب جديد"
+      coupon_placeholder: "رمز القسيمة"
+      apply_coupon: "تطبيق"
+      redeem_points: "استبدال النقاط (%{points})"
+      send_to_kitchen: "إرسال للمطبخ"
+      charge: "تحصيل %{amount}"
+      note_prefix: "ملاحظة:"
+    modifier:
+      add_to_order: "إضافة للطلب"
+      kitchen_notes: "ملاحظات المطبخ (اختياري)"
+      required: "مطلوب"
+    collect_payment:
+      title: "تحصيل الدفع"
+      description: "طلبات أُرسلت للمطبخ ولم تُدفع بعد. يُعرض طلبات الاستلام افتراضياً."
+      awaiting_payment: "بانتظار الدفع"
+      total_due: "إجمالي المستحق"
+      in_range: "في النطاق المحدد"
+      across_orders: "عبر الطلبات المعروضة"
+      pickup_orders: "طلبات الاستلام"
+      filtered_orders: "طلبات %{type}"
+      all_types: "جميع الأنواع"
+      search_title: "بحث"
+      search_hint: "البحث برقم الطلب"
+      unpaid_title: "طلبات غير مدفوعة"
+      unpaid_count:
+        one: "طلب واحد بانتظار الدفع"
+        other: "%{count} طلبات بانتظار الدفع"
+      empty: "لا توجد طلبات غير مدفوعة لهذا الفلتر."
+      back_to_register: "العودة للكاشير"
+      already_paid: "هذا الطلب مدفوع بالكامل."
+      lines_count:
+        one: "سطر واحد"
+        other: "%{count} أسطر"
+    categories:
+      combos: "الوجبات المركبة"
+
+  admin:
+    dashboard:
+      title: "لوحة التحكم"
+      description: "إدارة القائمة والخصومات والعملاء والطلبات."
+    orders:
+      title: "الطلبات"
+      description: "بحث ومراجعة طلبات نقطة البيع والمدفوعات والتنفيذ."
+      open_pos: "فتح نقطة البيع"
+    hints:
+      click_to_filter: "اضغط للتصفية"
+    categories:
+      description: "نظّم قائمتك لنقطة البيع. اسحب لترتيب العرض."
+      new_button: "تصنيف جديد"
+    menu_nav:
+      categories: "التصنيفات"
+      menu_items: "أصناف القائمة"
+      combos: "الوجبات المركبة"
+    pages:
+      categories:
+        title: "التصنيفات"
+        new: "تصنيف جديد"
+        edit: "تعديل التصنيف"
+      menu_items:
+        title: "أصناف القائمة"
+        new: "صنف جديد"
+        edit: "تعديل الصنف"
+      combos:
+        title: "الوجبات المركبة"
+        new: "وجبة جديدة"
+        edit: "تعديل الوجبة"
+      customers:
+        title: "العملاء"
+        new: "عميل جديد"
+        edit: "تعديل العميل"
+      users:
+        title: "الموظفون"
+        new: "موظف جديد"
+        edit: "تعديل الموظف"
+      discount_rules:
+        title: "قواعد الخصم"
+        new: "قاعدة خصم جديدة"
+        edit: "تعديل قاعدة الخصم"
+      notifications:
+        title: "الإشعارات"
+      ingredients:
+        title: "المكونات"
+        new: "مكون جديد"
+        edit: "تعديل المكون"
+        low_stock: "مخزون منخفض"
+      suppliers:
+        title: "الموردون"
+        new: "مورد جديد"
+        edit: "تعديل المورد"
+      purchase_orders:
+        title: "أوامر الشراء"
+        new: "أمر شراء جديد"
+        edit: "تعديل أمر الشراء"
+        suggestions: "اقتراحات الشراء"
+      stock_takes:
+        title: "جرد المخزون"
+      reports:
+        valuation_title: "تقييم المخزون"
+        variance_title: "فروقات الاستهلاك"
+
+  kitchen:
+    title: "شاشة المطبخ"
+
+  flash:
+    unauthorized: "غير مصرح لك بتنفيذ هذا الإجراء."
+    access_denied: "تم رفض الوصول."
+    admin_required: "يتطلب صلاحية الإدارة."
+    inventory_access: "صلاحية المخزون للمالك والمدير فقط."
+    pos_access: "نقطة البيع للكاشير فقط."
+    kitchen_access: "شاشة المطبخ لموظفي المطبخ فقط."
+    pos:
+      coupon_applied: "تم تطبيق القسيمة."
+      invalid_manager_pin: "رمز المدير غير صحيح"
+      discount_applied: "تم تطبيق الخصم."
+      points_redeemed: "تم استبدال النقاط."
+      no_active_order: "لا يوجد طلب نشط للإرسال."
+      sent_to_kitchen: "تم الإرسال للمطبخ."
+      order_split: "تم تقسيم الطلب."
+      orders_merged: "تم دمج الطلبات."
+      payment_recorded: "تم تسجيل الدفع."
+      already_paid: "هذا الطلب مدفوع بالكامل."
+    category:
+      created: "تم إنشاء التصنيف."
+      updated: "تم تحديث التصنيف."
+      removed: "تم حذف التصنيف."
+    menu_item:
+      created: "تم إنشاء الصنف."
+      updated: "تم تحديث الصنف."
+      removed: "تم حذف الصنف."
+    combo:
+      created: "تم إنشاء الوجبة."
+      updated: "تم تحديث الوجبة."
+      removed: "تم حذف الوجبة."
+    customer:
+      created: "تم إنشاء العميل."
+      updated: "تم تحديث العميل."
+      removed: "تم حذف العميل."
+    user:
+      created: "تم إنشاء الموظف."
+      updated: "تم تحديث الموظف."
+      removed: "تم حذف الموظف."
+    discount_rule:
+      created: "تم إنشاء قاعدة الخصم."
+      updated: "تم تحديث قاعدة الخصم."
+      removed: "تم حذف قاعدة الخصم."
+    order:
+      voided: "تم إلغاء الطلب."
+      refunded: "تم استرداد المبلغ."
+    notification:
+      all_read: "تم تعليم جميع الإشعارات كمقروءة."
+    ingredient:
+      created: "تم إنشاء المكون."
+      updated: "تم تحديث المكون."
+      removed: "تم حذف المكون."
+      adjusted: "تم تعديل المخزون."
+    purchase_order:
+      created: "تم إنشاء أمر الشراء."
+      updated: "تم تحديث أمر الشراء."
+      cancelled: "تم إلغاء أمر الشراء."
+      sent: "تم إرسال أمر الشراء للمورد."
+      cannot_send: "لا يمكن إرسال أمر الشراء هذا."
+    delivery:
+      recorded: "تم تسجيل التسليم."
+    recipe:
+      added: "تمت إضافة سطر الوصفة."
+      removed: "تم حذف سطر الوصفة."
+    supplier_ingredient:
+      assigned: "تم ربط المورد."
+      updated: "تم تحديث ربط المورد."
+      removed: "تم إزالة المورد."
+    supplier:
+      created: "تم إنشاء المورد."
+      updated: "تم تحديث المورد."
+      deactivated: "تم إلغاء تفعيل المورد."
+    stock_take:
+      started: "بدأ جرد المخزون."
+      saved: "تم حفظ العد."
+      completed: "اكتمل الجرد وتم تطبيق التعديلات."

@@ -18,7 +18,7 @@ module Admin
       @discount_rule = DiscountRule.new(rule_params)
       authorize @discount_rule
       if @discount_rule.save
-        redirect_to admin_discount_rules_path, notice: "Discount rule created."
+        redirect_to admin_discount_rules_path, notice: t("flash.discount_rule.created")
       else
         render :new, status: :unprocessable_entity
       end
@@ -31,7 +31,7 @@ module Admin
     def update
       authorize @discount_rule
       if @discount_rule.update(rule_params)
-        redirect_to admin_discount_rules_path, notice: "Discount rule updated."
+        redirect_to admin_discount_rules_path, notice: t("flash.discount_rule.updated")
       else
         render :edit, status: :unprocessable_entity
       end
@@ -40,7 +40,7 @@ module Admin
     def destroy
       authorize @discount_rule
       @discount_rule.destroy
-      redirect_to admin_discount_rules_path, notice: "Discount rule removed."
+      redirect_to admin_discount_rules_path, notice: t("flash.discount_rule.removed")
     end
 
     private

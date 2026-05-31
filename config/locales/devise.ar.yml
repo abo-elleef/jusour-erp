@@ -1,0 +1,30 @@
+ar:
+  devise:
+    confirmations:
+      confirmed: "تم تأكيد بريدك الإلكتروني بنجاح."
+      send_instructions: "ستتلقى رسالة بتعليمات التأكيد خلال دقائق."
+    failure:
+      already_authenticated: "أنت مسجّل الدخول بالفعل."
+      inactive: "حسابك غير مفعّل بعد."
+      invalid: "بيانات الدخول أو كلمة المرور غير صحيحة."
+      locked: "حسابك مقفل."
+      last_attempt: "محاولة واحدة متبقية قبل قفل الحساب."
+      not_found_in_database: "بيانات الدخول أو كلمة المرور غير صحيحة."
+      timeout: "انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى."
+      unauthenticated: "يجب تسجيل الدخول للمتابعة."
+      unconfirmed: "يجب تأكيد بريدك الإلكتروني للمتابعة."
+    passwords:
+      send_instructions: "ستتلقى رسالة لإعادة تعيين كلمة المرور خلال دقائق."
+      updated: "تم تغيير كلمة المرور بنجاح."
+      updated_not_active: "تم تغيير كلمة المرور بنجاح."
+    registrations:
+      destroyed: "تم إلغاء حسابك. نأمل رؤيتك مجدداً."
+      signed_up: "مرحباً! تم إنشاء حسابك."
+      updated: "تم تحديث حسابك بنجاح."
+    sessions:
+      signed_in: "تم تسجيل الدخول."
+      signed_out: "تم تسجيل الخروج."
+      already_signed_out: "تم تسجيل الخروج."
+    unlocks:
+      send_instructions: "ستتلقى رسالة بتعليمات فتح الحساب خلال دقائق."
+      unlocked: "تم فتح حسابك بنجاح."

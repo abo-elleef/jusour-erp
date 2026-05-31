@@ -5,10 +5,16 @@ module Admin
     before_action :set_menu_item, only: %i[edit update destroy]
 
     def index
-      @menu_items = policy_scope(MenuItem)
-        .includes(:category, :modifier_groups, image_attachment: :blob)
-        .joins(:category)
+      scope = policy_scope(MenuItem).includes(:category, :modifier_groups, image_attachment: :blob)
+      @total_count = scope.count
+      @available_count = scope.where(available: true).count
+      @unavailable_count = @total_count - @available_count
+      @menu_items = scope.joins(:category)
         .order("categories.position ASC, menu_items.position ASC, menu_items.name ASC")
+      if params[:category_id].present?
+        @menu_items = @menu_items.where(category_id: params[:category_id])
+        @filtered_category_id = params[:category_id]
+      end
       @categories = Category.active.ordered
       authorize MenuItem
     end
@@ -24,7 +30,7 @@ module Admin
       @menu_item = MenuItem.new(menu_item_params)
       authorize @menu_item
       if @menu_item.save
-        redirect_to admin_menu_items_path, notice: "Menu item created."
+        redirect_to admin_menu_items_path, notice: t("flash.menu_item.created")
       else
         build_nested_modifiers
         @categories = Category.active.ordered
@@ -41,7 +47,7 @@ module Admin
     def update
       authorize @menu_item
       if @menu_item.update(menu_item_params)
-        redirect_to admin_menu_items_path, notice: "Menu item updated."
+        redirect_to admin_menu_items_path, notice: t("flash.menu_item.updated")
       else
         @categories = Category.active.ordered
         render :edit, status: :unprocessable_entity
@@ -56,7 +62,7 @@ module Admin
         return
       end
       @menu_item.destroy
-      redirect_to admin_menu_items_path, notice: "Menu item removed."
+      redirect_to admin_menu_items_path, notice: t("flash.menu_item.removed")
     end
 
     private

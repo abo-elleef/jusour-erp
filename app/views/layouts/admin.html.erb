@@ -1,7 +1,7 @@
 <!DOCTYPE html>
-<html>
+<html lang="<%= html_lang %>" dir="<%= html_dir %>">
   <head>
-    <title>Admin — Saqr POS</title>
+    <title><%= t("app.admin_name") %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -9,18 +9,29 @@
     <%= javascript_importmap_tags %>
   </head>
   <body class="bg-gray-50">
-    <nav class="bg-gray-900 text-white px-6 py-3 flex gap-4 items-center">
-      <span class="font-bold text-lg">Saqr Admin</span>
-      <%= link_to "Dashboard", admin_root_path, class: "hover:underline" %>
-      <%= link_to "Categories", admin_categories_path, class: "hover:underline" %>
-      <%= link_to "Menu", admin_menu_items_path, class: "hover:underline" %>
-      <%= link_to "Combos", admin_combos_path, class: "hover:underline" %>
-      <%= link_to "Discounts", admin_discount_rules_path, class: "hover:underline" %>
-      <%= link_to "Customers", admin_customers_path, class: "hover:underline" %>
-      <%= link_to "Orders", admin_orders_path, class: "hover:underline" %>
-      <%= link_to "Staff", admin_users_path, class: "hover:underline" %>
-      <%= link_to "POS", pos_path, class: "ml-auto hover:underline" %>
-      <%= button_to "Sign out", destroy_user_session_path, method: :delete, class: "hover:underline" %>
+    <nav class="bg-gray-900 text-white px-6 py-3 flex flex-wrap gap-3 items-center">
+      <span class="font-bold text-lg"><%= t("app.admin_name") %></span>
+      <%= link_to t("nav.dashboard"), admin_root_path, class: "hover:underline" %>
+      <%= link_to t("nav.categories"), admin_categories_path, class: "hover:underline" %>
+      <%= link_to t("nav.menu"), admin_menu_items_path, class: "hover:underline" %>
+      <%= link_to t("nav.combos"), admin_combos_path, class: "hover:underline" %>
+      <%= link_to t("nav.discounts"), admin_discount_rules_path, class: "hover:underline" %>
+      <%= link_to t("nav.customers"), admin_customers_path, class: "hover:underline" %>
+      <%= link_to t("nav.orders"), admin_orders_path, class: "hover:underline" %>
+      <%= link_to t("nav.staff"), admin_users_path, class: "hover:underline" %>
+      <%= link_to t("nav.inventory"), admin_inventory_ingredients_path, class: "hover:underline" %>
+      <% if current_user.admin_access? %>
+        <%= link_to admin_notifications_path, class: "hover:underline relative" do %>
+          <%= t("nav.notifications") %>
+          <% unread = current_user.notifications.unread.count %>
+          <% if unread.positive? %><span class="ms-1 bg-red-500 text-white text-xs px-1.5 rounded-full"><%= unread %></span><% end %>
+        <% end %>
+      <% end %>
+      <div class="flex items-center gap-3 ms-auto">
+        <%= render "shared/locale_switcher" %>
+        <%= link_to t("nav.pos"), pos_path, class: "hover:underline" %>
+        <%= button_to t("actions.sign_out"), destroy_user_session_path, method: :delete, class: "hover:underline" %>
+      </div>
     </nav>
     <main class="p-6 max-w-6xl mx-auto">
       <% if notice %><p class="text-green-700 mb-4"><%= notice %></p><% end %>

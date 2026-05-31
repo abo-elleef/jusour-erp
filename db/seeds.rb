@@ -143,4 +143,62 @@ GiftCard.find_or_create_by!(code: "GIFT100") do |g|
   g.active = true
 end
 
+# Inventory
+["Proteins", "Produce", "Dairy", "Dry Goods", "Sauces & Condiments", "Packaging"].each_with_index do |name, i|
+  IngredientCategory.find_or_create_by!(name: name) { |c| c.position = i }
+end
+
+[
+  { name: "Chicken Thighs", unit: "kg", category: "Proteins", reorder_threshold: 5, cost_per_unit_cents: 450, qty: 12 },
+  { name: "Beef Patties (4oz)", unit: "pieces", category: "Proteins", reorder_threshold: 50, cost_per_unit_cents: 175, qty: 120 },
+  { name: "Burger Buns", unit: "pieces", category: "Dry Goods", reorder_threshold: 100, cost_per_unit_cents: 30, qty: 200 },
+  { name: "Chicken Buns", unit: "pieces", category: "Dry Goods", reorder_threshold: 100, cost_per_unit_cents: 28, qty: 150 },
+  { name: "Shredded Lettuce", unit: "kg", category: "Produce", reorder_threshold: 2, cost_per_unit_cents: 180, qty: 4 },
+  { name: "Tomatoes", unit: "kg", category: "Produce", reorder_threshold: 2, cost_per_unit_cents: 220, qty: 5 },
+  { name: "American Cheese", unit: "pieces", category: "Dairy", reorder_threshold: 100, cost_per_unit_cents: 20, qty: 250 },
+  { name: "Buttermilk", unit: "liters", category: "Dairy", reorder_threshold: 3, cost_per_unit_cents: 150, qty: 8 },
+  { name: "Flour", unit: "kg", category: "Dry Goods", reorder_threshold: 10, cost_per_unit_cents: 80, qty: 25 },
+  { name: "House Sauce", unit: "liters", category: "Sauces & Condiments", reorder_threshold: 2, cost_per_unit_cents: 300, qty: 6 },
+  { name: "Fry Oil", unit: "liters", category: "Dry Goods", reorder_threshold: 10, cost_per_unit_cents: 200, qty: 20 },
+  { name: "Takeout Boxes", unit: "pieces", category: "Packaging", reorder_threshold: 200, cost_per_unit_cents: 15, qty: 500 }
+].each do |attrs|
+  cat = IngredientCategory.find_by!(name: attrs[:category])
+  ing = Ingredient.find_or_create_by!(name: attrs[:name]) do |i|
+    i.ingredient_category = cat
+    i.unit = attrs[:unit]
+    i.reorder_threshold = attrs[:reorder_threshold]
+    i.cost_per_unit_cents = attrs[:cost_per_unit_cents]
+    i.quantity_on_hand = attrs[:qty]
+  end
+  StockBatch.find_or_create_by!(ingredient: ing, batch_reference: "SEED-#{ing.name.parameterize}") do |b|
+    b.quantity_received = ing.quantity_on_hand
+    b.quantity_remaining = ing.quantity_on_hand
+    b.cost_per_unit_cents = ing.cost_per_unit_cents
+    b.received_on = Date.current
+    b.expires_on = 30.days.from_now.to_date
+  end
+end
+
+supplier = Supplier.find_or_create_by!(name: "Metro Food Distributors") do |s|
+  s.contact_name = "John Metro"
+  s.email = "orders@metrofood.example.com"
+  s.phone = "555-0100"
+  s.lead_time_days = 2
+end
+
+Ingredient.active.find_each do |ing|
+  SupplierIngredient.find_or_create_by!(supplier: supplier, ingredient: ing) do |si|
+    si.price_cents = ing.cost_per_unit_cents
+    si.preferred = true
+  end
+end
+
+smash = MenuItem.find_by(name: "Smash Burger")
+patty = Ingredient.find_by(name: "Beef Patties (4oz)")
+bun = Ingredient.find_by(name: "Burger Buns")
+if smash && patty && bun
+  Recipe.find_or_create_by!(menu_item: smash, ingredient: patty) { |r| r.quantity_used = 1 }
+  Recipe.find_or_create_by!(menu_item: smash, ingredient: bun) { |r| r.quantity_used = 1 }
+end
+
 puts "Seed complete. Login: owner@restaurant.com / changeme123"

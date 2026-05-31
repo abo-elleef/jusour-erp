@@ -7,6 +7,8 @@ class MenuItem < ApplicationRecord
   has_many :modifier_groups, dependent: :destroy
   has_many :modifiers, through: :modifier_groups
   has_many :combo_items, dependent: :restrict_with_error
+  has_many :recipes, dependent: :destroy
+  has_many :recipe_ingredients, through: :recipes, source: :ingredient
   has_one_attached :image
 
   monetize :base_price_cents

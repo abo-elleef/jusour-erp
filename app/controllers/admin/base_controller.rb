@@ -11,7 +11,7 @@ module Admin
     def require_admin!
       return if current_user&.admin_access?
 
-      flash[:alert] = "Admin access required."
+      flash[:alert] = t("flash.admin_required")
       redirect_to pos_path
     end
   end

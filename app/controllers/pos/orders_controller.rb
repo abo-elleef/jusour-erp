@@ -27,7 +27,7 @@ module Pos
       @order.recalculate_totals!
 
       if @order.amount_due_cents.zero?
-        redirect_to pos_orders_path(order_type: @order.order_type), notice: "This order is already paid in full."
+        redirect_to pos_orders_path(order_type: @order.order_type), notice: t("flash.pos.already_paid")
         return
       end
 
@@ -42,7 +42,7 @@ module Pos
     def require_pos_access!
       return if current_user&.cashier? || current_user&.admin_access?
 
-      flash[:alert] = "POS access only for cashiers."
+      flash[:alert] = t("flash.pos_access")
       redirect_to root_path
     end
   end

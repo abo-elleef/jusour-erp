@@ -1,0 +1,20 @@
+<div class="flex justify-between mb-6">
+  <h1 class="text-2xl font-bold"><%= admin_page_title %></h1>
+  <%= link_to "New PO", new_admin_inventory_purchase_order_path, class: "bg-amber-500 text-white px-4 py-2 rounded-lg" %>
+</div>
+<%= link_to "Suggestions", suggestions_admin_inventory_purchase_orders_path, class: "text-amber-600 text-sm" %> ·
+<%= link_to "Inventory", admin_inventory_ingredients_path, class: "text-gray-600 text-sm" %>
+<table class="w-full text-sm bg-white shadow rounded-lg mt-4">
+  <thead class="bg-gray-50 border-b"><tr><th class="p-3 text-left">PO</th><th>Supplier</th><th>Status</th><th>Total</th><th></th></tr></thead>
+  <tbody>
+    <% @purchase_orders.each do |po| %>
+      <tr class="border-b">
+        <td class="p-3 font-medium"><%= link_to po.po_number, admin_inventory_purchase_order_path(po), class: "text-blue-600" %></td>
+        <td class="p-3"><%= po.supplier.name %></td>
+        <td class="p-3 capitalize"><%= po.status %></td>
+        <td class="p-3"><%= format_money(po.total_cents) %></td>
+        <td class="p-3 text-right"><%= link_to "View", admin_inventory_purchase_order_path(po) %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

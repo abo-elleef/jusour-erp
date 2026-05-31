@@ -1,5 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 
+const ACTIVE_CLASSES = ["bg-gray-900", "text-white", "border-gray-900"]
+const INACTIVE_CLASSES = ["bg-white", "text-gray-700", "border-gray-200"]
+
 export default class extends Controller {
   connect() {
     this.highlightCategory("all")
@@ -15,14 +18,14 @@ export default class extends Controller {
   }
 
   highlightCategory(category, activeButton) {
-    document.querySelectorAll("[data-action*='filterCategory']").forEach((btn) => {
-      btn.classList.remove("bg-amber-500", "text-white")
-      btn.classList.add("bg-gray-200")
+    document.querySelectorAll(".pos-category-btn").forEach((btn) => {
+      btn.classList.remove(...ACTIVE_CLASSES)
+      btn.classList.add(...INACTIVE_CLASSES)
     })
     const active = activeButton || document.querySelector(`[data-category="${category}"]`)
     if (active) {
-      active.classList.remove("bg-gray-200")
-      active.classList.add("bg-amber-500", "text-white")
+      active.classList.remove(...INACTIVE_CLASSES)
+      active.classList.add(...ACTIVE_CLASSES)
     }
   }
 

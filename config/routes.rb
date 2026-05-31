@@ -5,6 +5,8 @@ Rails.application.routes.draw do
 
   root "home#index"
 
+  patch "locale", to: "locales#update", as: :locale
+
   get "up" => "rails/health#show", as: :rails_health_check
 
   get "pos", to: "pos#index"
@@ -54,6 +56,33 @@ Rails.application.routes.draw do
       member do
         post :void
         post :refund
+      end
+    end
+
+    resources :notifications, only: [:index] do
+      member { patch :mark_read }
+      collection { patch :mark_all_read }
+    end
+
+    namespace :inventory do
+      resources :ingredients do
+        member { post :adjust }
+        collection { get :low_stock }
+        resources :recipes, only: %i[create destroy]
+        resources :supplier_ingredients, only: %i[create update destroy]
+      end
+      resources :suppliers
+      resources :purchase_orders do
+        member { patch :send_to_supplier }
+        collection { get :suggestions }
+        resource :delivery, only: %i[new create], controller: "deliveries"
+      end
+      resources :stock_takes, only: %i[index show create update] do
+        member { post :complete }
+      end
+      namespace :reports do
+        get :valuation
+        get :variance
       end
     end
   end

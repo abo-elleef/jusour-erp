@@ -1,0 +1,149 @@
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+
+<div class="max-w-6xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
+      <p class="text-gray-600 text-sm mt-1">Vendors for purchasing ingredients and receiving stock.</p>
+    </div>
+    <%= link_to new_admin_inventory_supplier_path,
+          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
+      <span aria-hidden="true">+</span> New supplier
+    <% end %>
+  </div>
+
+  <%= render "admin/inventory/tools_nav" %>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+    <%= link_to admin_inventory_suppliers_path,
+          class: orders_stat_card_class(@q.active_eq.blank? && !@filtered) do %>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
+    <% end %>
+
+    <%= link_to admin_inventory_suppliers_path(q: { active_eq: true }),
+          class: orders_stat_card_class(@q.active_eq == true || @q.active_eq == "true") do %>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Active</p>
+      <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= @active_count %></p>
+      <p class="text-xs text-gray-500 mt-1.5">Available for POs</p>
+    <% end %>
+
+    <% if @inactive_count.positive? %>
+      <%= link_to admin_inventory_suppliers_path(q: { active_eq: false }),
+            class: orders_stat_card_class(@q.active_eq == false || @q.active_eq == "false") do %>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Inactive</p>
+        <p class="text-2xl font-bold mt-1 text-gray-600 tabular-nums"><%= @inactive_count %></p>
+        <p class="text-xs text-gray-500 mt-1.5">Hidden from new POs</p>
+      <% end %>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900">Search</h2>
+      <p class="text-xs text-gray-500 mt-0.5">Find by name, contact, or email</p>
+    </div>
+    <div class="p-5">
+      <%= search_form_for @q, url: admin_inventory_suppliers_path, method: :get, class: "flex flex-wrap items-end gap-4" do |f| %>
+        <div class="flex-1 min-w-[12rem]">
+          <%= f.label :name_cont, "Name", class: label_class %>
+          <%= f.search_field :name_cont, placeholder: "Supplier name…", class: input_class %>
+        </div>
+        <%= f.submit "Apply search",
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
+        <% if @filtered %>
+          <%= link_to "Clear", admin_inventory_suppliers_path,
+                class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+        <% end %>
+        <span class="text-sm text-gray-500 ml-auto tabular-nums">
+          Showing <strong class="text-gray-900"><%= @suppliers.size %></strong>
+          <%= @suppliers.size == 1 ? "supplier" : "suppliers" %>
+        </span>
+      <% end %>
+    </div>
+  </section>
+
+  <% if @suppliers.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm min-w-[640px]">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 pl-5">Supplier</th>
+              <th class="p-3">Contact</th>
+              <th class="p-3">Lead time</th>
+              <th class="p-3 text-right">Ingredients</th>
+              <th class="p-3">Status</th>
+              <th class="p-3 pr-5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @suppliers.each do |s| %>
+              <tr class="hover:bg-gray-50/60 transition-colors">
+                <td class="p-3 pl-5">
+                  <%= link_to s.name, admin_inventory_supplier_path(s),
+                        class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                </td>
+                <td class="p-3 text-gray-600">
+                  <% if s.contact_name.present? %><div><%= s.contact_name %></div><% end %>
+                  <% if s.email.present? %><div class="text-gray-500"><%= s.email %></div><% end %>
+                  <% if s.contact_name.blank? && s.email.blank? && s.phone.present? %>
+                    <div><%= s.phone %></div>
+                  <% end %>
+                  <% if s.contact_name.blank? && s.email.blank? && s.phone.blank? %>
+                    <span class="text-gray-400">—</span>
+                  <% end %>
+                </td>
+                <td class="p-3 text-gray-700 tabular-nums whitespace-nowrap">
+                  <%= pluralize(s.lead_time_days, "day") %>
+                </td>
+                <td class="p-3 text-right text-gray-600 tabular-nums">
+                  <%= s.supplier_ingredients.size %>
+                </td>
+                <td class="p-3">
+                  <% if s.active? %>
+                    <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-200">
+                      Active
+                    </span>
+                  <% else %>
+                    <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                      Inactive
+                    </span>
+                  <% end %>
+                </td>
+                <td class="p-3 pr-5 text-right whitespace-nowrap">
+                  <div class="inline-flex gap-2">
+                    <%= link_to "View", admin_inventory_supplier_path(s),
+                          class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                    <%= link_to "Edit", edit_admin_inventory_supplier_path(s),
+                          class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1">No suppliers found</p>
+      <p class="text-gray-500 text-sm mb-5">
+        <% if @filtered %>
+          Try a different search or clear filters.
+        <% else %>
+          Add vendors to link ingredients and create purchase orders.
+        <% end %>
+      </p>
+      <div class="flex flex-wrap justify-center gap-3 text-sm">
+        <% if @filtered %>
+          <%= link_to "Clear search", admin_inventory_suppliers_path,
+                class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+        <% end %>
+        <%= link_to "New supplier", new_admin_inventory_supplier_path,
+              class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+      </div>
+    </section>
+  <% end %>
+</div>
