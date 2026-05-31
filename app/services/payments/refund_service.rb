@@ -28,6 +28,12 @@ module Payments
         new_refunded = payment.refunded_amount_cents + refund_amount
         status = new_refunded >= payment.amount_cents ? "refunded" : "partially_refunded"
         payment.update!(refunded_amount_cents: new_refunded, refund_reason: @reason, status: status)
+        AuditLogEntry.record!(
+          action: "payment.refund",
+          record: payment,
+          user: @user,
+          changes_snapshot: { refunded_amount_cents: new_refunded, status: status }
+        )
         remaining -= refund_amount
       end
 

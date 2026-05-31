@@ -1,0 +1,92 @@
+# frozen_string_literal: true
+
+module Accounting
+  class SalesReportService
+    def initialize(start_date, end_date)
+      @start = start_date.beginning_of_day
+      @end = end_date.end_of_day
+    end
+
+    def call
+      {
+        summary: summary,
+        by_category: by_category,
+        by_item: by_item,
+        by_payment_method: by_payment_method,
+        hourly_distribution: hourly_distribution,
+        daily_totals: daily_totals
+      }
+    end
+
+    private
+
+    def completed_orders
+      @completed_orders ||= Order.completed.where(created_at: @start..@end)
+    end
+
+    def order_ids
+      @order_ids ||= completed_orders.pluck(:id)
+    end
+
+    def summary
+      count = completed_orders.count
+      gross = completed_orders.sum(:subtotal_cents).to_i
+      discounts = completed_orders.sum(:discount_cents).to_i
+      {
+        order_count: count,
+        gross_sales_cents: gross,
+        discount_cents: discounts,
+        tax_cents: completed_orders.sum(:tax_cents).to_i,
+        tip_cents: completed_orders.sum(:tip_cents).to_i,
+        refunds_cents: Payment.where(order_id: order_ids, status: %w[refunded partially_refunded])
+                              .sum(:refunded_amount_cents).to_i,
+        net_sales_cents: gross - discounts,
+        average_ticket_cents: count.positive? ? (completed_orders.average(:total_cents) || 0).to_i : 0
+      }
+    end
+
+    def by_category
+      Category.order(:position).map do |cat|
+        revenue = OrderItem.joins(:order, :menu_item)
+          .where(orders: { id: order_ids })
+          .where(menu_items: { category_id: cat.id })
+          .sum("order_items.quantity * order_items.unit_price_cents")
+          .to_i
+        { category: cat.name, revenue_cents: revenue }
+      end.sort_by { |r| -r[:revenue_cents] }
+    end
+
+    def by_item
+      return [] if order_ids.empty?
+
+      rows = OrderItem.joins(:menu_item)
+        .where(order_id: order_ids)
+        .where.not(menu_item_id: nil)
+        .group("menu_items.id", "menu_items.name")
+        .pluck(
+          "menu_items.name",
+          Arel.sql("SUM(order_items.quantity)"),
+          Arel.sql("SUM(order_items.quantity * order_items.unit_price_cents)")
+        )
+
+      rows.map do |name, units, revenue|
+        { name: name, units_sold: units.to_i, revenue_cents: revenue.to_i }
+      end.sort_by { |r| -r[:revenue_cents] }
+    end
+
+    def by_payment_method
+      Payment.where(order_id: order_ids, status: "completed")
+        .group(:payment_method)
+        .sum(:amount_cents)
+        .transform_values(&:to_i)
+    end
+
+    def hourly_distribution
+      completed_orders.group_by_hour(:created_at, time_zone: Time.zone, range: @start..@end).count
+    end
+
+    def daily_totals
+      completed_orders.group_by_day(:created_at, time_zone: Time.zone, range: @start..@end).sum(:total_cents)
+    end
+  end
+end

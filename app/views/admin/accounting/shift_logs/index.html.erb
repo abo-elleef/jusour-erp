@@ -1,0 +1,55 @@
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.shift_logs.title") %></h1>
+    <div class="flex gap-2">
+      <% if policy(ShiftLog).clock_in? && !current_user.clocked_in? %>
+        <%= button_to t("accounting.clock_widget.clock_in"), clock_in_admin_accounting_shift_logs_path, method: :post,
+              class: "bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-semibold" %>
+      <% elsif current_user.current_shift %>
+        <%= button_to t("accounting.clock_widget.clock_out"), clock_out_admin_accounting_shift_log_path(current_user.current_shift), method: :patch,
+              class: "bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-semibold" %>
+      <% end %>
+    </div>
+  </div>
+
+  <%= form_with url: admin_accounting_shift_logs_path, method: :get, class: "flex gap-4 items-end mb-6" do %>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.day") %></label>
+      <%= date_field_tag :date, @date, class: pos_input_class %>
+    </div>
+    <%= submit_tag t("actions.view"), class: "bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-semibold" %>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
+        <tr>
+          <th class="p-3 ps-5 text-start"><%= t("accounting.shift_logs.employee") %></th>
+          <th class="p-3 text-start"><%= t("accounting.shift_logs.clock_in") %></th>
+          <th class="p-3 text-start"><%= t("accounting.shift_logs.clock_out_label") %></th>
+          <th class="p-3 text-end"><%= t("accounting.shift_logs.hours") %></th>
+          <th class="p-3 text-end"><%= t("accounting.shift_logs.tips") %></th>
+          <th class="p-3 pe-5 text-end"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @shifts.each do |shift| %>
+          <tr>
+            <td class="p-3 ps-5 font-medium"><%= shift.user.name %></td>
+            <td class="p-3"><%= l(shift.clocked_in_at, format: :short_time) %></td>
+            <td class="p-3"><%= shift.clocked_out_at ? l(shift.clocked_out_at, format: :short_time) : t("accounting.shared.em_dash") %></td>
+            <td class="p-3 text-end tabular-nums"><%= shift.clocked_out_at ? shift.hours_worked.round(2) : t("accounting.shared.em_dash") %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(shift.tips_cents) %></td>
+            <td class="p-3 pe-5 text-end">
+              <% if shift.status == "active" && policy(shift).clock_out? %>
+                <%= button_to t("accounting.clock_widget.clock_out"), clock_out_admin_accounting_shift_log_path(shift), method: :patch,
+                      class: "text-xs font-semibold text-amber-700" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+</div>

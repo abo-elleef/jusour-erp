@@ -1,0 +1,146 @@
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% type_chip_class = "inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600" %>
+<% system_chip_class = "inline-flex items-center rounded-lg border border-amber-200 bg-amber-50/80 px-2 py-0.5 text-xs font-semibold text-amber-800" %>
+<% edit_link_class = "inline-flex items-center text-xs font-semibold text-amber-700 hover:text-amber-800 px-3 py-1.5 rounded-lg hover:bg-amber-50 transition-colors" %>
+
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.expense_categories.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("accounting.expense_categories.description") %></p>
+    </div>
+    <%= link_to t("accounting.expense_categories.new_button"), new_admin_accounting_expense_category_path,
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shrink-0" %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.expense_categories.filters") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.expense_categories.filters_hint") %></p>
+    </div>
+    <div class="p-5">
+      <%= search_form_for @q, url: admin_accounting_expense_categories_path, method: :get,
+            class: "flex flex-wrap items-end gap-4" do |f| %>
+        <div class="flex-1 min-w-[12rem]">
+          <%= f.label :name_cont, t("accounting.expense_categories.name"), class: label_class %>
+          <%= f.search_field :name_cont,
+                placeholder: t("accounting.expense_categories.search_placeholder"),
+                class: pos_input_class %>
+        </div>
+        <div class="min-w-[12rem]">
+          <%= f.label :category_type_eq, t("accounting.expense_categories.category_type"), class: label_class %>
+          <%= f.select :category_type_eq,
+                options_for_select(
+                  @category_types.map { |type| [accounting_expense_category_type(type), type] },
+                  @q.category_type_eq
+                ),
+                { include_blank: t("accounting.expense_categories.all_types") },
+                class: "#{pos_input_class} appearance-none" %>
+        </div>
+        <%= f.submit t("actions.apply_filters"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
+        <% if @filtered.present? %>
+          <%= link_to t("actions.clear"), admin_accounting_expense_categories_path,
+                class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+        <% end %>
+        <span class="text-sm text-gray-500 ms-auto tabular-nums">
+          <%= t("accounting.expense_categories.list_hint", count: @categories.size) %>
+        </span>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.expense_categories.list_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5">
+          <%= t("accounting.expense_categories.list_hint", count: @categories.size) %>
+          <% if @sortable %>
+            · <%= t("accounting.expense_categories.reorder_hint") %>
+          <% else %>
+            · <%= t("accounting.expense_categories.reorder_disabled") %>
+          <% end %>
+        </p>
+      </div>
+      <span class="text-xs text-gray-500">
+        <span class="inline-flex items-center gap-1.5 me-3">
+          <span class="<%= system_chip_class %>" aria-hidden="true"><%= t("accounting.shared.system") %></span>
+          <%= t("accounting.expense_categories.legend_system") %>
+        </span>
+      </span>
+    </div>
+
+    <% if @categories.any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <% if @sortable %><th class="p-3 ps-5 w-12" aria-label="<%= t("accounting.expense_categories.drag_handle") %>"></th><% end %>
+              <th class="p-3 <%= @sortable ? '' : 'ps-5' %> text-start min-w-[12rem]"><%= t("accounting.expense_categories.name") %></th>
+              <th class="p-3 text-start"><%= t("accounting.expense_categories.category_type") %></th>
+              <th class="p-3 text-center w-24"><%= t("accounting.expense_categories.position") %></th>
+              <th class="p-3 text-start"><%= t("accounting.expense_categories.management") %></th>
+              <th class="p-3 pe-5 text-end w-28"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100"
+            <% if @sortable %>
+              data-controller="sortable-list"
+              data-sortable-list-url-value="<%= reorder_admin_accounting_expense_categories_path %>"
+            <% end %>>
+            <% @categories.each_with_index do |cat, index| %>
+              <tr class="group hover:bg-gray-50/50 transition-colors<%= ' cursor-grab active:cursor-grabbing' if @sortable %>"
+                <% if @sortable %>
+                  data-sortable-list-target="item"
+                  data-id="<%= cat.id %>"
+                <% end %>>
+                <% if @sortable %>
+                  <td class="p-3 ps-5">
+                    <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 text-gray-400 group-hover:bg-gray-200 group-hover:text-gray-600 transition-colors select-none"
+                          aria-hidden="true"
+                          title="<%= t("accounting.expense_categories.drag_handle") %>">⠿</span>
+                  </td>
+                <% end %>
+                <td class="p-3 <%= @sortable ? '' : 'ps-5' %> font-semibold text-gray-900"><%= cat.name %></td>
+                <td class="p-3">
+                  <span class="<%= type_chip_class %>"><%= accounting_expense_category_type(cat.category_type) %></span>
+                </td>
+                <td class="p-3 text-center tabular-nums text-gray-600">
+                  <% if @sortable %>
+                    <span data-sortable-list-target="position"><%= index %></span>
+                  <% else %>
+                    <%= cat.position %>
+                  <% end %>
+                </td>
+                <td class="p-3">
+                  <% if cat.system_managed? %>
+                    <span class="<%= system_chip_class %>"><%= t("accounting.shared.system") %></span>
+                  <% else %>
+                    <span class="text-xs text-gray-500"><%= t("accounting.expense_categories.custom") %></span>
+                  <% end %>
+                </td>
+                <td class="p-3 pe-5 text-end">
+                  <% unless cat.system_managed? %>
+                    <%= link_to t("actions.edit"), edit_admin_accounting_expense_category_path(cat), class: edit_link_class %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="p-10 text-center text-sm text-gray-500">
+        <%= @filtered.present? ? t("accounting.expense_categories.empty_filtered") : t("accounting.expense_categories.empty") %>
+      </p>
+      <% if @filtered.present? %>
+        <div class="pb-8 text-center">
+          <%= link_to t("actions.clear"), admin_accounting_expense_categories_path,
+                class: "text-sm font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+        </div>
+      <% end %>
+    <% end %>
+  </section>
+</div>

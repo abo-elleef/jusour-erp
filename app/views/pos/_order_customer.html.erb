@@ -1,0 +1,111 @@
+<%# locals: order, customer_form_errors: nil %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% form_errors = local_assigns[:customer_form_errors] %>
+
+<div id="order-customer" class="px-5 py-4 border-b border-gray-200 shrink-0 bg-white">
+  <div class="flex justify-between items-center gap-2 mb-2">
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("order.labels.customer") %></p>
+    <% if order.customer %>
+      <%= button_to t("pos.customer.clear"),
+            pos_attach_customer_path(clear: 1),
+            method: :patch,
+            form: { data: { turbo_stream: true } },
+            class: "text-xs font-semibold text-gray-600 hover:text-gray-900" %>
+    <% end %>
+  </div>
+
+  <% if order.customer %>
+    <div class="rounded-xl border border-amber-200 bg-amber-50/50 px-3 py-2.5">
+      <p class="font-semibold text-gray-900"><%= order.customer.display_name %></p>
+      <p class="text-xs text-gray-600 mt-0.5">
+        <% if order.customer.email.present? %><span class="block"><%= order.customer.email %></span><% end %>
+        <% order.customer.contact_phones.each do |num| %>
+          <span class="block"><%= num %></span>
+        <% end %>
+      </p>
+      <% if order.customer.addresses.any? %>
+        <p class="text-xs text-gray-500 mt-1.5">
+          <%= t("pos.customer.addresses_count", count: order.customer.addresses.size) %>
+        </p>
+      <% end %>
+      <% if order.customer.loyalty_points.positive? %>
+        <p class="text-xs font-semibold text-amber-800 mt-1.5">
+          <%= customer_loyalty_points_label(order.customer.loyalty_points) %>
+        </p>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="space-y-3"
+         data-controller="pos-customer"
+         data-pos-customer-search-url-value="<%= customers_search_path %>"
+         data-pos-customer-open-create-value="<%= form_errors&.any? %>">
+      <div class="relative">
+        <label for="customer-search-input" class="<%= label_class %>"><%= t("pos.customer.search_label") %></label>
+        <input id="customer-search-input"
+               type="search"
+               autocomplete="off"
+               placeholder="<%= t("pos.customer.search_placeholder") %>"
+               class="<%= pos_input_class %>"
+               data-pos-customer-target="searchInput"
+               data-action="input->pos-customer#search focus->pos-customer#showResults" />
+        <div class="hidden absolute z-20 mt-1 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden max-h-56 overflow-y-auto"
+             data-pos-customer-target="resultsPanel">
+          <%= turbo_frame_tag "customer_search_results", data: { pos_customer_target: "resultsFrame" } %>
+        </div>
+      </div>
+
+      <div>
+        <button type="button"
+                class="text-sm font-semibold text-amber-700 hover:text-amber-800"
+                data-action="pos-customer#toggleCreateForm"
+                data-pos-customer-target="createToggle"
+                data-open-label="<%= t("pos.customer.create_new") %>"
+                data-close-label="<%= t("pos.customer.cancel_create") %>">
+          <%= t("pos.customer.create_new") %>
+        </button>
+        <div class="hidden mt-3 rounded-xl border border-gray-200 bg-gray-50/80 p-3 space-y-3"
+             data-pos-customer-target="createForm">
+          <% if form_errors&.any? %>
+            <p class="text-sm text-red-700" role="alert"><%= form_errors.full_messages.to_sentence %></p>
+          <% end %>
+          <%= form_with url: pos_attach_customer_path,
+                method: :patch,
+                scope: :customer,
+                data: { turbo_stream: true },
+                class: "space-y-3" do |f| %>
+            <div>
+              <%= f.label :name, t("customers.form.name"), class: label_class %>
+              <%= f.text_field :name, class: pos_input_class %>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <%= f.label :phone, t("customers.form.phone"), class: label_class %>
+                <%= f.telephone_field :phone, class: pos_input_class, autocomplete: "tel" %>
+              </div>
+              <div>
+                <%= f.label :phone_secondary, t("customers.form.phone_secondary"), class: label_class %>
+                <%= f.telephone_field :phone_secondary, class: pos_input_class, autocomplete: "tel" %>
+              </div>
+            </div>
+            <div>
+              <%= f.label :email, t("customers.form.email"), class: label_class %>
+              <%= f.email_field :email, class: pos_input_class, autocomplete: "email" %>
+            </div>
+            <div>
+              <%= label_tag "customer[addresses_attributes][0][label]", t("customers.addresses.label"), class: label_class %>
+              <%= text_field_tag "customer[addresses_attributes][0][label]", nil,
+                    class: pos_input_class, placeholder: t("customers.addresses.label_placeholder") %>
+            </div>
+            <div>
+              <%= label_tag "customer[addresses_attributes][0][address]", t("customers.addresses.address"), class: label_class %>
+              <%= text_area_tag "customer[addresses_attributes][0][address]", nil, rows: 2, class: pos_input_class %>
+            </div>
+            <p class="text-xs text-gray-500"><%= t("pos.customer.create_hint") %></p>
+            <%= f.submit t("pos.customer.attach_new"),
+                  class: "w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

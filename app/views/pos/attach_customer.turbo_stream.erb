@@ -1,0 +1,9 @@
+<%= turbo_stream.replace "cart" do %>
+  <%= render "pos/cart_panel", order: @order, customer_form_errors: @customer_form_errors %>
+<% end %>
+<%= turbo_stream.replace "order-summary" do %>
+  <%= render "pos/order_summary", order: @order %>
+<% end %>
+<%= turbo_stream.replace "payment-modal-content" do %>
+  <%= render "pos/payment_modal", order: @order %>
+<% end %>

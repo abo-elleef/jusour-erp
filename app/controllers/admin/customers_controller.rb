@@ -24,6 +24,7 @@ module Admin
 
     def new
       @customer = Customer.new
+      @customer.addresses.build
       authorize @customer
     end
 
@@ -39,6 +40,7 @@ module Admin
 
     def edit
       authorize @customer
+      @customer.addresses.build if @customer.addresses.empty?
     end
 
     def update
@@ -54,7 +56,7 @@ module Admin
       authorize @customer
       if @customer.orders.exists?
         redirect_to admin_customer_path(@customer),
-                    alert: "Cannot delete a customer with orders. Their order history is kept."
+                    alert: t("flash.customer.cannot_delete_with_orders")
         return
       end
 
@@ -65,11 +67,14 @@ module Admin
     private
 
     def set_customer
-      @customer = Customer.find(params[:id])
+      @customer = Customer.includes(:addresses).find(params[:id])
     end
 
     def customer_params
-      params.require(:customer).permit(:name, :email, :phone)
+      params.require(:customer).permit(
+        :name, :email, :phone, :phone_secondary,
+        addresses_attributes: %i[id label address is_default position _destroy]
+      )
     end
   end
 end

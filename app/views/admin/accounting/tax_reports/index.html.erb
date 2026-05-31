@@ -1,0 +1,33 @@
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-2"><%= t("accounting.tax_reports.title") %></h1>
+  <%= render "admin/accounting/date_range_form" %>
+
+  <div class="rounded-2xl border border-gray-200 bg-white p-4 mb-6">
+    <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("accounting.tax_reports.total_collected") %></p>
+    <p class="text-2xl font-bold tabular-nums"><%= format_money(@total_tax_cents) %></p>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
+        <tr>
+          <th class="p-3 ps-5 text-start"><%= t("accounting.tax_reports.rate") %></th>
+          <th class="p-3 text-start"><%= t("accounting.shared.category") %></th>
+          <th class="p-3 text-end"><%= t("accounting.tax_reports.taxable_revenue") %></th>
+          <th class="p-3 pe-5 text-end"><%= t("accounting.tax_reports.tax_collected") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @tax_rows.each do |row| %>
+          <tr>
+            <td class="p-3 ps-5"><%= row[:rate].name %> (<%= (row[:rate].rate * 100).round(2) %>%)</td>
+            <td class="p-3"><%= row[:rate].tax_category %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(row[:taxable_revenue_cents]) %></td>
+            <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= format_money(row[:tax_collected_cents]) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+</div>

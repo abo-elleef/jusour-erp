@@ -1,0 +1,37 @@
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.shared.date_range") %></h2>
+    <% if defined?(@start_date) && defined?(@end_date) && @start_date && @end_date %>
+      <p class="text-xs text-gray-500 mt-0.5">
+        <%= t("accounting.shared.date_range_value",
+              start: l(@start_date, format: :long),
+              end: l(@end_date, format: :long)) %>
+      </p>
+    <% end %>
+  </div>
+  <div class="p-5">
+    <%= form_with url: request.path, method: :get, class: "flex flex-wrap items-end gap-4" do %>
+      <% params.except(:start_date, :end_date, :controller, :action, :format).each do |key, value| %>
+        <% if value.is_a?(Hash) %>
+          <% value.each do |k, v| %>
+            <%= hidden_field_tag "q[#{k}]", v %>
+          <% end %>
+        <% else %>
+          <%= hidden_field_tag key, value %>
+        <% end %>
+      <% end %>
+      <div class="min-w-[10rem]">
+        <%= label_tag :start_date, t("accounting.shared.start"), class: label_class %>
+        <%= date_field_tag :start_date, @start_date, class: pos_input_class %>
+      </div>
+      <div class="min-w-[10rem]">
+        <%= label_tag :end_date, t("accounting.shared.end"), class: label_class %>
+        <%= date_field_tag :end_date, @end_date, class: pos_input_class %>
+      </div>
+      <%= submit_tag t("actions.apply_range"),
+            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
+    <% end %>
+  </div>
+</section>

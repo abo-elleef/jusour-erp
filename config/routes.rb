@@ -64,6 +64,57 @@ Rails.application.routes.draw do
       collection { patch :mark_all_read }
     end
 
+    namespace :accounting do
+      root to: "dashboard#index"
+
+      resources :sales_reports, only: [:index]
+      resources :food_costs, only: [:index]
+      resources :expense_categories do
+        collection { patch :reorder }
+      end
+      resources :expenses
+      resources :budgets, only: [:index] do
+        collection { patch :update }
+      end
+
+      resources :shift_logs, only: %i[index show] do
+        collection do
+          post :clock_in
+        end
+        member do
+          patch :clock_out
+        end
+      end
+
+      get "payroll", to: "payroll#index"
+      get "payroll/export", to: "payroll#export", as: :payroll_export
+
+      resources :tax_reports, only: [:index]
+
+      resources :cash_drawer, only: [:index], controller: "cash_drawer" do
+        collection do
+          post :open_session
+        end
+        member do
+          get :count
+          patch :reconcile
+        end
+      end
+
+      resources :audit_log, only: [:index], controller: "audit_log"
+
+      resources :integrations, only: [:index] do
+        collection do
+          get "connect/:provider", action: :connect, as: :connect
+          get "callback/:provider", action: :callback, as: :callback
+        end
+        member do
+          post :sync
+          delete :disconnect
+        end
+      end
+    end
+
     namespace :inventory do
       resources :ingredients do
         member { post :adjust }

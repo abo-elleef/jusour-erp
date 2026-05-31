@@ -26,6 +26,12 @@
       </div>
 
       <div>
+        <%= f.label :hourly_rate_cents, "Hourly rate (cents)", class: label_class %>
+        <%= f.number_field :hourly_rate_cents, min: 0, class: input_class %>
+        <p class="text-xs text-gray-500 mt-1.5">Used for payroll and labor cost tracking</p>
+      </div>
+
+      <div>
         <%= f.label :role, class: label_class %>
         <% roles = policy(user).create? && current_user.owner? ? User::ROLES : User::ROLES - ["owner"] %>
         <% roles = %w[cashier kitchen] if current_user.manager? && !current_user.owner? %>

@@ -6,7 +6,7 @@ module Inventory
       User.where(role: %w[owner manager]).find_each do |user|
         Notification.create!(
           recipient: user,
-          type: "InventoryNotification",
+          notification_type: "inventory",
           params: {
             message: message,
             ingredient_id: ingredient&.id

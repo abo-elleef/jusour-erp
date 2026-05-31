@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["form", "tableFields", "deliveryFields"]
+  static targets = ["form", "tableFields", "deliveryFields", "addressSelect", "deliveryAddress"]
 
   connect() {
     this.toggleFields()
@@ -24,5 +24,16 @@ export default class extends Controller {
 
   submitForm() {
     this.formTarget.requestSubmit()
+  }
+
+  applySavedAddress(event) {
+    if (!this.hasDeliveryAddressTarget) return
+
+    const option = event.target.selectedOptions[0]
+    const address = option?.value
+    if (address) {
+      this.deliveryAddressTarget.value = address
+      this.submitForm()
+    }
   }
 }

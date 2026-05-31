@@ -14,6 +14,19 @@ class User < ApplicationRecord
   has_many :stock_takes, dependent: :nullify
   has_many :notifications, as: :recipient, dependent: :destroy
   has_many :processed_payments, class_name: "Payment", foreign_key: :processed_by_user_id, dependent: :nullify
+  has_many :shift_logs, dependent: :nullify
+  has_many :cash_drawer_sessions, dependent: :nullify
+  has_many :expenses, dependent: :nullify
+
+  monetize :hourly_rate_cents
+
+  def clocked_in?
+    shift_logs.active.exists?
+  end
+
+  def current_shift
+    shift_logs.active.order(clocked_in_at: :desc).first
+  end
 
   def owner?
     role == "owner"

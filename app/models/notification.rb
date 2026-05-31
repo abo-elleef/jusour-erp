@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Notification < ApplicationRecord
+  self.inheritance_column = :_type_disabled
+
   belongs_to :recipient, polymorphic: true
 
   scope :unread, -> { where(read_at: nil) }

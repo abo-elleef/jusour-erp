@@ -62,7 +62,7 @@ module Admin
     end
 
     def user_params
-      permitted = %i[name email role]
+      permitted = %i[name email role hourly_rate_cents]
       permitted += %i[password password_confirmation] if @user.new_record? || params.dig(:user, :password).present?
 
       attrs = params.require(:user).permit(permitted)

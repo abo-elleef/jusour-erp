@@ -1,0 +1,60 @@
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-2"><%= t("accounting.dashboard.title") %></h1>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.dashboard.net_sales_today") %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums"><%= format_money(@today_report[:summary][:net_sales_cents]) %></p>
+      <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.shared.orders_count", count: @today_report[:summary][:order_count]) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.dashboard.net_sales_mtd") %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums"><%= format_money(@month_report[:summary][:net_sales_cents]) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.dashboard.food_cost_mtd") %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums"><%= @food_cost[:overall_food_cost_pct] %>%</p>
+      <%= link_to t("actions.details"), admin_accounting_food_costs_path, class: "text-xs text-amber-700 font-medium mt-1.5 inline-block" %>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.dashboard.net_profit_mtd") %></p>
+      <% net = @pnl_month[:net_profit_cents] %>
+      <p class="text-2xl font-bold mt-1 tabular-nums <%= net >= 0 ? 'text-green-700' : 'text-red-700' %>">
+        <%= format_money(net) %>
+      </p>
+    </div>
+  </div>
+
+  <% if @ot_warnings.any? || @open_cash_sessions.any? %>
+    <section class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 mb-6">
+      <h2 class="text-sm font-semibold text-gray-900 mb-2"><%= t("accounting.dashboard.alerts") %></h2>
+      <ul class="text-sm space-y-1 text-amber-900">
+        <% @ot_warnings.each do |w| %>
+          <li>
+            <%= w[:user].name %> — <%= t("accounting.shared.hours_this_week", hours: w[:hours].round(1)) %><%= t("accounting.shared.overtime") if w[:over] %>
+          </li>
+        <% end %>
+        <% @open_cash_sessions.each do |s| %>
+          <li>
+            <%= t("accounting.dashboard.open_drawer", name: s.user.name, shift: accounting_shift_label(s.shift)) %>
+            — <%= link_to t("actions.reconcile"), count_admin_accounting_cash_drawer_path(s), class: "underline font-medium" %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <section class="rounded-2xl border border-gray-200 bg-white p-5">
+      <h2 class="text-sm font-semibold text-gray-900 mb-4"><%= t("accounting.dashboard.daily_sales_chart") %></h2>
+      <%= line_chart @chart_report[:daily_totals].transform_values { |c| c / 100.0 }.transform_keys { |d| d.to_s },
+            prefix: chart_money_prefix, thousands: ",", height: "240px" %>
+    </section>
+    <section class="rounded-2xl border border-gray-200 bg-white p-5">
+      <h2 class="text-sm font-semibold text-gray-900 mb-4"><%= t("accounting.dashboard.sales_by_category_chart") %></h2>
+      <%= bar_chart @month_report[:by_category].to_h { |r| [r[:category], r[:revenue_cents] / 100.0] },
+            prefix: chart_money_prefix, height: "240px" %>
+    </section>
+  </div>
+</div>

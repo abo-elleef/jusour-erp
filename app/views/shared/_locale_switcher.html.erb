@@ -1,10 +1,23 @@
-<div class="flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-0.5 text-xs font-semibold shrink-0" role="group" aria-label="<%= t("locale.switcher_label") %>">
-  <%= button_to t("locale.en"),
-        locale_path(locale: :en),
-        method: :patch,
-        class: locale_button_class(:en) %>
-  <%= button_to t("locale.ar"),
-        locale_path(locale: :ar),
-        method: :patch,
-        class: locale_button_class(:ar) %>
+<% dark = local_assigns[:theme] == :dark %>
+<div class="flex items-center gap-3 shrink-0">
+  <% if user_signed_in? %>
+    <div class="text-end leading-tight min-w-0 max-w-[12rem] sm:max-w-[14rem]" title="<%= current_user.email %>">
+      <p class="text-sm font-semibold truncate <%= dark ? "text-white" : "text-gray-900" %>">
+        <%= current_user.name %>
+      </p>
+      <p class="text-xs truncate <%= dark ? "text-gray-300" : "text-gray-500" %> hidden sm:block">
+        <%= current_user.email %>
+      </p>
+    </div>
+  <% end %>
+  <div class="flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-0.5 text-xs font-semibold shrink-0" role="group" aria-label="<%= t("locale.switcher_label") %>">
+    <%= button_to t("locale.en"),
+          locale_path(locale: :en),
+          method: :patch,
+          class: locale_button_class(:en) %>
+    <%= button_to t("locale.ar"),
+          locale_path(locale: :ar),
+          method: :patch,
+          class: locale_button_class(:ar) %>
+  </div>
 </div>

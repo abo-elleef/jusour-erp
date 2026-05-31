@@ -49,6 +49,11 @@ gem "ransack"
 gem "chartkick"
 gem "groupdate"
 gem "csv"
+gem "matrix"
+gem "prawn"
+gem "prawn-table"
+gem "httparty"
+gem "oauth2"
 gem "dotenv-rails", groups: [:development, :test]
 
 gem "tzinfo-data", platforms: %i[windows jruby]

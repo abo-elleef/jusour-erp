@@ -10,10 +10,25 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_04_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+
+  create_table "accounting_integrations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "provider", null: false
+    t.string "status", default: "disconnected", null: false
+    t.text "access_token_encrypted"
+    t.text "refresh_token_encrypted"
+    t.datetime "token_expires_at"
+    t.string "realm_id"
+    t.jsonb "account_mapping", default: {}, null: false
+    t.datetime "last_synced_at"
+    t.text "last_error"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["provider"], name: "index_accounting_integrations_on_provider", unique: true
+  end
 
   create_table "active_storage_attachments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
@@ -41,6 +56,48 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
     t.uuid "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "audit_log_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id"
+    t.string "action", null: false
+    t.string "record_type", null: false
+    t.uuid "record_id", null: false
+    t.jsonb "changes_snapshot", default: {}, null: false
+    t.string "ip_address"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["action"], name: "index_audit_log_entries_on_action"
+    t.index ["created_at"], name: "index_audit_log_entries_on_created_at"
+    t.index ["record_type", "record_id"], name: "index_audit_log_entries_on_record_type_and_record_id"
+    t.index ["user_id"], name: "index_audit_log_entries_on_user_id"
+  end
+
+  create_table "budgets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "expense_category_id", null: false
+    t.integer "year", null: false
+    t.integer "month", null: false
+    t.integer "amount_cents", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expense_category_id", "year", "month"], name: "index_budgets_on_expense_category_id_and_year_and_month", unique: true
+    t.index ["expense_category_id"], name: "index_budgets_on_expense_category_id"
+  end
+
+  create_table "cash_drawer_sessions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.date "session_date", null: false
+    t.string "shift", null: false
+    t.integer "opening_float_cents", default: 0, null: false
+    t.integer "expected_cash_cents"
+    t.integer "counted_cash_cents"
+    t.integer "variance_cents"
+    t.string "status", default: "open", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id", "session_date", "shift"], name: "idx_on_user_id_session_date_shift_04dd8c9892", unique: true
+    t.index ["user_id"], name: "index_cash_drawer_sessions_on_user_id"
   end
 
   create_table "categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -72,6 +129,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "customer_addresses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "customer_id", null: false
+    t.string "label"
+    t.text "address", null: false
+    t.boolean "is_default", default: false, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id"], name: "index_customer_addresses_on_customer_id"
+  end
+
   create_table "customers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name"
     t.string "email"
@@ -80,8 +148,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
     t.integer "total_spent_cents", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "phone_secondary"
     t.index ["email"], name: "index_customers_on_email", unique: true
     t.index ["phone"], name: "index_customers_on_phone", unique: true
+    t.index ["phone_secondary"], name: "index_customers_on_phone_secondary", unique: true, where: "(phone_secondary IS NOT NULL)"
   end
 
   create_table "discount_rules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -99,6 +169,36 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
     t.datetime "updated_at", null: false
     t.index ["active"], name: "index_discount_rules_on_active"
     t.index ["code"], name: "index_discount_rules_on_code", unique: true
+  end
+
+  create_table "expense_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "category_type", null: false
+    t.boolean "system_managed", default: false, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_expense_categories_on_name", unique: true
+  end
+
+  create_table "expenses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "expense_category_id", null: false
+    t.uuid "user_id", null: false
+    t.string "description", null: false
+    t.integer "amount_cents", null: false
+    t.date "expense_date", null: false
+    t.string "recurrence", default: "one_time", null: false
+    t.string "reference_number"
+    t.boolean "is_auto_generated", default: false, null: false
+    t.string "source_record_type"
+    t.uuid "source_record_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expense_category_id"], name: "index_expenses_on_expense_category_id"
+    t.index ["expense_date"], name: "index_expenses_on_expense_date"
+    t.index ["is_auto_generated"], name: "index_expenses_on_is_auto_generated"
+    t.index ["source_record_type", "source_record_id"], name: "index_expenses_on_source_record_type_and_source_record_id"
+    t.index ["user_id"], name: "index_expenses_on_user_id"
   end
 
   create_table "gift_cards", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -183,7 +283,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
   create_table "notifications", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "recipient_type", null: false
     t.uuid "recipient_id", null: false
-    t.string "type"
+    t.string "notification_type"
     t.jsonb "params"
     t.datetime "read_at"
     t.datetime "created_at", null: false
@@ -265,6 +365,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
     t.index ["user_id"], name: "index_orders_on_user_id"
   end
 
+  create_table "overtime_rules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.decimal "daily_threshold_hours", precision: 4, scale: 2
+    t.decimal "weekly_threshold_hours", precision: 4, scale: 2, default: "40.0"
+    t.decimal "ot_multiplier", precision: 3, scale: 2, default: "1.5"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "payments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id", null: false
     t.string "payment_method", null: false
@@ -343,6 +453,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["key"], name: "index_settings_on_key", unique: true
+  end
+
+  create_table "shift_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.datetime "clocked_in_at", null: false
+    t.datetime "clocked_out_at"
+    t.integer "break_minutes", default: 0, null: false
+    t.integer "hourly_rate_cents", null: false
+    t.integer "tips_cents", default: 0, null: false
+    t.string "status", default: "active", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["clocked_in_at"], name: "index_shift_logs_on_clocked_in_at"
+    t.index ["status"], name: "index_shift_logs_on_status"
+    t.index ["user_id"], name: "index_shift_logs_on_user_id"
   end
 
   create_table "stock_adjustments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -462,14 +588,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
     t.datetime "remember_created_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "hourly_rate_cents", default: 0, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "audit_log_entries", "users"
+  add_foreign_key "budgets", "expense_categories"
+  add_foreign_key "cash_drawer_sessions", "users"
   add_foreign_key "combo_items", "combos"
   add_foreign_key "combo_items", "menu_items"
+  add_foreign_key "customer_addresses", "customers"
+  add_foreign_key "expenses", "expense_categories"
+  add_foreign_key "expenses", "users"
   add_foreign_key "ingredients", "ingredient_categories"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"
@@ -496,6 +629,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_01_000000) do
   add_foreign_key "receipt_logs", "orders"
   add_foreign_key "recipes", "ingredients"
   add_foreign_key "recipes", "menu_items"
+  add_foreign_key "shift_logs", "users"
   add_foreign_key "stock_adjustments", "ingredients"
   add_foreign_key "stock_adjustments", "stock_batches"
   add_foreign_key "stock_adjustments", "users"

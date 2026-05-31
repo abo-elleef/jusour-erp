@@ -1,0 +1,160 @@
+<% s = @report[:summary] %>
+<% export_btn_class = "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" %>
+
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.sales_reports.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("accounting.sales_reports.description") %></p>
+    </div>
+    <div class="flex flex-wrap gap-2 shrink-0">
+      <%= link_to admin_accounting_sales_reports_path(request.query_parameters.merge(format: :csv)),
+            class: export_btn_class do %>
+        <%= t("actions.export_csv") %>
+      <% end %>
+      <%= link_to admin_accounting_sales_reports_path(request.query_parameters.merge(format: :pdf)),
+            class: export_btn_class do %>
+        <%= t("accounting.sales_reports.export_pdf") %>
+      <% end %>
+    </div>
+  </div>
+  <%= render "admin/accounting/date_range_form" %>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.sales_reports.net_sales") %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums text-gray-900"><%= format_money(s[:net_sales_cents]) %></p>
+      <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.shared.orders_count", count: s[:order_count]) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.sales_reports.gross_sales") %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums"><%= format_money(s[:gross_sales_cents]) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.sales_reports.avg_ticket") %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums"><%= format_money(s[:average_ticket_cents]) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.sales_reports.discounts") %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums text-red-700"><%= format_money(s[:discount_cents]) %></p>
+      <% if s[:tip_cents].positive? %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.sales_reports.tips_line", amount: format_money(s[:tip_cents])) %></p>
+      <% end %>
+    </div>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.sales_reports.pnl") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.sales_reports.pnl_hint") %></p>
+    </div>
+    <div class="p-5 text-sm space-y-2 max-w-xl">
+      <% rev = @pnl[:revenue] %>
+      <div class="flex justify-between gap-4 py-1">
+        <span class="text-gray-600"><%= t("accounting.sales_reports.gross_sales") %></span>
+        <span class="tabular-nums font-medium text-gray-900"><%= format_money(rev[:gross_sales_cents]) %></span>
+      </div>
+      <div class="flex justify-between gap-4 py-1 text-red-700">
+        <span><%= t("accounting.sales_reports.discounts") %></span>
+        <span class="tabular-nums font-medium">-<%= format_money(rev[:discounts_cents]) %></span>
+      </div>
+      <div class="flex justify-between gap-4 py-2 font-semibold border-t border-gray-100">
+        <span class="text-gray-900"><%= t("accounting.sales_reports.net_sales") %></span>
+        <span class="tabular-nums"><%= format_money(rev[:net_sales_cents]) %></span>
+      </div>
+      <% if @pnl[:expenses].any? %>
+        <% @pnl[:expenses].each do |row| %>
+          <div class="flex justify-between gap-4 py-1 text-gray-600">
+            <span><%= row[:category] %></span>
+            <span class="tabular-nums">-<%= format_money(row[:total_cents]) %></span>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="text-xs text-gray-500 py-1"><%= t("accounting.sales_reports.no_expenses_period") %></p>
+      <% end %>
+      <div class="flex justify-between gap-4 py-3 font-bold border-t border-gray-200">
+        <span class="text-gray-900"><%= t("accounting.sales_reports.net_profit") %></span>
+        <span class="tabular-nums <%= @pnl[:net_profit_cents] >= 0 ? 'text-green-700' : 'text-red-700' %>">
+          <%= format_money(@pnl[:net_profit_cents]) %>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.sales_reports.by_category") %></h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("accounting.shared.category") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("accounting.sales_reports.revenue") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% if @report[:by_category].any? %>
+              <% @report[:by_category].each do |row| %>
+                <tr class="hover:bg-gray-50/50 transition-colors">
+                  <td class="p-3 ps-5 font-medium text-gray-900"><%= row[:category] %></td>
+                  <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= format_money(row[:revenue_cents]) %></td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="2" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_reports.no_sales") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.sales_reports.payment_methods") %></h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("accounting.sales_reports.method") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("accounting.sales_reports.total") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% if @report[:by_payment_method].any? %>
+              <% @report[:by_payment_method].each do |method, cents| %>
+                <tr class="hover:bg-gray-50/50 transition-colors">
+                  <td class="p-3 ps-5 font-medium text-gray-900"><%= payment_method_label(method) %></td>
+                  <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= format_money(cents) %></td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="2" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_reports.no_payments") %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <section class="rounded-2xl border border-gray-200 bg-white p-5">
+      <h2 class="text-sm font-semibold text-gray-900 mb-1"><%= t("accounting.sales_reports.daily_totals_chart") %></h2>
+      <p class="text-xs text-gray-500 mb-4"><%= t("accounting.sales_reports.daily_totals_hint") %></p>
+      <%= line_chart @report[:daily_totals].transform_values { |c| c / 100.0 }.transform_keys { |d| d.to_s },
+            prefix: chart_money_prefix, thousands: ",", height: "220px" %>
+    </section>
+    <section class="rounded-2xl border border-gray-200 bg-white p-5">
+      <h2 class="text-sm font-semibold text-gray-900 mb-1"><%= t("accounting.sales_reports.hourly_chart") %></h2>
+      <p class="text-xs text-gray-500 mb-4"><%= t("accounting.sales_reports.hourly_hint") %></p>
+      <%= bar_chart @report[:hourly_distribution], height: "220px" %>
+    </section>
+  </div>
+</div>

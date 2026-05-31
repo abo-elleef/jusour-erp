@@ -83,16 +83,35 @@ class PosController < ApplicationController
 
   def attach_customer
     authorize @order, :update?
-    customer = Customer.find_by(id: params[:customer_id]) ||
-               Customer.find_by(phone: params[:phone]) ||
-               Customer.find_by(email: params[:email])
-    if customer
-      @order.update!(customer: customer)
-    elsif params[:name].present?
-      customer = Customer.create!(customer_params)
-      @order.update!(customer: customer)
+
+    if params[:clear].present?
+      @order.update!(customer: nil)
+      return respond_to_customer_attach
     end
-    redirect_to pos_path
+
+    if params[:customer_id].present?
+      customer = Customer.find(params[:customer_id])
+      @order.update!(customer: customer)
+      apply_customer_default_delivery_address!(customer)
+      return respond_to_customer_attach
+    end
+
+    attrs = customer_params
+    if customer_contact_blank?(attrs)
+      return redirect_to pos_path, alert: t("flash.pos.customer_required")
+    end
+
+    customer = find_or_create_customer(attrs)
+    if customer.persisted? && customer.errors.empty?
+      @order.update!(customer: customer)
+      apply_customer_default_delivery_address!(customer)
+      respond_to_customer_attach
+    else
+      @customer_form_errors = customer.errors
+      respond_to_customer_attach(status: :unprocessable_entity)
+    end
+  rescue ActiveRecord::RecordNotFound
+    redirect_to pos_path, alert: t("flash.pos.customer_not_found")
   end
 
   def split
@@ -153,7 +172,50 @@ class PosController < ApplicationController
   end
 
   def customer_params
-    params.permit(:name, :email, :phone)
+    source = params[:customer].presence || params
+    source.permit(
+      :name, :email, :phone, :phone_secondary,
+      addresses_attributes: %i[label address is_default]
+    )
+  end
+
+  def find_or_create_customer(attrs)
+    phone = attrs[:phone].to_s.strip.presence
+    phone_secondary = attrs[:phone_secondary].to_s.strip.presence
+    email = attrs[:email].to_s.strip.presence
+    existing = find_customer_by_contact(phone: phone, phone_secondary: phone_secondary, email: email)
+    return existing if existing
+
+    Customer.create(attrs)
+  end
+
+  def customer_contact_blank?(attrs)
+    attrs[:email].blank? && attrs[:phone].blank? && attrs[:phone_secondary].blank?
+  end
+
+  def apply_customer_default_delivery_address!(customer)
+    return unless @order.delivery?
+
+    addr = customer.default_address
+    return if addr.blank?
+
+    @order.update!(delivery_address: addr.address) if @order.delivery_address.blank?
+  end
+
+  def find_customer_by_contact(phone:, phone_secondary:, email:)
+    [phone, phone_secondary].compact_blank.each do |number|
+      found = Customer.find_by(phone: number) || Customer.find_by(phone_secondary: number)
+      return found if found
+    end
+    Customer.find_by(email: email) if email.present?
+  end
+
+  def respond_to_customer_attach(status: :ok)
+    @order.recalculate_totals!
+    respond_to do |format|
+      format.turbo_stream { render :attach_customer, status: status }
+      format.html { redirect_to pos_path }
+    end
   end
 
   def fulfillment_params

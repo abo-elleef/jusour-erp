@@ -201,4 +201,32 @@ if smash && patty && bun
   Recipe.find_or_create_by!(menu_item: smash, ingredient: bun) { |r| r.quantity_used = 1 }
 end
 
+[
+  { name: "COGS", category_type: "cogs", system_managed: true, position: 1 },
+  { name: "Labor", category_type: "labor", system_managed: true, position: 2 },
+  { name: "Rent", category_type: "rent", system_managed: false, position: 3 },
+  { name: "Utilities", category_type: "utilities", system_managed: false, position: 4 },
+  { name: "Marketing", category_type: "marketing", system_managed: false, position: 5 },
+  { name: "Maintenance", category_type: "maintenance", system_managed: false, position: 6 },
+  { name: "Other", category_type: "other", system_managed: false, position: 7 }
+].each do |attrs|
+  ExpenseCategory.find_or_create_by!(name: attrs[:name]) { |e| e.assign_attributes(attrs) }
+end
+
+OvertimeRule.find_or_create_by!(name: "Federal Standard") do |r|
+  r.weekly_threshold_hours = 40.0
+  r.ot_multiplier = 1.5
+  r.active = true
+end
+
+current_month = Date.current
+ExpenseCategory.where(system_managed: false).find_each do |cat|
+  Budget.find_or_create_by!(expense_category: cat, year: current_month.year, month: current_month.month) do |b|
+    b.amount_cents = 200_000
+  end
+end
+
+User.find_by(email: "cashier@restaurant.com")&.update!(hourly_rate_cents: 1500)
+User.find_by(email: "manager@restaurant.com")&.update!(hourly_rate_cents: 2500)
+
 puts "Seed complete. Login: owner@restaurant.com / changeme123"

@@ -1,60 +1,61 @@
-<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% action_btn_class = "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+<% delete_btn_class = "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
+<% loyalty_chip_class = "text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 tabular-nums" %>
 
 <div class="max-w-6xl">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
-      <p class="text-gray-600 text-sm mt-1">Loyalty accounts, contact info, and order history.</p>
+      <p class="text-gray-600 text-sm mt-1"><%= t("customers.description") %></p>
     </div>
     <%= link_to new_admin_customer_path,
           class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
-      <span aria-hidden="true">+</span> New customer
+      <span aria-hidden="true">+</span> <%= t("customers.new_button") %>
     <% end %>
   </div>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("customers.stats.total") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lifetime spend</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("customers.stats.lifetime_spend") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@total_lifetime_spend_cents) %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">With points</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("customers.stats.with_points") %></p>
       <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= @loyalty_members_count %></p>
-      <p class="text-xs text-gray-500 mt-1.5">Loyalty balance &gt; 0</p>
+      <p class="text-xs text-gray-500 mt-1.5"><%= t("customers.stats.with_points_hint") %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">New this month</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("customers.stats.new_this_month") %></p>
       <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= @new_this_month_count %></p>
     </div>
   </div>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-      <h2 class="text-sm font-semibold text-gray-900">Search</h2>
-      <p class="text-xs text-gray-500 mt-0.5">Find by name, email, or phone</p>
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("customers.search.title") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("customers.search.hint") %></p>
     </div>
     <div class="p-5">
       <%= search_form_for @q, url: admin_customers_path, method: :get, class: "flex flex-wrap items-end gap-4" do |f| %>
         <div class="flex-1 min-w-[12rem]">
-          <%= f.label :name_or_email_or_phone_cont, "Search", class: label_class %>
-          <%= f.search_field :name_or_email_or_phone_cont,
-                placeholder: "Name, email, or phone…",
-                class: input_class %>
+          <%= f.label :name_or_email_or_phone_or_phone_secondary_cont, t("customers.search.label"), class: label_class %>
+          <%= f.search_field :name_or_email_or_phone_or_phone_secondary_cont,
+                placeholder: t("customers.search.placeholder"),
+                class: pos_input_class %>
         </div>
-        <%= f.submit "Apply search",
+        <%= f.submit t("customers.search.apply"),
               class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
         <% if @filtered %>
-          <%= link_to "Clear", admin_customers_path,
+          <%= link_to t("actions.clear"), admin_customers_path,
                 class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
         <% end %>
-        <span class="text-sm text-gray-500 ml-auto tabular-nums">
-          Showing <strong class="text-gray-900"><%= @pagy.count %></strong>
-          <%= @pagy.count == 1 ? "customer" : "customers" %>
+        <span class="text-sm text-gray-500 ms-auto tabular-nums">
+          <%= t("customers.search.showing", count: @pagy.count) %>
         </span>
       <% end %>
     </div>
@@ -63,54 +64,52 @@
   <% if @customers.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm min-w-[720px]">
+        <table class="w-full text-sm min-w-[720px]">
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
-              <th class="p-3 pl-5">Customer</th>
-              <th class="p-3">Contact</th>
-              <th class="p-3 text-right">Loyalty</th>
-              <th class="p-3 text-right">Lifetime spend</th>
-              <th class="p-3">Joined</th>
-              <th class="p-3 pr-5 text-right">Actions</th>
+              <th class="p-3 ps-5 text-start"><%= t("customers.table.customer") %></th>
+              <th class="p-3 text-start"><%= t("customers.table.contact") %></th>
+              <th class="p-3 text-end"><%= t("customers.table.loyalty") %></th>
+              <th class="p-3 text-end"><%= t("customers.table.lifetime_spend") %></th>
+              <th class="p-3 text-start"><%= t("customers.table.joined") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("customers.table.actions") %></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @customers.each do |c| %>
               <tr class="hover:bg-gray-50/60 transition-colors">
-                <td class="p-3 pl-5">
+                <td class="p-3 ps-5">
                   <%= link_to c.display_name, admin_customer_path(c),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>
                 </td>
                 <td class="p-3 text-gray-600">
                   <% if c.email.present? %><div><%= c.email %></div><% end %>
-                  <% if c.phone.present? %><div class="text-gray-500"><%= c.phone %></div><% end %>
-                  <% if c.email.blank? && c.phone.blank? %><span class="text-gray-400">—</span><% end %>
+                  <% c.contact_phones.each do |num| %>
+                    <div class="text-gray-500"><%= num %></div>
+                  <% end %>
+                  <% if c.email.blank? && c.contact_phones.empty? %><span class="text-gray-400"><%= t("customers.shared.em_dash") %></span><% end %>
                 </td>
-                <td class="p-3 text-right">
+                <td class="p-3 text-end">
                   <% if c.loyalty_points.positive? %>
-                    <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 tabular-nums">
-                      <%= c.loyalty_points %> pts
-                    </span>
+                    <span class="<%= loyalty_chip_class %>"><%= customer_loyalty_points_label(c.loyalty_points) %></span>
                   <% else %>
                     <span class="text-gray-400 tabular-nums">0</span>
                   <% end %>
                 </td>
-                <td class="p-3 text-right font-semibold text-gray-900 tabular-nums whitespace-nowrap">
+                <td class="p-3 text-end font-semibold text-gray-900 tabular-nums whitespace-nowrap">
                   <%= format_money(c.total_spent_cents) %>
                 </td>
                 <td class="p-3 text-gray-500 whitespace-nowrap tabular-nums">
-                  <%= c.created_at.strftime("%b %-d, %Y") %>
+                  <%= l(c.created_at.to_date, format: :long) %>
                 </td>
-                <td class="p-3 pr-5 text-right whitespace-nowrap">
+                <td class="p-3 pe-5 text-end whitespace-nowrap">
                   <div class="inline-flex gap-2">
-                    <%= link_to "View", admin_customer_path(c),
-                          class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
-                    <%= link_to "Edit", edit_admin_customer_path(c),
-                          class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                    <%= link_to t("actions.view"), admin_customer_path(c), class: action_btn_class %>
+                    <%= link_to t("actions.edit"), edit_admin_customer_path(c), class: action_btn_class %>
                     <% if policy(c).destroy? %>
-                      <%= button_to "Delete", admin_customer_path(c), method: :delete,
-                            form: { data: { turbo_confirm: "Delete this customer?" }, class: "inline" },
-                            class: "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
+                      <%= button_to t("actions.delete"), admin_customer_path(c), method: :delete,
+                            form: { data: { turbo_confirm: t("customers.delete_confirm") }, class: "inline" },
+                            class: delete_btn_class %>
                     <% end %>
                   </div>
                 </td>
@@ -122,34 +121,30 @@
     </section>
 
     <% if @pagy.pages > 1 %>
-      <nav class="mt-5 flex flex-wrap gap-2 text-sm items-center" aria-label="Pagination">
+      <nav class="mt-5 flex flex-wrap gap-2 text-sm items-center" aria-label="<%= t("customers.shared.pagination", page: @pagy.page, pages: @pagy.pages) %>">
         <% if @pagy.previous %>
-          <%= link_to "← Previous", url_for(request.query_parameters.merge(page: @pagy.previous)),
+          <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: @pagy.previous)),
                 class: "px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 transition-colors" %>
         <% end %>
-        <span class="text-gray-600 px-2 tabular-nums">Page <%= @pagy.page %> of <%= @pagy.pages %></span>
+        <span class="text-gray-600 px-2 tabular-nums"><%= t("customers.shared.pagination", page: @pagy.page, pages: @pagy.pages) %></span>
         <% if @pagy.next %>
-          <%= link_to "Next →", url_for(request.query_parameters.merge(page: @pagy.next)),
+          <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: @pagy.next)),
                 class: "px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 transition-colors" %>
         <% end %>
       </nav>
     <% end %>
   <% else %>
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-      <p class="text-gray-900 font-semibold mb-1">No customers found</p>
+      <p class="text-gray-900 font-semibold mb-1"><%= t("customers.empty.title") %></p>
       <p class="text-gray-500 text-sm mb-5">
-        <% if @filtered %>
-          Try a different search term.
-        <% else %>
-          Add customers to track loyalty and order history.
-        <% end %>
+        <%= @filtered ? t("customers.empty.filtered_hint") : t("customers.empty.default_hint") %>
       </p>
       <div class="flex flex-wrap justify-center gap-3 text-sm">
         <% if @filtered %>
-          <%= link_to "Clear search", admin_customers_path,
+          <%= link_to t("customers.empty.clear_search"), admin_customers_path,
                 class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
         <% end %>
-        <%= link_to "New customer", new_admin_customer_path,
+        <%= link_to t("customers.new_button"), new_admin_customer_path,
               class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
       </div>
     </section>

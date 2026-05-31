@@ -59,11 +59,16 @@ class Order < ApplicationRecord
       after do
         Loyalty::AwardPointsJob.perform_later(id)
         Inventory::DeductStockService.new(self).call
+        Accounting::AutoCostService.new(self).call
+        AuditLogEntry.record!(action: "order.complete", record: self, user: user)
       end
     end
 
     event :cancel do
       transitions from: %i[draft submitted in_progress], to: :cancelled
+      after do
+        AuditLogEntry.record!(action: "order.void", record: self, user: user)
+      end
     end
   end
 
@@ -76,6 +81,7 @@ class Order < ApplicationRecord
     day = date.is_a?(Date) ? date : Date.parse(date.to_s)
     where(created_at: day.beginning_of_day..day.end_of_day)
   }
+  scope :completed, -> { where(status: "completed") }
   scope :open_orders, -> { where(status: %w[submitted in_progress ready]) }
   scope :unpaid, -> {
     where.not(status: %w[draft cancelled])

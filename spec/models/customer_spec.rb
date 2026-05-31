@@ -7,7 +7,7 @@ RSpec.describe Customer, type: :model do
     it "requires email or phone" do
       customer = build(:customer, email: nil, phone: nil)
       expect(customer).not_to be_valid
-      expect(customer.errors[:base]).to include("Email or phone is required")
+      expect(customer.errors[:base]).to include(I18n.t("customers.errors.email_or_phone_required"))
     end
 
     it "is valid with phone only" do

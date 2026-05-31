@@ -13,6 +13,34 @@ module ApplicationHelper
     html_dir == "rtl"
   end
 
+  def accounting_nav_active?(*controller_names)
+    controller_names.include?(controller.controller_name)
+  end
+
+  def accounting_shift_label(shift)
+    t("accounting.shifts.#{shift}", default: shift.to_s.humanize)
+  end
+
+  def accounting_drawer_status(status)
+    t("accounting.cash_drawer.statuses.#{status}", default: status.to_s.humanize)
+  end
+
+  def accounting_integration_status(status)
+    t("accounting.integrations.statuses.#{status}", default: status.to_s.humanize)
+  end
+
+  def accounting_month_abbr(month)
+    I18n.t("date.abbr_month_names")[month]
+  end
+
+  def accounting_expense_category_type(type)
+    t("accounting.expense_categories.types.#{type}", default: type.to_s.humanize)
+  end
+
+  def chart_money_prefix
+    Money.new(0).format(symbol: true, no_cents: true, locale: I18n.locale).gsub(/[\d.,\s\u00a0]/, "")
+  end
+
   def admin_page_title(page_action = nil)
     page_action ||= action_name
     if controller_name == "reports"
@@ -99,6 +127,10 @@ module ApplicationHelper
 
   def order_status_label(status)
     I18n.t("order.statuses.#{status}", default: status.to_s.humanize)
+  end
+
+  def customer_loyalty_points_label(points)
+    t("customers.loyalty_points", count: points.to_i)
   end
 
   def order_type_label(order_type)

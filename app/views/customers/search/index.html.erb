@@ -1,0 +1,26 @@
+<%= turbo_frame_tag "customer_search_results" do %>
+  <% if @customers.any? %>
+    <ul class="divide-y divide-gray-100" role="listbox">
+      <% @customers.each do |customer| %>
+        <li>
+          <%= button_to pos_attach_customer_path(customer_id: customer.id),
+                method: :patch,
+                form: { data: { turbo_stream: true } },
+                class: "w-full text-start px-3 py-2.5 hover:bg-amber-50 transition-colors" do %>
+            <span class="block font-semibold text-sm text-gray-900"><%= customer.display_name %></span>
+            <span class="block text-xs text-gray-500 mt-0.5">
+              <%= [customer.email, *customer.contact_phones].compact_blank.join(" · ") %>
+            </span>
+            <% if customer.loyalty_points.positive? %>
+              <span class="inline-block mt-1 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5">
+                <%= customer_loyalty_points_label(customer.loyalty_points) %>
+              </span>
+            <% end %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% elsif params[:q].to_s.strip.length >= 2 %>
+    <p class="px-3 py-3 text-sm text-gray-500"><%= t("pos.customer.no_results") %></p>
+  <% end %>
+<% end %>

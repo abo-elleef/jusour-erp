@@ -1,0 +1,35 @@
+<%= form_with model: expense,
+      url: expense.persisted? ? admin_accounting_expense_path(expense) : admin_accounting_expenses_path,
+      class: "space-y-4 max-w-lg" do |f| %>
+  <% if expense.errors.any? %>
+    <p class="text-red-700 text-sm"><%= expense.errors.full_messages.to_sentence %></p>
+  <% end %>
+  <div>
+    <%= f.label :expense_category_id, t("accounting.shared.category"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <%= f.collection_select :expense_category_id, @categories, :id, :name, {}, class: pos_input_class %>
+  </div>
+  <div>
+    <%= f.label :description, t("accounting.shared.description"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <%= f.text_field :description, class: pos_input_class %>
+  </div>
+  <div>
+    <%= f.label :amount_cents, t("accounting.shared.amount_cents"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <%= f.number_field :amount_cents, min: 1, class: pos_input_class %>
+  </div>
+  <div>
+    <%= f.label :expense_date, t("accounting.shared.day"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <%= f.date_field :expense_date, class: pos_input_class %>
+  </div>
+  <div>
+    <%= f.label :reference_number, t("accounting.shared.reference_number"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <%= f.text_field :reference_number, class: pos_input_class %>
+  </div>
+  <div>
+    <%= f.label :receipt_image, t("accounting.shared.receipt"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <%= f.file_field :receipt_image, class: "text-sm" %>
+  </div>
+  <div class="flex gap-2">
+    <%= f.submit class: "bg-gray-900 text-white px-5 py-2.5 rounded-xl font-semibold text-sm" %>
+    <%= link_to t("actions.cancel"), admin_accounting_expenses_path, class: "border border-gray-200 px-5 py-2.5 rounded-xl text-sm font-semibold" %>
+  </div>
+<% end %>

@@ -1,0 +1,38 @@
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-2"><%= t("accounting.integrations.title") %></h1>
+
+  <div class="space-y-4">
+    <% @integrations.each do |integration| %>
+      <section class="rounded-2xl border border-gray-200 bg-white p-5">
+        <div class="flex justify-between items-start gap-4">
+          <div>
+            <h2 class="font-semibold text-gray-900 capitalize"><%= integration.provider %></h2>
+            <p class="text-sm text-gray-600 mt-1">
+              <%= t("accounting.integrations.status", status: accounting_integration_status(integration.status)) %>
+            </p>
+            <% if integration.last_synced_at %>
+              <p class="text-xs text-gray-500 mt-1">
+                <%= t("accounting.integrations.last_sync", time: l(integration.last_synced_at, format: :short)) %>
+              </p>
+            <% end %>
+            <% if integration.last_error.present? %>
+              <p class="text-xs text-red-600 mt-1"><%= integration.last_error %></p>
+            <% end %>
+          </div>
+          <div class="flex flex-col gap-2 shrink-0">
+            <% if integration.connected? %>
+              <%= button_to t("accounting.integrations.sync_yesterday"), sync_admin_accounting_integration_path(integration), method: :post,
+                    class: "text-sm font-semibold bg-gray-900 text-white px-3 py-2 rounded-xl" %>
+              <%= button_to t("actions.disconnect"), disconnect_admin_accounting_integration_path(integration), method: :delete,
+                    class: "text-sm font-semibold border border-gray-200 px-3 py-2 rounded-xl" %>
+            <% else %>
+              <%= link_to t("actions.connect"), connect_admin_accounting_integrations_path(provider: integration.provider),
+                    class: "text-sm font-semibold bg-amber-600 text-white px-3 py-2 rounded-xl text-center" %>
+            <% end %>
+          </div>
+        </div>
+      </section>
+    <% end %>
+  </div>
+</div>

@@ -10,7 +10,7 @@
   </head>
   <body class="bg-black text-white min-h-screen p-4" data-controller="kitchen-display">
     <div class="flex justify-end mb-4">
-      <%= render "shared/locale_switcher" %>
+      <%= render "shared/locale_switcher", theme: :dark %>
     </div>
     <%= turbo_stream_from "kitchen" %>
     <%= yield %>

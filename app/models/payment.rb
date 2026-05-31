@@ -13,4 +13,12 @@ class Payment < ApplicationRecord
 
   validates :payment_method, inclusion: { in: METHODS }
   validates :status, inclusion: { in: STATUSES }
+
+  after_create do
+    AuditLogEntry.record!(
+      action: "payment.create",
+      record: self,
+      user: processed_by_user
+    )
+  end
 end

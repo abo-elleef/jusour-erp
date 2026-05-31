@@ -1,0 +1,42 @@
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-2"><%= t("accounting.food_costs.title") %></h1>
+  <%= render "admin/accounting/date_range_form" %>
+
+  <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 mb-6">
+    <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("accounting.food_costs.overall") %></p>
+    <p class="text-3xl font-bold tabular-nums"><%= @food_cost[:overall_food_cost_pct] %>%</p>
+    <p class="text-sm text-gray-600 mt-1">
+      <%= t("accounting.food_costs.cost_on_revenue",
+            cost: format_money(@food_cost[:total_cost_cents]),
+            revenue: format_money(@food_cost[:total_revenue_cents])) %>
+    </p>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
+        <tr>
+          <th class="p-3 ps-5 text-start"><%= t("accounting.food_costs.item") %></th>
+          <th class="p-3 text-end"><%= t("accounting.food_costs.units") %></th>
+          <th class="p-3 text-end"><%= t("accounting.sales_reports.revenue") %></th>
+          <th class="p-3 text-end"><%= t("accounting.food_costs.cost") %></th>
+          <th class="p-3 pe-5 text-end"><%= t("accounting.food_costs.food_cost_pct") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @food_cost[:items].each do |row| %>
+          <% pct = row[:food_cost_pct] %>
+          <% row_class = pct > 35 ? "bg-red-50" : (pct >= 28 ? "bg-yellow-50" : "bg-green-50/50") %>
+          <tr class="<%= row_class %>">
+            <td class="p-3 ps-5 font-medium"><%= row[:item].name %></td>
+            <td class="p-3 text-end tabular-nums"><%= row[:units_sold] %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(row[:revenue_cents]) %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(row[:cost_cents]) %></td>
+            <td class="p-3 pe-5 text-end font-bold tabular-nums"><%= pct %>%</td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+</div>
