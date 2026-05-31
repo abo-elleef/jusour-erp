@@ -2,11 +2,11 @@
 
 class MenuItemPolicy < ApplicationPolicy
   def index?
-    admin?
+    true
   end
 
   def show?
-    admin?
+    true
   end
 
   def new?
@@ -14,7 +14,7 @@ class MenuItemPolicy < ApplicationPolicy
   end
 
   def create?
-    admin?
+    user.can_access_admin?
   end
 
   def edit?
@@ -22,10 +22,16 @@ class MenuItemPolicy < ApplicationPolicy
   end
 
   def update?
-    admin?
+    user.can_access_admin?
   end
 
   def destroy?
-    owner?
+    user.owner?
+  end
+
+  class Scope < Scope
+    def resolve
+      scope.all
+    end
   end
 end

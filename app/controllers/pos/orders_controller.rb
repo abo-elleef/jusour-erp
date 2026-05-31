@@ -21,6 +21,25 @@ module Pos
       @orders = orders.select { |order| order.amount_due_cents.positive? }
     end
 
+    def sync_offline
+      authorize Order, :create?
+      payload = params.require(:order).permit(
+        :order_id, :tip_cents,
+        payments_attributes: %i[payment_method amount_cents]
+      )
+      result = Orders::SyncOfflineService.call(user: current_user, payload: payload.to_h)
+
+      if result.success?
+        render json: {
+          success: true,
+          order_number: result.order.order_number,
+          order_id: result.order.id
+        }, status: :created
+      else
+        render json: { success: false, errors: result.errors }, status: :unprocessable_entity
+      end
+    end
+
     def show
       @order = Order.includes(:payments, order_items: [:menu_item, :combo, :order_item_modifiers])
                     .find(params[:id])
@@ -40,7 +59,7 @@ module Pos
     private
 
     def require_pos_access!
-      return if current_user&.cashier? || current_user&.admin_access?
+      return if current_user&.can_access_pos?
 
       flash[:alert] = t("flash.pos_access")
       redirect_to root_path

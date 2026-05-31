@@ -51,6 +51,83 @@ ar:
     next: "التالي →"
     apply_filters: "تطبيق التصفية"
     apply_range: "تطبيق الفترة"
+    apply_search: "تطبيق البحث"
+    save_changes: "حفظ التغييرات"
+
+  printers:
+    index:
+      description: "طابعات الإيصالات والمطبخ والبار في المطعم."
+    stats:
+      total: "الإجمالي"
+      active: "نشطة"
+      inactive: "غير نشطة"
+    filters:
+      title: "بحث وتصفية"
+      name_placeholder: "اسم الطابعة…"
+      all_types: "كل الأنواع"
+    fields:
+      name: "الاسم"
+      type: "النوع"
+      connection: "الاتصال"
+      host: "المضيف / IP"
+      port: "المنفذ"
+      location: "الموقع"
+      paper_width: "عرض الورق"
+      status: "الحالة"
+      notes: "ملاحظات"
+      actions: "إجراءات"
+    types:
+      receipt: "إيصال"
+      kitchen: "مطبخ"
+      bar: "بار"
+      expo: "تسليم"
+    connection_types:
+      network: "شبكة (IP)"
+      usb: "USB"
+    status:
+      active: "نشطة"
+      inactive: "غير نشطة"
+    labels:
+      default: "افتراضية"
+    actions:
+      new: "طابعة جديدة"
+      create: "إنشاء طابعة"
+      back: "العودة للطابعات"
+    form:
+      identity: "بيانات الطابعة"
+      connection: "الاتصال"
+      options: "خيارات"
+      name_placeholder: "مثال: إيصال الكاشير الأمامي"
+      location_placeholder: "مثال: الكاشير، خط ساخن"
+      network_hint: "طابعات ESC/POS الشبكية تستخدم عادة المنفذ 9100."
+      active_label: "نشطة"
+      active_hint: "الطابعات غير النشطة لا تُستخدم عند الطباعة."
+      default_label: "افتراضية لهذا النوع"
+      default_hint: "تُستخدم عند الطباعة التلقائية للإيصالات أو تذاكر المطبخ."
+    empty:
+      title: "لا توجد طابعات"
+      description: "أضف طابعات الإيصالات والمطبخ لنقطة البيع وشاشة المطبخ."
+    confirm_delete: "حذف هذه الطابعة؟"
+
+  printing:
+    receipt:
+      thank_you: "شكراً لطلبكم!"
+    test:
+      title: "طباعة تجريبية"
+      button: "إرسال طباعة تجريبية"
+      sent: "تم إرسال صفحة الاختبار للطابعة."
+    errors:
+      usb_not_supported: "لا يمكن الوصول لطابعات USB من الخادم. استخدم طابعة شبكة."
+      failed: "فشلت الطباعة: %{message}"
+    logs:
+      title: "مهام الطباعة الأخيرة"
+      time: "الوقت"
+      order: "الطلب"
+      status: "الحالة"
+      statuses:
+        sent: "تمت الطباعة"
+        failed: "فشل"
+        skipped: "تخطي"
 
   nav:
     dashboard: "لوحة التحكم"
@@ -61,6 +138,8 @@ ar:
     customers: "العملاء"
     orders: "الطلبات"
     staff: "الموظفون"
+    settings: "الإعدادات"
+    printers: "الطابعات"
     inventory: "المخزون"
     notifications: "الإشعارات"
     accounting: "المحاسبة"
@@ -116,6 +195,17 @@ ar:
       manager: "مدير"
       cashier: "كاشير"
       kitchen: "مطبخ"
+    pin: "رمز المدير (4 أرقام)"
+    pin_hint: "للإلغاء والاسترداد وخصم المدير عند الكاشير."
+
+  settings:
+    title: "إعدادات النظام"
+    description: "الولاء والضرائب وإعدادات المالك فقط."
+    loyalty: "الولاء"
+    redeem_threshold: "النقاط المطلوبة للاستبدال"
+    tax_rates: "معدلات الضريبة"
+    no_tax_rates: "لا توجد معدلات ضريبة."
+    quick_links: "روابط سريعة"
 
   payment:
     methods:
@@ -148,6 +238,16 @@ ar:
 
   pos:
     title: "صقر POS"
+    offline:
+      banner_offline: "أنت غير متصل. الدفع نقداً فقط. ستتم مزامنة الطلبات عند الاتصال."
+      banner_online: "عدت للاتصال — جاري مزامنة المدفوعات المؤجلة..."
+      saved: "تم حفظ الدفع محلياً. ستتم المزامنة عند الاتصال."
+      syncing: "جاري مزامنة %{count} دفعة/دفعات..."
+    manager_pin:
+      title: "رمز المدير مطلوب"
+      placeholder: "4 أرقام"
+      confirm: "تأكيد"
+      cancel: "إلغاء"
     customer:
       search_label: "البحث عن عميل"
       search_placeholder: "الاسم أو الهاتف أو البريد…"
@@ -243,6 +343,12 @@ ar:
         title: "الموظفون"
         new: "موظف جديد"
         edit: "تعديل الموظف"
+      settings:
+        title: "الإعدادات"
+      printers:
+        title: "الطابعات"
+        new: "طابعة جديدة"
+        edit: "تعديل الطابعة"
       discount_rules:
         title: "قواعد الخصم"
         new: "قاعدة خصم جديدة"
@@ -610,6 +716,13 @@ ar:
       created: "تم إنشاء الموظف."
       updated: "تم تحديث الموظف."
       removed: "تم حذف الموظف."
+      deactivated: "تم تعطيل الموظف."
+    settings:
+      updated: "تم حفظ الإعدادات."
+    printer:
+      created: "تم إنشاء الطابعة."
+      updated: "تم تحديث الطابعة."
+      removed: "تم حذف الطابعة."
     discount_rule:
       created: "تم إنشاء قاعدة الخصم."
       updated: "تم تحديث قاعدة الخصم."

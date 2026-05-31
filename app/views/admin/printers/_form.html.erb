@@ -1,0 +1,108 @@
+<%# locals: printer %>
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+
+<%= form_with model: [:admin, printer], class: "space-y-6 max-w-lg",
+      data: { controller: "printer-form" } do |f| %>
+  <% if printer.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <%= printer.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("printers.form.identity") %></h2>
+    </div>
+    <div class="p-5 space-y-5">
+      <div>
+        <%= f.label :name, t("printers.fields.name"), class: label_class %>
+        <%= f.text_field :name, class: input_class, autofocus: true, required: true,
+              placeholder: t("printers.form.name_placeholder") %>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <%= f.label :printer_type, t("printers.fields.type"), class: label_class %>
+          <%= f.select :printer_type,
+                Printer::PRINTER_TYPES.map { |tpe| [t("printers.types.#{tpe}"), tpe] },
+                {}, class: input_class %>
+        </div>
+        <div>
+          <%= f.label :location, t("printers.fields.location"), class: label_class %>
+          <%= f.text_field :location, class: input_class, placeholder: t("printers.form.location_placeholder") %>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("printers.form.connection") %></h2>
+    </div>
+    <div class="p-5 space-y-5">
+      <div>
+        <%= f.label :connection_type, t("printers.fields.connection"), class: label_class %>
+        <%= f.select :connection_type,
+              Printer::CONNECTION_TYPES.map { |ct| [t("printers.connection_types.#{ct}"), ct] },
+              {}, class: input_class, data: { printer_form_target: "connectionType", action: "change->printer-form#toggleNetwork" } %>
+      </div>
+
+      <div data-printer-form-target="networkFields" class="space-y-5 <%= "hidden" unless printer.network? %>">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div class="sm:col-span-2">
+            <%= f.label :host, t("printers.fields.host"), class: label_class %>
+            <%= f.text_field :host, class: input_class, placeholder: "192.168.1.50" %>
+          </div>
+          <div>
+            <%= f.label :port, t("printers.fields.port"), class: label_class %>
+            <%= f.number_field :port, min: 1, max: 65535, class: input_class %>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500"><%= t("printers.form.network_hint") %></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("printers.form.options") %></h2>
+    </div>
+    <div class="p-5 space-y-5">
+      <div>
+        <%= f.label :paper_width, t("printers.fields.paper_width"), class: label_class %>
+        <%= f.select :paper_width, Printer::PAPER_WIDTHS, {}, class: input_class %>
+      </div>
+
+      <div>
+        <%= f.label :notes, t("printers.fields.notes"), class: label_class %>
+        <%= f.text_area :notes, rows: 3, class: "#{input_class} resize-y min-h-[4rem]" %>
+      </div>
+
+      <div class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3 space-y-3">
+        <label class="inline-flex items-center gap-3 cursor-pointer">
+          <%= f.check_box :active, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+          <span>
+            <span class="block text-sm font-semibold text-gray-900"><%= t("printers.form.active_label") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("printers.form.active_hint") %></span>
+          </span>
+        </label>
+        <label class="inline-flex items-center gap-3 cursor-pointer">
+          <%= f.check_box :is_default, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+          <span>
+            <span class="block text-sm font-semibold text-gray-900"><%= t("printers.form.default_label") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("printers.form.default_hint") %></span>
+          </span>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <%= f.submit printer.persisted? ? t("actions.save_changes") : t("printers.actions.create"),
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
+    <%= link_to t("actions.cancel"),
+          printer.persisted? ? admin_printer_path(printer) : admin_printers_path,
+          class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+  </div>
+<% end %>

@@ -8,6 +8,8 @@ class User < ApplicationRecord
   validates :name, presence: true
   validates :role, presence: true, inclusion: { in: ROLES }
 
+  scope :active, -> { where(active: true) }
+
   has_many :orders, dependent: :restrict_with_error
   has_many :stock_adjustments, dependent: :nullify
   has_many :purchase_orders, dependent: :nullify
@@ -48,8 +50,42 @@ class User < ApplicationRecord
     owner? || manager?
   end
 
+  def can_access_pos?
+    owner? || manager? || cashier?
+  end
+
+  def can_access_kds?
+    owner? || manager? || kitchen?
+  end
+
+  def can_access_admin?
+    owner? || manager?
+  end
+
+  def can_manage_system?
+    owner?
+  end
+
+  def pin=(raw)
+    return if raw.blank?
+
+    self.pin_digest = BCrypt::Password.create(raw.to_s)
+  end
+
+  def authenticate_pin(raw)
+    return false if pin_digest.blank?
+
+    BCrypt::Password.new(pin_digest) == raw.to_s
+  rescue BCrypt::Errors::InvalidHash
+    false
+  end
+
+  def deactivate!
+    update!(active: false)
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name email role created_at]
+    %w[name email role active created_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)

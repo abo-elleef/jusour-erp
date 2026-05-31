@@ -1,0 +1,28 @@
+<div class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-gray-900/50 p-4"
+     data-controller="manager-pin-modal"
+     data-manager-pin-modal-target="modal">
+  <div class="bg-white rounded-2xl border border-gray-200 p-6 w-full max-w-sm shadow-xl">
+    <h3 class="text-lg font-bold text-gray-900 mb-2"><%= t("pos.manager_pin.title") %></h3>
+    <form data-manager-pin-modal-target="form"
+          data-action="submit->manager-pin-modal#verify">
+      <input type="password"
+             data-manager-pin-modal-target="input"
+             maxlength="4"
+             pattern="[0-9]{4}"
+             inputmode="numeric"
+             autocomplete="off"
+             placeholder="<%= t("pos.manager_pin.placeholder") %>"
+             class="<%= pos_input_class %> text-center text-2xl tracking-widest mb-3 min-h-14" />
+      <p class="text-sm text-red-600 mb-3 min-h-5" data-manager-pin-modal-target="error"></p>
+      <div class="flex gap-2">
+        <button type="submit" class="flex-1 min-h-11 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl">
+          <%= t("pos.manager_pin.confirm") %>
+        </button>
+        <button type="button" class="min-h-11 px-4 rounded-xl border border-gray-200 font-semibold text-gray-700"
+                data-action="manager-pin-modal#close">
+          <%= t("pos.manager_pin.cancel") %>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

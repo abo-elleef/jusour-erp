@@ -5,6 +5,7 @@ puts "Seeding Saqr POS..."
 Setting.set("loyalty_earn_rate", "1")
 Setting.set("loyalty_redeem_threshold", "100")
 Setting.set("loyalty_redeem_value_cents", "500")
+Setting.set("restaurant_name", "Saqr Chicken & Burgers")
 
 User.find_or_create_by!(email: "owner@restaurant.com") do |u|
   u.name = "Owner"
@@ -228,5 +229,23 @@ end
 
 User.find_by(email: "cashier@restaurant.com")&.update!(hourly_rate_cents: 1500)
 User.find_by(email: "manager@restaurant.com")&.update!(hourly_rate_cents: 2500)
+
+Printer.find_or_create_by!(name: "Front Counter Receipt") do |p|
+  p.printer_type = "receipt"
+  p.connection_type = "network"
+  p.host = "192.168.1.100"
+  p.port = 9100
+  p.location = "Front counter"
+  p.is_default = true
+end
+
+Printer.find_or_create_by!(name: "Kitchen Hot Line") do |p|
+  p.printer_type = "kitchen"
+  p.connection_type = "network"
+  p.host = "192.168.1.101"
+  p.port = 9100
+  p.location = "Hot line"
+  p.is_default = true
+end
 
 puts "Seed complete. Login: owner@restaurant.com / changeme123"

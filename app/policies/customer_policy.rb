@@ -2,11 +2,11 @@
 
 class CustomerPolicy < ApplicationPolicy
   def index?
-    admin?
+    user.can_access_pos? || user.can_access_admin?
   end
 
   def show?
-    admin?
+    user.can_access_pos? || user.can_access_admin?
   end
 
   def new?
@@ -14,7 +14,7 @@ class CustomerPolicy < ApplicationPolicy
   end
 
   def create?
-    admin?
+    user.can_access_pos? || user.can_access_admin?
   end
 
   def edit?
@@ -22,10 +22,10 @@ class CustomerPolicy < ApplicationPolicy
   end
 
   def update?
-    admin?
+    user.can_access_admin?
   end
 
   def destroy?
-    owner?
+    user.owner?
   end
 end

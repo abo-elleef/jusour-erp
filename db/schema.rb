@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_04_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_07_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -393,6 +393,38 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_04_000000) do
     t.index ["status"], name: "index_payments_on_status"
   end
 
+  create_table "print_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "order_id", null: false
+    t.uuid "printer_id"
+    t.string "print_type", default: "receipt", null: false
+    t.string "status", null: false
+    t.text "error_message"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["order_id"], name: "index_print_logs_on_order_id"
+    t.index ["print_type"], name: "index_print_logs_on_print_type"
+    t.index ["printer_id"], name: "index_print_logs_on_printer_id"
+    t.index ["status"], name: "index_print_logs_on_status"
+  end
+
+  create_table "printers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "printer_type", default: "receipt", null: false
+    t.string "connection_type", default: "network", null: false
+    t.string "host"
+    t.integer "port", default: 9100
+    t.string "location"
+    t.string "paper_width", default: "80mm"
+    t.boolean "active", default: true, null: false
+    t.boolean "is_default", default: false, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_printers_on_active"
+    t.index ["name"], name: "index_printers_on_name"
+    t.index ["printer_type", "is_default"], name: "index_printers_on_printer_type_and_is_default"
+  end
+
   create_table "purchase_order_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "purchase_order_id", null: false
     t.uuid "ingredient_id", null: false
@@ -589,6 +621,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_04_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "hourly_rate_cents", default: 0, null: false
+    t.boolean "active", default: true, null: false
+    t.string "pin_digest"
+    t.index ["active"], name: "index_users_on_active"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
@@ -622,6 +657,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_04_000000) do
   add_foreign_key "orders", "users"
   add_foreign_key "payments", "orders"
   add_foreign_key "payments", "users", column: "processed_by_user_id"
+  add_foreign_key "print_logs", "orders"
+  add_foreign_key "print_logs", "printers"
   add_foreign_key "purchase_order_items", "ingredients"
   add_foreign_key "purchase_order_items", "purchase_orders"
   add_foreign_key "purchase_orders", "suppliers"

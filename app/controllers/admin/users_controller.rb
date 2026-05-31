@@ -7,12 +7,13 @@ module Admin
     def index
       authorize User
 
-      @q = User.ransack(params[:q])
-      @total_count = User.count
-      @owner_count = User.where(role: "owner").count
-      @manager_count = User.where(role: "manager").count
-      @cashier_count = User.where(role: "cashier").count
-      @kitchen_count = User.where(role: "kitchen").count
+      scope = policy_scope(User).active
+      @q = scope.ransack(params[:q])
+      @total_count = scope.count
+      @owner_count = scope.where(role: "owner").count
+      @manager_count = scope.where(role: "manager").count
+      @cashier_count = scope.where(role: "cashier").count
+      @kitchen_count = scope.where(role: "kitchen").count
       @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
       @pagy, @users = pagy(:offset, @q.result.order(:name), limit: 25)
     end
@@ -51,8 +52,8 @@ module Admin
 
     def destroy
       authorize @user
-      @user.destroy
-      redirect_to admin_users_path, notice: t("flash.user.removed")
+      @user.deactivate!
+      redirect_to admin_users_path, notice: t("flash.user.deactivated")
     end
 
     private
@@ -62,18 +63,19 @@ module Admin
     end
 
     def user_params
-      permitted = %i[name email role hourly_rate_cents]
+      permitted = %i[name email role hourly_rate_cents pin]
       permitted += %i[password password_confirmation] if @user.new_record? || params.dig(:user, :password).present?
 
       attrs = params.require(:user).permit(permitted)
       attrs[:role] = sanitize_role(attrs[:role]) if attrs[:role].present?
+      attrs.delete(:pin) if attrs[:pin].blank?
       attrs
     end
 
     def sanitize_role(role)
       return role if current_user.owner?
 
-      %w[cashier kitchen].include?(role) ? role : (@user.role.presence || "cashier")
+      policy(User).permitted_roles.include?(role) ? role : (@user.role.presence || "cashier")
     end
   end
 end

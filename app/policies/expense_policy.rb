@@ -6,6 +6,6 @@ class ExpensePolicy < AccountingPolicy
   end
 
   def destroy?
-    (owner? || manager?) && !record.is_auto_generated?
+    user.owner? && !record.is_auto_generated?
   end
 end

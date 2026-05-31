@@ -13,3 +13,12 @@
  *= require_tree .
  *= require_self
  */
+
+button, a, input[type="submit"] {
+  touch-action: manipulation;
+}
+
+.pos-screen {
+  -webkit-user-select: none;
+  user-select: none;
+}

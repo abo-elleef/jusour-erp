@@ -248,7 +248,7 @@ module ApplicationHelper
     active ? "#{base} bg-gray-900 text-white border-gray-900" : "#{base} bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
   end
 
-  POS_INPUT_CLASS = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 " \
+  POS_INPUT_CLASS = "w-full min-h-11 text-base bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 " \
                     "placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 " \
                     "focus:border-amber-500 transition-shadow".freeze
 
@@ -257,11 +257,11 @@ module ApplicationHelper
   end
 
   def pos_btn_primary_class
-    "w-full bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
+    "w-full min-h-11 bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
   end
 
   def pos_btn_accent_class
-    "w-full bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
+    "w-full min-h-11 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
   end
 
   def ingredient_status_badge(ingredient)

@@ -21,18 +21,22 @@
   </div>
   <%= number_field_tag :tip_cents, order.tip_cents, class: "#{pos_input_class} mb-4", data: { payment_target: "tipInput" } %>
 
-  <%= form_with url: pos_payments_path, method: :post, class: "space-y-3" do %>
+  <%= form_with url: pos_payments_path, method: :post, class: "space-y-3",
+        data: { action: "submit->payment#submitCash" } do %>
     <%= hidden_field_tag :order_id, order.id %>
     <%= hidden_field_tag :tip_cents, order.tip_cents, data: { payment_target: "tipHidden" } %>
     <section class="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
       <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("payment.cash_tendered") %></label>
-      <%= number_field_tag :amount_cents, due, min: 0, class: pos_input_class %>
+      <%= number_field_tag :amount_cents, due, min: 0, class: "#{pos_input_class} text-2xl text-center min-h-14" %>
       <%= hidden_field_tag :payment_method, "cash" %>
-      <%= submit_tag t("payment.pay_cash"), class: "w-full mt-3 bg-green-700 hover:bg-green-800 text-white py-2.5 rounded-xl font-semibold transition-colors" %>
+      <%= submit_tag t("payment.pay_cash"), class: "w-full mt-3 min-h-11 bg-green-700 hover:bg-green-800 text-white py-2.5 rounded-xl font-semibold transition-colors" %>
     </section>
   <% end %>
 
-  <button type="button" class="w-full mt-3 bg-indigo-700 hover:bg-indigo-800 text-white py-2.5 rounded-xl font-semibold transition-colors" data-action="payment#payCard">
+  <button type="button"
+          data-connectivity-target="cardPaymentBtn"
+          class="w-full mt-3 min-h-11 bg-indigo-700 hover:bg-indigo-800 text-white py-2.5 rounded-xl font-semibold transition-colors"
+          data-action="payment#payCard">
     <%= t("payment.pay_card") %>
   </button>
 

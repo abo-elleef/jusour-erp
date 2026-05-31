@@ -2,44 +2,51 @@
 <html lang="<%= html_lang %>" dir="<%= html_dir %>">
   <head>
     <title><%= t("app.admin_name") %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <%= javascript_include_tag "Chart.bundle", "chartkick" %>
   </head>
-  <body class="bg-gray-50">
-    <nav class="bg-gray-900 text-white px-6 py-3 flex flex-wrap gap-3 items-center">
-      <span class="font-bold text-lg"><%= t("app.admin_name") %></span>
-      <%= link_to t("nav.dashboard"), admin_root_path, class: "hover:underline" %>
-      <%= link_to t("nav.categories"), admin_categories_path, class: "hover:underline" %>
-      <%= link_to t("nav.menu"), admin_menu_items_path, class: "hover:underline" %>
-      <%= link_to t("nav.combos"), admin_combos_path, class: "hover:underline" %>
-      <%= link_to t("nav.discounts"), admin_discount_rules_path, class: "hover:underline" %>
-      <%= link_to t("nav.customers"), admin_customers_path, class: "hover:underline" %>
-      <%= link_to t("nav.orders"), admin_orders_path, class: "hover:underline" %>
-      <%= link_to t("nav.staff"), admin_users_path, class: "hover:underline" %>
-      <%= link_to t("nav.inventory"), admin_inventory_ingredients_path, class: "hover:underline" %>
-      <%= link_to t("nav.accounting"), admin_accounting_root_path, class: "hover:underline" %>
-      <% if current_user.admin_access? %>
-        <%= link_to admin_notifications_path, class: "hover:underline relative" do %>
-          <%= t("nav.notifications") %>
-          <% unread = current_user.notifications.unread.count %>
-          <% if unread.positive? %><span class="ms-1 bg-red-500 text-white text-xs px-1.5 rounded-full"><%= unread %></span><% end %>
-        <% end %>
-      <% end %>
-      <div class="flex items-center gap-3 ms-auto">
-        <%= render "shared/locale_switcher", theme: :dark %>
-        <%= link_to t("nav.pos"), pos_path, class: "hover:underline" %>
-        <%= button_to t("actions.sign_out"), destroy_user_session_path, method: :delete, class: "hover:underline" %>
+  <body class="bg-gray-50 flex h-screen overflow-hidden" data-controller="sidebar">
+    <aside class="fixed inset-y-0 start-0 z-30 w-60 bg-gray-900 text-white flex flex-col transform -translate-x-full lg:relative lg:translate-x-0 transition-transform duration-200 ease-in-out shrink-0"
+           data-sidebar-target="panel">
+      <div class="px-5 py-4 border-b border-gray-800">
+        <span class="font-bold text-lg"><%= t("app.admin_name") %></span>
       </div>
-    </nav>
-    <main class="p-6 max-w-7xl mx-auto">
-      <% if notice %><p class="text-green-700 mb-4"><%= notice %></p><% end %>
-      <% if alert %><p class="text-red-700 mb-4"><%= alert %></p><% end %>
-      <%= yield %>
-    </main>
-    <%= render "admin/accounting/clock_widget" if current_user&.admin_access? || current_user&.cashier? %>
+      <nav class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2 text-sm">
+        <%= render "admin/nav" %>
+      </nav>
+      <div class="px-4 py-4 border-t border-gray-800">
+        <%= render "shared/locale_switcher", theme: :dark %>
+        <%= button_to t("actions.sign_out"), destroy_user_session_path, method: :delete,
+              class: "mt-3 text-sm text-gray-300 hover:text-white w-full text-start" %>
+      </div>
+    </aside>
+
+    <div class="fixed inset-0 bg-black/50 z-20 hidden lg:hidden"
+         data-sidebar-target="overlay"
+         data-action="click->sidebar#close"></div>
+
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <header class="flex items-center h-14 px-4 border-b border-gray-200 bg-white shrink-0 gap-3">
+        <button type="button"
+                class="lg:hidden p-2 rounded-lg hover:bg-gray-100 min-h-11 min-w-11"
+                data-action="click->sidebar#toggle"
+                aria-label="Menu">☰</button>
+        <span class="font-semibold text-gray-900 truncate"><%= admin_page_title %></span>
+      </header>
+
+      <main class="flex-1 overflow-y-auto p-4 lg:p-6">
+        <div id="flash-messages">
+          <% if notice %><p class="text-green-700 mb-4 text-sm"><%= notice %></p><% end %>
+          <% if alert %><p class="text-red-700 mb-4 text-sm"><%= alert %></p><% end %>
+        </div>
+        <%= yield %>
+      </main>
+    </div>
+
+    <%= render "admin/accounting/clock_widget" if current_user.can_access_pos? %>
   </body>
 </html>

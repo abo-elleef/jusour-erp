@@ -40,6 +40,6 @@ class InventoryPolicy < ApplicationPolicy
   private
 
   def manager_access?
-    user&.owner? || user&.manager?
+    user&.can_access_admin?
   end
 end

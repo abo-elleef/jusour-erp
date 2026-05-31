@@ -2,7 +2,11 @@
 
 class UserPolicy < ApplicationPolicy
   def index?
-    admin?
+    user.owner?
+  end
+
+  def show?
+    user.owner? || record == user
   end
 
   def new?
@@ -10,7 +14,7 @@ class UserPolicy < ApplicationPolicy
   end
 
   def create?
-    owner?
+    user.owner?
   end
 
   def edit?
@@ -18,22 +22,29 @@ class UserPolicy < ApplicationPolicy
   end
 
   def update?
-    return false if record == user
+    return true if record == user
+    return false unless user.owner?
 
-    owner? || (manager? && staff_role?(record))
+    true
   end
 
   def destroy?
-    return false unless owner?
+    return false unless user.owner?
     return false if record == user
-    return false if record.owner? && User.where(role: "owner").count <= 1
+    return false if record.owner? && User.active.where(role: "owner").where.not(id: record.id).none?
 
-    !record.orders.exists?
+    true
   end
 
-  private
+  def permitted_roles
+    return User::ROLES if user.owner?
 
-  def staff_role?(target)
-    target.cashier? || target.kitchen?
+    %w[cashier kitchen]
+  end
+
+  class Scope < Scope
+    def resolve
+      user.owner? ? scope.all : scope.where(id: user.id)
+    end
   end
 end

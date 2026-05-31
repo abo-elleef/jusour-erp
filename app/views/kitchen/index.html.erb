@@ -1,5 +1,4 @@
-<h1 class="text-3xl font-bold mb-6"><%= t("kitchen.title") %></h1>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="kitchen-orders">
+<div class="grid grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-min" id="kitchen-orders">
   <% @orders.each do |order| %>
     <div class="border-2 border-amber-500 rounded-lg p-4 <%= 'border-green-500' if order.ready? %>">
       <div class="flex justify-between mb-2">
@@ -28,10 +27,12 @@
       <% end %>
       <div class="flex gap-2">
         <% if order.submitted? %>
-          <%= button_to t("actions.start"), kitchen_start_path(order), method: :patch, class: "flex-1 bg-blue-600 py-2 rounded" %>
+          <%= button_to t("actions.start"), kitchen_start_path(order), method: :patch,
+                class: "flex-1 min-h-14 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl text-lg" %>
         <% end %>
         <% if order.in_progress? %>
-          <%= button_to t("actions.ready"), kitchen_ready_path(order), method: :patch, class: "flex-1 bg-green-600 py-2 rounded" %>
+          <%= button_to t("actions.ready"), kitchen_ready_path(order), method: :patch,
+                class: "flex-1 min-h-14 bg-green-600 hover:bg-green-500 text-white font-semibold rounded-xl text-lg" %>
         <% end %>
       </div>
     </div>

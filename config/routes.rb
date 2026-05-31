@@ -21,8 +21,11 @@ Rails.application.routes.draw do
   post "pos/merge", to: "pos#merge"
 
   namespace :pos do
+    post "verify_manager_pin", to: "manager_pin#verify"
     get "modifier_form", to: "order_items#modifier_form", as: :modifier_form
-    resources :orders, only: %i[index show]
+    resources :orders, only: %i[index show] do
+      collection { post :sync_offline }
+    end
     resources :order_items, only: %i[create update destroy]
     resources :payments, only: [:create] do
       collection do
@@ -52,6 +55,10 @@ Rails.application.routes.draw do
     resources :discount_rules
     resources :customers
     resources :users, except: [:show]
+    resource :settings, only: %i[index update], controller: "settings"
+    resources :printers do
+      member { post :test_print }
+    end
     resources :orders, only: %i[index show] do
       member do
         post :void

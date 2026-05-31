@@ -2,15 +2,15 @@
 
 class OrderPolicy < ApplicationPolicy
   def index?
-    admin?
+    user.can_access_pos? || user.can_access_admin?
   end
 
   def index_for_payment?
-    cashier_access?
+    user.can_access_pos?
   end
 
   def show?
-    admin? || cashier_access? || kitchen_access?
+    user.can_access_pos? || user.can_access_admin?
   end
 
   def checkout?
@@ -20,17 +20,17 @@ class OrderPolicy < ApplicationPolicy
   def record_payment?
     return false if record.cancelled? || record.draft?
 
-    cashier_access? && record.amount_due_cents.positive?
+    user.can_access_pos? && record.amount_due_cents.positive?
   end
 
   def create?
-    user&.cashier? || admin?
+    user.can_access_pos?
   end
 
   def update?
     return false if record.cancelled?
     return false if record.completed? && record.fully_paid?
-    return cashier_access? if !record.draft?
+    return user.can_access_pos? if !record.draft?
 
     create? && record.draft?
   end
@@ -39,29 +39,43 @@ class OrderPolicy < ApplicationPolicy
     update?
   end
 
+  def apply_discount?
+    user.can_access_pos?
+  end
+
+  def manager_discount?
+    user.owner? || user.manager?
+  end
+
   def void?
-    admin? && !record.completed?
+    (user.owner? || user.manager?) && !record.completed?
   end
 
   def refund?
-    admin? && record.completed?
+    (user.owner? || user.manager?) && record.completed?
   end
 
   def split?
-    update?
+    user.can_access_pos?
   end
 
   def merge?
-    update?
+    user.owner? || user.manager?
   end
 
-  private
-
-  def cashier_access?
-    user&.cashier? || admin?
+  def destroy?
+    false
   end
 
-  def kitchen_access?
-    user&.kitchen? || admin?
+  class Scope < Scope
+    def resolve
+      if user.owner? || user.manager?
+        scope.all
+      elsif user.cashier?
+        scope.where(user: user)
+      else
+        scope.none
+      end
+    end
   end
 end

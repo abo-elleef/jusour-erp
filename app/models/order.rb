@@ -13,6 +13,7 @@ class Order < ApplicationRecord
   has_many :payments, dependent: :destroy
   has_many :order_events, dependent: :destroy
   has_many :receipt_logs, dependent: :destroy
+  has_many :print_logs, dependent: :destroy
   has_many :loyalty_transactions, dependent: :nullify
 
   monetize :subtotal_cents, allow_nil: true
@@ -61,6 +62,7 @@ class Order < ApplicationRecord
         Inventory::DeductStockService.new(self).call
         Accounting::AutoCostService.new(self).call
         AuditLogEntry.record!(action: "order.complete", record: self, user: user)
+        Printing::PrintReceiptJob.perform_later(id)
       end
     end
 

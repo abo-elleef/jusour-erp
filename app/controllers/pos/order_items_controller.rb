@@ -55,7 +55,7 @@ module Pos
     private
 
     def require_pos_access!
-      return if current_user&.cashier? || current_user&.admin_access?
+      return if current_user&.can_access_pos?
 
       flash[:alert] = t("flash.pos_access")
       redirect_to root_path

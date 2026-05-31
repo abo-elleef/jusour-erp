@@ -2,15 +2,29 @@
 <html lang="<%= html_lang %>" dir="<%= html_dir %>" class="h-full">
   <head>
     <title><%= t("pos.title") %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="turbo-cache-control" content="no-cache">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="<%= t("pos.title") %>">
+    <meta name="theme-color" content="#1A1A2E">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <script src="https://js.stripe.com/v3/"></script>
   </head>
-  <body class="h-full overflow-hidden bg-gray-100 text-gray-900" data-turbo-cache="false">
+  <body class="h-full overflow-hidden bg-gray-100 text-gray-900 pos-screen"
+        data-turbo-cache="false"
+        data-controller="connectivity offline-order"
+        data-offline-order-csrf-token-value="<%= form_authenticity_token %>"
+        data-offline-order-saved-message-value="<%= t("pos.offline.saved") %>"
+        data-offline-message="<%= t("pos.offline.banner_offline") %>"
+        data-online-message="<%= t("pos.offline.banner_online") %>"
+        data-connectivity-online-value="true">
+    <div data-connectivity-target="banner" class="hidden" role="status"></div>
     <% if notice || alert %>
       <div id="flash-messages" data-controller="flash" data-flash-dismiss-after-value="3000">
         <% if notice %>
@@ -21,6 +35,8 @@
         <% end %>
       </div>
     <% end %>
+    <span class="sr-only" data-connectivity-target="syncStatus"></span>
     <%= yield %>
+    <%= render "pos/manager_pin_modal" %>
   </body>
 </html>

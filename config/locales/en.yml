@@ -51,6 +51,83 @@ en:
     next: "Next →"
     apply_filters: "Apply filters"
     apply_range: "Apply range"
+    apply_search: "Apply search"
+    save_changes: "Save changes"
+
+  printers:
+    index:
+      description: "Receipt, kitchen, and bar printers used across the restaurant."
+    stats:
+      total: "Total"
+      active: "Active"
+      inactive: "Inactive"
+    filters:
+      title: "Search & filter"
+      name_placeholder: "Printer name…"
+      all_types: "All types"
+    fields:
+      name: "Name"
+      type: "Type"
+      connection: "Connection"
+      host: "Host / IP"
+      port: "Port"
+      location: "Location"
+      paper_width: "Paper width"
+      status: "Status"
+      notes: "Notes"
+      actions: "Actions"
+    types:
+      receipt: "Receipt"
+      kitchen: "Kitchen"
+      bar: "Bar"
+      expo: "Expo"
+    connection_types:
+      network: "Network (IP)"
+      usb: "USB"
+    status:
+      active: "Active"
+      inactive: "Inactive"
+    labels:
+      default: "Default"
+    actions:
+      new: "New printer"
+      create: "Create printer"
+      back: "Back to printers"
+    form:
+      identity: "Printer identity"
+      connection: "Connection"
+      options: "Options"
+      name_placeholder: "e.g. Front counter receipt"
+      location_placeholder: "e.g. Front counter, Hot line"
+      network_hint: "ESC/POS network printers typically use port 9100."
+      active_label: "Active"
+      active_hint: "Inactive printers are ignored when printing."
+      default_label: "Default for this type"
+      default_hint: "Used when auto-printing receipts or kitchen tickets."
+    empty:
+      title: "No printers configured"
+      description: "Add receipt and kitchen printers for your POS and KDS."
+    confirm_delete: "Remove this printer?"
+
+  printing:
+    receipt:
+      thank_you: "Thank you for your order!"
+    test:
+      title: "TEST PRINT"
+      button: "Send test print"
+      sent: "Test page sent to printer."
+    errors:
+      usb_not_supported: "USB printers cannot be reached from the server. Use a network printer."
+      failed: "Print failed: %{message}"
+    logs:
+      title: "Recent print jobs"
+      time: "Time"
+      order: "Order"
+      status: "Status"
+      statuses:
+        sent: "Printed"
+        failed: "Failed"
+        skipped: "Skipped"
 
   nav:
     dashboard: "Dashboard"
@@ -61,6 +138,8 @@ en:
     customers: "Customers"
     orders: "Orders"
     staff: "Staff"
+    settings: "Settings"
+    printers: "Printers"
     inventory: "Inventory"
     notifications: "Notifications"
     accounting: "Accounting"
@@ -116,6 +195,17 @@ en:
       manager: "Manager"
       cashier: "Cashier"
       kitchen: "Kitchen"
+    pin: "Manager PIN (4 digits)"
+    pin_hint: "Used for voids, refunds, and manager discount approval at the register."
+
+  settings:
+    title: "System settings"
+    description: "Loyalty, tax rates, and owner-only configuration."
+    loyalty: "Loyalty"
+    redeem_threshold: "Points needed to redeem"
+    tax_rates: "Tax rates"
+    no_tax_rates: "No tax rates configured."
+    quick_links: "Quick links"
 
   payment:
     methods:
@@ -148,6 +238,16 @@ en:
 
   pos:
     title: "Saqr POS"
+    offline:
+      banner_offline: "You are offline. Cash payments only. Orders will sync when reconnected."
+      banner_online: "Back online — syncing queued payments..."
+      saved: "Payment queued offline. It will sync when reconnected."
+      syncing: "Syncing %{count} queued payment(s)..."
+    manager_pin:
+      title: "Manager PIN required"
+      placeholder: "4-digit PIN"
+      confirm: "Confirm"
+      cancel: "Cancel"
     customer:
       search_label: "Find customer"
       search_placeholder: "Name, phone, or email…"
@@ -239,6 +339,12 @@ en:
         title: "Staff"
         new: "New staff member"
         edit: "Edit staff member"
+      settings:
+        title: "Settings"
+      printers:
+        title: "Printers"
+        new: "New printer"
+        edit: "Edit printer"
       discount_rules:
         title: "Discount rules"
         new: "New discount rule"
@@ -558,7 +664,7 @@ en:
     access_denied: "Access denied."
     admin_required: "Admin access required."
     inventory_access: "Inventory access is limited to owners and managers."
-    pos_access: "POS access only for cashiers."
+    pos_access: "You do not have access to the POS screen."
     kitchen_access: "Kitchen display access only."
     pos:
       coupon_applied: "Coupon applied."
@@ -594,6 +700,13 @@ en:
       created: "Staff member created."
       updated: "Staff member updated."
       removed: "Staff member removed."
+      deactivated: "Staff member deactivated."
+    settings:
+      updated: "Settings saved."
+    printer:
+      created: "Printer created."
+      updated: "Printer updated."
+      removed: "Printer removed."
     discount_rule:
       created: "Discount rule created."
       updated: "Discount rule updated."

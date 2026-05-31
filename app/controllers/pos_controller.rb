@@ -34,7 +34,10 @@ class PosController < ApplicationController
 
   def manager_discount
     authorize @order, :update?
-    unless current_user.admin_access? && params[:pin] == ENV.fetch("MANAGER_PIN", "1234")
+    pin = params[:pin].presence || ENV.fetch("MANAGER_PIN", "1234")
+    manager = User.active.where(role: %w[owner manager]).find { |u| u.authenticate_pin(pin) }
+    env_fallback = pin == ENV.fetch("MANAGER_PIN", "1234") && current_user.admin_access?
+    unless manager || env_fallback
       return redirect_to pos_path, alert: t("flash.pos.invalid_manager_pin")
     end
 
@@ -143,7 +146,7 @@ class PosController < ApplicationController
   private
 
   def require_cashier!
-    return if current_user&.cashier? || current_user&.admin_access?
+    return if current_user&.can_access_pos?
 
     flash[:alert] = t("flash.pos_access")
     redirect_to root_path

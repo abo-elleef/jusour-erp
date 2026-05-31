@@ -1,0 +1,14 @@
+{
+  "name": "Saqr POS",
+  "short_name": "POS",
+  "description": "Restaurant point of sale",
+  "start_url": "/pos",
+  "display": "standalone",
+  "background_color": "#1A1A2E",
+  "theme_color": "#1A1A2E",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

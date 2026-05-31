@@ -16,8 +16,40 @@ export default class extends Controller {
     return this.element.querySelector('input[name="order_id"]')?.value
   }
 
+  async submitCash(event) {
+    if (navigator.onLine) return
+
+    event.preventDefault()
+    const form = event.target
+    const orderId = form.querySelector('input[name="order_id"]')?.value
+    const amountCents = form.querySelector('input[name="amount_cents"]')?.value
+    const tipCents = form.querySelector('input[name="tip_cents"]')?.value || 0
+
+    const offline = this.application.getControllerForElementAndIdentifier(
+      document.body,
+      "offline-order"
+    )
+    if (!offline) return
+
+    await offline.queuePayment({
+      order_id: orderId,
+      tip_cents: tipCents,
+      payments_attributes: [{ payment_method: "cash", amount_cents: amountCents }]
+    })
+
+    const msg = offline.savedMessageValue
+    if (msg) alert(msg)
+    window.location.href = "/pos"
+  }
+
   async payCard(event) {
     event.preventDefault()
+    if (!navigator.onLine) {
+      if (this.hasTerminalStatusTarget) {
+        this.terminalStatusTarget.textContent = "Card payments require an internet connection."
+      }
+      return
+    }
     if (this.hasTerminalStatusTarget) {
       this.terminalStatusTarget.textContent = "Connecting to Stripe Terminal..."
     }
