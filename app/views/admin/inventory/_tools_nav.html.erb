@@ -1,6 +1,8 @@
 <nav class="flex flex-wrap gap-2 mb-6" aria-label="<%= t("nav.inventory") %>">
   <%= link_to t("inventory.tools.ingredients"), admin_inventory_ingredients_path,
         class: inventory_tool_link_class(controller_name == "ingredients" && action_name == "index") %>
+  <%= link_to t("inventory.tools.ingredient_categories"), admin_inventory_ingredient_categories_path,
+        class: inventory_tool_link_class(controller_name == "ingredient_categories") %>
   <%= link_to t("inventory.tools.suppliers"), admin_inventory_suppliers_path,
         class: inventory_tool_link_class(controller_name == "suppliers") %>
   <%= link_to t("inventory.tools.purchase_orders"), admin_inventory_purchase_orders_path,

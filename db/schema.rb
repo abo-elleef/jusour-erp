@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_07_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_08_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -245,6 +245,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_07_000000) do
     t.index ["order_id"], name: "index_loyalty_transactions_on_order_id"
   end
 
+  create_table "menu_item_modifier_groups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "menu_item_id", null: false
+    t.uuid "modifier_group_id", null: false
+    t.integer "position"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["menu_item_id", "modifier_group_id"], name: "index_menu_item_modifier_groups_unique", unique: true
+    t.index ["menu_item_id"], name: "index_menu_item_modifier_groups_on_menu_item_id"
+    t.index ["modifier_group_id"], name: "index_menu_item_modifier_groups_on_modifier_group_id"
+  end
+
   create_table "menu_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "category_id", null: false
     t.string "name", null: false
@@ -260,14 +271,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_07_000000) do
   end
 
   create_table "modifier_groups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "menu_item_id", null: false
     t.string "name", null: false
     t.boolean "required", default: false, null: false
     t.boolean "multi_select", default: false, null: false
     t.integer "position"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["menu_item_id"], name: "index_modifier_groups_on_menu_item_id"
   end
 
   create_table "modifiers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -641,8 +650,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_07_000000) do
   add_foreign_key "ingredients", "ingredient_categories"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"
+  add_foreign_key "menu_item_modifier_groups", "menu_items"
+  add_foreign_key "menu_item_modifier_groups", "modifier_groups"
   add_foreign_key "menu_items", "categories"
-  add_foreign_key "modifier_groups", "menu_items"
   add_foreign_key "modifiers", "modifier_groups"
   add_foreign_key "order_discounts", "discount_rules"
   add_foreign_key "order_discounts", "orders"

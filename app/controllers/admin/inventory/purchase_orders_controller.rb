@@ -8,7 +8,15 @@ module Admin
       def index
         authorize_inventory_index!(PurchaseOrder)
         @q = PurchaseOrder.ransack(params[:q])
+        @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
         @purchase_orders = @q.result.includes(:supplier, :user).order(created_at: :desc)
+        scope = PurchaseOrder.all
+        @total_count = scope.count
+        @draft_count = scope.draft.count
+        @open_count = scope.where(status: %w[sent partially_received]).count
+        @received_count = scope.received.count
+        @cancelled_count = scope.cancelled.count
+        @suppliers = Supplier.active.order(:name)
       end
 
       def show

@@ -4,7 +4,8 @@ class MenuItem < ApplicationRecord
   include Taxable
 
   belongs_to :category
-  has_many :modifier_groups, dependent: :destroy
+  has_many :menu_item_modifier_groups, -> { order(:position) }, dependent: :destroy
+  has_many :modifier_groups, through: :menu_item_modifier_groups
   has_many :modifiers, through: :modifier_groups
   has_many :combo_items, dependent: :restrict_with_error
   has_many :recipes, dependent: :destroy
@@ -20,6 +21,7 @@ class MenuItem < ApplicationRecord
   scope :available, -> { where(available: true) }
   scope :ordered, -> { order(:position, :name) }
 
-  accepts_nested_attributes_for :modifier_groups, allow_destroy: true,
-    reject_if: proc { |attrs| attrs["name"].blank? }
+  def modifier_group_ids
+    menu_item_modifier_groups.map(&:modifier_group_id)
+  end
 end

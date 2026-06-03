@@ -5,7 +5,7 @@ class ApplicationController < ActionController::Base
   include Pundit::Authorization
   include Pagy::Method
 
-  before_action :authenticate_user!
+  before_action :authenticate_user!, unless: :devise_controller?
   before_action :configure_permitted_parameters, if: :devise_controller?
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized

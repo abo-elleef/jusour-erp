@@ -1,0 +1,54 @@
+<%# locals: modifier_group %>
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+
+<%= form_with model: [:admin, modifier_group], class: "space-y-6 max-w-lg" do |f| %>
+  <% if modifier_group.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <%= modifier_group.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("menu.modifier_groups.form_heading") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("menu.modifier_groups.form_hint") %></p>
+    </div>
+    <div class="p-5 space-y-5">
+      <div>
+        <%= f.label :name, t("menu.modifier_groups.name"), class: label_class %>
+        <%= f.text_field :name, class: input_class, autofocus: true, required: true %>
+      </div>
+
+      <div>
+        <%= f.label :position, t("menu.modifier_groups.position"), class: label_class %>
+        <%= f.number_field :position, min: 0, class: input_class %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("menu.modifier_groups.position_hint") %></p>
+      </div>
+
+      <div class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3 space-y-3">
+        <label class="inline-flex items-center gap-3 cursor-pointer">
+          <%= f.check_box :required, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+          <span>
+            <span class="block text-sm font-semibold text-gray-900"><%= t("menu.modifier_groups.required_label") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("menu.modifier_groups.required_hint") %></span>
+          </span>
+        </label>
+        <label class="inline-flex items-center gap-3 cursor-pointer">
+          <%= f.check_box :multi_select, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+          <span>
+            <span class="block text-sm font-semibold text-gray-900"><%= t("menu.modifier_groups.multi_select_label") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("menu.modifier_groups.multi_select_hint") %></span>
+          </span>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <%= f.submit modifier_group.persisted? ? t("actions.save_changes") : t("menu.modifier_groups.create_button"),
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
+    <%= link_to t("actions.cancel"), modifier_group.persisted? ? admin_modifier_group_path(modifier_group) : admin_modifier_groups_path,
+          class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+  </div>
+<% end %>

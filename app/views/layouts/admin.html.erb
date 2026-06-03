@@ -10,7 +10,7 @@
     <%= javascript_include_tag "Chart.bundle", "chartkick" %>
   </head>
   <body class="bg-gray-50 flex h-screen overflow-hidden" data-controller="sidebar">
-    <aside class="fixed inset-y-0 start-0 z-30 w-60 bg-gray-900 text-white flex flex-col transform -translate-x-full lg:relative lg:translate-x-0 transition-transform duration-200 ease-in-out shrink-0"
+    <aside class="fixed inset-y-0 start-0 z-30 w-60 bg-gray-900 text-white flex flex-col transition-transform duration-200 ease-in-out shrink-0 sidebar-panel--closed lg:relative"
            data-sidebar-target="panel">
       <div class="px-5 py-4 border-b border-gray-800">
         <span class="font-bold text-lg"><%= t("app.admin_name") %></span>
@@ -30,14 +30,17 @@
          data-action="click->sidebar#close"></div>
 
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <header class="flex items-center h-14 px-4 border-b border-gray-200 bg-white shrink-0 gap-3">
+      <header class="flex items-center h-14 px-4 border-b border-gray-200 bg-white shrink-0 gap-3 lg:hidden">
         <button type="button"
-                class="lg:hidden p-2 rounded-lg hover:bg-gray-100 min-h-11 min-w-11"
-                data-action="click->sidebar#toggle"
-                aria-label="Menu">☰</button>
-        <span class="font-semibold text-gray-900 truncate"><%= admin_page_title %></span>
+                class="p-2 rounded-lg hover:bg-gray-100 min-h-11 min-w-11"
+                data-action="sidebar#toggle"
+                aria-label="<%= t("nav.open_menu") %>">
+          <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+        <span class="font-semibold text-gray-900 truncate"><%= t("app.admin_name") %></span>
       </header>
-
       <main class="flex-1 overflow-y-auto p-4 lg:p-6">
         <div id="flash-messages">
           <% if notice %><p class="text-green-700 mb-4 text-sm"><%= notice %></p><% end %>

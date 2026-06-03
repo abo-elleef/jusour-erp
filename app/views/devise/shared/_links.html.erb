@@ -1,0 +1,4 @@
+<%- if devise_mapping.recoverable? && controller_name != "passwords" %>
+  <%= link_to t("auth.forgot_password"), new_password_path(resource_name),
+        class: "font-semibold text-amber-700 hover:text-amber-800 transition-colors" %>
+<% end %>

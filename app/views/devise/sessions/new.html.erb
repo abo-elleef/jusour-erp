@@ -1,0 +1,56 @@
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+
+<div class="text-center mb-8">
+  <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-600 text-white text-xl font-bold shadow-sm mb-4" aria-hidden="true">
+    <%= t("app.name").first %>
+  </div>
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("app.name") %></h1>
+  <p class="text-gray-600 text-sm mt-1"><%= t("auth.sign_in_subtitle") %></p>
+</div>
+
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("auth.sign_in_heading") %></h2>
+    <p class="text-xs text-gray-500 mt-0.5"><%= t("auth.sign_in_hint") %></p>
+  </div>
+
+  <div class="p-5">
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-5" }) do |f| %>
+      <div>
+        <%= f.label :email, t("auth.email"), class: label_class %>
+        <%= f.email_field :email,
+              autofocus: true,
+              autocomplete: "email",
+              required: true,
+              class: input_class,
+              placeholder: t("auth.email_placeholder") %>
+      </div>
+
+      <div>
+        <%= f.label :password, t("auth.password"), class: label_class %>
+        <%= f.password_field :password,
+              autocomplete: "current-password",
+              required: true,
+              class: input_class,
+              placeholder: "••••••••" %>
+      </div>
+
+      <% if devise_mapping.rememberable? %>
+        <div class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+          <label class="inline-flex items-center gap-3 cursor-pointer">
+            <%= f.check_box :remember_me, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+            <span class="text-sm font-medium text-gray-900"><%= t("auth.remember_me") %></span>
+          </label>
+        </div>
+      <% end %>
+
+      <%= f.submit t("auth.sign_in_button"),
+            class: "w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-3 rounded-xl shadow-sm transition-colors" %>
+    <% end %>
+  </div>
+</section>
+
+<div class="mt-6 text-center text-sm">
+  <%= render "devise/shared/links" %>
+</div>

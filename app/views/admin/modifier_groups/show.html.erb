@@ -1,0 +1,83 @@
+<%= render "admin/menu_nav" %>
+
+<div class="max-w-4xl">
+  <div class="mb-4">
+    <%= link_to t("menu.modifier_groups.back_to_list"), admin_modifier_groups_path,
+          class: "text-sm font-semibold text-amber-700 hover:text-amber-800 transition-colors" %>
+  </div>
+
+  <header class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @modifier_group.name %></h1>
+      <div class="flex flex-wrap gap-2 mt-2">
+        <% if @modifier_group.required? %>
+          <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+            <%= t("menu.modifier_groups.required") %>
+          </span>
+        <% end %>
+        <% if @modifier_group.multi_select? %>
+          <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+            <%= t("menu.modifier_groups.multi_select") %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <%= link_to t("actions.edit"), edit_admin_modifier_group_path(@modifier_group),
+            class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200 transition-colors" %>
+      <%= link_to new_admin_modifier_group_modifier_path(@modifier_group),
+            class: "inline-flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors" do %>
+        <span aria-hidden="true">+</span> <%= t("menu.modifiers.new_button") %>
+      <% end %>
+    </div>
+  </header>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("menu.modifiers.list_heading") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("menu.modifiers.list_hint") %></p>
+    </div>
+    <% if @modifiers.any? %>
+      <ul class="divide-y divide-gray-100">
+        <% @modifiers.each do |mod| %>
+          <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-50/60 transition-colors">
+            <div>
+              <p class="font-semibold text-gray-900"><%= mod.name %></p>
+              <p class="text-xs text-gray-500 mt-0.5 tabular-nums">
+                <%= t("menu.modifiers.price_adjustment") %>: <%= format_money(mod.price_adjustment_cents) %>
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <%= link_to t("actions.edit"), edit_admin_modifier_group_modifier_path(@modifier_group, mod),
+                    class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+              <% if policy(mod).destroy? && mod.order_item_modifiers.none? %>
+                <%= button_to t("actions.delete"), admin_modifier_group_modifier_path(@modifier_group, mod), method: :delete,
+                      form: { data: { turbo_confirm: t("menu.modifiers.confirm_delete", name: mod.name) }, class: "inline" },
+                      class: "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("menu.modifiers.empty") %></p>
+    <% end %>
+  </section>
+
+  <% if @modifier_group.menu_items.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("menu.modifier_groups.assigned_items") %></h2>
+      </div>
+      <ul class="divide-y divide-gray-100">
+        <% @modifier_group.menu_items.order(:name).each do |item| %>
+          <li class="px-5 py-3">
+            <%= link_to item.name, edit_admin_menu_item_path(item),
+                  class: "font-semibold text-amber-700 hover:text-amber-800" %>
+            <span class="text-xs text-gray-500 ms-2"><%= item.category.name %></span>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+</div>

@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users, controllers: {
+    sessions: "users/sessions",
+    passwords: "users/passwords"
+  }
 
   root "home#index"
 
@@ -51,6 +54,9 @@ Rails.application.routes.draw do
       patch :reorder, on: :collection
     end
     resources :menu_items, except: [:show]
+    resources :modifier_groups, except: [] do
+      resources :modifiers, except: %i[index show]
+    end
     resources :combos
     resources :discount_rules
     resources :customers
@@ -123,6 +129,9 @@ Rails.application.routes.draw do
     end
 
     namespace :inventory do
+      resources :ingredient_categories do
+        collection { patch :reorder }
+      end
       resources :ingredients do
         member { post :adjust }
         collection { get :low_stock }

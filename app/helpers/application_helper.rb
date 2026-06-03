@@ -266,11 +266,28 @@ module ApplicationHelper
 
   def ingredient_status_badge(ingredient)
     case ingredient.stock_status
-    when :out then [t("inventory.stock_status.out"), "bg-red-100 text-red-800"]
-    when :low then [t("inventory.stock_status.low"), "bg-red-100 text-red-800"]
-    when :near then [t("inventory.stock_status.near"), "bg-yellow-100 text-yellow-800"]
-    else [t("inventory.stock_status.ok"), "bg-green-100 text-green-800"]
+    when :out then [t("inventory.stock_status.out"), "bg-red-100 text-red-800 border border-red-200"]
+    when :low then [t("inventory.stock_status.low"), "bg-red-100 text-red-800 border border-red-200"]
+    when :near then [t("inventory.stock_status.near"), "bg-amber-100 text-amber-900 border border-amber-200"]
+    else [t("inventory.stock_status.ok"), "bg-green-100 text-green-800 border border-green-200"]
     end
+  end
+
+  def inventory_adjustment_type_label(type)
+    t("inventory.adjustment_types.#{type}", default: type.to_s.humanize)
+  end
+
+  def purchase_order_status_badge(status)
+    label = t("inventory.purchase_orders.statuses.#{status}", default: status.to_s.humanize)
+    badge_class = case status.to_s
+                  when "draft" then "bg-gray-100 text-gray-800 border-gray-200"
+                  when "sent" then "bg-blue-100 text-blue-800 border-blue-200"
+                  when "partially_received" then "bg-amber-100 text-amber-900 border-amber-200"
+                  when "received" then "bg-green-100 text-green-800 border-green-200"
+                  when "cancelled" then "bg-red-100 text-red-800 border-red-200"
+                  else "bg-gray-100 text-gray-700 border-gray-200"
+                  end
+    [label, badge_class]
   end
 
   def order_type_class(order_type)

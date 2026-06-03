@@ -21,7 +21,7 @@ module Admin
 
     def new
       @menu_item = MenuItem.new(available: true, tax_category: "food")
-      build_nested_modifiers
+      load_modifier_groups_for_form
       @categories = Category.active.ordered
       authorize @menu_item
     end
@@ -30,16 +30,17 @@ module Admin
       @menu_item = MenuItem.new(menu_item_params)
       authorize @menu_item
       if @menu_item.save
+        sync_modifier_groups!(@menu_item)
         redirect_to admin_menu_items_path, notice: t("flash.menu_item.created")
       else
-        build_nested_modifiers
+        load_modifier_groups_for_form
         @categories = Category.active.ordered
         render :new, status: :unprocessable_entity
       end
     end
 
     def edit
-      build_nested_modifiers
+      load_modifier_groups_for_form
       @categories = Category.active.ordered
       authorize @menu_item
     end
@@ -47,8 +48,10 @@ module Admin
     def update
       authorize @menu_item
       if @menu_item.update(menu_item_params)
+        sync_modifier_groups!(@menu_item)
         redirect_to admin_menu_items_path, notice: t("flash.menu_item.updated")
       else
+        load_modifier_groups_for_form
         @categories = Category.active.ordered
         render :edit, status: :unprocessable_entity
       end
@@ -68,24 +71,28 @@ module Admin
     private
 
     def set_menu_item
-      @menu_item = MenuItem.includes(modifier_groups: :modifiers).find(params[:id])
+      @menu_item = MenuItem.includes(:modifier_groups).find(params[:id])
     end
 
-    def build_nested_modifiers
-      return if @menu_item.modifier_groups.any?
+    def load_modifier_groups_for_form
+      @all_modifier_groups = ModifierGroup.includes(:modifiers).ordered
+      @assigned_modifier_group_ids = @menu_item.modifier_group_ids
+    end
 
-      group = @menu_item.modifier_groups.build(required: false, multi_select: false)
-      group.modifiers.build
+    def sync_modifier_groups!(menu_item)
+      ids = Array(params.dig(:menu_item, :modifier_group_ids)).reject(&:blank?)
+      menu_item.menu_item_modifier_groups.where.not(modifier_group_id: ids).destroy_all
+      ids.each_with_index do |group_id, index|
+        join = menu_item.menu_item_modifier_groups.find_or_initialize_by(modifier_group_id: group_id)
+        join.position = index
+        join.save!
+      end
     end
 
     def menu_item_params
       params.require(:menu_item).permit(
         :category_id, :name, :description, :base_price_cents, :tax_category,
-        :available, :position, :image,
-        modifier_groups_attributes: [
-          :id, :name, :required, :multi_select, :position, :_destroy,
-          { modifiers_attributes: %i[id name price_adjustment_cents position _destroy] }
-        ]
+        :available, :position, :image
       )
     end
   end

@@ -5,3 +5,20 @@
 [dir="rtl"] td {
   text-align: start;
 }
+
+/* Admin mobile nav drawer — hide off-screen toward inline-start (left in LTR, right in RTL) */
+@media (max-width: 1023px) {
+  [data-sidebar-target="panel"].sidebar-panel--closed {
+    transform: translateX(-100%);
+  }
+
+  [dir="rtl"] [data-sidebar-target="panel"].sidebar-panel--closed {
+    transform: translateX(100%);
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-sidebar-target="panel"] {
+    transform: none !important;
+  }
+}

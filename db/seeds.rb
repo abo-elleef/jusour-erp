@@ -89,6 +89,8 @@ items = [
   { cat: drinks, name: "Bottled Water", price: 199, tax: "beverage", mods: [] }
 ]
 
+modifier_group_cache = {}
+
 items.each_with_index do |data, i|
   item = MenuItem.find_or_create_by!(name: data[:name], category: data[:cat]) do |m|
     m.base_price_cents = data[:price]
@@ -97,16 +99,24 @@ items.each_with_index do |data, i|
     m.position = i
     m.description = "House favorite"
   end
-  data[:mods].each do |mg_data|
-    group = item.modifier_groups.find_or_create_by!(name: mg_data[:group]) do |g|
-      g.required = mg_data[:required] || false
-      g.multi_select = false
-    end
-    mg_data[:mods].each_with_index do |(name, cents), j|
-      group.modifiers.find_or_create_by!(name: name) do |mod|
-        mod.price_adjustment_cents = cents
-        mod.position = j
+  data[:mods].each_with_index do |mg_data, idx|
+    group_name = mg_data[:group]
+    group = modifier_group_cache[group_name] ||= begin
+      g = ModifierGroup.find_or_create_by!(name: group_name) do |gr|
+        gr.required = mg_data[:required] || false
+        gr.multi_select = false
       end
+      g.update!(required: true) if mg_data[:required] && !g.required?
+      mg_data[:mods].each_with_index do |(name, cents), j|
+        g.modifiers.find_or_create_by!(name: name) do |mod|
+          mod.price_adjustment_cents = cents
+          mod.position = j
+        end
+      end
+      g
+    end
+    MenuItemModifierGroup.find_or_create_by!(menu_item: item, modifier_group: group) do |join|
+      join.position = idx
     end
   end
 end

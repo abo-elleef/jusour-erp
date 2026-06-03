@@ -1,0 +1,10 @@
+<%= render "admin/menu_nav" %>
+
+<div class="max-w-3xl">
+  <div class="mb-4">
+    <%= link_to @modifier_group.name, admin_modifier_group_path(@modifier_group),
+          class: "text-sm font-semibold text-amber-700 hover:text-amber-800 transition-colors" %>
+  </div>
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-6"><%= admin_page_title("new") %></h1>
+  <%= render "form", modifier_group: @modifier_group, modifier: @modifier %>
+</div>

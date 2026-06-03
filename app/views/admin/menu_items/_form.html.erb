@@ -2,7 +2,7 @@
 <% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
-<%= form_with model: [:admin, menu_item], class: "space-y-6 max-w-3xl", data: { controller: "nested-modifiers" } do |f| %>
+<%= form_with model: [:admin, menu_item], class: "space-y-6 max-w-3xl" do |f| %>
   <% if menu_item.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
       <%= menu_item.errors.full_messages.to_sentence %>
@@ -82,26 +82,43 @@
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
       <div>
-        <h2 class="text-sm font-semibold text-gray-900">Modifier groups</h2>
-        <p class="text-xs text-gray-500 mt-0.5">Optional add-ons (size, extras, etc.)</p>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("menu.menu_items.assign_modifier_groups") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("menu.menu_items.assign_modifier_groups_hint") %></p>
       </div>
-      <button type="button"
-            class="text-sm font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-colors"
-            data-action="nested-modifiers#addGroup">
-        + Add group
-      </button>
+      <%= link_to t("menu.modifier_groups.manage_link"), admin_modifier_groups_path,
+            class: "text-sm font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-colors" %>
     </div>
-    <div class="p-5" data-nested-modifiers-target="groups">
-      <%= f.fields_for :modifier_groups do |mg| %>
-        <%= render "modifier_group_fields", mg: mg %>
+    <div class="p-5">
+      <% if @all_modifier_groups.any? %>
+        <div class="space-y-2">
+          <% @all_modifier_groups.each do |group| %>
+            <label class="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors">
+              <%= check_box_tag "menu_item[modifier_group_ids][]",
+                    group.id,
+                    @assigned_modifier_group_ids.include?(group.id),
+                    class: "mt-1 rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+              <span class="min-w-0 flex-1">
+                <span class="block text-sm font-semibold text-gray-900"><%= group.name %></span>
+                <span class="block text-xs text-gray-500 mt-0.5">
+                  <%= t("menu.modifier_groups.modifier_count", count: group.modifiers.size) %>
+                  <% badges = [] %>
+                  <% badges << t("menu.modifier_groups.required") if group.required? %>
+                  <% badges << t("menu.modifier_groups.multi_select") if group.multi_select? %>
+                  <% if badges.any? %> · <%= badges.join(" · ") %><% end %>
+                </span>
+              </span>
+            </label>
+          <% end %>
+        </div>
+        <%= hidden_field_tag "menu_item[modifier_group_ids][]", "" %>
+      <% else %>
+        <p class="text-sm text-gray-500 text-center py-4">
+          <%= t("menu.menu_items.no_modifier_groups") %>
+          <%= link_to t("menu.modifier_groups.new_button"), new_admin_modifier_group_path,
+                class: "font-semibold text-amber-700 hover:text-amber-800" %>.
+        </p>
       <% end %>
     </div>
-
-    <template data-nested-modifiers-target="groupTemplate">
-      <%= f.fields_for :modifier_groups, ModifierGroup.new, child_index: "NEW_GROUP" do |mg| %>
-        <%= render "modifier_group_fields", mg: mg %>
-      <% end %>
-    </template>
   </section>
 
   <div class="flex flex-wrap items-center gap-3">
