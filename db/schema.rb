@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_08_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_11_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -402,6 +402,23 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_08_000000) do
     t.index ["status"], name: "index_payments_on_status"
   end
 
+  create_table "payroll_adjustments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.uuid "recorded_by_id", null: false
+    t.string "kind", null: false
+    t.string "unit_type", null: false
+    t.integer "amount_cents", null: false
+    t.date "payroll_month", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "overtime_hours", precision: 8, scale: 2
+    t.index ["payroll_month"], name: "index_payroll_adjustments_on_payroll_month"
+    t.index ["recorded_by_id"], name: "index_payroll_adjustments_on_recorded_by_id"
+    t.index ["user_id", "payroll_month"], name: "index_payroll_adjustments_on_user_id_and_payroll_month"
+    t.index ["user_id"], name: "index_payroll_adjustments_on_user_id"
+  end
+
   create_table "print_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id", null: false
     t.uuid "printer_id"
@@ -632,8 +649,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_08_000000) do
     t.integer "hourly_rate_cents", default: 0, null: false
     t.boolean "active", default: true, null: false
     t.string "pin_digest"
+    t.integer "monthly_salary_cents", default: 0, null: false
+    t.string "payroll_access_token", null: false
     t.index ["active"], name: "index_users_on_active"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["payroll_access_token"], name: "index_users_on_payroll_access_token", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
@@ -667,6 +687,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_08_000000) do
   add_foreign_key "orders", "users"
   add_foreign_key "payments", "orders"
   add_foreign_key "payments", "users", column: "processed_by_user_id"
+  add_foreign_key "payroll_adjustments", "users"
+  add_foreign_key "payroll_adjustments", "users", column: "recorded_by_id"
   add_foreign_key "print_logs", "orders"
   add_foreign_key "print_logs", "printers"
   add_foreign_key "purchase_order_items", "ingredients"

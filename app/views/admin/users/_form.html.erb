@@ -26,9 +26,14 @@
       </div>
 
       <div>
-        <%= f.label :hourly_rate_cents, "Hourly rate (cents)", class: label_class %>
-        <%= f.number_field :hourly_rate_cents, min: 0, class: input_class %>
-        <p class="text-xs text-gray-500 mt-1.5">Used for payroll and labor cost tracking</p>
+        <%= f.label :monthly_salary_cents, t("staff.payroll.monthly_salary_cents"), class: label_class %>
+        <%= f.number_field :monthly_salary_cents, min: 0, class: input_class %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.payroll.salary_hint", days: User::WORK_DAYS_PER_MONTH) %></p>
+        <% if user.monthly_salary_cents.to_i.positive? %>
+          <p class="text-xs text-gray-600 mt-2">
+            <%= t("staff.payroll.hourly_rate_auto", rate: format_money(user.hourly_rate_cents), hours: User::WORK_HOURS_PER_MONTH) %>
+          </p>
+        <% end %>
       </div>
 
       <div>
@@ -82,7 +87,8 @@
   <div class="flex flex-wrap items-center gap-3">
     <%= f.submit user.persisted? ? "Save changes" : "Create staff member",
           class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
-    <%= link_to "Cancel", admin_users_path,
+    <%= link_to user.persisted? ? t("actions.cancel") : t("staff.show.back_to_list"),
+          user.persisted? ? admin_user_path(user) : admin_users_path,
           class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
   </div>
 <% end %>

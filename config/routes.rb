@@ -48,6 +48,10 @@ Rails.application.routes.draw do
 
   get "receipts/:token", to: "receipts#show", as: :receipt
 
+  get "staff/payroll/:token", to: "staff_payroll#show", as: :staff_payroll
+  post "staff/payroll/:token/verify", to: "staff_payroll#verify", as: :verify_staff_payroll
+  delete "staff/payroll/:token", to: "staff_payroll#lock", as: :lock_staff_payroll
+
   namespace :admin do
     root "dashboard#index"
     resources :categories do
@@ -60,7 +64,9 @@ Rails.application.routes.draw do
     resources :combos
     resources :discount_rules
     resources :customers
-    resources :users, except: [:show]
+    resources :users do
+      resources :payroll_adjustments, only: %i[create destroy], module: :users
+    end
     resource :settings, only: %i[index update], controller: "settings"
     resources :printers do
       member { post :test_print }
@@ -101,6 +107,8 @@ Rails.application.routes.draw do
 
       get "payroll", to: "payroll#index"
       get "payroll/export", to: "payroll#export", as: :payroll_export
+      get "monthly_payroll", to: "monthly_payroll#index"
+      get "monthly_payroll/export", to: "monthly_payroll#export", as: :monthly_payroll_export
 
       resources :tax_reports, only: [:index]
 

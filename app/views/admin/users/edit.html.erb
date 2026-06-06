@@ -1,16 +1,12 @@
 <div class="max-w-lg">
   <div class="mb-4">
-    <%= link_to "← Staff", admin_users_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+    <%= link_to t("staff.show.back_to_profile", name: @user.name), admin_user_path(@user),
+          class: "text-sm text-gray-600 hover:text-gray-900" %>
   </div>
 
-  <div class="flex flex-wrap justify-between items-start gap-3 mb-6">
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight text-gray-900">Edit <%= @user.name %></h1>
-      <p class="text-gray-600 text-sm mt-1"><%= @user.email %></p>
-    </div>
-    <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full border <%= user_role_class(@user.role) %> <%= user_role_border_class(@user.role) %>">
-      <%= @user.role_label %>
-    </span>
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("staff.show.edit_title", name: @user.name) %></h1>
+    <p class="text-gray-600 text-sm mt-1"><%= @user.email %></p>
   </div>
 
   <%= render "form", user: @user %>

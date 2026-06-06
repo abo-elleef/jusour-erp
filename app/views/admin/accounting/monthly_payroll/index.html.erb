@@ -1,0 +1,72 @@
+<%= render "admin/accounting/nav" %>
+<%= render "admin/accounting/payroll_nav" %>
+
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.monthly_payroll.title") %></h1>
+    <%= link_to t("accounting.monthly_payroll.export_csv"),
+          admin_accounting_monthly_payroll_export_path(payroll_month: @payroll_month.strftime("%Y-%m")),
+          class: "text-sm font-semibold border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50" %>
+  </div>
+
+  <p class="text-sm text-gray-600 mb-6"><%= t("accounting.monthly_payroll.hint", days: User::WORK_DAYS_PER_MONTH) %></p>
+
+  <%= form_with url: admin_accounting_monthly_payroll_path, method: :get, class: "flex gap-4 items-end mb-6" do %>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("staff.payroll.month") %></label>
+      <%= month_field_tag :payroll_month, @payroll_month.strftime("%Y-%m"), class: pos_input_class %>
+    </div>
+    <%= submit_tag t("actions.apply"), class: "bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-semibold" %>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
+        <tr>
+          <th class="p-3 ps-5 text-start"><%= t("accounting.shift_logs.employee") %></th>
+          <th class="p-3 text-end"><%= t("accounting.monthly_payroll.base_salary") %></th>
+          <th class="p-3 text-end"><%= t("accounting.monthly_payroll.daily_rate") %></th>
+          <th class="p-3 text-end"><%= t("accounting.monthly_payroll.penalties") %></th>
+          <th class="p-3 text-end"><%= t("accounting.monthly_payroll.bonuses") %></th>
+          <th class="p-3 text-end"><%= t("accounting.monthly_payroll.net_pay") %></th>
+          <th class="p-3 pe-5 text-end"><%= t("actions.actions") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% if @rows.any? %>
+          <% @rows.each do |row| %>
+            <tr class="hover:bg-gray-50/60">
+              <td class="p-3 ps-5 font-medium"><%= row.user.name %></td>
+              <td class="p-3 text-end tabular-nums"><%= format_money(row.base_salary_cents) %></td>
+              <td class="p-3 text-end tabular-nums text-gray-600"><%= format_money(row.daily_rate_cents) %></td>
+              <td class="p-3 text-end tabular-nums text-red-700">−<%= format_money(row.penalties_cents) %></td>
+              <td class="p-3 text-end tabular-nums text-emerald-700">+<%= format_money(row.bonuses_cents) %></td>
+              <td class="p-3 text-end font-semibold tabular-nums"><%= format_money(row.net_pay_cents) %></td>
+              <td class="p-3 pe-5 text-end">
+                <%= link_to t("staff.payroll.manage"), admin_user_path(row.user, payroll_month: @payroll_month.strftime("%Y-%m")),
+                      class: "text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors" %>
+              </td>
+            </tr>
+          <% end %>
+        <% else %>
+          <tr>
+            <td colspan="7" class="p-8 text-center text-gray-500"><%= t("accounting.monthly_payroll.empty") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+      <% if @rows.any? %>
+        <tfoot class="border-t border-gray-200 bg-gray-50/80 font-semibold">
+          <tr>
+            <td class="p-3 ps-5"><%= t("accounting.monthly_payroll.totals") %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(@rows.sum(&:base_salary_cents)) %></td>
+            <td class="p-3"></td>
+            <td class="p-3 text-end tabular-nums text-red-700">−<%= format_money(@rows.sum(&:penalties_cents)) %></td>
+            <td class="p-3 text-end tabular-nums text-emerald-700">+<%= format_money(@rows.sum(&:bonuses_cents)) %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(@rows.sum(&:net_pay_cents)) %></td>
+            <td class="p-3 pe-5"></td>
+          </tr>
+        </tfoot>
+      <% end %>
+    </table>
+  </section>
+</div>

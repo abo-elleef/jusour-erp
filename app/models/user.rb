@@ -1,12 +1,20 @@
 # frozen_string_literal: true
 
+require "bcrypt"
+
 class User < ApplicationRecord
   ROLES = %w[owner manager cashier kitchen].freeze
+  WORK_DAYS_PER_MONTH = 30
+  WORK_HOURS_PER_MONTH = 300
 
   devise :database_authenticatable, :recoverable, :rememberable, :validatable
 
   validates :name, presence: true
   validates :role, presence: true, inclusion: { in: ROLES }
+  validates :payroll_access_token, presence: true, uniqueness: true
+
+  before_validation :assign_payroll_access_token, on: :create
+  before_validation :sync_hourly_rate_from_monthly_salary
 
   scope :active, -> { where(active: true) }
 
@@ -19,8 +27,12 @@ class User < ApplicationRecord
   has_many :shift_logs, dependent: :nullify
   has_many :cash_drawer_sessions, dependent: :nullify
   has_many :expenses, dependent: :nullify
+  has_many :payroll_adjustments, dependent: :destroy
+  has_many :recorded_payroll_adjustments, class_name: "PayrollAdjustment",
+    foreign_key: :recorded_by_id, dependent: :nullify, inverse_of: :recorded_by
 
   monetize :hourly_rate_cents
+  monetize :monthly_salary_cents
 
   def clocked_in?
     shift_logs.active.exists?
@@ -80,6 +92,10 @@ class User < ApplicationRecord
     false
   end
 
+  def pin_configured?
+    pin_digest.present?
+  end
+
   def deactivate!
     update!(active: false)
   end
@@ -106,5 +122,29 @@ class User < ApplicationRecord
 
   def role_label
     role.humanize
+  end
+
+  def daily_rate_cents
+    return 0 if monthly_salary_cents.to_i.zero?
+
+    (monthly_salary_cents.to_f / WORK_DAYS_PER_MONTH).round
+  end
+
+  def monthly_payroll(payroll_month = Date.current)
+    Accounting::MonthlyPayrollService.new(self, payroll_month).call
+  end
+
+  private
+
+  def assign_payroll_access_token
+    self.payroll_access_token ||= SecureRandom.urlsafe_base64(24)
+  end
+
+  def sync_hourly_rate_from_monthly_salary
+    self.hourly_rate_cents = if monthly_salary_cents.to_i.zero?
+                               0
+                             else
+                               (monthly_salary_cents.to_f / WORK_HOURS_PER_MONTH).round
+                             end
   end
 end

@@ -1,0 +1,37 @@
+<% content_for :title, t("staff.payroll_portal.pin_title") %>
+<% content_for :narrow, true %>
+
+<div class="w-full max-w-md">
+  <div class="rounded-3xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div class="px-6 py-8 text-center border-b border-gray-100 bg-gray-50/80">
+      <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-100 text-amber-700 text-2xl font-bold mb-4" aria-hidden="true">
+        <%= @user.name.first.upcase %>
+      </div>
+      <h1 class="text-xl font-bold tracking-tight text-gray-900"><%= t("staff.payroll_portal.pin_title") %></h1>
+      <p class="text-sm text-gray-600 mt-1"><%= @user.name %></p>
+    </div>
+
+    <div class="p-6">
+      <% if @user.pin_configured? %>
+        <p class="text-sm text-gray-600 mb-5"><%= t("staff.payroll_portal.pin_instructions") %></p>
+
+        <%= form_with url: verify_staff_payroll_path(token: @user.payroll_access_token), method: :post, class: "space-y-4" do %>
+          <%= hidden_field_tag :payroll_month, @payroll_month&.strftime("%Y-%m") %>
+
+          <div>
+            <%= label_tag :pin, t("staff.payroll_portal.pin_label"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+            <%= password_field_tag :pin, nil,
+                  class: "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-center text-lg tracking-[0.4em] font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500",
+                  maxlength: 4, pattern: "[0-9]{4}", inputmode: "numeric", autocomplete: "off",
+                  required: true, autofocus: true, placeholder: "••••" %>
+          </div>
+
+          <%= submit_tag t("staff.payroll_portal.view_payroll"),
+                class: "w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-3 rounded-xl shadow-sm transition-colors" %>
+        <% end %>
+      <% else %>
+        <p class="text-sm text-gray-600 text-center"><%= t("staff.payroll_portal.pin_not_set") %></p>
+      <% end %>
+    </div>
+  </div>
+</div>

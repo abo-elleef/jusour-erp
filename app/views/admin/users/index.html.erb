@@ -88,6 +88,7 @@
               <th class="p-3 pl-5">Name</th>
               <th class="p-3">Email</th>
               <th class="p-3">Role</th>
+              <th class="p-3 text-end">Monthly salary</th>
               <th class="p-3">Joined</th>
               <th class="p-3 pr-5 text-right">Actions</th>
             </tr>
@@ -96,7 +97,11 @@
             <% @users.each do |staff| %>
               <tr class="hover:bg-gray-50/60 transition-colors">
                 <td class="p-3 pl-5">
-                  <span class="font-semibold text-gray-900"><%= staff.name %></span>
+                  <% if policy(staff).show? %>
+                    <%= link_to staff.name, admin_user_path(staff), class: "font-semibold text-gray-900 hover:text-amber-700 transition-colors" %>
+                  <% else %>
+                    <span class="font-semibold text-gray-900"><%= staff.name %></span>
+                  <% end %>
                   <% if staff == current_user %>
                     <span class="text-xs font-semibold text-amber-700 ml-1.5">(you)</span>
                   <% end %>
@@ -107,13 +112,24 @@
                     <%= staff.role_label %>
                   </span>
                 </td>
+                <td class="p-3 text-end tabular-nums text-gray-700">
+                  <% if staff.monthly_salary_cents.positive? %>
+                    <%= format_money(staff.monthly_salary_cents) %>
+                  <% else %>
+                    <span class="text-gray-400">—</span>
+                  <% end %>
+                </td>
                 <td class="p-3 text-gray-500 whitespace-nowrap tabular-nums">
                   <%= staff.created_at.strftime("%b %-d, %Y") %>
                 </td>
                 <td class="p-3 pr-5 text-right whitespace-nowrap">
                   <div class="inline-flex gap-2">
+                    <% if policy(staff).show? %>
+                      <%= link_to t("actions.view"), admin_user_path(staff),
+                            class: "inline-flex text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors" %>
+                    <% end %>
                     <% if policy(staff).update? %>
-                      <%= link_to "Edit", edit_admin_user_path(staff),
+                      <%= link_to t("actions.edit"), edit_admin_user_path(staff),
                             class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
                     <% end %>
                     <% if policy(staff).destroy? %>

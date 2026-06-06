@@ -19,21 +19,24 @@ User.find_or_create_by!(email: "manager@restaurant.com") do |u|
   u.role = "manager"
   u.password = "changeme123"
   u.password_confirmation = "changeme123"
-end
+  u.monthly_salary_cents = 450_000
+end.tap { |u| u.update!(monthly_salary_cents: 450_000) if u.monthly_salary_cents.zero? }
 
 User.find_or_create_by!(email: "cashier@restaurant.com") do |u|
   u.name = "Cashier"
   u.role = "cashier"
   u.password = "changeme123"
   u.password_confirmation = "changeme123"
-end
+  u.monthly_salary_cents = 300_000
+end.tap { |u| u.update!(monthly_salary_cents: 300_000) if u.monthly_salary_cents.zero? }
 
 User.find_or_create_by!(email: "kitchen@restaurant.com") do |u|
   u.name = "Kitchen"
   u.role = "kitchen"
   u.password = "changeme123"
   u.password_confirmation = "changeme123"
-end
+  u.monthly_salary_cents = 320_000
+end.tap { |u| u.update!(monthly_salary_cents: 320_000) if u.monthly_salary_cents.zero? }
 
 %w[Chicken Burgers Sides Drinks Combos].each_with_index do |name, i|
   Category.find_or_create_by!(name: name) { |c| c.position = i; c.active = true }
@@ -237,8 +240,6 @@ ExpenseCategory.where(system_managed: false).find_each do |cat|
   end
 end
 
-User.find_by(email: "cashier@restaurant.com")&.update!(hourly_rate_cents: 1500)
-User.find_by(email: "manager@restaurant.com")&.update!(hourly_rate_cents: 2500)
 
 Printer.find_or_create_by!(name: "Front Counter Receipt") do |p|
   p.printer_type = "receipt"

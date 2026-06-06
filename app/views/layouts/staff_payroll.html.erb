@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="<%= html_lang %>" dir="<%= html_dir %>" class="h-full">
+  <head>
+    <title><%= content_for?(:title) ? yield(:title) : t("staff.payroll_portal.title") %> — <%= t("app.name") %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="min-h-full bg-gradient-to-br from-amber-50 via-gray-50 to-gray-100 text-gray-900">
+    <div class="min-h-full flex flex-col">
+      <header class="flex justify-end p-4 sm:p-6">
+        <%= render "shared/locale_switcher" %>
+      </header>
+
+      <main class="flex-1 px-4 pb-12 <%= content_for?(:narrow) ? 'flex items-center justify-center' : 'max-w-3xl mx-auto w-full pt-2' %>">
+        <% if notice.present? %>
+          <div class="mb-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
+            <%= notice %>
+          </div>
+        <% end %>
+        <% if alert.present? %>
+          <div class="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+            <%= alert %>
+          </div>
+        <% end %>
+
+        <%= yield %>
+      </main>
+
+      <footer class="pb-6 text-center text-xs text-gray-500">
+        <%= t("app.name") %>
+      </footer>
+    </div>
+  </body>
+</html>

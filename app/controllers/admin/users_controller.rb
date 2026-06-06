@@ -2,7 +2,7 @@
 
 module Admin
   class UsersController < BaseController
-    before_action :set_user, only: %i[edit update destroy]
+    before_action :set_user, only: %i[show edit update destroy]
 
     def index
       authorize User
@@ -28,10 +28,15 @@ module Admin
       authorize @user
 
       if @user.save
-        redirect_to admin_users_path, notice: t("flash.user.created")
+        redirect_to admin_user_path(@user), notice: t("flash.user.created")
       else
         render :new, status: :unprocessable_entity
       end
+    end
+
+    def show
+      authorize @user
+      load_payroll_context
     end
 
     def edit
@@ -44,7 +49,7 @@ module Admin
       attributes = attributes.except(:password, :password_confirmation) if attributes[:password].blank?
 
       if @user.update(attributes)
-        redirect_to admin_users_path, notice: t("flash.user.updated")
+        redirect_to admin_user_path(@user), notice: t("flash.user.updated")
       else
         render :edit, status: :unprocessable_entity
       end
@@ -62,8 +67,25 @@ module Admin
       @user = User.find(params[:id])
     end
 
+    def load_payroll_context
+      return unless current_user.admin_access?
+
+      @payroll_month = parse_payroll_month_param
+      @payroll_summary = @user.monthly_payroll(@payroll_month)
+    end
+
+    def parse_payroll_month_param
+      if params[:payroll_month].present?
+        Date.parse("#{params[:payroll_month]}-01")
+      else
+        Date.current.beginning_of_month
+      end
+    rescue ArgumentError
+      Date.current.beginning_of_month
+    end
+
     def user_params
-      permitted = %i[name email role hourly_rate_cents pin]
+      permitted = %i[name email role monthly_salary_cents pin]
       permitted += %i[password password_confirmation] if @user.new_record? || params.dig(:user, :password).present?
 
       attrs = params.require(:user).permit(permitted)

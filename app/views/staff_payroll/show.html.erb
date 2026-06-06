@@ -1,0 +1,19 @@
+<% content_for :title, t("staff.payroll_portal.title") %>
+
+<div class="mb-6 flex flex-wrap justify-between items-start gap-4">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("staff.payroll_portal.title") %></h1>
+    <p class="text-gray-600 text-sm mt-1"><%= @user.name %></p>
+  </div>
+  <%= button_to t("staff.payroll_portal.lock"),
+        lock_staff_payroll_path(token: @user.payroll_access_token),
+        method: :delete,
+        class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200 transition-colors" %>
+</div>
+
+<%= render "shared/payroll_preview",
+      user: @user,
+      payroll_month: @payroll_month,
+      payroll_summary: @payroll_summary,
+      readonly: true,
+      month_url: staff_payroll_path(token: @user.payroll_access_token) %>

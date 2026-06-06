@@ -1,0 +1,95 @@
+<% action_btn_class = "text-sm font-semibold px-4 py-2 rounded-xl transition-colors" %>
+<% stat_card_class = "rounded-2xl border border-gray-200 bg-white p-4" %>
+
+<div class="max-w-3xl">
+  <div class="mb-4">
+    <%= link_to t("staff.show.back_to_list"), admin_users_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+  </div>
+
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @user.name %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= @user.email %></p>
+      <% if @user == current_user %>
+        <span class="inline-block text-xs font-semibold text-amber-700 mt-1"><%= t("staff.show.you") %></span>
+      <% end %>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 shrink-0">
+      <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full border <%= user_role_class(@user.role) %> <%= user_role_border_class(@user.role) %>">
+        <%= @user.role_label %>
+      </span>
+      <% if policy(@user).update? %>
+        <%= link_to t("actions.edit"), edit_admin_user_path(@user),
+              class: "#{action_btn_class} bg-gray-900 hover:bg-gray-800 text-white" %>
+      <% end %>
+      <% if policy(@user).destroy? %>
+        <%= button_to t("actions.delete"), admin_user_path(@user), method: :delete,
+              form: { data: { turbo_confirm: t("staff.show.delete_confirm", name: @user.name) } },
+              class: "#{action_btn_class} bg-red-600 hover:bg-red-700 text-white" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="<%= stat_card_class %>">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.payroll.base_salary") %></p>
+      <p class="text-xl font-bold text-gray-900 mt-1 tabular-nums">
+        <% if @user.monthly_salary_cents.positive? %>
+          <%= format_money(@user.monthly_salary_cents) %>
+        <% else %>
+          <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+        <% end %>
+      </p>
+    </div>
+    <div class="<%= stat_card_class %>">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.payroll.daily_rate") %></p>
+      <p class="text-xl font-bold text-gray-900 mt-1 tabular-nums">
+        <% if @user.monthly_salary_cents.positive? %>
+          <%= format_money(@user.daily_rate_cents) %>
+        <% else %>
+          <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+        <% end %>
+      </p>
+    </div>
+    <div class="<%= stat_card_class %>">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.show.hourly_rate") %></p>
+      <p class="text-xl font-bold text-gray-900 mt-1 tabular-nums">
+        <% if @user.monthly_salary_cents.positive? %>
+          <%= format_money(@user.hourly_rate_cents) %>
+        <% else %>
+          <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+        <% end %>
+      </p>
+    </div>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-8">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.show.account_details") %></h2>
+    </div>
+    <dl class="divide-y divide-gray-100 text-sm">
+      <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
+        <dt class="text-gray-500"><%= t("staff.show.joined") %></dt>
+        <dd class="font-medium text-gray-900 tabular-nums"><%= l(@user.created_at.to_date, format: :long) %></dd>
+      </div>
+      <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
+        <dt class="text-gray-500"><%= t("staff.show.pin_status") %></dt>
+        <dd class="font-medium text-gray-900">
+          <%= @user.pin_configured? ? t("staff.show.pin_set") : t("staff.show.pin_missing") %>
+        </dd>
+      </div>
+      <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
+        <dt class="text-gray-500"><%= t("staff.show.status") %></dt>
+        <dd class="font-medium text-gray-900"><%= @user.active? ? t("staff.show.active") : t("staff.show.inactive") %></dd>
+      </div>
+    </dl>
+  </section>
+
+  <% if current_user.admin_access? %>
+    <%= render "payroll_portal_link" %>
+  <% end %>
+
+  <% if @payroll_summary %>
+    <%= render "payroll_section", user: @user, payroll_month: @payroll_month, payroll_summary: @payroll_summary %>
+  <% end %>
+</div>

@@ -1,0 +1,17 @@
+<% if current_user.admin_access? && @user.payroll_access_token.present? %>
+  <% portal_url = staff_payroll_url(token: @user.payroll_access_token) %>
+  <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mt-8 max-w-3xl">
+    <div class="px-5 py-4 border-b border-amber-100">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.payroll_portal.share_link") %></h2>
+      <p class="text-xs text-gray-600 mt-0.5"><%= t("staff.payroll_portal.share_link_hint", name: @user.name) %></p>
+    </div>
+    <div class="p-5 flex flex-wrap gap-3 items-center">
+      <%= text_field_tag :staff_payroll_url, portal_url, readonly: true,
+            class: "flex-1 min-w-[12rem] bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 font-mono select-all",
+            onclick: "this.select()" %>
+      <%= link_to t("actions.view"), staff_payroll_path(token: @user.payroll_access_token),
+            class: "text-sm font-semibold text-amber-800 hover:bg-amber-100 px-4 py-2.5 rounded-xl border border-amber-200 transition-colors",
+            target: "_blank", rel: "noopener" %>
+    </div>
+  </section>
+<% end %>
