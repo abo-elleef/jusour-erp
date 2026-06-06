@@ -1,0 +1,52 @@
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.treasuries.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("accounting.treasuries.description") %></p>
+    </div>
+    <%= link_to t("accounting.treasuries.new_button"), new_admin_accounting_treasury_path,
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shrink-0" %>
+  </div>
+
+  <div class="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 mb-6 max-w-sm">
+    <p class="text-xs font-semibold text-amber-800 uppercase"><%= t("accounting.treasuries.total_balance") %></p>
+    <p class="text-3xl font-bold text-amber-950 tabular-nums mt-1"><%= format_money(@total_balance_cents) %></p>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
+        <tr>
+          <th class="p-3 ps-5 text-start"><%= t("accounting.treasuries.name") %></th>
+          <th class="p-3 text-start"><%= t("accounting.treasuries.treasury_type") %></th>
+          <th class="p-3 text-end"><%= t("accounting.treasuries.balance") %></th>
+          <th class="p-3 text-start"><%= t("accounting.treasuries.status") %></th>
+          <th class="p-3 pe-5 text-end"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @treasuries.each do |treasury| %>
+          <tr class="hover:bg-gray-50/60">
+            <td class="p-3 ps-5 font-semibold text-gray-900">
+              <%= link_to treasury.name, admin_accounting_treasury_path(treasury), class: "hover:text-amber-700" %>
+              <% if treasury.is_default? %>
+                <span class="ms-2 text-[0.65rem] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800"><%= t("accounting.treasuries.default") %></span>
+              <% end %>
+            </td>
+            <td class="p-3 text-gray-600"><%= accounting_treasury_type(treasury.treasury_type) %></td>
+            <td class="p-3 text-end font-bold tabular-nums"><%= format_money(treasury.balance_cents) %></td>
+            <td class="p-3">
+              <span class="text-xs font-semibold <%= treasury.active? ? 'text-emerald-700' : 'text-gray-500' %>">
+                <%= treasury.active? ? t("accounting.treasuries.active") : t("accounting.treasuries.inactive") %>
+              </span>
+            </td>
+            <td class="p-3 pe-5 text-end">
+              <%= link_to t("actions.view"), admin_accounting_treasury_path(treasury), class: "text-xs font-semibold text-amber-700" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+</div>

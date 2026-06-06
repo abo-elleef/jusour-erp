@@ -14,6 +14,12 @@
     <h2 class="text-sm font-semibold text-gray-900 mb-3"><%= t("accounting.cash_drawer.open_drawer") %></h2>
     <%= form_with url: open_session_admin_accounting_cash_drawer_index_path, method: :post, class: "flex flex-wrap gap-4 items-end" do %>
       <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.treasury") %></label>
+        <%= select_tag :treasury_id,
+              options_from_collection_for_select(@drawer_treasuries, :id, :name, Treasury.default_treasury&.id),
+              class: pos_input_class, required: true %>
+      </div>
+      <div>
         <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.cash_drawer.shift") %></label>
         <%= select_tag :shift,
               options_for_select(CashDrawerSession::SHIFTS.map { |s| [accounting_shift_label(s), s] }),
@@ -32,6 +38,7 @@
       <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
         <tr>
           <th class="p-3 ps-5 text-start"><%= t("accounting.cash_drawer.cashier") %></th>
+          <th class="p-3 text-start"><%= t("accounting.shared.treasury") %></th>
           <th class="p-3 text-start"><%= t("accounting.cash_drawer.shift") %></th>
           <th class="p-3 text-start"><%= t("accounting.cash_drawer.status") %></th>
           <th class="p-3 text-end"><%= t("accounting.cash_drawer.expected") %></th>
@@ -44,6 +51,7 @@
         <% @sessions.each do |session| %>
           <tr>
             <td class="p-3 ps-5"><%= session.user.name %></td>
+            <td class="p-3 text-gray-600"><%= session.treasury.name %></td>
             <td class="p-3"><%= accounting_shift_label(session.shift) %></td>
             <td class="p-3"><%= accounting_drawer_status(session.status) %></td>
             <td class="p-3 text-end tabular-nums"><%= session.expected_cash_cents ? format_money(session.expected_cash_cents) : t("accounting.shared.em_dash") %></td>

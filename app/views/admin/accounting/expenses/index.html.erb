@@ -26,6 +26,7 @@
         <tr>
           <th class="p-3 ps-5 text-start"><%= t("accounting.shared.day") %></th>
           <th class="p-3 text-start"><%= t("accounting.shared.category") %></th>
+          <th class="p-3 text-start"><%= t("accounting.shared.treasury") %></th>
           <th class="p-3 text-start"><%= t("accounting.shared.description") %></th>
           <th class="p-3 text-end"><%= t("order.labels.total") %></th>
           <th class="p-3 pe-5 text-end"></th>
@@ -36,6 +37,7 @@
           <tr>
             <td class="p-3 ps-5"><%= l(expense.expense_date, format: :long) %></td>
             <td class="p-3"><%= expense.expense_category.name %></td>
+            <td class="p-3 text-gray-600"><%= expense.treasury&.name || t("accounting.shared.em_dash") %></td>
             <td class="p-3">
               <%= expense.description %>
               <% if expense.is_auto_generated? %><span class="text-xs text-gray-400"><%= t("accounting.shared.auto") %></span><% end %>

@@ -37,6 +37,18 @@ module ApplicationHelper
     t("accounting.expense_categories.types.#{type}", default: type.to_s.humanize)
   end
 
+  def accounting_income_category_type(type)
+    t("accounting.income_categories.types.#{type}", default: type.to_s.humanize)
+  end
+
+  def accounting_treasury_type(type)
+    t("accounting.treasuries.types.#{type}", default: type.to_s.humanize)
+  end
+
+  def accounting_treasury_transaction_kind(kind)
+    t("accounting.treasuries.transaction_kinds.#{kind}", default: kind.to_s.humanize)
+  end
+
   def chart_money_prefix
     Money.new(0).format(symbol: true, no_cents: true, locale: I18n.locale).gsub(/[\d.,\s\u00a0]/, "")
   end

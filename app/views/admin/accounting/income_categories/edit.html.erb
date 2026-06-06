@@ -1,0 +1,8 @@
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <div class="mb-4">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.income_categories.edit") %></h1>
+    <p class="text-gray-600 text-sm mt-1"><%= t("accounting.income_categories.form_hint_edit") %></p>
+  </div>
+  <%= render "form", category: @category %>
+</div>

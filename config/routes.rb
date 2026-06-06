@@ -92,6 +92,13 @@ Rails.application.routes.draw do
         collection { patch :reorder }
       end
       resources :expenses
+      resources :income_categories do
+        collection { patch :reorder }
+      end
+      resources :incomes
+      resources :treasuries do
+        member { post :adjust }
+      end
       resources :budgets, only: [:index] do
         collection { patch :update }
       end

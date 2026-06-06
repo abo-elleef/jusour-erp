@@ -8,7 +8,7 @@ module Admin
       def index
         parse_date_range
         @q = Expense.ransack(params[:q])
-        scope = @q.result.includes(:expense_category, :user)
+        scope = @q.result.includes(:expense_category, :user, :treasury)
         scope = scope.on_date_range(@start_date, @end_date)
         scope = scope.where(is_auto_generated: false) if params[:manual_only] == "1"
         scope = scope.where(expense_category_id: params[:category_id]) if params[:category_id].present?
@@ -22,9 +22,10 @@ module Admin
       end
 
       def new
-        @expense = Expense.new(expense_date: Date.current, user: current_user)
+        @expense = Expense.new(expense_date: Date.current, user: current_user, treasury: Treasury.default_treasury)
         authorize @expense
         @categories = ExpenseCategory.manual.ordered
+        @treasuries = Treasury.active.ordered
       end
 
       def create
@@ -35,6 +36,7 @@ module Admin
           redirect_to admin_accounting_expenses_path, notice: t("flash.accounting.expense_recorded")
         else
           @categories = ExpenseCategory.manual.ordered
+          @treasuries = Treasury.active.ordered
           render :new, status: :unprocessable_entity
         end
       end
@@ -42,6 +44,7 @@ module Admin
       def edit
         authorize @expense
         @categories = ExpenseCategory.manual.ordered
+        @treasuries = Treasury.active.ordered
       end
 
       def update
@@ -50,6 +53,7 @@ module Admin
           redirect_to admin_accounting_expenses_path, notice: t("flash.accounting.expense_updated")
         else
           @categories = ExpenseCategory.manual.ordered
+          @treasuries = Treasury.active.ordered
           render :edit, status: :unprocessable_entity
         end
       end
@@ -69,7 +73,7 @@ module Admin
 
       def expense_params
         params.require(:expense).permit(
-          :expense_category_id, :description, :amount_cents, :expense_date,
+          :expense_category_id, :treasury_id, :description, :amount_cents, :expense_date,
           :recurrence, :reference_number, :receipt_image
         )
       end

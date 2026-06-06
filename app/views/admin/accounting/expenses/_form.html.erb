@@ -9,6 +9,10 @@
     <%= f.collection_select :expense_category_id, @categories, :id, :name, {}, class: pos_input_class %>
   </div>
   <div>
+    <%= f.label :treasury_id, t("accounting.shared.treasury"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <%= f.collection_select :treasury_id, @treasuries, :id, :name, {}, class: pos_input_class, required: true %>
+  </div>
+  <div>
     <%= f.label :description, t("accounting.shared.description"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
     <%= f.text_field :description, class: pos_input_class %>
   </div>

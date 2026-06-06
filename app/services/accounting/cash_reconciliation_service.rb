@@ -38,6 +38,8 @@ module Accounting
         status: "reconciled"
       )
 
+      ::Accounting::TreasuryLedgerService.sync_drawer_reconcile!(@session)
+
       AuditLogEntry.record!(
         action: "cash_drawer.reconciled",
         record: @session,

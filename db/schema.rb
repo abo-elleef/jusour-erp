@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_11_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_13_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -96,6 +96,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_11_000000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "treasury_id"
+    t.index ["treasury_id"], name: "index_cash_drawer_sessions_on_treasury_id"
     t.index ["user_id", "session_date", "shift"], name: "idx_on_user_id_session_date_shift_04dd8c9892", unique: true
     t.index ["user_id"], name: "index_cash_drawer_sessions_on_user_id"
   end
@@ -194,10 +196,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_11_000000) do
     t.uuid "source_record_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "treasury_id"
     t.index ["expense_category_id"], name: "index_expenses_on_expense_category_id"
     t.index ["expense_date"], name: "index_expenses_on_expense_date"
     t.index ["is_auto_generated"], name: "index_expenses_on_is_auto_generated"
     t.index ["source_record_type", "source_record_id"], name: "index_expenses_on_source_record_type_and_source_record_id"
+    t.index ["treasury_id"], name: "index_expenses_on_treasury_id"
     t.index ["user_id"], name: "index_expenses_on_user_id"
   end
 
@@ -208,6 +212,38 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_11_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["code"], name: "index_gift_cards_on_code", unique: true
+  end
+
+  create_table "income_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "category_type", null: false
+    t.boolean "system_managed", default: false, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["name"], name: "index_income_categories_on_name", unique: true
+  end
+
+  create_table "incomes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "income_category_id", null: false
+    t.uuid "user_id", null: false
+    t.string "description", null: false
+    t.integer "amount_cents", null: false
+    t.date "income_date", null: false
+    t.string "recurrence", default: "one_time", null: false
+    t.string "reference_number"
+    t.boolean "is_auto_generated", default: false, null: false
+    t.string "source_record_type"
+    t.uuid "source_record_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "treasury_id"
+    t.index ["income_category_id"], name: "index_incomes_on_income_category_id"
+    t.index ["income_date"], name: "index_incomes_on_income_date"
+    t.index ["is_auto_generated"], name: "index_incomes_on_is_auto_generated"
+    t.index ["source_record_type", "source_record_id"], name: "index_incomes_on_source_record_type_and_source_record_id"
+    t.index ["treasury_id"], name: "index_incomes_on_treasury_id"
+    t.index ["user_id"], name: "index_incomes_on_user_id"
   end
 
   create_table "ingredient_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -636,6 +672,40 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_11_000000) do
     t.index ["tax_category"], name: "index_tax_rates_on_tax_category"
   end
 
+  create_table "treasuries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "treasury_type", null: false
+    t.integer "balance_cents", default: 0, null: false
+    t.integer "opening_balance_cents", default: 0, null: false
+    t.boolean "active", default: true, null: false
+    t.boolean "is_default", default: false, null: false
+    t.integer "position", default: 0, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_treasuries_on_active"
+    t.index ["name"], name: "index_treasuries_on_name", unique: true
+  end
+
+  create_table "treasury_transactions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "treasury_id", null: false
+    t.uuid "user_id", null: false
+    t.integer "amount_cents", null: false
+    t.string "kind", null: false
+    t.string "description", null: false
+    t.date "occurred_on", null: false
+    t.string "source_record_type"
+    t.uuid "source_record_id"
+    t.integer "balance_after_cents", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["kind"], name: "index_treasury_transactions_on_kind"
+    t.index ["occurred_on"], name: "index_treasury_transactions_on_occurred_on"
+    t.index ["source_record_type", "source_record_id"], name: "index_treasury_transactions_on_source"
+    t.index ["treasury_id"], name: "index_treasury_transactions_on_treasury_id"
+    t.index ["user_id"], name: "index_treasury_transactions_on_user_id"
+  end
+
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "role", default: "cashier", null: false
@@ -661,12 +731,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_11_000000) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "audit_log_entries", "users"
   add_foreign_key "budgets", "expense_categories"
+  add_foreign_key "cash_drawer_sessions", "treasuries"
   add_foreign_key "cash_drawer_sessions", "users"
   add_foreign_key "combo_items", "combos"
   add_foreign_key "combo_items", "menu_items"
   add_foreign_key "customer_addresses", "customers"
   add_foreign_key "expenses", "expense_categories"
+  add_foreign_key "expenses", "treasuries"
   add_foreign_key "expenses", "users"
+  add_foreign_key "incomes", "income_categories"
+  add_foreign_key "incomes", "treasuries"
+  add_foreign_key "incomes", "users"
   add_foreign_key "ingredients", "ingredient_categories"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"
@@ -712,4 +787,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_11_000000) do
   add_foreign_key "supplier_price_histories", "ingredients"
   add_foreign_key "supplier_price_histories", "suppliers"
   add_foreign_key "supplier_price_histories", "users", column: "recorded_by_user_id"
+  add_foreign_key "treasury_transactions", "treasuries"
+  add_foreign_key "treasury_transactions", "users"
 end

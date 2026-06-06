@@ -227,6 +227,28 @@ end
   ExpenseCategory.find_or_create_by!(name: attrs[:name]) { |e| e.assign_attributes(attrs) }
 end
 
+[
+  { name: "POS Sales", category_type: "sales", system_managed: true, position: 1 },
+  { name: "Catering", category_type: "catering", system_managed: false, position: 2 },
+  { name: "Delivery Fees", category_type: "delivery", system_managed: false, position: 3 },
+  { name: "Services", category_type: "services", system_managed: false, position: 4 },
+  { name: "Other Income", category_type: "other", system_managed: false, position: 5 }
+].each do |attrs|
+  IncomeCategory.find_or_create_by!(name: attrs[:name]) { |e| e.assign_attributes(attrs) }
+end
+
+[
+  { name: "Main Safe", treasury_type: "safe", opening_balance_cents: 500_000, balance_cents: 500_000, is_default: true, position: 1 },
+  { name: "Front Register", treasury_type: "cash_drawer", opening_balance_cents: 50_000, balance_cents: 50_000, position: 2 },
+  { name: "Bank Account", treasury_type: "bank", opening_balance_cents: 1_000_000, balance_cents: 1_000_000, position: 3 }
+].each do |attrs|
+  Treasury.find_or_create_by!(name: attrs[:name]) do |t|
+    t.assign_attributes(attrs)
+  end.tap do |t|
+    t.update!(attrs.except(:name)) unless t.balance_cents == attrs[:balance_cents]
+  end
+end
+
 OvertimeRule.find_or_create_by!(name: "Federal Standard") do |r|
   r.weekly_threshold_hours = 40.0
   r.ot_multiplier = 1.5

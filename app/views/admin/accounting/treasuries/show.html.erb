@@ -1,0 +1,89 @@
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @treasury.name %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= accounting_treasury_type(@treasury.treasury_type) %></p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <%= link_to t("actions.edit"), edit_admin_accounting_treasury_path(@treasury),
+            class: "border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50" %>
+      <%= link_to t("accounting.treasuries.back"), admin_accounting_treasuries_path,
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="rounded-2xl border border-amber-200 bg-amber-50/60 p-5">
+      <p class="text-xs font-semibold text-amber-800 uppercase"><%= t("accounting.treasuries.balance") %></p>
+      <p class="text-3xl font-bold text-amber-950 tabular-nums mt-1"><%= format_money(@treasury.balance_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 sm:col-span-2">
+      <% if @treasury.notes.present? %>
+        <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("accounting.treasuries.notes") %></p>
+        <p class="text-sm text-gray-700 mt-1"><%= @treasury.notes %></p>
+      <% else %>
+        <p class="text-sm text-gray-500"><%= t("accounting.treasuries.no_notes") %></p>
+      <% end %>
+    </div>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
+    <h2 class="text-sm font-semibold text-gray-900 mb-4"><%= t("accounting.treasuries.manual_adjustment") %></h2>
+    <%= form_with url: adjust_admin_accounting_treasury_path(@treasury), method: :post, class: "grid sm:grid-cols-4 gap-4 items-end" do %>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.amount_cents") %></label>
+        <%= number_field_tag :amount_cents, nil, class: pos_input_class, placeholder: "5000 or -5000", required: true %>
+        <p class="text-xs text-gray-500 mt-1"><%= t("accounting.treasuries.adjustment_hint") %></p>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.day") %></label>
+        <%= date_field_tag :occurred_on, Date.current, class: pos_input_class %>
+      </div>
+      <div class="sm:col-span-2">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.description") %></label>
+        <%= text_field_tag :description, nil, class: pos_input_class, placeholder: t("accounting.treasuries.adjustment_placeholder") %>
+      </div>
+      <div>
+        <%= submit_tag t("accounting.treasuries.record_adjustment"), class: "bg-gray-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold w-full sm:w-auto" %>
+      </div>
+    <% end %>
+  </section>
+
+  <%= render "admin/accounting/date_range_form" %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.treasuries.transactions_title") %></h2>
+    </div>
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
+        <tr>
+          <th class="p-3 ps-5 text-start"><%= t("accounting.shared.day") %></th>
+          <th class="p-3 text-start"><%= t("accounting.treasuries.transaction_kind") %></th>
+          <th class="p-3 text-start"><%= t("accounting.shared.description") %></th>
+          <th class="p-3 text-end"><%= t("accounting.treasuries.amount") %></th>
+          <th class="p-3 text-end"><%= t("accounting.treasuries.balance_after") %></th>
+          <th class="p-3 pe-5 text-start"><%= t("accounting.treasuries.recorded_by") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @transactions.each do |tx| %>
+          <tr>
+            <td class="p-3 ps-5 whitespace-nowrap"><%= l(tx.occurred_on, format: :long) %></td>
+            <td class="p-3 text-gray-600"><%= accounting_treasury_transaction_kind(tx.kind) %></td>
+            <td class="p-3"><%= tx.description %></td>
+            <td class="p-3 text-end font-semibold tabular-nums <%= tx.inflow? ? 'text-emerald-700' : 'text-red-700' %>">
+              <%= tx.inflow? ? "+" : "" %><%= format_money(tx.amount_cents) %>
+            </td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(tx.balance_after_cents) %></td>
+            <td class="p-3 pe-5 text-gray-500 text-xs"><%= tx.user.name %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @transactions.empty? %>
+      <p class="p-8 text-center text-sm text-gray-500"><%= t("accounting.treasuries.no_transactions") %></p>
+    <% end %>
+  </section>
+</div>
