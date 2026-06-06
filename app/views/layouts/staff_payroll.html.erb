@@ -2,19 +2,22 @@
 <html lang="<%= html_lang %>" dir="<%= html_dir %>" class="h-full">
   <head>
     <title><%= content_for?(:title) ? yield(:title) : t("staff.payroll_portal.title") %> — <%= t("app.name") %></title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#fffbeb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
-  <body class="min-h-full bg-gradient-to-br from-amber-50 via-gray-50 to-gray-100 text-gray-900">
-    <div class="min-h-full flex flex-col">
-      <header class="flex justify-end p-4 sm:p-6">
+  <body class="min-h-full bg-gradient-to-b from-amber-50 via-gray-50 to-gray-100 text-gray-900 antialiased">
+    <div class="min-h-full flex flex-col staff-payroll-shell">
+      <header class="flex justify-end px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-2 sm:px-6">
         <%= render "shared/locale_switcher" %>
       </header>
 
-      <main class="flex-1 px-4 pb-12 <%= content_for?(:narrow) ? 'flex items-center justify-center' : 'max-w-3xl mx-auto w-full pt-2' %>">
+      <main class="flex-1 w-full mx-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] <%= content_for?(:narrow) ? 'flex items-center justify-center max-w-md' : 'max-w-lg sm:max-w-xl' %>">
         <% if notice.present? %>
           <div class="mb-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
             <%= notice %>
@@ -29,7 +32,7 @@
         <%= yield %>
       </main>
 
-      <footer class="pb-6 text-center text-xs text-gray-500">
+      <footer class="pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 text-center text-xs text-gray-500">
         <%= t("app.name") %>
       </footer>
     </div>

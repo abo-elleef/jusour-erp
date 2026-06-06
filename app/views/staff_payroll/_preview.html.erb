@@ -1,0 +1,93 @@
+<%# locals: user, payroll_month, payroll_summary %>
+<% return unless payroll_summary %>
+
+<div class="space-y-4 pb-2">
+  <%# Profile header %>
+  <div class="flex items-center gap-3">
+    <div class="shrink-0 inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 text-lg font-bold" aria-hidden="true">
+      <%= user.name.first.upcase %>
+    </div>
+    <div class="min-w-0 flex-1">
+      <h1 class="text-lg font-bold tracking-tight text-gray-900 truncate"><%= user.name %></h1>
+      <p class="text-sm text-gray-600"><%= t("staff.payroll_portal.title") %></p>
+    </div>
+  </div>
+
+  <%# Month picker — full width, touch-friendly %>
+  <%= form_with url: staff_payroll_path(token: user.payroll_access_token), method: :get,
+        class: "rounded-2xl border border-gray-200 bg-white p-4 shadow-sm" do %>
+    <label for="payroll_month" class="block text-xs font-semibold text-gray-600 mb-2"><%= t("staff.payroll.month") %></label>
+    <div class="flex flex-col sm:flex-row gap-3">
+      <%= month_field_tag :payroll_month, payroll_month.strftime("%Y-%m"),
+            id: "payroll_month",
+            class: "flex-1 w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-base text-gray-900 min-h-[3rem] focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
+      <%= submit_tag t("actions.apply"),
+            class: "w-full sm:w-auto shrink-0 bg-gray-900 hover:bg-gray-800 active:bg-black text-white text-sm font-semibold px-6 py-3.5 rounded-xl min-h-[3rem] transition-colors" %>
+    </div>
+  <% end %>
+
+  <%# Net pay hero %>
+  <div class="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/80 p-5 shadow-sm">
+    <p class="text-xs font-semibold text-amber-800 uppercase tracking-wide"><%= t("staff.payroll.net_pay") %></p>
+    <p class="text-3xl sm:text-4xl font-bold text-amber-950 tabular-nums mt-1"><%= format_money(payroll_summary.net_pay_cents) %></p>
+    <p class="text-xs text-amber-800/80 mt-2"><%= t("staff.payroll.subtitle", days: User::WORK_DAYS_PER_MONTH) %></p>
+  </div>
+
+  <%# Summary stats — 2×2 grid %>
+  <div class="grid grid-cols-2 gap-3">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <p class="text-[0.65rem] font-semibold text-gray-500 uppercase tracking-wide leading-tight"><%= t("staff.payroll.base_salary") %></p>
+      <p class="text-base sm:text-lg font-bold text-gray-900 tabular-nums mt-1.5 break-all"><%= format_money(payroll_summary.base_salary_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <p class="text-[0.65rem] font-semibold text-gray-500 uppercase tracking-wide leading-tight"><%= t("staff.payroll.daily_rate") %></p>
+      <p class="text-base sm:text-lg font-bold text-gray-900 tabular-nums mt-1.5 break-all"><%= format_money(payroll_summary.daily_rate_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-red-100 bg-red-50/80 p-4 shadow-sm">
+      <p class="text-[0.65rem] font-semibold text-red-600 uppercase tracking-wide leading-tight"><%= t("staff.payroll.penalties") %></p>
+      <p class="text-base sm:text-lg font-bold text-red-700 tabular-nums mt-1.5 break-all">−<%= format_money(payroll_summary.penalties_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4 shadow-sm">
+      <p class="text-[0.65rem] font-semibold text-emerald-600 uppercase tracking-wide leading-tight"><%= t("staff.payroll.bonuses") %></p>
+      <p class="text-base sm:text-lg font-bold text-emerald-700 tabular-nums mt-1.5 break-all">+<%= format_money(payroll_summary.bonuses_cents) %></p>
+    </div>
+  </div>
+
+  <%# Adjustments — card list (no horizontal scroll) %>
+  <section class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div class="px-4 py-3.5 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.payroll_portal.adjustments_title") %></h2>
+    </div>
+
+    <% if payroll_summary.adjustments.any? %>
+      <ul class="divide-y divide-gray-100">
+        <% payroll_summary.adjustments.each do |adj| %>
+          <li class="p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <span class="inline-flex text-[0.65rem] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full <%= adj.penalty? ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' %>">
+                  <%= t("staff.payroll.kinds.#{adj.kind}") %>
+                </span>
+                <p class="text-sm text-gray-700 mt-2 leading-snug"><%= adj.unit_label %></p>
+                <% if adj.notes.present? %>
+                  <p class="text-xs text-gray-500 mt-1.5 leading-relaxed"><%= adj.notes %></p>
+                <% end %>
+              </div>
+              <p class="shrink-0 text-base font-bold tabular-nums <%= adj.penalty? ? 'text-red-700' : 'text-emerald-700' %>">
+                <%= adj.penalty? ? "−" : "+" %><%= format_money(adj.amount_cents) %>
+              </p>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="p-5 text-sm text-gray-500 text-center"><%= t("staff.payroll.no_adjustments") %></p>
+    <% end %>
+  </section>
+
+  <%# Lock — full-width touch target at bottom %>
+  <%= button_to t("staff.payroll_portal.lock"),
+        lock_staff_payroll_path(token: user.payroll_access_token),
+        method: :delete,
+        class: "w-full text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 active:bg-gray-100 px-4 py-4 rounded-2xl border border-gray-200 transition-colors min-h-[3rem] shadow-sm" %>
+</div>

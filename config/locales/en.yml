@@ -280,6 +280,7 @@ en:
       pin_not_set: "No PIN is set for this account. Ask your manager to configure one."
       lock: "Lock"
       locked: "Salary preview locked."
+      adjustments_title: "Penalties & bonuses"
       share_link: "Staff salary link"
       share_link_hint: "Share this link with %{name}. They enter their PIN to view monthly salary — no login needed."
       copy_link: "Copy link"
