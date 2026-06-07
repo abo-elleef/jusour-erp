@@ -5,10 +5,8 @@
         class: inventory_tool_link_class(controller_name == "ingredient_categories") %>
   <%= link_to t("inventory.tools.suppliers"), admin_inventory_suppliers_path,
         class: inventory_tool_link_class(controller_name == "suppliers") %>
-  <%= link_to t("inventory.tools.purchase_orders"), admin_inventory_purchase_orders_path,
-        class: inventory_tool_link_class(controller_name == "purchase_orders") %>
-  <%= link_to t("inventory.tools.po_suggestions"), suggestions_admin_inventory_purchase_orders_path,
-        class: inventory_tool_link_class(controller_name == "purchase_orders" && action_name.in?(%w[suggestions])) %>
+  <%= link_to t("inventory.tools.vendor_invoices"), admin_inventory_vendor_invoices_path,
+        class: inventory_tool_link_class(controller_name == "vendor_invoices") %>
   <%= link_to t("inventory.tools.stock_takes"), admin_inventory_stock_takes_path,
         class: inventory_tool_link_class(controller_name == "stock_takes") %>
   <%= link_to t("inventory.tools.valuation"), admin_inventory_reports_valuation_path,

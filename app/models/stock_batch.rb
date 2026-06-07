@@ -5,6 +5,7 @@ class StockBatch < ApplicationRecord
 
   belongs_to :ingredient
   belongs_to :supplier, optional: true
+  belongs_to :vendor_invoice_line, optional: true
   has_many :stock_adjustments, dependent: :nullify
 
   scope :fifo_order, -> { order(received_on: :asc, created_at: :asc) }

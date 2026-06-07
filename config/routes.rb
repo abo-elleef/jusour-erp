@@ -160,10 +160,11 @@ Rails.application.routes.draw do
         resources :supplier_ingredients, only: %i[create update destroy]
       end
       resources :suppliers
-      resources :purchase_orders do
-        member { patch :send_to_supplier }
-        collection { get :suggestions }
-        resource :delivery, only: %i[new create], controller: "deliveries"
+      resources :vendor_invoices, only: %i[index show new create] do
+        member do
+          post :record_payment
+          patch :void
+        end
       end
       resources :stock_takes, only: %i[index show create update] do
         member { post :complete }

@@ -6,7 +6,7 @@ class StockAdjustment < ApplicationRecord
   belongs_to :stock_batch, optional: true
 
   ADJUSTMENT_TYPES = %w[
-    delivery manual_add manual_remove
+    delivery vendor_invoice manual_add manual_remove
     waste_spoilage waste_prep waste_overproduction
     cycle_count_correction consumption
     production_consumption production_output

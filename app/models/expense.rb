@@ -10,6 +10,8 @@ class Expense < ApplicationRecord
 
   has_one_attached :receipt_image
 
+  has_one :vendor_invoice_payment, as: :source_record
+
   monetize :amount_cents
 
   validates :description, :expense_date, :amount_cents, presence: true

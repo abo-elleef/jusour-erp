@@ -27,7 +27,7 @@
       <%= link_to t("actions.edit"), edit_admin_inventory_supplier_path(@supplier),
             class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200 transition-colors" %>
       <% if @supplier.active? %>
-        <%= link_to t("inventory.suppliers.show.new_po"), new_admin_inventory_purchase_order_path(supplier_id: @supplier.id),
+        <%= link_to t("inventory.suppliers.show.new_invoice"), new_admin_inventory_vendor_invoice_path(supplier_id: @supplier.id),
               class: "inline-flex text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-colors" %>
       <% end %>
     </div>
@@ -47,8 +47,8 @@
       <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.suppliers.show.stats.linked_products") %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.suppliers.show.stats.purchase_orders") %></p>
-      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @purchase_orders.size %></p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.suppliers.show.stats.vendor_invoices") %></p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @vendor_invoices.size %></p>
       <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.suppliers.show.stats.recent_pos") %></p>
     </div>
   </div>
@@ -97,27 +97,27 @@
     <% end %>
   </section>
 
-  <% if @purchase_orders.any? %>
+  <% if @vendor_invoices.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
         <div>
-          <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.suppliers.show.purchase_orders_heading") %></h2>
-          <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.suppliers.show.purchase_orders_hint") %></p>
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.suppliers.show.vendor_invoices_heading") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.suppliers.show.vendor_invoices_hint") %></p>
         </div>
-        <%= link_to t("inventory.suppliers.show.all_pos"), admin_inventory_purchase_orders_path(q: { supplier_id_eq: @supplier.id }),
+        <%= link_to t("inventory.suppliers.show.all_invoices"), admin_inventory_vendor_invoices_path(q: { supplier_id_eq: @supplier.id }),
               class: "text-sm font-medium text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-colors" %>
       </div>
       <ul class="divide-y divide-gray-100">
-        <% @purchase_orders.each do |po| %>
-          <% status_label, status_class = purchase_order_status_badge(po.status) %>
+        <% @vendor_invoices.each do |invoice| %>
+          <% status_label, status_class = vendor_invoice_payment_badge(invoice.payment_status) %>
           <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-2 hover:bg-gray-50/60 transition-colors">
-            <%= link_to po.po_number, admin_inventory_purchase_order_path(po),
+            <%= link_to invoice.invoice_number, admin_inventory_vendor_invoice_path(invoice),
                   class: "font-semibold text-amber-700 hover:text-amber-800" %>
             <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= status_class %>">
               <%= status_label %>
             </span>
-            <span class="text-sm text-gray-600 tabular-nums"><%= format_money(po.total_cents) %></span>
-            <span class="text-xs text-gray-500"><%= l(po.created_at.to_date, format: :long) %></span>
+            <span class="text-sm text-gray-600 tabular-nums"><%= format_money(invoice.total_cents) %></span>
+            <span class="text-xs text-gray-500"><%= l(invoice.invoice_date.to_date, format: :long) %></span>
           </li>
         <% end %>
       </ul>

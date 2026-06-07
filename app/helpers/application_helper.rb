@@ -217,13 +217,6 @@ module ApplicationHelper
     (ingredient.cost_per_unit_cents.to_d / 100).round(2)
   end
 
-  def purchase_order_item_unit_price_dollars(item)
-    cents = item.unit_price_cents.to_i
-    return nil if cents.zero? && item.new_record?
-
-    (cents.to_d / 100).round(2)
-  end
-
   def ingredient_stock_level_percent(ingredient)
     return 100 if ingredient.reorder_threshold.zero?
 
@@ -296,6 +289,33 @@ module ApplicationHelper
     "w-full min-h-11 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
   end
 
+
+  def vendor_invoice_payment_badge(status)
+    label = t("inventory.vendor_invoices.payment_statuses.#{status}", default: status.to_s.humanize)
+    badge_class = case status.to_s
+                  when "unpaid" then "bg-amber-100 text-amber-900 border-amber-200"
+                  when "partially_paid" then "bg-blue-100 text-blue-900 border-blue-200"
+                  when "paid" then "bg-green-100 text-green-800 border-green-200"
+                  when "void" then "bg-gray-100 text-gray-700 border-gray-200"
+                  else "bg-gray-100 text-gray-700 border-gray-200"
+                  end
+    [label, badge_class]
+  end
+
+  def vendor_invoice_balance_due_dollars(invoice)
+    cents = invoice.balance_due_cents
+    return nil if cents.zero?
+
+    (cents.to_d / 100).round(2)
+  end
+
+  def vendor_invoice_line_unit_price_dollars(line)
+    cents = line.unit_price_cents.to_i
+    return nil if cents.zero? && line.new_record?
+
+    (cents.to_d / 100).round(2)
+  end
+
   def ingredient_status_badge(ingredient)
     case ingredient.stock_status
     when :out then [t("inventory.stock_status.out"), "bg-red-100 text-red-800 border border-red-200"]
@@ -307,31 +327,6 @@ module ApplicationHelper
 
   def inventory_adjustment_type_label(type)
     t("inventory.adjustment_types.#{type}", default: type.to_s.humanize)
-  end
-
-  def purchase_order_status_badge(status)
-    label = t("inventory.purchase_orders.statuses.#{status}", default: status.to_s.humanize)
-    badge_class = case status.to_s
-                  when "draft" then "bg-gray-100 text-gray-800 border-gray-200"
-                  when "sent" then "bg-blue-100 text-blue-800 border-blue-200"
-                  when "partially_received" then "bg-amber-100 text-amber-900 border-amber-200"
-                  when "received" then "bg-green-100 text-green-800 border-green-200"
-                  when "cancelled" then "bg-red-100 text-red-800 border-red-200"
-                  else "bg-gray-100 text-gray-700 border-gray-200"
-                  end
-    [label, badge_class]
-  end
-
-  def purchase_order_item_status_badge(status)
-    label = t("inventory.purchase_orders.item_statuses.#{status}", default: status.to_s.humanize)
-    badge_class = case status.to_s
-                  when "pending" then "bg-gray-100 text-gray-800 border-gray-200"
-                  when "partial" then "bg-amber-100 text-amber-900 border-amber-200"
-                  when "received" then "bg-green-100 text-green-800 border-green-200"
-                  when "discrepancy" then "bg-red-100 text-red-800 border-red-200"
-                  else "bg-gray-100 text-gray-700 border-gray-200"
-                  end
-    [label, badge_class]
   end
 
   def order_type_class(order_type)

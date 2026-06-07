@@ -12,7 +12,6 @@ class Ingredient < ApplicationRecord
   has_many :stock_batches, dependent: :nullify
   has_many :supplier_ingredients, dependent: :destroy
   has_many :suppliers, through: :supplier_ingredients
-  has_many :purchase_order_items, dependent: :nullify
   has_many :supplier_price_histories, dependent: :nullify
   has_many :stock_take_items, dependent: :nullify
   has_many :manufacturing_template_lines, dependent: :restrict_with_error

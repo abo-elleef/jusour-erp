@@ -29,11 +29,7 @@ class InventoryPolicy < ApplicationPolicy
     manager_access?
   end
 
-  def receive_delivery?
-    manager_access?
-  end
-
-  def send_po?
+  def record_vendor_invoice_payment?
     manager_access?
   end
 

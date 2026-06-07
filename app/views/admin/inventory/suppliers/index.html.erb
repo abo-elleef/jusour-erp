@@ -65,19 +65,23 @@
   <% if @suppliers.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm min-w-[640px]">
+        <table class="w-full text-left text-sm min-w-[52rem]">
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
               <th class="p-3 pl-5"><%= t("inventory.suppliers.index.table.supplier") %></th>
               <th class="p-3"><%= t("inventory.suppliers.index.table.contact") %></th>
               <th class="p-3"><%= t("inventory.suppliers.index.table.lead_time") %></th>
               <th class="p-3 text-right"><%= t("inventory.suppliers.index.table.ingredients") %></th>
+              <th class="p-3 text-right"><%= t("inventory.suppliers.index.table.invoice_total") %></th>
+              <th class="p-3 text-right"><%= t("inventory.suppliers.index.table.outstanding") %></th>
               <th class="p-3"><%= t("inventory.suppliers.index.table.status") %></th>
               <th class="p-3 pr-5 text-right"><%= t("inventory.suppliers.index.table.actions") %></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @suppliers.each do |s| %>
+              <% invoice_total_cents = @invoice_total_cents_by_supplier[s.id] || 0 %>
+              <% outstanding_cents = @outstanding_cents_by_supplier[s.id] || 0 %>
               <tr class="hover:bg-gray-50/60 transition-colors">
                 <td class="p-3 pl-5">
                   <%= link_to s.name, admin_inventory_supplier_path(s),
@@ -98,6 +102,18 @@
                 </td>
                 <td class="p-3 text-right text-gray-600 tabular-nums">
                   <%= s.supplier_ingredients.size %>
+                </td>
+                <td class="p-3 text-right text-gray-700 tabular-nums">
+                  <%= format_money(invoice_total_cents) %>
+                </td>
+                <td class="p-3 text-right tabular-nums">
+                  <% if outstanding_cents.positive? %>
+                    <%= link_to format_money(outstanding_cents),
+                          admin_inventory_vendor_invoices_path(q: { supplier_id_eq: s.id, payment_status_in: %w[unpaid partially_paid] }),
+                          class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                  <% else %>
+                    <span class="text-gray-400"><%= format_money(0) %></span>
+                  <% end %>
                 </td>
                 <td class="p-3">
                   <% if s.active? %>

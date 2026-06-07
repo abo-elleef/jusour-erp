@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_17_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_19_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -577,40 +577,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_17_000000) do
     t.index ["printer_type", "is_default"], name: "index_printers_on_printer_type_and_is_default"
   end
 
-  create_table "purchase_order_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "purchase_order_id", null: false
-    t.uuid "ingredient_id", null: false
-    t.decimal "quantity_ordered", precision: 10, scale: 3, null: false
-    t.decimal "quantity_received", precision: 10, scale: 3, default: "0.0"
-    t.integer "unit_price_cents", null: false
-    t.string "status", default: "pending"
-    t.text "discrepancy_notes"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["ingredient_id"], name: "index_purchase_order_items_on_ingredient_id"
-    t.index ["purchase_order_id"], name: "index_purchase_order_items_on_purchase_order_id"
-  end
-
-  create_table "purchase_orders", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "supplier_id", null: false
-    t.uuid "user_id", null: false
-    t.string "po_number", null: false
-    t.string "status", default: "draft", null: false
-    t.date "ordered_on"
-    t.date "expected_on"
-    t.integer "total_cents", default: 0
-    t.text "notes"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.uuid "company_id", null: false
-    t.index ["company_id", "po_number"], name: "index_purchase_orders_on_company_id_and_po_number", unique: true
-    t.index ["company_id"], name: "index_purchase_orders_on_company_id"
-    t.index ["ordered_on"], name: "index_purchase_orders_on_ordered_on"
-    t.index ["status"], name: "index_purchase_orders_on_status"
-    t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
-    t.index ["user_id"], name: "index_purchase_orders_on_user_id"
-  end
-
   create_table "receipt_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id", null: false
     t.string "delivery_method", null: false
@@ -686,10 +652,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_17_000000) do
     t.string "batch_reference"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "vendor_invoice_line_id"
     t.index ["expires_on"], name: "index_stock_batches_on_expires_on"
     t.index ["ingredient_id"], name: "index_stock_batches_on_ingredient_id"
     t.index ["received_on"], name: "index_stock_batches_on_received_on"
     t.index ["supplier_id"], name: "index_stock_batches_on_supplier_id"
+    t.index ["vendor_invoice_line_id"], name: "index_stock_batches_on_vendor_invoice_line_id"
   end
 
   create_table "stock_take_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -846,6 +814,57 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_17_000000) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  create_table "vendor_invoice_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "vendor_invoice_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.decimal "quantity", precision: 10, scale: 3, null: false
+    t.integer "unit_price_cents", null: false
+    t.date "expires_on"
+    t.string "batch_reference"
+    t.text "line_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_vendor_invoice_lines_on_ingredient_id"
+    t.index ["vendor_invoice_id"], name: "index_vendor_invoice_lines_on_vendor_invoice_id"
+  end
+
+  create_table "vendor_invoice_payments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "vendor_invoice_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "treasury_id", null: false
+    t.integer "amount_cents", null: false
+    t.date "payment_date", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_vendor_invoice_payments_on_company_id"
+    t.index ["payment_date"], name: "index_vendor_invoice_payments_on_payment_date"
+    t.index ["treasury_id"], name: "index_vendor_invoice_payments_on_treasury_id"
+    t.index ["user_id"], name: "index_vendor_invoice_payments_on_user_id"
+    t.index ["vendor_invoice_id"], name: "index_vendor_invoice_payments_on_vendor_invoice_id"
+  end
+
+  create_table "vendor_invoices", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "supplier_id", null: false
+    t.uuid "user_id", null: false
+    t.string "invoice_number", null: false
+    t.date "invoice_date", null: false
+    t.date "received_on", null: false
+    t.string "payment_status", default: "unpaid", null: false
+    t.integer "total_cents", default: 0, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "amount_paid_cents", default: 0, null: false
+    t.index ["company_id", "supplier_id", "invoice_number"], name: "index_vendor_invoices_on_company_supplier_and_number", unique: true
+    t.index ["company_id"], name: "index_vendor_invoices_on_company_id"
+    t.index ["invoice_date"], name: "index_vendor_invoices_on_invoice_date"
+    t.index ["payment_status"], name: "index_vendor_invoices_on_payment_status"
+    t.index ["supplier_id"], name: "index_vendor_invoices_on_supplier_id"
+    t.index ["user_id"], name: "index_vendor_invoices_on_user_id"
+  end
+
   add_foreign_key "accounting_integrations", "companies"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
@@ -909,11 +928,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_17_000000) do
   add_foreign_key "print_logs", "orders"
   add_foreign_key "print_logs", "printers"
   add_foreign_key "printers", "companies"
-  add_foreign_key "purchase_order_items", "ingredients"
-  add_foreign_key "purchase_order_items", "purchase_orders"
-  add_foreign_key "purchase_orders", "companies"
-  add_foreign_key "purchase_orders", "suppliers"
-  add_foreign_key "purchase_orders", "users"
   add_foreign_key "receipt_logs", "orders"
   add_foreign_key "recipes", "ingredients"
   add_foreign_key "recipes", "menu_items"
@@ -924,6 +938,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_17_000000) do
   add_foreign_key "stock_adjustments", "users"
   add_foreign_key "stock_batches", "ingredients"
   add_foreign_key "stock_batches", "suppliers"
+  add_foreign_key "stock_batches", "vendor_invoice_lines"
   add_foreign_key "stock_take_items", "ingredients"
   add_foreign_key "stock_take_items", "stock_takes"
   add_foreign_key "stock_takes", "companies"
@@ -942,4 +957,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_17_000000) do
   add_foreign_key "treasury_transfers", "treasuries", column: "to_treasury_id"
   add_foreign_key "treasury_transfers", "users"
   add_foreign_key "users", "companies"
+  add_foreign_key "vendor_invoice_lines", "ingredients"
+  add_foreign_key "vendor_invoice_lines", "vendor_invoices"
+  add_foreign_key "vendor_invoice_payments", "companies"
+  add_foreign_key "vendor_invoice_payments", "treasuries"
+  add_foreign_key "vendor_invoice_payments", "users"
+  add_foreign_key "vendor_invoice_payments", "vendor_invoices"
+  add_foreign_key "vendor_invoices", "companies"
+  add_foreign_key "vendor_invoices", "suppliers"
+  add_foreign_key "vendor_invoices", "users"
 end

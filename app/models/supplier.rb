@@ -5,7 +5,7 @@ class Supplier < ApplicationRecord
 
   has_many :supplier_ingredients, dependent: :destroy
   has_many :ingredients, through: :supplier_ingredients
-  has_many :purchase_orders, dependent: :nullify
+  has_many :vendor_invoices, dependent: :nullify
   has_many :supplier_price_histories, dependent: :nullify
   has_many :stock_batches, dependent: :nullify
 

@@ -30,7 +30,8 @@ class User < ApplicationRecord
   has_many :orders, dependent: :restrict_with_error
   has_many :stock_adjustments, dependent: :nullify
   has_many :manufacturing_runs, dependent: :nullify
-  has_many :purchase_orders, dependent: :nullify
+  has_many :vendor_invoices, dependent: :nullify
+  has_many :vendor_invoice_payments, dependent: :nullify
   has_many :stock_takes, dependent: :nullify
   has_many :notifications, as: :recipient, dependent: :destroy
   has_many :processed_payments, class_name: "Payment", foreign_key: :processed_by_user_id, dependent: :nullify

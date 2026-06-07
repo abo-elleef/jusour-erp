@@ -13,12 +13,25 @@ module Admin
         @inactive_count = @total_count - @active_count
         @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
         @suppliers = @q.result.includes(:supplier_ingredients).order(:name)
+        supplier_ids = @suppliers.map(&:id)
+
+        @invoice_total_cents_by_supplier = VendorInvoice
+          .where(supplier_id: supplier_ids)
+          .where.not(payment_status: "void")
+          .group(:supplier_id)
+          .sum(:total_cents)
+
+        @outstanding_cents_by_supplier = VendorInvoice
+          .where(supplier_id: supplier_ids)
+          .outstanding
+          .group(:supplier_id)
+          .sum(Arel.sql("total_cents - amount_paid_cents"))
       end
 
       def show
         authorize_inventory!(:show)
         @supplier_ingredients = @supplier.supplier_ingredients.includes(:ingredient)
-        @purchase_orders = @supplier.purchase_orders.order(created_at: :desc).limit(10)
+        @vendor_invoices = @supplier.vendor_invoices.order(invoice_date: :desc).limit(10)
         @price_histories = @supplier.supplier_price_histories
           .includes(:ingredient, :recorded_by_user)
           .order(effective_date: :desc)
