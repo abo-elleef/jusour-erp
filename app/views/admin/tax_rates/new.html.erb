@@ -1,0 +1,8 @@
+<div class="max-w-2xl">
+  <div class="mb-6">
+    <%= link_to t("settings.tax_rate_form.back"), admin_settings_path,
+          class: "text-sm font-semibold text-gray-600 hover:text-gray-900" %>
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900 mt-2"><%= t("settings.tax_rate_form.new") %></h1>
+  </div>
+  <%= render "form", tax_rate: @tax_rate %>
+</div>

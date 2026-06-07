@@ -18,20 +18,54 @@
   </section>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
-    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex justify-between items-center">
-      <h2 class="text-sm font-semibold text-gray-900"><%= t("settings.tax_rates") %></h2>
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-3">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("settings.tax_rates") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("settings.tax_rates_hint") %></p>
+      </div>
+      <%= link_to new_admin_tax_rate_path,
+            class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors shrink-0" do %>
+        <span aria-hidden="true">+</span> <%= t("settings.add_tax_rate") %>
+      <% end %>
     </div>
-    <ul class="divide-y divide-gray-100">
-      <% @tax_rates.each do |rate| %>
-        <li class="px-5 py-3 flex justify-between text-sm">
-          <span class="font-medium"><%= rate.name %></span>
-          <span class="text-gray-600 tabular-nums"><%= rate.rate %>%</span>
-        </li>
-      <% end %>
-      <% if @tax_rates.empty? %>
-        <li class="px-5 py-6 text-sm text-gray-500"><%= t("settings.no_tax_rates") %></li>
-      <% end %>
-    </ul>
+    <% if @tax_rates.any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("settings.tax_rate_form.name") %></th>
+              <th class="p-3 text-start"><%= t("settings.tax_rate_form.category") %></th>
+              <th class="p-3 text-end"><%= t("settings.tax_rate_form.rate_percent") %></th>
+              <th class="p-3 text-start"><%= t("settings.tax_rate_form.active") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("customers.table.actions") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @tax_rates.each do |rate| %>
+              <tr class="hover:bg-gray-50/60 transition-colors">
+                <td class="p-3 ps-5 font-semibold text-gray-900"><%= rate.name %></td>
+                <td class="p-3 text-gray-600"><%= menu_item_tax_category(rate.tax_category) %></td>
+                <td class="p-3 text-end tabular-nums font-semibold text-gray-900"><%= format_tax_rate_percent(rate) %>%</td>
+                <td class="p-3">
+                  <span class="text-xs font-semibold <%= rate.active? ? 'text-emerald-700' : 'text-gray-500' %>">
+                    <%= rate.active? ? t("settings.tax_rate_form.active_yes") : t("settings.tax_rate_form.active_no") %>
+                  </span>
+                </td>
+                <td class="p-3 pe-5 text-end whitespace-nowrap">
+                  <%= link_to t("actions.edit"), edit_admin_tax_rate_path(rate),
+                        class: "text-xs font-semibold text-amber-700 hover:text-amber-800 me-3" %>
+                  <%= button_to t("actions.delete"), admin_tax_rate_path(rate), method: :delete,
+                        class: "text-xs font-semibold text-red-700 hover:text-red-800 inline",
+                        form: { data: { turbo_confirm: t("settings.tax_rate_form.delete_confirm") }, class: "inline" } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("settings.no_tax_rates") %></p>
+    <% end %>
   </section>
 
   <section class="rounded-2xl border border-amber-200 bg-amber-50/40 p-5">

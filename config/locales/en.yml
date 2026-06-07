@@ -340,8 +340,28 @@ en:
     loyalty: "Loyalty"
     redeem_threshold: "Points needed to redeem"
     tax_rates: "Tax rates"
+    tax_rates_hint: "Applied to menu items by tax category at checkout."
+    add_tax_rate: "Add tax rate"
     no_tax_rates: "No tax rates configured."
     quick_links: "Quick links"
+    tax_rate_form:
+      back: "← Settings"
+      new: "New tax rate"
+      edit: "Edit tax rate"
+      heading: "Tax rate details"
+      hint: "Rates apply to all menu items in the selected category."
+      name: "Name"
+      name_placeholder: "e.g. State sales tax"
+      category: "Tax category"
+      category_hint: "Must match the category on menu items (food, beverage, packaged)."
+      rate_percent: "Rate (%)"
+      rate_hint: "Enter 8 for 8% tax."
+      active: "Active"
+      active_yes: "Active"
+      active_no: "Inactive"
+      active_hint: "Inactive rates are ignored at checkout."
+      create: "Create tax rate"
+      delete_confirm: "Delete this tax rate?"
 
   payment:
     methods:
@@ -1785,6 +1805,10 @@ en:
       removed: "Adjustment removed."
     settings:
       updated: "Settings saved."
+    tax_rate:
+      created: "Tax rate created."
+      updated: "Tax rate updated."
+      removed: "Tax rate removed."
     printer:
       created: "Printer created."
       updated: "Printer updated."

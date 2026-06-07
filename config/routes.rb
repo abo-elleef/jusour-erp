@@ -70,7 +70,9 @@ Rails.application.routes.draw do
     resources :users do
       resources :payroll_adjustments, only: %i[create destroy], module: :users
     end
-    resource :settings, only: %i[index update], controller: "settings"
+    get "settings", to: "settings#index", as: :settings
+    patch "settings", to: "settings#update"
+    resources :tax_rates, only: %i[new create edit update destroy]
     resources :printers do
       member { post :test_print }
     end

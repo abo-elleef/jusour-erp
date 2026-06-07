@@ -6,7 +6,7 @@ module Admin
 
     def index
       @loyalty_redeem_threshold = Setting.get_int("loyalty_redeem_threshold", 100)
-      @tax_rates = TaxRate.order(:name)
+      @tax_rates = TaxRate.ordered
     end
 
     def update

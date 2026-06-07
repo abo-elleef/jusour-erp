@@ -1,0 +1,61 @@
+<%# locals: tax_rate %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+
+<%= form_with model: [:admin, tax_rate], class: "space-y-6 max-w-2xl" do |f| %>
+  <% if tax_rate.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <%= tax_rate.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("settings.tax_rate_form.heading") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("settings.tax_rate_form.hint") %></p>
+    </div>
+    <div class="p-5 space-y-5">
+      <div>
+        <%= f.label :name, t("settings.tax_rate_form.name"), class: label_class %>
+        <%= f.text_field :name, class: pos_input_class, required: true,
+              placeholder: t("settings.tax_rate_form.name_placeholder") %>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <%= f.label :tax_category, t("settings.tax_rate_form.category"), class: label_class %>
+          <%= f.select :tax_category,
+                options_for_select(
+                  TaxRate::TAX_CATEGORIES.map { |cat| [menu_item_tax_category(cat), cat] },
+                  tax_rate.tax_category
+                ),
+                {},
+                class: "#{pos_input_class} appearance-none", required: true %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("settings.tax_rate_form.category_hint") %></p>
+        </div>
+        <div>
+          <%= f.label :rate_percent, t("settings.tax_rate_form.rate_percent"), class: label_class %>
+          <%= f.number_field :rate_percent, step: 0.001, min: 0, max: 100,
+                class: "#{pos_input_class} tabular-nums", required: true %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("settings.tax_rate_form.rate_hint") %></p>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+        <label class="inline-flex items-center gap-3 cursor-pointer">
+          <%= f.check_box :active, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+          <span>
+            <span class="block text-sm font-semibold text-gray-900"><%= t("settings.tax_rate_form.active") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("settings.tax_rate_form.active_hint") %></span>
+          </span>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <div class="flex flex-wrap items-center gap-3">
+    <%= f.submit tax_rate.persisted? ? t("actions.save") : t("settings.tax_rate_form.create"),
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
+    <%= link_to t("actions.cancel"), admin_settings_path,
+          class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+  </div>
+<% end %>

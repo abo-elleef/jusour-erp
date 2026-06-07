@@ -53,6 +53,10 @@ module ApplicationHelper
     t("admin.menu_items.tax_categories.#{category}", default: category.to_s.humanize)
   end
 
+  def format_tax_rate_percent(tax_rate)
+    number_with_precision(tax_rate.rate_percent, precision: 2, strip_insignificant_zeros: true)
+  end
+
   def chart_money_prefix
     Money.new(0).format(symbol: true, no_cents: true, locale: I18n.locale).gsub(/[\d.,\s\u00a0]/, "")
   end
