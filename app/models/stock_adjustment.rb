@@ -9,6 +9,7 @@ class StockAdjustment < ApplicationRecord
     delivery manual_add manual_remove
     waste_spoilage waste_prep waste_overproduction
     cycle_count_correction consumption
+    production_consumption production_output
   ].freeze
 
   validates :quantity_delta, numericality: true

@@ -378,6 +378,8 @@ en:
       waste_overproduction: "Waste — overproduction"
       cycle_count_correction: "Cycle count correction"
       consumption: "Consumption"
+      production_consumption: "Production — consumption"
+      production_output: "Production — output"
     ingredients:
       back_to_list: "Back to ingredients"
       back_to_inventory: "← Inventory"
@@ -516,6 +518,7 @@ en:
       stock_takes: "Stock takes"
       valuation: "Valuation"
       variance: "Variance"
+      manufacturing: "Manufacturing"
     ingredient_categories:
       description: "Group ingredients for filters, reports, and stock takes."
       new_button: "New category"
@@ -773,6 +776,64 @@ en:
           actual: "Actual"
           variance: "Variance"
           percent: "%"
+    manufacturing:
+      adjustment_consumption: "Production %{template} — consumed %{ingredient} (×%{runs} runs, run %{run_id})"
+      adjustment_output: "Production %{template} — produced %{output} (×%{runs} runs, run %{run_id})"
+      templates:
+        title: "Manufacturing templates"
+        description: "Define how raw ingredients combine into prep items. Kitchen staff run these templates without manual stock entry."
+        new: "New template"
+        edit: "Edit template"
+        new_button: "New template"
+        back: "Back to templates"
+        name: "Template"
+        output: "Output ingredient"
+        yield_per_run: "Yield per run"
+        yield_hint: "How much output ingredient one run produces."
+        per_run: "per run"
+        inputs: "Inputs"
+        input_lines: "Input ingredients"
+        input_lines_hint: "Raw ingredients consumed each time this template is run once."
+        ingredient: "Ingredient"
+        quantity: "Qty"
+        select_ingredient: "Select ingredient"
+        add_line: "Add input"
+        remove_line: "Remove"
+        remove_line_confirm: "Remove this input from the template?"
+        no_lines: "No input ingredients yet. Add at least one before activating."
+        status: "Status"
+        active: "Active"
+        inactive: "Inactive"
+        position: "Sort order"
+        notes: "Notes"
+        empty: "No manufacturing templates yet."
+        delete: "Delete template"
+        delete_confirm: "Delete this template?"
+        form_intro: "Set the output product, then add one or more input ingredients with quantities per run."
+        form_details: "Template details"
+        form_details_hint: "Name, output product, and yield for each production run."
+        form_inputs_hint: "Add multiple rows — leave blank rows empty. Required before activating."
+        name_placeholder: "e.g. Marinate chicken batch"
+        output_hint: "The prep item produced (must be an ingredient in inventory)."
+        notes_placeholder: "Optional notes for kitchen staff…"
+        active_hint: "Only enable when at least one input ingredient is filled in."
+        create: "Create template"
+      runs:
+        title: "Production history"
+        description: "Audit log of manufacturing runs recorded by kitchen and admin staff."
+        history: "Run history"
+        recent: "Recent runs"
+        recent_hint: "Latest production runs for this template."
+        view_all: "View all"
+        back: "Back to history"
+        date: "Date"
+        runs_count: "Runs"
+        by: "Recorded by"
+        empty: "No production runs yet."
+        output_produced: "Output produced"
+        inputs_used: "Inputs consumed"
+        quantity_used: "Quantity"
+        notes: "Notes"
 
   notifications:
     index:
@@ -1644,6 +1705,21 @@ en:
 
   kitchen:
     title: "Kitchen Display"
+    nav:
+      kds: "Kitchen"
+      production: "Production"
+
+  production:
+    title: "Production"
+    description: "Select a template and enter how many batches you produced."
+    runs_label: "Number of runs"
+    notes_label: "Notes (optional)"
+    record: "Record production"
+    empty: "No active manufacturing templates."
+    invalid_runs: "Enter a positive number of runs."
+    produces: "Produces"
+    success: "Recorded %{runs}× %{template} — added %{output_qty} %{output_unit} of %{output}."
+    low_stock_warning: "Some inputs are below required quantity; stock may go negative."
 
   flash:
     unauthorized: "You are not authorized to perform this action."
@@ -1652,6 +1728,7 @@ en:
     inventory_access: "Inventory access is limited to owners and managers."
     pos_access: "You do not have access to the POS screen."
     kitchen_access: "Kitchen display access only."
+    production_access: "Production access only."
     pos:
       coupon_applied: "Coupon applied."
       invalid_manager_pin: "Invalid manager PIN"
@@ -1737,6 +1814,16 @@ en:
     recipe:
       added: "Recipe line added."
       removed: "Recipe line removed."
+    manufacturing_template:
+      created: "Manufacturing template created."
+      updated: "Manufacturing template updated."
+      removed: "Manufacturing template removed."
+      cannot_delete_with_runs: "Cannot delete a template that has production runs."
+    manufacturing_template_line:
+      added: "Input ingredient added."
+      removed: "Input ingredient removed."
+    manufacturing_run:
+      recorded: "Production recorded."
     supplier_ingredient:
       assigned: "Supplier assigned."
       updated: "Supplier link updated."
@@ -1798,6 +1885,14 @@ en:
               inactive: "must be active"
             amount_cents:
               insufficient_balance: "exceeds available balance in the source treasury"
+        manufacturing_template:
+          attributes:
+            base:
+              needs_input_lines: "must have at least one input ingredient when active"
+        manufacturing_template_line:
+          attributes:
+            ingredient_id:
+              cannot_be_output: "cannot be the same as the template output ingredient"
     models:
       accounting_integration:
         one: "Accounting integration"
@@ -1907,6 +2002,15 @@ en:
       receipt_log:
         one: "Receipt log"
         other: "Receipt logs"
+      manufacturing_run:
+        one: "Production run"
+        other: "Production runs"
+      manufacturing_template:
+        one: "Manufacturing template"
+        other: "Manufacturing templates"
+      manufacturing_template_line:
+        one: "Template input"
+        other: "Template inputs"
       recipe:
         one: "Recipe"
         other: "Recipes"

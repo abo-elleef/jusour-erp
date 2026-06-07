@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_15_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -279,6 +279,44 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_15_000000) do
     t.datetime "created_at", null: false
     t.index ["customer_id"], name: "index_loyalty_transactions_on_customer_id"
     t.index ["order_id"], name: "index_loyalty_transactions_on_order_id"
+  end
+
+  create_table "manufacturing_runs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "manufacturing_template_id", null: false
+    t.uuid "user_id", null: false
+    t.decimal "runs_count", precision: 10, scale: 3, null: false
+    t.date "occurred_on", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["manufacturing_template_id"], name: "index_manufacturing_runs_on_manufacturing_template_id"
+    t.index ["occurred_on"], name: "index_manufacturing_runs_on_occurred_on"
+    t.index ["user_id"], name: "index_manufacturing_runs_on_user_id"
+  end
+
+  create_table "manufacturing_template_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "manufacturing_template_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.decimal "quantity_used", precision: 10, scale: 3, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_manufacturing_template_lines_on_ingredient_id"
+    t.index ["manufacturing_template_id", "ingredient_id"], name: "index_mfg_template_lines_on_template_and_ingredient", unique: true
+    t.index ["manufacturing_template_id"], name: "idx_on_manufacturing_template_id_0bc4795371"
+  end
+
+  create_table "manufacturing_templates", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.uuid "output_ingredient_id", null: false
+    t.decimal "yield_quantity", precision: 10, scale: 3, default: "1.0", null: false
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_manufacturing_templates_on_active"
+    t.index ["name"], name: "index_manufacturing_templates_on_name", unique: true
+    t.index ["output_ingredient_id"], name: "index_manufacturing_templates_on_output_ingredient_id"
   end
 
   create_table "menu_item_modifier_groups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -761,6 +799,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_15_000000) do
   add_foreign_key "ingredients", "ingredient_categories"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"
+  add_foreign_key "manufacturing_runs", "manufacturing_templates"
+  add_foreign_key "manufacturing_runs", "users"
+  add_foreign_key "manufacturing_template_lines", "ingredients"
+  add_foreign_key "manufacturing_template_lines", "manufacturing_templates"
+  add_foreign_key "manufacturing_templates", "ingredients", column: "output_ingredient_id"
   add_foreign_key "menu_item_modifier_groups", "menu_items"
   add_foreign_key "menu_item_modifier_groups", "modifier_groups"
   add_foreign_key "menu_items", "categories"

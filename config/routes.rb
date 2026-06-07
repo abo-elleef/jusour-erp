@@ -42,6 +42,9 @@ Rails.application.routes.draw do
   patch "kitchen/:id/start", to: "kitchen#start", as: :kitchen_start
   patch "kitchen/:id/ready", to: "kitchen#ready", as: :kitchen_ready
 
+  get "production", to: "production#index"
+  post "production/:manufacturing_template_id", to: "production#create", as: :production_run
+
   namespace :customers do
     get "search", to: "search#index"
   end
@@ -163,6 +166,10 @@ Rails.application.routes.draw do
       resources :stock_takes, only: %i[index show create update] do
         member { post :complete }
       end
+      resources :manufacturing_templates do
+        resources :lines, only: %i[create destroy], controller: "manufacturing_template_lines"
+      end
+      resources :manufacturing_runs, only: %i[index show]
       namespace :reports do
         get :valuation
         get :variance

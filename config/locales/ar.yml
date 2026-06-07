@@ -378,6 +378,8 @@ ar:
       waste_overproduction: "هدر — إنتاج زائد"
       cycle_count_correction: "تصحيح جرد"
       consumption: "استهلاك"
+      production_consumption: "إنتاج — استهلاك"
+      production_output: "إنتاج — مخرجات"
     ingredients:
       back_to_list: "العودة إلى المكونات"
       back_to_inventory: "← المخزون"
@@ -516,6 +518,7 @@ ar:
       stock_takes: "جرد المخزون"
       valuation: "تقييم المخزون"
       variance: "فروقات الاستهلاك"
+      manufacturing: "التصنيع"
     ingredient_categories:
       description: "تصنيف المكونات للتصفية والتقارير وجرد المخزون."
       new_button: "تصنيف جديد"
@@ -773,6 +776,64 @@ ar:
           actual: "فعلي"
           variance: "الفرق"
           percent: "%"
+    manufacturing:
+      adjustment_consumption: "تصنيع %{template} — استهلاك %{ingredient} (×%{runs} دفعات، تشغيل %{run_id})"
+      adjustment_output: "تصنيع %{template} — إنتاج %{output} (×%{runs} دفعات، تشغيل %{run_id})"
+      templates:
+        title: "قوالب التصنيع"
+        description: "حدّد كيف تُحوَّل المكونات الخام إلى منتجات تحضير. يشغّل طاقم المطبخ هذه القوالب دون إدخال مخزون يدوي."
+        new: "قالب جديد"
+        edit: "تعديل القالب"
+        new_button: "قالب جديد"
+        back: "العودة إلى القوالب"
+        name: "القالب"
+        output: "مكون الإنتاج"
+        yield_per_run: "الناتج لكل تشغيل"
+        yield_hint: "كمية مكون الإنتاج من تشغيل واحد."
+        per_run: "لكل تشغيل"
+        inputs: "المدخلات"
+        input_lines: "مكونات المدخلات"
+        input_lines_hint: "المكونات الخام المستهلكة في كل تشغيل واحد."
+        ingredient: "المكون"
+        quantity: "الكمية"
+        select_ingredient: "اختر مكونًا"
+        add_line: "إضافة مدخل"
+        remove_line: "إزالة"
+        remove_line_confirm: "إزالة هذا المدخل من القالب؟"
+        no_lines: "لا توجد مدخلات بعد. أضف مدخلًا واحدًا على الأقل قبل التفعيل."
+        status: "الحالة"
+        active: "نشط"
+        inactive: "غير نشط"
+        position: "ترتيب العرض"
+        notes: "ملاحظات"
+        empty: "لا توجد قوالب تصنيع بعد."
+        delete: "حذف القالب"
+        delete_confirm: "حذف هذا القالب؟"
+        form_intro: "حدّد منتج الإخراج، ثم أضف مكونًا أو أكثر من المدخلات مع الكميات لكل تشغيل."
+        form_details: "تفاصيل القالب"
+        form_details_hint: "الاسم ومنتج الإخراج والناتج لكل عملية تصنيع."
+        form_inputs_hint: "أضف عدة صفوف — اترك الصفوف الفارغة. مطلوب قبل التفعيل."
+        name_placeholder: "مثال: دفعة تتبيل الدجاج"
+        output_hint: "منتج التحضير الناتج (يجب أن يكون مكونًا في المخزون)."
+        notes_placeholder: "ملاحظات اختيارية لطاقم المطبخ…"
+        active_hint: "فعّل فقط بعد إدخال مكون مدخل واحد على الأقل."
+        create: "إنشاء القالب"
+      runs:
+        title: "سجل الإنتاج"
+        description: "سجل تدقيق لعمليات التصنيع التي سجّلها طاقم المطبخ والإدارة."
+        history: "سجل التشغيل"
+        recent: "تشغيلات حديثة"
+        recent_hint: "أحدث عمليات التصنيع لهذا القالب."
+        view_all: "عرض الكل"
+        back: "العودة إلى السجل"
+        date: "التاريخ"
+        runs_count: "التشغيلات"
+        by: "سجّله"
+        empty: "لا توجد عمليات تصنيع بعد."
+        output_produced: "الناتج المُنتَج"
+        inputs_used: "المدخلات المستهلكة"
+        quantity_used: "الكمية"
+        notes: "ملاحظات"
 
   notifications:
     index:
@@ -1664,6 +1725,21 @@ ar:
 
   kitchen:
     title: "شاشة المطبخ"
+    nav:
+      kds: "المطبخ"
+      production: "التصنيع"
+
+  production:
+    title: "التصنيع"
+    description: "اختر قالبًا وأدخل عدد الدفعات التي أنتجتها."
+    runs_label: "عدد التشغيلات"
+    notes_label: "ملاحظات (اختياري)"
+    record: "تسجيل الإنتاج"
+    empty: "لا توجد قوالب تصنيع نشطة."
+    invalid_runs: "أدخل عدد تشغيلات أكبر من صفر."
+    produces: "ينتج"
+    success: "تم تسجيل %{runs}× %{template} — أُضيف %{output_qty} %{output_unit} من %{output}."
+    low_stock_warning: "بعض المدخلات أقل من الكمية المطلوبة؛ قد يصبح المخزون سالبًا."
 
   flash:
     unauthorized: "غير مصرح لك بتنفيذ هذا الإجراء."
@@ -1672,6 +1748,7 @@ ar:
     inventory_access: "صلاحية المخزون للمالك والمدير فقط."
     pos_access: "نقطة البيع للكاشير فقط."
     kitchen_access: "شاشة المطبخ لموظفي المطبخ فقط."
+    production_access: "صلاحية التصنيع فقط."
     pos:
       coupon_applied: "تم تطبيق القسيمة."
       invalid_manager_pin: "رمز المدير غير صحيح"
@@ -1757,6 +1834,16 @@ ar:
     recipe:
       added: "تمت إضافة سطر الوصفة."
       removed: "تم حذف سطر الوصفة."
+    manufacturing_template:
+      created: "تم إنشاء قالب التصنيع."
+      updated: "تم تحديث قالب التصنيع."
+      removed: "تم حذف قالب التصنيع."
+      cannot_delete_with_runs: "لا يمكن حذف قالب له عمليات تصنيع مسجّلة."
+    manufacturing_template_line:
+      added: "تمت إضافة مكون مدخل."
+      removed: "تمت إزالة مكون المدخل."
+    manufacturing_run:
+      recorded: "تم تسجيل الإنتاج."
     supplier_ingredient:
       assigned: "تم ربط المورد."
       updated: "تم تحديث ربط المورد."
@@ -1824,6 +1911,14 @@ ar:
               inactive: "يجب أن تكون نشطة"
             amount_cents:
               insufficient_balance: "يتجاوز الرصيد المتاح في خزينة المصدر"
+        manufacturing_template:
+          attributes:
+            base:
+              needs_input_lines: "يجب أن يحتوي على مكون مدخل واحد على الأقل عند التفعيل"
+        manufacturing_template_line:
+          attributes:
+            ingredient_id:
+              cannot_be_output: "لا يمكن أن يكون نفس مكون الإنتاج"
     models:
       accounting_integration:
         one: "تكامل محاسبي"
@@ -1933,6 +2028,15 @@ ar:
       receipt_log:
         one: "سجل إيصال"
         other: "سجلات الإيصالات"
+      manufacturing_run:
+        one: "عملية تصنيع"
+        other: "عمليات التصنيع"
+      manufacturing_template:
+        one: "قالب تصنيع"
+        other: "قوالب التصنيع"
+      manufacturing_template_line:
+        one: "مدخل قالب"
+        other: "مدخلات القالب"
       recipe:
         one: "وصفة"
         other: "وصفات"

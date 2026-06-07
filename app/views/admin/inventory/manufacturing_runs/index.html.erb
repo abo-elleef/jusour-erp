@@ -1,0 +1,43 @@
+<%= render "admin/inventory/tools_nav" %>
+
+<div class="max-w-6xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.manufacturing.runs.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("inventory.manufacturing.runs.description") %></p>
+    </div>
+    <%= link_to t("inventory.manufacturing.templates.back"), admin_inventory_manufacturing_templates_path,
+          class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
+        <tr>
+          <th class="p-3 ps-5 text-start"><%= t("inventory.manufacturing.runs.date") %></th>
+          <th class="p-3 text-start"><%= t("inventory.manufacturing.templates.name") %></th>
+          <th class="p-3 text-start"><%= t("inventory.manufacturing.templates.output") %></th>
+          <th class="p-3 text-end"><%= t("inventory.manufacturing.runs.runs_count") %></th>
+          <th class="p-3 pe-5 text-start"><%= t("inventory.manufacturing.runs.by") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @runs.each do |run| %>
+          <tr class="hover:bg-gray-50/60">
+            <td class="p-3 ps-5 whitespace-nowrap">
+              <%= link_to l(run.occurred_on, format: :long), admin_inventory_manufacturing_run_path(run),
+                    class: "font-medium text-amber-700 hover:text-amber-800" %>
+            </td>
+            <td class="p-3 font-semibold text-gray-900"><%= run.manufacturing_template.name %></td>
+            <td class="p-3 text-gray-700"><%= run.manufacturing_template.output_ingredient.name %></td>
+            <td class="p-3 text-end tabular-nums font-semibold"><%= run.runs_count %></td>
+            <td class="p-3 pe-5 text-gray-600"><%= run.user.name %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @runs.empty? %>
+      <p class="p-8 text-center text-sm text-gray-500"><%= t("inventory.manufacturing.runs.empty") %></p>
+    <% end %>
+  </section>
+</div>

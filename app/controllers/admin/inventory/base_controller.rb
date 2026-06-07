@@ -19,7 +19,8 @@ module Admin
       end
 
       def record_for_policy
-        @ingredient || @supplier || @purchase_order || @stock_take || Ingredient.new
+        @ingredient || @supplier || @purchase_order || @stock_take ||
+          @manufacturing_template || @manufacturing_run || Ingredient.new
       end
 
       def authorize_inventory!(action)

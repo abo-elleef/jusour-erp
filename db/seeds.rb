@@ -215,6 +215,33 @@ if smash && patty && bun
   Recipe.find_or_create_by!(menu_item: smash, ingredient: bun) { |r| r.quantity_used = 1 }
 end
 
+chicken = Ingredient.find_by(name: "Chicken Thighs")
+buttermilk = Ingredient.find_by(name: "Buttermilk")
+proteins_cat = IngredientCategory.find_by(name: "Proteins")
+if chicken && buttermilk && proteins_cat
+  marinated = Ingredient.find_or_create_by!(name: "Marinated Chicken (Prep)") do |i|
+    i.ingredient_category = proteins_cat
+    i.unit = "kg"
+    i.reorder_threshold = 3
+    i.cost_per_unit_cents = 0
+    i.quantity_on_hand = 0
+  end
+
+  template = ManufacturingTemplate.find_or_create_by!(name: "Marinate Chicken Batch") do |t|
+    t.output_ingredient = marinated
+    t.yield_quantity = 5
+    t.position = 1
+    t.active = false
+  end
+  ManufacturingTemplateLine.find_or_create_by!(manufacturing_template: template, ingredient: chicken) do |l|
+    l.quantity_used = 4
+  end
+  ManufacturingTemplateLine.find_or_create_by!(manufacturing_template: template, ingredient: buttermilk) do |l|
+    l.quantity_used = 2
+  end
+  template.update!(active: true) if template.manufacturing_template_lines.any?
+end
+
 [
   { name: "COGS", category_type: "cogs", system_managed: true, position: 1 },
   { name: "Labor", category_type: "labor", system_managed: true, position: 2 },

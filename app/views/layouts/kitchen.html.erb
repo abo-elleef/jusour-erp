@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="<%= html_lang %>" dir="<%= html_dir %>" class="h-full">
   <head>
-    <title><%= t("kitchen.title") %> — <%= t("app.name") %></title>
+    <title><%= controller_name == "production" ? t("production.title") : t("kitchen.title") %> — <%= t("app.name") %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <%= csrf_meta_tags %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
@@ -9,11 +9,24 @@
     <%= action_cable_meta_tag %>
   </head>
   <body class="bg-gray-900 text-white min-h-screen p-3 lg:p-4 touch-manipulation" data-controller="kitchen-display">
-    <header class="flex justify-between items-center mb-4 gap-3">
-      <h1 class="text-2xl lg:text-3xl font-bold"><%= t("kitchen.title") %></h1>
+    <header class="flex flex-wrap justify-between items-center mb-4 gap-3">
+      <div class="flex flex-wrap items-center gap-4">
+        <h1 class="text-2xl lg:text-3xl font-bold">
+          <%= controller_name == "production" ? t("production.title") : t("kitchen.title") %>
+        </h1>
+        <nav class="flex gap-2" aria-label="<%= t("kitchen.nav_label", default: "Kitchen navigation") %>">
+          <%= link_to t("kitchen.nav.kds"), kitchen_path,
+                class: "px-3 py-1.5 rounded-lg text-sm font-semibold #{controller_name == 'kitchen' ? 'bg-white text-gray-900' : 'text-gray-300 hover:bg-gray-800'}" %>
+          <%= link_to t("kitchen.nav.production"), production_path,
+                class: "px-3 py-1.5 rounded-lg text-sm font-semibold #{controller_name == 'production' ? 'bg-white text-gray-900' : 'text-gray-300 hover:bg-gray-800'}" %>
+        </nav>
+      </div>
       <%= render "shared/locale_switcher", theme: :dark %>
     </header>
-    <%= turbo_stream_from "kitchen" %>
+    <% if controller_name == "production" %>
+      <p class="text-gray-400 text-sm mb-4"><%= t("production.description") %></p>
+    <% end %>
+    <%= turbo_stream_from "kitchen" unless controller_name == "production" %>
     <%= yield %>
   </body>
 </html>

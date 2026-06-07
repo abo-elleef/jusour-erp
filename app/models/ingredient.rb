@@ -13,6 +13,9 @@ class Ingredient < ApplicationRecord
   has_many :purchase_order_items, dependent: :nullify
   has_many :supplier_price_histories, dependent: :nullify
   has_many :stock_take_items, dependent: :nullify
+  has_many :manufacturing_template_lines, dependent: :restrict_with_error
+  has_many :output_manufacturing_templates, class_name: "ManufacturingTemplate",
+    foreign_key: :output_ingredient_id, dependent: :restrict_with_error, inverse_of: :output_ingredient
 
   monetize :cost_per_unit_cents
 

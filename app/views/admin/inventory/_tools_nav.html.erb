@@ -15,4 +15,6 @@
         class: inventory_tool_link_class(controller_name == "reports" && action_name == "valuation") %>
   <%= link_to t("inventory.tools.variance"), admin_inventory_reports_variance_path,
         class: inventory_tool_link_class(controller_name == "reports" && action_name == "variance") %>
+  <%= link_to t("inventory.tools.manufacturing"), admin_inventory_manufacturing_templates_path,
+        class: inventory_tool_link_class(controller_name.in?(%w[manufacturing_templates manufacturing_runs manufacturing_template_lines])) %>
 </nav>

@@ -20,6 +20,7 @@ class User < ApplicationRecord
 
   has_many :orders, dependent: :restrict_with_error
   has_many :stock_adjustments, dependent: :nullify
+  has_many :manufacturing_runs, dependent: :nullify
   has_many :purchase_orders, dependent: :nullify
   has_many :stock_takes, dependent: :nullify
   has_many :notifications, as: :recipient, dependent: :destroy
@@ -68,6 +69,10 @@ class User < ApplicationRecord
   end
 
   def can_access_kds?
+    owner? || manager? || kitchen?
+  end
+
+  def can_access_production?
     owner? || manager? || kitchen?
   end
 
