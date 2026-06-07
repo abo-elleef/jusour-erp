@@ -1,16 +1,16 @@
 <div id="suppliers" class="bg-white rounded-lg shadow p-6">
   <div class="flex flex-wrap justify-between items-start gap-2 mb-1">
-    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide">Suppliers</h2>
-    <span class="text-xs text-gray-500"><%= @supplier_links.size %> assigned</span>
+    <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide"><%= t("inventory.ingredients.supplier_links.heading") %></h2>
+    <span class="text-xs text-gray-500"><%= t("inventory.ingredients.supplier_links.assigned", count: @supplier_links.size) %></span>
   </div>
-  <p class="text-sm text-gray-500 mb-5">Link vendors and set their price. One preferred supplier is used for PO suggestions.</p>
+  <p class="text-sm text-gray-500 mb-5"><%= t("inventory.ingredients.supplier_links.description") %></p>
 
   <% if @supplier_links.any? %>
     <div class="hidden sm:grid grid-cols-12 gap-3 px-3 pb-2 text-xs font-medium text-gray-500 uppercase tracking-wide">
-      <div class="col-span-4">Supplier</div>
-      <div class="col-span-3">Price / unit</div>
-      <div class="col-span-2 text-center">Preferred</div>
-      <div class="col-span-3 text-right">Actions</div>
+      <div class="col-span-4"><%= t("inventory.ingredients.supplier_links.supplier") %></div>
+      <div class="col-span-3"><%= t("inventory.ingredients.supplier_links.price_per_unit") %></div>
+      <div class="col-span-2 text-center"><%= t("inventory.ingredients.supplier_links.preferred") %></div>
+      <div class="col-span-3 text-right"><%= t("inventory.ingredients.index.table.actions") %></div>
     </div>
 
     <div class="divide-y divide-gray-100 border border-gray-200 rounded-lg overflow-hidden">
@@ -20,18 +20,18 @@
               method: :patch,
               class: "grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-3 items-center p-4 sm:px-3 bg-white hover:bg-gray-50/80" do |f| %>
           <div class="sm:col-span-4 flex items-center gap-2 min-w-0">
-            <span class="sm:hidden text-xs font-medium text-gray-500 w-20 shrink-0">Supplier</span>
+            <span class="sm:hidden text-xs font-medium text-gray-500 w-20 shrink-0"><%= t("inventory.ingredients.supplier_links.supplier") %></span>
             <div class="min-w-0">
               <%= link_to link.supplier.name, admin_inventory_supplier_path(link.supplier),
                     class: "font-medium text-blue-600 hover:underline truncate block" %>
               <% if link.preferred? %>
-                <span class="inline-block mt-0.5 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">Preferred</span>
+                <span class="inline-block mt-0.5 text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded bg-amber-100 text-amber-800"><%= t("inventory.ingredients.supplier_links.preferred") %></span>
               <% end %>
             </div>
           </div>
 
           <div class="sm:col-span-3 flex sm:block items-center gap-2">
-            <span class="sm:hidden text-xs font-medium text-gray-500 w-20 shrink-0">Price</span>
+            <span class="sm:hidden text-xs font-medium text-gray-500 w-20 shrink-0"><%= t("inventory.ingredients.supplier_links.price") %></span>
             <div class="flex-1 sm:flex-none">
               <span class="sm:hidden text-xs text-gray-400">$</span>
               <%= f.number_field :price_dollars,
@@ -43,16 +43,16 @@
           </div>
 
           <div class="sm:col-span-2 flex sm:justify-center items-center gap-2">
-            <span class="sm:hidden text-xs font-medium text-gray-500 w-20 shrink-0">Preferred</span>
+            <span class="sm:hidden text-xs font-medium text-gray-500 w-20 shrink-0"><%= t("inventory.ingredients.supplier_links.preferred") %></span>
             <%= f.check_box :preferred, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500" %>
           </div>
 
           <div class="sm:col-span-3 flex sm:justify-end items-center gap-2">
-            <%= f.submit "Save", class: "bg-gray-800 hover:bg-gray-900 text-white px-3 py-1.5 rounded-lg text-sm" %>
-            <%= button_to "Remove",
+            <%= f.submit t("actions.save"), class: "bg-gray-800 hover:bg-gray-900 text-white px-3 py-1.5 rounded-lg text-sm" %>
+            <%= button_to t("actions.remove"),
                   admin_inventory_ingredient_supplier_ingredient_path(@ingredient, link),
                   method: :delete,
-                  form: { data: { turbo_confirm: "Remove #{link.supplier.name}?" }, class: "inline" },
+                  form: { data: { turbo_confirm: t("inventory.ingredients.supplier_links.remove_confirm", name: link.supplier.name) }, class: "inline" },
                   class: "text-red-600 hover:text-red-800 text-sm px-2 py-1.5" %>
           </div>
         <% end %>
@@ -60,25 +60,25 @@
     </div>
   <% else %>
     <div class="border border-dashed border-gray-300 rounded-lg p-8 text-center text-gray-500 text-sm mb-5">
-      No suppliers assigned yet. Add one below.
+      <%= t("inventory.ingredients.supplier_links.empty") %>
     </div>
   <% end %>
 
   <% if @available_suppliers.any? %>
     <div class="mt-6 pt-6 border-t border-gray-100">
-      <h3 class="text-sm font-semibold text-gray-800 mb-3">Add supplier</h3>
+      <h3 class="text-sm font-semibold text-gray-800 mb-3"><%= t("inventory.ingredients.supplier_links.add_heading") %></h3>
       <%= form_with url: admin_inventory_ingredient_supplier_ingredients_path(@ingredient),
             class: "grid grid-cols-1 sm:grid-cols-12 gap-3 items-end bg-amber-50/50 border border-amber-200/60 rounded-lg p-4" do %>
         <div class="sm:col-span-4">
-          <%= label_tag "supplier_ingredient[supplier_id]", "Supplier", class: "block text-xs font-medium text-gray-700 mb-1" %>
+          <%= label_tag "supplier_ingredient[supplier_id]", t("inventory.ingredients.supplier_links.supplier"), class: "block text-xs font-medium text-gray-700 mb-1" %>
           <%= select_tag "supplier_ingredient[supplier_id]",
                 options_from_collection_for_select(@available_suppliers, :id, :name),
-                include_blank: "Choose supplier…",
+                include_blank: t("inventory.ingredients.supplier_links.choose_supplier"),
                 required: true,
                 class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white" %>
         </div>
         <div class="sm:col-span-3">
-          <%= label_tag "supplier_ingredient[price_dollars]", "Price ($)", class: "block text-xs font-medium text-gray-700 mb-1" %>
+          <%= label_tag "supplier_ingredient[price_dollars]", t("inventory.ingredients.supplier_links.price_dollars"), class: "block text-xs font-medium text-gray-700 mb-1" %>
           <%= number_field_tag "supplier_ingredient[price_dollars]",
                 ingredient_cost_dollars(@ingredient),
                 step: 0.01,
@@ -89,22 +89,22 @@
         <div class="sm:col-span-2 flex items-center gap-2 sm:pb-2">
           <%= check_box_tag "supplier_ingredient[preferred]", "1", @supplier_links.none?,
                 id: "supplier_ingredient_preferred", class: "rounded border-gray-300" %>
-          <%= label_tag "supplier_ingredient_preferred", "Preferred", class: "text-sm text-gray-700" %>
+          <%= label_tag "supplier_ingredient_preferred", t("inventory.ingredients.supplier_links.preferred"), class: "text-sm text-gray-700" %>
         </div>
         <div class="sm:col-span-3 sm:text-right">
-          <%= submit_tag "Add supplier", class: "w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium" %>
+          <%= submit_tag t("inventory.ingredients.supplier_links.add_supplier"), class: "w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium" %>
         </div>
       <% end %>
     </div>
   <% elsif @supplier_links.any? %>
     <p class="mt-4 text-sm text-gray-500">
-      All active suppliers are linked.
-      <%= link_to "Create another supplier", new_admin_inventory_supplier_path, class: "text-amber-600 hover:underline" %>.
+      <%= t("inventory.ingredients.supplier_links.all_linked_html",
+            link: link_to(t("inventory.ingredients.supplier_links.create_another_supplier"), new_admin_inventory_supplier_path, class: "text-amber-600 hover:underline")).html_safe %>
     </p>
   <% else %>
     <p class="mt-4 text-sm text-gray-500">
-      No active suppliers available.
-      <%= link_to "Create a supplier", new_admin_inventory_supplier_path, class: "text-amber-600 hover:underline" %> first.
+      <%= t("inventory.ingredients.supplier_links.no_suppliers_html",
+            link: link_to(t("inventory.ingredients.supplier_links.create_supplier"), new_admin_inventory_supplier_path, class: "text-amber-600 hover:underline")).html_safe %>
     </p>
   <% end %>
 </div>

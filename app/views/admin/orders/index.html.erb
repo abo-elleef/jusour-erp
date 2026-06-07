@@ -14,37 +14,37 @@
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <%= link_to admin_orders_filter_url(date: Date.current, focus: nil),
           class: orders_stat_card_class(@filter_date == Date.current.to_s && @focus.blank?) do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Today</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.stats_today") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @today_count %></p>
-      <p class="text-xs text-amber-700 mt-1.5 font-medium">Click to filter</p>
+      <p class="text-xs text-amber-700 mt-1.5 font-medium"><%= t("admin.hints.click_to_filter") %></p>
     <% end %>
 
     <%= link_to admin_orders_filter_url(date: Date.current, focus: nil, q: { status_eq: "completed" }),
           class: orders_stat_card_class(@filter_date == Date.current.to_s && params.dig(:q, :status_eq) == "completed" && @focus.blank?) do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Revenue today</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.stats_revenue_today") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@today_revenue_cents) %></p>
-      <p class="text-xs text-gray-500 mt-1.5">Completed orders</p>
+      <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.orders.stats_completed_orders") %></p>
     <% end %>
 
     <%= link_to admin_orders_filter_url(focus: "open", date: @filter_date, q: params[:q]&.to_unsafe_h),
           class: orders_stat_card_class(@focus == "open") do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Open</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.stats_open") %></p>
       <p class="text-2xl font-bold mt-1 text-indigo-600 tabular-nums"><%= @open_count %></p>
-      <p class="text-xs text-gray-500 mt-1.5">Submitted · In progress · Ready</p>
+      <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.orders.stats_open_hint") %></p>
     <% end %>
 
     <%= link_to admin_orders_filter_url(focus: "unpaid", date: @filter_date, q: params[:q]&.to_unsafe_h),
           class: orders_stat_card_class(@focus == "unpaid") do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Unpaid</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.stats_unpaid") %></p>
       <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= @unpaid_count %></p>
-      <p class="text-xs text-gray-500 mt-1.5">Balance due</p>
+      <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.orders.stats_balance_due") %></p>
     <% end %>
   </div>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-      <h2 class="text-sm font-semibold text-gray-900">Filters</h2>
-      <p class="text-xs text-gray-500 mt-0.5">Narrow by day, cashier, customer, status, or type</p>
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.orders.filters") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.orders.filters_hint") %></p>
     </div>
     <div class="p-5">
       <%= search_form_for @q, url: admin_orders_path, method: :get, class: "space-y-4" do |f| %>
@@ -52,73 +52,72 @@
         <%= hidden_field_tag :focus, @focus if @focus.present? %>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <div>
-            <label for="date" class="<%= label_class %>">Day</label>
+            <%= label_tag :date, t("admin.orders.day"), class: label_class %>
             <%= date_field_tag :date, @filter_date, class: input_class %>
-            <p class="text-xs text-gray-500 mt-1.5">Leave blank for all dates</p>
+            <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.orders.day_hint") %></p>
           </div>
           <div>
-            <%= f.label :user_id_eq, "Cashier", class: label_class %>
+            <%= f.label :user_id_eq, t("admin.orders.cashier"), class: label_class %>
             <%= f.select :user_id_eq,
                   options_from_collection_for_select(@cashiers, :id, :name, @q.user_id_eq),
-                  { include_blank: "All cashiers" },
+                  { include_blank: t("admin.orders.all_cashiers") },
                   class: "#{input_class} appearance-none" %>
           </div>
           <div>
-            <%= f.label :customer_id_eq, "Customer", class: label_class %>
+            <%= f.label :customer_id_eq, t("admin.orders.customer"), class: label_class %>
             <%= f.select :customer_id_eq,
                   options_from_collection_for_select(@customers, :id, :display_name, @q.customer_id_eq),
-                  { include_blank: "All customers" },
+                  { include_blank: t("admin.orders.all_customers") },
                   class: "#{input_class} appearance-none" %>
           </div>
           <div>
-            <%= f.label :status_eq, "Status", class: label_class %>
+            <%= f.label :status_eq, t("admin.orders.status"), class: label_class %>
             <%= f.select :status_eq,
                   options_for_select(Order::STATUSES.map { |s| [order_status_label(s), s] }, @q.status_eq),
-                  { include_blank: "All statuses" },
+                  { include_blank: t("admin.orders.all_statuses") },
                   class: "#{input_class} appearance-none" %>
           </div>
           <div>
-            <%= f.label :order_type_eq, "Type", class: label_class %>
+            <%= f.label :order_type_eq, t("admin.orders.type"), class: label_class %>
             <%= f.select :order_type_eq,
-                  options_for_select(Order::ORDER_TYPES.map { |t| [t.humanize, t] }, @q.order_type_eq),
-                  { include_blank: "All types" },
+                  options_for_select(Order::ORDER_TYPES.map { |type| [order_type_label(type), type] }, @q.order_type_eq),
+                  { include_blank: t("admin.orders.all_types") },
                   class: "#{input_class} appearance-none" %>
           </div>
         </div>
         <div class="flex flex-wrap items-center gap-3 pt-1">
-          <%= f.submit "Apply filters",
+          <%= f.submit t("actions.apply_filters"),
                 class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
-          <%= link_to "Clear", admin_orders_path,
+          <%= link_to t("actions.clear"), admin_orders_path,
                 class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
-          <%= link_to "Today", admin_orders_filter_url(date: Date.current, focus: nil, q: params[:q]&.to_unsafe_h),
+          <%= link_to t("admin.orders.today_link"), admin_orders_filter_url(date: Date.current, focus: nil, q: params[:q]&.to_unsafe_h),
                 class: "text-sm font-medium text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
           <% if @filtered %>
-            <%= link_to "All orders", admin_orders_path,
+            <%= link_to t("admin.orders.all_orders"), admin_orders_path,
                   class: "text-sm font-medium text-gray-600 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
           <% end %>
           <% if @focus == "open" %>
             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-100 text-indigo-900 border border-indigo-200 text-xs font-semibold">
-              Open orders
+              <%= t("admin.orders.focus_open") %>
               <%= link_to "×", admin_orders_filter_url(focus: nil, date: @filter_date, q: params[:q]&.to_unsafe_h),
-                    class: "hover:text-indigo-950 ml-0.5", aria: { label: "Remove open filter" } %>
+                    class: "hover:text-indigo-950 ml-0.5", aria: { label: t("admin.orders.remove_open_filter") } %>
             </span>
           <% elsif @focus == "unpaid" %>
             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200 text-xs font-semibold">
-              Unpaid
+              <%= t("admin.orders.focus_unpaid") %>
               <%= link_to "×", admin_orders_filter_url(focus: nil, date: @filter_date, q: params[:q]&.to_unsafe_h),
-                    class: "hover:text-amber-950 ml-0.5", aria: { label: "Remove unpaid filter" } %>
+                    class: "hover:text-amber-950 ml-0.5", aria: { label: t("admin.orders.remove_unpaid_filter") } %>
             </span>
           <% end %>
           <% if @filter_date.present? %>
             <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 text-gray-800 border border-gray-200 text-xs font-semibold">
-              <%= Date.parse(@filter_date).strftime("%b %-d, %Y") rescue @filter_date %>
+              <%= l(Date.parse(@filter_date), format: :long) rescue @filter_date %>
               <%= link_to "×", admin_orders_filter_url(date: nil, focus: @focus, q: params[:q]&.to_unsafe_h),
-                    class: "hover:text-gray-900 ml-0.5", aria: { label: "Remove date filter" } %>
+                    class: "hover:text-gray-900 ml-0.5", aria: { label: t("admin.orders.remove_date_filter") } %>
             </span>
           <% end %>
           <span class="text-sm text-gray-500 ml-auto tabular-nums">
-            Showing <strong class="text-gray-900"><%= @pagy.count %></strong>
-            <%= @pagy.count == 1 ? "order" : "orders" %>
+            <%= t("admin.orders.showing_orders", count: @pagy.count) %>
           </span>
         </div>
       <% end %>
@@ -131,16 +130,16 @@
         <table class="w-full text-left text-sm min-w-[960px]">
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
-              <th class="p-3 pl-5">Order</th>
-              <th class="p-3">Date / time</th>
-              <th class="p-3">Cashier</th>
-              <th class="p-3">Customer</th>
-              <th class="p-3">Type</th>
-              <th class="p-3">Status</th>
-              <th class="p-3 text-right">Items</th>
-              <th class="p-3 text-right">Total</th>
-              <th class="p-3">Payment</th>
-              <th class="p-3 pr-5 text-right">Actions</th>
+              <th class="p-3 pl-5"><%= t("admin.orders.table.order") %></th>
+              <th class="p-3"><%= t("admin.orders.table.date_time") %></th>
+              <th class="p-3"><%= t("admin.orders.table.cashier") %></th>
+              <th class="p-3"><%= t("admin.orders.table.customer") %></th>
+              <th class="p-3"><%= t("admin.orders.table.type") %></th>
+              <th class="p-3"><%= t("admin.orders.table.status") %></th>
+              <th class="p-3 text-right"><%= t("admin.orders.table.items") %></th>
+              <th class="p-3 text-right"><%= t("admin.orders.table.total") %></th>
+              <th class="p-3"><%= t("admin.orders.table.payment") %></th>
+              <th class="p-3 pr-5 text-right"><%= t("admin.orders.table.actions") %></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -151,8 +150,8 @@
                         class: "text-amber-700 hover:text-amber-800 font-semibold" %>
                 </td>
                 <td class="p-3 text-gray-600 whitespace-nowrap">
-                  <%= order.created_at.strftime("%b %-d, %Y") %>
-                  <span class="text-gray-400 block text-xs"><%= order.created_at.strftime("%l:%M %p") %></span>
+                  <%= l(order.created_at.to_date, format: :long) %>
+                  <span class="text-gray-400 block text-xs"><%= l(order.created_at, format: :short_time) %></span>
                 </td>
                 <td class="p-3 text-gray-900"><%= order.user.name %></td>
                 <td class="p-3 text-gray-600">
@@ -160,7 +159,7 @@
                     <%= link_to order.customer.display_name, admin_customer_path(order.customer),
                           class: "text-amber-700 hover:text-amber-800 font-medium" %>
                   <% else %>
-                    <span class="text-gray-400">—</span>
+                    <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
                   <% end %>
                 </td>
                 <td class="p-3">
@@ -178,7 +177,7 @@
                 <td class="p-3 text-right font-semibold text-gray-900 whitespace-nowrap tabular-nums"><%= format_money(order.total_cents) %></td>
                 <td class="p-3"><%= order_payment_summary(order) %></td>
                 <td class="p-3 pr-5 text-right whitespace-nowrap">
-                  <%= link_to "View", admin_order_path(order, admin_orders_filter_params),
+                  <%= link_to t("actions.view"), admin_order_path(order, admin_orders_filter_params),
                         class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
                 </td>
               </tr>
@@ -189,34 +188,34 @@
     </section>
 
     <% if @pagy.pages > 1 %>
-      <nav class="mt-5 flex flex-wrap gap-2 text-sm items-center" aria-label="Pagination">
+      <nav class="mt-5 flex flex-wrap gap-2 text-sm items-center" aria-label="<%= t("admin.orders.pagination_aria") %>">
         <% if @pagy.previous %>
-          <%= link_to "← Previous", url_for(request.query_parameters.merge(page: @pagy.previous)),
+          <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: @pagy.previous)),
                 class: "px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 transition-colors" %>
         <% end %>
-        <span class="text-gray-600 px-2 tabular-nums">Page <%= @pagy.page %> of <%= @pagy.pages %></span>
+        <span class="text-gray-600 px-2 tabular-nums"><%= t("accounting.shared.pagination", page: @pagy.page, pages: @pagy.pages) %></span>
         <% if @pagy.next %>
-          <%= link_to "Next →", url_for(request.query_parameters.merge(page: @pagy.next)),
+          <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: @pagy.next)),
                 class: "px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 transition-colors" %>
         <% end %>
       </nav>
     <% end %>
   <% else %>
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-      <p class="text-gray-900 font-semibold mb-1">No orders found</p>
+      <p class="text-gray-900 font-semibold mb-1"><%= t("admin.orders.empty_title") %></p>
       <p class="text-gray-500 text-sm mb-5">
         <% if @filtered %>
-          Try adjusting filters or pick a different day.
+          <%= t("admin.orders.empty_description_filtered") %>
         <% else %>
-          Orders from the POS will appear here.
+          <%= t("admin.orders.empty_description") %>
         <% end %>
       </p>
       <div class="flex flex-wrap justify-center gap-3 text-sm">
         <% if @filtered %>
-          <%= link_to "Clear filters", admin_orders_path,
+          <%= link_to t("admin.orders.clear_filters"), admin_orders_path,
                 class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
         <% end %>
-        <%= link_to "Open POS", pos_path,
+        <%= link_to t("admin.orders.open_pos"), pos_path,
               class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
       </div>
     </section>

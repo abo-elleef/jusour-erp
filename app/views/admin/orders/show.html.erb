@@ -3,15 +3,16 @@
 
 <div class="max-w-6xl">
   <div class="mb-4">
-    <%= link_to "← Orders", admin_orders_path(admin_orders_filter_params), class: "text-sm text-gray-600 hover:text-gray-900" %>
+    <%= link_to t("admin.orders.back_to_list"), admin_orders_path(admin_orders_filter_params), class: "text-sm text-gray-600 hover:text-gray-900" %>
   </div>
 
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @order.order_number %></h1>
       <p class="text-gray-600 text-sm mt-1">
-        <%= @order.created_at.strftime("%B %-d, %Y at %l:%M %p") %>
-        · Cashier: <%= @order.user.name %>
+        <%= t("admin.orders.meta_line",
+              datetime: "#{l(@order.created_at.to_date, format: :long)} #{l(@order.created_at, format: :short_time)}",
+              cashier: @order.user.name) %>
         <% if @order.customer %>
           · <%= link_to @order.customer.display_name, admin_customer_path(@order.customer),
                 class: "text-amber-700 hover:text-amber-800 font-medium" %>
@@ -31,20 +32,20 @@
 
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.stats_total") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@order.total_cents) %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Items</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.stats_items") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @order_items.size %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Paid</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.stats_paid") %></p>
       <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= format_money(@order.paid_cents) %></p>
     </div>
     <% if @order.amount_due_cents.positive? %>
       <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Due</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.stats_due") %></p>
         <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= format_money(@order.amount_due_cents) %></p>
       </div>
     <% end %>
@@ -54,8 +55,8 @@
     <div class="lg:col-span-2 space-y-6">
       <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-          <h2 class="text-sm font-semibold text-gray-900">Line items</h2>
-          <p class="text-xs text-gray-500 mt-0.5"><%= pluralize(@order_items.size, "item") %></p>
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.orders.line_items") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.orders.item_count", count: @order_items.size) %></p>
         </div>
         <div class="divide-y divide-gray-100">
           <% @order_items.each do |item| %>
@@ -69,7 +70,7 @@
                 <% end %>
                 <% if item.notes.present? %>
                   <p class="text-xs text-amber-800 mt-1.5 bg-amber-50 border border-amber-100 rounded-lg px-2 py-1 inline-block">
-                    Note: <%= item.notes %>
+                    <%= t("admin.orders.item_note") %> <%= item.notes %>
                   </p>
                 <% end %>
               </div>
@@ -79,7 +80,7 @@
         </div>
         <% if @order.notes.present? %>
           <div class="px-5 py-4 border-t border-gray-100 bg-gray-50/50 text-sm text-gray-700">
-            <span class="font-semibold text-gray-900">Order note:</span> <%= @order.notes %>
+            <span class="font-semibold text-gray-900"><%= t("admin.orders.order_note") %></span> <%= @order.notes %>
           </div>
         <% end %>
       </section>
@@ -87,30 +88,30 @@
       <% if @payments.any? %>
         <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
           <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-            <h2 class="text-sm font-semibold text-gray-900">Payments</h2>
-            <p class="text-xs text-gray-500 mt-0.5"><%= pluralize(@payments.size, "transaction") %></p>
+            <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.orders.payments_heading") %></h2>
+            <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.orders.transaction_count", count: @payments.size) %></p>
           </div>
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
               <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 <tr>
-                  <th class="p-3 pl-5">Method</th>
-                  <th class="p-3">Status</th>
-                  <th class="p-3">Processed by</th>
-                  <th class="p-3 pr-5 text-right">Amount</th>
+                  <th class="p-3 pl-5"><%= t("admin.orders.payment_method") %></th>
+                  <th class="p-3"><%= t("admin.orders.payment_status") %></th>
+                  <th class="p-3"><%= t("admin.orders.processed_by") %></th>
+                  <th class="p-3 pr-5 text-right"><%= t("admin.orders.amount") %></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
                 <% @payments.each do |payment| %>
                   <tr class="hover:bg-gray-50/60 transition-colors">
-                    <td class="p-3 pl-5 capitalize font-medium text-gray-900"><%= payment.payment_method %></td>
+                    <td class="p-3 pl-5 font-medium text-gray-900"><%= payment_method_label(payment.payment_method) %></td>
                     <td class="p-3">
                       <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= payment_status_class(payment.status) %> <%= payment_status_border_class(payment.status) %>">
-                        <%= payment.status.humanize %>
+                        <%= payment_status_label(payment.status) %>
                       </span>
                     </td>
                     <td class="p-3 text-gray-600 text-sm">
-                      <%= payment.processed_by_user&.name || "—" %>
+                      <%= payment.processed_by_user&.name || t("accounting.shared.em_dash") %>
                     </td>
                     <td class="p-3 pr-5 text-right font-semibold tabular-nums"><%= format_money(payment.amount_cents) %></td>
                   </tr>
@@ -125,29 +126,29 @@
     <div class="space-y-6">
       <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-          <h2 class="text-sm font-semibold text-gray-900">Order total</h2>
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.orders.order_total") %></h2>
         </div>
         <div class="p-5 space-y-3 text-sm">
           <div class="flex justify-between text-gray-600">
-            <span>Subtotal</span>
+            <span><%= t("order.labels.subtotal") %></span>
             <span class="tabular-nums"><%= format_money(@order.subtotal_cents) %></span>
           </div>
           <% if @order.discount_cents.positive? %>
             <div class="flex justify-between text-green-700">
-              <span>Discount</span>
+              <span><%= t("order.labels.discount") %></span>
               <span class="tabular-nums">-<%= format_money(@order.discount_cents) %></span>
             </div>
           <% end %>
           <div class="flex justify-between text-gray-600">
-            <span>Tax</span>
+            <span><%= t("order.labels.tax") %></span>
             <span class="tabular-nums"><%= format_money(@order.tax_cents) %></span>
           </div>
           <div class="flex justify-between text-gray-600">
-            <span>Tip</span>
+            <span><%= t("order.labels.tip") %></span>
             <span class="tabular-nums"><%= format_money(@order.tip_cents) %></span>
           </div>
           <div class="flex justify-between font-bold text-lg text-gray-900 pt-3 border-t border-gray-100">
-            <span>Total</span>
+            <span><%= t("order.labels.total") %></span>
             <span class="tabular-nums"><%= format_money(@order.total_cents) %></span>
           </div>
           <div class="pt-2 border-t border-gray-100">
@@ -159,18 +160,18 @@
       <% if policy(@order).void? %>
         <section class="rounded-2xl border border-red-200 bg-red-50/30 overflow-hidden">
           <div class="px-5 py-4 border-b border-red-100 bg-red-50/80">
-            <h2 class="text-sm font-semibold text-red-900">Void order</h2>
-            <p class="text-xs text-red-800/80 mt-0.5">Cancel this order and pending payments</p>
+            <h2 class="text-sm font-semibold text-red-900"><%= t("admin.orders.void_heading") %></h2>
+            <p class="text-xs text-red-800/80 mt-0.5"><%= t("admin.orders.void_hint") %></p>
           </div>
           <div class="p-5">
             <%= form_with url: void_admin_order_path(@order), method: :post, class: "space-y-4" do %>
               <div>
-                <%= label_tag :reason, "Reason", class: label_class %>
-                <%= text_field_tag :reason, nil, placeholder: "Why is this order being voided?", class: input_class %>
+                <%= label_tag :reason, t("admin.orders.void_reason"), class: label_class %>
+                <%= text_field_tag :reason, nil, placeholder: t("admin.orders.void_reason_placeholder"), class: input_class %>
               </div>
-              <%= submit_tag "Void order",
+              <%= submit_tag t("admin.orders.void_submit"),
                     class: "w-full bg-red-700 hover:bg-red-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors",
-                    data: { turbo_confirm: "Void this order?" } %>
+                    data: { turbo_confirm: t("admin.orders.void_confirm") } %>
             <% end %>
           </div>
         </section>
@@ -179,23 +180,23 @@
       <% if policy(@order).refund? %>
         <section class="rounded-2xl border border-amber-200 bg-amber-50/30 overflow-hidden">
           <div class="px-5 py-4 border-b border-amber-100 bg-amber-50/80">
-            <h2 class="text-sm font-semibold text-amber-900">Refund</h2>
-            <p class="text-xs text-amber-800/80 mt-0.5">Process a partial or full refund</p>
+            <h2 class="text-sm font-semibold text-amber-900"><%= t("admin.orders.refund_heading") %></h2>
+            <p class="text-xs text-amber-800/80 mt-0.5"><%= t("admin.orders.refund_hint") %></p>
           </div>
           <div class="p-5">
             <%= form_with url: refund_admin_order_path(@order), method: :post, class: "space-y-4" do %>
               <div>
-                <%= label_tag :amount_cents, "Amount (cents)", class: label_class %>
+                <%= label_tag :amount_cents, t("admin.orders.refund_amount_cents"), class: label_class %>
                 <%= number_field_tag :amount_cents, @order.total_cents, min: 0, class: input_class %>
-                <p class="text-xs text-gray-500 mt-1.5"><%= format_money(@order.total_cents) %> total</p>
+                <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.orders.refund_total_hint", amount: format_money(@order.total_cents)) %></p>
               </div>
               <div>
-                <%= label_tag :reason, "Reason", class: label_class %>
-                <%= text_field_tag :reason, nil, placeholder: "Refund reason", class: input_class %>
+                <%= label_tag :reason, t("admin.orders.refund_reason"), class: label_class %>
+                <%= text_field_tag :reason, nil, placeholder: t("admin.orders.refund_reason_placeholder"), class: input_class %>
               </div>
-              <%= submit_tag "Process refund",
+              <%= submit_tag t("admin.orders.refund_submit"),
                     class: "w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors",
-                    data: { turbo_confirm: "Process this refund?" } %>
+                    data: { turbo_confirm: t("admin.orders.refund_confirm") } %>
             <% end %>
           </div>
         </section>
@@ -204,15 +205,15 @@
       <% if @order_events.any? %>
         <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
           <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-            <h2 class="text-sm font-semibold text-gray-900">Activity</h2>
-            <p class="text-xs text-gray-500 mt-0.5">Order timeline</p>
+            <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.orders.activity") %></h2>
+            <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.orders.activity_hint") %></p>
           </div>
           <ul class="divide-y divide-gray-100">
             <% @order_events.each do |event| %>
               <li class="px-5 py-3 text-sm">
                 <div class="flex justify-between gap-2">
-                  <span class="font-semibold text-gray-900 capitalize"><%= event.event_type %></span>
-                  <span class="text-xs text-gray-500 shrink-0"><%= event.created_at.strftime("%b %-d · %l:%M %p") %></span>
+                  <span class="font-semibold text-gray-900"><%= order_event_type_label(event.event_type) %></span>
+                  <span class="text-xs text-gray-500 shrink-0"><%= l(event.created_at.to_date, format: :short) %> · <%= l(event.created_at, format: :short_time) %></span>
                 </div>
                 <% if event.user %>
                   <p class="text-xs text-gray-500 mt-0.5"><%= event.user.name %></p>

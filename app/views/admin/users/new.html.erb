@@ -1,11 +1,11 @@
 <div class="max-w-lg">
   <div class="mb-4">
-    <%= link_to "← Staff", admin_users_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+    <%= link_to t("staff.show.back_to_list"), admin_users_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
   </div>
 
   <div class="mb-6">
     <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title("new") %></h1>
-    <p class="text-gray-600 text-sm mt-1">Create an account for your team.</p>
+    <p class="text-gray-600 text-sm mt-1"><%= t("staff.new_subtitle") %></p>
   </div>
 
   <%= render "form", user: @user %>

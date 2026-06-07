@@ -53,8 +53,12 @@ module Accounting
 
       if variance.abs > 1000
         NotifyService.deliver_to_managers(
-          message: "Cash drawer variance of #{Money.new(variance.abs).format} detected for " \
-                   "#{@session.user.name} on #{@session.session_date.strftime('%b %d')}."
+          message_key: "cash_variance",
+          message_params: {
+            variance_cents: variance.abs,
+            name: @session.user.name,
+            session_date: @session.session_date.iso8601
+          }
         )
       end
 

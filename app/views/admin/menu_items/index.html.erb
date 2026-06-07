@@ -5,11 +5,11 @@
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
-      <p class="text-gray-600 text-sm mt-1">Products sold on the POS — prices, modifiers, and availability.</p>
+      <p class="text-gray-600 text-sm mt-1"><%= t("admin.menu_items.description") %></p>
     </div>
     <%= link_to new_admin_menu_item_path,
           class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
-      <span aria-hidden="true">+</span> New item
+      <span aria-hidden="true">+</span> <%= t("admin.menu_items.new_button") %>
     <% end %>
   </div>
 
@@ -18,46 +18,45 @@
   <% if @total_count.positive? %>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
       <div class="rounded-2xl border border-gray-200 bg-white p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.menu_items.stats_total") %></p>
         <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
       </div>
       <div class="rounded-2xl border border-gray-200 bg-white p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Available</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.menu_items.stats_available") %></p>
         <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= @available_count %></p>
-        <p class="text-xs text-gray-500 mt-1.5">On POS</p>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.menu_items.on_pos") %></p>
       </div>
       <% if @unavailable_count.positive? %>
         <div class="rounded-2xl border border-gray-200 bg-white p-4">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Unavailable</p>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.menu_items.stats_unavailable") %></p>
           <p class="text-2xl font-bold mt-1 text-gray-600 tabular-nums"><%= @unavailable_count %></p>
-          <p class="text-xs text-gray-500 mt-1.5">Hidden on POS</p>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.menu_items.hidden_on_pos") %></p>
         </div>
       <% end %>
     </div>
 
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-        <h2 class="text-sm font-semibold text-gray-900">Filters</h2>
-        <p class="text-xs text-gray-500 mt-0.5">Narrow by category</p>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.menu_items.filters") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.menu_items.filters_hint") %></p>
       </div>
       <div class="p-5">
         <%= form_with url: admin_menu_items_path, method: :get, class: "flex flex-wrap items-end gap-4" do %>
           <div class="min-w-[12rem] flex-1 max-w-xs">
-            <label for="category_id" class="<%= label_class %>">Category</label>
+            <%= label_tag :category_id, t("admin.menu_items.category"), class: label_class %>
             <%= select_tag :category_id,
                   options_from_collection_for_select(@categories, :id, :name, @filtered_category_id),
-                  include_blank: "All categories",
+                  include_blank: t("admin.menu_items.all_categories"),
                   class: "#{input_class} appearance-none" %>
           </div>
-          <%= submit_tag "Apply filters",
+          <%= submit_tag t("actions.apply_filters"),
                 class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
           <% if @filtered_category_id.present? %>
-            <%= link_to "Clear", admin_menu_items_path,
+            <%= link_to t("actions.clear"), admin_menu_items_path,
                   class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
           <% end %>
           <span class="text-sm text-gray-500 ml-auto tabular-nums">
-            Showing <strong class="text-gray-900"><%= @menu_items.size %></strong>
-            <%= @menu_items.size == 1 ? "item" : "items" %>
+            <%= t("admin.menu_items.showing_items", count: @menu_items.size) %>
           </span>
         <% end %>
       </div>
@@ -71,12 +70,12 @@
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
               <th class="p-3 pl-5 w-16"></th>
-              <th class="p-3">Name</th>
-              <th class="p-3">Category</th>
-              <th class="p-3 text-right">Price</th>
-              <th class="p-3">Tax</th>
-              <th class="p-3">Status</th>
-              <th class="p-3 pr-5 text-right">Actions</th>
+              <th class="p-3"><%= t("admin.menu_items.table.name") %></th>
+              <th class="p-3"><%= t("admin.menu_items.table.category") %></th>
+              <th class="p-3 text-right"><%= t("admin.menu_items.table.price") %></th>
+              <th class="p-3"><%= t("admin.menu_items.table.tax") %></th>
+              <th class="p-3"><%= t("admin.menu_items.table.status") %></th>
+              <th class="p-3 pr-5 text-right"><%= t("admin.menu_items.table.actions") %></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -87,7 +86,7 @@
                     <%= image_tag item.image, class: "w-12 h-12 rounded-xl object-cover border border-gray-200" %>
                   <% else %>
                     <div class="w-12 h-12 rounded-xl bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 text-xs font-medium">
-                      —
+                      <%= t("accounting.shared.em_dash") %>
                     </div>
                   <% end %>
                 </td>
@@ -95,7 +94,7 @@
                   <span class="font-semibold text-gray-900"><%= item.name %></span>
                   <% if item.modifier_groups.any? %>
                     <p class="text-xs text-gray-500 mt-1">
-                      <%= pluralize(item.modifier_groups.size, "modifier group") %>
+                      <%= t("admin.menu_items.modifier_group_count", count: item.modifier_groups.size) %>
                     </p>
                   <% end %>
                 </td>
@@ -107,25 +106,25 @@
                 <td class="p-3 text-right font-semibold text-gray-900 tabular-nums whitespace-nowrap">
                   <%= format_money(item.base_price_cents) %>
                 </td>
-                <td class="p-3 text-gray-600 capitalize"><%= item.tax_category %></td>
+                <td class="p-3 text-gray-600"><%= menu_item_tax_category(item.tax_category) %></td>
                 <td class="p-3">
                   <% if item.available? %>
                     <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-200">
-                      Available
+                      <%= t("admin.menu_items.available") %>
                     </span>
                   <% else %>
                     <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-                      Unavailable
+                      <%= t("admin.menu_items.unavailable") %>
                     </span>
                   <% end %>
                 </td>
                 <td class="p-3 pr-5 text-right whitespace-nowrap">
                   <div class="inline-flex gap-2">
-                    <%= link_to "Edit", edit_admin_menu_item_path(item),
+                    <%= link_to t("actions.edit"), edit_admin_menu_item_path(item),
                           class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
                     <% if policy(item).destroy? %>
-                      <%= button_to "Delete", admin_menu_item_path(item), method: :delete,
-                            form: { data: { turbo_confirm: "Delete #{item.name}?" }, class: "inline" },
+                      <%= button_to t("actions.delete"), admin_menu_item_path(item), method: :delete,
+                            form: { data: { turbo_confirm: t("admin.menu_items.confirm_delete", name: item.name) }, class: "inline" },
                             class: "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
                     <% end %>
                   </div>
@@ -140,24 +139,24 @@
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
       <p class="text-gray-900 font-semibold mb-1">
         <% if @filtered_category_id.present? %>
-          No items in this category
+          <%= t("admin.menu_items.empty_title_filtered") %>
         <% else %>
-          No menu items yet
+          <%= t("admin.menu_items.empty_title") %>
         <% end %>
       </p>
       <p class="text-gray-500 text-sm mb-5">
         <% if @filtered_category_id.present? %>
-          Try another category or clear the filter.
+          <%= t("admin.menu_items.empty_description_filtered") %>
         <% else %>
-          Add items to sell on the POS register.
+          <%= t("admin.menu_items.empty_description") %>
         <% end %>
       </p>
       <div class="flex flex-wrap justify-center gap-3 text-sm">
         <% if @filtered_category_id.present? %>
-          <%= link_to "Clear filter", admin_menu_items_path,
+          <%= link_to t("admin.menu_items.clear_filter"), admin_menu_items_path,
                 class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
         <% end %>
-        <%= link_to "Create your first item", new_admin_menu_item_path,
+        <%= link_to t("admin.menu_items.empty_cta"), new_admin_menu_item_path,
               class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
       </div>
     </section>

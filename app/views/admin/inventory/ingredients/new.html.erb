@@ -1,5 +1,5 @@
 <div class="mb-4">
-  <%= link_to "← Inventory", admin_inventory_ingredients_path, class: "text-gray-600 hover:underline text-sm" %>
+  <%= link_to t("inventory.ingredients.back_to_inventory"), admin_inventory_ingredients_path, class: "text-gray-600 hover:underline text-sm" %>
 </div>
 <h1 class="text-2xl font-bold mb-6"><%= admin_page_title("new") %></h1>
 <%= render "form", ingredient: @ingredient %>

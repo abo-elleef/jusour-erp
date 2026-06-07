@@ -12,10 +12,10 @@ module Admin
         authorize @adjustment
 
         if @adjustment.save
-          redirect_to admin_user_path(@user, payroll_month: @adjustment.payroll_month),
+          redirect_to admin_user_path(@user, payroll_show_url_params(@adjustment.payroll_month)),
             notice: t("flash.payroll_adjustment.created")
         else
-          redirect_to admin_user_path(@user, payroll_month: adjustment_params[:payroll_month]),
+          redirect_to admin_user_path(@user, payroll_show_url_params(adjustment_params[:payroll_month])),
             alert: @adjustment.errors.full_messages.to_sentence
         end
       end
@@ -24,7 +24,7 @@ module Admin
         authorize @adjustment
         month = @adjustment.payroll_month
         @adjustment.destroy!
-        redirect_to admin_user_path(@user, payroll_month: month),
+        redirect_to admin_user_path(@user, payroll_show_url_params(month)),
           notice: t("flash.payroll_adjustment.removed")
       end
 
@@ -39,7 +39,17 @@ module Admin
       end
 
       def adjustment_params
-        params.require(:payroll_adjustment).permit(:kind, :unit_type, :amount_cents, :overtime_hours, :payroll_month, :notes)
+        params.require(:payroll_adjustment).permit(
+          :kind, :unit_type, :amount_cents, :overtime_hours, :payroll_month, :happened_at, :notes
+        )
+      end
+
+      def payroll_show_url_params(month)
+        {
+          payroll_month: month,
+          payroll_sort: params[:payroll_sort].presence,
+          payroll_direction: params[:payroll_direction].presence
+        }.compact
       end
     end
   end

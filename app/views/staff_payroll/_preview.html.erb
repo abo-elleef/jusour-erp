@@ -68,6 +68,9 @@
                 <span class="inline-flex text-[0.65rem] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full <%= adj.penalty? ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' %>">
                   <%= t("staff.payroll.kinds.#{adj.kind}") %>
                 </span>
+                <p class="text-xs text-gray-500 mt-1.5 tabular-nums">
+                  <%= t("staff.payroll.happened_at") %>: <%= l(adj.happened_at, format: :long) %>
+                </p>
                 <p class="text-sm text-gray-700 mt-2 leading-snug"><%= adj.unit_label %></p>
                 <% if adj.notes.present? %>
                   <p class="text-xs text-gray-500 mt-1.5 leading-relaxed"><%= adj.notes %></p>

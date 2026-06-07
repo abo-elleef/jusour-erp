@@ -5,12 +5,12 @@
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
-      <p class="text-gray-600 text-sm mt-1">Manage team accounts, roles, and POS access.</p>
+      <p class="text-gray-600 text-sm mt-1"><%= t("staff.index.description") %></p>
     </div>
     <% if policy(User).create? %>
       <%= link_to new_admin_user_path,
             class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
-        <span aria-hidden="true">+</span> New staff member
+        <span aria-hidden="true">+</span> <%= t("staff.index.new_button") %>
       <% end %>
     <% end %>
   </div>
@@ -18,62 +18,61 @@
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
     <%= link_to admin_users_path,
           class: orders_stat_card_class(@q.role_eq.blank? && !@filtered) do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.index.stats_total") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
     <% end %>
 
     <%= link_to admin_users_path(q: { role_eq: "owner" }),
           class: orders_stat_card_class(@q.role_eq == "owner") do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Owners</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.index.stats_owners") %></p>
       <p class="text-2xl font-bold mt-1 text-purple-700 tabular-nums"><%= @owner_count %></p>
     <% end %>
 
     <%= link_to admin_users_path(q: { role_eq: "manager" }),
           class: orders_stat_card_class(@q.role_eq == "manager") do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Managers</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.index.stats_managers") %></p>
       <p class="text-2xl font-bold mt-1 text-blue-700 tabular-nums"><%= @manager_count %></p>
     <% end %>
 
     <%= link_to admin_users_path(q: { role_eq: "cashier" }),
           class: orders_stat_card_class(@q.role_eq == "cashier") do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Cashiers</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.index.stats_cashiers") %></p>
       <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= @cashier_count %></p>
     <% end %>
 
     <%= link_to admin_users_path(q: { role_eq: "kitchen" }),
           class: orders_stat_card_class(@q.role_eq == "kitchen") do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Kitchen</p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.index.stats_kitchen") %></p>
       <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= @kitchen_count %></p>
     <% end %>
   </div>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-      <h2 class="text-sm font-semibold text-gray-900">Filters</h2>
-      <p class="text-xs text-gray-500 mt-0.5">Search by name or email, or filter by role</p>
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.index.filters") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("staff.index.filters_hint") %></p>
     </div>
     <div class="p-5">
       <%= search_form_for @q, url: admin_users_path, method: :get, class: "flex flex-wrap items-end gap-4" do |f| %>
         <div class="flex-1 min-w-[12rem]">
-          <%= f.label :name_or_email_cont, "Search", class: label_class %>
-          <%= f.search_field :name_or_email_cont, placeholder: "Name or email…", class: input_class %>
+          <%= f.label :name_or_email_cont, t("staff.index.search"), class: label_class %>
+          <%= f.search_field :name_or_email_cont, placeholder: t("staff.index.search_placeholder"), class: input_class %>
         </div>
         <div class="min-w-[10rem]">
-          <%= f.label :role_eq, "Role", class: label_class %>
+          <%= f.label :role_eq, t("staff.index.role"), class: label_class %>
           <%= f.select :role_eq,
-                options_for_select(User::ROLES.map { |r| [r.humanize, r] }, @q.role_eq),
-                { include_blank: "All roles" },
+                options_for_select(User::ROLES.map { |r| [user_role_label(r), r] }, @q.role_eq),
+                { include_blank: t("staff.index.all_roles") },
                 class: "#{input_class} appearance-none" %>
         </div>
-        <%= f.submit "Apply filters",
+        <%= f.submit t("actions.apply_filters"),
               class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
         <% if @filtered %>
-          <%= link_to "Clear", admin_users_path,
+          <%= link_to t("actions.clear"), admin_users_path,
                 class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
         <% end %>
         <span class="text-sm text-gray-500 ml-auto tabular-nums">
-          Showing <strong class="text-gray-900"><%= @pagy.count %></strong>
-          <%= @pagy.count == 1 ? "member" : "members" %>
+          <%= t("staff.index.showing_members", count: @pagy.count) %>
         </span>
       <% end %>
     </div>
@@ -85,12 +84,12 @@
         <table class="w-full text-left text-sm min-w-[640px]">
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
-              <th class="p-3 pl-5">Name</th>
-              <th class="p-3">Email</th>
-              <th class="p-3">Role</th>
-              <th class="p-3 text-end">Monthly salary</th>
-              <th class="p-3">Joined</th>
-              <th class="p-3 pr-5 text-right">Actions</th>
+              <th class="p-3 pl-5"><%= t("staff.index.table.name") %></th>
+              <th class="p-3"><%= t("staff.index.table.email") %></th>
+              <th class="p-3"><%= t("staff.index.table.role") %></th>
+              <th class="p-3 text-end"><%= t("staff.index.table.monthly_salary") %></th>
+              <th class="p-3"><%= t("staff.index.table.joined") %></th>
+              <th class="p-3 pr-5 text-right"><%= t("staff.index.table.actions") %></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -103,7 +102,7 @@
                     <span class="font-semibold text-gray-900"><%= staff.name %></span>
                   <% end %>
                   <% if staff == current_user %>
-                    <span class="text-xs font-semibold text-amber-700 ml-1.5">(you)</span>
+                    <span class="text-xs font-semibold text-amber-700 ml-1.5"><%= t("staff.index.you_badge") %></span>
                   <% end %>
                 </td>
                 <td class="p-3 text-gray-600"><%= staff.email %></td>
@@ -116,11 +115,11 @@
                   <% if staff.monthly_salary_cents.positive? %>
                     <%= format_money(staff.monthly_salary_cents) %>
                   <% else %>
-                    <span class="text-gray-400">—</span>
+                    <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
                   <% end %>
                 </td>
                 <td class="p-3 text-gray-500 whitespace-nowrap tabular-nums">
-                  <%= staff.created_at.strftime("%b %-d, %Y") %>
+                  <%= l(staff.created_at.to_date, format: :long) %>
                 </td>
                 <td class="p-3 pr-5 text-right whitespace-nowrap">
                   <div class="inline-flex gap-2">
@@ -133,8 +132,8 @@
                             class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
                     <% end %>
                     <% if policy(staff).destroy? %>
-                      <%= button_to "Delete", admin_user_path(staff), method: :delete,
-                            form: { data: { turbo_confirm: "Remove #{staff.name}?" }, class: "inline" },
+                      <%= button_to t("actions.delete"), admin_user_path(staff), method: :delete,
+                            form: { data: { turbo_confirm: t("staff.show.delete_confirm", name: staff.name) }, class: "inline" },
                             class: "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
                     <% end %>
                   </div>
@@ -147,35 +146,35 @@
     </section>
 
     <% if @pagy.pages > 1 %>
-      <nav class="mt-5 flex flex-wrap gap-2 text-sm items-center" aria-label="Pagination">
+      <nav class="mt-5 flex flex-wrap gap-2 text-sm items-center" aria-label="<%= t("staff.index.pagination_aria") %>">
         <% if @pagy.previous %>
-          <%= link_to "← Previous", url_for(request.query_parameters.merge(page: @pagy.previous)),
+          <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: @pagy.previous)),
                 class: "px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 transition-colors" %>
         <% end %>
-        <span class="text-gray-600 px-2 tabular-nums">Page <%= @pagy.page %> of <%= @pagy.pages %></span>
+        <span class="text-gray-600 px-2 tabular-nums"><%= t("accounting.shared.pagination", page: @pagy.page, pages: @pagy.pages) %></span>
         <% if @pagy.next %>
-          <%= link_to "Next →", url_for(request.query_parameters.merge(page: @pagy.next)),
+          <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: @pagy.next)),
                 class: "px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 transition-colors" %>
         <% end %>
       </nav>
     <% end %>
   <% else %>
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-      <p class="text-gray-900 font-semibold mb-1">No staff members found</p>
+      <p class="text-gray-900 font-semibold mb-1"><%= t("staff.index.empty_title") %></p>
       <p class="text-gray-500 text-sm mb-5">
         <% if @filtered %>
-          Try adjusting your search or role filter.
+          <%= t("staff.index.empty_description_filtered") %>
         <% else %>
-          Add your first team member to get started.
+          <%= t("staff.index.empty_description") %>
         <% end %>
       </p>
       <div class="flex flex-wrap justify-center gap-3 text-sm">
         <% if @filtered %>
-          <%= link_to "Clear filters", admin_users_path,
+          <%= link_to t("staff.index.clear_filters"), admin_users_path,
                 class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
         <% end %>
         <% if policy(User).create? %>
-          <%= link_to "New staff member", new_admin_user_path,
+          <%= link_to t("staff.index.new_button"), new_admin_user_path,
                 class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
         <% end %>
       </div>

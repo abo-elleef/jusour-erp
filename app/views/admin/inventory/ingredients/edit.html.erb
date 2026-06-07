@@ -1,11 +1,11 @@
 <div class="mb-4">
-  <%= link_to "← Inventory", admin_inventory_ingredients_path, class: "text-gray-600 hover:underline text-sm" %>
+  <%= link_to t("inventory.ingredients.back_to_inventory"), admin_inventory_ingredients_path, class: "text-gray-600 hover:underline text-sm" %>
 </div>
 
 <div class="flex flex-wrap justify-between items-start gap-3 mb-6">
   <div>
-    <h1 class="text-2xl font-bold">Edit <%= @ingredient.name %></h1>
-    <p class="text-gray-600 text-sm mt-1"><%= @ingredient.ingredient_category.name %> · <%= @ingredient.unit %></p>
+    <h1 class="text-2xl font-bold"><%= t("inventory.ingredients.edit.title", name: @ingredient.name) %></h1>
+    <p class="text-gray-600 text-sm mt-1"><%= @ingredient.ingredient_category.name %> · <%= ingredient_unit_label(@ingredient.unit) %></p>
   </div>
   <% label, badge_class = ingredient_status_badge(@ingredient) %>
   <span class="text-xs uppercase px-2 py-1 rounded <%= badge_class %>"><%= label %></span>
@@ -14,7 +14,7 @@
 <div class="grid grid-cols-1 xl:grid-cols-5 gap-6 max-w-6xl">
   <div class="xl:col-span-2">
     <div class="bg-white rounded-lg shadow p-6">
-      <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4">Details</h2>
+      <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4"><%= t("inventory.ingredients.edit.details") %></h2>
       <%= render "form", ingredient: @ingredient, embedded: true %>
     </div>
   </div>

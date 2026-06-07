@@ -10,8 +10,12 @@ module Accounting
         next unless checker.over_overtime? && checker.rule
 
         NotifyService.deliver_to_managers(
-          message: "#{user.name} has exceeded #{checker.weekly_hours.round(1)} hours this week " \
-                   "(OT threshold: #{checker.rule.weekly_threshold_hours}h)."
+          message_key: "overtime_weekly",
+          message_params: {
+            name: user.name,
+            hours: checker.weekly_hours.round(1),
+            threshold: checker.rule.weekly_threshold_hours
+          }
         )
       end
     end

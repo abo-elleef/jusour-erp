@@ -1,11 +1,11 @@
 <div class="max-w-3xl">
   <div class="mb-4">
-    <%= link_to "← Combos", admin_combos_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+    <%= link_to t("admin.combos.back_to_list"), admin_combos_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
   </div>
 
   <div class="mb-6">
     <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title("new") %></h1>
-    <p class="text-gray-600 text-sm mt-1">Bundle menu items at one price for the POS.</p>
+    <p class="text-gray-600 text-sm mt-1"><%= t("admin.combos.new_subtitle") %></p>
   </div>
 
   <%= render "admin/menu_nav" %>

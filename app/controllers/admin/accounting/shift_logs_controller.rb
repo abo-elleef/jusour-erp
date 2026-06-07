@@ -50,7 +50,8 @@ module Admin
         checker = ::Accounting::OvertimeCheckService.new(@shift.user)
         if checker.over_overtime?
           ::Accounting::NotifyService.deliver_to_managers(
-            message: "#{@shift.user.name} has gone into overtime this week."
+            message_key: "overtime_shift",
+            message_params: { name: @shift.user.name }
           )
         end
 

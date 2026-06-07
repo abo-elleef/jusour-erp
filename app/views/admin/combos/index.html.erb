@@ -2,11 +2,11 @@
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
-      <p class="text-gray-600 text-sm mt-1">Bundle menu items at a set price for the POS.</p>
+      <p class="text-gray-600 text-sm mt-1"><%= t("admin.combos.description") %></p>
     </div>
     <%= link_to new_admin_combo_path,
           class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
-      <span aria-hidden="true">+</span> New combo
+      <span aria-hidden="true">+</span> <%= t("admin.combos.new_button") %>
     <% end %>
   </div>
 
@@ -15,19 +15,19 @@
   <% if @total_count.positive? %>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
       <div class="rounded-2xl border border-gray-200 bg-white p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.combos.stats_total") %></p>
         <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
       </div>
       <div class="rounded-2xl border border-gray-200 bg-white p-4">
-        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Active</p>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.combos.stats_active") %></p>
         <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= @active_count %></p>
-        <p class="text-xs text-gray-500 mt-1.5">On POS</p>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.combos.on_pos") %></p>
       </div>
       <% if @inactive_count.positive? %>
         <div class="rounded-2xl border border-gray-200 bg-white p-4">
-          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Inactive</p>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.combos.stats_inactive") %></p>
           <p class="text-2xl font-bold mt-1 text-gray-600 tabular-nums"><%= @inactive_count %></p>
-          <p class="text-xs text-gray-500 mt-1.5">Hidden on POS</p>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.combos.hidden_on_pos") %></p>
         </div>
       <% end %>
     </div>
@@ -36,8 +36,8 @@
   <% if @combos.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-        <h2 class="text-sm font-semibold text-gray-900">All combos</h2>
-        <p class="text-xs text-gray-500 mt-0.5"><%= pluralize(@combos.size, "combo") %> configured</p>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.combos.list_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.combos.configured_count", count: @combos.size) %></p>
       </div>
       <ul class="divide-y divide-gray-100">
         <% @combos.each do |combo| %>
@@ -47,11 +47,11 @@
                 <span class="font-semibold text-gray-900"><%= combo.name %></span>
                 <% if combo.active? %>
                   <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-200">
-                    Active
+                    <%= t("admin.combos.active") %>
                   </span>
                 <% else %>
                   <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-                    Inactive
+                    <%= t("admin.combos.inactive") %>
                   </span>
                 <% end %>
               </div>
@@ -59,7 +59,7 @@
                 <p class="text-sm text-gray-600 mt-1 line-clamp-2"><%= combo.description %></p>
               <% end %>
               <p class="text-xs text-gray-500 mt-1">
-                <%= pluralize(combo.combo_items.size, "included item") %>
+                <%= t("admin.combos.included_item_count", count: combo.combo_items.size) %>
                 <% if combo.combo_items.any? %>
                   · <%= combo.combo_items.map { |ci| "#{ci.quantity}× #{ci.menu_item.name}" }.join(", ") %>
                 <% end %>
@@ -69,11 +69,11 @@
               <%= format_money(combo.price_cents) %>
             </span>
             <div class="flex gap-2 shrink-0">
-              <%= link_to "Edit", edit_admin_combo_path(combo),
+              <%= link_to t("actions.edit"), edit_admin_combo_path(combo),
                     class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
               <% if policy(combo).destroy? %>
-                <%= button_to "Delete", admin_combo_path(combo), method: :delete,
-                      form: { data: { turbo_confirm: "Delete #{combo.name}?" }, class: "inline" },
+                <%= button_to t("actions.delete"), admin_combo_path(combo), method: :delete,
+                      form: { data: { turbo_confirm: t("admin.combos.confirm_delete", name: combo.name) }, class: "inline" },
                       class: "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
               <% end %>
             </div>
@@ -83,9 +83,9 @@
     </section>
   <% else %>
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-      <p class="text-gray-900 font-semibold mb-1">No combos yet</p>
-      <p class="text-gray-500 text-sm mb-5">Create a bundle of menu items at one price for the POS.</p>
-      <%= link_to "Create your first combo", new_admin_combo_path,
+      <p class="text-gray-900 font-semibold mb-1"><%= t("admin.combos.empty_title") %></p>
+      <p class="text-gray-500 text-sm mb-5"><%= t("admin.combos.empty_description") %></p>
+      <%= link_to t("admin.combos.empty_cta"), new_admin_combo_path,
             class: "inline-flex font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
     </section>
   <% end %>

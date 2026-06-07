@@ -1,14 +1,14 @@
 <div class="max-w-5xl">
   <div class="mb-4">
-    <%= link_to "← Purchase orders", admin_inventory_purchase_orders_path, class: "text-gray-600 hover:underline text-sm" %>
+    <%= link_to t("inventory.purchase_orders.suggestions.back_to_list"), admin_inventory_purchase_orders_path, class: "text-gray-600 hover:underline text-sm" %>
   </div>
 
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold"><%= admin_page_title("suggestions") %></h1>
-      <p class="text-gray-600 text-sm mt-1">Draft purchase orders grouped by preferred supplier for low-stock ingredients.</p>
+      <p class="text-gray-600 text-sm mt-1"><%= t("inventory.purchase_orders.suggestions.description") %></p>
     </div>
-    <%= link_to "New PO manually", new_admin_inventory_purchase_order_path,
+    <%= link_to t("inventory.purchase_orders.suggestions.new_manual"), new_admin_inventory_purchase_order_path,
           class: "text-sm text-gray-600 hover:underline shrink-0 py-2" %>
   </div>
 
@@ -16,23 +16,23 @@
 
   <% if @grouped.blank? && @skipped_low_stock.empty? %>
     <div class="bg-white rounded-lg shadow p-10 text-center">
-      <p class="text-gray-700 font-medium mb-1">Nothing to order right now</p>
-      <p class="text-gray-500 text-sm mb-4">No ingredients are below their reorder threshold.</p>
-      <%= link_to "View inventory", admin_inventory_ingredients_path, class: "text-amber-600 hover:underline text-sm font-medium" %>
+      <p class="text-gray-700 font-medium mb-1"><%= t("inventory.purchase_orders.suggestions.empty.title") %></p>
+      <p class="text-gray-500 text-sm mb-4"><%= t("inventory.purchase_orders.suggestions.empty.description") %></p>
+      <%= link_to t("inventory.purchase_orders.suggestions.empty.view_inventory"), admin_inventory_ingredients_path, class: "text-amber-600 hover:underline text-sm font-medium" %>
     </div>
   <% else %>
     <% if @grouped.any? %>
       <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-lg shadow p-4">
-          <p class="text-sm text-gray-500">Suppliers</p>
+          <p class="text-sm text-gray-500"><%= t("inventory.purchase_orders.suggestions.stats.suppliers") %></p>
           <p class="text-2xl font-bold mt-1"><%= @grouped.size %></p>
         </div>
         <div class="bg-white rounded-lg shadow p-4">
-          <p class="text-sm text-gray-500">Line items</p>
+          <p class="text-sm text-gray-500"><%= t("inventory.purchase_orders.suggestions.stats.line_items") %></p>
           <p class="text-2xl font-bold mt-1"><%= @line_count %></p>
         </div>
         <div class="bg-white rounded-lg shadow p-4 sm:col-span-1 col-span-2">
-          <p class="text-sm text-gray-500">Estimated total</p>
+          <p class="text-sm text-gray-500"><%= t("inventory.purchase_orders.suggestions.stats.estimated_total") %></p>
           <p class="text-2xl font-bold mt-1"><%= format_money(@estimated_total_cents) %></p>
         </div>
       </div>
@@ -47,21 +47,24 @@
                   <%= link_to supplier.name, admin_inventory_supplier_path(supplier), class: "text-blue-600 hover:underline" %>
                 </h2>
                 <p class="text-sm text-gray-500">
-                  <%= pluralize(lines.size, "item") %> · <%= pluralize(supplier.lead_time_days, "day") %> lead time · Est. <%= format_money(supplier_total) %>
+                  <%= t("inventory.purchase_orders.suggestions.supplier_summary",
+                        items: t("inventory.purchase_orders.suggestions.items_count", count: lines.size),
+                        lead_time: t("inventory.suppliers.lead_time_count", count: supplier.lead_time_days),
+                        total: format_money(supplier_total)) %>
                 </p>
               </div>
-              <%= link_to "Create PO",
+              <%= link_to t("inventory.purchase_orders.suggestions.create_po"),
                     new_admin_inventory_purchase_order_path(supplier_id: supplier.id, from: "suggestions"),
                     class: "bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium shrink-0" %>
             </div>
             <table class="w-full text-sm">
               <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wide border-b bg-white">
                 <tr>
-                  <th class="p-3 pl-4 text-left">Ingredient</th>
-                  <th class="p-3 text-right">On hand</th>
-                  <th class="p-3 text-right">Suggest qty</th>
-                  <th class="p-3 text-right">Unit price</th>
-                  <th class="p-3 pr-4 text-right">Line total</th>
+                  <th class="p-3 pl-4 text-left"><%= t("inventory.purchase_orders.suggestions.table.ingredient") %></th>
+                  <th class="p-3 text-right"><%= t("inventory.purchase_orders.suggestions.table.on_hand") %></th>
+                  <th class="p-3 text-right"><%= t("inventory.purchase_orders.suggestions.table.suggest_qty") %></th>
+                  <th class="p-3 text-right"><%= t("inventory.purchase_orders.suggestions.table.unit_price") %></th>
+                  <th class="p-3 pr-4 text-right"><%= t("inventory.purchase_orders.suggestions.table.line_total") %></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
@@ -74,10 +77,10 @@
                       <span class="text-xs text-gray-500 block"><%= ingredient.ingredient_category.name %></span>
                     </td>
                     <td class="p-3 text-right text-red-700 font-medium">
-                      <%= ingredient.quantity_on_hand %> <%= ingredient.unit %>
+                      <%= ingredient.quantity_on_hand %> <%= ingredient_unit_label(ingredient.unit) %>
                     </td>
                     <td class="p-3 text-right">
-                      <%= line[:suggested_quantity] %> <%= ingredient.unit %>
+                      <%= line[:suggested_quantity] %> <%= ingredient_unit_label(ingredient.unit) %>
                     </td>
                     <td class="p-3 text-right text-gray-600"><%= format_money(line[:unit_price_cents]) %></td>
                     <td class="p-3 pr-4 text-right font-medium"><%= format_money(line_total) %></td>
@@ -92,18 +95,24 @@
 
     <% if @skipped_low_stock.any? %>
       <div class="bg-amber-50 border border-amber-200 rounded-lg p-5">
-        <h2 class="font-semibold text-amber-900 mb-1">Needs a supplier first</h2>
+        <h2 class="font-semibold text-amber-900 mb-1"><%= t("inventory.purchase_orders.suggestions.skipped.heading") %></h2>
         <p class="text-sm text-amber-800 mb-3">
-          These low-stock ingredients are skipped because no vendor is assigned.
+          <%= t("inventory.purchase_orders.suggestions.skipped.description") %>
         </p>
         <ul class="text-sm space-y-2">
           <% @skipped_low_stock.each do |ingredient| %>
             <li class="flex flex-wrap justify-between items-center gap-2">
               <span>
                 <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient), class: "font-medium text-blue-600 hover:underline" %>
-                <span class="text-gray-600">— <%= ingredient.quantity_on_hand %> / <%= ingredient.reorder_threshold %> <%= ingredient.unit %></span>
+                <span class="text-gray-600">
+                  <%= t("accounting.shared.em_dash") %>
+                  <%= t("inventory.purchase_orders.suggestions.skipped.stock_level",
+                        on_hand: ingredient.quantity_on_hand,
+                        reorder: ingredient.reorder_threshold,
+                        unit: ingredient_unit_label(ingredient.unit)) %>
+                </span>
               </span>
-              <%= link_to "Assign supplier", edit_admin_inventory_ingredient_path(ingredient, anchor: "suppliers"),
+              <%= link_to t("inventory.purchase_orders.suggestions.skipped.assign_supplier"), edit_admin_inventory_ingredient_path(ingredient, anchor: "suppliers"),
                     class: "text-amber-700 hover:underline text-sm font-medium" %>
             </li>
           <% end %>
@@ -111,8 +120,8 @@
       </div>
     <% elsif @grouped.blank? %>
       <div class="bg-white rounded-lg shadow p-8 text-center">
-        <p class="text-gray-700 font-medium mb-1">No orderable low-stock items</p>
-        <p class="text-gray-500 text-sm">Assign suppliers to low-stock ingredients to see suggestions here.</p>
+        <p class="text-gray-700 font-medium mb-1"><%= t("inventory.purchase_orders.suggestions.no_orderable.title") %></p>
+        <p class="text-gray-500 text-sm"><%= t("inventory.purchase_orders.suggestions.no_orderable.description") %></p>
       </div>
     <% end %>
   <% end %>

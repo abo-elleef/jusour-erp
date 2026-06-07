@@ -11,27 +11,27 @@
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden max-w-lg">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-      <h2 class="text-sm font-semibold text-gray-900">Category details</h2>
-      <p class="text-xs text-gray-500 mt-0.5">Name and visibility on the POS</p>
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.categories.form_heading") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.categories.form_hint") %></p>
     </div>
     <div class="p-5 space-y-5">
       <div>
-        <%= f.label :name, class: label_class %>
+        <%= f.label :name, t("admin.categories.name"), class: label_class %>
         <%= f.text_field :name, class: input_class, autofocus: true %>
       </div>
 
       <div>
-        <%= f.label :position, "Display position", class: label_class %>
+        <%= f.label :position, t("admin.categories.position"), class: label_class %>
         <%= f.number_field :position, min: 0, class: input_class %>
-        <p class="text-xs text-gray-500 mt-1.5">Lower numbers appear first. You can also drag to reorder on the list.</p>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.categories.position_hint") %></p>
       </div>
 
       <div class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
         <label class="inline-flex items-center gap-3 cursor-pointer">
           <%= f.check_box :active, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
           <span>
-            <span class="block text-sm font-semibold text-gray-900">Active on POS</span>
-            <span class="block text-xs text-gray-500 mt-0.5">Inactive categories are hidden from cashiers</span>
+            <span class="block text-sm font-semibold text-gray-900"><%= t("admin.categories.active_label") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("admin.categories.active_hint") %></span>
           </span>
         </label>
       </div>
@@ -39,9 +39,9 @@
   </section>
 
   <div class="flex flex-wrap items-center gap-3 max-w-lg">
-    <%= f.submit category.persisted? ? "Save changes" : "Create category",
+    <%= f.submit category.persisted? ? t("actions.save_changes") : t("admin.categories.create_button"),
           class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
-    <%= link_to "Cancel", admin_categories_path,
+    <%= link_to t("actions.cancel"), admin_categories_path,
           class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
   </div>
 <% end %>

@@ -11,17 +11,17 @@
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-      <h2 class="text-sm font-semibold text-gray-900">Account</h2>
-      <p class="text-xs text-gray-500 mt-0.5">Name, email, and role</p>
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.form.account_heading") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("staff.form.account_hint") %></p>
     </div>
     <div class="p-5 space-y-5">
       <div>
-        <%= f.label :name, class: label_class %>
+        <%= f.label :name, t("staff.form.name"), class: label_class %>
         <%= f.text_field :name, class: input_class, required: true, autofocus: true %>
       </div>
 
       <div>
-        <%= f.label :email, class: label_class %>
+        <%= f.label :email, t("staff.form.email"), class: label_class %>
         <%= f.email_field :email, class: input_class, required: true, autocomplete: "off" %>
       </div>
 
@@ -37,13 +37,13 @@
       </div>
 
       <div>
-        <%= f.label :role, class: label_class %>
+        <%= f.label :role, t("staff.index.role"), class: label_class %>
         <% roles = policy(user).create? && current_user.owner? ? User::ROLES : User::ROLES - ["owner"] %>
         <% roles = %w[cashier kitchen] if current_user.manager? && !current_user.owner? %>
-        <%= f.select :role, roles.map { |r| [r.humanize, r] }, {},
+        <%= f.select :role, roles.map { |r| [user_role_label(r), r] }, {},
               class: "#{input_class} appearance-none" %>
         <p class="text-xs text-gray-500 mt-1.5">
-          Owner — full access · Manager — admin + POS · Cashier — POS · Kitchen — KDS only
+          <%= t("staff.form.role_hint") %>
         </p>
       </div>
     </div>
@@ -62,30 +62,30 @@
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-      <h2 class="text-sm font-semibold text-gray-900">Password</h2>
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.form.password_heading") %></h2>
       <p class="text-xs text-gray-500 mt-0.5">
         <% if user.persisted? %>
-          Leave blank to keep the current password
+          <%= t("staff.form.password_hint_blank") %>
         <% else %>
-          Set an initial sign-in password
+          <%= t("staff.form.password_hint_new") %>
         <% end %>
       </p>
     </div>
     <div class="p-5 space-y-5">
       <div>
-        <%= f.label :password, user.persisted? ? "New password" : "Password", class: label_class %>
+        <%= f.label :password, user.persisted? ? t("staff.form.new_password") : t("staff.form.password"), class: label_class %>
         <%= f.password_field :password, class: input_class, autocomplete: "new-password", required: !user.persisted? %>
       </div>
 
       <div>
-        <%= f.label :password_confirmation, "Confirm password", class: label_class %>
+        <%= f.label :password_confirmation, t("staff.form.confirm_password"), class: label_class %>
         <%= f.password_field :password_confirmation, class: input_class, autocomplete: "new-password", required: !user.persisted? %>
       </div>
     </div>
   </section>
 
   <div class="flex flex-wrap items-center gap-3">
-    <%= f.submit user.persisted? ? "Save changes" : "Create staff member",
+    <%= f.submit user.persisted? ? t("actions.save_changes") : t("staff.form.create_button"),
           class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
     <%= link_to user.persisted? ? t("actions.cancel") : t("staff.show.back_to_list"),
           user.persisted? ? admin_user_path(user) : admin_users_path,

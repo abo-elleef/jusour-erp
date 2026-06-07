@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_13_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_14_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -449,6 +449,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_13_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.decimal "overtime_hours", precision: 8, scale: 2
+    t.date "happened_at", null: false
     t.index ["payroll_month"], name: "index_payroll_adjustments_on_payroll_month"
     t.index ["recorded_by_id"], name: "index_payroll_adjustments_on_recorded_by_id"
     t.index ["user_id", "payroll_month"], name: "index_payroll_adjustments_on_user_id_and_payroll_month"

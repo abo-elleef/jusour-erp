@@ -1,7 +1,10 @@
-<%# locals: user, payroll_month:, payroll_summary:, readonly: false, month_url: %>
+<%# locals: user, payroll_month:, payroll_summary:, readonly: false, month_url:, payroll_sort:, payroll_direction: %>
 <% return unless payroll_summary %>
 <% readonly = local_assigns.fetch(:readonly, false) %>
-<% month_url = local_assigns.fetch(:month_url, admin_user_path(user)) %>
+<% payroll_sort = local_assigns.fetch(:payroll_sort, PayrollAdjustment::DEFAULT_SORT) %>
+<% payroll_direction = local_assigns.fetch(:payroll_direction, PayrollAdjustment::DEFAULT_SORT_DIRECTION) %>
+<% month_url = local_assigns.fetch(:month_url, admin_user_path(user, payroll_show_url_params(payroll_month))) %>
+<% sortable = !readonly %>
 <% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
@@ -16,6 +19,8 @@
         <%= label_tag :payroll_month, t("staff.payroll.month"), class: label_class %>
         <%= month_field_tag :payroll_month, payroll_month.strftime("%Y-%m"), class: input_class %>
       </div>
+      <%= hidden_field_tag :payroll_sort, payroll_sort if sortable %>
+      <%= hidden_field_tag :payroll_direction, payroll_direction if sortable %>
       <%= submit_tag t("actions.apply"), class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors" %>
     <% end %>
   </div>
@@ -48,11 +53,13 @@
     <% if policy(PayrollAdjustment.new(user: user)).create? %>
       <div class="p-5 border-b border-gray-100">
         <h3 class="text-sm font-semibold text-gray-900 mb-4"><%= t("staff.payroll.add_adjustment") %></h3>
-        <%= form_with model: PayrollAdjustment.new(payroll_month: payroll_month),
+        <%= form_with model: PayrollAdjustment.new(payroll_month: payroll_month, happened_at: Date.current),
               url: admin_user_payroll_adjustments_path(user),
               class: "grid sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end",
               data: { controller: "payroll-adjustment" } do |f| %>
           <%= f.hidden_field :payroll_month, value: payroll_month %>
+          <%= hidden_field_tag :payroll_sort, payroll_sort %>
+          <%= hidden_field_tag :payroll_direction, payroll_direction %>
 
           <div>
             <%= f.label :kind, class: label_class %>
@@ -81,6 +88,11 @@
             <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.payroll.overtime_hint") %></p>
           </div>
 
+          <div>
+            <%= f.label :happened_at, t("staff.payroll.happened_at"), class: label_class %>
+            <%= f.date_field :happened_at, class: input_class %>
+          </div>
+
           <div class="sm:col-span-2 lg:col-span-3">
             <%= f.label :notes, class: label_class %>
             <%= f.text_field :notes, class: input_class, placeholder: t("staff.payroll.notes_placeholder") %>
@@ -99,12 +111,27 @@
       <table class="w-full text-sm">
         <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
           <tr>
-            <th class="p-3 ps-5 text-start"><%= t("staff.payroll.type") %></th>
-            <th class="p-3 text-start"><%= t("staff.payroll.unit") %></th>
-            <th class="p-3 text-end"><%= t("staff.payroll.amount") %></th>
-            <th class="p-3 text-start"><%= t("staff.payroll.notes") %></th>
+            <th class="p-3 ps-5 text-start">
+              <%= payroll_adjustment_sort_link(t("staff.payroll.type"), "kind", user: user, payroll_month: payroll_month, payroll_sort: payroll_sort, payroll_direction: payroll_direction, sortable: sortable) %>
+            </th>
+            <th class="p-3 text-start">
+              <%= payroll_adjustment_sort_link(t("staff.payroll.happened_at"), "happened_at", user: user, payroll_month: payroll_month, payroll_sort: payroll_sort, payroll_direction: payroll_direction, sortable: sortable) %>
+            </th>
+            <th class="p-3 text-start">
+              <%= payroll_adjustment_sort_link(t("staff.payroll.unit"), "unit_type", user: user, payroll_month: payroll_month, payroll_sort: payroll_sort, payroll_direction: payroll_direction, sortable: sortable) %>
+            </th>
+            <th class="p-3 text-end">
+              <span class="inline-flex justify-end w-full">
+                <%= payroll_adjustment_sort_link(t("staff.payroll.amount"), "amount_cents", user: user, payroll_month: payroll_month, payroll_sort: payroll_sort, payroll_direction: payroll_direction, sortable: sortable) %>
+              </span>
+            </th>
+            <th class="p-3 text-start">
+              <%= payroll_adjustment_sort_link(t("staff.payroll.notes"), "notes", user: user, payroll_month: payroll_month, payroll_sort: payroll_sort, payroll_direction: payroll_direction, sortable: sortable) %>
+            </th>
             <% unless readonly %>
-              <th class="p-3 text-start"><%= t("staff.payroll.recorded_by") %></th>
+              <th class="p-3 text-start">
+                <%= payroll_adjustment_sort_link(t("staff.payroll.recorded_by"), "recorded_by", user: user, payroll_month: payroll_month, payroll_sort: payroll_sort, payroll_direction: payroll_direction, sortable: sortable) %>
+              </th>
               <th class="p-3 pe-5 text-end"><%= t("staff.payroll.actions_column") %></th>
             <% end %>
           </tr>
@@ -117,6 +144,7 @@
                   <%= t("staff.payroll.kinds.#{adj.kind}") %>
                 </span>
               </td>
+              <td class="p-3 text-gray-600 whitespace-nowrap tabular-nums"><%= l(adj.happened_at, format: :long) %></td>
               <td class="p-3 text-gray-600"><%= adj.unit_label %></td>
               <td class="p-3 text-end font-semibold tabular-nums <%= adj.penalty? ? 'text-red-700' : 'text-emerald-700' %>">
                 <%= adj.penalty? ? "−" : "+" %><%= format_money(adj.amount_cents) %>
@@ -126,7 +154,8 @@
                 <td class="p-3 text-gray-500 text-xs"><%= adj.recorded_by.name %></td>
                 <td class="p-3 pe-5 text-end">
                   <% if policy(adj).destroy? %>
-                    <%= button_to t("actions.remove"), admin_user_payroll_adjustment_path(user, adj), method: :delete,
+                    <%= button_to t("actions.remove"), admin_user_payroll_adjustment_path(user, adj, payroll_show_url_params(payroll_month)),
+                          method: :delete,
                           form: { data: { turbo_confirm: t("staff.payroll.remove_confirm") }, class: "inline" },
                           class: "text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
                   <% end %>

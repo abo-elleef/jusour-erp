@@ -1,22 +1,22 @@
 <div class="max-w-3xl">
   <div class="mb-4">
-    <%= link_to "← Categories", admin_categories_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+    <%= link_to t("admin.categories.back_to_list"), admin_categories_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
   </div>
 
   <div class="flex flex-wrap justify-between items-start gap-3 mb-6">
     <div>
-      <h1 class="text-2xl font-bold tracking-tight text-gray-900">Edit <%= @category.name %></h1>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title("edit") %>: <%= @category.name %></h1>
       <p class="text-gray-600 text-sm mt-1">
-        <%= pluralize(@category.menu_items.size, "menu item") %> in this category
+        <%= t("admin.categories.menu_items_in_category", count: @category.menu_items.size) %>
       </p>
     </div>
     <% if @category.active? %>
       <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full bg-green-100 text-green-800 border border-green-200">
-        Active
+        <%= t("admin.categories.active") %>
       </span>
     <% else %>
       <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-        Inactive
+        <%= t("admin.categories.inactive") %>
       </span>
     <% end %>
   </div>

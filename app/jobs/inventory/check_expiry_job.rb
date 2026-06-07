@@ -6,12 +6,17 @@ module Inventory
 
     def perform
       StockBatch.expiring_soon(2).includes(:ingredient).find_each do |batch|
-        ref = batch.batch_reference.presence || "no ref"
+        ref = batch.batch_reference.presence || I18n.t("notifications.messages.no_batch_ref")
         Inventory::NotifyService.deliver_to_managers(
           ingredient: batch.ingredient,
-          message: "#{batch.ingredient.name} batch (#{ref}) expires on " \
-                   "#{batch.expires_on.strftime('%b %d')}. " \
-                   "#{batch.quantity_remaining} #{batch.ingredient.unit} remaining."
+          message_key: "batch_expiring",
+          message_params: {
+            name: batch.ingredient.name,
+            ref: ref,
+            expires_on: batch.expires_on.iso8601,
+            remaining: batch.quantity_remaining,
+            unit: batch.ingredient.unit
+          }
         )
       end
     end

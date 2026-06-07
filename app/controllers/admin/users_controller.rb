@@ -71,7 +71,18 @@ module Admin
       return unless current_user.admin_access?
 
       @payroll_month = parse_payroll_month_param
-      @payroll_summary = @user.monthly_payroll(@payroll_month)
+      @payroll_sort = parse_payroll_sort_param
+      @payroll_direction = parse_payroll_direction_param
+      @payroll_summary = @user.monthly_payroll(@payroll_month, sort: @payroll_sort, direction: @payroll_direction)
+    end
+
+    def parse_payroll_sort_param
+      sort = params[:payroll_sort].to_s
+      PayrollAdjustment::SORTABLE_COLUMNS.include?(sort) ? sort : PayrollAdjustment::DEFAULT_SORT
+    end
+
+    def parse_payroll_direction_param
+      params[:payroll_direction].to_s == "asc" ? "asc" : PayrollAdjustment::DEFAULT_SORT_DIRECTION
     end
 
     def parse_payroll_month_param

@@ -15,6 +15,7 @@ class PayrollAdjustment < ApplicationRecord
   validates :kind, presence: true, inclusion: { in: KINDS }
   validates :unit_type, presence: true, inclusion: { in: UNIT_TYPES }
   validates :payroll_month, presence: true
+  validates :happened_at, presence: true
   validates :amount_cents, numericality: { greater_than: 0 }, if: -> { unit_type == "fixed" }
   validates :overtime_hours, numericality: { greater_than: 0 }, allow_nil: true, if: -> { unit_type == "overtime" }
   validate :fixed_amount_required
@@ -23,11 +24,16 @@ class PayrollAdjustment < ApplicationRecord
   validate :salary_required_for_computed_amount
 
   before_validation :normalize_payroll_month
+  before_validation :set_default_happened_at, on: :create
   before_validation :compute_amount, unless: -> { unit_type == "fixed" }
 
-  scope :for_month, ->(month) { where(payroll_month: month.beginning_of_month) }
+  scope :for_month, ->(month) { where(happened_at: month.beginning_of_month..month.end_of_month) }
   scope :penalties, -> { where(kind: "penalty") }
   scope :bonuses, -> { where(kind: "bonus") }
+
+  SORTABLE_COLUMNS = %w[kind happened_at unit_type amount_cents notes recorded_by].freeze
+  DEFAULT_SORT = "happened_at"
+  DEFAULT_SORT_DIRECTION = "desc"
 
   def penalty?
     kind == "penalty"
@@ -61,6 +67,10 @@ class PayrollAdjustment < ApplicationRecord
     return if payroll_month.blank?
 
     self.payroll_month = payroll_month.to_date.beginning_of_month
+  end
+
+  def set_default_happened_at
+    self.happened_at ||= Date.current
   end
 
   def compute_amount

@@ -24,7 +24,7 @@
     <div class="min-w-0">
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @ingredient.name %></h1>
       <p class="text-gray-600 text-sm mt-1">
-        <%= @ingredient.ingredient_category.name %> · <%= @ingredient.unit %>
+        <%= @ingredient.ingredient_category.name %> · <%= ingredient_unit_label(@ingredient.unit) %>
       </p>
     </div>
     <div class="flex flex-wrap items-center gap-2 shrink-0">
@@ -41,7 +41,7 @@
     <div class="rounded-2xl border p-4 <%= on_hand_stat_class %>">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.ingredients.show.on_hand") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums">
-        <%= @ingredient.quantity_on_hand %> <span class="text-base font-semibold text-gray-600"><%= @ingredient.unit %></span>
+        <%= @ingredient.quantity_on_hand %> <span class="text-base font-semibold text-gray-600"><%= ingredient_unit_label(@ingredient.unit) %></span>
       </p>
       <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.ingredients.show.on_hand_hint") %></p>
     </div>
@@ -104,7 +104,7 @@
                 <div class="min-w-0">
                   <p class="font-semibold text-gray-900"><%= recipe.menu_item.name %></p>
                   <p class="text-xs text-gray-500 mt-0.5 tabular-nums">
-                    <%= recipe.quantity_used %> <%= @ingredient.unit %>
+                    <%= recipe.quantity_used %> <%= ingredient_unit_label(@ingredient.unit) %>
                   </p>
                 </div>
                 <%= button_to t("inventory.ingredients.show.remove_recipe"),
@@ -159,18 +159,18 @@
                   <tr class="hover:bg-gray-50/60 transition-colors">
                     <td class="p-3 ps-5 tabular-nums text-gray-900"><%= l(batch.received_on) %></td>
                     <td class="p-3 tabular-nums text-gray-700">
-                      <%= batch.quantity_remaining %> <%= @ingredient.unit %>
+                      <%= batch.quantity_remaining %> <%= ingredient_unit_label(@ingredient.unit) %>
                     </td>
                     <td class="p-3 pe-5 tabular-nums <%= batch.expired? ? "text-red-700 font-semibold" : "text-gray-700" %>">
                       <% if batch.expired? %>
                         <span class="inline-flex items-center gap-1.5">
-                          <%= batch.expires_on ? l(batch.expires_on) : "—" %>
+                          <%= batch.expires_on ? l(batch.expires_on) : t("accounting.shared.em_dash") %>
                           <span class="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200">
                             <%= t("inventory.ingredients.show.expired") %>
                           </span>
                         </span>
                       <% else %>
-                        <%= batch.expires_on ? l(batch.expires_on) : "—" %>
+                        <%= batch.expires_on ? l(batch.expires_on) : t("accounting.shared.em_dash") %>
                       <% end %>
                     </td>
                   </tr>

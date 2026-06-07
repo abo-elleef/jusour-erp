@@ -10,8 +10,13 @@ module Inventory
 
       Inventory::NotifyService.deliver_to_managers(
         ingredient: ingredient,
-        message: "#{ingredient.name} is low: #{ingredient.quantity_on_hand} #{ingredient.unit} " \
-                 "remaining (threshold: #{ingredient.reorder_threshold})"
+        message_key: "low_stock",
+        message_params: {
+          name: ingredient.name,
+          on_hand: ingredient.quantity_on_hand,
+          unit: ingredient.unit,
+          threshold: ingredient.reorder_threshold
+        }
       )
     end
   end

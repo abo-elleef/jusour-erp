@@ -1,16 +1,43 @@
-<h1 class="text-2xl font-bold mb-4"><%= admin_page_title %></h1>
-<%= button_to "Mark all read", mark_all_read_admin_notifications_path, method: :patch, class: "text-sm text-gray-600 mb-4" %>
-<ul class="bg-white shadow rounded-lg divide-y">
-  <% @notifications.each do |n| %>
-    <li class="p-4 <%= n.unread? ? 'bg-amber-50' : '' %>">
-      <p class="text-sm"><%= n.message %></p>
-      <p class="text-xs text-gray-500 mt-1"><%= time_ago_in_words(n.created_at) %> ago</p>
-      <% if n.unread? && n.ingredient %>
-        <%= link_to "View ingredient", admin_inventory_ingredient_path(n.ingredient), class: "text-xs text-amber-600" %>
+<div class="max-w-3xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("notifications.index.description") %></p>
+    </div>
+    <% if @notifications.any?(&:unread?) %>
+      <%= button_to t("notifications.index.mark_all_read"),
+            mark_all_read_admin_notifications_path,
+            method: :patch,
+            class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors shrink-0" %>
+    <% end %>
+  </div>
+
+  <% if @notifications.any? %>
+    <ul class="bg-white shadow rounded-2xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+      <% @notifications.each do |n| %>
+        <li class="p-4 <%= n.unread? ? 'bg-amber-50/60' : '' %>">
+          <p class="text-sm text-gray-900"><%= notification_message(n) %></p>
+          <p class="text-xs text-gray-500 mt-1"><%= time_ago_in_words(n.created_at) %></p>
+          <div class="flex flex-wrap items-center gap-3 mt-2">
+            <% if n.unread? && n.ingredient %>
+              <%= link_to t("notifications.index.view_ingredient"),
+                    admin_inventory_ingredient_path(n.ingredient),
+                    class: "text-xs font-semibold text-amber-700 hover:text-amber-800" %>
+            <% end %>
+            <% if n.unread? %>
+              <%= button_to t("notifications.index.mark_read"),
+                    mark_read_admin_notification_path(n),
+                    method: :patch,
+                    class: "text-xs font-semibold text-gray-700 hover:text-gray-900" %>
+            <% end %>
+          </div>
+        </li>
       <% end %>
-      <% if n.unread? %>
-        <%= button_to "Mark read", mark_read_admin_notification_path(n), method: :patch, class: "text-xs text-blue-600 mt-1 block" %>
-      <% end %>
-    </li>
+    </ul>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("notifications.index.empty_title") %></p>
+      <p class="text-gray-500 text-sm"><%= t("notifications.index.empty_description") %></p>
+    </section>
   <% end %>
-</ul>
+</div>

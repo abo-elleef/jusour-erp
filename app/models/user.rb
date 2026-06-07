@@ -122,7 +122,7 @@ class User < ApplicationRecord
   }
 
   def role_label
-    role.humanize
+    I18n.t("user.roles.#{role}", default: role.to_s.humanize)
   end
 
   def daily_rate_cents
@@ -131,8 +131,8 @@ class User < ApplicationRecord
     (monthly_salary_cents.to_f / WORK_DAYS_PER_MONTH).round
   end
 
-  def monthly_payroll(payroll_month = Date.current)
-    Accounting::MonthlyPayrollService.new(self, payroll_month).call
+  def monthly_payroll(payroll_month = Date.current, sort: nil, direction: nil)
+    Accounting::MonthlyPayrollService.new(self, payroll_month, sort: sort, direction: direction).call
   end
 
   private

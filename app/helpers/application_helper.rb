@@ -49,6 +49,10 @@ module ApplicationHelper
     t("accounting.treasuries.transaction_kinds.#{kind}", default: kind.to_s.humanize)
   end
 
+  def menu_item_tax_category(category)
+    t("admin.menu_items.tax_categories.#{category}", default: category.to_s.humanize)
+  end
+
   def chart_money_prefix
     Money.new(0).format(symbol: true, no_cents: true, locale: I18n.locale).gsub(/[\d.,\s\u00a0]/, "")
   end
@@ -157,6 +161,14 @@ module ApplicationHelper
     I18n.t("payment.methods.#{method}", default: method.to_s.humanize)
   end
 
+  def payment_status_label(status)
+    I18n.t("payment.statuses.#{status}", default: status.to_s.humanize)
+  end
+
+  def order_event_type_label(event_type)
+    I18n.t("order.event_types.#{event_type}", default: event_type.to_s.humanize)
+  end
+
   def order_payment_summary(order)
     if order.status.in?(%w[draft cancelled])
       return tag.span("—", class: "text-gray-400")
@@ -230,12 +242,16 @@ module ApplicationHelper
       .min_by(&:expires_on)&.expires_on
     return unless date
 
-    "Expires #{date.strftime('%b %-d')}"
+    t("inventory.ingredients.expires_on", date: l(date, format: :short))
+  end
+
+  def ingredient_unit_label(unit)
+    t("inventory.ingredients.units.#{unit}", default: unit.to_s)
   end
 
   def ingredient_suppliers_summary(ingredient)
     suppliers = ingredient.suppliers.sort_by(&:name)
-    return tag.span("—", class: "text-gray-400") if suppliers.empty?
+    return tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") if suppliers.empty?
 
     primary = suppliers.first
     parts = [link_to(primary.name, admin_inventory_supplier_path(primary), class: "text-blue-600 hover:underline")]
@@ -337,12 +353,70 @@ module ApplicationHelper
     end
   end
 
+  def stock_take_status_label(status)
+    t("inventory.stock_takes.statuses.#{status}", default: status.to_s.humanize)
+  end
+
   def stock_take_status_border_class(status)
     case status
     when "completed" then "border-green-200"
     when "in_progress" then "border-amber-200"
     else "border-gray-200"
     end
+  end
+
+  def payroll_adjustment_sort_link(label, column, user:, payroll_month:, payroll_sort:, payroll_direction:, sortable: true)
+    return label unless sortable
+
+    next_direction = payroll_sort == column && payroll_direction == "desc" ? "asc" : "desc"
+    link_class = "inline-flex items-center gap-1 hover:text-gray-900 transition-colors"
+    link_class += payroll_sort == column ? " text-gray-900" : " text-gray-500"
+
+    link_to admin_user_path(
+              user,
+              payroll_month: payroll_month,
+              payroll_sort: column,
+              payroll_direction: next_direction
+            ),
+            class: link_class do
+      safe_join([label, payroll_sort_indicator(payroll_sort, payroll_direction, column)].compact)
+    end
+  end
+
+  def payroll_sort_indicator(current_sort, current_direction, column)
+    return unless current_sort == column
+
+    tag.span(current_direction == "asc" ? "↑" : "↓", class: "text-amber-700 not-italic", aria: { hidden: true })
+  end
+
+  def payroll_show_url_params(month)
+    {
+      payroll_month: month,
+      payroll_sort: params[:payroll_sort].presence,
+      payroll_direction: params[:payroll_direction].presence
+    }.compact
+  end
+
+  def notification_message(notification)
+    key = notification.params["message_key"] || notification.params[:message_key]
+    legacy = notification.params["message"] || notification.params[:message]
+    return legacy if key.blank?
+
+    raw = (notification.params["message_params"] || notification.params[:message_params] || {}).to_h.with_indifferent_access
+    if raw[:expires_on].present?
+      raw[:date] = l(Date.parse(raw[:expires_on].to_s), format: :short)
+    end
+    if raw[:session_date].present?
+      raw[:date] = l(Date.parse(raw[:session_date].to_s), format: :short)
+    end
+    if raw[:variance_cents].present?
+      raw[:variance] = format_money(raw[:variance_cents].to_i)
+    end
+    if raw[:unit].present?
+      raw[:unit] = ingredient_unit_label(raw[:unit])
+    end
+
+    t("notifications.messages.#{key}", **raw.symbolize_keys, default: legacy)
   end
 
   def user_role_border_class(role)
