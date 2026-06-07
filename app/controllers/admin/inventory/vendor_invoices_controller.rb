@@ -23,7 +23,7 @@ module Admin
         authorize_inventory!(:show)
         @lines = @vendor_invoice.vendor_invoice_lines.includes(:ingredient, :stock_batch)
         @payments = @vendor_invoice.vendor_invoice_payments.includes(:user, :treasury).order(payment_date: :desc, created_at: :desc)
-        @treasuries = Treasury.active.ordered
+        @treasuries = Treasury.active.payable.ordered
       end
 
       def new
@@ -78,7 +78,7 @@ module Admin
              ActiveRecord::RecordInvalid => e
         @lines = @vendor_invoice.vendor_invoice_lines.includes(:ingredient, :stock_batch)
         @payments = @vendor_invoice.vendor_invoice_payments.includes(:user, :treasury).order(payment_date: :desc, created_at: :desc)
-        @treasuries = Treasury.active.ordered
+        @treasuries = Treasury.active.payable.ordered
         flash.now[:alert] = e.message
         render :show, status: :unprocessable_entity
       end
@@ -91,7 +91,13 @@ module Admin
           return
         end
 
-        @vendor_invoice.update!(payment_status: "void")
+        ActiveRecord::Base.transaction do
+          @vendor_invoice.update!(payment_status: "void")
+          Accounting::SupplierApLedgerService.reverse_invoice!(
+            invoice: @vendor_invoice,
+            user: current_user
+          )
+        end
         redirect_to admin_inventory_vendor_invoices_path, notice: t("flash.vendor_invoice.voided")
       end
 

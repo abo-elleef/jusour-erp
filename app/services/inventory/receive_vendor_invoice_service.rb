@@ -14,6 +14,8 @@ module Inventory
           receive_line(line)
         end
         @invoice.update_column(:total_cents, @invoice.vendor_invoice_lines.sum(&:line_total_cents))
+        @invoice.reload
+        Accounting::SupplierApLedgerService.record_invoice!(invoice: @invoice, user: @user)
       end
       @invoice
     end

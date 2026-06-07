@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_19_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_20_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -723,8 +723,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_19_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.uuid "treasury_id"
     t.index ["company_id"], name: "index_suppliers_on_company_id"
     t.index ["name"], name: "index_suppliers_on_name"
+    t.index ["treasury_id"], name: "index_suppliers_on_treasury_id"
   end
 
   create_table "tax_rates", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -752,9 +754,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_19_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.uuid "supplier_id"
     t.index ["active"], name: "index_treasuries_on_active"
     t.index ["company_id", "name"], name: "index_treasuries_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_treasuries_on_company_id"
+    t.index ["supplier_id"], name: "index_treasuries_on_supplier_id"
   end
 
   create_table "treasury_transactions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -949,6 +953,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_19_000000) do
   add_foreign_key "supplier_price_histories", "suppliers"
   add_foreign_key "supplier_price_histories", "users", column: "recorded_by_user_id"
   add_foreign_key "suppliers", "companies"
+  add_foreign_key "suppliers", "treasuries"
   add_foreign_key "tax_rates", "companies"
   add_foreign_key "treasuries", "companies"
   add_foreign_key "treasury_transactions", "treasuries"

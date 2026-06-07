@@ -3,7 +3,7 @@
 class Treasury < ApplicationRecord
   include Tenantable
 
-  TYPES = %w[cash_drawer bank safe petty_cash mobile_wallet other].freeze
+  TYPES = %w[cash_drawer bank safe petty_cash mobile_wallet other supplier_ap].freeze
 
   has_many :treasury_transactions, dependent: :destroy
   has_many :expenses, dependent: :restrict_with_error
@@ -11,6 +11,7 @@ class Treasury < ApplicationRecord
   has_many :cash_drawer_sessions, dependent: :restrict_with_error
   has_many :outgoing_transfers, class_name: "TreasuryTransfer", foreign_key: :from_treasury_id, dependent: :restrict_with_error
   has_many :incoming_transfers, class_name: "TreasuryTransfer", foreign_key: :to_treasury_id, dependent: :restrict_with_error
+  belongs_to :supplier, optional: true
 
   monetize :balance_cents
   monetize :opening_balance_cents
@@ -21,6 +22,8 @@ class Treasury < ApplicationRecord
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }
   scope :cash_drawers, -> { where(treasury_type: "cash_drawer") }
+  scope :payable, -> { where.not(treasury_type: "supplier_ap") }
+  scope :supplier_ap, -> { where(treasury_type: "supplier_ap") }
 
   def self.default_treasury
     active.find_by(is_default: true) || active.ordered.first

@@ -25,7 +25,7 @@ module Admin
         @expense = Expense.new(expense_date: Date.current, user: current_user, treasury: Treasury.default_treasury)
         authorize @expense
         @categories = ExpenseCategory.manual.ordered
-        @treasuries = Treasury.active.ordered
+        @treasuries = Treasury.active.payable.ordered
       end
 
       def create
@@ -36,7 +36,7 @@ module Admin
           redirect_to admin_accounting_expenses_path, notice: t("flash.accounting.expense_recorded")
         else
           @categories = ExpenseCategory.manual.ordered
-          @treasuries = Treasury.active.ordered
+          @treasuries = Treasury.active.payable.ordered
           render :new, status: :unprocessable_entity
         end
       end
@@ -44,7 +44,7 @@ module Admin
       def edit
         authorize @expense
         @categories = ExpenseCategory.manual.ordered
-        @treasuries = Treasury.active.ordered
+        @treasuries = Treasury.active.payable.ordered
       end
 
       def update
@@ -53,7 +53,7 @@ module Admin
           redirect_to admin_accounting_expenses_path, notice: t("flash.accounting.expense_updated")
         else
           @categories = ExpenseCategory.manual.ordered
-          @treasuries = Treasury.active.ordered
+          @treasuries = Treasury.active.payable.ordered
           render :edit, status: :unprocessable_entity
         end
       end

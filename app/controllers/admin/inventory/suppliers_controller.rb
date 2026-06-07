@@ -36,6 +36,14 @@ module Admin
           .includes(:ingredient, :recorded_by_user)
           .order(effective_date: :desc)
           .limit(30)
+        @ap_transactions = if @supplier.ap_treasury
+                             @supplier.ap_treasury.treasury_transactions
+                               .where(kind: %w[ap_invoice ap_payment])
+                               .order(occurred_on: :desc, created_at: :desc)
+                               .limit(50)
+                           else
+                             TreasuryTransaction.none
+                           end
       end
 
       def new

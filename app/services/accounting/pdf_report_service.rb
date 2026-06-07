@@ -47,7 +47,7 @@ module Accounting
     private
 
     def format_money(cents)
-      Money.new(cents || 0).format
+      Money.new(cents || 0).format(symbol: false)
     end
   end
 end

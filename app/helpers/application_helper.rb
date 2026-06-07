@@ -87,7 +87,7 @@ module ApplicationHelper
   def format_money(cents)
     return Money.new(0).format(locale: I18n.locale) if cents.nil?
 
-    Money.new(cents).format(locale: I18n.locale)
+    Money.new(cents).format(locale: I18n.locale, symbol: false)
   end
 
   def order_status_class(status)

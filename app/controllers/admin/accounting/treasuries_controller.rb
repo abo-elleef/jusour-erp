@@ -10,7 +10,8 @@ module Admin
         @q = Treasury.ransack(params[:q])
         @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
         @treasuries = @q.result.ordered
-        @total_balance_cents = Treasury.active.sum(:balance_cents)
+        @total_balance_cents = Treasury.active.payable.sum(:balance_cents)
+        @supplier_ap_balance_cents = Treasury.active.supplier_ap.sum(:balance_cents)
       end
 
       def show

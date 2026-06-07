@@ -44,6 +44,8 @@ module Accounting
         @invoice.update!(amount_paid_cents: @invoice.amount_paid_cents + @amount_cents)
         @invoice.sync_payment_status!
 
+        Accounting::SupplierApLedgerService.record_payment!(payment: payment, user: @user)
+
         payment
       end
     end

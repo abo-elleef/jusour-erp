@@ -25,7 +25,7 @@ module Admin
         @income = Income.new(income_date: Date.current, user: current_user, treasury: Treasury.default_treasury)
         authorize @income
         @categories = IncomeCategory.manual.ordered
-        @treasuries = Treasury.active.ordered
+        @treasuries = Treasury.active.payable.ordered
       end
 
       def create
@@ -36,7 +36,7 @@ module Admin
           redirect_to admin_accounting_incomes_path, notice: t("flash.accounting.income_recorded")
         else
           @categories = IncomeCategory.manual.ordered
-          @treasuries = Treasury.active.ordered
+          @treasuries = Treasury.active.payable.ordered
           render :new, status: :unprocessable_entity
         end
       end
@@ -44,7 +44,7 @@ module Admin
       def edit
         authorize @income
         @categories = IncomeCategory.manual.ordered
-        @treasuries = Treasury.active.ordered
+        @treasuries = Treasury.active.payable.ordered
       end
 
       def update
@@ -53,7 +53,7 @@ module Admin
           redirect_to admin_accounting_incomes_path, notice: t("flash.accounting.income_updated")
         else
           @categories = IncomeCategory.manual.ordered
-          @treasuries = Treasury.active.ordered
+          @treasuries = Treasury.active.payable.ordered
           render :edit, status: :unprocessable_entity
         end
       end

@@ -9,7 +9,7 @@ module Admin
           from_treasury_id: params[:from_treasury_id]
         )
         authorize @transfer
-        @treasuries = Treasury.active.ordered
+        @treasuries = Treasury.active.payable.ordered
       end
 
       def create
@@ -21,7 +21,7 @@ module Admin
           redirect_to admin_accounting_treasury_path(@transfer.from_treasury),
             notice: t("flash.accounting.treasury_transfer_recorded")
         else
-          @treasuries = Treasury.active.ordered
+          @treasuries = Treasury.active.payable.ordered
           render :new, status: :unprocessable_entity
         end
       end
