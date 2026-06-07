@@ -2,13 +2,15 @@
 
 FactoryBot.define do
   factory :category do
+    company { Current.company }
     sequence(:name) { |n| "Category #{n}" }
     position { 1 }
     active { true }
   end
 
   factory :menu_item do
-    category
+    company { Current.company }
+    category { association :category, company: company }
     name { "Test Item" }
     base_price_cents { 999 }
     tax_category { "food" }
@@ -16,12 +18,14 @@ FactoryBot.define do
   end
 
   factory :customer do
+    company { Current.company }
     name { "Test Customer" }
     email { Faker::Internet.unique.email }
     phone { nil }
   end
 
   factory :order do
+    company { user.company }
     user
     status { "draft" }
     subtotal_cents { 0 }

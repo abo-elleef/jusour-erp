@@ -2,6 +2,7 @@
 
 class PurchaseOrder < ApplicationRecord
   include AASM
+  include Tenantable
 
   belongs_to :supplier
   belongs_to :user

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class StockTake < ApplicationRecord
+  include Tenantable
+
   STATUSES = %w[in_progress completed cancelled].freeze
 
   belongs_to :user

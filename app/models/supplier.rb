@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Supplier < ApplicationRecord
+  include Tenantable
+
   has_many :supplier_ingredients, dependent: :destroy
   has_many :ingredients, through: :supplier_ingredients
   has_many :purchase_orders, dependent: :nullify

@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 class ModifierGroup < ApplicationRecord
+  include Tenantable
+
   has_many :modifiers, -> { order(:position, :name) }, dependent: :destroy
   has_many :menu_item_modifier_groups, dependent: :destroy
   has_many :menu_items, through: :menu_item_modifier_groups
 
-  validates :name, presence: true, uniqueness: { case_sensitive: false }
+  validates :name, presence: true
 
   scope :ordered, -> { order(:position, :name) }
 

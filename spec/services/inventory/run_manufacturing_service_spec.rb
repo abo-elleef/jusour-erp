@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe Inventory::RunManufacturingService do
   let(:user) { create(:user) }
-  let(:category) { IngredientCategory.create!(name: "Proteins", position: 1) }
+  let(:category) { IngredientCategory.create!(name: "Proteins", position: 1, company: Current.company) }
 
   let(:chicken) do
     Ingredient.create!(

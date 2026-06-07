@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Customer < ApplicationRecord
+  include Tenantable
+
   has_many :orders, dependent: :nullify
   has_many :loyalty_transactions, dependent: :destroy
   has_many :addresses, class_name: "CustomerAddress", dependent: :destroy, inverse_of: :customer
@@ -8,9 +10,9 @@ class Customer < ApplicationRecord
   accepts_nested_attributes_for :addresses, allow_destroy: true,
     reject_if: proc { |attrs| attrs["address"].to_s.strip.blank? }
 
-  validates :email, uniqueness: true, allow_blank: true
-  validates :phone, uniqueness: true, allow_blank: true
-  validates :phone_secondary, uniqueness: true, allow_blank: true
+  validates :email, uniqueness: { scope: :company_id }, allow_blank: true
+  validates :phone, uniqueness: { scope: :company_id }, allow_blank: true
+  validates :phone_secondary, uniqueness: { scope: :company_id }, allow_blank: true
   validate :email_or_phone_present
   validate :phones_must_differ
 

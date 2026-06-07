@@ -2,6 +2,7 @@
 
 class MenuItem < ApplicationRecord
   include Taxable
+  include Tenantable
 
   belongs_to :category
   has_many :menu_item_modifier_groups, -> { order(:position) }, dependent: :destroy
@@ -23,5 +24,11 @@ class MenuItem < ApplicationRecord
 
   def modifier_group_ids
     menu_item_modifier_groups.map(&:modifier_group_id)
+  end
+
+  private
+
+  def assign_company
+    self.company ||= category&.company || Current.company
   end
 end

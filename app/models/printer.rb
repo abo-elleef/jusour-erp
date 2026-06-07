@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Printer < ApplicationRecord
+  include Tenantable
+
   PRINTER_TYPES = %w[receipt kitchen bar expo].freeze
   CONNECTION_TYPES = %w[network usb].freeze
   PAPER_WIDTHS = %w[58mm 80mm].freeze

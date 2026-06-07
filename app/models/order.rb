@@ -2,6 +2,7 @@
 
 class Order < ApplicationRecord
   include AASM
+  include Tenantable
 
   STATUSES = %w[draft submitted in_progress ready completed cancelled].freeze
   ORDER_TYPES = %w[delivery pickup table].freeze
@@ -22,7 +23,7 @@ class Order < ApplicationRecord
   monetize :tip_cents, allow_nil: false
   monetize :total_cents, allow_nil: true
 
-  validates :order_number, presence: true, uniqueness: true
+  validates :order_number, presence: true, uniqueness: { scope: :company_id }
   validates :order_type, presence: true, inclusion: { in: ORDER_TYPES }
 
   before_validation :assign_order_number, on: :create
@@ -159,7 +160,7 @@ class Order < ApplicationRecord
   end
 
   def broadcast_to_kds
-    Turbo::StreamsChannel.broadcast_refresh_to("kitchen")
+    Turbo::StreamsChannel.broadcast_refresh_to("kitchen_#{company_id}")
   end
 
   private

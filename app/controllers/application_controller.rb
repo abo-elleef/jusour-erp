@@ -6,11 +6,16 @@ class ApplicationController < ActionController::Base
   include Pagy::Method
 
   before_action :authenticate_user!, unless: :devise_controller?
+  before_action :set_current_company, if: :user_signed_in?
   before_action :configure_permitted_parameters, if: :devise_controller?
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
 
   private
+
+  def set_current_company
+    Current.company = current_user.company
+  end
 
   def configure_permitted_parameters
     devise_parameter_sanitizer.permit(:sign_up, keys: %i[name role])
@@ -54,7 +59,8 @@ class ApplicationController < ActionController::Base
 
   def authenticate_manager_pin!(action_type:, record_id: nil)
     pin = params[:pin].presence || session.dig(:manager_approval, "pin")
-    manager = User.active.where(role: %w[owner manager]).find { |u| u.authenticate_pin(pin) }
+    manager = User.active.where(role: %w[owner manager], company_id: Current.company&.id)
+      .find { |u| u.authenticate_pin(pin) }
 
     unless manager
       return false

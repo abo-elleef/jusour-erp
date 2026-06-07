@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 class ExpenseCategory < ApplicationRecord
+  include Tenantable
+
   CATEGORY_TYPES = %w[cogs labor rent utilities marketing maintenance other].freeze
 
   has_many :expenses, dependent: :restrict_with_error
   has_many :budgets, dependent: :destroy
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :category_type, presence: true, inclusion: { in: CATEGORY_TYPES }
 
   scope :ordered, -> { order(:position, :name) }

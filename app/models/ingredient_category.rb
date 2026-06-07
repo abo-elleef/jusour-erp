@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
 class IngredientCategory < ApplicationRecord
+  include Tenantable
+
   has_many :ingredients, dependent: :restrict_with_error
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { scope: :company_id }
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }

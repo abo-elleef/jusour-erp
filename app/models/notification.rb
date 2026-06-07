@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Notification < ApplicationRecord
+  include Tenantable
+
   self.inheritance_column = :_type_disabled
 
   belongs_to :recipient, polymorphic: true

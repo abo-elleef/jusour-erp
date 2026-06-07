@@ -9,11 +9,16 @@ RSpec.describe Accounting::TreasuryLedgerService do
       name: "Test Safe",
       treasury_type: "safe",
       opening_balance_cents: 100_000,
-      balance_cents: 100_000
+      balance_cents: 100_000,
+      company: Current.company
     )
   end
-  let(:expense_category) { ExpenseCategory.create!(name: "Supplies", category_type: "other", position: 1) }
-  let(:income_category) { IncomeCategory.create!(name: "Catering", category_type: "catering", position: 1) }
+  let(:expense_category) do
+    ExpenseCategory.create!(name: "Supplies", category_type: "other", position: 1, company: Current.company)
+  end
+  let(:income_category) do
+    IncomeCategory.create!(name: "Catering", category_type: "catering", position: 1, company: Current.company)
+  end
 
   describe ".sync_expense!" do
     it "deducts from treasury balance" do

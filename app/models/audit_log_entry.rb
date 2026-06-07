@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class AuditLogEntry < ApplicationRecord
+  include Tenantable
+
   belongs_to :user, optional: true
 
   validates :action, :record_type, :record_id, presence: true
@@ -15,11 +17,13 @@ class AuditLogEntry < ApplicationRecord
   end
 
   def self.record!(action:, record:, user: nil, changes_snapshot: {}, ip_address: nil)
+    company = record.try(:company) || user&.company || Current.company
     create!(
       action: action,
       record_type: record.class.name,
       record_id: record.id,
       user: user,
+      company: company,
       changes_snapshot: changes_snapshot,
       ip_address: ip_address
     )

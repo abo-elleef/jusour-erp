@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class DiscountRule < ApplicationRecord
+  include Tenantable
+
   DISCOUNT_TYPES = %w[percentage fixed_amount].freeze
   APPLIES_TO = %w[order item category].freeze
 
@@ -9,7 +11,7 @@ class DiscountRule < ApplicationRecord
   validates :name, :discount_type, :discount_value, :applies_to, presence: true
   validates :discount_type, inclusion: { in: DISCOUNT_TYPES }
   validates :applies_to, inclusion: { in: APPLIES_TO }
-  validates :code, uniqueness: true, allow_nil: true
+  validates :code, uniqueness: { scope: :company_id }, allow_nil: true
 
   scope :active, -> { where(active: true) }
   scope :valid_now, -> {

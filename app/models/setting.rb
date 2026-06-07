@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 class Setting < ApplicationRecord
-  validates :key, presence: true, uniqueness: true
+  include Tenantable
+
+  validates :key, presence: true, uniqueness: { scope: :company_id }
 
   def self.get(key, default = nil)
     find_by(key: key)&.value || default

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Treasury < ApplicationRecord
+  include Tenantable
+
   TYPES = %w[cash_drawer bank safe petty_cash mobile_wallet other].freeze
 
   has_many :treasury_transactions, dependent: :destroy
@@ -13,7 +15,7 @@ class Treasury < ApplicationRecord
   monetize :balance_cents
   monetize :opening_balance_cents
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :treasury_type, presence: true, inclusion: { in: TYPES }
 
   scope :active, -> { where(active: true) }

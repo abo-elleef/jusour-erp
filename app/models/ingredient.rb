@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Ingredient < ApplicationRecord
+  include Tenantable
+
   UNITS = %w[kg g lbs oz liters ml pieces packs].freeze
 
   belongs_to :ingredient_category
@@ -19,7 +21,7 @@ class Ingredient < ApplicationRecord
 
   monetize :cost_per_unit_cents
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :unit, presence: true, inclusion: { in: UNITS }
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_on_hand, numericality: true
@@ -63,5 +65,11 @@ class Ingredient < ApplicationRecord
 
   def stock_value_cents
     (quantity_on_hand.to_d * cost_per_unit_cents).round
+  end
+
+  private
+
+  def assign_company
+    self.company ||= ingredient_category&.company || Current.company
   end
 end

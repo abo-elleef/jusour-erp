@@ -2,19 +2,28 @@
 
 puts "Seeding Saqr POS..."
 
+company = Company.find_or_create_by!(slug: "default") do |c|
+  c.name = "Saqr Chicken & Burgers"
+  c.timezone = "America/New_York"
+  c.currency = "USD"
+  c.locale = "en"
+  c.active = true
+end
+Current.company = company
+
 Setting.set("loyalty_earn_rate", "1")
 Setting.set("loyalty_redeem_threshold", "100")
 Setting.set("loyalty_redeem_value_cents", "500")
 Setting.set("restaurant_name", "Saqr Chicken & Burgers")
 
-User.find_or_create_by!(email: "owner@restaurant.com") do |u|
+User.find_or_create_by!(email: "owner@restaurant.com", company: company) do |u|
   u.name = "Owner"
   u.role = "owner"
   u.password = "changeme123"
   u.password_confirmation = "changeme123"
 end
 
-User.find_or_create_by!(email: "manager@restaurant.com") do |u|
+User.find_or_create_by!(email: "manager@restaurant.com", company: company) do |u|
   u.name = "Manager"
   u.role = "manager"
   u.password = "changeme123"
@@ -22,7 +31,7 @@ User.find_or_create_by!(email: "manager@restaurant.com") do |u|
   u.monthly_salary_cents = 450_000
 end.tap { |u| u.update!(monthly_salary_cents: 450_000) if u.monthly_salary_cents.zero? }
 
-User.find_or_create_by!(email: "cashier@restaurant.com") do |u|
+User.find_or_create_by!(email: "cashier@restaurant.com", company: company) do |u|
   u.name = "Cashier"
   u.role = "cashier"
   u.password = "changeme123"
@@ -30,7 +39,7 @@ User.find_or_create_by!(email: "cashier@restaurant.com") do |u|
   u.monthly_salary_cents = 300_000
 end.tap { |u| u.update!(monthly_salary_cents: 300_000) if u.monthly_salary_cents.zero? }
 
-User.find_or_create_by!(email: "kitchen@restaurant.com") do |u|
+User.find_or_create_by!(email: "kitchen@restaurant.com", company: company) do |u|
   u.name = "Kitchen"
   u.role = "kitchen"
   u.password = "changeme123"

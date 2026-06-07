@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 class IncomeCategory < ApplicationRecord
+  include Tenantable
+
   CATEGORY_TYPES = %w[sales catering services delivery other].freeze
 
   has_many :incomes, dependent: :restrict_with_error
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :category_type, presence: true, inclusion: { in: CATEGORY_TYPES }
 
   scope :ordered, -> { order(:position, :name) }

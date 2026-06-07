@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe Ingredient, type: :model do
-  let(:category) { IngredientCategory.create!(name: "Test Cat") }
+  let(:category) { IngredientCategory.create!(name: "Test Cat", company: Current.company) }
 
   it "is valid with defaults" do
     expect(described_class.new(

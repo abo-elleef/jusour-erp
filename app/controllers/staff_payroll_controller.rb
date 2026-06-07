@@ -37,7 +37,8 @@ class StaffPayrollController < ApplicationController
   private
 
   def set_user
-    @user = User.active.find_by!(payroll_access_token: params[:token])
+    @user = User.unscoped.active.find_by!(payroll_access_token: params[:token])
+    Current.company = @user.company
   rescue ActiveRecord::RecordNotFound
     raise ActionController::RoutingError, "Not Found"
   end

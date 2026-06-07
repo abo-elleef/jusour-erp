@@ -6,6 +6,7 @@ module Accounting
       User.where(role: %w[owner manager]).find_each do |user|
         Notification.create!(
           recipient: user,
+          company: user.company,
           notification_type: "accounting",
           params: {
             message_key: message_key,

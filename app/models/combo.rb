@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Combo < ApplicationRecord
+  include Tenantable
+
   has_many :combo_items, dependent: :destroy
   has_many :menu_items, through: :combo_items
 

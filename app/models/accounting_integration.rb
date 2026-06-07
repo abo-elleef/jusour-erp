@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 class AccountingIntegration < ApplicationRecord
+  include Tenantable
+
   PROVIDERS = %w[quickbooks xero].freeze
   STATUSES = %w[disconnected connected error].freeze
 
-  validates :provider, presence: true, uniqueness: true, inclusion: { in: PROVIDERS }
+  validates :provider, presence: true, uniqueness: { scope: :company_id }, inclusion: { in: PROVIDERS }
   validates :status, inclusion: { in: STATUSES }
 
   scope :connected, -> { where(status: "connected") }

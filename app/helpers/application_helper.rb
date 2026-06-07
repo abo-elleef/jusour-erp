@@ -322,6 +322,18 @@ module ApplicationHelper
     [label, badge_class]
   end
 
+  def purchase_order_item_status_badge(status)
+    label = t("inventory.purchase_orders.item_statuses.#{status}", default: status.to_s.humanize)
+    badge_class = case status.to_s
+                  when "pending" then "bg-gray-100 text-gray-800 border-gray-200"
+                  when "partial" then "bg-amber-100 text-amber-900 border-amber-200"
+                  when "received" then "bg-green-100 text-green-800 border-green-200"
+                  when "discrepancy" then "bg-red-100 text-red-800 border-red-200"
+                  else "bg-gray-100 text-gray-700 border-gray-200"
+                  end
+    [label, badge_class]
+  end
+
   def order_type_class(order_type)
     case order_type
     when "delivery" then "bg-blue-100 text-blue-800"

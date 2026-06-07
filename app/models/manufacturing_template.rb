@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class ManufacturingTemplate < ApplicationRecord
+  include Tenantable
+
   belongs_to :output_ingredient, class_name: "Ingredient"
   has_many :manufacturing_template_lines, dependent: :destroy
   has_many :input_ingredients, through: :manufacturing_template_lines, source: :ingredient
@@ -10,7 +12,7 @@ class ManufacturingTemplate < ApplicationRecord
     allow_destroy: true,
     reject_if: proc { |attrs| attrs["ingredient_id"].blank? }
 
-  validates :name, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :yield_quantity, numericality: { greater_than: 0 }
   validate :must_have_input_lines, if: :active?
 

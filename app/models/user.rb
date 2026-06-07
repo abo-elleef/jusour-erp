@@ -3,14 +3,23 @@
 require "bcrypt"
 
 class User < ApplicationRecord
+  include Tenantable
+
   ROLES = %w[owner manager cashier kitchen].freeze
   WORK_DAYS_PER_MONTH = 30
   WORK_HOURS_PER_MONTH = 300
 
-  devise :database_authenticatable, :recoverable, :rememberable, :validatable
+  devise :database_authenticatable, :recoverable, :rememberable
 
   validates :name, presence: true
   validates :role, presence: true, inclusion: { in: ROLES }
+  validates :email, presence: true, if: :email_required?
+  validates :email, uniqueness: { scope: :company_id, case_sensitive: false, allow_blank: true },
+    if: :will_save_change_to_email?
+  validates :email, format: { with: Devise.email_regexp, allow_blank: true }, if: :will_save_change_to_email?
+  validates :password, presence: true, if: :password_required?
+  validates :password, confirmation: true, if: :password_required?
+  validates :password, length: { within: 6..128 }, allow_blank: true
   validates :payroll_access_token, presence: true, uniqueness: true
 
   before_validation :assign_payroll_access_token, on: :create
@@ -141,6 +150,14 @@ class User < ApplicationRecord
   end
 
   private
+
+  def email_required?
+    true
+  end
+
+  def password_required?
+    !persisted? || password.present? || password_confirmation.present?
+  end
 
   def assign_payroll_access_token
     self.payroll_access_token ||= SecureRandom.urlsafe_base64(24)

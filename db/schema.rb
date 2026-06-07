@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_17_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -27,7 +27,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.text "last_error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["provider"], name: "index_accounting_integrations_on_provider", unique: true
+    t.uuid "company_id", null: false
+    t.index ["company_id", "provider"], name: "index_accounting_integrations_on_company_id_and_provider", unique: true
+    t.index ["company_id"], name: "index_accounting_integrations_on_company_id"
   end
 
   create_table "active_storage_attachments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -67,7 +69,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.string "ip_address"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
     t.index ["action"], name: "index_audit_log_entries_on_action"
+    t.index ["company_id"], name: "index_audit_log_entries_on_company_id"
     t.index ["created_at"], name: "index_audit_log_entries_on_created_at"
     t.index ["record_type", "record_id"], name: "index_audit_log_entries_on_record_type_and_record_id"
     t.index ["user_id"], name: "index_audit_log_entries_on_user_id"
@@ -108,7 +112,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_categories_on_name", unique: true
+    t.uuid "company_id", null: false
+    t.index ["company_id", "name"], name: "index_categories_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_categories_on_company_id"
     t.index ["position"], name: "index_categories_on_position"
   end
 
@@ -129,6 +135,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_combos_on_company_id"
+  end
+
+  create_table "companies", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "slug", null: false
+    t.string "timezone", default: "UTC", null: false
+    t.string "currency", default: "USD", null: false
+    t.string "locale", default: "en", null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["slug"], name: "index_companies_on_slug", unique: true
   end
 
   create_table "customer_addresses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -151,9 +171,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "phone_secondary"
-    t.index ["email"], name: "index_customers_on_email", unique: true
-    t.index ["phone"], name: "index_customers_on_phone", unique: true
-    t.index ["phone_secondary"], name: "index_customers_on_phone_secondary", unique: true, where: "(phone_secondary IS NOT NULL)"
+    t.uuid "company_id", null: false
+    t.index ["company_id", "email"], name: "index_customers_on_company_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
+    t.index ["company_id", "phone"], name: "index_customers_on_company_id_and_phone", unique: true, where: "((phone IS NOT NULL) AND ((phone)::text <> ''::text))"
+    t.index ["company_id", "phone_secondary"], name: "index_customers_on_company_id_and_phone_secondary", unique: true, where: "(phone_secondary IS NOT NULL)"
+    t.index ["company_id"], name: "index_customers_on_company_id"
   end
 
   create_table "discount_rules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -169,8 +191,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.integer "uses_remaining"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
     t.index ["active"], name: "index_discount_rules_on_active"
-    t.index ["code"], name: "index_discount_rules_on_code", unique: true
+    t.index ["company_id", "code"], name: "index_discount_rules_on_company_id_and_code", unique: true, where: "(code IS NOT NULL)"
+    t.index ["company_id"], name: "index_discount_rules_on_company_id"
   end
 
   create_table "expense_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -180,7 +204,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_expense_categories_on_name", unique: true
+    t.uuid "company_id", null: false
+    t.index ["company_id", "name"], name: "index_expense_categories_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_expense_categories_on_company_id"
   end
 
   create_table "expenses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -211,7 +237,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["code"], name: "index_gift_cards_on_code", unique: true
+    t.uuid "company_id", null: false
+    t.index ["company_id", "code"], name: "index_gift_cards_on_company_id_and_code", unique: true
+    t.index ["company_id"], name: "index_gift_cards_on_company_id"
   end
 
   create_table "income_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -221,7 +249,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_income_categories_on_name", unique: true
+    t.uuid "company_id", null: false
+    t.index ["company_id", "name"], name: "index_income_categories_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_income_categories_on_company_id"
   end
 
   create_table "incomes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -252,7 +282,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.boolean "active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["name"], name: "index_ingredient_categories_on_name", unique: true
+    t.uuid "company_id", null: false
+    t.index ["company_id", "name"], name: "index_ingredient_categories_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_ingredient_categories_on_company_id"
   end
 
   create_table "ingredients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -265,7 +297,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.boolean "active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
     t.index ["active"], name: "index_ingredients_on_active"
+    t.index ["company_id", "name"], name: "index_ingredients_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_ingredients_on_company_id"
     t.index ["ingredient_category_id"], name: "index_ingredients_on_ingredient_category_id"
     t.index ["name"], name: "index_ingredients_on_name"
   end
@@ -314,8 +349,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
     t.index ["active"], name: "index_manufacturing_templates_on_active"
-    t.index ["name"], name: "index_manufacturing_templates_on_name", unique: true
+    t.index ["company_id", "name"], name: "index_manufacturing_templates_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_manufacturing_templates_on_company_id"
     t.index ["output_ingredient_id"], name: "index_manufacturing_templates_on_output_ingredient_id"
   end
 
@@ -340,8 +377,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.integer "position"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
     t.index ["available"], name: "index_menu_items_on_available"
     t.index ["category_id"], name: "index_menu_items_on_category_id"
+    t.index ["company_id"], name: "index_menu_items_on_company_id"
   end
 
   create_table "modifier_groups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -351,6 +390,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.integer "position"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_modifier_groups_on_company_id"
   end
 
   create_table "modifiers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -360,6 +401,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.integer "position"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_modifiers_on_company_id"
     t.index ["modifier_group_id"], name: "index_modifiers_on_modifier_group_id"
   end
 
@@ -371,6 +414,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.datetime "read_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_notifications_on_company_id"
     t.index ["read_at"], name: "index_notifications_on_read_at"
     t.index ["recipient_type", "recipient_id"], name: "index_notifications_on_recipient"
   end
@@ -439,9 +484,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.string "order_type", default: "pickup", null: false
     t.string "table_number"
     t.text "delivery_address"
+    t.uuid "company_id", null: false
+    t.index ["company_id", "order_number"], name: "index_orders_on_company_id_and_order_number", unique: true
+    t.index ["company_id"], name: "index_orders_on_company_id"
     t.index ["created_at"], name: "index_orders_on_created_at"
     t.index ["customer_id"], name: "index_orders_on_customer_id"
-    t.index ["order_number"], name: "index_orders_on_order_number", unique: true
     t.index ["order_type"], name: "index_orders_on_order_type"
     t.index ["receipt_token"], name: "index_orders_on_receipt_token", unique: true
     t.index ["status"], name: "index_orders_on_status"
@@ -456,6 +503,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_overtime_rules_on_company_id"
   end
 
   create_table "payments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -521,7 +570,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
     t.index ["active"], name: "index_printers_on_active"
+    t.index ["company_id"], name: "index_printers_on_company_id"
     t.index ["name"], name: "index_printers_on_name"
     t.index ["printer_type", "is_default"], name: "index_printers_on_printer_type_and_is_default"
   end
@@ -551,8 +602,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id", "po_number"], name: "index_purchase_orders_on_company_id_and_po_number", unique: true
+    t.index ["company_id"], name: "index_purchase_orders_on_company_id"
     t.index ["ordered_on"], name: "index_purchase_orders_on_ordered_on"
-    t.index ["po_number"], name: "index_purchase_orders_on_po_number", unique: true
     t.index ["status"], name: "index_purchase_orders_on_status"
     t.index ["supplier_id"], name: "index_purchase_orders_on_supplier_id"
     t.index ["user_id"], name: "index_purchase_orders_on_user_id"
@@ -585,7 +638,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.text "value"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.index ["key"], name: "index_settings_on_key", unique: true
+    t.uuid "company_id", null: false
+    t.index ["company_id", "key"], name: "index_settings_on_company_id_and_key", unique: true
+    t.index ["company_id"], name: "index_settings_on_company_id"
   end
 
   create_table "shift_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -658,6 +713,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_stock_takes_on_company_id"
     t.index ["user_id"], name: "index_stock_takes_on_user_id"
   end
 
@@ -697,6 +754,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.boolean "active", default: true
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_suppliers_on_company_id"
     t.index ["name"], name: "index_suppliers_on_name"
   end
 
@@ -707,7 +766,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
     t.index ["active"], name: "index_tax_rates_on_active"
+    t.index ["company_id"], name: "index_tax_rates_on_company_id"
     t.index ["tax_category"], name: "index_tax_rates_on_tax_category"
   end
 
@@ -722,8 +783,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
     t.index ["active"], name: "index_treasuries_on_active"
-    t.index ["name"], name: "index_treasuries_on_name", unique: true
+    t.index ["company_id", "name"], name: "index_treasuries_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_treasuries_on_company_id"
   end
 
   create_table "treasury_transactions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -775,27 +838,40 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
     t.string "pin_digest"
     t.integer "monthly_salary_cents", default: 0, null: false
     t.string "payroll_access_token", null: false
+    t.uuid "company_id", null: false
     t.index ["active"], name: "index_users_on_active"
-    t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["company_id", "email"], name: "index_users_on_company_id_and_email", unique: true
+    t.index ["company_id"], name: "index_users_on_company_id"
     t.index ["payroll_access_token"], name: "index_users_on_payroll_access_token", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "accounting_integrations", "companies"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "audit_log_entries", "companies"
   add_foreign_key "audit_log_entries", "users"
   add_foreign_key "budgets", "expense_categories"
   add_foreign_key "cash_drawer_sessions", "treasuries"
   add_foreign_key "cash_drawer_sessions", "users"
+  add_foreign_key "categories", "companies"
   add_foreign_key "combo_items", "combos"
   add_foreign_key "combo_items", "menu_items"
+  add_foreign_key "combos", "companies"
   add_foreign_key "customer_addresses", "customers"
+  add_foreign_key "customers", "companies"
+  add_foreign_key "discount_rules", "companies"
+  add_foreign_key "expense_categories", "companies"
   add_foreign_key "expenses", "expense_categories"
   add_foreign_key "expenses", "treasuries"
   add_foreign_key "expenses", "users"
+  add_foreign_key "gift_cards", "companies"
+  add_foreign_key "income_categories", "companies"
   add_foreign_key "incomes", "income_categories"
   add_foreign_key "incomes", "treasuries"
   add_foreign_key "incomes", "users"
+  add_foreign_key "ingredient_categories", "companies"
+  add_foreign_key "ingredients", "companies"
   add_foreign_key "ingredients", "ingredient_categories"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"
@@ -803,11 +879,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
   add_foreign_key "manufacturing_runs", "users"
   add_foreign_key "manufacturing_template_lines", "ingredients"
   add_foreign_key "manufacturing_template_lines", "manufacturing_templates"
+  add_foreign_key "manufacturing_templates", "companies"
   add_foreign_key "manufacturing_templates", "ingredients", column: "output_ingredient_id"
   add_foreign_key "menu_item_modifier_groups", "menu_items"
   add_foreign_key "menu_item_modifier_groups", "modifier_groups"
   add_foreign_key "menu_items", "categories"
+  add_foreign_key "menu_items", "companies"
+  add_foreign_key "modifier_groups", "companies"
+  add_foreign_key "modifiers", "companies"
   add_foreign_key "modifiers", "modifier_groups"
+  add_foreign_key "notifications", "companies"
   add_foreign_key "order_discounts", "discount_rules"
   add_foreign_key "order_discounts", "orders"
   add_foreign_key "order_events", "orders"
@@ -817,21 +898,26 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
   add_foreign_key "order_items", "combos"
   add_foreign_key "order_items", "menu_items"
   add_foreign_key "order_items", "orders"
+  add_foreign_key "orders", "companies"
   add_foreign_key "orders", "customers"
   add_foreign_key "orders", "users"
+  add_foreign_key "overtime_rules", "companies"
   add_foreign_key "payments", "orders"
   add_foreign_key "payments", "users", column: "processed_by_user_id"
   add_foreign_key "payroll_adjustments", "users"
   add_foreign_key "payroll_adjustments", "users", column: "recorded_by_id"
   add_foreign_key "print_logs", "orders"
   add_foreign_key "print_logs", "printers"
+  add_foreign_key "printers", "companies"
   add_foreign_key "purchase_order_items", "ingredients"
   add_foreign_key "purchase_order_items", "purchase_orders"
+  add_foreign_key "purchase_orders", "companies"
   add_foreign_key "purchase_orders", "suppliers"
   add_foreign_key "purchase_orders", "users"
   add_foreign_key "receipt_logs", "orders"
   add_foreign_key "recipes", "ingredients"
   add_foreign_key "recipes", "menu_items"
+  add_foreign_key "settings", "companies"
   add_foreign_key "shift_logs", "users"
   add_foreign_key "stock_adjustments", "ingredients"
   add_foreign_key "stock_adjustments", "stock_batches"
@@ -840,15 +926,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_16_000000) do
   add_foreign_key "stock_batches", "suppliers"
   add_foreign_key "stock_take_items", "ingredients"
   add_foreign_key "stock_take_items", "stock_takes"
+  add_foreign_key "stock_takes", "companies"
   add_foreign_key "stock_takes", "users"
   add_foreign_key "supplier_ingredients", "ingredients"
   add_foreign_key "supplier_ingredients", "suppliers"
   add_foreign_key "supplier_price_histories", "ingredients"
   add_foreign_key "supplier_price_histories", "suppliers"
   add_foreign_key "supplier_price_histories", "users", column: "recorded_by_user_id"
+  add_foreign_key "suppliers", "companies"
+  add_foreign_key "tax_rates", "companies"
+  add_foreign_key "treasuries", "companies"
   add_foreign_key "treasury_transactions", "treasuries"
   add_foreign_key "treasury_transactions", "users"
   add_foreign_key "treasury_transfers", "treasuries", column: "from_treasury_id"
   add_foreign_key "treasury_transfers", "treasuries", column: "to_treasury_id"
   add_foreign_key "treasury_transfers", "users"
+  add_foreign_key "users", "companies"
 end
