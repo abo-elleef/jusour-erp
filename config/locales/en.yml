@@ -1205,21 +1205,153 @@ en:
 
   activerecord:
     models:
-      treasury:
-        one: "Treasury"
-        other: "Treasuries"
-      income:
-        one: "Income"
-        other: "Incomes"
+      accounting_integration:
+        one: "Accounting integration"
+        other: "Accounting integrations"
+      audit_log_entry:
+        one: "Audit log entry"
+        other: "Audit log entries"
+      budget:
+        one: "Budget"
+        other: "Budgets"
+      cash_drawer_session:
+        one: "Cash drawer session"
+        other: "Cash drawer sessions"
+      category:
+        one: "Category"
+        other: "Categories"
+      combo:
+        one: "Combo"
+        other: "Combos"
+      combo_item:
+        one: "Combo item"
+        other: "Combo items"
+      customer:
+        one: "Customer"
+        other: "Customers"
+      customer_address:
+        one: "Customer address"
+        other: "Customer addresses"
+      discount_rule:
+        one: "Discount rule"
+        other: "Discount rules"
       expense:
         one: "Expense"
         other: "Expenses"
-      income_category:
-        one: "Income category"
-        other: "Income categories"
       expense_category:
         one: "Expense category"
         other: "Expense categories"
+      gift_card:
+        one: "Gift card"
+        other: "Gift cards"
+      income:
+        one: "Income"
+        other: "Incomes"
+      income_category:
+        one: "Income category"
+        other: "Income categories"
+      ingredient:
+        one: "Ingredient"
+        other: "Ingredients"
+      ingredient_category:
+        one: "Ingredient category"
+        other: "Ingredient categories"
+      loyalty_transaction:
+        one: "Loyalty transaction"
+        other: "Loyalty transactions"
+      menu_item:
+        one: "Menu item"
+        other: "Menu items"
+      menu_item_modifier_group:
+        one: "Menu item modifier group"
+        other: "Menu item modifier groups"
+      modifier:
+        one: "Modifier"
+        other: "Modifiers"
+      modifier_group:
+        one: "Modifier group"
+        other: "Modifier groups"
+      notification:
+        one: "Notification"
+        other: "Notifications"
+      order:
+        one: "Order"
+        other: "Orders"
+      order_discount:
+        one: "Order discount"
+        other: "Order discounts"
+      order_event:
+        one: "Order event"
+        other: "Order events"
+      order_item:
+        one: "Order item"
+        other: "Order items"
+      order_item_modifier:
+        one: "Order item modifier"
+        other: "Order item modifiers"
+      overtime_rule:
+        one: "Overtime rule"
+        other: "Overtime rules"
+      payment:
+        one: "Payment"
+        other: "Payments"
+      payroll_adjustment:
+        one: "Payroll adjustment"
+        other: "Payroll adjustments"
+      printer:
+        one: "Printer"
+        other: "Printers"
+      print_log:
+        one: "Print log"
+        other: "Print logs"
+      purchase_order:
+        one: "Purchase order"
+        other: "Purchase orders"
+      purchase_order_item:
+        one: "Purchase order item"
+        other: "Purchase order items"
+      receipt_log:
+        one: "Receipt log"
+        other: "Receipt logs"
+      recipe:
+        one: "Recipe"
+        other: "Recipes"
+      setting:
+        one: "Setting"
+        other: "Settings"
+      shift_log:
+        one: "Shift log"
+        other: "Shift logs"
+      stock_adjustment:
+        one: "Stock adjustment"
+        other: "Stock adjustments"
+      stock_batch:
+        one: "Stock batch"
+        other: "Stock batches"
+      stock_take:
+        one: "Stock take"
+        other: "Stock takes"
+      stock_take_item:
+        one: "Stock take item"
+        other: "Stock take items"
+      supplier:
+        one: "Supplier"
+        other: "Suppliers"
+      supplier_ingredient:
+        one: "Supplier ingredient"
+        other: "Supplier ingredients"
+      supplier_price_history:
+        one: "Supplier price history"
+        other: "Supplier price histories"
+      tax_rate:
+        one: "Tax rate"
+        other: "Tax rates"
+      treasury:
+        one: "Treasury"
+        other: "Treasuries"
       treasury_transaction:
         one: "Treasury transaction"
         other: "Treasury transactions"
+      user:
+        one: "Staff member"
+        other: "Staff members"

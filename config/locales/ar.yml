@@ -1231,21 +1231,153 @@ ar:
 
   activerecord:
     models:
-      treasury:
-        one: "خزينة"
-        other: "خزائن"
-      income:
-        one: "إيراد"
-        other: "إيرادات"
+      accounting_integration:
+        one: "تكامل محاسبي"
+        other: "تكاملات محاسبية"
+      audit_log_entry:
+        one: "سجل تدقيق"
+        other: "سجلات التدقيق"
+      budget:
+        one: "ميزانية"
+        other: "ميزانيات"
+      cash_drawer_session:
+        one: "جلسة صندوق"
+        other: "جلسات الصندوق"
+      category:
+        one: "تصنيف"
+        other: "تصنيفات"
+      combo:
+        one: "وجبة مركبة"
+        other: "وجبات مركبة"
+      combo_item:
+        one: "بند وجبة"
+        other: "بنود الوجبة"
+      customer:
+        one: "عميل"
+        other: "عملاء"
+      customer_address:
+        one: "عنوان عميل"
+        other: "عناوين العملاء"
+      discount_rule:
+        one: "قاعدة خصم"
+        other: "قواعد الخصم"
       expense:
         one: "مصروف"
         other: "مصروفات"
-      income_category:
-        one: "فئة إيراد"
-        other: "فئات الإيرادات"
       expense_category:
         one: "فئة مصروف"
         other: "فئات المصروفات"
+      gift_card:
+        one: "بطاقة هدايا"
+        other: "بطاقات هدايا"
+      income:
+        one: "إيراد"
+        other: "إيرادات"
+      income_category:
+        one: "فئة إيراد"
+        other: "فئات الإيرادات"
+      ingredient:
+        one: "مكون"
+        other: "مكونات"
+      ingredient_category:
+        one: "تصنيف مكون"
+        other: "تصنيفات المكونات"
+      loyalty_transaction:
+        one: "معاملة ولاء"
+        other: "معاملات الولاء"
+      menu_item:
+        one: "صنف"
+        other: "أصناف"
+      menu_item_modifier_group:
+        one: "مجموعة معدّلات الصنف"
+        other: "مجموعات معدّلات الصنف"
+      modifier:
+        one: "معدّل"
+        other: "معدّلات"
+      modifier_group:
+        one: "مجموعة معدّلات"
+        other: "مجموعات المعدّلات"
+      notification:
+        one: "إشعار"
+        other: "إشعارات"
+      order:
+        one: "طلب"
+        other: "طلبات"
+      order_discount:
+        one: "خصم طلب"
+        other: "خصومات الطلب"
+      order_event:
+        one: "حدث طلب"
+        other: "أحداث الطلب"
+      order_item:
+        one: "بند طلب"
+        other: "بنود الطلب"
+      order_item_modifier:
+        one: "معدّل البند"
+        other: "معدّلات البند"
+      overtime_rule:
+        one: "قاعدة وقت إضافي"
+        other: "قواعد الوقت الإضافي"
+      payment:
+        one: "دفعة"
+        other: "دفعات"
+      payroll_adjustment:
+        one: "تعديل راتب"
+        other: "تعديلات الراتب"
+      printer:
+        one: "طابعة"
+        other: "طابعات"
+      print_log:
+        one: "سجل طباعة"
+        other: "سجلات الطباعة"
+      purchase_order:
+        one: "أمر شراء"
+        other: "أوامر الشراء"
+      purchase_order_item:
+        one: "بند أمر شراء"
+        other: "بنود أمر الشراء"
+      receipt_log:
+        one: "سجل إيصال"
+        other: "سجلات الإيصالات"
+      recipe:
+        one: "وصفة"
+        other: "وصفات"
+      setting:
+        one: "إعداد"
+        other: "إعدادات"
+      shift_log:
+        one: "سجل وردية"
+        other: "سجلات الورديات"
+      stock_adjustment:
+        one: "تعديل مخزون"
+        other: "تعديلات المخزون"
+      stock_batch:
+        one: "دفعة مخزون"
+        other: "دفعات المخزون"
+      stock_take:
+        one: "جرد مخزون"
+        other: "عمليات الجرد"
+      stock_take_item:
+        one: "بند جرد"
+        other: "بنود الجرد"
+      supplier:
+        one: "مورد"
+        other: "موردون"
+      supplier_ingredient:
+        one: "مكون مورد"
+        other: "مكونات المورد"
+      supplier_price_history:
+        one: "سجل أسعار مورد"
+        other: "سجلات أسعار المورد"
+      tax_rate:
+        one: "معدل ضريبة"
+        other: "معدلات الضريبة"
+      treasury:
+        one: "خزينة"
+        other: "خزائن"
       treasury_transaction:
         one: "معاملة خزينة"
         other: "معاملات الخزينة"
+      user:
+        one: "موظف"
+        other: "موظفون"
