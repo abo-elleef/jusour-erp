@@ -1,4 +1,5 @@
-<div class="max-w-5xl">
+<%= render "admin/inventory/tools_nav" %>
+<div class="max-w-7xl">
   <div class="mb-4">
     <%= link_to t("inventory.purchase_orders.suggestions.back_to_list"), admin_inventory_purchase_orders_path, class: "text-gray-600 hover:underline text-sm" %>
   </div>
@@ -12,7 +13,6 @@
           class: "text-sm text-gray-600 hover:underline shrink-0 py-2" %>
   </div>
 
-  <%= render "admin/inventory/tools_nav" %>
 
   <% if @grouped.blank? && @skipped_low_stock.empty? %>
     <div class="bg-white rounded-lg shadow p-10 text-center">

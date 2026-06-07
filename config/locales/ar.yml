@@ -1525,6 +1525,17 @@ ar:
       transactions:
         drawer_open: "رصيد افتتاح — %{cashier} (%{shift}، %{date})"
         drawer_reconcile: "تسوية صندوق — %{cashier} (%{shift}، %{date})"
+        transfer_out: "تحويل إلى %{treasury} — %{notes}"
+        transfer_in: "تحويل من %{treasury} — %{notes}"
+    treasury_transfers:
+      new: "تحويل بين الخزائن"
+      description: "انقل المال من خزينة إلى أخرى. يُسجَّل الطرفان تلقائيًا."
+      from: "من خزينة"
+      to: "إلى خزينة"
+      select_treasury: "اختر خزينة"
+      description_placeholder: "سبب التحويل"
+      record: "تسجيل التحويل"
+      new_button: "تحويل مبلغ"
     expense_categories:
       title: "تصنيفات المصروفات"
       description: "جمّع المصروفات والميزانيات حسب التصنيف. تصنيفات النظام تُدار تلقائيًا."
@@ -1780,6 +1791,7 @@ ar:
       treasury_in_use: "لا يمكن حذف خزينة مرتبطة بسجلات."
       treasury_adjusted: "تم تعديل رصيد الخزينة."
       treasury_adjustment_invalid: "أدخل مبلغ تعديل غير صفري."
+      treasury_transfer_recorded: "تم تسجيل التحويل."
       budget_saved: "تم حفظ الميزانية."
       drawer_opened: "تم فتح الدرج."
       drawer_reconciled: "تم تسوية الدرج."
@@ -1801,6 +1813,17 @@ ar:
       submit: "حفظ %{model}"
 
   activerecord:
+    errors:
+      models:
+        treasury_transfer:
+          attributes:
+            to_treasury_id:
+              same_as_source: "يجب أن تختلف عن خزينة المصدر"
+              inactive: "يجب أن تكون نشطة"
+            from_treasury_id:
+              inactive: "يجب أن تكون نشطة"
+            amount_cents:
+              insufficient_balance: "يتجاوز الرصيد المتاح في خزينة المصدر"
     models:
       accounting_integration:
         one: "تكامل محاسبي"
@@ -1949,6 +1972,9 @@ ar:
       treasury_transaction:
         one: "معاملة خزينة"
         other: "معاملات الخزينة"
+      treasury_transfer:
+        one: "تحويل خزينة"
+        other: "تحويلات الخزينة"
       user:
         one: "موظف"
         other: "موظفون"

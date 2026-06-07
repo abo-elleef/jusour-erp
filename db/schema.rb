@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_14_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_15_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -707,6 +707,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_14_000000) do
     t.index ["user_id"], name: "index_treasury_transactions_on_user_id"
   end
 
+  create_table "treasury_transfers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "from_treasury_id", null: false
+    t.uuid "to_treasury_id", null: false
+    t.uuid "user_id", null: false
+    t.integer "amount_cents", null: false
+    t.string "description", null: false
+    t.date "occurred_on", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["from_treasury_id"], name: "index_treasury_transfers_on_from_treasury_id"
+    t.index ["occurred_on"], name: "index_treasury_transfers_on_occurred_on"
+    t.index ["to_treasury_id"], name: "index_treasury_transfers_on_to_treasury_id"
+    t.index ["user_id"], name: "index_treasury_transfers_on_user_id"
+  end
+
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "role", default: "cashier", null: false
@@ -790,4 +805,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_14_000000) do
   add_foreign_key "supplier_price_histories", "users", column: "recorded_by_user_id"
   add_foreign_key "treasury_transactions", "treasuries"
   add_foreign_key "treasury_transactions", "users"
+  add_foreign_key "treasury_transfers", "treasuries", column: "from_treasury_id"
+  add_foreign_key "treasury_transfers", "treasuries", column: "to_treasury_id"
+  add_foreign_key "treasury_transfers", "users"
 end

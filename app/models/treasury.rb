@@ -7,6 +7,8 @@ class Treasury < ApplicationRecord
   has_many :expenses, dependent: :restrict_with_error
   has_many :incomes, dependent: :restrict_with_error
   has_many :cash_drawer_sessions, dependent: :restrict_with_error
+  has_many :outgoing_transfers, class_name: "TreasuryTransfer", foreign_key: :from_treasury_id, dependent: :restrict_with_error
+  has_many :incoming_transfers, class_name: "TreasuryTransfer", foreign_key: :to_treasury_id, dependent: :restrict_with_error
 
   monetize :balance_cents
   monetize :opening_balance_cents

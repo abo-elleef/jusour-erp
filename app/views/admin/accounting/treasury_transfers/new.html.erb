@@ -1,0 +1,55 @@
+<%= render "admin/accounting/nav" %>
+<div class="max-w-3xl">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.treasury_transfers.new") %></h1>
+    <p class="text-gray-600 text-sm mt-1"><%= t("accounting.treasury_transfers.description") %></p>
+  </div>
+
+  <%= form_with model: @transfer, url: admin_accounting_treasury_transfers_path, class: "space-y-5" do |f| %>
+    <% if @transfer.errors.any? %>
+      <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <%= @transfer.errors.full_messages.to_sentence %>
+      </div>
+    <% end %>
+
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 space-y-5">
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.treasury_transfers.from") %></label>
+          <%= f.collection_select :from_treasury_id, @treasuries, :id, :name,
+                { include_blank: t("accounting.treasury_transfers.select_treasury") },
+                class: pos_input_class, required: true %>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.treasury_transfers.to") %></label>
+          <%= f.collection_select :to_treasury_id, @treasuries, :id, :name,
+                { include_blank: t("accounting.treasury_transfers.select_treasury") },
+                class: pos_input_class, required: true %>
+        </div>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.amount_cents") %></label>
+          <%= f.number_field :amount_cents, class: pos_input_class, min: 1, required: true %>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.day") %></label>
+          <%= f.date_field :occurred_on, class: pos_input_class, required: true %>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.description") %></label>
+        <%= f.text_field :description, class: pos_input_class,
+              placeholder: t("accounting.treasury_transfers.description_placeholder"), required: true %>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3">
+      <%= f.submit t("accounting.treasury_transfers.record"), class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold" %>
+      <%= link_to t("actions.cancel"), admin_accounting_treasuries_path,
+            class: "border border-gray-200 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-50" %>
+    </div>
+  <% end %>
+</div>

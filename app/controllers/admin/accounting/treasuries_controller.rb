@@ -57,7 +57,9 @@ module Admin
 
       def destroy
         authorize @treasury
-        if @treasury.expenses.exists? || @treasury.incomes.exists? || @treasury.cash_drawer_sessions.exists?
+        if @treasury.expenses.exists? || @treasury.incomes.exists? ||
+           @treasury.cash_drawer_sessions.exists? || @treasury.outgoing_transfers.exists? ||
+           @treasury.incoming_transfers.exists?
           redirect_to admin_accounting_treasuries_path, alert: t("flash.accounting.treasury_in_use")
         else
           @treasury.destroy!
@@ -73,7 +75,7 @@ module Admin
           return
         end
 
-        Accounting::TreasuryLedgerService.new.record_adjustment!(
+        ::Accounting::TreasuryLedgerService.new.record_adjustment!(
           treasury: @treasury,
           user: current_user,
           amount_cents: amount_cents,

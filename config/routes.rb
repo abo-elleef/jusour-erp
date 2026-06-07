@@ -99,6 +99,7 @@ Rails.application.routes.draw do
       resources :treasuries do
         member { post :adjust }
       end
+      resources :treasury_transfers, only: %i[new create]
       resources :budgets, only: [:index] do
         collection { patch :update }
       end

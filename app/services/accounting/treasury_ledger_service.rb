@@ -24,6 +24,10 @@ module Accounting
       new.sync_drawer_reconcile!(session)
     end
 
+    def self.create_transfer!(transfer)
+      new.create_transfer!(transfer)
+    end
+
     def sync_expense!(expense)
       remove_for_source(expense)
       return if expense.treasury_id.blank?
@@ -98,6 +102,16 @@ module Accounting
       )
     end
 
+    def create_transfer!(transfer)
+      raise ActiveRecord::RecordInvalid, transfer unless transfer.valid?
+
+      ApplicationRecord.transaction do
+        transfer.save!
+        record_transfer_ledger!(transfer)
+        transfer
+      end
+    end
+
     def remove_for_source(source, kinds: nil)
       scope = TreasuryTransaction.where(source_record: source)
       scope = scope.where(kind: kinds) if kinds
@@ -141,6 +155,43 @@ module Accounting
         cashier: session.user.name,
         shift: session.shift,
         date: I18n.l(session.session_date, format: :long)
+      )
+    end
+
+    def record_transfer_ledger!(transfer)
+      record!(
+        treasury: transfer.from_treasury,
+        user: transfer.user,
+        amount_cents: -transfer.amount_cents,
+        kind: "transfer",
+        description: transfer_out_description(transfer),
+        occurred_on: transfer.occurred_on,
+        source: transfer
+      )
+      record!(
+        treasury: transfer.to_treasury,
+        user: transfer.user,
+        amount_cents: transfer.amount_cents,
+        kind: "transfer",
+        description: transfer_in_description(transfer),
+        occurred_on: transfer.occurred_on,
+        source: transfer
+      )
+    end
+
+    def transfer_out_description(transfer)
+      I18n.t(
+        "accounting.treasuries.transactions.transfer_out",
+        treasury: transfer.to_treasury.name,
+        notes: transfer.description
+      )
+    end
+
+    def transfer_in_description(transfer)
+      I18n.t(
+        "accounting.treasuries.transactions.transfer_in",
+        treasury: transfer.from_treasury.name,
+        notes: transfer.description
       )
     end
   end

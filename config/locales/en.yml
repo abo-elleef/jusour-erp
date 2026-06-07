@@ -1509,6 +1509,17 @@ en:
       transactions:
         drawer_open: "Opening float — %{cashier} (%{shift}, %{date})"
         drawer_reconcile: "Drawer reconcile — %{cashier} (%{shift}, %{date})"
+        transfer_out: "Transfer to %{treasury} — %{notes}"
+        transfer_in: "Transfer from %{treasury} — %{notes}"
+    treasury_transfers:
+      new: "Transfer between treasuries"
+      description: "Move money from one treasury to another. Both sides are recorded automatically."
+      from: "From treasury"
+      to: "To treasury"
+      select_treasury: "Select treasury"
+      description_placeholder: "Reason for transfer"
+      record: "Record transfer"
+      new_button: "Transfer money"
     expense_categories:
       title: "Expense categories"
       description: "Group expenses and budgets by category. System categories are managed automatically."
@@ -1760,6 +1771,7 @@ en:
       treasury_in_use: "Cannot delete a treasury that has linked records."
       treasury_adjusted: "Treasury balance adjusted."
       treasury_adjustment_invalid: "Enter a non-zero adjustment amount."
+      treasury_transfer_recorded: "Transfer recorded."
       budget_saved: "Budget saved."
       drawer_opened: "Drawer opened."
       drawer_reconciled: "Drawer reconciled."
@@ -1775,6 +1787,17 @@ en:
       disconnected: "Disconnected."
 
   activerecord:
+    errors:
+      models:
+        treasury_transfer:
+          attributes:
+            to_treasury_id:
+              same_as_source: "must be different from the source treasury"
+              inactive: "must be active"
+            from_treasury_id:
+              inactive: "must be active"
+            amount_cents:
+              insufficient_balance: "exceeds available balance in the source treasury"
     models:
       accounting_integration:
         one: "Accounting integration"
@@ -1923,6 +1946,9 @@ en:
       treasury_transaction:
         one: "Treasury transaction"
         other: "Treasury transactions"
+      treasury_transfer:
+        one: "Treasury transfer"
+        other: "Treasury transfers"
       user:
         one: "Staff member"
         other: "Staff members"

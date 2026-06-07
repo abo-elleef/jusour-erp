@@ -108,4 +108,52 @@ RSpec.describe Accounting::TreasuryLedgerService do
       expect(treasury.reload.balance_cents).to eq(98_000)
     end
   end
+
+  describe ".create_transfer!" do
+    let(:destination) do
+      Treasury.create!(
+        name: "Bank Account",
+        treasury_type: "bank",
+        opening_balance_cents: 50_000,
+        balance_cents: 50_000
+      )
+    end
+
+    it "moves money between treasuries with paired ledger entries" do
+      transfer = TreasuryTransfer.new(
+        from_treasury: treasury,
+        to_treasury: destination,
+        user: user,
+        amount_cents: 15_000,
+        description: "End-of-day deposit",
+        occurred_on: Date.current
+      )
+
+      described_class.create_transfer!(transfer)
+
+      expect(treasury.reload.balance_cents).to eq(85_000)
+      expect(destination.reload.balance_cents).to eq(65_000)
+
+      outbound = treasury.treasury_transactions.last
+      inbound = destination.treasury_transactions.last
+      expect(outbound).to have_attributes(kind: "transfer", amount_cents: -15_000, source_record: transfer)
+      expect(inbound).to have_attributes(kind: "transfer", amount_cents: 15_000, source_record: transfer)
+    end
+
+    it "does not persist transfer when source balance is insufficient" do
+      transfer = TreasuryTransfer.new(
+        from_treasury: treasury,
+        to_treasury: destination,
+        user: user,
+        amount_cents: 200_000,
+        description: "Too much",
+        occurred_on: Date.current
+      )
+
+      expect { described_class.create_transfer!(transfer) }.to raise_error(ActiveRecord::RecordInvalid)
+      expect(TreasuryTransfer.count).to eq(0)
+      expect(treasury.reload.balance_cents).to eq(100_000)
+      expect(destination.reload.balance_cents).to eq(50_000)
+    end
+  end
 end
