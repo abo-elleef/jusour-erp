@@ -76,6 +76,27 @@
     </dl>
   </section>
 
+  <% if @printer.network? && @connection_check %>
+    <section class="rounded-2xl border <%= @connection_check[:ok] ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50' %> overflow-hidden mt-6">
+      <div class="px-5 py-4 border-b <%= @connection_check[:ok] ? 'border-green-100' : 'border-red-100' %>">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("printing.connection.title") %></h2>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("printing.connection.hint") %></p>
+      </div>
+      <div class="px-5 py-4 text-sm">
+        <% if @connection_check[:ok] %>
+          <p class="font-semibold text-green-800"><%= t("printing.connection.ok", ms: @connection_check[:latency_ms]) %></p>
+          <p class="text-green-700 mt-1"><%= t("printing.connection.ok_detail", host: @printer.host, port: @printer.port) %></p>
+        <% else %>
+          <p class="font-semibold text-red-800"><%= t("printing.connection.failed") %></p>
+          <p class="text-red-700 mt-2"><%= @connection_check[:error] %></p>
+          <p class="text-gray-600 mt-3 font-mono text-xs bg-white/80 border border-red-100 rounded-xl px-3 py-2">
+            nc -zv <%= @printer.host %> <%= @printer.port %>
+          </p>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
   <% if @recent_print_logs&.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">

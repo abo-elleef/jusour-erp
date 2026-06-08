@@ -134,9 +134,18 @@ en:
       title: "TEST PRINT"
       button: "Send test print"
       sent: "Test page sent to printer."
+    connection:
+      title: "Server connectivity"
+      hint: "TCP check from the machine running this app (not your browser)."
+      ok: "Reachable (%{ms} ms)"
+      ok_detail: "The server can open port %{port} on %{host}. Test print should work."
+      failed: "Not reachable from server"
     errors:
       usb_not_supported: "USB printers cannot be reached from the server. Use a network printer."
       failed: "Print failed: %{message}"
+      timeout: "Could not reach %{host}:%{port} within 5 seconds. The server running this app cannot open a TCP connection to the printer. On that same machine run: nc -zv %{host} %{port} — if that fails, fix Wi‑Fi/VLAN/firewall, confirm the printer IP, and enable RAW port 9100 on the printer."
+      conn_refused: "%{host}:%{port} is reachable but nothing is listening. Enable RAW / JetDirect / port 9100 on the printer, or verify the port number."
+      no_route: "No network route to %{host}:%{port}. Put the server and printer on the same LAN, disable guest-network isolation, and turn off VPN while testing."
     logs:
       title: "Recent print jobs"
       time: "Time"

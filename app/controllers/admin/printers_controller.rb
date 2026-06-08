@@ -19,6 +19,12 @@ module Admin
     def show
       authorize @printer
       @recent_print_logs = @printer.print_logs.includes(:order).order(created_at: :desc).limit(10)
+      return unless @printer.network?
+
+      @connection_check = Printing::Drivers::Network.check_connection(
+        host: @printer.host,
+        port: @printer.port || Printing::Drivers::Network::DEFAULT_PORT
+      )
     end
 
     def new
@@ -84,7 +90,7 @@ module Admin
       )
       redirect_to admin_printer_path(@printer), notice: t("printing.test.sent")
     rescue Printing::Drivers::Network::Error => e
-      redirect_to admin_printer_path(@printer), alert: t("printing.errors.failed", message: e.message)
+      redirect_to admin_printer_path(@printer), alert: e.message
     end
 
     private
