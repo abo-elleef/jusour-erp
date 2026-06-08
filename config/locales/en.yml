@@ -165,6 +165,7 @@ en:
     pos: "POS"
     register: "Register"
     collect_payment: "Collect Payment"
+    my_shift: "My shift"
     kitchen: "Kitchen"
     admin: "Admin"
 
@@ -948,6 +949,24 @@ en:
         other: "%{count} lines"
     categories:
       combos: "Combos"
+    shift:
+      title: "My shift"
+      description: "Open your drawer, count cash, and close your shift from the register."
+      time_tracking: "Time tracking"
+      drawer_open: "Drawer open"
+      drawer_reconciled: "Drawer reconciled for today"
+      open_drawer_heading: "Open drawer"
+      open_drawer_hint: "Count your starting float before taking cash payments."
+      start_count: "Count & close drawer"
+      back_to_shift: "Back to shift"
+      back_to_register: "Back to register"
+      unpaid_orders_warning:
+        one: "You have %{count} unpaid order — finish payment before closing."
+        other: "You have %{count} unpaid orders — finish payment before closing."
+      draft_cart_warning: "You have an open cart with items."
+      manager_pin_hint: "Cash variance exceeds the allowed threshold. A manager PIN is required to reconcile."
+      variance_detected: "Variance detected — manager approval required"
+      not_clocked_in: "You are not clocked in."
 
   menu:
     modifier_groups:
@@ -1791,6 +1810,12 @@ en:
       already_paid: "This order is already paid in full."
       customer_required: "Enter a phone or email for the new customer."
       customer_not_found: "Customer not found."
+      shift:
+        drawer_already_open: "Your drawer is already open for today."
+        no_open_drawer: "No open drawer session. Open your drawer first."
+        count_required: "Enter a counted cash amount greater than zero."
+        manager_pin_required: "Manager PIN required for this variance."
+        not_clocked_in: "You are not clocked in."
     category:
       created: "Category created."
       updated: "Category updated."

@@ -24,6 +24,14 @@ Rails.application.routes.draw do
   post "pos/merge", to: "pos#merge"
 
   namespace :pos do
+    resource :shift, only: [:show] do
+      post :open_drawer
+      post :clock_in
+      get :count
+      patch :reconcile
+      patch :clock_out
+    end
+
     post "verify_manager_pin", to: "manager_pin#verify"
     get "modifier_form", to: "order_items#modifier_form", as: :modifier_form
     resources :orders, only: %i[index show] do

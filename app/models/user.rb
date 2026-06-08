@@ -54,6 +54,14 @@ class User < ApplicationRecord
     shift_logs.active.order(clocked_in_at: :desc).first
   end
 
+  def open_cash_drawer_session
+    cash_drawer_sessions.open.find_by(session_date: Date.current)
+  end
+
+  def todays_cash_drawer_session
+    cash_drawer_sessions.find_by(session_date: Date.current)
+  end
+
   def owner?
     role == "owner"
   end

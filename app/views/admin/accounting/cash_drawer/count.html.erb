@@ -12,24 +12,7 @@
     <p><%= t("accounting.cash_drawer.expected_line", amount: format_money(@session.expected_cash_cents)) %></p>
   </div>
 
-  <div data-controller="cash-count" class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
-    <h2 class="text-sm font-semibold mb-3"><%= t("accounting.cash_drawer.denominations") %></h2>
-    <% { "100" => 10000, "50" => 5000, "20" => 2000, "10" => 1000, "5" => 500, "1" => 100 }.each do |label, cents| %>
-      <div class="flex justify-between items-center gap-4 mb-2">
-        <label class="text-sm">$<%= label %></label>
-        <input type="number" min="0" value="0" class="w-20 border rounded-lg px-2 py-1 text-end"
-               data-cash-count-target="denom" data-cents="<%= cents %>" data-action="input->cash-count#recalculate">
-      </div>
-    <% end %>
-    <p class="font-bold mt-4">
-      <%= t("accounting.cash_drawer.total_counted", amount: "") %>
-      <span data-cash-count-target="total">$0.00</span>
-    </p>
-  </div>
-
-  <%= form_with url: reconcile_admin_accounting_cash_drawer_path(@session), method: :patch do %>
-    <%= hidden_field_tag :counted_cash, 0, data: { cash_count_target: "hidden" } %>
-    <%= submit_tag t("accounting.cash_drawer.reconcile_drawer"), class: "w-full bg-gray-900 text-white py-3 rounded-xl font-bold",
-          data: { action: "click->cash-count#syncHidden" } %>
-  <% end %>
+  <%= render "shared/cash_denomination_count",
+        reconcile_url: reconcile_admin_accounting_cash_drawer_path(@session),
+        submit_label: t("accounting.cash_drawer.reconcile_drawer") %>
 </div>

@@ -36,26 +36,7 @@ module Admin
 
       def clock_out
         authorize @shift, :clock_out?
-        @shift.update!(clocked_out_at: Time.current, status: "completed")
-
-        tips = Payment.joins(:order)
-          .where(orders: { user_id: @shift.user_id })
-          .where(status: "completed")
-          .where(created_at: @shift.clocked_in_at..@shift.clocked_out_at)
-          .sum(:tip_cents).to_i
-        @shift.update!(tips_cents: tips)
-
-        ::Accounting::LaborCostService.new(@shift).call
-
-        checker = ::Accounting::OvertimeCheckService.new(@shift.user)
-        if checker.over_overtime?
-          ::Accounting::NotifyService.deliver_to_managers(
-            message_key: "overtime_shift",
-            message_params: { name: @shift.user.name }
-          )
-        end
-
-        AuditLogEntry.record!(action: "shift.clock_out", record: @shift, user: current_user)
+        ::Accounting::ClockOutService.new(@shift, user: current_user).call
         redirect_to admin_accounting_shift_logs_path, notice: t("flash.accounting.clocked_out")
       end
 

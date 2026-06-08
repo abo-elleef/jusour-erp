@@ -1,0 +1,46 @@
+<div class="min-h-screen bg-gray-100 flex flex-col">
+  <header class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white shrink-0">
+    <span class="text-xl font-bold tracking-tight text-gray-900"><%= t("accounting.cash_drawer.count_title") %></span>
+    <%= render "pos/pos_nav" %>
+  </header>
+
+  <div class="p-5 max-w-lg mx-auto w-full flex-1">
+    <div class="mb-4">
+      <%= link_to t("pos.shift.back_to_shift"), pos_shift_path,
+            class: "text-sm font-semibold text-amber-700 hover:text-amber-800" %>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-gray-50/80 p-4 mb-6 text-sm space-y-1">
+      <p>
+        <strong><%= t("accounting.cash_drawer.session_line",
+              name: @open_session.user.name,
+              shift: accounting_shift_label(@open_session.shift),
+              date: l(@open_session.session_date, format: :long)) %></strong>
+      </p>
+      <p><%= t("accounting.cash_drawer.expected_line", amount: format_money(@open_session.expected_cash_cents)) %></p>
+    </div>
+
+    <% if @requires_manager_pin %>
+      <div class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 mb-6 text-sm space-y-1">
+        <p class="font-semibold text-amber-900"><%= t("pos.shift.variance_detected") %></p>
+        <p class="tabular-nums"><%= t("accounting.cash_drawer.counted") %>: <%= format_money(@counted_cents) %></p>
+        <p class="tabular-nums"><%= t("accounting.cash_drawer.variance") %>: <%= format_money(@variance_cents) %></p>
+      </div>
+
+      <%= form_with url: reconcile_pos_shift_path, method: :patch do %>
+        <%= hidden_field_tag :counted_cash, (@counted_cents / 100.0) %>
+        <div class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 mb-4">
+          <p class="text-sm text-amber-900 mb-3"><%= t("pos.shift.manager_pin_hint") %></p>
+          <%= label_tag :manager_pin, t("pos.manager_pin.title"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+          <%= password_field_tag :manager_pin, nil, maxlength: 4, autocomplete: "off",
+                class: "w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm", required: true %>
+        </div>
+        <%= submit_tag t("accounting.cash_drawer.reconcile_drawer"), class: "w-full bg-gray-900 text-white py-3 rounded-xl font-bold" %>
+      <% end %>
+    <% else %>
+      <%= render "shared/cash_denomination_count",
+            reconcile_url: reconcile_pos_shift_path,
+            submit_label: t("accounting.cash_drawer.reconcile_drawer") %>
+    <% end %>
+  </div>
+</div>

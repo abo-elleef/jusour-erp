@@ -165,6 +165,7 @@ ar:
     pos: "نقطة البيع"
     register: "الكاشير"
     collect_payment: "تحصيل الدفع"
+    my_shift: "ورديتي"
     kitchen: "المطبخ"
     admin: "الإدارة"
 
@@ -953,6 +954,24 @@ ar:
         other: "%{count} أسطر"
     categories:
       combos: "الوجبات المركبة"
+    shift:
+      title: "ورديتي"
+      description: "افتح الصندوق، عد النقد، وأغلق ورديتك من الكاشير."
+      time_tracking: "تتبع الوقت"
+      drawer_open: "الصندوق مفتوح"
+      drawer_reconciled: "تمت تسوية الصندوق لهذا اليوم"
+      open_drawer_heading: "فتح الصندوق"
+      open_drawer_hint: "عد رصيد الافتتاح قبل استلام المدفوعات النقدية."
+      start_count: "عد النقد وأغلق الصندوق"
+      back_to_shift: "العودة للوردية"
+      back_to_register: "العودة للكاشير"
+      unpaid_orders_warning:
+        one: "لديك %{count} طلب غير مدفوع — أنهِ الدفع قبل الإغلاق."
+        other: "لديك %{count} طلبات غير مدفوعة — أنهِ الدفع قبل الإغلاق."
+      draft_cart_warning: "لديك سلة مفتوحة بها أصناف."
+      manager_pin_hint: "فرق النقد يتجاوز الحد المسموح. يلزم رمز المدير للتسوية."
+      variance_detected: "تم رصد فرق — يلزم موافقة المدير"
+      not_clocked_in: "لم تسجّل حضورك."
 
   menu:
     modifier_groups:
@@ -1812,6 +1831,12 @@ ar:
       already_paid: "هذا الطلب مدفوع بالكامل."
       customer_required: "أدخل هاتفًا أو بريدًا للعميل الجديد."
       customer_not_found: "العميل غير موجود."
+      shift:
+        drawer_already_open: "صندوقك مفتوح بالفعل لهذا اليوم."
+        no_open_drawer: "لا توجد جلسة صندوق مفتوحة. افتح الصندوق أولاً."
+        count_required: "أدخل مبلغًا نقديًا محسوبًا أكبر من صفر."
+        manager_pin_required: "يلزم رمز المدير لهذا الفرق."
+        not_clocked_in: "لم تسجّل حضورك."
     category:
       created: "تم إنشاء التصنيف."
       updated: "تم تحديث التصنيف."

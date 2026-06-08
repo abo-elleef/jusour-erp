@@ -3,6 +3,7 @@
 module Accounting
   class CashReconciliationService
     SHIFT_START_HOURS = { "morning" => 0, "afternoon" => 8, "evening" => 16, "night" => 20 }.freeze
+    VARIANCE_ALERT_THRESHOLD_CENTS = 1000
 
     def initialize(session)
       @session = session
@@ -51,7 +52,7 @@ module Accounting
         }
       )
 
-      if variance.abs > 1000
+      if variance.abs > VARIANCE_ALERT_THRESHOLD_CENTS
         NotifyService.deliver_to_managers(
           message_key: "cash_variance",
           message_params: {

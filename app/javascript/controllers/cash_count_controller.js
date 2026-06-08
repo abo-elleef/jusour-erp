@@ -21,7 +21,8 @@ export default class extends Controller {
 
   syncHidden(event) {
     this.recalculate()
-    if (this.hasHiddenTarget && !this.hiddenTarget.value) {
+    const amount = parseFloat(this.hiddenTarget?.value || "0")
+    if (!amount || amount <= 0) {
       event.preventDefault()
     }
   }
