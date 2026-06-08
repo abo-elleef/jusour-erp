@@ -24,6 +24,7 @@ class Treasury < ApplicationRecord
   scope :cash_drawers, -> { where(treasury_type: "cash_drawer") }
   # Exclude supplier AP ledgers from normal cash-flow selections
   scope :payable, -> { where.not(treasury_type: "supplier_ap") }
+  scope :supplier_ap, -> { where(treasury_type: "supplier_ap") }
 
   def self.default_treasury
     active.find_by(is_default: true) || active.ordered.first
