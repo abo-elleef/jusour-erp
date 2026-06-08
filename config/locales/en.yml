@@ -205,6 +205,7 @@ en:
       customer: "Customer"
       status: "Status"
       type: "Type"
+      time: "Time"
       due: "Due"
       items: "Order items"
       payments: "Payments"
@@ -870,6 +871,17 @@ en:
         notes: "Notes"
 
   notifications:
+    types:
+      inventory: "Inventory"
+      accounting: "Accounting"
+      unknown: "Alert"
+    keys:
+      low_stock: "Low stock"
+      batch_expiring: "Batch expiring"
+      overtime_weekly: "Weekly overtime"
+      overtime_shift: "Shift overtime"
+      cash_variance: "Cash variance"
+      unknown: "Alert"
     index:
       description: "Inventory and accounting alerts for owners and managers."
       mark_all_read: "Mark all read"
@@ -877,6 +889,33 @@ en:
       view_ingredient: "View ingredient"
       empty_title: "No notifications"
       empty_description: "You're all caught up — new alerts will appear here."
+      list_title: "Recent alerts"
+      list_hint:
+        one: "%{count} notification shown"
+        other: "%{count} notifications shown"
+      filtered_by: "Filtered by %{filter}"
+      show_all: "Show all notifications"
+      unread: "Unread"
+      read: "Read"
+      ago: "%{time} ago"
+      stats:
+        total: "Total"
+        unread: "Unread"
+        unread_hint: "Needs attention"
+        inventory: "Inventory"
+        accounting: "Accounting"
+      filters:
+        all: "All"
+        unread: "Unread"
+        inventory: "Inventory"
+        accounting: "Accounting"
+      columns:
+        status: "Status"
+        type: "Type"
+        alert: "Alert"
+        message: "Details"
+        time: "Time"
+        actions: "Actions"
     messages:
       no_batch_ref: "no ref"
       low_stock: "%{name} is low: %{on_hand} %{unit} remaining (threshold: %{threshold})"
@@ -967,6 +1006,21 @@ en:
       manager_pin_hint: "Cash variance exceeds the allowed threshold. A manager PIN is required to reconcile."
       variance_detected: "Variance detected — manager approval required"
       not_clocked_in: "You are not clocked in."
+      back_to_shift_orders: "Shift orders"
+      tabs:
+        label: "Shift sections"
+        shift: "Shift"
+        orders: "Orders"
+      orders:
+        description: "Review orders from your current shift for customer questions or complaints."
+        title: "Shift orders"
+        count:
+          one: "%{count} order"
+          other: "%{count} orders"
+        range: "Showing orders from %{from} to %{to} on %{date}."
+        empty: "No orders yet in this shift."
+        no_shift: "No active shift to show orders for."
+        no_shift_hint: "Clock in or open your drawer to see orders for your shift."
 
   menu:
     modifier_groups:
@@ -1503,7 +1557,7 @@ en:
       net_profit_mtd: "Net profit MTD"
       alerts: "Alerts"
       open_drawer: "Open cash drawer: %{name} (%{shift})"
-      daily_sales_chart: "Daily sales (30 days)"
+      daily_sales_chart: "Daily net sales (30 days)"
       sales_by_category_chart: "Sales by category (MTD)"
     sales_reports:
       title: "Sales reports"
@@ -1512,6 +1566,8 @@ en:
       gross_sales: "Gross sales"
       avg_ticket: "Avg ticket"
       discounts: "Discounts"
+      refunds: "Refunds"
+      combos_category: "Combos"
       tips_line: "Tips %{amount}"
       pnl: "Profit & loss"
       pnl_hint: "Revenue minus categorized expenses"
@@ -1525,7 +1581,7 @@ en:
       no_sales: "No sales in this period."
       no_payments: "No payments in this period."
       daily_totals_chart: "Daily totals"
-      daily_totals_hint: "Completed order revenue per day"
+      daily_totals_hint: "Net sales per day (subtotal minus discounts)"
       hourly_chart: "Hourly distribution"
       hourly_hint: "Order count by hour of day"
       export_pdf: "Export PDF"

@@ -24,16 +24,21 @@ module Accounting
     end
 
     def gross_revenue_cents
-      completed_orders.sum(:subtotal_cents).to_i - completed_orders.sum(:discount_cents).to_i
+      RevenueCalculator.order_net_sales(completed_orders) - refunds_cents
+    end
+
+    def refunds_cents
+      @refunds_cents ||= RevenueCalculator.refunds_cents(completed_orders.pluck(:id))
     end
 
     def revenue_breakdown
+      gross = completed_orders.sum(:subtotal_cents).to_i
+      discounts = completed_orders.sum(:discount_cents).to_i
       {
-        gross_sales_cents: completed_orders.sum(:subtotal_cents).to_i,
-        discounts_cents: completed_orders.sum(:discount_cents).to_i,
-        refunds_cents: Payment.where(order: completed_orders, status: %w[refunded partially_refunded])
-                              .sum(:refunded_amount_cents).to_i,
-        net_sales_cents: gross_revenue_cents,
+        gross_sales_cents: gross,
+        discounts_cents: discounts,
+        refunds_cents: refunds_cents,
+        net_sales_cents: gross - discounts - refunds_cents,
         tax_collected_cents: completed_orders.sum(:tax_cents).to_i,
         tips_cents: completed_orders.sum(:tip_cents).to_i
       }

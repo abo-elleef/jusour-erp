@@ -59,6 +59,12 @@
         <span><%= t("accounting.sales_reports.discounts") %></span>
         <span class="tabular-nums font-medium">-<%= format_money(rev[:discounts_cents]) %></span>
       </div>
+      <% if rev[:refunds_cents].positive? %>
+        <div class="flex justify-between gap-4 py-1 text-red-700">
+          <span><%= t("accounting.sales_reports.refunds") %></span>
+          <span class="tabular-nums font-medium">-<%= format_money(rev[:refunds_cents]) %></span>
+        </div>
+      <% end %>
       <div class="flex justify-between gap-4 py-2 font-semibold border-t border-gray-100">
         <span class="text-gray-900"><%= t("accounting.sales_reports.net_sales") %></span>
         <span class="tabular-nums"><%= format_money(rev[:net_sales_cents]) %></span>

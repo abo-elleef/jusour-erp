@@ -5,7 +5,17 @@ module Admin
     def index
       return redirect_to root_path, alert: t("flash.access_denied") unless current_user.admin_access?
 
-      @notifications = current_user.notifications.order(created_at: :desc).limit(50)
+      @filter = params[:filter].presence_in(%w[all unread inventory accounting]) || "all"
+      base = current_user.notifications
+      @total_count = base.count
+      @unread_count = base.unread.count
+      @inventory_count = base.where(notification_type: "inventory").count
+      @accounting_count = base.where(notification_type: "accounting").count
+
+      scope = base.order(created_at: :desc)
+      scope = scope.unread if @filter == "unread"
+      scope = scope.where(notification_type: @filter) if %w[inventory accounting].include?(@filter)
+      @notifications = scope.limit(50)
     end
 
     def mark_read

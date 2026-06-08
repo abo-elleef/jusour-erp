@@ -417,6 +417,35 @@ module ApplicationHelper
     }.compact
   end
 
+  def notification_type_label(type)
+    return t("notifications.types.unknown") if type.blank?
+
+    t("notifications.types.#{type}", default: type.titleize)
+  end
+
+  def notification_type_class(type)
+    case type
+    when "inventory" then "bg-amber-100 text-amber-900"
+    when "accounting" then "bg-blue-100 text-blue-900"
+    else "bg-gray-100 text-gray-700"
+    end
+  end
+
+  def notification_type_border_class(type)
+    case type
+    when "inventory" then "border-amber-200"
+    when "accounting" then "border-blue-200"
+    else "border-gray-200"
+    end
+  end
+
+  def notification_message_key_label(notification)
+    key = notification.params["message_key"] || notification.params[:message_key]
+    return t("notifications.keys.unknown") if key.blank?
+
+    t("notifications.keys.#{key}", default: key.humanize)
+  end
+
   def notification_message(notification)
     key = notification.params["message_key"] || notification.params[:message_key]
     legacy = notification.params["message"] || notification.params[:message]

@@ -62,6 +62,25 @@ class User < ApplicationRecord
     cash_drawer_sessions.find_by(session_date: Date.current)
   end
 
+  def shift_orders_time_range
+    ranges = []
+
+    if clocked_in?
+      ranges << [current_shift.clocked_in_at, Time.current]
+    end
+
+    cash_drawer_sessions.where(session_date: Date.current).find_each do |drawer|
+      end_time = drawer.status == "open" ? Time.current : drawer.updated_at
+      ranges << [drawer.created_at, end_time]
+    end
+
+    if ranges.any?
+      [ranges.map(&:first).min, ranges.map(&:last).max]
+    else
+      [Time.zone.today.beginning_of_day, Time.current]
+    end
+  end
+
   def owner?
     role == "owner"
   end

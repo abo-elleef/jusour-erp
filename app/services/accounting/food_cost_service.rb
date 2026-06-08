@@ -13,9 +13,12 @@ module Accounting
       )
       order_ids = completed_orders.select(:id)
 
-      items = MenuItem.available.includes(recipes: :ingredient).map do |item|
-        units_sold = OrderItem.where(order_id: order_ids, menu_item_id: item.id).sum(:quantity)
-        revenue_cents = units_sold * item.base_price_cents
+      items = MenuItem.available.includes(recipes: :ingredient).filter_map do |item|
+        scope = OrderItem.where(order_id: order_ids, menu_item_id: item.id)
+        units_sold = scope.sum(:quantity)
+        next if units_sold.zero?
+
+        revenue_cents = RevenueCalculator.order_item_revenue(scope)
 
         ingredient_cost_per_unit = item.recipes.sum do |r|
           (r.quantity_used * r.ingredient.cost_per_unit_cents).round
@@ -32,7 +35,7 @@ module Accounting
         }
       end
 
-      total_revenue = items.sum { |i| i[:revenue_cents] }
+      total_revenue = RevenueCalculator.order_item_revenue(OrderItem.where(order_id: order_ids))
       total_cost = items.sum { |i| i[:cost_cents] }
       overall_pct = total_revenue.positive? ? (total_cost.to_f / total_revenue * 100).round(1) : 0
 

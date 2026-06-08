@@ -1,43 +1,134 @@
-<div class="max-w-3xl">
+<% action_btn_class = "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+
+<div class="max-w-5xl">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("notifications.index.description") %></p>
     </div>
-    <% if @notifications.any?(&:unread?) %>
+    <% if @unread_count.positive? %>
       <%= button_to t("notifications.index.mark_all_read"),
             mark_all_read_admin_notifications_path,
             method: :patch,
-            class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors shrink-0" %>
+            class: "inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" %>
     <% end %>
   </div>
 
-  <% if @notifications.any? %>
-    <ul class="bg-white shadow rounded-2xl border border-gray-200 divide-y divide-gray-100 overflow-hidden">
-      <% @notifications.each do |n| %>
-        <li class="p-4 <%= n.unread? ? 'bg-amber-50/60' : '' %>">
-          <p class="text-sm text-gray-900"><%= notification_message(n) %></p>
-          <p class="text-xs text-gray-500 mt-1"><%= time_ago_in_words(n.created_at) %></p>
-          <div class="flex flex-wrap items-center gap-3 mt-2">
-            <% if n.unread? && n.ingredient %>
-              <%= link_to t("notifications.index.view_ingredient"),
-                    admin_inventory_ingredient_path(n.ingredient),
-                    class: "text-xs font-semibold text-amber-700 hover:text-amber-800" %>
-            <% end %>
-            <% if n.unread? %>
-              <%= button_to t("notifications.index.mark_read"),
-                    mark_read_admin_notification_path(n),
-                    method: :patch,
-                    class: "text-xs font-semibold text-gray-700 hover:text-gray-900" %>
-            <% end %>
-          </div>
-        </li>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <%= link_to admin_notifications_path(filter: "all"),
+          class: orders_stat_card_class(@filter == "all") do %>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("notifications.index.stats.total") %></p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
+    <% end %>
+
+    <%= link_to admin_notifications_path(filter: "unread"),
+          class: orders_stat_card_class(@filter == "unread") do %>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("notifications.index.stats.unread") %></p>
+      <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= @unread_count %></p>
+      <% if @unread_count.positive? %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("notifications.index.stats.unread_hint") %></p>
       <% end %>
-    </ul>
-  <% else %>
-    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-      <p class="text-gray-900 font-semibold mb-1"><%= t("notifications.index.empty_title") %></p>
-      <p class="text-gray-500 text-sm"><%= t("notifications.index.empty_description") %></p>
-    </section>
-  <% end %>
+    <% end %>
+
+    <%= link_to admin_notifications_path(filter: "inventory"),
+          class: orders_stat_card_class(@filter == "inventory") do %>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("notifications.index.stats.inventory") %></p>
+      <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= @inventory_count %></p>
+    <% end %>
+
+    <%= link_to admin_notifications_path(filter: "accounting"),
+          class: orders_stat_card_class(@filter == "accounting") do %>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("notifications.index.stats.accounting") %></p>
+      <p class="text-2xl font-bold mt-1 text-blue-700 tabular-nums"><%= @accounting_count %></p>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("notifications.index.list_title") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5">
+          <%= t("notifications.index.list_hint", count: @notifications.size) %>
+          <% if @filter != "all" %>
+            · <%= t("notifications.index.filtered_by", filter: t("notifications.index.filters.#{@filter}")) %>
+          <% end %>
+        </p>
+      </div>
+      <% if @filter != "all" %>
+        <%= link_to t("actions.clear"), admin_notifications_path,
+              class: "text-sm font-medium text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-colors" %>
+      <% end %>
+    </div>
+
+    <% if @notifications.any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[720px]">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start w-8"><span class="sr-only"><%= t("notifications.index.columns.status") %></span></th>
+              <th class="p-3 text-start"><%= t("notifications.index.columns.type") %></th>
+              <th class="p-3 text-start"><%= t("notifications.index.columns.alert") %></th>
+              <th class="p-3 text-start"><%= t("notifications.index.columns.message") %></th>
+              <th class="p-3 text-start whitespace-nowrap"><%= t("notifications.index.columns.time") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("notifications.index.columns.actions") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @notifications.each do |notification| %>
+              <tr class="<%= notification.unread? ? 'bg-amber-50/40' : '' %> hover:bg-gray-50/60 transition-colors">
+                <td class="p-3 ps-5 align-top">
+                  <% if notification.unread? %>
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mt-1.5" title="<%= t('notifications.index.unread') %>"></span>
+                  <% else %>
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-gray-200 mt-1.5" title="<%= t('notifications.index.read') %>"></span>
+                  <% end %>
+                </td>
+                <td class="p-3 align-top whitespace-nowrap">
+                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= notification_type_class(notification.notification_type) %> <%= notification_type_border_class(notification.notification_type) %>">
+                    <%= notification_type_label(notification.notification_type) %>
+                  </span>
+                </td>
+                <td class="p-3 align-top text-gray-900 font-medium whitespace-nowrap">
+                  <%= notification_message_key_label(notification) %>
+                </td>
+                <td class="p-3 align-top text-gray-600">
+                  <%= notification_message(notification) %>
+                </td>
+                <td class="p-3 align-top whitespace-nowrap text-gray-500">
+                  <span class="block text-gray-900 tabular-nums"><%= l(notification.created_at, format: :short) %></span>
+                  <span class="text-xs"><%= t("notifications.index.ago", time: time_ago_in_words(notification.created_at)) %></span>
+                </td>
+                <td class="p-3 pe-5 align-top text-end whitespace-nowrap">
+                  <div class="inline-flex flex-wrap justify-end gap-2">
+                    <% if notification.unread? && notification.ingredient %>
+                      <%= link_to t("notifications.index.view_ingredient"),
+                            admin_inventory_ingredient_path(notification.ingredient),
+                            class: action_btn_class %>
+                    <% end %>
+                    <% if notification.unread? %>
+                      <%= button_to t("notifications.index.mark_read"),
+                            mark_read_admin_notification_path(notification),
+                            method: :patch,
+                            class: action_btn_class %>
+                    <% else %>
+                      <span class="inline-flex text-xs font-medium text-gray-400 px-3 py-1.5"><%= t("notifications.index.read") %></span>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="p-12 text-center">
+        <p class="text-gray-900 font-semibold mb-1"><%= t("notifications.index.empty_title") %></p>
+        <p class="text-gray-500 text-sm"><%= t("notifications.index.empty_description") %></p>
+        <% if @filter != "all" %>
+          <%= link_to t("notifications.index.show_all"), admin_notifications_path,
+                class: "inline-flex mt-4 text-sm font-semibold text-amber-700 hover:text-amber-800 px-4 py-2 rounded-xl hover:bg-amber-50 transition-colors" %>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
 </div>

@@ -43,16 +43,18 @@ module Pos
       @order = Order.includes(:payments, order_items: [:menu_item, :combo, :order_item_modifiers])
                     .find(params[:id])
       @order.recalculate_totals!
+      authorize @order, :show?
 
-      if @order.amount_due_cents.zero?
-        redirect_to pos_orders_path(order_type: @order.order_type), notice: t("flash.pos.already_paid")
+      @from_shift = params[:from] == "shift"
+      @order_items = @order.order_items
+      @payments = @order.payments.order(created_at: :desc)
+
+      if @from_shift || @order.amount_due_cents.zero?
         return
       end
 
       authorize @order, :checkout?
       session[:checkout_order_id] = @order.id
-      @order_items = @order.order_items
-      @payments = @order.payments.order(created_at: :desc)
     end
 
     private

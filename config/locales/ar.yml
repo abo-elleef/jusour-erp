@@ -205,6 +205,7 @@ ar:
       customer: "العميل"
       status: "الحالة"
       type: "النوع"
+      time: "الوقت"
       due: "المستحق"
       items: "عناصر الطلب"
       payments: "المدفوعات"
@@ -871,6 +872,17 @@ ar:
         notes: "ملاحظات"
 
   notifications:
+    types:
+      inventory: "المخزون"
+      accounting: "المحاسبة"
+      unknown: "تنبيه"
+    keys:
+      low_stock: "مخزون منخفض"
+      batch_expiring: "دفعة تنتهي"
+      overtime_weekly: "ساعات إضافية أسبوعية"
+      overtime_shift: "ساعات إضافية بالوردية"
+      cash_variance: "فرق نقدي"
+      unknown: "تنبيه"
     index:
       description: "تنبيهات المخزون والمحاسبة للمالكين والمديرين."
       mark_all_read: "تعليم الكل كمقروء"
@@ -878,6 +890,33 @@ ar:
       view_ingredient: "عرض المكون"
       empty_title: "لا توجد إشعارات"
       empty_description: "لا جديد — ستظهر التنبيهات هنا."
+      list_title: "التنبيهات الأخيرة"
+      list_hint:
+        one: "إشعار واحد معروض"
+        other: "%{count} إشعارات معروضة"
+      filtered_by: "مفلتر حسب %{filter}"
+      show_all: "عرض كل الإشعارات"
+      unread: "غير مقروء"
+      read: "مقروء"
+      ago: "منذ %{time}"
+      stats:
+        total: "الإجمالي"
+        unread: "غير مقروء"
+        unread_hint: "يحتاج انتباه"
+        inventory: "المخزون"
+        accounting: "المحاسبة"
+      filters:
+        all: "الكل"
+        unread: "غير مقروء"
+        inventory: "المخزون"
+        accounting: "المحاسبة"
+      columns:
+        status: "الحالة"
+        type: "النوع"
+        alert: "التنبيه"
+        message: "التفاصيل"
+        time: "الوقت"
+        actions: "إجراءات"
     messages:
       no_batch_ref: "بدون مرجع"
       low_stock: "%{name} منخفض: %{on_hand} %{unit} متبقية (الحد: %{threshold})"
@@ -972,6 +1011,21 @@ ar:
       manager_pin_hint: "فرق النقد يتجاوز الحد المسموح. يلزم رمز المدير للتسوية."
       variance_detected: "تم رصد فرق — يلزم موافقة المدير"
       not_clocked_in: "لم تسجّل حضورك."
+      back_to_shift_orders: "طلبات الوردية"
+      tabs:
+        label: "أقسام الوردية"
+        shift: "الوردية"
+        orders: "الطلبات"
+      orders:
+        description: "راجع طلبات ورديتك الحالية لأسئلة العملاء أو الشكاوى."
+        title: "طلبات الوردية"
+        count:
+          one: "طلب واحد"
+          other: "%{count} طلبات"
+        range: "عرض الطلبات من %{from} إلى %{to} بتاريخ %{date}."
+        empty: "لا توجد طلبات في هذه الوردية بعد."
+        no_shift: "لا توجد وردية نشطة لعرض الطلبات."
+        no_shift_hint: "سجّل حضورك أو افتح الصندوق لعرض طلبات ورديتك."
 
   menu:
     modifier_groups:
@@ -1516,7 +1570,7 @@ ar:
       net_profit_mtd: "صافي الربح للشهر"
       alerts: "تنبيهات"
       open_drawer: "درج نقد مفتوح: %{name} (%{shift})"
-      daily_sales_chart: "المبيعات اليومية (30 يومًا)"
+      daily_sales_chart: "صافي المبيعات اليومية (30 يومًا)"
       sales_by_category_chart: "المبيعات حسب التصنيف (الشهر)"
     sales_reports:
       title: "تقارير المبيعات"
@@ -1525,6 +1579,8 @@ ar:
       gross_sales: "إجمالي المبيعات"
       avg_ticket: "متوسط الفاتورة"
       discounts: "الخصومات"
+      refunds: "المستردات"
+      combos_category: "الوجبات المركبة"
       tips_line: "بقشيش %{amount}"
       pnl: "الأرباح والخسائر"
       pnl_hint: "الإيرادات ناقص المصروفات المصنّفة"
@@ -1538,7 +1594,7 @@ ar:
       no_sales: "لا مبيعات في هذه الفترة."
       no_payments: "لا مدفوعات في هذه الفترة."
       daily_totals_chart: "الإجمالي اليومي"
-      daily_totals_hint: "إيراد الطلبات المكتملة لكل يوم"
+      daily_totals_hint: "صافي المبيعات لكل يوم (المجموع الفرعي ناقص الخصومات)"
       hourly_chart: "التوزيع بالساعة"
       hourly_hint: "عدد الطلبات حسب ساعة اليوم"
       export_pdf: "تصدير PDF"
@@ -1788,9 +1844,9 @@ ar:
     clock_widget:
       on_shift: "في الوردية"
       since: "منذ %{time}"
-      not_clocked_in: "غير مسجّل الدخول"
-      clock_in: "تسجيل دخول"
-      clock_out: "تسجيل خروج"
+      not_clocked_in: "لا يوجد وردية مفتوحة"
+      clock_in: "بداية الوردية"
+      clock_out: "انهاء الوردية"
 
   kitchen:
     title: "شاشة المطبخ"

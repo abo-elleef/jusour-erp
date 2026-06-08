@@ -8,11 +8,13 @@ module Pos
     before_action :set_open_session, only: %i[count reconcile]
 
     def show
+      @tab = params[:tab].presence_in(%w[shift orders]) || "shift"
       @open_session = current_user.open_cash_drawer_session
       @today_session = current_user.todays_cash_drawer_session
       @drawer_treasuries = Treasury.active.cash_drawers.ordered
       @unpaid_orders_count = unpaid_orders_for(current_user).size
       @has_draft_cart = draft_order_for(current_user).present?
+      load_shift_orders if @tab == "orders"
     end
 
     def open_drawer
@@ -125,6 +127,20 @@ module Pos
       return unless session[:current_order_id]
 
       Order.find_by(id: session[:current_order_id], status: "draft", user_id: user.id)
+    end
+
+    def load_shift_orders
+      @shift_time_range = current_user.shift_orders_time_range
+      @shift_orders = if @shift_time_range
+        start_time, end_time = @shift_time_range
+        Order.where(user: current_user)
+          .where.not(status: "draft")
+          .where(created_at: start_time..end_time)
+          .includes(:customer, :payments)
+          .order(created_at: :desc)
+      else
+        Order.none
+      end
     end
 
     def manager_approved_reconcile?(drawer_session)

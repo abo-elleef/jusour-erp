@@ -28,6 +28,56 @@ RSpec.describe "POS shift flow", type: :request do
       get pos_shift_path
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(I18n.t("pos.shift.title"))
+      expect(response.body).to include(I18n.t("pos.shift.tabs.shift"))
+      expect(response.body).to include(I18n.t("pos.shift.tabs.orders"))
+    end
+
+    it "lists orders from the current clocked-in shift" do
+      ShiftLog.create!(
+        user: cashier,
+        clocked_in_at: 2.hours.ago,
+        hourly_rate_cents: 1500,
+        status: "active"
+      )
+      order = create(:order, user: cashier, company: company, status: "completed",
+        subtotal_cents: 1000, tax_cents: 0, total_cents: 1000, created_at: 1.hour.ago)
+      create(:order_item, order: order, unit_price_cents: 1000)
+      create(:payment, order: order, amount_cents: 1000)
+
+      get pos_shift_path(tab: "orders")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(order.order_number)
+      expect(response.body).to include(I18n.t("pos.shift.orders.title"))
+    end
+
+    it "lists orders from an open drawer even outside the accounting shift window" do
+      drawer = CashDrawerSession.create!(
+        user: cashier,
+        treasury: treasury,
+        session_date: Date.current,
+        shift: "morning",
+        opening_float_cents: 10_000,
+        status: "open",
+        created_at: 1.hour.ago
+      )
+      order = create(:order, user: cashier, company: company, status: "submitted",
+        subtotal_cents: 1500, tax_cents: 0, total_cents: 1500, created_at: 30.minutes.ago)
+      create(:order_item, order: order, unit_price_cents: 1500)
+
+      get pos_shift_path(tab: "orders")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(order.order_number)
+    end
+
+    it "lists today's orders when the cashier has no clock-in or drawer session" do
+      order = create(:order, user: cashier, company: company, status: "completed",
+        subtotal_cents: 2000, tax_cents: 0, total_cents: 2000, created_at: 2.hours.ago)
+      create(:order_item, order: order, unit_price_cents: 2000)
+      create(:payment, order: order, amount_cents: 2000)
+
+      get pos_shift_path(tab: "orders")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(order.order_number)
     end
   end
 

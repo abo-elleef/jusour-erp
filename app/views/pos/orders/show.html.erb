@@ -1,7 +1,9 @@
 <div class="min-h-screen bg-gray-100 flex flex-col">
   <header class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-gray-200 bg-white shrink-0">
     <div class="flex flex-wrap items-center gap-3">
-      <%= link_to "← #{t('nav.orders')}", pos_orders_path(order_type: @order.order_type),
+      <% back_path = @from_shift ? pos_shift_path(tab: "orders") : pos_orders_path(order_type: @order.order_type) %>
+      <% back_label = @from_shift ? t("pos.shift.back_to_shift_orders") : t("nav.orders") %>
+      <%= link_to "← #{back_label}", back_path,
             class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors" %>
       <span class="text-xl font-bold tracking-tight text-gray-900"><%= @order.order_number %></span>
       <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= order_type_class(@order.order_type) %> <%= order_type_border_class(@order.order_type) %>">
@@ -14,7 +16,7 @@
     <%= render "pos/pos_nav" %>
   </header>
 
-  <div class="p-5 max-w-6xl mx-auto w-full flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="p-5 max-w-6xl mx-auto w-full flex-1 grid grid-cols-1 <%= @order.amount_due_cents.positive? && !@from_shift ? "lg:grid-cols-2" : "" %> gap-6">
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("order.labels.items") %></h2>
@@ -67,8 +69,10 @@
       <% end %>
     </section>
 
-    <div class="lg:sticky lg:top-5 lg:self-start">
-      <%= render "pos/payment_modal", order: @order, checkout: true %>
-    </div>
+    <% if @order.amount_due_cents.positive? && !@from_shift %>
+      <div class="lg:sticky lg:top-5 lg:self-start">
+        <%= render "pos/payment_modal", order: @order, checkout: true %>
+      </div>
+    <% end %>
   </div>
 </div>

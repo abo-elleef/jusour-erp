@@ -9,6 +9,13 @@ module Accounting
       @session = session
     end
 
+    def self.shift_window_for(session)
+      day_start = session.session_date.in_time_zone.beginning_of_day
+      offset_hours = SHIFT_START_HOURS.fetch(session.shift, 0)
+      shift_start = day_start + offset_hours.hours
+      [shift_start, shift_start + 8.hours]
+    end
+
     def compute_expected!
       shift_start, shift_end = shift_window
 
@@ -69,10 +76,7 @@ module Accounting
     private
 
     def shift_window
-      day_start = @session.session_date.in_time_zone.beginning_of_day
-      offset_hours = SHIFT_START_HOURS.fetch(@session.shift, 0)
-      shift_start = day_start + offset_hours.hours
-      [shift_start, shift_start + 8.hours]
+      self.class.shift_window_for(@session)
     end
   end
 end
