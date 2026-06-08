@@ -12,6 +12,9 @@
     </div>
 
     <div class="flex flex-wrap gap-2 mb-6" aria-label="<%= t('order.labels.order_type') %>">
+      <%= link_to t("pos.collect_payment.all_types"),
+        pos_orders_path(all: 1, q: params[:q]&.to_unsafe_h),
+        class: pos_category_pill_class(active: @filter_type.nil?) %>
       <%= link_to order_type_label("pickup"),
             pos_orders_path(order_type: "pickup", q: params[:q]&.to_unsafe_h),
             class: pos_category_pill_class(active: @filter_type == "pickup") %>
@@ -21,9 +24,6 @@
       <%= link_to order_type_label("delivery"),
             pos_orders_path(order_type: "delivery", q: params[:q]&.to_unsafe_h),
             class: pos_category_pill_class(active: @filter_type == "delivery") %>
-      <%= link_to t("pos.collect_payment.all_types"),
-            pos_orders_path(all: 1, q: params[:q]&.to_unsafe_h),
-            class: pos_category_pill_class(active: @filter_type.nil?) %>
     </div>
 
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">

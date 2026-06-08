@@ -10,7 +10,6 @@ module Pos
       authorize Order, :index_for_payment?
 
       @filter_type = params[:order_type].presence
-      @filter_type = "pickup" if @filter_type.blank? && params[:all].blank?
       @filter_type = nil if @filter_type == "all"
 
       @q = Order.ransack(params[:q])

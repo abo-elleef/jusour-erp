@@ -1,18 +1,20 @@
-<nav class="flex flex-wrap gap-2 mb-6" aria-label="<%= t("nav.inventory") %>">
-  <%= link_to t("inventory.tools.ingredients"), admin_inventory_ingredients_path,
-        class: inventory_tool_link_class(controller_name == "ingredients" && action_name == "index") %>
-  <%= link_to t("inventory.tools.ingredient_categories"), admin_inventory_ingredient_categories_path,
-        class: inventory_tool_link_class(controller_name == "ingredient_categories") %>
-  <%= link_to t("inventory.tools.suppliers"), admin_inventory_suppliers_path,
-        class: inventory_tool_link_class(controller_name == "suppliers") %>
-  <%= link_to t("inventory.tools.vendor_invoices"), admin_inventory_vendor_invoices_path,
-        class: inventory_tool_link_class(controller_name == "vendor_invoices") %>
-  <%= link_to t("inventory.tools.stock_takes"), admin_inventory_stock_takes_path,
-        class: inventory_tool_link_class(controller_name == "stock_takes") %>
-  <%= link_to t("inventory.tools.valuation"), admin_inventory_reports_valuation_path,
-        class: inventory_tool_link_class(controller_name == "reports" && action_name == "valuation") %>
-  <%= link_to t("inventory.tools.variance"), admin_inventory_reports_variance_path,
-        class: inventory_tool_link_class(controller_name == "reports" && action_name == "variance") %>
-  <%= link_to t("inventory.tools.manufacturing"), admin_inventory_manufacturing_templates_path,
-        class: inventory_tool_link_class(controller_name.in?(%w[manufacturing_templates manufacturing_runs manufacturing_template_lines])) %>
+<nav class="mb-6 border-b border-gray-200" aria-label="<%= t("nav.inventory") %>">
+  <div class="flex flex-wrap gap-x-1 -mb-px">
+    <%= link_to t("inventory.tools.ingredients"), admin_inventory_ingredients_path,
+          class: admin_section_tab_class(controller_name == "ingredients" && action_name == "index") %>
+    <%= link_to t("inventory.tools.ingredient_categories"), admin_inventory_ingredient_categories_path,
+          class: admin_section_tab_class(controller_name == "ingredient_categories") %>
+    <%= link_to t("inventory.tools.suppliers"), admin_inventory_suppliers_path,
+          class: admin_section_tab_class(controller_name == "suppliers") %>
+    <%= link_to t("inventory.tools.vendor_invoices"), admin_inventory_vendor_invoices_path,
+          class: admin_section_tab_class(controller_name == "vendor_invoices") %>
+    <%= link_to t("inventory.tools.stock_takes"), admin_inventory_stock_takes_path,
+          class: admin_section_tab_class(controller_name == "stock_takes") %>
+    <%= link_to t("inventory.tools.valuation"), admin_inventory_reports_valuation_path,
+          class: admin_section_tab_class(controller_name == "reports" && action_name == "valuation") %>
+    <%= link_to t("inventory.tools.variance"), admin_inventory_reports_variance_path,
+          class: admin_section_tab_class(controller_name == "reports" && action_name == "variance") %>
+    <%= link_to t("inventory.tools.manufacturing"), admin_inventory_manufacturing_templates_path,
+          class: admin_section_tab_class(controller_name.in?(%w[manufacturing_templates manufacturing_runs manufacturing_template_lines])) %>
+  </div>
 </nav>

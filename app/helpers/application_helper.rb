@@ -263,6 +263,15 @@ module ApplicationHelper
     active ? "#{base} bg-gray-900 text-white border-gray-900" : "#{base} bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
   end
 
+  def admin_section_tab_class(active)
+    base = "inline-flex items-center px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap"
+    if active
+      "#{base} border-amber-600 text-amber-800"
+    else
+      "#{base} border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300"
+    end
+  end
+
   def pos_nav_link_class(active)
     base = "px-3 py-1.5 rounded-xl text-sm font-semibold border transition-colors"
     active ? "#{base} bg-gray-900 text-white border-gray-900" : "#{base} bg-white text-gray-600 border-gray-200 hover:bg-gray-50"

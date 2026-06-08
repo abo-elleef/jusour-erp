@@ -927,7 +927,7 @@ en:
       required: "required"
     collect_payment:
       title: "Collect Payment"
-      description: "Orders sent to the kitchen that still need payment. Pickup orders are shown by default."
+      description: "Orders sent to the kitchen that still need payment. All order types are shown by default."
       awaiting_payment: "Awaiting payment"
       total_due: "Total due"
       in_range: "In selected range"
