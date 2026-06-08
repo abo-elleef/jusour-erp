@@ -60,12 +60,13 @@ Rails.application.routes.draw do
     resources :categories do
       patch :reorder, on: :collection
     end
-    resources :menu_items, except: [:show]
+    resources :menu_items, except: [:show] do
+      resources :recipes, only: %i[create destroy], module: :menu_items
+    end
     resources :modifier_groups, except: [] do
       resources :modifiers, except: %i[index show]
     end
     resources :combos
-    resources :discount_rules
     resources :customers
     resources :users do
       resources :payroll_adjustments, only: %i[create destroy], module: :users
@@ -101,6 +102,7 @@ Rails.application.routes.draw do
         collection { patch :reorder }
       end
       resources :incomes
+      resources :discount_rules, except: [:show]
       resources :treasuries do
         member { post :adjust }
       end

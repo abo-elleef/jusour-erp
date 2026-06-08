@@ -74,7 +74,7 @@ module ApplicationHelper
           when "suggestions" then "suggestions"
           else "title"
           end
-    scope = controller_path.delete_prefix("admin/").delete_prefix("inventory/")
+    scope = controller_path.delete_prefix("admin/").delete_prefix("inventory/").delete_prefix("accounting/")
     t("admin.pages.#{scope}.#{key}", default: controller_name.humanize)
   end
 
@@ -87,7 +87,7 @@ module ApplicationHelper
   def format_money(cents)
     return Money.new(0).format(locale: I18n.locale) if cents.nil?
 
-    Money.new(cents).format(locale: I18n.locale, symbol: false)
+    Money.new(cents).format(locale: I18n.locale, symbol: 'ج.م.')
   end
 
   def order_status_class(status)

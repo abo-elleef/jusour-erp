@@ -4,10 +4,7 @@
 
 <%= link_to t("nav.dashboard"), admin_root_path, class: nav_link %>
 <% if current_user.can_access_admin? %>
-  <%= link_to t("nav.categories"), admin_categories_path, class: nav_link %>
   <%= link_to t("nav.menu"), admin_menu_items_path, class: nav_link %>
-  <%= link_to t("nav.combos"), admin_combos_path, class: nav_link %>
-  <%= link_to t("nav.discounts"), admin_discount_rules_path, class: nav_link %>
   <%= link_to t("nav.customers"), admin_customers_path, class: nav_link %>
   <%= link_to t("nav.orders"), admin_orders_path, class: nav_link %>
   <%= link_to t("nav.inventory"), admin_inventory_ingredients_path, class: nav_link %>

@@ -66,7 +66,7 @@ module Printing
       end
 
       def format_money(cents)
-        Money.new(cents.to_i).format(symbol: false)
+        Money.new(cents.to_i).format(symbol: 'ج.م.')
       end
 
       def print_payments(doc)

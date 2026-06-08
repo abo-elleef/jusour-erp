@@ -41,6 +41,7 @@ module Admin
 
     def edit
       load_modifier_groups_for_form
+      load_recipes_for_form
       @categories = Category.active.ordered
       authorize @menu_item
     end
@@ -77,6 +78,12 @@ module Admin
     def load_modifier_groups_for_form
       @all_modifier_groups = ModifierGroup.includes(:modifiers).ordered
       @assigned_modifier_group_ids = @menu_item.modifier_group_ids
+    end
+
+    def load_recipes_for_form
+      @recipes = @menu_item.recipes.joins(:ingredient).includes(:ingredient).order("ingredients.name")
+      assigned_ids = @recipes.map(&:ingredient_id)
+      @recipe_ingredients = Ingredient.active.where.not(id: assigned_ids).order(:name)
     end
 
     def sync_modifier_groups!(menu_item)

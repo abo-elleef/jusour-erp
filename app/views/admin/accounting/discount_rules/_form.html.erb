@@ -2,7 +2,7 @@
 <% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
-<%= form_with model: [:admin, discount_rule],
+<%= form_with model: [:admin, :accounting, discount_rule],
       class: "space-y-6 max-w-2xl",
       data: { controller: "discount-rule-scope" } do |f| %>
   <% if discount_rule.errors.any? %>
@@ -136,7 +136,7 @@
   <div class="flex flex-wrap items-center gap-3">
     <%= f.submit discount_rule.persisted? ? t("actions.save_changes") : t("discounts.rules.create_button"),
           class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
-    <%= link_to t("actions.cancel"), admin_discount_rules_path,
+    <%= link_to t("actions.cancel"), admin_accounting_discount_rules_path,
           class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
   </div>
 <% end %>
