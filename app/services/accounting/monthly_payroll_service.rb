@@ -2,6 +2,10 @@
 
 module Accounting
   class MonthlyPayrollService
+    INDEX_SORTABLE_COLUMNS = %w[name base_salary_cents daily_rate_cents penalties_cents bonuses_cents net_pay_cents status].freeze
+    INDEX_DEFAULT_SORT = "name"
+    INDEX_DEFAULT_SORT_DIRECTION = "asc"
+
     Result = Struct.new(
       :user,
       :payroll_month,
@@ -66,6 +70,22 @@ module Accounting
 
       user.monthly_salary_cents.to_i.positive? ||
         user.payroll_adjustments.for_month(payroll_month).exists?
+    end
+
+    def self.sort_rows(rows, sort:, direction:)
+      sort = INDEX_SORTABLE_COLUMNS.include?(sort.to_s) ? sort.to_s : INDEX_DEFAULT_SORT
+      direction = direction.to_s == "desc" ? :desc : :asc
+
+      sorted = case sort
+               when "name"
+                 rows.sort_by { |row| row.user.name.downcase }
+               when "status"
+                 rows.sort_by { |row| row.finalized ? 1 : 0 }
+               else
+                 rows.sort_by { |row| row.public_send(sort).to_i }
+               end
+
+      direction == :desc ? sorted.reverse : sorted
     end
 
     private

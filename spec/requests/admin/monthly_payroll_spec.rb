@@ -21,5 +21,15 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(I18n.t("accounting.monthly_payroll.title"))
     end
+
+    it "sorts rows by net pay descending" do
+      create(:user, company: company, name: "Lower Paid", role: "cashier", monthly_salary_cents: 100_000)
+      create(:user, company: company, name: "Higher Paid", role: "kitchen", monthly_salary_cents: 400_000)
+
+      get admin_accounting_monthly_payroll_path, params: { sort: "net_pay_cents", direction: "desc" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body.index("Higher Paid")).to be < response.body.index("Lower Paid")
+    end
   end
 end

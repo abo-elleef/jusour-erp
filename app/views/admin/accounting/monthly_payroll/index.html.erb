@@ -16,12 +16,18 @@
               class: "text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-colors" %>
       <% end %>
       <%= link_to t("accounting.monthly_payroll.export_csv"),
-            admin_accounting_monthly_payroll_export_path(payroll_month: @payroll_month.strftime("%Y-%m")),
+            admin_accounting_monthly_payroll_export_path(
+              payroll_month: @payroll_month.strftime("%Y-%m"),
+              sort: @sort,
+              direction: @sort_direction
+            ),
             class: "text-sm font-semibold border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50" %>
     </div>
   </div>
 
   <%= form_with url: admin_accounting_monthly_payroll_path, method: :get, class: "flex gap-4 items-end mb-6" do %>
+    <%= hidden_field_tag :sort, @sort %>
+    <%= hidden_field_tag :direction, @sort_direction %>
     <div>
       <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("staff.payroll.month") %></label>
       <%= month_field_tag :payroll_month, @payroll_month.strftime("%Y-%m"), class: pos_input_class %>
@@ -50,13 +56,37 @@
     <table class="w-full text-sm">
       <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
         <tr>
-          <th class="p-3 ps-5 text-start"><%= t("accounting.shift_logs.employee") %></th>
-          <th class="p-3 text-end"><%= t("accounting.monthly_payroll.base_salary") %></th>
-          <th class="p-3 text-end"><%= t("accounting.monthly_payroll.daily_rate") %></th>
-          <th class="p-3 text-end"><%= t("accounting.monthly_payroll.penalties") %></th>
-          <th class="p-3 text-end"><%= t("accounting.monthly_payroll.bonuses") %></th>
-          <th class="p-3 text-end"><%= t("accounting.monthly_payroll.net_pay") %></th>
-          <th class="p-3 text-center"><%= t("accounting.monthly_payroll.status") %></th>
+          <th class="p-3 ps-5 text-start">
+            <%= monthly_payroll_sort_link(t("accounting.shift_logs.employee"), "name", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
+          </th>
+          <th class="p-3 text-end">
+            <div class="flex justify-end">
+              <%= monthly_payroll_sort_link(t("accounting.monthly_payroll.base_salary"), "base_salary_cents", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
+            </div>
+          </th>
+          <th class="p-3 text-end">
+            <div class="flex justify-end">
+              <%= monthly_payroll_sort_link(t("accounting.monthly_payroll.daily_rate"), "daily_rate_cents", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
+            </div>
+          </th>
+          <th class="p-3 text-end">
+            <div class="flex justify-end">
+              <%= monthly_payroll_sort_link(t("accounting.monthly_payroll.penalties"), "penalties_cents", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
+            </div>
+          </th>
+          <th class="p-3 text-end">
+            <div class="flex justify-end">
+              <%= monthly_payroll_sort_link(t("accounting.monthly_payroll.bonuses"), "bonuses_cents", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
+            </div>
+          </th>
+          <th class="p-3 text-end">
+            <div class="flex justify-end">
+              <%= monthly_payroll_sort_link(t("accounting.monthly_payroll.net_pay"), "net_pay_cents", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
+            </div>
+          </th>
+          <th class="p-3 text-center">
+            <%= monthly_payroll_sort_link(t("accounting.monthly_payroll.status"), "status", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
+          </th>
           <th class="p-3 pe-5 text-end"><%= t("staff.index.table.actions") %></th>
         </tr>
       </thead>

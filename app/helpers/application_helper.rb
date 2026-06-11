@@ -385,6 +385,23 @@ module ApplicationHelper
     end
   end
 
+  def monthly_payroll_sort_link(label, column, sort:, direction:, payroll_month:)
+    next_direction = sort == column && direction == "asc" ? "desc" : "asc"
+    link_class = "inline-flex items-center gap-1 hover:text-gray-900 transition-colors"
+    link_class += sort == column ? " text-gray-900" : " text-gray-500"
+
+    link_to admin_accounting_monthly_payroll_path(
+              request.query_parameters.merge(
+                payroll_month: payroll_month.strftime("%Y-%m"),
+                sort: column,
+                direction: next_direction
+              )
+            ),
+            class: link_class do
+      safe_join([label, payroll_sort_indicator(sort, direction, column)])
+    end
+  end
+
   def staff_index_sort_link(label, column, sort:, direction:)
     next_direction = sort == column && direction == "asc" ? "desc" : "asc"
     link_class = "inline-flex items-center gap-1 hover:text-gray-900 transition-colors"

@@ -7,7 +7,9 @@ module Admin
     class MonthlyPayrollController < BaseController
       def index
         @payroll_month = parse_payroll_month
-        @rows = ::Accounting::MonthlyPayrollService.for_all_staff(@payroll_month)
+        @sort = parse_index_sort_param
+        @sort_direction = parse_index_sort_direction_param
+        @rows = sorted_payroll_rows
         @finalized_count = @rows.count(&:finalized)
         @pending_count = @rows.count - @finalized_count
 
@@ -37,13 +39,29 @@ module Admin
       def export
         authorize :accounting, :export?
         @payroll_month = parse_payroll_month
-        @rows = ::Accounting::MonthlyPayrollService.for_all_staff(@payroll_month)
+        @sort = parse_index_sort_param
+        @sort_direction = parse_index_sort_direction_param
+        @rows = sorted_payroll_rows
         send_data generate_csv,
           filename: "monthly-payroll-#{@payroll_month.strftime('%Y-%m')}.csv",
           type: "text/csv"
       end
 
       private
+
+      def sorted_payroll_rows
+        rows = ::Accounting::MonthlyPayrollService.for_all_staff(@payroll_month)
+        ::Accounting::MonthlyPayrollService.sort_rows(rows, sort: @sort, direction: @sort_direction)
+      end
+
+      def parse_index_sort_param
+        sort = params[:sort].to_s
+        ::Accounting::MonthlyPayrollService::INDEX_SORTABLE_COLUMNS.include?(sort) ? sort : ::Accounting::MonthlyPayrollService::INDEX_DEFAULT_SORT
+      end
+
+      def parse_index_sort_direction_param
+        params[:direction].to_s == "desc" ? "desc" : ::Accounting::MonthlyPayrollService::INDEX_DEFAULT_SORT_DIRECTION
+      end
 
       def parse_payroll_month
         if params[:payroll_month].present?

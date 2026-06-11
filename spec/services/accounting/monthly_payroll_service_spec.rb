@@ -53,4 +53,22 @@ RSpec.describe Accounting::MonthlyPayrollService do
       expect(result.net_pay_cents).to eq(290_000)
     end
   end
+
+  describe ".sort_rows" do
+    let(:low_row) do
+      described_class.new(staff, payroll_month).build_calculated
+    end
+    let(:high_user) do
+      create(:user, company: company, name: "Zara", monthly_salary_cents: 500_000)
+    end
+    let(:high_row) do
+      described_class.new(high_user, payroll_month).build_calculated
+    end
+
+    it "sorts by net pay descending" do
+      sorted = described_class.sort_rows([low_row, high_row], sort: "net_pay_cents", direction: "desc")
+
+      expect(sorted.first.user.name).to eq("Zara")
+    end
+  end
 end
