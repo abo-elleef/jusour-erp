@@ -7,7 +7,9 @@ module Admin
     class MonthlyPayrollController < BaseController
       def index
         @payroll_month = parse_payroll_month
-        @rows = Accounting::MonthlyPayrollService.for_all_staff(@payroll_month)
+        @rows = ::Accounting::MonthlyPayrollService.for_all_staff(@payroll_month)
+        @finalized_count = @rows.count(&:finalized)
+        @pending_count = @rows.count - @finalized_count
 
         respond_to do |format|
           format.html
@@ -15,10 +17,27 @@ module Admin
         end
       end
 
+      def finalize_all
+        authorize PayrollSnapshot, :create?
+
+        @payroll_month = parse_payroll_month
+        finalized = 0
+
+        ::Accounting::MonthlyPayrollService.for_all_staff(@payroll_month).each do |row|
+          next if row.finalized
+
+          ::Accounting::FinalizePayrollService.new(row.user, @payroll_month, finalized_by: current_user).call
+          finalized += 1
+        end
+
+        notice = finalized.positive? ? t("flash.payroll_snapshot.bulk_recorded", count: finalized) : t("flash.payroll_snapshot.all_recorded")
+        redirect_to admin_accounting_monthly_payroll_path(payroll_month: @payroll_month.strftime("%Y-%m")), notice: notice
+      end
+
       def export
         authorize :accounting, :export?
         @payroll_month = parse_payroll_month
-        @rows = Accounting::MonthlyPayrollService.for_all_staff(@payroll_month)
+        @rows = ::Accounting::MonthlyPayrollService.for_all_staff(@payroll_month)
         send_data generate_csv,
           filename: "monthly-payroll-#{@payroll_month.strftime('%Y-%m')}.csv",
           type: "text/csv"

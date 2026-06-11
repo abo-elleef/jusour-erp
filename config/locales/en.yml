@@ -257,11 +257,13 @@ en:
       stats_cashiers: "Cashiers"
       stats_kitchen: "Kitchen"
       filters: "Filters"
-      filters_hint: "Search by name or email, or filter by role"
+      filters_hint: "Search by name or email, or filter by role and status"
       search: "Search"
       search_placeholder: "Name or email…"
       role: "Role"
       all_roles: "All roles"
+      status: "Status"
+      all_statuses: "All statuses"
       showing_members:
         one: "Showing %{count} member"
         other: "Showing %{count} members"
@@ -272,6 +274,7 @@ en:
         role: "Role"
         monthly_salary: "Monthly salary"
         joined: "Joined"
+        status: "Status"
         actions: "Actions"
       empty_title: "No staff members found"
       empty_description: "Add your first team member to get started."
@@ -345,6 +348,9 @@ en:
       overtime_hours: "Overtime hours"
       overtime_hint: "Bonus = hours × hourly rate (from monthly salary)."
       overtime_label: "Overtime — %{hours} hrs"
+      record_payroll: "Record payroll"
+      recorded: "Recorded"
+      recorded_on: "Recorded on %{date} by %{name}"
     payroll_portal:
       title: "Salary preview"
       pin_title: "Enter your PIN"
@@ -1808,7 +1814,7 @@ en:
     monthly_payroll:
       title: "Monthly payroll"
       export_csv: "Export CSV"
-      hint: "Salaries are based on a fixed %{days}-day work month. Daily rate = monthly salary ÷ %{days}."
+      hint: "Salaries are based on a fixed %{days}-day work month. Record payroll to lock amounts for each month."
       base_salary: "Base salary"
       daily_rate: "Daily rate"
       penalties: "Penalties"
@@ -1816,6 +1822,15 @@ en:
       net_pay: "Net pay"
       totals: "Totals"
       empty: "No staff with salaries or adjustments for this month. Set monthly salaries under Staff."
+      total_to_pay: "Total to pay"
+      recorded_count: "Recorded"
+      pending_count: "Pending"
+      status: "Status"
+      status_recorded: "Recorded"
+      status_draft: "Draft"
+      record_all: "Record all"
+      record_all_confirm: "Record payroll for %{count} staff members? Locked amounts will be saved for this month."
+      recorded_summary: "%{recorded} / %{total} recorded"
     tax_reports:
       title: "Sales tax report"
       total_collected: "Total tax collected"
@@ -1948,6 +1963,12 @@ en:
     payroll_adjustment:
       created: "Adjustment recorded."
       removed: "Adjustment removed."
+    payroll_snapshot:
+      recorded: "Payroll recorded for this month."
+      bulk_recorded:
+        one: "Payroll recorded for %{count} staff member."
+        other: "Payroll recorded for %{count} staff members."
+      all_recorded: "All payroll for this month is already recorded."
     settings:
       updated: "Settings saved."
     tax_rate:

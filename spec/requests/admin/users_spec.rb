@@ -24,6 +24,47 @@ RSpec.describe "Admin::Users", type: :request do
         expect(response.body).to include(staff.name)
         expect(response.body).to include(I18n.t("staff.index.new_button"))
       end
+
+      it "shows inactive staff and their status" do
+        inactive = create(:user, company: company, name: "Former Staff", active: false)
+
+        get admin_users_path
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(inactive.name)
+        expect(response.body).to include(I18n.t("staff.show.inactive"))
+      end
+
+      it "filters by active status" do
+        active_staff = create(:user, company: company, name: "Active Staff")
+        create(:user, company: company, name: "Inactive Staff", active: false)
+
+        get admin_users_path, params: { q: { active_eq: true } }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(active_staff.name)
+        expect(response.body).not_to include("Inactive Staff")
+      end
+
+      it "sorts staff by name descending" do
+        create(:user, company: company, name: "Zara Staff")
+        create(:user, company: company, name: "Adam Staff")
+
+        get admin_users_path, params: { sort: "name", direction: "desc" }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body.index("Zara Staff")).to be < response.body.index("Adam Staff")
+      end
+
+      it "sorts staff by monthly salary ascending" do
+        create(:user, company: company, name: "Higher Paid", monthly_salary_cents: 400_000)
+        create(:user, company: company, name: "Lower Paid", monthly_salary_cents: 100_000)
+
+        get admin_users_path, params: { sort: "monthly_salary_cents", direction: "asc" }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body.index("Lower Paid")).to be < response.body.index("Higher Paid")
+      end
     end
 
     describe "POST /admin/users" do

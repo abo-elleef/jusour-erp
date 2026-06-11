@@ -6,6 +6,9 @@ class User < ApplicationRecord
   include Tenantable
 
   ROLES = %w[owner manager cashier kitchen].freeze
+  INDEX_SORTABLE_COLUMNS = %w[name email role monthly_salary_cents created_at].freeze
+  INDEX_DEFAULT_SORT = "name"
+  INDEX_DEFAULT_SORT_DIRECTION = "asc"
   WORK_DAYS_PER_MONTH = 30
   WORK_HOURS_PER_MONTH = 300
 
@@ -40,6 +43,7 @@ class User < ApplicationRecord
   has_many :expenses, dependent: :nullify
   has_many :incomes, dependent: :nullify
   has_many :payroll_adjustments, dependent: :destroy
+  has_many :payroll_snapshots, dependent: :destroy
   has_many :recorded_payroll_adjustments, class_name: "PayrollAdjustment",
     foreign_key: :recorded_by_id, dependent: :nullify, inverse_of: :recorded_by
 

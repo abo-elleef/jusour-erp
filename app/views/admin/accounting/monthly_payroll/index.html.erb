@@ -3,13 +3,23 @@
 
 <div class="max-w-7xl">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
-    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.monthly_payroll.title") %></h1>
-    <%= link_to t("accounting.monthly_payroll.export_csv"),
-          admin_accounting_monthly_payroll_export_path(payroll_month: @payroll_month.strftime("%Y-%m")),
-          class: "text-sm font-semibold border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50" %>
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.monthly_payroll.title") %></h1>
+      <p class="text-sm text-gray-600 mt-1"><%= t("accounting.monthly_payroll.hint", days: User::WORK_DAYS_PER_MONTH) %></p>
+    </div>
+    <div class="flex flex-wrap gap-2 shrink-0">
+      <% if policy(PayrollSnapshot).create? && @pending_count.positive? %>
+        <%= button_to t("accounting.monthly_payroll.record_all"),
+              admin_accounting_monthly_payroll_finalize_all_path(payroll_month: @payroll_month.strftime("%Y-%m")),
+              method: :post,
+              form: { data: { turbo_confirm: t("accounting.monthly_payroll.record_all_confirm", count: @pending_count) } },
+              class: "text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-colors" %>
+      <% end %>
+      <%= link_to t("accounting.monthly_payroll.export_csv"),
+            admin_accounting_monthly_payroll_export_path(payroll_month: @payroll_month.strftime("%Y-%m")),
+            class: "text-sm font-semibold border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50" %>
+    </div>
   </div>
-
-  <p class="text-sm text-gray-600 mb-6"><%= t("accounting.monthly_payroll.hint", days: User::WORK_DAYS_PER_MONTH) %></p>
 
   <%= form_with url: admin_accounting_monthly_payroll_path, method: :get, class: "flex gap-4 items-end mb-6" do %>
     <div>
@@ -17,6 +27,23 @@
       <%= month_field_tag :payroll_month, @payroll_month.strftime("%Y-%m"), class: pos_input_class %>
     </div>
     <%= submit_tag t("actions.apply"), class: "bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-semibold" %>
+  <% end %>
+
+  <% if @rows.any? %>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.monthly_payroll.total_to_pay") %></p>
+        <p class="text-2xl font-bold text-amber-800 tabular-nums mt-1"><%= format_money(@rows.sum(&:net_pay_cents)) %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.monthly_payroll.recorded_count") %></p>
+        <p class="text-2xl font-bold text-emerald-700 tabular-nums mt-1"><%= @finalized_count %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.monthly_payroll.pending_count") %></p>
+        <p class="text-2xl font-bold text-gray-900 tabular-nums mt-1"><%= @pending_count %></p>
+      </div>
+    </div>
   <% end %>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -29,7 +56,8 @@
           <th class="p-3 text-end"><%= t("accounting.monthly_payroll.penalties") %></th>
           <th class="p-3 text-end"><%= t("accounting.monthly_payroll.bonuses") %></th>
           <th class="p-3 text-end"><%= t("accounting.monthly_payroll.net_pay") %></th>
-          <th class="p-3 pe-5 text-end"><%= t("actions.actions") %></th>
+          <th class="p-3 text-center"><%= t("accounting.monthly_payroll.status") %></th>
+          <th class="p-3 pe-5 text-end"><%= t("staff.index.table.actions") %></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
@@ -42,15 +70,29 @@
               <td class="p-3 text-end tabular-nums text-red-700">−<%= format_money(row.penalties_cents) %></td>
               <td class="p-3 text-end tabular-nums text-emerald-700">+<%= format_money(row.bonuses_cents) %></td>
               <td class="p-3 text-end font-semibold tabular-nums"><%= format_money(row.net_pay_cents) %></td>
-              <td class="p-3 pe-5 text-end">
-                <%= link_to t("staff.payroll.manage"), admin_user_path(row.user, payroll_month: @payroll_month.strftime("%Y-%m")),
-                      class: "text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors" %>
+              <td class="p-3 text-center">
+                <% if row.finalized %>
+                  <span class="text-xs font-semibold uppercase px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800"><%= t("accounting.monthly_payroll.status_recorded") %></span>
+                <% else %>
+                  <span class="text-xs font-semibold uppercase px-2.5 py-1 rounded-full bg-amber-100 text-amber-800"><%= t("accounting.monthly_payroll.status_draft") %></span>
+                <% end %>
+              </td>
+              <td class="p-3 pe-5 text-end whitespace-nowrap">
+                <div class="inline-flex gap-2">
+                  <%= render "admin/users/payroll_finalize_button",
+                        user: row.user,
+                        payroll_month: @payroll_month,
+                        payroll_summary: row,
+                        compact: true %>
+                  <%= link_to t("staff.payroll.manage"), admin_user_path(row.user, payroll_month: @payroll_month.strftime("%Y-%m")),
+                        class: "inline-flex text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors" %>
+                </div>
               </td>
             </tr>
           <% end %>
         <% else %>
           <tr>
-            <td colspan="7" class="p-8 text-center text-gray-500"><%= t("accounting.monthly_payroll.empty") %></td>
+            <td colspan="8" class="p-8 text-center text-gray-500"><%= t("accounting.monthly_payroll.empty") %></td>
           </tr>
         <% end %>
       </tbody>
@@ -62,7 +104,8 @@
             <td class="p-3"></td>
             <td class="p-3 text-end tabular-nums text-red-700">−<%= format_money(@rows.sum(&:penalties_cents)) %></td>
             <td class="p-3 text-end tabular-nums text-emerald-700">+<%= format_money(@rows.sum(&:bonuses_cents)) %></td>
-            <td class="p-3 text-end tabular-nums"><%= format_money(@rows.sum(&:net_pay_cents)) %></td>
+            <td class="p-3 text-end tabular-nums text-amber-800"><%= format_money(@rows.sum(&:net_pay_cents)) %></td>
+            <td class="p-3 text-center text-xs text-gray-500"><%= t("accounting.monthly_payroll.recorded_summary", recorded: @finalized_count, total: @rows.size) %></td>
             <td class="p-3 pe-5"></td>
           </tr>
         </tfoot>

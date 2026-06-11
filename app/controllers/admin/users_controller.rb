@@ -7,15 +7,18 @@ module Admin
     def index
       authorize User
 
-      scope = policy_scope(User).active
+      scope = policy_scope(User)
       @q = scope.ransack(params[:q])
+      @sort = parse_index_sort_param
+      @sort_direction = parse_index_sort_direction_param
       @total_count = scope.count
       @owner_count = scope.where(role: "owner").count
       @manager_count = scope.where(role: "manager").count
       @cashier_count = scope.where(role: "cashier").count
       @kitchen_count = scope.where(role: "kitchen").count
       @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
-      @pagy, @users = pagy(:offset, @q.result.order(:name), limit: 25)
+      @pagy, @users = pagy(:offset, @q.result.order(@sort => @sort_direction), limit: 25)
+      load_index_payroll_context
     end
 
     def new
@@ -74,6 +77,25 @@ module Admin
       @payroll_sort = parse_payroll_sort_param
       @payroll_direction = parse_payroll_direction_param
       @payroll_summary = @user.monthly_payroll(@payroll_month, sort: @payroll_sort, direction: @payroll_direction)
+    end
+
+    def load_index_payroll_context
+      return unless current_user.admin_access?
+
+      @current_payroll_month = Date.current.beginning_of_month
+      user_ids = @users.map(&:id)
+      @payroll_snapshots_by_user = PayrollSnapshot.for_month(@current_payroll_month)
+        .where(user_id: user_ids)
+        .index_by(&:user_id)
+    end
+
+    def parse_index_sort_param
+      sort = params[:sort].to_s
+      User::INDEX_SORTABLE_COLUMNS.include?(sort) ? sort : User::INDEX_DEFAULT_SORT
+    end
+
+    def parse_index_sort_direction_param
+      params[:direction].to_s == "desc" ? "desc" : User::INDEX_DEFAULT_SORT_DIRECTION
     end
 
     def parse_payroll_sort_param

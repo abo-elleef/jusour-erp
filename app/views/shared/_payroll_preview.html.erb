@@ -13,7 +13,21 @@
     <div>
       <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.payroll.title") %></h2>
       <p class="text-xs text-gray-500 mt-0.5"><%= t("staff.payroll.subtitle", days: User::WORK_DAYS_PER_MONTH) %></p>
+      <% if payroll_summary.finalized && payroll_summary.snapshot %>
+        <p class="text-xs text-emerald-700 font-medium mt-1.5">
+          <%= t("staff.payroll.recorded_on",
+                date: l(payroll_summary.snapshot.finalized_at.to_date, format: :long),
+                name: payroll_summary.snapshot.finalized_by.name) %>
+        </p>
+      <% end %>
     </div>
+    <div class="flex flex-wrap items-end gap-2">
+      <% unless readonly %>
+        <%= render "admin/users/payroll_finalize_button",
+              user: user,
+              payroll_month: payroll_month,
+              payroll_summary: payroll_summary %>
+      <% end %>
     <%= form_with url: month_url, method: :get, class: "flex items-end gap-2" do %>
       <div>
         <%= label_tag :payroll_month, t("staff.payroll.month"), class: label_class %>
@@ -23,6 +37,7 @@
       <%= hidden_field_tag :payroll_direction, payroll_direction if sortable %>
       <%= submit_tag t("actions.apply"), class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors" %>
     <% end %>
+    </div>
   </div>
 
   <div class="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 border-b border-gray-100">
@@ -50,7 +65,7 @@
   </div>
 
   <% unless readonly %>
-    <% if policy(PayrollAdjustment.new(user: user)).create? %>
+    <% if policy(PayrollAdjustment.new(user: user)).create? && !payroll_summary.finalized %>
       <div class="p-5 border-b border-gray-100">
         <h3 class="text-sm font-semibold text-gray-900 mb-4"><%= t("staff.payroll.add_adjustment") %></h3>
         <%= form_with model: PayrollAdjustment.new(payroll_month: payroll_month, happened_at: Date.current),
@@ -153,7 +168,7 @@
               <% unless readonly %>
                 <td class="p-3 text-gray-500 text-xs"><%= adj.recorded_by.name %></td>
                 <td class="p-3 pe-5 text-end">
-                  <% if policy(adj).destroy? %>
+                  <% if policy(adj).destroy? && !payroll_summary.finalized %>
                     <%= button_to t("actions.remove"), admin_user_payroll_adjustment_path(user, adj, payroll_show_url_params(payroll_month)),
                           method: :delete,
                           form: { data: { turbo_confirm: t("staff.payroll.remove_confirm") }, class: "inline" },

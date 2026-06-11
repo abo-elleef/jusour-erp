@@ -1,0 +1,23 @@
+<%# locals: user, payroll_month:, payroll_summary: nil, snapshot: nil, return_to: nil, compact: false %>
+<% payroll_month ||= Date.current.beginning_of_month %>
+<% payroll_summary = local_assigns[:payroll_summary] %>
+<% snapshot = local_assigns[:snapshot] || payroll_summary&.snapshot %>
+<% finalized = payroll_summary&.finalized || snapshot.present? %>
+<% compact = local_assigns.fetch(:compact, false) %>
+<% return_to = local_assigns[:return_to] %>
+<% btn_class = compact ? "inline-flex text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors" : "inline-flex text-sm font-semibold px-4 py-2 rounded-xl border transition-colors" %>
+
+<% if policy(PayrollSnapshot).create? %>
+  <% if finalized %>
+    <span class="<%= btn_class %> bg-emerald-50 text-emerald-800 border-emerald-200"
+          title="<%= t("staff.payroll.recorded_on", date: l(snapshot.finalized_at.to_date, format: :long), name: snapshot.finalized_by.name) %>">
+      <%= t("staff.payroll.recorded") %>
+    </span>
+  <% else %>
+    <%= button_to t("staff.payroll.record_payroll"),
+          admin_user_payroll_snapshot_path(user, payroll_month: payroll_month.strftime("%Y-%m"), return_to: return_to),
+          method: :post,
+          form: { class: "inline" },
+          class: "#{btn_class} bg-amber-600 hover:bg-amber-700 text-white border-amber-600" %>
+  <% end %>
+<% end %>

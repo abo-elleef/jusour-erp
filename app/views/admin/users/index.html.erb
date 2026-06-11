@@ -17,7 +17,7 @@
 
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
     <%= link_to admin_users_path,
-          class: orders_stat_card_class(@q.role_eq.blank? && !@filtered) do %>
+          class: orders_stat_card_class(@q.role_eq.blank? && @q.active_eq.blank? && !@filtered) do %>
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.index.stats_total") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
     <% end %>
@@ -54,6 +54,8 @@
     </div>
     <div class="p-5">
       <%= search_form_for @q, url: admin_users_path, method: :get, class: "flex flex-wrap items-end gap-4" do |f| %>
+        <%= hidden_field_tag :sort, @sort %>
+        <%= hidden_field_tag :direction, @sort_direction %>
         <div class="flex-1 min-w-[12rem]">
           <%= f.label :name_or_email_cont, t("staff.index.search"), class: label_class %>
           <%= f.search_field :name_or_email_cont, placeholder: t("staff.index.search_placeholder"), class: input_class %>
@@ -63,6 +65,17 @@
           <%= f.select :role_eq,
                 options_for_select(User::ROLES.map { |r| [user_role_label(r), r] }, @q.role_eq),
                 { include_blank: t("staff.index.all_roles") },
+                class: "#{input_class} appearance-none" %>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= f.label :active_eq, t("staff.index.status"), class: label_class %>
+          <%= f.select :active_eq,
+                options_for_select([
+                  [t("staff.index.all_statuses"), ""],
+                  [t("staff.show.active"), true],
+                  [t("staff.show.inactive"), false]
+                ], @q.active_eq),
+                {},
                 class: "#{input_class} appearance-none" %>
         </div>
         <%= f.submit t("actions.apply_filters"),
@@ -81,20 +94,25 @@
   <% if @users.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-sm min-w-[640px]">
+        <table class="w-full text-left text-sm min-w-[760px]">
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
-              <th class="p-3 pl-5"><%= t("staff.index.table.name") %></th>
-              <th class="p-3"><%= t("staff.index.table.email") %></th>
-              <th class="p-3"><%= t("staff.index.table.role") %></th>
-              <th class="p-3 text-end"><%= t("staff.index.table.monthly_salary") %></th>
-              <th class="p-3"><%= t("staff.index.table.joined") %></th>
+              <th class="p-3 pl-5"><%= staff_index_sort_link(t("staff.index.table.name"), "name", sort: @sort, direction: @sort_direction) %></th>
+              <th class="p-3"><%= staff_index_sort_link(t("staff.index.table.email"), "email", sort: @sort, direction: @sort_direction) %></th>
+              <th class="p-3"><%= staff_index_sort_link(t("staff.index.table.role"), "role", sort: @sort, direction: @sort_direction) %></th>
+              <th class="p-3 text-end">
+                <div class="flex justify-end">
+                  <%= staff_index_sort_link(t("staff.index.table.monthly_salary"), "monthly_salary_cents", sort: @sort, direction: @sort_direction) %>
+                </div>
+              </th>
+              <th class="p-3"><%= staff_index_sort_link(t("staff.index.table.joined"), "created_at", sort: @sort, direction: @sort_direction) %></th>
+              <th class="p-3"><%= t("staff.index.table.status") %></th>
               <th class="p-3 pr-5 text-right"><%= t("staff.index.table.actions") %></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @users.each do |staff| %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-50/60 transition-colors<%= " opacity-60" unless staff.active? %>">
                 <td class="p-3 pl-5">
                   <% if policy(staff).show? %>
                     <%= link_to staff.name, admin_user_path(staff), class: "font-semibold text-gray-900 hover:text-amber-700 transition-colors" %>
@@ -121,6 +139,11 @@
                 <td class="p-3 text-gray-500 whitespace-nowrap tabular-nums">
                   <%= l(staff.created_at.to_date, format: :long) %>
                 </td>
+                <td class="p-3">
+                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= user_active_status_class(staff.active?) %>">
+                    <%= staff.active? ? t("staff.show.active") : t("staff.show.inactive") %>
+                  </span>
+                </td>
                 <td class="p-3 pr-5 text-right whitespace-nowrap">
                   <div class="inline-flex gap-2">
                     <% if policy(staff).show? %>
@@ -131,7 +154,15 @@
                       <%= link_to t("actions.edit"), edit_admin_user_path(staff),
                             class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
                     <% end %>
-                    <% if policy(staff).destroy? %>
+                    <% if current_user.admin_access? && (staff.monthly_salary_cents.positive? || staff.payroll_adjustments.for_month(@current_payroll_month).exists?) %>
+                      <%= render "payroll_finalize_button",
+                            user: staff,
+                            payroll_month: @current_payroll_month,
+                            snapshot: @payroll_snapshots_by_user[staff.id],
+                            return_to: "index",
+                            compact: true %>
+                    <% end %>
+                    <% if policy(staff).destroy? && staff.active? %>
                       <%= button_to t("actions.delete"), admin_user_path(staff), method: :delete,
                             form: { data: { turbo_confirm: t("staff.show.delete_confirm", name: staff.name) }, class: "inline" },
                             class: "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>

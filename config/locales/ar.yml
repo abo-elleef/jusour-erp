@@ -257,11 +257,13 @@ ar:
       stats_cashiers: "الكاشير"
       stats_kitchen: "المطبخ"
       filters: "التصفية"
-      filters_hint: "ابحث بالاسم أو البريد، أو صفّ حسب الدور"
+      filters_hint: "ابحث بالاسم أو البريد، أو صفّ حسب الدور والحالة"
       search: "بحث"
       search_placeholder: "الاسم أو البريد…"
       role: "الدور"
       all_roles: "كل الأدوار"
+      status: "الحالة"
+      all_statuses: "كل الحالات"
       showing_members:
         one: "عرض %{count} موظف"
         other: "عرض %{count} موظفين"
@@ -272,6 +274,7 @@ ar:
         role: "الدور"
         monthly_salary: "الراتب الشهري"
         joined: "تاريخ الانضمام"
+        status: "الحالة"
         actions: "إجراءات"
       empty_title: "لم يُعثر على موظفين"
       empty_description: "أضف أول عضو في فريقك للبدء."
@@ -345,6 +348,9 @@ ar:
       overtime_hours: "ساعات إضافية"
       overtime_hint: "المكافأة = الساعات × أجر الساعة (من الراتب الشهري)."
       overtime_label: "ساعات إضافية — %{hours} س"
+      record_payroll: "تسجيل الراتب"
+      recorded: "مُسجّل"
+      recorded_on: "سُجّل في %{date} بواسطة %{name}"
     payroll_portal:
       title: "معاينة الراتب"
       pin_title: "أدخل رمز PIN"
@@ -1829,7 +1835,7 @@ ar:
     monthly_payroll:
       title: "الرواتب الشهرية"
       export_csv: "تصدير CSV"
-      hint: "الرواتب مبنية على %{days} يوم عمل ثابت. أجر اليوم = الراتب الشهري ÷ %{days}."
+      hint: "الرواتب مبنية على %{days} يوم عمل ثابت. سجّل الراتب لحفظ المبالغ لكل شهر."
       base_salary: "الراتب الأساسي"
       daily_rate: "أجر اليوم"
       penalties: "الخصومات"
@@ -1837,6 +1843,15 @@ ar:
       net_pay: "صافي الراتب"
       totals: "الإجمالي"
       empty: "لا يوجد موظفون براتب أو تعديلات لهذا الشهر. عيّن الرواتب من صفحة الموظفين."
+      total_to_pay: "إجمالي المستحق"
+      recorded_count: "مُسجّل"
+      pending_count: "معلّق"
+      status: "الحالة"
+      status_recorded: "مُسجّل"
+      status_draft: "مسودة"
+      record_all: "تسجيل الكل"
+      record_all_confirm: "تسجيل رواتب %{count} موظفين؟ سيتم حفظ المبالغ لهذا الشهر."
+      recorded_summary: "%{recorded} / %{total} مُسجّل"
     tax_reports:
       title: "تقرير ضريبة المبيعات"
       total_collected: "إجمالي الضريبة المحصّلة"
@@ -1969,6 +1984,12 @@ ar:
     payroll_adjustment:
       created: "تم تسجيل التعديل."
       removed: "تمت إزالة التعديل."
+    payroll_snapshot:
+      recorded: "تم تسجيل الراتب لهذا الشهر."
+      bulk_recorded:
+        one: "تم تسجيل راتب %{count} موظف."
+        other: "تم تسجيل رواتب %{count} موظفين."
+      all_recorded: "جميع رواتب هذا الشهر مُسجّلة بالفعل."
     settings:
       updated: "تم حفظ الإعدادات."
     tax_rate:

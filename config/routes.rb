@@ -84,6 +84,7 @@ Rails.application.routes.draw do
     resources :customers
     resources :users do
       resources :payroll_adjustments, only: %i[create destroy], module: :users
+      resource :payroll_snapshot, only: :create, module: :users
     end
     get "settings", to: "settings#index", as: :settings
     patch "settings", to: "settings#update"
@@ -138,6 +139,7 @@ Rails.application.routes.draw do
       get "payroll", to: "payroll#index"
       get "payroll/export", to: "payroll#export", as: :payroll_export
       get "monthly_payroll", to: "monthly_payroll#index"
+      post "monthly_payroll/finalize_all", to: "monthly_payroll#finalize_all", as: :monthly_payroll_finalize_all
       get "monthly_payroll/export", to: "monthly_payroll#export", as: :monthly_payroll_export
 
       resources :tax_reports, only: [:index]

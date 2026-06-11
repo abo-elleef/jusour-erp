@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_20_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_21_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -543,6 +543,26 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_20_000000) do
     t.index ["user_id"], name: "index_payroll_adjustments_on_user_id"
   end
 
+  create_table "payroll_snapshots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "finalized_by_id", null: false
+    t.date "payroll_month", null: false
+    t.integer "base_salary_cents", default: 0, null: false
+    t.integer "daily_rate_cents", default: 0, null: false
+    t.integer "penalties_cents", default: 0, null: false
+    t.integer "bonuses_cents", default: 0, null: false
+    t.integer "net_pay_cents", default: 0, null: false
+    t.datetime "finalized_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "payroll_month"], name: "index_payroll_snapshots_on_company_id_and_payroll_month"
+    t.index ["company_id"], name: "index_payroll_snapshots_on_company_id"
+    t.index ["finalized_by_id"], name: "index_payroll_snapshots_on_finalized_by_id"
+    t.index ["user_id", "payroll_month"], name: "index_payroll_snapshots_on_user_id_and_payroll_month", unique: true
+    t.index ["user_id"], name: "index_payroll_snapshots_on_user_id"
+  end
+
   create_table "print_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id", null: false
     t.uuid "printer_id"
@@ -929,6 +949,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_20_000000) do
   add_foreign_key "payments", "users", column: "processed_by_user_id"
   add_foreign_key "payroll_adjustments", "users"
   add_foreign_key "payroll_adjustments", "users", column: "recorded_by_id"
+  add_foreign_key "payroll_snapshots", "companies"
+  add_foreign_key "payroll_snapshots", "users"
+  add_foreign_key "payroll_snapshots", "users", column: "finalized_by_id"
   add_foreign_key "print_logs", "orders"
   add_foreign_key "print_logs", "printers"
   add_foreign_key "printers", "companies"
