@@ -4,6 +4,7 @@ require "rails_helper"
 
 RSpec.describe StaffPayrollController, type: :request do
   include ActiveSupport::Testing::TimeHelpers
+  include ApplicationHelper
 
   let(:company) { create(:company) }
   let!(:staff) do

@@ -101,6 +101,17 @@ Rails.application.routes.draw do
       end
     end
 
+    resources :locations do
+      resources :menu_items, only: %i[index update], module: :locations do
+        collection do
+          post :bulk_update
+        end
+      end
+      resources :ingredients, only: %i[index create update destroy], module: :locations do
+        member { post :adjust }
+      end
+    end
+
     resources :notifications, only: [:index] do
       member { patch :mark_read }
       collection { patch :mark_all_read }

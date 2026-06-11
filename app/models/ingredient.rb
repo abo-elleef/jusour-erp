@@ -6,6 +6,8 @@ class Ingredient < ApplicationRecord
   UNITS = %w[kg g lbs oz liters ml pieces packs].freeze
 
   belongs_to :ingredient_category
+  has_many :ingredient_locations, dependent: :destroy
+  has_many :locations, through: :ingredient_locations
   has_many :recipes, dependent: :destroy
   has_many :menu_items, through: :recipes
   has_many :stock_adjustments, dependent: :nullify

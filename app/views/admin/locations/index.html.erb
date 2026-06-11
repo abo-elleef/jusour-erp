@@ -1,0 +1,79 @@
+<div class="max-w-4xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("admin.locations.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("admin.locations.description") %></p>
+    </div>
+    <% if policy(Location.new).create? %>
+      <%= link_to new_admin_location_path,
+            class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
+        <span aria-hidden="true">+</span> <%= t("admin.locations.new_button") %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <% if @locations.any? %>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.locations.stats_total") %></p>
+        <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @locations.size %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.locations.stats_branches") %></p>
+        <p class="text-2xl font-bold mt-1 text-blue-700 tabular-nums"><%= @locations.count(&:branch?) %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.locations.stats_kitchens") %></p>
+        <p class="text-2xl font-bold mt-1 text-orange-700 tabular-nums"><%= @locations.count(&:central_kitchen?) %></p>
+      </div>
+    </div>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <ul class="divide-y divide-gray-100">
+        <% @locations.each do |location| %>
+          <li class="px-5 py-4 flex items-center gap-4 hover:bg-gray-50/60 transition-colors">
+            <div class="flex-1 min-w-0">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="font-semibold text-gray-900"><%= location.name %></span>
+                <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full <%= location.central_kitchen? ? "bg-orange-100 text-orange-800 border border-orange-200" : "bg-blue-100 text-blue-800 border border-blue-200" %>">
+                  <%= t("admin.locations.type_#{location.location_type}") %>
+                </span>
+                <% unless location.active? %>
+                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                    <%= t("admin.locations.inactive") %>
+                  </span>
+                <% end %>
+              </div>
+              <p class="text-xs text-gray-500 mt-1">
+                <%= t("admin.locations.ingredient_count", count: location.ingredient_locations.size) %> ·
+                <%= t("admin.locations.menu_item_count", count: location.location_menu_items.size) %>
+              </p>
+            </div>
+            <div class="flex gap-2 shrink-0">
+              <%= link_to t("actions.view"), admin_location_path(location),
+                    class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+              <% if policy(location).update? %>
+                <%= link_to t("actions.edit"), edit_admin_location_path(location),
+                      class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+              <% end %>
+              <% if policy(location).destroy? %>
+                <%= button_to t("actions.delete"), admin_location_path(location), method: :delete,
+                      form: { data: { turbo_confirm: t("admin.locations.confirm_delete", name: location.name) }, class: "inline" },
+                      class: "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("admin.locations.empty_title") %></p>
+      <p class="text-gray-500 text-sm mb-5"><%= t("admin.locations.empty_description") %></p>
+      <% if policy(Location.new).create? %>
+        <%= link_to t("admin.locations.new_button"), new_admin_location_path,
+              class: "inline-flex font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+      <% end %>
+    </section>
+  <% end %>
+</div>

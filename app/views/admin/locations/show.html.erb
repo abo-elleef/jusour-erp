@@ -1,0 +1,85 @@
+<div class="max-w-4xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <p class="text-sm text-gray-500 mb-1">
+        <%= link_to t("admin.locations.title"), admin_locations_path, class: "hover:underline" %> /
+      </p>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @location.name %></h1>
+      <div class="flex items-center gap-2 mt-1">
+        <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full <%= @location.central_kitchen? ? "bg-orange-100 text-orange-800 border border-orange-200" : "bg-blue-100 text-blue-800 border border-blue-200" %>">
+          <%= t("admin.locations.type_#{@location.location_type}") %>
+        </span>
+        <% unless @location.active? %>
+          <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+            <%= t("admin.locations.inactive") %>
+          </span>
+        <% end %>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <%= link_to t("admin.locations.manage_menu"), admin_location_menu_items_path(@location),
+            class: "inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors" %>
+      <%= link_to t("admin.locations.manage_stock"), admin_location_ingredients_path(@location),
+            class: "inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors" %>
+      <% if policy(@location).update? %>
+        <%= link_to t("actions.edit"), edit_admin_location_path(@location),
+              class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors" %>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.locations.stats_ingredients") %></p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @ingredient_locations.size %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.locations.stats_menu_items") %></p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @menu_items_count %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.locations.stats_available") %></p>
+      <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= @available_count %></p>
+    </div>
+  </div>
+
+  <% if @location.address.present? %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-4">
+      <p class="text-sm font-semibold text-gray-700"><%= t("admin.locations.address") %></p>
+      <p class="text-sm text-gray-600 mt-1"><%= @location.address %></p>
+      <% if @location.phone.present? %>
+        <p class="text-sm text-gray-600 mt-1"><%= @location.phone %></p>
+      <% end %>
+    </section>
+  <% end %>
+
+  <% if @ingredient_locations.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-4">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex justify-between items-center">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.locations.stock_section") %></h2>
+        <%= link_to t("admin.locations.view_all_stock"), admin_location_ingredients_path(@location),
+              class: "text-xs font-medium text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-colors" %>
+      </div>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-gray-100">
+          <% @ingredient_locations.first(5).each do |il| %>
+            <tr class="px-5 py-3 hover:bg-gray-50/60">
+              <td class="px-5 py-3 font-medium text-gray-900"><%= il.ingredient.name %></td>
+              <td class="px-5 py-3 text-gray-600"><%= number_with_precision(il.quantity_on_hand, precision: 2) %> <%= il.ingredient.unit %></td>
+              <td class="px-5 py-3">
+                <% case il.stock_status
+                   when :out %>
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800"><%= t("admin.inventory.status_out") %></span>
+                <% when :low %>
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800"><%= t("admin.inventory.status_low") %></span>
+                <% else %>
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-800"><%= t("admin.inventory.status_ok") %></span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+  <% end %>
+</div>

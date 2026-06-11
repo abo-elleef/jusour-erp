@@ -3,6 +3,7 @@
 class StockAdjustment < ApplicationRecord
   belongs_to :ingredient
   belongs_to :user
+  belongs_to :location, optional: true
   belongs_to :stock_batch, optional: true
 
   ADJUSTMENT_TYPES = %w[
@@ -29,5 +30,11 @@ class StockAdjustment < ApplicationRecord
   def update_ingredient_stock
     new_qty = ingredient.quantity_on_hand.to_d + quantity_delta.to_d
     ingredient.update_columns(quantity_on_hand: new_qty)
+
+    if location_id.present?
+      il = IngredientLocation.find_or_initialize_by(ingredient: ingredient, location: location)
+      il.quantity_on_hand = il.quantity_on_hand.to_d + quantity_delta.to_d
+      il.save!
+    end
   end
 end

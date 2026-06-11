@@ -6,6 +6,7 @@ class StockTake < ApplicationRecord
   STATUSES = %w[in_progress completed cancelled].freeze
 
   belongs_to :user
+  belongs_to :location, optional: true
   has_many :stock_take_items, dependent: :destroy
 
   accepts_nested_attributes_for :stock_take_items

@@ -5,6 +5,8 @@ class MenuItem < ApplicationRecord
   include Tenantable
 
   belongs_to :category
+  has_many :location_menu_items, dependent: :destroy
+  has_many :locations, through: :location_menu_items
   has_many :menu_item_modifier_groups, -> { order(:position) }, dependent: :destroy
   has_many :modifier_groups, through: :menu_item_modifier_groups
   has_many :modifiers, through: :modifier_groups

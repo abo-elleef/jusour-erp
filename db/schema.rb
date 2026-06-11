@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_25_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -287,6 +287,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
     t.index ["company_id"], name: "index_ingredient_categories_on_company_id"
   end
 
+  create_table "ingredient_locations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "ingredient_id", null: false
+    t.uuid "location_id", null: false
+    t.decimal "quantity_on_hand", precision: 10, scale: 3, default: "0.0", null: false
+    t.decimal "reorder_threshold", precision: 10, scale: 3, default: "0.0", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id", "location_id"], name: "index_ingredient_locations_on_ingredient_id_and_location_id", unique: true
+    t.index ["ingredient_id"], name: "index_ingredient_locations_on_ingredient_id"
+    t.index ["location_id"], name: "index_ingredient_locations_on_location_id"
+  end
+
   create_table "ingredients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "ingredient_category_id", null: false
     t.string "name", null: false
@@ -303,6 +315,33 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
     t.index ["company_id"], name: "index_ingredients_on_company_id"
     t.index ["ingredient_category_id"], name: "index_ingredients_on_ingredient_category_id"
     t.index ["name"], name: "index_ingredients_on_name"
+  end
+
+  create_table "location_menu_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "location_id", null: false
+    t.uuid "menu_item_id", null: false
+    t.boolean "available", default: true, null: false
+    t.integer "price_override_cents"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id", "menu_item_id"], name: "index_location_menu_items_on_location_id_and_menu_item_id", unique: true
+    t.index ["location_id"], name: "index_location_menu_items_on_location_id"
+    t.index ["menu_item_id"], name: "index_location_menu_items_on_menu_item_id"
+  end
+
+  create_table "locations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "name", null: false
+    t.string "location_type", default: "branch", null: false
+    t.text "address"
+    t.string "phone"
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["active"], name: "index_locations_on_active"
+    t.index ["company_id", "name"], name: "index_locations_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_locations_on_company_id"
   end
 
   create_table "loyalty_transactions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -324,6 +363,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "location_id"
+    t.index ["location_id"], name: "index_manufacturing_runs_on_location_id"
     t.index ["manufacturing_template_id"], name: "index_manufacturing_runs_on_manufacturing_template_id"
     t.index ["occurred_on"], name: "index_manufacturing_runs_on_occurred_on"
     t.index ["user_id"], name: "index_manufacturing_runs_on_user_id"
@@ -485,10 +526,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
     t.string "table_number"
     t.text "delivery_address"
     t.uuid "company_id", null: false
+    t.uuid "location_id"
     t.index ["company_id", "order_number"], name: "index_orders_on_company_id_and_order_number", unique: true
     t.index ["company_id"], name: "index_orders_on_company_id"
     t.index ["created_at"], name: "index_orders_on_created_at"
     t.index ["customer_id"], name: "index_orders_on_customer_id"
+    t.index ["location_id"], name: "index_orders_on_location_id"
     t.index ["order_type"], name: "index_orders_on_order_type"
     t.index ["receipt_token"], name: "index_orders_on_receipt_token", unique: true
     t.index ["status"], name: "index_orders_on_status"
@@ -679,9 +722,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
     t.string "reason_notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "location_id"
     t.index ["adjustment_type"], name: "index_stock_adjustments_on_adjustment_type"
     t.index ["created_at"], name: "index_stock_adjustments_on_created_at"
     t.index ["ingredient_id"], name: "index_stock_adjustments_on_ingredient_id"
+    t.index ["location_id"], name: "index_stock_adjustments_on_location_id"
     t.index ["stock_batch_id"], name: "index_stock_adjustments_on_stock_batch_id"
     t.index ["user_id"], name: "index_stock_adjustments_on_user_id"
   end
@@ -698,8 +743,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "vendor_invoice_line_id"
+    t.uuid "location_id"
     t.index ["expires_on"], name: "index_stock_batches_on_expires_on"
     t.index ["ingredient_id"], name: "index_stock_batches_on_ingredient_id"
+    t.index ["location_id"], name: "index_stock_batches_on_location_id"
     t.index ["received_on"], name: "index_stock_batches_on_received_on"
     t.index ["supplier_id"], name: "index_stock_batches_on_supplier_id"
     t.index ["vendor_invoice_line_id"], name: "index_stock_batches_on_vendor_invoice_line_id"
@@ -727,7 +774,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.uuid "location_id"
     t.index ["company_id"], name: "index_stock_takes_on_company_id"
+    t.index ["location_id"], name: "index_stock_takes_on_location_id"
     t.index ["user_id"], name: "index_stock_takes_on_user_id"
   end
 
@@ -939,10 +988,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
   add_foreign_key "incomes", "treasuries"
   add_foreign_key "incomes", "users"
   add_foreign_key "ingredient_categories", "companies"
+  add_foreign_key "ingredient_locations", "ingredients"
+  add_foreign_key "ingredient_locations", "locations"
   add_foreign_key "ingredients", "companies"
   add_foreign_key "ingredients", "ingredient_categories"
+  add_foreign_key "location_menu_items", "locations"
+  add_foreign_key "location_menu_items", "menu_items"
+  add_foreign_key "locations", "companies"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"
+  add_foreign_key "manufacturing_runs", "locations"
   add_foreign_key "manufacturing_runs", "manufacturing_templates"
   add_foreign_key "manufacturing_runs", "users"
   add_foreign_key "manufacturing_template_lines", "ingredients"
@@ -968,6 +1023,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
   add_foreign_key "order_items", "orders"
   add_foreign_key "orders", "companies"
   add_foreign_key "orders", "customers"
+  add_foreign_key "orders", "locations"
   add_foreign_key "orders", "users"
   add_foreign_key "overtime_rules", "companies"
   add_foreign_key "payments", "orders"
@@ -991,14 +1047,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
   add_foreign_key "settings", "companies"
   add_foreign_key "shift_logs", "users"
   add_foreign_key "stock_adjustments", "ingredients"
+  add_foreign_key "stock_adjustments", "locations"
   add_foreign_key "stock_adjustments", "stock_batches"
   add_foreign_key "stock_adjustments", "users"
   add_foreign_key "stock_batches", "ingredients"
+  add_foreign_key "stock_batches", "locations"
   add_foreign_key "stock_batches", "suppliers"
   add_foreign_key "stock_batches", "vendor_invoice_lines"
   add_foreign_key "stock_take_items", "ingredients"
   add_foreign_key "stock_take_items", "stock_takes"
   add_foreign_key "stock_takes", "companies"
+  add_foreign_key "stock_takes", "locations"
   add_foreign_key "stock_takes", "users"
   add_foreign_key "supplier_ingredients", "ingredients"
   add_foreign_key "supplier_ingredients", "suppliers"

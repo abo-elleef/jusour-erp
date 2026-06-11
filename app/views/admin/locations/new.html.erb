@@ -1,0 +1,11 @@
+<div class="max-w-lg">
+  <div class="mb-6">
+    <p class="text-sm text-gray-500 mb-1">
+      <%= link_to t("admin.locations.title"), admin_locations_path, class: "hover:underline" %> /
+    </p>
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("admin.locations.new_title") %></h1>
+  </div>
+  <section class="rounded-2xl border border-gray-200 bg-white p-6">
+    <%= render "form", location: @location %>
+  </section>
+</div>

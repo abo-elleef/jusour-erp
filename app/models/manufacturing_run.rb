@@ -3,6 +3,7 @@
 class ManufacturingRun < ApplicationRecord
   belongs_to :manufacturing_template
   belongs_to :user
+  belongs_to :location, optional: true
 
   validates :runs_count, numericality: { greater_than: 0 }
   validates :occurred_on, presence: true

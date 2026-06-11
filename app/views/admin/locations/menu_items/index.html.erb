@@ -1,0 +1,50 @@
+<div class="max-w-4xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <p class="text-sm text-gray-500 mb-1">
+        <%= link_to t("admin.locations.title"), admin_locations_path, class: "hover:underline" %> /
+        <%= link_to @location.name, admin_location_path(@location), class: "hover:underline" %> /
+      </p>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("admin.locations.menu_items_title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("admin.locations.menu_items_description") %></p>
+    </div>
+    <%= link_to t("admin.locations.bulk_enable_all"), bulk_update_admin_location_menu_items_path(@location),
+          data: { turbo_method: :post, turbo_params: { available: "true", menu_item_ids: MenuItem.pluck(:id) } },
+          class: "inline-flex items-center bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors" %>
+  </div>
+
+  <% @categories.each do |category| %>
+    <% next if category.menu_items.empty? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-4">
+      <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= category.name %></h2>
+      </div>
+      <ul class="divide-y divide-gray-100">
+        <% category.menu_items.ordered.each do |menu_item| %>
+          <% lmi = @location_menu_items_map[menu_item.id] %>
+          <% available = lmi.nil? || lmi.available? %>
+          <li class="px-5 py-3 flex items-center gap-4">
+            <div class="flex-1 min-w-0">
+              <span class="font-medium text-gray-900 <%= "opacity-50" unless available %>"><%= menu_item.name %></span>
+              <% if lmi&.price_override_cents.present? %>
+                <span class="text-xs text-amber-700 font-semibold ml-2"><%= humanized_money_with_symbol(lmi.price_override) %></span>
+              <% else %>
+                <span class="text-xs text-gray-500 ml-2"><%= humanized_money_with_symbol(menu_item.base_price) %></span>
+              <% end %>
+            </div>
+            <%= form_with url: admin_location_menu_item_path(@location, menu_item), method: :patch, local: false do |f| %>
+              <%= f.hidden_field :location_menu_item, value: nil %>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <%= f.check_box :available,
+                      { checked: available, class: "sr-only peer",
+                        data: { action: "change->toggle#submit" },
+                        name: "location_menu_item[available]" } %>
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+              </label>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+</div>
