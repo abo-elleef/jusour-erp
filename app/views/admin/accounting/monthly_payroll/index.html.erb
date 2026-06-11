@@ -113,6 +113,7 @@
                         user: row.user,
                         payroll_month: @payroll_month,
                         payroll_summary: row,
+                        return_to: "monthly_payroll",
                         compact: true %>
                   <%= link_to t("staff.payroll.manage"), admin_user_path(row.user, payroll_month: @payroll_month.strftime("%Y-%m")),
                         class: "inline-flex text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors" %>

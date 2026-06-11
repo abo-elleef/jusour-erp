@@ -351,6 +351,8 @@ en:
       record_payroll: "Record payroll"
       recorded: "Recorded"
       recorded_on: "Recorded on %{date} by %{name}"
+      undo_record: "Undo"
+      undo_record_confirm: "Undo recorded payroll for %{name} (%{month})? You can edit adjustments and record again."
     payroll_portal:
       title: "Salary preview"
       pin_title: "Enter your PIN"
@@ -1969,6 +1971,7 @@ en:
         one: "Payroll recorded for %{count} staff member."
         other: "Payroll recorded for %{count} staff members."
       all_recorded: "All payroll for this month is already recorded."
+      undone: "Recorded payroll removed. You can edit adjustments and record again."
     settings:
       updated: "Settings saved."
     tax_rate:

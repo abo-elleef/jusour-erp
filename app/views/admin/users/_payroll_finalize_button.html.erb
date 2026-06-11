@@ -6,6 +6,7 @@
 <% compact = local_assigns.fetch(:compact, false) %>
 <% return_to = local_assigns[:return_to] %>
 <% btn_class = compact ? "inline-flex text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors" : "inline-flex text-sm font-semibold px-4 py-2 rounded-xl border transition-colors" %>
+<% snapshot_params = { payroll_month: payroll_month.strftime("%Y-%m"), return_to: return_to }.compact %>
 
 <% if policy(PayrollSnapshot).create? %>
   <% if finalized %>
@@ -13,9 +14,25 @@
           title="<%= t("staff.payroll.recorded_on", date: l(snapshot.finalized_at.to_date, format: :long), name: snapshot.finalized_by.name) %>">
       <%= t("staff.payroll.recorded") %>
     </span>
+    <% if policy(snapshot).destroy? %>
+      <%= button_to t("staff.payroll.undo_record"),
+            admin_user_payroll_snapshot_path(user, **snapshot_params),
+            method: :delete,
+            form: {
+              data: {
+                turbo_confirm: t(
+                  "staff.payroll.undo_record_confirm",
+                  name: user.name,
+                  month: l(payroll_month, format: "%B %Y")
+                )
+              },
+              class: "inline"
+            },
+            class: "#{btn_class} text-red-700 hover:bg-red-50 border-red-200" %>
+    <% end %>
   <% else %>
     <%= button_to t("staff.payroll.record_payroll"),
-          admin_user_payroll_snapshot_path(user, payroll_month: payroll_month.strftime("%Y-%m"), return_to: return_to),
+          admin_user_payroll_snapshot_path(user, **snapshot_params),
           method: :post,
           form: { class: "inline" },
           class: "#{btn_class} bg-amber-600 hover:bg-amber-700 text-white border-amber-600" %>

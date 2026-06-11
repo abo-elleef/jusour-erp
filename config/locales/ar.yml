@@ -351,6 +351,8 @@ ar:
       record_payroll: "تسجيل الراتب"
       recorded: "مُسجّل"
       recorded_on: "سُجّل في %{date} بواسطة %{name}"
+      undo_record: "تراجع"
+      undo_record_confirm: "إلغاء تسجيل راتب %{name} (%{month})؟ يمكنك تعديل الخصومات والمكافآت والتسجيل مجدداً."
     payroll_portal:
       title: "معاينة الراتب"
       pin_title: "أدخل رمز PIN"
@@ -1990,6 +1992,7 @@ ar:
         one: "تم تسجيل راتب %{count} موظف."
         other: "تم تسجيل رواتب %{count} موظفين."
       all_recorded: "جميع رواتب هذا الشهر مُسجّلة بالفعل."
+      undone: "تم إلغاء تسجيل الراتب. يمكنك تعديل الخصومات والمكافآت والتسجيل مجدداً."
     settings:
       updated: "تم حفظ الإعدادات."
     tax_rate:

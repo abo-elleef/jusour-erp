@@ -5,6 +5,10 @@ class PayrollSnapshotPolicy < ApplicationPolicy
     user&.admin_access?
   end
 
+  def destroy?
+    user&.admin_access?
+  end
+
   class Scope < Scope
     def resolve
       user&.admin_access? ? scope.all : scope.none

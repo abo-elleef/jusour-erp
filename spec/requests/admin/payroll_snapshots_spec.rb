@@ -44,6 +44,36 @@ RSpec.describe "Admin payroll snapshots", type: :request do
     end
   end
 
+  describe "DELETE /admin/users/:user_id/payroll_snapshot" do
+    before { sign_in owner }
+
+    it "removes a recorded payroll snapshot" do
+      post admin_user_payroll_snapshot_path(staff, payroll_month: payroll_month.strftime("%Y-%m"))
+
+      expect do
+        delete admin_user_payroll_snapshot_path(staff, payroll_month: payroll_month.strftime("%Y-%m"))
+      end.to change(PayrollSnapshot, :count).by(-1)
+
+      expect(response).to redirect_to(admin_user_path(staff, payroll_month: payroll_month.strftime("%Y-%m")))
+      follow_redirect!
+
+      expect(response.body).to include(I18n.t("staff.payroll.record_payroll"))
+      expect(response.body).not_to include(I18n.t("staff.payroll.recorded"))
+    end
+
+    it "returns to monthly payroll when requested" do
+      post admin_user_payroll_snapshot_path(staff, payroll_month: payroll_month.strftime("%Y-%m"))
+
+      delete admin_user_payroll_snapshot_path(
+        staff,
+        payroll_month: payroll_month.strftime("%Y-%m"),
+        return_to: "monthly_payroll"
+      )
+
+      expect(response).to redirect_to(admin_accounting_monthly_payroll_path(payroll_month: payroll_month.strftime("%Y-%m")))
+    end
+  end
+
   describe "POST /admin/accounting/monthly_payroll/finalize_all" do
     before { sign_in owner }
 
