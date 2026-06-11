@@ -14,6 +14,8 @@ class StaffPayrollController < ApplicationController
   end
 
   def verify
+    @payroll_month = parse_payroll_month
+
     unless @user.pin_configured?
       flash.now[:alert] = t("staff.payroll_portal.pin_not_set")
       return render :pin, status: :unprocessable_entity

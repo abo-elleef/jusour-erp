@@ -10,6 +10,9 @@
     <div class="min-w-0 flex-1">
       <h1 class="text-lg font-bold tracking-tight text-gray-900 truncate"><%= user.name %></h1>
       <p class="text-sm text-gray-600"><%= t("staff.payroll_portal.title") %></p>
+      <% if payroll_summary.finalized %>
+        <p class="text-xs text-emerald-700 font-medium mt-1"><%= t("staff.payroll_portal.recorded") %></p>
+      <% end %>
     </div>
   </div>
 
@@ -26,14 +29,18 @@
     </div>
   <% end %>
 
-  <%# Net pay hero %>
+  <%# Remaining pay hero — what staff still receives this month %>
   <div class="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/80 p-5 shadow-sm">
-    <p class="text-xs font-semibold text-amber-800 uppercase tracking-wide"><%= t("staff.payroll.net_pay") %></p>
-    <p class="text-3xl sm:text-4xl font-bold text-amber-950 tabular-nums mt-1"><%= format_money(payroll_summary.net_pay_cents) %></p>
-    <p class="text-xs text-amber-800/80 mt-2"><%= t("staff.payroll.subtitle", days: User::WORK_DAYS_PER_MONTH) %></p>
+    <p class="text-xs font-semibold text-amber-800 uppercase tracking-wide"><%= t("staff.payroll.remaining_pay") %></p>
+    <p class="text-3xl sm:text-4xl font-bold text-amber-950 tabular-nums mt-1"><%= format_money(payroll_summary.remaining_pay_cents) %></p>
+    <p class="text-xs text-amber-800/80 mt-2">
+      <%= t("staff.payroll_portal.gross_summary",
+            net: format_money(payroll_summary.net_pay_cents),
+            advances: format_money(payroll_summary.advances_cents)) %>
+    </p>
   </div>
 
-  <%# Summary stats — 2×2 grid %>
+  <%# Summary stats %>
   <div class="grid grid-cols-2 gap-3">
     <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <p class="text-[0.65rem] font-semibold text-gray-500 uppercase tracking-wide leading-tight"><%= t("staff.payroll.base_salary") %></p>
@@ -51,9 +58,48 @@
       <p class="text-[0.65rem] font-semibold text-emerald-600 uppercase tracking-wide leading-tight"><%= t("staff.payroll.bonuses") %></p>
       <p class="text-base sm:text-lg font-bold text-emerald-700 tabular-nums mt-1.5 break-all">+<%= format_money(payroll_summary.bonuses_cents) %></p>
     </div>
+    <div class="rounded-2xl border border-blue-100 bg-blue-50/80 p-4 shadow-sm">
+      <p class="text-[0.65rem] font-semibold text-blue-600 uppercase tracking-wide leading-tight"><%= t("staff.payroll.advances.title") %></p>
+      <p class="text-base sm:text-lg font-bold text-blue-700 tabular-nums mt-1.5 break-all">−<%= format_money(payroll_summary.advances_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+      <p class="text-[0.65rem] font-semibold text-gray-500 uppercase tracking-wide leading-tight"><%= t("staff.payroll.net_pay") %></p>
+      <p class="text-base sm:text-lg font-bold text-gray-900 tabular-nums mt-1.5 break-all"><%= format_money(payroll_summary.net_pay_cents) %></p>
+    </div>
   </div>
 
-  <%# Adjustments — card list (no horizontal scroll) %>
+  <%# Advances — card list %>
+  <% if payroll_summary.advances.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div class="px-4 py-3.5 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.payroll_portal.advances_title") %></h2>
+      </div>
+      <ul class="divide-y divide-gray-100">
+        <% payroll_summary.advances.each do |advance| %>
+          <li class="p-4">
+            <div class="flex items-start justify-between gap-3">
+              <div class="min-w-0 flex-1">
+                <span class="inline-flex text-[0.65rem] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
+                  <%= advance.slot_label %>
+                </span>
+                <p class="text-xs text-gray-500 mt-1.5 tabular-nums">
+                  <%= t("staff.payroll.happened_at") %>: <%= l(advance.paid_on, format: :long) %>
+                </p>
+                <% if advance.notes.present? %>
+                  <p class="text-xs text-gray-500 mt-1.5 leading-relaxed"><%= advance.notes %></p>
+                <% end %>
+              </div>
+              <p class="shrink-0 text-base font-bold tabular-nums text-blue-700">
+                −<%= format_money(advance.amount_cents) %>
+              </p>
+            </div>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <%# Adjustments — card list %>
   <section class="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
     <div class="px-4 py-3.5 border-b border-gray-100 bg-gray-50/80">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.payroll_portal.adjustments_title") %></h2>
