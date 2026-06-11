@@ -38,6 +38,12 @@ Rails.application.routes.draw do
       collection { post :sync_offline }
     end
     resources :order_items, only: %i[create update destroy]
+    resources :print_logs, only: [] do
+      member do
+        get :payload
+        patch :confirm
+      end
+    end
     resources :payments, only: [:create] do
       collection do
         post :stripe_intent
@@ -85,6 +91,7 @@ Rails.application.routes.draw do
     resources :printers do
       member { post :test_print }
     end
+    get "print_agent/test_payload/:printer_id", to: "print_agent#test_payload", as: :print_agent_test_payload
     resources :orders, only: %i[index show] do
       member do
         post :void

@@ -319,3 +319,6 @@ Printer.find_or_create_by!(name: "Kitchen Hot Line") do |p|
 end
 
 puts "Seed complete. Login: owner@restaurant.com / changeme123"
+
+Setting.set("print_routing", Printing::Config::ROUTING_CLIENT) if Setting.get("print_routing").blank?
+Setting.set("print_agent_port", Printing::Config::DEFAULT_AGENT_PORT) if Setting.get("print_agent_port").blank?

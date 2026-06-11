@@ -2,7 +2,7 @@
 
 class PrintLog < ApplicationRecord
   PRINT_TYPES = %w[receipt kitchen bar expo].freeze
-  STATUSES = %w[sent failed skipped].freeze
+  STATUSES = %w[pending sent failed skipped].freeze
 
   belongs_to :order
   belongs_to :printer, optional: true

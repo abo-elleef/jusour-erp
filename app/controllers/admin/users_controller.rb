@@ -97,7 +97,8 @@ module Admin
 
     def user_params
       permitted = %i[name email role monthly_salary_cents pin]
-      permitted += %i[password password_confirmation] if @user.new_record? || params.dig(:user, :password).present?
+      changing_password = action_name == "create" || params.dig(:user, :password).present?
+      permitted += %i[password password_confirmation] if changing_password
 
       attrs = params.require(:user).permit(permitted)
       attrs[:role] = sanitize_role(attrs[:role]) if attrs[:role].present?
@@ -108,7 +109,7 @@ module Admin
     def sanitize_role(role)
       return role if current_user.owner?
 
-      policy(User).permitted_roles.include?(role) ? role : (@user.role.presence || "cashier")
+      policy(User).permitted_roles.include?(role) ? role : (@user&.role.presence || "cashier")
     end
   end
 end

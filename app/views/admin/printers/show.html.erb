@@ -7,10 +7,25 @@
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @printer.name %></h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("printers.types.#{@printer.printer_type}") %> · <%= @printer.connection_summary %></p>
     </div>
-    <div class="flex flex-wrap gap-2">
+    <div class="flex flex-wrap gap-2"
+         <% if @printer.network? && Printing::Config.client_routing? && policy(@printer).test_print? %>
+           data-controller="print-agent"
+           data-print-agent-config-value="<%= print_agent_config_json %>"
+           data-print-agent-test-payload-url-value="<%= admin_print_agent_test_payload_path(@printer) %>"
+         <% end %>>
       <% if @printer.network? && policy(@printer).test_print? %>
-        <%= button_to t("printing.test.button"), test_print_admin_printer_path(@printer), method: :post,
-              class: "inline-flex text-sm font-semibold text-indigo-700 hover:bg-indigo-50 px-4 py-2.5 rounded-xl border border-indigo-200 transition-colors" %>
+        <% if Printing::Config.client_routing? %>
+          <button type="button"
+                  data-action="click->print-agent#testViaAgent"
+                  data-printing-text="<%= t("printing.agent.printing") %>"
+                  data-success-text="<%= t("printing.test.sent") %>"
+                  class="inline-flex text-sm font-semibold text-indigo-700 hover:bg-indigo-50 px-4 py-2.5 rounded-xl border border-indigo-200 transition-colors">
+            <%= t("printing.agent.test_button") %>
+          </button>
+        <% else %>
+          <%= button_to t("printing.test.button"), test_print_admin_printer_path(@printer), method: :post,
+                class: "inline-flex text-sm font-semibold text-indigo-700 hover:bg-indigo-50 px-4 py-2.5 rounded-xl border border-indigo-200 transition-colors" %>
+        <% end %>
       <% end %>
       <% if policy(@printer).update? %>
         <%= link_to t("actions.edit"), edit_admin_printer_path(@printer),
@@ -76,7 +91,18 @@
     </dl>
   </section>
 
-  <% if @printer.network? && @connection_check %>
+  <% if @printer.network? && Printing::Config.client_routing? %>
+    <section class="rounded-2xl border border-indigo-200 bg-indigo-50/40 overflow-hidden mt-6">
+      <div class="px-5 py-4 border-b border-indigo-100">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("printing.agent.title") %></h2>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("printing.agent.show_hint", port: Printing::Config.agent_port) %></p>
+      </div>
+      <div class="px-5 py-4 text-sm text-indigo-900 space-y-2">
+        <p><%= t("printing.agent.routing_client") %></p>
+        <p class="font-mono text-xs bg-white/80 border border-indigo-100 rounded-xl px-3 py-2">node print_agent/index.js</p>
+      </div>
+    </section>
+  <% elsif @connection_check %>
     <section class="rounded-2xl border <%= @connection_check[:ok] ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50' %> overflow-hidden mt-6">
       <div class="px-5 py-4 border-b <%= @connection_check[:ok] ? 'border-green-100' : 'border-red-100' %>">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("printing.connection.title") %></h2>
@@ -119,6 +145,7 @@
                 <td class="p-3">
                   <% badge = case log.status
                              when "sent" then "bg-green-100 text-green-800 border-green-200"
+                             when "pending" then "bg-amber-100 text-amber-800 border-amber-200"
                              when "failed" then "bg-red-100 text-red-800 border-red-200"
                              else "bg-gray-100 text-gray-700 border-gray-200"
                              end %>

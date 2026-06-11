@@ -140,8 +140,23 @@ en:
       ok: "Reachable (%{ms} ms)"
       ok_detail: "The server can open port %{port} on %{host}. Test print should work."
       failed: "Not reachable from server"
+    agent:
+      title: "Local print agent"
+      show_hint: "Install and run the print agent on this register (port %{port})."
+      routing_client: "Print jobs are sent from this computer to the store printer, not from the cloud server."
+      banner: "Print agent not running on this register."
+      banner_hint: "Start it with: node print_agent/index.js (port %{port})"
+      discover_button: "Scan local network"
+      discover_hint: "Discovers printers on this computer's network via the local print agent."
+      discover_empty: "No printers found — enter IP manually"
+      discover_placeholder: "Select a discovered printer…"
+      scanning: "Scanning…"
+      printing: "Printing…"
+      test_button: "Send test print (via agent)"
+      use_agent_button: "Use the “Send test print (via agent)” button — printing is routed through the local agent."
     errors:
       usb_not_supported: "USB printers cannot be reached from the server. Use a network printer."
+      no_printer: "No printer configured for this print job."
       failed: "Print failed: %{message}"
       timeout: "Could not reach %{host}:%{port} within 5 seconds. The server running this app cannot open a TCP connection to the printer. On that same machine run: nc -zv %{host} %{port} — if that fails, fix Wi‑Fi/VLAN/firewall, confirm the printer IP, and enable RAW port 9100 on the printer."
       conn_refused: "%{host}:%{port} is reachable but nothing is listening. Enable RAW / JetDirect / port 9100 on the printer, or verify the port number."
@@ -153,6 +168,7 @@ en:
       status: "Status"
       statuses:
         sent: "Printed"
+        pending: "Pending"
         failed: "Failed"
         skipped: "Skipped"
 
@@ -355,6 +371,16 @@ en:
     add_tax_rate: "Add tax rate"
     no_tax_rates: "No tax rates configured."
     quick_links: "Quick links"
+    printing:
+      title: "Printing"
+      hint: "Configure how receipts reach network printers."
+      routing: "Print routing"
+      routing_client: "Client (local print agent)"
+      routing_server: "Server (Rails sends directly)"
+      routing_hint: "Use Client when Rails runs in the cloud and printers are on the store LAN."
+      agent_port: "Agent port"
+      agent_token: "Agent token (optional)"
+      agent_install: "On each register run: node print_agent/index.js — default port %{port}"
     tax_rate_form:
       back: "← Settings"
       new: "New tax rate"

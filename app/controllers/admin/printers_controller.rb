@@ -19,7 +19,7 @@ module Admin
     def show
       authorize @printer
       @recent_print_logs = @printer.print_logs.includes(:order).order(created_at: :desc).limit(10)
-      return unless @printer.network?
+      return unless @printer.network? && Printing::Config.server_routing?
 
       @connection_check = Printing::Drivers::Network.check_connection(
         host: @printer.host,
@@ -68,6 +68,11 @@ module Admin
 
       if @printer.usb?
         redirect_to admin_printer_path(@printer), alert: t("printing.errors.usb_not_supported")
+        return
+      end
+
+      if Printing::Config.client_routing?
+        redirect_to admin_printer_path(@printer), alert: t("printing.agent.use_agent_button")
         return
       end
 

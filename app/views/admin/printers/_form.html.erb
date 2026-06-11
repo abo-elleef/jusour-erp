@@ -3,7 +3,10 @@
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
 <%= form_with model: [:admin, printer], class: "space-y-6 max-w-lg",
-      data: { controller: "printer-form" } do |f| %>
+      data: {
+        controller: "printer-form print-agent",
+        print_agent_config_value: print_agent_config_json
+      } do |f| %>
   <% if printer.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
       <%= printer.errors.full_messages.to_sentence %>
@@ -17,8 +20,9 @@
     <div class="p-5 space-y-5">
       <div>
         <%= f.label :name, t("printers.fields.name"), class: label_class %>
-        <%= f.text_field :name, class: input_class, autofocus: true, required: true,
-              placeholder: t("printers.form.name_placeholder") %>
+            <%= f.text_field :name, class: input_class, autofocus: true, required: true,
+                  placeholder: t("printers.form.name_placeholder"),
+                  data: { print_agent_target: "name" } %>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -52,13 +56,36 @@
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
           <div class="sm:col-span-2">
             <%= f.label :host, t("printers.fields.host"), class: label_class %>
-            <%= f.text_field :host, class: input_class, placeholder: "192.168.1.50" %>
+            <%= f.text_field :host, class: input_class, placeholder: "192.168.1.50",
+                  data: { print_agent_target: "host" } %>
           </div>
           <div>
             <%= f.label :port, t("printers.fields.port"), class: label_class %>
-            <%= f.number_field :port, min: 1, max: 65535, class: input_class %>
+            <%= f.number_field :port, min: 1, max: 65535, class: input_class,
+                  data: { print_agent_target: "port" } %>
           </div>
         </div>
+        <% if Printing::Config.client_routing? %>
+          <div class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3 space-y-3">
+            <p class="text-xs text-gray-600"><%= t("printing.agent.discover_hint") %></p>
+            <div class="flex flex-wrap gap-2 items-center">
+              <button type="button"
+                      data-print-agent-target="discoverButton"
+                      data-action="click->print-agent#discover"
+                      data-scanning-text="<%= t("printing.agent.scanning") %>"
+                      class="inline-flex text-sm font-semibold text-indigo-700 hover:bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-200 transition-colors">
+                <%= t("printing.agent.discover_button") %>
+              </button>
+              <select data-print-agent-target="discoverSelect"
+                      data-action="change->print-agent#applyDiscovery"
+                      data-empty-text="<%= t("printing.agent.discover_empty") %>"
+                      data-placeholder-text="<%= t("printing.agent.discover_placeholder") %>"
+                      class="hidden flex-1 min-w-[12rem] <%= input_class %> appearance-none">
+              </select>
+            </div>
+            <p class="text-xs text-red-700" data-print-agent-target="discoverStatus"></p>
+          </div>
+        <% end %>
         <p class="text-xs text-gray-500"><%= t("printers.form.network_hint") %></p>
       </div>
     </div>

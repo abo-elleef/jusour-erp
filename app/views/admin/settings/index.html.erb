@@ -18,6 +18,39 @@
   </section>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("settings.printing.title") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("settings.printing.hint") %></p>
+    </div>
+    <div class="p-5">
+      <%= form_with url: admin_settings_path, method: :patch, class: "space-y-4" do %>
+        <div>
+          <%= label_tag :print_routing, t("settings.printing.routing"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+          <%= select_tag :print_routing,
+                options_for_select([
+                  [t("settings.printing.routing_client"), Printing::Config::ROUTING_CLIENT],
+                  [t("settings.printing.routing_server"), Printing::Config::ROUTING_SERVER]
+                ], @print_routing),
+                class: pos_input_class %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("settings.printing.routing_hint") %></p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <%= label_tag :print_agent_port, t("settings.printing.agent_port"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+            <%= number_field_tag :print_agent_port, @print_agent_port, min: 1, max: 65535, class: pos_input_class %>
+          </div>
+          <div>
+            <%= label_tag :print_agent_token, t("settings.printing.agent_token"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+            <%= text_field_tag :print_agent_token, @print_agent_token, class: pos_input_class, autocomplete: "off" %>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500"><%= t("settings.printing.agent_install", port: @print_agent_port) %></p>
+        <%= submit_tag t("actions.save"), class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-3">
       <div>
         <h2 class="text-sm font-semibold text-gray-900"><%= t("settings.tax_rates") %></h2>
