@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_21_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_23_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -543,6 +543,26 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_21_000000) do
     t.index ["user_id"], name: "index_payroll_adjustments_on_user_id"
   end
 
+  create_table "payroll_advances", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "treasury_id", null: false
+    t.uuid "paid_by_id", null: false
+    t.date "payroll_month", null: false
+    t.string "advance_slot", null: false
+    t.date "paid_on", null: false
+    t.integer "amount_cents", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_payroll_advances_on_company_id"
+    t.index ["paid_by_id"], name: "index_payroll_advances_on_paid_by_id"
+    t.index ["payroll_month"], name: "index_payroll_advances_on_payroll_month"
+    t.index ["treasury_id"], name: "index_payroll_advances_on_treasury_id"
+    t.index ["user_id", "payroll_month", "advance_slot"], name: "index_payroll_advances_on_user_month_and_slot", unique: true
+    t.index ["user_id"], name: "index_payroll_advances_on_user_id"
+  end
+
   create_table "payroll_snapshots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.uuid "user_id", null: false
@@ -556,9 +576,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_21_000000) do
     t.datetime "finalized_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "advances_cents", default: 0, null: false
+    t.integer "remaining_pay_cents", default: 0, null: false
+    t.uuid "treasury_id"
+    t.date "paid_on"
     t.index ["company_id", "payroll_month"], name: "index_payroll_snapshots_on_company_id_and_payroll_month"
     t.index ["company_id"], name: "index_payroll_snapshots_on_company_id"
     t.index ["finalized_by_id"], name: "index_payroll_snapshots_on_finalized_by_id"
+    t.index ["treasury_id"], name: "index_payroll_snapshots_on_treasury_id"
     t.index ["user_id", "payroll_month"], name: "index_payroll_snapshots_on_user_id_and_payroll_month", unique: true
     t.index ["user_id"], name: "index_payroll_snapshots_on_user_id"
   end
@@ -949,7 +974,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_21_000000) do
   add_foreign_key "payments", "users", column: "processed_by_user_id"
   add_foreign_key "payroll_adjustments", "users"
   add_foreign_key "payroll_adjustments", "users", column: "recorded_by_id"
+  add_foreign_key "payroll_advances", "companies"
+  add_foreign_key "payroll_advances", "treasuries"
+  add_foreign_key "payroll_advances", "users"
+  add_foreign_key "payroll_advances", "users", column: "paid_by_id"
   add_foreign_key "payroll_snapshots", "companies"
+  add_foreign_key "payroll_snapshots", "treasuries"
   add_foreign_key "payroll_snapshots", "users"
   add_foreign_key "payroll_snapshots", "users", column: "finalized_by_id"
   add_foreign_key "print_logs", "orders"

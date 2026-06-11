@@ -8,7 +8,7 @@
 <% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
-<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden <%= 'mt-8 max-w-3xl' unless readonly %>">
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden <%= 'mt-8 max-w-7xl' unless readonly %>">
   <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-start gap-3">
     <div>
       <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.payroll.title") %></h2>
@@ -19,6 +19,16 @@
                 date: l(payroll_summary.snapshot.finalized_at.to_date, format: :long),
                 name: payroll_summary.snapshot.finalized_by.name) %>
         </p>
+        <% if payroll_summary.snapshot.payout_required? %>
+          <p class="text-xs text-gray-600 mt-0.5">
+            <%= t("staff.payroll.paid_from",
+                  amount: format_money(payroll_summary.snapshot.remaining_pay_cents),
+                  treasury: payroll_summary.snapshot.treasury.name,
+                  date: l(payroll_summary.snapshot.paid_on, format: :long)) %>
+          </p>
+        <% else %>
+          <p class="text-xs text-gray-600 mt-0.5"><%= t("staff.payroll.fully_advanced_hint") %></p>
+        <% end %>
       <% end %>
     </div>
     <div class="flex flex-wrap items-end gap-2">
@@ -26,7 +36,9 @@
         <%= render "admin/users/payroll_finalize_button",
               user: user,
               payroll_month: payroll_month,
-              payroll_summary: payroll_summary %>
+              payroll_summary: payroll_summary,
+              treasuries: local_assigns[:treasuries],
+              default_treasury: local_assigns[:default_treasury] %>
       <% end %>
     <%= form_with url: month_url, method: :get, class: "flex items-end gap-2" do %>
       <div>
@@ -40,7 +52,7 @@
     </div>
   </div>
 
-  <div class="p-5 grid grid-cols-2 sm:grid-cols-4 gap-4 border-b border-gray-100">
+  <div class="p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 border-b border-gray-100">
     <div class="rounded-xl bg-gray-50 px-4 py-3">
       <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("staff.payroll.base_salary") %></p>
       <p class="text-lg font-bold text-gray-900 tabular-nums mt-1"><%= format_money(payroll_summary.base_salary_cents) %></p>
@@ -57,11 +69,19 @@
       <p class="text-xs font-semibold text-emerald-600 uppercase"><%= t("staff.payroll.bonuses") %></p>
       <p class="text-lg font-bold text-emerald-700 tabular-nums mt-1">+<%= format_money(payroll_summary.bonuses_cents) %></p>
     </div>
+    <div class="rounded-xl bg-blue-50 px-4 py-3">
+      <p class="text-xs font-semibold text-blue-600 uppercase"><%= t("staff.payroll.advances.title") %></p>
+      <p class="text-lg font-bold text-blue-700 tabular-nums mt-1">−<%= format_money(payroll_summary.advances_cents) %></p>
+    </div>
+    <div class="rounded-xl bg-amber-50 px-4 py-3">
+      <p class="text-xs font-semibold text-amber-700 uppercase"><%= t("staff.payroll.remaining_pay") %></p>
+      <p class="text-lg font-bold text-amber-800 tabular-nums mt-1"><%= format_money(payroll_summary.remaining_pay_cents) %></p>
+    </div>
   </div>
 
-  <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-amber-50/60">
+  <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80">
     <span class="text-sm font-semibold text-gray-900"><%= t("staff.payroll.net_pay") %></span>
-    <span class="text-xl font-bold text-amber-800 tabular-nums"><%= format_money(payroll_summary.net_pay_cents) %></span>
+    <span class="text-xl font-bold text-gray-900 tabular-nums"><%= format_money(payroll_summary.net_pay_cents) %></span>
   </div>
 
   <% unless readonly %>
@@ -184,4 +204,13 @@
   <% else %>
     <p class="p-5 text-sm text-gray-500"><%= t("staff.payroll.no_adjustments") %></p>
   <% end %>
+
+  <%= render "admin/users/payroll_advances",
+        user: user,
+        payroll_month: payroll_month,
+        payroll_summary: payroll_summary,
+        treasuries: local_assigns[:treasuries],
+        readonly: readonly,
+        payroll_sort: payroll_sort,
+        payroll_direction: payroll_direction %>
 </section>

@@ -44,6 +44,7 @@ class User < ApplicationRecord
   has_many :incomes, dependent: :nullify
   has_many :payroll_adjustments, dependent: :destroy
   has_many :payroll_snapshots, dependent: :destroy
+  has_many :payroll_advances, dependent: :destroy
   has_many :recorded_payroll_adjustments, class_name: "PayrollAdjustment",
     foreign_key: :recorded_by_id, dependent: :nullify, inverse_of: :recorded_by
 

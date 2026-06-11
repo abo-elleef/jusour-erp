@@ -353,6 +353,29 @@ en:
       recorded_on: "Recorded on %{date} by %{name}"
       undo_record: "Undo"
       undo_record_confirm: "Undo recorded payroll for %{name} (%{month})? You can edit adjustments and record again."
+      remaining_pay: "Remaining to pay"
+      paid_from: "Paid %{amount} from %{treasury} on %{date}"
+      fully_advanced_hint: "No remaining payout — salary fully covered by advances."
+      record_fully_advanced_confirm: "Record payroll with no treasury payout? Remaining balance is zero."
+      advances:
+        title: "Advances"
+        heading: "Salary advances"
+        hint: "Advances are paid early from this month's salary and reduce the remaining payout."
+        policy_hint: "Typical policy: mid-month advance around the 15th, end-month advance around the 25th. You can record either window on any date."
+        slot_option: "%{label} (max %{max})"
+        all_slots_used: "Both advance windows for this month are already used."
+        slot: "Window"
+        amount_cents: "Amount (cents)"
+        treasury: "Paid from"
+        pay: "Pay advance"
+        max_hint: "Max for this window: %{max}"
+        notes_placeholder: "Reason (optional)"
+        no_remaining: "No remaining salary available for an advance in this window."
+        empty: "No advances paid for this month."
+        remove_confirm: "Remove this advance? Treasury balance will be restored."
+        slots:
+          mid_month: "Mid-month (15th)"
+          end_month: "End-month (25th)"
     payroll_portal:
       title: "Salary preview"
       pin_title: "Enter your PIN"
@@ -1729,6 +1752,8 @@ en:
         drawer_reconcile: "Drawer reconcile"
         adjustment: "Adjustment"
         transfer: "Transfer"
+        payroll_advance: "Payroll advance"
+        payroll_salary: "Payroll salary"
         ap_invoice: "AP — Invoice received"
         ap_payment: "AP — Payment made"
       transactions:
@@ -1736,6 +1761,8 @@ en:
         drawer_reconcile: "Drawer reconcile — %{cashier} (%{shift}, %{date})"
         transfer_out: "Transfer to %{treasury} — %{notes}"
         transfer_in: "Transfer from %{treasury} — %{notes}"
+        payroll_advance: "Payroll advance — %{employee} (%{slot}, %{month})"
+        payroll_salary: "Payroll salary — %{employee} (%{month})"
     ap_ledger:
       invoice_received: "Invoice %{invoice_number} received — %{supplier}"
       payment_made: "Payment for invoice %{invoice_number} — %{supplier}"
@@ -1821,10 +1848,13 @@ en:
       daily_rate: "Daily rate"
       penalties: "Penalties"
       bonuses: "Bonuses"
-      net_pay: "Net pay"
+      net_pay: "Net salary"
+      advances: "Advances paid"
+      remaining_pay: "Remaining to pay"
       totals: "Totals"
       empty: "No staff with salaries or adjustments for this month. Set monthly salaries under Staff."
-      total_to_pay: "Total to pay"
+      total_obligation: "Total salary obligation"
+      total_to_pay: "Remaining to pay"
       recorded_count: "Recorded"
       pending_count: "Pending"
       status: "Status"
@@ -1972,6 +2002,9 @@ en:
         other: "Payroll recorded for %{count} staff members."
       all_recorded: "All payroll for this month is already recorded."
       undone: "Recorded payroll removed. You can edit adjustments and record again."
+    payroll_advance:
+      paid: "Salary advance paid."
+      removed: "Salary advance removed."
     settings:
       updated: "Settings saved."
     tax_rate:
@@ -2084,6 +2117,23 @@ en:
           attributes:
             ingredient_id:
               cannot_be_output: "cannot be the same as the template output ingredient"
+        payroll_advance:
+          attributes:
+            base:
+              salary_required: "requires a monthly salary on the employee profile"
+              payroll_finalized: "cannot be changed after payroll is recorded for this month"
+            paid_on:
+              invalid_slot_day: "must fall on day %{day} for the selected window"
+              must_be_in_payroll_month: "must be in the payroll month"
+            amount_cents:
+              exceeds_limit: "exceeds the maximum available for this window (%{limit} cents)"
+        payroll_snapshot:
+          attributes:
+            treasury:
+              blank: "must be selected when there is remaining pay"
+            paid_on:
+              blank: "must be set when there is remaining pay"
+              must_be_in_payroll_month: "must be in the payroll month"
     models:
       accounting_integration:
         one: "Accounting integration"

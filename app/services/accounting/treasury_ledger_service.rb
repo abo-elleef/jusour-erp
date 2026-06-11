@@ -28,6 +28,14 @@ module Accounting
       new.create_transfer!(transfer)
     end
 
+    def self.sync_payroll_advance!(advance)
+      new.sync_payroll_advance!(advance)
+    end
+
+    def self.sync_payroll_salary!(snapshot)
+      new.sync_payroll_salary!(snapshot)
+    end
+
     def sync_expense!(expense)
       remove_for_source(expense)
       return if expense.treasury_id.blank?
@@ -40,6 +48,37 @@ module Accounting
         description: expense.description,
         occurred_on: expense.expense_date,
         source: expense
+      )
+    end
+
+    def sync_payroll_advance!(advance)
+      remove_for_source(advance)
+      return if advance.treasury_id.blank?
+
+      record!(
+        treasury: advance.treasury,
+        user: advance.paid_by,
+        amount_cents: -advance.amount_cents,
+        kind: "payroll_advance",
+        description: payroll_advance_description(advance),
+        occurred_on: advance.paid_on,
+        source: advance
+      )
+    end
+
+    def sync_payroll_salary!(snapshot)
+      remove_for_source(snapshot)
+      return unless snapshot.payout_required?
+      return if snapshot.treasury_id.blank?
+
+      record!(
+        treasury: snapshot.treasury,
+        user: snapshot.finalized_by,
+        amount_cents: -snapshot.remaining_pay_cents,
+        kind: "payroll_salary",
+        description: payroll_salary_description(snapshot),
+        occurred_on: snapshot.paid_on,
+        source: snapshot
       )
     end
 
@@ -138,6 +177,23 @@ module Accounting
           balance_after_cents: treasury.balance_cents
         )
       end
+    end
+
+    def payroll_advance_description(advance)
+      I18n.t(
+        "accounting.treasuries.transactions.payroll_advance",
+        employee: advance.user.name,
+        slot: advance.slot_label,
+        month: I18n.l(advance.payroll_month, format: "%B %Y")
+      )
+    end
+
+    def payroll_salary_description(snapshot)
+      I18n.t(
+        "accounting.treasuries.transactions.payroll_salary",
+        employee: snapshot.user.name,
+        month: I18n.l(snapshot.payroll_month, format: "%B %Y")
+      )
     end
 
     def drawer_open_description(session)

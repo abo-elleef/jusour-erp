@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class TreasuryTransaction < ApplicationRecord
-  KINDS = %w[expense income drawer_open drawer_reconcile adjustment transfer ap_invoice ap_payment].freeze
+  KINDS = %w[expense income drawer_open drawer_reconcile adjustment transfer ap_invoice ap_payment payroll_advance payroll_salary].freeze
 
   belongs_to :treasury
   belongs_to :user

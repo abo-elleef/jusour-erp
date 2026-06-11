@@ -9,7 +9,13 @@ module Admin
         authorize PayrollSnapshot
 
         payroll_month = parse_payroll_month
-        ::Accounting::FinalizePayrollService.new(@user, payroll_month, finalized_by: current_user).call
+        ::Accounting::FinalizePayrollService.new(
+          @user,
+          payroll_month,
+          finalized_by: current_user,
+          treasury: resolve_treasury,
+          paid_on: snapshot_params[:paid_on]
+        ).call
 
         redirect_to redirect_path(payroll_month), notice: t("flash.payroll_snapshot.recorded")
       rescue ActiveRecord::RecordInvalid => e
@@ -20,7 +26,11 @@ module Admin
         payroll_month = parse_payroll_month
         snapshot = @user.payroll_snapshots.find_by!(payroll_month: payroll_month)
         authorize snapshot
-        snapshot.destroy!
+
+        ApplicationRecord.transaction do
+          ::Accounting::TreasuryLedgerService.remove_source!(snapshot)
+          snapshot.destroy!
+        end
 
         redirect_to redirect_path(payroll_month), notice: t("flash.payroll_snapshot.undone")
       end
@@ -39,6 +49,17 @@ module Admin
         end
       rescue ArgumentError
         Date.current.beginning_of_month
+      end
+
+      def snapshot_params
+        params.fetch(:payroll_snapshot, {}).permit(:treasury_id, :paid_on)
+      end
+
+      def resolve_treasury
+        treasury_id = snapshot_params[:treasury_id]
+        return if treasury_id.blank?
+
+        Treasury.active.payable.find(treasury_id)
       end
 
       def redirect_path(payroll_month)

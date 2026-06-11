@@ -159,8 +159,11 @@
                             user: staff,
                             payroll_month: @current_payroll_month,
                             snapshot: @payroll_snapshots_by_user[staff.id],
+                            remaining_pay_cents: @payroll_remaining_by_user[staff.id],
                             return_to: "index",
-                            compact: true %>
+                            compact: true,
+                            treasuries: @treasuries,
+                            default_treasury: @default_treasury %>
                     <% end %>
                     <% if policy(staff).destroy? && staff.active? %>
                       <%= button_to t("actions.delete"), admin_user_path(staff), method: :delete,

@@ -2,7 +2,10 @@
 
 module Accounting
   class MonthlyPayrollService
-    INDEX_SORTABLE_COLUMNS = %w[name base_salary_cents daily_rate_cents penalties_cents bonuses_cents net_pay_cents status].freeze
+    INDEX_SORTABLE_COLUMNS = %w[
+      name base_salary_cents daily_rate_cents penalties_cents bonuses_cents
+      net_pay_cents advances_cents remaining_pay_cents status
+    ].freeze
     INDEX_DEFAULT_SORT = "name"
     INDEX_DEFAULT_SORT_DIRECTION = "asc"
 
@@ -14,7 +17,10 @@ module Accounting
       :penalties_cents,
       :bonuses_cents,
       :net_pay_cents,
+      :advances_cents,
+      :remaining_pay_cents,
       :adjustments,
+      :advances,
       :finalized,
       :snapshot,
       keyword_init: true
@@ -37,9 +43,12 @@ module Accounting
 
     def build_calculated
       adjustments = sorted_adjustments
+      advances = @user.payroll_advances.for_month(@payroll_month).ordered
       base = @user.monthly_salary_cents.to_i
       penalties = adjustments.penalties.sum(:amount_cents)
       bonuses = adjustments.bonuses.sum(:amount_cents)
+      gross_net = base - penalties + bonuses
+      advances_total = advances.sum(:amount_cents)
 
       Result.new(
         user: @user,
@@ -48,8 +57,11 @@ module Accounting
         daily_rate_cents: @user.daily_rate_cents,
         penalties_cents: penalties,
         bonuses_cents: bonuses,
-        net_pay_cents: base - penalties + bonuses,
+        net_pay_cents: gross_net,
+        advances_cents: advances_total,
+        remaining_pay_cents: gross_net - advances_total,
         adjustments: adjustments,
+        advances: advances,
         finalized: false,
         snapshot: nil
       )
@@ -69,7 +81,8 @@ module Accounting
       return true if snapshot
 
       user.monthly_salary_cents.to_i.positive? ||
-        user.payroll_adjustments.for_month(payroll_month).exists?
+        user.payroll_adjustments.for_month(payroll_month).exists? ||
+        user.payroll_advances.for_month(payroll_month).exists?
     end
 
     def self.sort_rows(rows, sort:, direction:)
@@ -116,7 +129,10 @@ module Accounting
         penalties_cents: snapshot.penalties_cents,
         bonuses_cents: snapshot.bonuses_cents,
         net_pay_cents: snapshot.net_pay_cents,
+        advances_cents: snapshot.advances_cents,
+        remaining_pay_cents: snapshot.remaining_pay_cents,
         adjustments: calculated.adjustments,
+        advances: calculated.advances,
         finalized: true,
         snapshot: snapshot
       )

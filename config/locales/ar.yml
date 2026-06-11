@@ -353,6 +353,29 @@ ar:
       recorded_on: "سُجّل في %{date} بواسطة %{name}"
       undo_record: "تراجع"
       undo_record_confirm: "إلغاء تسجيل راتب %{name} (%{month})؟ يمكنك تعديل الخصومات والمكافآت والتسجيل مجدداً."
+      remaining_pay: "المتبقي للدفع"
+      paid_from: "دُفع %{amount} من %{treasury} في %{date}"
+      fully_advanced_hint: "لا يوجد متبقٍ للدفع — الراتب مُغطّى بالكامل بالسلف."
+      record_fully_advanced_confirm: "تسجيل الراتب بدون دفعة من الخزينة؟ الرصيد المتبقي صفر."
+      advances:
+        title: "السلف"
+        heading: "سلف الراتب"
+        hint: "السلف تُدفع مبكراً من راتب الشهر وتُخصم من المتبقي."
+        policy_hint: "السياسة المعتادة: سلفة منتصف الشهر حوالي اليوم 15، وسلفة نهاية الشهر حوالي اليوم 25. يمكنك تسجيل أي نافذة في أي تاريخ."
+        slot_option: "%{label} (حد أقصى %{max})"
+        all_slots_used: "تم استخدام نافذتي السلف لهذا الشهر."
+        slot: "النافذة"
+        amount_cents: "المبلغ (سنت)"
+        treasury: "دُفعت من"
+        pay: "دفع سلفة"
+        max_hint: "الحد الأقصى لهذه النافذة: %{max}"
+        notes_placeholder: "السبب (اختياري)"
+        no_remaining: "لا يوجد راتب متبقٍ متاح لسلفة في هذه النافذة."
+        empty: "لا توجد سلف مدفوعة لهذا الشهر."
+        remove_confirm: "إزالة هذه السلفة؟ سيُستعاد رصيد الخزينة."
+        slots:
+          mid_month: "منتصف الشهر (15)"
+          end_month: "نهاية الشهر (25)"
     payroll_portal:
       title: "معاينة الراتب"
       pin_title: "أدخل رمز PIN"
@@ -1746,6 +1769,8 @@ ar:
         drawer_reconcile: "تسوية الصندوق"
         adjustment: "تعديل"
         transfer: "تحويل"
+        payroll_advance: "سلفة راتب"
+        payroll_salary: "راتب شهري"
         ap_invoice: "ذمم — فاتورة مستلمة"
         ap_payment: "ذمم — دفعة محوّلة"
       transactions:
@@ -1753,6 +1778,8 @@ ar:
         drawer_reconcile: "تسوية صندوق — %{cashier} (%{shift}، %{date})"
         transfer_out: "تحويل إلى %{treasury} — %{notes}"
         transfer_in: "تحويل من %{treasury} — %{notes}"
+        payroll_advance: "سلفة راتب — %{employee} (%{slot}، %{month})"
+        payroll_salary: "راتب شهري — %{employee} (%{month})"
     ap_ledger:
       invoice_received: "فاتورة %{invoice_number} مستلمة — %{supplier}"
       payment_made: "دفعة لفاتورة %{invoice_number} — %{supplier}"
@@ -1843,9 +1870,12 @@ ar:
       penalties: "الخصومات"
       bonuses: "المكافآت"
       net_pay: "صافي الراتب"
+      advances: "السلف المدفوعة"
+      remaining_pay: "المتبقي للدفع"
       totals: "الإجمالي"
       empty: "لا يوجد موظفون براتب أو تعديلات لهذا الشهر. عيّن الرواتب من صفحة الموظفين."
-      total_to_pay: "إجمالي المستحق"
+      total_obligation: "إجمالي الالتزام بالراتب"
+      total_to_pay: "المتبقي للدفع"
       recorded_count: "مُسجّل"
       pending_count: "معلّق"
       status: "الحالة"
@@ -1993,6 +2023,9 @@ ar:
         other: "تم تسجيل رواتب %{count} موظفين."
       all_recorded: "جميع رواتب هذا الشهر مُسجّلة بالفعل."
       undone: "تم إلغاء تسجيل الراتب. يمكنك تعديل الخصومات والمكافآت والتسجيل مجدداً."
+    payroll_advance:
+      paid: "تم دفع سلفة الراتب."
+      removed: "تمت إزالة سلفة الراتب."
     settings:
       updated: "تم حفظ الإعدادات."
     tax_rate:
@@ -2111,6 +2144,23 @@ ar:
           attributes:
             ingredient_id:
               cannot_be_output: "لا يمكن أن يكون نفس مكون الإنتاج"
+        payroll_advance:
+          attributes:
+            base:
+              salary_required: "يتطلب راتباً شهرياً في ملف الموظف"
+              payroll_finalized: "لا يمكن التعديل بعد تسجيل الراتب لهذا الشهر"
+            paid_on:
+              invalid_slot_day: "يجب أن يكون في اليوم %{day} للنافذة المحددة"
+              must_be_in_payroll_month: "يجب أن يكون ضمن شهر الراتب"
+            amount_cents:
+              exceeds_limit: "يتجاوز الحد الأقصى المتاح لهذه النافذة (%{limit} سنت)"
+        payroll_snapshot:
+          attributes:
+            treasury:
+              blank: "يجب اختيارها عند وجود متبقٍ للدفع"
+            paid_on:
+              blank: "يجب تحديده عند وجود متبقٍ للدفع"
+              must_be_in_payroll_month: "يجب أن يكون ضمن شهر الراتب"
     models:
       accounting_integration:
         one: "تكامل محاسبي"

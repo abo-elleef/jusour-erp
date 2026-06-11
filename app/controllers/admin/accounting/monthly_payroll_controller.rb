@@ -12,6 +12,8 @@ module Admin
         @rows = sorted_payroll_rows
         @finalized_count = @rows.count(&:finalized)
         @pending_count = @rows.count - @finalized_count
+        @treasuries = Treasury.active.payable.ordered
+        @default_treasury = Treasury.default_treasury
 
         respond_to do |format|
           format.html
@@ -23,17 +25,28 @@ module Admin
         authorize PayrollSnapshot, :create?
 
         @payroll_month = parse_payroll_month
+        treasury = resolve_bulk_treasury
+        paid_on = bulk_paid_on
         finalized = 0
 
         ::Accounting::MonthlyPayrollService.for_all_staff(@payroll_month).each do |row|
           next if row.finalized
 
-          ::Accounting::FinalizePayrollService.new(row.user, @payroll_month, finalized_by: current_user).call
+          ::Accounting::FinalizePayrollService.new(
+            row.user,
+            @payroll_month,
+            finalized_by: current_user,
+            treasury: treasury,
+            paid_on: paid_on
+          ).call
           finalized += 1
         end
 
         notice = finalized.positive? ? t("flash.payroll_snapshot.bulk_recorded", count: finalized) : t("flash.payroll_snapshot.all_recorded")
         redirect_to admin_accounting_monthly_payroll_path(payroll_month: @payroll_month.strftime("%Y-%m")), notice: notice
+      rescue ActiveRecord::RecordInvalid => e
+        redirect_to admin_accounting_monthly_payroll_path(payroll_month: @payroll_month.strftime("%Y-%m")),
+          alert: e.record.errors.full_messages.to_sentence
       end
 
       def export
@@ -73,6 +86,17 @@ module Admin
         Date.current.beginning_of_month
       end
 
+      def resolve_bulk_treasury
+        treasury_id = params.dig(:payroll_snapshot, :treasury_id)
+        return if treasury_id.blank?
+
+        Treasury.active.payable.find(treasury_id)
+      end
+
+      def bulk_paid_on
+        params.dig(:payroll_snapshot, :paid_on)
+      end
+
       def generate_csv
         CSV.generate(headers: true) do |csv|
           csv << [
@@ -81,7 +105,9 @@ module Admin
             t("accounting.monthly_payroll.daily_rate"),
             t("accounting.monthly_payroll.penalties"),
             t("accounting.monthly_payroll.bonuses"),
-            t("accounting.monthly_payroll.net_pay")
+            t("accounting.monthly_payroll.net_pay"),
+            t("accounting.monthly_payroll.advances"),
+            t("accounting.monthly_payroll.remaining_pay")
           ]
           @rows.each do |row|
             csv << [
@@ -90,7 +116,9 @@ module Admin
               format_money(row.daily_rate_cents),
               format_money(row.penalties_cents),
               format_money(row.bonuses_cents),
-              format_money(row.net_pay_cents)
+              format_money(row.net_pay_cents),
+              format_money(row.advances_cents),
+              format_money(row.remaining_pay_cents)
             ]
           end
         end

@@ -84,6 +84,7 @@ Rails.application.routes.draw do
     resources :customers
     resources :users do
       resources :payroll_adjustments, only: %i[create destroy], module: :users
+      resources :payroll_advances, only: %i[create destroy], module: :users
       resource :payroll_snapshot, only: %i[create destroy], module: :users
     end
     get "settings", to: "settings#index", as: :settings
