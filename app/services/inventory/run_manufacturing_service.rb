@@ -4,10 +4,11 @@ module Inventory
   class RunManufacturingService
     class Error < StandardError; end
 
-    def initialize(template:, user:, runs_count:, occurred_on: Date.current, notes: nil)
+    def initialize(template:, user:, runs_count:, shelf_life_days:, occurred_on: Date.current, notes: nil)
       @template = template
       @user = user
       @runs_count = runs_count.to_d
+      @shelf_life_days = shelf_life_days.to_i
       @occurred_on = occurred_on
       @notes = notes
     end
@@ -24,6 +25,7 @@ module Inventory
           user: @user,
           runs_count: @runs_count,
           occurred_on: @occurred_on,
+          shelf_life_days: @shelf_life_days,
           notes: @notes
         )
 
@@ -53,6 +55,7 @@ module Inventory
 
     def validate!
       raise Error, "Runs count must be positive" unless @runs_count.positive?
+      raise Error, "Shelf life must be at least 1 day" unless @shelf_life_days.positive?
       raise Error, "Template has no input lines" if @template.manufacturing_template_lines.empty?
     end
 
@@ -90,6 +93,7 @@ module Inventory
         quantity_remaining: output_quantity,
         cost_per_unit_cents: cost_per_unit_cents,
         received_on: @occurred_on,
+        expires_on: @occurred_on + @shelf_life_days.days,
         batch_reference: "MFG-#{run.id.to_s.first(8).upcase}"
       )
 

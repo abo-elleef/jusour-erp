@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_26_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_27_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -364,6 +364,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_26_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "location_id"
+    t.integer "shelf_life_days", null: false
     t.index ["location_id"], name: "index_manufacturing_runs_on_location_id"
     t.index ["manufacturing_template_id"], name: "index_manufacturing_runs_on_manufacturing_template_id"
     t.index ["occurred_on"], name: "index_manufacturing_runs_on_occurred_on"

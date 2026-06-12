@@ -18,6 +18,7 @@
           <th class="p-3 text-start"><%= t("inventory.manufacturing.templates.name") %></th>
           <th class="p-3 text-start"><%= t("inventory.manufacturing.templates.output") %></th>
           <th class="p-3 text-end"><%= t("inventory.manufacturing.runs.runs_count") %></th>
+          <th class="p-3 text-start"><%= t("inventory.manufacturing.runs.expires") %></th>
           <th class="p-3 pe-5 text-start"><%= t("inventory.manufacturing.runs.by") %></th>
         </tr>
       </thead>
@@ -31,6 +32,7 @@
             <td class="p-3 font-semibold text-gray-900"><%= run.manufacturing_template.name %></td>
             <td class="p-3 text-gray-700"><%= run.manufacturing_template.output_ingredient.name %></td>
             <td class="p-3 text-end tabular-nums font-semibold"><%= run.runs_count %></td>
+            <td class="p-3 text-gray-600 tabular-nums"><%= l(run.output_expires_on, format: :short) %></td>
             <td class="p-3 pe-5 text-gray-600"><%= run.user.name %></td>
           </tr>
         <% end %>

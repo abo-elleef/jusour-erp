@@ -82,14 +82,23 @@ module Admin
           return
         end
 
+        shelf_life_days = params[:shelf_life_days].to_i
+        if shelf_life_days <= 0
+          redirect_to admin_inventory_manufacturing_template_path(@template),
+            alert: t("production.invalid_shelf_life")
+          return
+        end
+
         ::Inventory::RunManufacturingService.new(
           template: @template,
           user: current_user,
           runs_count: runs_count,
+          shelf_life_days: shelf_life_days,
           notes: params[:notes].presence
         ).call
 
         output_qty = runs_count * @template.yield_quantity.to_d
+        expires_on = Date.current + shelf_life_days.days
         redirect_to admin_inventory_manufacturing_template_path(@template),
           notice: t(
             "production.success",
@@ -97,7 +106,8 @@ module Admin
             template: @template.name,
             output: @template.output_ingredient.name,
             output_qty: output_qty,
-            output_unit: helpers.ingredient_unit_label(@template.output_ingredient.unit)
+            output_unit: helpers.ingredient_unit_label(@template.output_ingredient.unit),
+            expires_on: l(expires_on, format: :short)
           )
       rescue Inventory::RunManufacturingService::Error => e
         redirect_to admin_inventory_manufacturing_template_path(@template), alert: e.message

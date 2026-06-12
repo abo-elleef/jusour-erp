@@ -70,6 +70,7 @@ RSpec.describe Inventory::RunManufacturingService do
         template: template,
         user: user,
         runs_count: 2,
+        shelf_life_days: 5,
         occurred_on: Date.current
       ).call
 
@@ -83,8 +84,13 @@ RSpec.describe Inventory::RunManufacturingService do
 
       output_batch = marinated.stock_batches.last
       expect(output_batch.quantity_remaining.to_d).to eq(10)
+      expect(output_batch.expires_on).to eq(Date.current + 5.days)
       expected_cost = (((4 * 2 * 450) + (2 * 2 * 150)).to_d / 10).round
       expect(output_batch.cost_per_unit_cents).to eq(expected_cost)
+
+      run = ManufacturingRun.last
+      expect(run.shelf_life_days).to eq(5)
+      expect(run.output_expires_on).to eq(Date.current + 5.days)
     end
 
     it "allows run when input stock is below required" do
@@ -94,11 +100,23 @@ RSpec.describe Inventory::RunManufacturingService do
       described_class.new(
         template: template,
         user: user,
-        runs_count: 1
+        runs_count: 1,
+        shelf_life_days: 3
       ).call
 
       expect(chicken.reload.quantity_on_hand.to_d).to eq(-3)
       expect(marinated.reload.quantity_on_hand.to_d).to eq(5)
+    end
+
+    it "rejects zero shelf life" do
+      expect {
+        described_class.new(
+          template: template,
+          user: user,
+          runs_count: 1,
+          shelf_life_days: 0
+        ).call
+      }.to raise_error(Inventory::RunManufacturingService::Error, "Shelf life must be at least 1 day")
     end
   end
 end
