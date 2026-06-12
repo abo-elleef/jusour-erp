@@ -5,6 +5,7 @@ require "rails_helper"
 RSpec.describe Accounting::RecordVendorInvoicePaymentService do
   let(:user) { create(:user) }
   let(:supplier) { Supplier.create!(name: "Fresh Farms", lead_time_days: 2, company: Current.company) }
+  let(:location) { create(:location, company: Current.company) }
   let(:treasury) do
     Treasury.create!(
       name: "Main Safe",
@@ -18,6 +19,7 @@ RSpec.describe Accounting::RecordVendorInvoicePaymentService do
     invoice = VendorInvoice.new(
       supplier: supplier,
       user: user,
+      location: location,
       invoice_number: "INV-2001",
       invoice_date: Date.current,
       received_on: Date.current,

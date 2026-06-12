@@ -3,13 +3,13 @@
 module Admin
   module Inventory
     class VendorInvoicesController < BaseController
-      before_action :set_vendor_invoice, only: %i[show record_payment void]
+      before_action :set_vendor_invoice, only: %i[show edit update record_payment void]
 
       def index
         authorize_inventory_index!(VendorInvoice)
         @q = VendorInvoice.ransack(params[:q])
         @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
-        @vendor_invoices = @q.result.includes(:supplier, :user).recent.limit(200)
+        @vendor_invoices = @q.result.includes(:supplier, :user, :location).recent.limit(200)
         scope = VendorInvoice.all
         @total_count = scope.count
         @unpaid_count = scope.unpaid.count
@@ -17,6 +17,7 @@ module Admin
         @paid_count = scope.paid.count
         @outstanding_total_cents = scope.outstanding.sum(Arel.sql("total_cents - amount_paid_cents"))
         @suppliers = Supplier.active.order(:name)
+        @locations = Location.active.ordered
       end
 
       def show
@@ -42,7 +43,7 @@ module Admin
         @vendor_invoice = VendorInvoice.new(vendor_invoice_params.merge(user: current_user))
         authorize_inventory!(:create)
 
-        if @vendor_invoice.vendor_invoice_lines.reject(&:marked_for_destruction?).any? { |l| l.ingredient_id.present? }
+        if invoice_lines_present?
           ::Inventory::ReceiveVendorInvoiceService.new(@vendor_invoice, current_user).call
           redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
             notice: t("flash.vendor_invoice.created")
@@ -56,6 +57,50 @@ module Admin
         build_line_items
         load_form_data
         render :new, status: :unprocessable_entity
+      end
+
+      def edit
+        authorize_inventory!(:update)
+        unless @vendor_invoice.fully_editable?
+          redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+            alert: edit_blocked_message
+          return
+        end
+        build_line_items
+        load_form_data
+      end
+
+      def update
+        authorize_inventory!(:update)
+        unless @vendor_invoice.fully_editable?
+          redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+            alert: edit_blocked_message
+          return
+        end
+
+        if invoice_lines_present?(vendor_invoice_params)
+          ::Inventory::UpdateVendorInvoiceService.new(
+            @vendor_invoice,
+            current_user,
+            vendor_invoice_params
+          ).call
+          redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+            notice: t("flash.vendor_invoice.updated")
+        else
+          @vendor_invoice.errors.add(:base, t("inventory.vendor_invoices.errors.lines_required"))
+          build_line_items
+          load_form_data
+          render :edit, status: :unprocessable_entity
+        end
+      rescue Inventory::UpdateVendorInvoiceService::Error => e
+        build_line_items
+        load_form_data
+        flash.now[:alert] = e.message
+        render :edit, status: :unprocessable_entity
+      rescue ActiveRecord::RecordInvalid
+        build_line_items
+        load_form_data
+        render :edit, status: :unprocessable_entity
       end
 
       def record_payment
@@ -74,7 +119,7 @@ module Admin
 
         notice_key = @vendor_invoice.reload.paid? ? "flash.vendor_invoice.paid" : "flash.vendor_invoice.payment_recorded"
         redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice), notice: t(notice_key)
-      rescue Accounting::RecordVendorInvoicePaymentService::Error,
+      rescue ::Accounting::RecordVendorInvoicePaymentService::Error,
              ActiveRecord::RecordInvalid => e
         @lines = @vendor_invoice.vendor_invoice_lines.includes(:ingredient, :stock_batch)
         @payments = @vendor_invoice.vendor_invoice_payments.includes(:user, :treasury).order(payment_date: :desc, created_at: :desc)
@@ -93,7 +138,7 @@ module Admin
 
         ActiveRecord::Base.transaction do
           @vendor_invoice.update!(payment_status: "void")
-          Accounting::SupplierApLedgerService.reverse_invoice!(
+          ::Accounting::SupplierApLedgerService.reverse_invoice!(
             invoice: @vendor_invoice,
             user: current_user
           )
@@ -112,18 +157,21 @@ module Admin
       end
 
       def build_line_items
-        remaining = 5 - @vendor_invoice.vendor_invoice_lines.reject(&:marked_for_destruction?).size
-        remaining.times { @vendor_invoice.vendor_invoice_lines.build } if remaining.positive?
+        return if @vendor_invoice.vendor_invoice_lines.reject(&:marked_for_destruction?).any?
+
+        @vendor_invoice.vendor_invoice_lines.build
       end
 
       def load_form_data
         @suppliers = Supplier.active.order(:name)
+        @locations = Location.active.ordered
         @ingredients = Ingredient.active.order(:name)
+        @ingredient_units = @ingredients.to_h { |i| [i.id, helpers.ingredient_unit_label(i.unit)] }
       end
 
       def vendor_invoice_params
         permitted = params.require(:vendor_invoice).permit(
-          :supplier_id, :invoice_number, :invoice_date, :received_on, :notes,
+          :supplier_id, :location_id, :invoice_number, :invoice_date, :received_on, :notes,
           vendor_invoice_lines_attributes: %i[
             id ingredient_id quantity unit_price_dollars expires_on batch_reference line_notes _destroy
           ]
@@ -133,6 +181,20 @@ module Admin
           attrs[:unit_price_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
         end
         permitted
+      end
+
+      def invoice_lines_present?(attrs = vendor_invoice_params)
+        attrs[:vendor_invoice_lines_attributes]&.values&.any? do |line_attrs|
+          line_attrs[:_destroy] != "1" && line_attrs[:ingredient_id].present?
+        end
+      end
+
+      def edit_blocked_message
+        if !@vendor_invoice.editable?
+          t("inventory.vendor_invoices.errors.not_editable")
+        else
+          t("inventory.vendor_invoices.errors.stock_consumed_blocked")
+        end
       end
     end
   end

@@ -7,6 +7,7 @@ class VendorInvoice < ApplicationRecord
 
   belongs_to :supplier
   belongs_to :user
+  belongs_to :location
   has_many :vendor_invoice_lines, dependent: :destroy
   has_many :vendor_invoice_payments, dependent: :destroy
 
@@ -20,6 +21,7 @@ class VendorInvoice < ApplicationRecord
   validates :invoice_number, presence: true,
     uniqueness: { scope: %i[company_id supplier_id], case_sensitive: false }
   validates :invoice_date, :received_on, presence: true
+  validates :location, presence: true
   validates :payment_status, inclusion: { in: PAYMENT_STATUSES }
   validates :amount_paid_cents, numericality: { greater_than_or_equal_to: 0 }
   validate :amount_paid_not_above_total
@@ -52,6 +54,21 @@ class VendorInvoice < ApplicationRecord
     !void? && balance_due_cents.positive?
   end
 
+  def editable?
+    unpaid? && amount_paid_cents.zero? && !void?
+  end
+
+  def stock_intact_for_edit?
+    vendor_invoice_lines.all? do |line|
+      batch = line.stock_batch
+      batch.nil? || batch.quantity_remaining.to_d >= line.quantity.to_d
+    end
+  end
+
+  def fully_editable?
+    editable? && stock_intact_for_edit?
+  end
+
   def balance_due_cents
     total_cents - amount_paid_cents
   end
@@ -75,7 +92,7 @@ class VendorInvoice < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[supplier user]
+    %w[supplier user location]
   end
 
   private

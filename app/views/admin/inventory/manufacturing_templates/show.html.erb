@@ -14,12 +14,43 @@
       </p>
     </div>
     <div class="flex flex-wrap gap-2">
+      <% if current_user.can_access_production? && @template.active? && @lines.any? %>
+        <%= link_to t("inventory.manufacturing.templates.open_production_screen"), production_path,
+              class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded-xl" %>
+      <% end %>
       <%= link_to t("actions.edit"), edit_admin_inventory_manufacturing_template_path(@template),
             class: "border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50" %>
       <%= link_to t("inventory.manufacturing.templates.back"), admin_inventory_manufacturing_templates_path,
             class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
     </div>
   </div>
+
+  <% if current_user.can_access_production? && @template.active? && @lines.any? %>
+    <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mb-6">
+      <div class="px-5 py-4 border-b border-amber-100">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.manufacturing.templates.record_run") %></h2>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.manufacturing.templates.record_run_hint") %></p>
+      </div>
+      <%= form_with url: run_admin_inventory_manufacturing_template_path(@template),
+            method: :post,
+            class: "p-5 flex flex-wrap items-end gap-4" do %>
+        <div class="min-w-[10rem]">
+          <%= label_tag :runs_count, t("production.runs_label"), class: label_class %>
+          <%= number_field_tag :runs_count, 1, min: 0.001, step: 0.001, required: true, class: pos_input_class %>
+        </div>
+        <div class="flex-1 min-w-[12rem]">
+          <%= label_tag :notes, t("production.notes_label"), class: label_class %>
+          <%= text_field_tag :notes, nil, class: pos_input_class %>
+        </div>
+        <%= submit_tag t("production.record"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
+      <% end %>
+    </section>
+  <% elsif current_user.can_access_production? && !@template.active? %>
+    <div class="rounded-2xl border border-amber-200 bg-amber-50/40 px-5 py-4 mb-6 text-sm text-amber-900">
+      <%= t("inventory.manufacturing.templates.inactive_run_hint") %>
+    </div>
+  <% end %>
 
   <% if @template.notes.present? %>
     <div class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">

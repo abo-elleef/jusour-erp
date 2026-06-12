@@ -9,6 +9,11 @@
       <p class="text-gray-600 text-sm mt-1"><%= t("inventory.manufacturing.templates.description") %></p>
     </div>
     <div class="flex flex-wrap gap-2 shrink-0">
+      <% if current_user.can_access_production? %>
+        <%= link_to t("inventory.manufacturing.templates.open_production_screen"),
+              production_path,
+              class: "border border-amber-200 bg-amber-50 text-amber-800 text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-amber-100" %>
+      <% end %>
       <%= link_to t("inventory.manufacturing.runs.history"),
             admin_inventory_manufacturing_runs_path,
             class: "border border-gray-200 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-50" %>

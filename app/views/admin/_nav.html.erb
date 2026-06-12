@@ -29,3 +29,6 @@
 <% if current_user.can_access_kds? %>
   <%= link_to t("nav.kitchen"), kitchen_path, class: nav_link %>
 <% end %>
+<% if current_user.can_access_production? %>
+  <%= link_to t("nav.production"), production_path, class: nav_link %>
+<% end %>

@@ -15,6 +15,7 @@ class Location < ApplicationRecord
   has_many :stock_takes, dependent: :nullify
   has_many :manufacturing_runs, dependent: :nullify
   has_many :orders, dependent: :nullify
+  has_many :vendor_invoices, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :location_type, presence: true, inclusion: { in: TYPES }

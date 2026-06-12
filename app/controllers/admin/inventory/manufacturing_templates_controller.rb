@@ -3,7 +3,7 @@
 module Admin
   module Inventory
     class ManufacturingTemplatesController < BaseController
-      before_action :set_template, only: %i[show edit update destroy]
+      before_action :set_template, only: %i[show edit update destroy run]
 
       def index
         authorize_inventory_index!(ManufacturingTemplate)
@@ -64,6 +64,43 @@ module Admin
           redirect_to admin_inventory_manufacturing_templates_path,
             notice: t("flash.manufacturing_template.removed")
         end
+      end
+
+      def run
+        authorize @template, :create?, policy_class: ProductionPolicy
+
+        unless @template.active? && @template.manufacturing_template_lines.any?
+          redirect_to admin_inventory_manufacturing_template_path(@template),
+            alert: t("inventory.manufacturing.templates.cannot_run")
+          return
+        end
+
+        runs_count = params[:runs_count].to_d
+        if runs_count <= 0
+          redirect_to admin_inventory_manufacturing_template_path(@template),
+            alert: t("production.invalid_runs")
+          return
+        end
+
+        ::Inventory::RunManufacturingService.new(
+          template: @template,
+          user: current_user,
+          runs_count: runs_count,
+          notes: params[:notes].presence
+        ).call
+
+        output_qty = runs_count * @template.yield_quantity.to_d
+        redirect_to admin_inventory_manufacturing_template_path(@template),
+          notice: t(
+            "production.success",
+            runs: runs_count,
+            template: @template.name,
+            output: @template.output_ingredient.name,
+            output_qty: output_qty,
+            output_unit: helpers.ingredient_unit_label(@template.output_ingredient.unit)
+          )
+      rescue Inventory::RunManufacturingService::Error => e
+        redirect_to admin_inventory_manufacturing_template_path(@template), alert: e.message
       end
 
       private

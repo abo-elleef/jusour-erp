@@ -81,6 +81,7 @@
             <tr>
               <th class="p-3 ps-5 text-start"><%= t("inventory.vendor_invoices.invoice_number") %></th>
               <th class="p-3 text-start"><%= t("inventory.vendor_invoices.supplier") %></th>
+              <th class="p-3 text-start"><%= t("inventory.vendor_invoices.location") %></th>
               <th class="p-3 text-start"><%= t("inventory.vendor_invoices.invoice_date") %></th>
               <th class="p-3 text-start"><%= t("inventory.vendor_invoices.payment_status") %></th>
               <th class="p-3 text-end"><%= t("inventory.vendor_invoices.total") %></th>
@@ -96,6 +97,7 @@
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>
                 </td>
                 <td class="p-3"><%= invoice.supplier.name %></td>
+                <td class="p-3 text-gray-600"><%= invoice.location&.name || "—" %></td>
                 <td class="p-3 tabular-nums text-gray-600"><%= l(invoice.invoice_date) %></td>
                 <td class="p-3">
                   <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= pay_class %>"><%= pay_label %></span>

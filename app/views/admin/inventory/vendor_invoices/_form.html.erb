@@ -4,7 +4,7 @@
 <% active_lines = vendor_invoice.vendor_invoice_lines.reject(&:marked_for_destruction?).select { |l| l.ingredient_id.present? } %>
 <% estimated_cents = active_lines.sum { |l| (l.quantity.to_d * l.unit_price_cents.to_i).round } %>
 
-<%= form_with model: vendor_invoice, url: admin_inventory_vendor_invoices_path, class: "space-y-6" do |f| %>
+<%= form_with model: [:admin, :inventory, vendor_invoice], class: "space-y-6" do |f| %>
   <% if vendor_invoice.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
       <%= vendor_invoice.errors.full_messages.to_sentence %>
@@ -20,6 +20,13 @@
       <div>
         <%= f.label :supplier_id, t("inventory.vendor_invoices.supplier"), class: label_class %>
         <%= f.collection_select :supplier_id, @suppliers, :id, :name, { prompt: t("inventory.vendor_invoices.select_supplier") }, class: "#{input_class} appearance-none" %>
+      </div>
+      <div>
+        <%= f.label :location_id, t("inventory.vendor_invoices.location"), class: label_class %>
+        <%= f.collection_select :location_id, @locations, :id, :name,
+              { prompt: t("inventory.vendor_invoices.select_location") },
+              class: "#{input_class} appearance-none", required: true %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.vendor_invoices.location_hint") %></p>
       </div>
       <div>
         <%= f.label :invoice_number, t("inventory.vendor_invoices.invoice_number"), class: label_class %>
@@ -40,64 +47,53 @@
     </div>
   </section>
 
-  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden"
+           data-controller="vendor-invoice-lines"
+           data-vendor-invoice-lines-units-value="<%= @ingredient_units.to_json %>">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
       <div>
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.form.line_items") %></h2>
         <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.vendor_invoices.form.line_items_hint") %></p>
       </div>
-      <% if estimated_cents.positive? %>
-        <p class="text-sm text-gray-600"><%= t("inventory.vendor_invoices.total") %> <span class="font-semibold text-gray-900"><%= format_money(estimated_cents) %></span></p>
-      <% end %>
+      <div class="flex flex-wrap items-center gap-3">
+        <% if estimated_cents.positive? %>
+          <p class="text-sm text-gray-600"><%= t("inventory.vendor_invoices.total") %> <span class="font-semibold text-gray-900"><%= format_money(estimated_cents) %></span></p>
+        <% end %>
+        <button type="button"
+                class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-2 rounded-xl border border-amber-200 transition-colors shrink-0"
+                data-action="vendor-invoice-lines#add">
+          <span aria-hidden="true">+</span> <%= t("inventory.vendor_invoices.form.add_line") %>
+        </button>
+      </div>
     </div>
     <div class="divide-y divide-gray-100">
       <div class="hidden lg:grid lg:grid-cols-12 gap-3 px-5 py-3 bg-white text-xs font-semibold text-gray-500 uppercase tracking-wide">
         <div class="lg:col-span-3"><%= t("inventory.vendor_invoices.form.ingredient") %></div>
+        <div class="lg:col-span-1"><%= t("inventory.vendor_invoices.form.unit") %></div>
         <div class="lg:col-span-1"><%= t("inventory.vendor_invoices.form.quantity") %></div>
         <div class="lg:col-span-1"><%= t("inventory.vendor_invoices.form.unit_price") %></div>
         <div class="lg:col-span-2"><%= t("inventory.vendor_invoices.form.expires_on") %></div>
         <div class="lg:col-span-2"><%= t("inventory.vendor_invoices.form.batch_reference") %></div>
-        <div class="lg:col-span-2"><%= t("inventory.vendor_invoices.form.line_notes") %></div>
+        <div class="lg:col-span-1"><%= t("inventory.vendor_invoices.form.line_notes") %></div>
         <div class="lg:col-span-1"></div>
       </div>
-      <%= f.fields_for :vendor_invoice_lines do |line_f| %>
-        <% line = line_f.object %>
-        <div class="px-5 py-4 lg:grid lg:grid-cols-12 lg:gap-3 lg:items-end space-y-3 lg:space-y-0">
-          <div class="lg:col-span-3">
-            <%= line_f.collection_select :ingredient_id, @ingredients, :id, :name, { prompt: t("inventory.vendor_invoices.select_ingredient") }, class: "#{input_class} appearance-none" %>
-          </div>
-          <div class="lg:col-span-1">
-            <%= line_f.number_field :quantity, step: 0.001, min: 0, placeholder: "0", class: input_class %>
-          </div>
-          <div class="lg:col-span-1">
-            <%= line_f.number_field :unit_price_dollars, value: vendor_invoice_line_unit_price_dollars(line), step: 0.01, min: 0, placeholder: "0.00", class: input_class %>
-          </div>
-          <div class="lg:col-span-2">
-            <%= line_f.date_field :expires_on, class: input_class %>
-          </div>
-          <div class="lg:col-span-2">
-            <%= line_f.text_field :batch_reference, class: input_class %>
-          </div>
-          <div class="lg:col-span-2">
-            <%= line_f.text_field :line_notes, class: input_class %>
-          </div>
-          <div class="lg:col-span-1">
-            <% unless line.new_record? %>
-              <label class="inline-flex items-center gap-2 text-xs font-medium text-red-700">
-                <%= line_f.check_box :_destroy, class: "rounded border-gray-300" %>
-                <%= t("actions.remove") %>
-              </label>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
+      <div data-vendor-invoice-lines-target="list">
+        <%= f.fields_for :vendor_invoice_lines do |line_f| %>
+          <%= render "line_fields", f: line_f %>
+        <% end %>
+      </div>
     </div>
+    <template data-vendor-invoice-lines-target="template">
+      <%= f.fields_for :vendor_invoice_lines, VendorInvoiceLine.new, child_index: "NEW_RECORD" do |line_f| %>
+        <%= render "line_fields", f: line_f %>
+      <% end %>
+    </template>
   </section>
 
   <div class="flex flex-wrap items-center gap-3 pb-8">
-    <%= f.submit t("inventory.vendor_invoices.form.submit"),
+    <%= f.submit vendor_invoice.persisted? ? t("inventory.vendor_invoices.form.submit_update") : t("inventory.vendor_invoices.form.submit"),
           class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
-    <%= link_to t("actions.cancel"), admin_inventory_vendor_invoices_path,
+    <%= link_to t("actions.cancel"), vendor_invoice.persisted? ? admin_inventory_vendor_invoice_path(vendor_invoice) : admin_inventory_vendor_invoices_path,
           class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
   </div>
 <% end %>

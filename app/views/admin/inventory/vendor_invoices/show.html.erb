@@ -1,12 +1,8 @@
 <% table_head = "border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide" %>
 <% pay_label, pay_class = vendor_invoice_payment_badge(@vendor_invoice.payment_status) %>
 
-<div class="max-w-5xl">
-  <div class="mb-4">
-    <%= link_to t("inventory.vendor_invoices.back_to_list"), admin_inventory_vendor_invoices_path,
-          class: "text-sm text-gray-600 hover:text-gray-900 transition-colors" %>
-  </div>
-
+<%= render "admin/inventory/tools_nav" %>
+<div class="max-w-7xl">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <div class="flex flex-wrap items-center gap-3">
@@ -17,9 +13,22 @@
         <%= link_to @vendor_invoice.supplier.name, admin_inventory_supplier_path(@vendor_invoice.supplier),
               class: "font-medium text-amber-700 hover:text-amber-800" %>
         · <%= t("inventory.vendor_invoices.invoice_date") %> <%= l(@vendor_invoice.invoice_date) %>
+        <% if @vendor_invoice.location %>
+          · <%= t("inventory.vendor_invoices.received_at") %>
+          <%= link_to @vendor_invoice.location.name, admin_location_path(@vendor_invoice.location),
+                class: "font-medium text-amber-700 hover:text-amber-800" %>
+        <% end %>
       </p>
     </div>
     <div class="flex flex-wrap gap-2 shrink-0">
+      <% if @vendor_invoice.fully_editable? %>
+        <%= link_to t("actions.edit"), edit_admin_inventory_vendor_invoice_path(@vendor_invoice),
+              class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" %>
+      <% elsif @vendor_invoice.editable? && !@vendor_invoice.stock_intact_for_edit? %>
+        <span class="inline-flex text-xs text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
+          <%= t("inventory.vendor_invoices.errors.stock_consumed_blocked") %>
+        </span>
+      <% end %>
       <% if @vendor_invoice.amount_paid_cents.zero? && !@vendor_invoice.void? %>
         <%= button_to t("inventory.vendor_invoices.void"),
               void_admin_inventory_vendor_invoice_path(@vendor_invoice),
@@ -29,8 +38,6 @@
       <% end %>
     </div>
   </div>
-
-  <%= render "admin/inventory/tools_nav" %>
 
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
     <div class="rounded-2xl border border-gray-200 bg-white p-4">

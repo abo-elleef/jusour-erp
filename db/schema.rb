@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_25_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_26_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -955,9 +955,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_25_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "amount_paid_cents", default: 0, null: false
+    t.uuid "location_id"
     t.index ["company_id", "supplier_id", "invoice_number"], name: "index_vendor_invoices_on_company_supplier_and_number", unique: true
     t.index ["company_id"], name: "index_vendor_invoices_on_company_id"
     t.index ["invoice_date"], name: "index_vendor_invoices_on_invoice_date"
+    t.index ["location_id"], name: "index_vendor_invoices_on_location_id"
     t.index ["payment_status"], name: "index_vendor_invoices_on_payment_status"
     t.index ["supplier_id"], name: "index_vendor_invoices_on_supplier_id"
     t.index ["user_id"], name: "index_vendor_invoices_on_user_id"
@@ -1081,6 +1083,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_25_000000) do
   add_foreign_key "vendor_invoice_payments", "users"
   add_foreign_key "vendor_invoice_payments", "vendor_invoices"
   add_foreign_key "vendor_invoices", "companies"
+  add_foreign_key "vendor_invoices", "locations"
   add_foreign_key "vendor_invoices", "suppliers"
   add_foreign_key "vendor_invoices", "users"
 end

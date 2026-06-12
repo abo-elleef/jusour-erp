@@ -191,7 +191,7 @@ Rails.application.routes.draw do
         resources :supplier_ingredients, only: %i[create update destroy]
       end
       resources :suppliers
-      resources :vendor_invoices, only: %i[index show new create] do
+      resources :vendor_invoices, only: %i[index show new create edit update] do
         member do
           post :record_payment
           patch :void
@@ -201,6 +201,7 @@ Rails.application.routes.draw do
         member { post :complete }
       end
       resources :manufacturing_templates do
+        member { post :run }
         resources :lines, only: %i[create destroy], controller: "manufacturing_template_lines"
       end
       resources :manufacturing_runs, only: %i[index show]
