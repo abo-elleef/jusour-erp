@@ -31,5 +31,13 @@ module Printing
     def agent_token
       Setting.get("print_agent_token", "")
     end
+
+    def print_encoding
+      Setting.get("print_encoding", "auto")
+    end
+
+    def print_code_page
+      Setting.get_int("print_code_page", 0)
+    end
   end
 end

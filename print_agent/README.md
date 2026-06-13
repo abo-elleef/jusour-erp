@@ -2,6 +2,19 @@
 
 Bridges the POS browser to LAN ESC/POS receipt printers (TCP port 9100). Required when Rails runs in the cloud and printers are on the store network.
 
+The agent forwards raw ESC/POS bytes as-is (including Arabic). Character encoding and code-page selection are handled by the Rails app before data reaches the agent.
+
+## Arabic printing
+
+Receipts and kitchen tickets use **Windows-1256** when the app locale is Arabic (`ar`), with ESC/POS code page **47** (common on Arabic firmware). If characters appear garbled on your printer, set in Rails console:
+
+```ruby
+Setting.set("print_code_page", 22)   # try PC864 table on some Epson models
+Setting.set("print_encoding", "windows-1256")
+```
+
+Default is `print_encoding: auto` (Arabic when locale is `ar`).
+
 ## Install
 
 Requires Node.js 18+.

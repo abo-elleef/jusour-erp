@@ -130,11 +130,20 @@ ar:
   printing:
     receipt:
       thank_you: "شكراً لطلبكم!"
+      subtotal: "المجموع الفرعي"
+      discount: "الخصم"
+      tax: "الضريبة"
+      tip: "الإكرامية"
+      total: "الإجمالي"
+      payments: "المدفوعات:"
+      change: "الباقي"
+      loyalty: "الولاء: %{points} نقطة"
     kitchen_ticket:
       title: "المطبخ"
       order_notes: "ملاحظات الطلب:"
     test:
       title: "طباعة تجريبية"
+      arabic_sample: "اختبار العربية: شكراً لطلبكم"
       button: "إرسال طباعة تجريبية"
       sent: "تم إرسال صفحة الاختبار للطابعة."
     connection:

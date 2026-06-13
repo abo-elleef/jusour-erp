@@ -83,6 +83,7 @@ module Admin
       doc.text(Setting.get("restaurant_name", t("app.name")))
       doc.bold(false)
       doc.text(t("printing.test.title"))
+      doc.text(t("printing.test.arabic_sample")) if Printing::Escpos::Charset.arabic_locale?
       doc.text(@printer.name)
       doc.text(Time.current.strftime("%b %d, %Y %l:%M %p"))
       doc.blank(2)

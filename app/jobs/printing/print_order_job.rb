@@ -16,7 +16,9 @@ module Printing
       return if print_type == "kitchen" && order.draft?
 
       with_company(order.company) do
-        PrintOrderService.call(order: order, print_type: print_type)
+        I18n.with_locale(I18n.default_locale) do
+          PrintOrderService.call(order: order, print_type: print_type)
+        end
       end
     end
   end

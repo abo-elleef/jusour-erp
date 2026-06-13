@@ -32,13 +32,15 @@ module Printing
         end
 
         doc.rule
-        doc.row("Subtotal", format_money(@order.subtotal_cents))
-        doc.row("Discount", "-#{format_money(@order.discount_cents)}") if @order.discount_cents.positive?
-        doc.row("Tax", format_money(@order.tax_cents))
-        doc.row("Tip", format_money(@order.tip_cents)) if @order.tip_cents.positive?
+        doc.row(I18n.t("printing.receipt.subtotal"), format_money(@order.subtotal_cents))
+        if @order.discount_cents.positive?
+          doc.row(I18n.t("printing.receipt.discount"), "-#{format_money(@order.discount_cents)}")
+        end
+        doc.row(I18n.t("printing.receipt.tax"), format_money(@order.tax_cents))
+        doc.row(I18n.t("printing.receipt.tip"), format_money(@order.tip_cents)) if @order.tip_cents.positive?
 
         doc.bold
-        doc.row("TOTAL", format_money(@order.total_cents))
+        doc.row(I18n.t("printing.receipt.total"), format_money(@order.total_cents))
         doc.bold(false)
         doc.rule
 
@@ -48,7 +50,7 @@ module Printing
         if @order.customer
           doc.blank
           doc.align(:center)
-          doc.text("Loyalty: #{@order.customer.loyalty_points} pts")
+          doc.text(I18n.t("printing.receipt.loyalty", points: @order.customer.loyalty_points))
         end
 
         doc.blank
@@ -73,7 +75,7 @@ module Printing
         payments = @order.payments.where(status: "completed").order(:created_at)
         return if payments.none?
 
-        doc.text("Payments:")
+        doc.text(I18n.t("printing.receipt.payments"))
         payments.each do |payment|
           label = I18n.t("payment.methods.#{payment.payment_method}", default: payment.payment_method.humanize)
           doc.row("  #{label}", format_money(payment.amount_cents))
@@ -87,7 +89,7 @@ module Printing
         change = cash_payments.first.amount_cents - @order.total_cents
         return unless change.positive?
 
-        doc.row("Change", format_money(change))
+        doc.row(I18n.t("printing.receipt.change"), format_money(change))
       end
     end
   end

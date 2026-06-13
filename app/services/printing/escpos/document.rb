@@ -6,14 +6,16 @@ module Printing
       ESC = "\x1B"
       GS = "\x1D"
 
-      def initialize(width: 42)
+      def initialize(width: 42, charset: nil)
         @width = width
         @buffer = +""
+        @charset_config = Charset.resolve(charset)
+        @rtl = @charset_config.equal?(Charset::ARABIC)
         init
       end
 
       def text(line = "")
-        @buffer << sanitize(line) << "\n"
+        @buffer << encode_text(line) << "\n"
       end
 
       def blank(lines = 1)
@@ -21,9 +23,13 @@ module Printing
       end
 
       def row(left, right = "")
-        left_str = sanitize(left.to_s)
-        right_str = sanitize(right.to_s)
-        space = @width - left_str.length - right_str.length
+        left_str = left.to_s
+        right_str = right.to_s
+        left_str, right_str = right_str, left_str if @rtl
+
+        left_len = display_width(left_str)
+        right_len = display_width(right_str)
+        space = @width - left_len - right_len
         space = 1 if space < 1
         text("#{left_str}#{' ' * space}#{right_str}")
       end
@@ -57,10 +63,25 @@ module Printing
 
       def init
         @buffer << ESC << "@"
+        select_code_page
       end
 
-      def sanitize(value)
-        value.to_s.encode("Windows-1252", invalid: :replace, undef: :replace, replace: "?")
+      def select_code_page
+        code_page = Charset.code_page_for(@charset_config)
+        @buffer << ESC << "t" << code_page.chr
+      end
+
+      def encode_text(value)
+        value.to_s.encode(
+          @charset_config[:encoding],
+          invalid: :replace,
+          undef: :replace,
+          replace: "?"
+        )
+      end
+
+      def display_width(value)
+        value.to_s.length
       end
     end
   end

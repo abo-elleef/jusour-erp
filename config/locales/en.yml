@@ -130,11 +130,20 @@ en:
   printing:
     receipt:
       thank_you: "Thank you for your order!"
+      subtotal: "Subtotal"
+      discount: "Discount"
+      tax: "Tax"
+      tip: "Tip"
+      total: "TOTAL"
+      payments: "Payments:"
+      change: "Change"
+      loyalty: "Loyalty: %{points} pts"
     kitchen_ticket:
       title: "KITCHEN"
       order_notes: "Order notes:"
     test:
       title: "TEST PRINT"
+      arabic_sample: "Arabic test: شكراً لطلبكم"
       button: "Send test print"
       sent: "Test page sent to printer."
     connection:
