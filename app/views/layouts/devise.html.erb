@@ -16,17 +16,6 @@
 
       <main class="flex-1 flex items-center justify-center px-4 pb-12">
         <div class="w-full max-w-md">
-          <% if notice.present? %>
-            <div class="mb-4 rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
-              <%= notice %>
-            </div>
-          <% end %>
-          <% if alert.present? %>
-            <div class="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
-              <%= alert %>
-            </div>
-          <% end %>
-
           <%= yield %>
         </div>
       </main>
@@ -35,5 +24,7 @@
         <%= t("app.name") %>
       </footer>
     </div>
+
+    <%= render "shared/toasts" %>
   </body>
 </html>

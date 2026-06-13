@@ -31,8 +31,11 @@ class ApplicationController < ActionController::Base
       format.json { render json: { error: t("flash.unauthorized") }, status: :forbidden }
       format.turbo_stream do
         flash.now[:alert] = t("flash.unauthorized")
-        render turbo_stream: turbo_stream.update("flash-messages", partial: "shared/flash_alert"),
-               status: :forbidden
+        render turbo_stream: turbo_stream.append(
+          "toast-container",
+          partial: "shared/toast",
+          locals: { message: flash.now[:alert], type: :alert }
+        ), status: :forbidden
       end
     end
   end

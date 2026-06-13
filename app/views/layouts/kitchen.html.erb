@@ -27,6 +27,7 @@
       <p class="text-gray-400 text-sm mb-4"><%= t("production.description") %></p>
     <% end %>
     <%= turbo_stream_from "kitchen_#{current_user.company_id}" unless controller_name == "production" %>
+    <%= render "shared/toasts" %>
     <%= yield %>
   </body>
 </html>

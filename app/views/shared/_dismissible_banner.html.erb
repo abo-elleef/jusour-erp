@@ -1,0 +1,39 @@
+<%# locals: id:, message:, hint: nil, variant: "warning", fixed: false, hidden: true, target: nil %>
+<% variant = local_assigns.fetch(:variant, "warning") %>
+<% fixed = local_assigns.fetch(:fixed, false) %>
+<% hidden = local_assigns.fetch(:hidden, true) %>
+<% hint = local_assigns[:hint] %>
+<% target = local_assigns[:target] %>
+<% variant_classes = {
+     "warning" => "bg-amber-50 text-amber-900 border-amber-200",
+     "offline" => "bg-yellow-500 text-yellow-900 border-yellow-600",
+     "success" => "bg-green-600 text-white border-green-700"
+   } %>
+<% position_classes = fixed ? "fixed top-0 start-0 end-0 z-[60] border-b shadow-sm" : "border-b" %>
+<% data_attrs = { controller: "dismissible-banner", dismissible_banner_id_value: id } %>
+<% data_attrs[:"#{target}_target"] = "banner" if target.present? %>
+
+<%= tag.div role: "alert",
+      data: data_attrs,
+      class: class_names(
+        position_classes,
+        variant_classes.fetch(variant, variant_classes["warning"]),
+        "hidden": hidden
+      ) do %>
+  <div class="flex items-start gap-3 px-4 py-2.5 max-w-5xl mx-auto">
+    <div class="flex-1 min-w-0 text-center sm:text-start">
+      <p class="text-sm font-medium leading-snug"><%= message %></p>
+      <% if hint.present? %>
+        <p class="text-xs mt-1 font-normal opacity-90 leading-relaxed"><%= hint %></p>
+      <% end %>
+    </div>
+    <button type="button"
+            data-action="dismissible-banner#dismiss"
+            class="shrink-0 rounded-lg p-1.5 opacity-70 hover:opacity-100 hover:bg-black/5 transition-colors min-h-9 min-w-9 flex items-center justify-center"
+            aria-label="<%= t("actions.close") %>">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+<% end %>

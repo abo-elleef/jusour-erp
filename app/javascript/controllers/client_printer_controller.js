@@ -10,8 +10,18 @@ export default class extends Controller {
 
   connect() {
     this.storageKey = "saqr_register_printer"
+    this.boundBannerDismissed = () => this.hideBanner()
+    if (this.hasBannerTarget) {
+      this.bannerTarget.addEventListener("banner:dismissed", this.boundBannerDismissed)
+    }
     if (this.configValue?.client_routing) {
       this.checkAgentHealth()
+    }
+  }
+
+  disconnect() {
+    if (this.hasBannerTarget) {
+      this.bannerTarget.removeEventListener("banner:dismissed", this.boundBannerDismissed)
     }
   }
 
@@ -22,14 +32,41 @@ export default class extends Controller {
 
   async checkAgentHealth() {
     if (!this.hasBannerTarget) return
+    if (this.isBannerDismissed()) return
+
     try {
       const ok = await this.agentFetch("/health")
-      this.bannerTarget.classList.add("hidden")
-      if (ok) return
+      if (ok) {
+        this.hideBanner()
+        return
+      }
     } catch (_e) {
       // fall through
     }
-    this.bannerTarget.classList.remove("hidden")
+
+    this.showBanner()
+  }
+
+  showBanner() {
+    if (this.isBannerDismissed()) return
+    this.dismissibleBanner()?.show() || this.bannerTarget.classList.remove("hidden")
+  }
+
+  hideBanner() {
+    if (!this.hasBannerTarget) return
+    this.dismissibleBanner()?.hide() || this.bannerTarget.classList.add("hidden")
+  }
+
+  isBannerDismissed() {
+    return sessionStorage.getItem("saqr_banner_dismissed_print-agent") === "1"
+  }
+
+  dismissibleBanner() {
+    if (!this.hasBannerTarget) return null
+    return this.application.getControllerForElementAndIdentifier(
+      this.bannerTarget,
+      "dismissible-banner"
+    )
   }
 
   async processJob(element) {

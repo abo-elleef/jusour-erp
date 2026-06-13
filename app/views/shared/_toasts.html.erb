@@ -1,0 +1,13 @@
+<div id="toast-container"
+     data-controller="toast"
+     data-toast-dismiss-after-value="4000"
+     class="fixed top-4 end-4 z-[100] flex flex-col gap-2 w-[min(100vw-2rem,24rem)] pointer-events-none print:hidden"
+     aria-live="polite"
+     aria-relevant="additions">
+  <% if notice.present? %>
+    <%= render "shared/toast", message: notice, type: :notice %>
+  <% end %>
+  <% if alert.present? %>
+    <%= render "shared/toast", message: alert, type: :alert %>
+  <% end %>
+</div>

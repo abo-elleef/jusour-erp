@@ -22,6 +22,7 @@ export default class extends Controller {
     this.onlineValue = true
     this.updateUI()
     this.triggerSync()
+    this.clearOfflineDismissal()
     this.showBanner(this.bannerOnlineMessage(), "success")
     setTimeout(() => this.hideBanner(), 4000)
   }
@@ -29,7 +30,7 @@ export default class extends Controller {
   handleOffline() {
     this.onlineValue = false
     this.updateUI()
-    this.showBanner(this.bannerOfflineMessage(), "warning")
+    this.showBanner(this.bannerOfflineMessage(), "offline")
   }
 
   bannerOfflineMessage() {
@@ -61,14 +62,34 @@ export default class extends Controller {
 
   showBanner(message, type) {
     if (!this.hasBannerTarget) return
-    this.bannerTarget.textContent = message
-    this.bannerTarget.className = `fixed top-0 left-0 right-0 z-[60] px-4 py-3 text-sm font-medium text-center ${
-      type === "warning" ? "bg-yellow-500 text-yellow-900" : "bg-green-600 text-white"
-    }`
-    this.bannerTarget.classList.remove("hidden")
+
+    const banner = this.bannerTarget
+    const messageEl = banner.querySelector("[data-connectivity-banner-message]")
+    if (messageEl) messageEl.textContent = message
+
+    const offlineClasses = ["bg-yellow-500", "text-yellow-900", "border-yellow-600"]
+    const successClasses = ["bg-green-600", "text-white", "border-green-700"]
+    banner.classList.remove(...offlineClasses, ...successClasses)
+    ;(type === "offline" ? offlineClasses : successClasses).forEach((klass) => banner.classList.add(klass))
+
+    if (type === "success") {
+      banner.classList.remove("hidden")
+      return
+    }
+
+    this.dismissibleBanner(banner)?.show() || banner.classList.remove("hidden")
   }
 
   hideBanner() {
-    if (this.hasBannerTarget) this.bannerTarget.classList.add("hidden")
+    this.dismissibleBanner(this.bannerTarget)?.hide() || this.bannerTarget?.classList.add("hidden")
+  }
+
+  clearOfflineDismissal() {
+    sessionStorage.removeItem("saqr_banner_dismissed_connectivity-offline")
+  }
+
+  dismissibleBanner(element) {
+    if (!element) return null
+    return this.application.getControllerForElementAndIdentifier(element, "dismissible-banner")
   }
 }
