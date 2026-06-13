@@ -18,6 +18,7 @@ module Pos
       data = Printing::BuildPayloadService.call(
         order: @print_log.order,
         printer: printer,
+        print_type: @print_log.print_type,
         host: params[:host],
         port: params[:port]
       )

@@ -130,6 +130,9 @@ ar:
   printing:
     receipt:
       thank_you: "شكراً لطلبكم!"
+    kitchen_ticket:
+      title: "المطبخ"
+      order_notes: "ملاحظات الطلب:"
     test:
       title: "طباعة تجريبية"
       button: "إرسال طباعة تجريبية"
@@ -955,6 +958,7 @@ ar:
         date: "التاريخ"
         runs_count: "التشغيلات"
         by: "سجّله"
+        created_at: "تاريخ الإنشاء"
         empty: "لا توجد عمليات تصنيع بعد."
         output_produced: "الناتج المُنتَج"
         shelf_life: "مدة الصلاحية"

@@ -16,6 +16,7 @@ module Orders
       validate_fulfillment!
       @order.recalculate_totals!
       @order.submit!
+      Printing::PrintOrderJob.perform_later(@order.id, "kitchen")
       @order
     end
 

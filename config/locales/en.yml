@@ -130,6 +130,9 @@ en:
   printing:
     receipt:
       thank_you: "Thank you for your order!"
+    kitchen_ticket:
+      title: "KITCHEN"
+      order_notes: "Order notes:"
     test:
       title: "TEST PRINT"
       button: "Send test print"
@@ -954,6 +957,7 @@ en:
         date: "Date"
         runs_count: "Runs"
         by: "Recorded by"
+        created_at: "Created at"
         empty: "No production runs yet."
         output_produced: "Output produced"
         shelf_life: "Shelf life"
