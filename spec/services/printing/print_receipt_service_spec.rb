@@ -31,14 +31,14 @@ RSpec.describe Printing::PrintReceiptService do
         subtotal_cents: 1000, tax_cents: 0, total_cents: 1000)
       create(:order_item, order: order, unit_price_cents: 1000)
 
-      expect(Turbo::StreamsChannel).to receive(:broadcast_append_to).with(
+      expect(Turbo::StreamsChannel).to receive(:broadcast_append_to).once.with(
         "pos_prints_#{company.id}",
         hash_including(target: "client-print-queue")
       )
 
       described_class.call(order: order)
 
-      log = PrintLog.last
+      log = PrintLog.find_by(print_type: "receipt")
       expect(log.status).to eq("pending")
       expect(log.printer).to eq(printer)
     end
@@ -56,7 +56,7 @@ RSpec.describe Printing::PrintReceiptService do
 
       expect(Printing::Drivers::Network).to receive(:print!).and_return(true)
       described_class.call(order: order)
-      expect(PrintLog.last.status).to eq("sent")
+      expect(PrintLog.find_by(print_type: "receipt").status).to eq("sent")
     end
   end
 end

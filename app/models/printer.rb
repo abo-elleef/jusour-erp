@@ -4,6 +4,7 @@ class Printer < ApplicationRecord
   include Tenantable
 
   PRINTER_TYPES = %w[receipt kitchen bar expo].freeze
+  PRODUCTION_TYPES = %w[kitchen bar].freeze
   CONNECTION_TYPES = %w[network usb].freeze
   PAPER_WIDTHS = %w[58mm 80mm].freeze
 
@@ -19,6 +20,10 @@ class Printer < ApplicationRecord
   scope :defaults, -> { where(is_default: true) }
 
   has_many :print_logs, dependent: :nullify
+  has_many :printer_menu_items, dependent: :destroy
+  has_many :menu_items, through: :printer_menu_items
+
+  scope :production_stations, -> { active.where(printer_type: PRODUCTION_TYPES) }
 
   before_validation :normalize_host, :clear_default_if_inactive
   before_save :unset_other_defaults, if: -> { is_default? && active? }
@@ -49,7 +54,11 @@ class Printer < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    []
+    %w[menu_items]
+  end
+
+  def production_station?
+    PRODUCTION_TYPES.include?(printer_type)
   end
 
   private

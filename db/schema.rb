@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_27_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_28_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -646,6 +646,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_27_000000) do
     t.index ["status"], name: "index_print_logs_on_status"
   end
 
+  create_table "printer_menu_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "printer_id", null: false
+    t.uuid "menu_item_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["menu_item_id"], name: "index_printer_menu_items_on_menu_item_id"
+    t.index ["printer_id", "menu_item_id"], name: "index_printer_menu_items_on_printer_id_and_menu_item_id", unique: true
+    t.index ["printer_id"], name: "index_printer_menu_items_on_printer_id"
+  end
+
   create_table "printers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "printer_type", default: "receipt", null: false
@@ -1043,6 +1053,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_27_000000) do
   add_foreign_key "payroll_snapshots", "users", column: "finalized_by_id"
   add_foreign_key "print_logs", "orders"
   add_foreign_key "print_logs", "printers"
+  add_foreign_key "printer_menu_items", "menu_items"
+  add_foreign_key "printer_menu_items", "printers"
   add_foreign_key "printers", "companies"
   add_foreign_key "receipt_logs", "orders"
   add_foreign_key "recipes", "ingredients"

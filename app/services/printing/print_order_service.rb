@@ -2,17 +2,19 @@
 
 module Printing
   class PrintOrderService
-    def self.call(order:, print_type:)
-      new(order: order, print_type: print_type).call
+    def self.call(order:, print_type:, printer: nil, order_items: nil)
+      new(order: order, print_type: print_type, printer: printer, order_items: order_items).call
     end
 
-    def initialize(order:, print_type:)
+    def initialize(order:, print_type:, printer: nil, order_items: nil)
       @order = order
       @print_type = print_type
+      @printer = printer
+      @order_items = order_items
     end
 
     def call
-      printer = Printer.default_for(@print_type)
+      printer = @printer || Printer.default_for(default_printer_type)
       return log_skipped(nil, "no_active_#{@print_type}_printer") unless printer
 
       if printer.usb?
@@ -33,12 +35,43 @@ module Printing
 
     private
 
+    def default_printer_type
+      case @print_type
+      when "pick_station" then "expo"
+      when "station" then @printer&.printer_type || "kitchen"
+      else @print_type
+      end
+    end
+
     def build_payload(printer)
       case @print_type
+      when "receipt"
+        Escpos::ReceiptBuilder.new(@order, printer: printer).build
       when "kitchen"
         Escpos::KitchenTicketBuilder.new(@order, printer: printer).build
+      when "pick_station", "station"
+        Escpos::ProductionTicketBuilder.new(
+          @order,
+          printer: printer,
+          order_items: ticket_items,
+          title: production_title(printer)
+        ).build
       else
         Escpos::ReceiptBuilder.new(@order, printer: printer).build
+      end
+    end
+
+    def ticket_items
+      return @order_items if @order_items
+
+      @order.order_items.includes(:order_item_modifiers, :menu_item, :combo).to_a
+    end
+
+    def production_title(printer)
+      if @print_type == "pick_station"
+        I18n.t("printing.production_ticket.pick_title")
+      else
+        printer.location.presence || printer.name
       end
     end
 

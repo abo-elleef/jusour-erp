@@ -122,6 +122,9 @@ ar:
       active_hint: "الطابعات غير النشطة لا تُستخدم عند الطباعة."
       default_label: "افتراضية لهذا النوع"
       default_hint: "تُستخدم عند الطباعة التلقائية للإيصالات أو تذاكر المطبخ."
+      menu_items: "عناصر القائمة"
+      menu_items_hint: "لطابعات المطبخ والبار — تُطبع في هذه المحطة العناصر المحددة فقط."
+      menu_items_empty: "لا توجد عناصر قائمة بعد. أضف العناصر من قسم القائمة أولاً."
     empty:
       title: "لا توجد طابعات"
       description: "أضف طابعات الإيصالات والمطبخ لنقطة البيع وشاشة المطبخ."
@@ -140,6 +143,9 @@ ar:
       loyalty: "الولاء: %{points} نقطة"
     kitchen_ticket:
       title: "المطبخ"
+      order_notes: "ملاحظات الطلب:"
+    production_ticket:
+      pick_title: "التجميع"
       order_notes: "ملاحظات الطلب:"
     test:
       title: "طباعة تجريبية"
@@ -251,6 +257,10 @@ ar:
       notes: "ملاحظات"
       table_number: "رقم الطاولة"
       delivery_address: "عنوان التوصيل"
+    submit:
+      errors:
+        table_number_required: "رقم الطاولة مطلوب لطلبات الطاولة."
+        delivery_address_required: "عنوان التوصيل مطلوب لطلبات التوصيل."
 
   user:
     roles:

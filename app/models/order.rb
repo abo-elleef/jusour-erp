@@ -64,7 +64,7 @@ class Order < ApplicationRecord
         Inventory::DeductStockService.new(self).call
         Accounting::AutoCostService.new(self).call
         AuditLogEntry.record!(action: "order.complete", record: self, user: user)
-        Printing::PrintReceiptJob.perform_later(id)
+        Printing::PrintReceiptService.call(order: self)
       end
     end
 

@@ -14,6 +14,8 @@ class MenuItem < ApplicationRecord
   has_many :recipes, dependent: :destroy
   has_many :recipe_ingredients, through: :recipes, source: :ingredient
   has_one_attached :image
+  has_many :printer_menu_items, dependent: :destroy
+  has_many :printers, through: :printer_menu_items
 
   monetize :base_price_cents
 

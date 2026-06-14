@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class PrintLog < ApplicationRecord
-  PRINT_TYPES = %w[receipt kitchen bar expo].freeze
+  PRINT_TYPES = %w[receipt kitchen bar expo pick_station station].freeze
   STATUSES = %w[pending sent failed skipped].freeze
 
   belongs_to :order

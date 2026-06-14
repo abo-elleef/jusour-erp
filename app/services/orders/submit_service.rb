@@ -16,7 +16,7 @@ module Orders
       validate_fulfillment!
       @order.recalculate_totals!
       @order.submit!
-      Printing::PrintOrderJob.perform_later(@order.id, "kitchen")
+      Printing::DispatchProductionPrintsService.call(order: @order)
       @order
     end
 
@@ -24,10 +24,10 @@ module Orders
 
     def validate_fulfillment!
       if @order.table? && @order.table_number.blank?
-        raise InvalidFulfillment, "Table number is required for table orders."
+        raise InvalidFulfillment, I18n.t("order.submit.errors.table_number_required")
       end
       if @order.delivery? && @order.delivery_address.blank?
-        raise InvalidFulfillment, "Delivery address is required for delivery orders."
+        raise InvalidFulfillment, I18n.t("order.submit.errors.delivery_address_required")
       end
     end
   end

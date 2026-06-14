@@ -18,6 +18,13 @@ module Printing
       payload = case @print_type
                 when "kitchen"
                   Escpos::KitchenTicketBuilder.new(@order, printer: @printer).build
+                when "pick_station", "station"
+                  Escpos::ProductionTicketBuilder.new(
+                    @order,
+                    printer: @printer,
+                    order_items: @order.order_items.includes(:order_item_modifiers, :menu_item, :combo),
+                    title: @print_type == "pick_station" ? I18n.t("printing.production_ticket.pick_title") : (@printer.location.presence || @printer.name)
+                  ).build
                 else
                   Escpos::ReceiptBuilder.new(@order, printer: @printer).build
                 end

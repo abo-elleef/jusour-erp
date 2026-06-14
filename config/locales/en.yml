@@ -122,6 +122,9 @@ en:
       active_hint: "Inactive printers are ignored when printing."
       default_label: "Default for this type"
       default_hint: "Used when auto-printing receipts or kitchen tickets."
+      menu_items: "Menu items"
+      menu_items_hint: "For kitchen and bar printers — only these items are printed at this station."
+      menu_items_empty: "No menu items yet. Add items under Menu first."
     empty:
       title: "No printers configured"
       description: "Add receipt and kitchen printers for your POS and KDS."
@@ -140,6 +143,9 @@ en:
       loyalty: "Loyalty: %{points} pts"
     kitchen_ticket:
       title: "KITCHEN"
+      order_notes: "Order notes:"
+    production_ticket:
+      pick_title: "PICK"
       order_notes: "Order notes:"
     test:
       title: "TEST PRINT"
@@ -251,6 +257,10 @@ en:
       notes: "Notes"
       table_number: "Table #"
       delivery_address: "Delivery address"
+    submit:
+      errors:
+        table_number_required: "Table number is required for table orders."
+        delivery_address_required: "Delivery address is required for delivery orders."
 
   user:
     roles:
