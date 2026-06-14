@@ -300,12 +300,19 @@ ExpenseCategory.where(system_managed: false).find_each do |cat|
 end
 
 
+main_branch = Location.find_or_create_by!(company: company, name: "Main Branch") do |l|
+  l.location_type = "branch"
+  l.active = true
+  l.position = 0
+end
+
 Printer.find_or_create_by!(name: "Front Counter Receipt") do |p|
   p.printer_type = "receipt"
   p.connection_type = "network"
   p.host = "192.168.1.100"
   p.port = 9100
-  p.location = "Front counter"
+  p.station = "Front counter"
+  p.location = main_branch
   p.is_default = true
 end
 
@@ -314,8 +321,13 @@ Printer.find_or_create_by!(name: "Kitchen Hot Line") do |p|
   p.connection_type = "network"
   p.host = "192.168.1.101"
   p.port = 9100
-  p.location = "Hot line"
+  p.station = "Hot line"
+  p.location = main_branch
   p.is_default = true
+end
+
+Printer.where(location_id: nil).find_each do |printer|
+  printer.update!(location: main_branch)
 end
 
 puts "Seed complete. Login: owner@restaurant.com / changeme123"

@@ -23,7 +23,9 @@ module Printing
     end
 
     def print_pick_station
-      printer = Printer.default_for("expo")
+      return if @order.location.blank?
+
+      printer = Printer.default_for("expo", location: @order.location)
       return unless printer
 
       PrintOrderService.call(
@@ -35,7 +37,9 @@ module Printing
     end
 
     def print_station_tickets
-      Printer.production_stations.includes(:menu_items).find_each do |printer|
+      return if @order.location.blank?
+
+      Printer.production_stations.for_location(@order.location).includes(:menu_items).find_each do |printer|
         matching = OrderItemRouting.matching_items(@items, printer)
         next if matching.empty?
 

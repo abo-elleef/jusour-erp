@@ -8,6 +8,11 @@ class Printer < ApplicationRecord
   CONNECTION_TYPES = %w[network usb].freeze
   PAPER_WIDTHS = %w[58mm 80mm].freeze
 
+  belongs_to :location
+  has_many :print_logs, dependent: :nullify
+  has_many :printer_menu_items, dependent: :destroy
+  has_many :menu_items, through: :printer_menu_items
+
   validates :name, presence: true
   validates :printer_type, presence: true, inclusion: { in: PRINTER_TYPES }
   validates :connection_type, presence: true, inclusion: { in: CONNECTION_TYPES }
@@ -18,12 +23,14 @@ class Printer < ApplicationRecord
 
   scope :active, -> { where(active: true) }
   scope :defaults, -> { where(is_default: true) }
-
-  has_many :print_logs, dependent: :nullify
-  has_many :printer_menu_items, dependent: :destroy
-  has_many :menu_items, through: :printer_menu_items
-
   scope :production_stations, -> { active.where(printer_type: PRODUCTION_TYPES) }
+  scope :for_location, lambda { |location|
+    if location.present?
+      where(location_id: location.id)
+    else
+      none
+    end
+  }
 
   before_validation :normalize_host, :clear_default_if_inactive
   before_save :unset_other_defaults, if: -> { is_default? && active? }
@@ -44,17 +51,19 @@ class Printer < ApplicationRecord
     end
   end
 
-  def self.default_for(type)
-    active.where(printer_type: type, is_default: true).first ||
-      active.where(printer_type: type).order(:created_at).first
+  def self.default_for(type, location:)
+    return nil if location.blank?
+
+    scope = active.for_location(location).where(printer_type: type)
+    scope.where(is_default: true).first || scope.order(:created_at).first
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name printer_type connection_type location active is_default created_at]
+    %w[name printer_type connection_type station active is_default created_at location_id]
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[menu_items]
+    %w[menu_items location]
   end
 
   def production_station?
@@ -73,7 +82,7 @@ class Printer < ApplicationRecord
   end
 
   def unset_other_defaults
-    Printer.where(printer_type: printer_type, is_default: true)
+    Printer.where(printer_type: printer_type, location_id: location_id, is_default: true)
            .where.not(id: id)
            .update_all(is_default: false)
   end

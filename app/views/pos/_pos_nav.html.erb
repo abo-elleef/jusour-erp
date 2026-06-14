@@ -1,5 +1,17 @@
 <nav class="flex flex-wrap items-center gap-2" aria-label="<%= t("nav.pos") %>">
   <%= render "shared/locale_switcher" %>
+  <% if @pos_locations.many? %>
+    <%= form_with url: pos_set_location_path, method: :patch, class: "inline-flex items-center gap-2" do %>
+      <label for="pos_location_id" class="sr-only"><%= t("pos.location.label") %></label>
+      <%= select_tag :location_id,
+            options_from_collection_for_select(@pos_locations, :id, :name, @pos_location&.id),
+            id: "pos_location_id",
+            class: "border border-gray-200 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-800 bg-white",
+            onchange: "this.form.requestSubmit()" %>
+    <% end %>
+  <% elsif @pos_location %>
+    <span class="text-sm font-semibold text-gray-600 px-2 py-1.5"><%= @pos_location.name %></span>
+  <% end %>
   <%= link_to t("nav.register"), pos_path, class: pos_nav_link_class(request.path == pos_path) %>
   <%= link_to t("nav.collect_payment"), pos_orders_path, class: pos_nav_link_class(request.path.start_with?("/pos/orders")) %>
   <%= link_to t("nav.my_shift"), pos_shift_path, class: pos_nav_link_class(request.path == pos_shift_path || request.path.start_with?("/pos/shift")) %>

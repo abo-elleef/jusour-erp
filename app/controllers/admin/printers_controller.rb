@@ -30,7 +30,7 @@ module Admin
     def new
       @printer = Printer.new(active: true, connection_type: "network", port: 9100, paper_width: "80mm")
       authorize @printer
-      load_menu_items
+      load_form_data
     end
 
     def create
@@ -40,14 +40,14 @@ module Admin
       if @printer.save
         redirect_to admin_printer_path(@printer), notice: t("flash.printer.created")
       else
-        load_menu_items
+        load_form_data
         render :new, status: :unprocessable_entity
       end
     end
 
     def edit
       authorize @printer
-      load_menu_items
+      load_form_data
     end
 
     def update
@@ -56,7 +56,7 @@ module Admin
       if @printer.update(printer_params)
         redirect_to admin_printer_path(@printer), notice: t("flash.printer.updated")
       else
-        load_menu_items
+        load_form_data
         render :edit, status: :unprocessable_entity
       end
     end
@@ -111,13 +111,15 @@ module Admin
 
     def printer_params
       params.require(:printer).permit(
-        :name, :printer_type, :connection_type, :host, :port, :location,
+        :name, :printer_type, :connection_type, :host, :port, :station, :location_id,
         :paper_width, :active, :is_default, :notes, menu_item_ids: []
       )
     end
 
-    def load_menu_items
+    def load_form_data
+      @locations = Location.active.branches.ordered
       @menu_items = MenuItem.ordered.includes(:category)
+      @printer.location ||= @locations.first if @printer.location_id.blank? && @locations.one?
     end
   end
 end

@@ -39,9 +39,16 @@
                 } %>
         </div>
         <div>
-          <%= f.label :location, t("printers.fields.location"), class: label_class %>
-          <%= f.text_field :location, class: input_class, placeholder: t("printers.form.location_placeholder") %>
+          <%= f.label :location_id, t("printers.fields.branch"), class: label_class %>
+          <%= f.collection_select :location_id, @locations, :id, :name, { prompt: t("printers.form.select_branch") },
+                class: input_class, required: true %>
         </div>
+      </div>
+
+      <div>
+        <%= f.label :station, t("printers.fields.station"), class: label_class %>
+        <%= f.text_field :station, class: input_class, placeholder: t("printers.form.station_placeholder") %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("printers.form.station_hint") %></p>
       </div>
     </div>
   </section>

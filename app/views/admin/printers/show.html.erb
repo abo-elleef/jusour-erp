@@ -56,8 +56,18 @@
         </div>
       <% end %>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 px-5 py-4">
-        <dt class="text-gray-500 font-medium"><%= t("printers.fields.location") %></dt>
-        <dd class="sm:col-span-2 text-gray-900"><%= @printer.location.presence || "—" %></dd>
+        <dt class="text-gray-500 font-medium"><%= t("printers.fields.branch") %></dt>
+        <dd class="sm:col-span-2 text-gray-900">
+          <% if @printer.location %>
+            <%= link_to @printer.location.name, admin_location_path(@printer.location), class: "font-semibold text-amber-700 hover:text-amber-800" %>
+          <% else %>
+            —
+          <% end %>
+        </dd>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 px-5 py-4">
+        <dt class="text-gray-500 font-medium"><%= t("printers.fields.station") %></dt>
+        <dd class="sm:col-span-2 text-gray-900"><%= @printer.station.presence || "—" %></dd>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 px-5 py-4">
         <dt class="text-gray-500 font-medium"><%= t("printers.fields.paper_width") %></dt>

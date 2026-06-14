@@ -17,6 +17,7 @@ Rails.application.routes.draw do
   patch "pos/apply_coupon", to: "pos#apply_coupon"
   patch "pos/manager_discount", to: "pos#manager_discount"
   patch "pos/redeem_points", to: "pos#redeem_points"
+  patch "pos/location", to: "pos#set_location", as: :pos_set_location
   patch "pos/submit", to: "pos#submit"
   patch "pos/attach_customer", to: "pos#attach_customer"
   patch "pos/fulfillment", to: "pos#update_fulfillment", as: :pos_update_fulfillment

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_28_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_29_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -662,7 +662,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_28_000000) do
     t.string "connection_type", default: "network", null: false
     t.string "host"
     t.integer "port", default: 9100
-    t.string "location"
+    t.string "station"
     t.string "paper_width", default: "80mm"
     t.boolean "active", default: true, null: false
     t.boolean "is_default", default: false, null: false
@@ -670,8 +670,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_28_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.uuid "location_id"
     t.index ["active"], name: "index_printers_on_active"
     t.index ["company_id"], name: "index_printers_on_company_id"
+    t.index ["location_id"], name: "index_printers_on_location_id"
     t.index ["name"], name: "index_printers_on_name"
     t.index ["printer_type", "is_default"], name: "index_printers_on_printer_type_and_is_default"
   end
@@ -1056,6 +1058,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_28_000000) do
   add_foreign_key "printer_menu_items", "menu_items"
   add_foreign_key "printer_menu_items", "printers"
   add_foreign_key "printers", "companies"
+  add_foreign_key "printers", "locations"
   add_foreign_key "receipt_logs", "orders"
   add_foreign_key "recipes", "ingredients"
   add_foreign_key "recipes", "menu_items"

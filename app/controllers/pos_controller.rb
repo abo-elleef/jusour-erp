@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
 class PosController < ApplicationController
+  include PosLocationScoped
+
   layout "pos"
 
   before_action :require_cashier!
-  before_action :set_order, except: %i[new_order submit]
+  before_action :set_order, except: %i[new_order submit set_location]
   before_action :no_cache, only: :index
 
   def index
@@ -55,6 +57,20 @@ class PosController < ApplicationController
     redirect_to pos_path, notice: t("flash.pos.points_redeemed")
   rescue Loyalty::RedeemPointsService::InsufficientPoints => e
     redirect_to pos_path, alert: e.message
+  end
+
+  def set_location
+    location = @pos_locations.find { |loc| loc.id == params[:location_id] }
+    unless location
+      redirect_to pos_path, alert: t("flash.pos.invalid_location"), status: :see_other
+      return
+    end
+
+    session[:pos_location_id] = location.id
+    if (order = current_draft_order) && order.location_id != location.id
+      session.delete(:current_order_id)
+    end
+    redirect_to pos_path, notice: t("flash.pos.location_changed", name: location.name), status: :see_other
   end
 
   def submit
@@ -122,6 +138,7 @@ class PosController < ApplicationController
     new_order = Orders::CreateService.call(
       user: current_user,
       customer: @order.customer,
+      location: @order.location,
       order_type: @order.order_type,
       table_number: @order.table_number,
       delivery_address: @order.delivery_address
@@ -164,7 +181,7 @@ class PosController < ApplicationController
   end
 
   def assign_new_draft_order!
-    order = Orders::CreateService.call(user: current_user)
+    order = Orders::CreateService.call(user: current_user, location: current_pos_location)
     session[:current_order_id] = order.id
     order
   end

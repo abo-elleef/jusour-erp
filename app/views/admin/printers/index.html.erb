@@ -72,7 +72,8 @@
               <th class="p-3 ps-5"><%= t("printers.fields.name") %></th>
               <th class="p-3"><%= t("printers.fields.type") %></th>
               <th class="p-3 hidden md:table-cell"><%= t("printers.fields.connection") %></th>
-              <th class="p-3 hidden lg:table-cell"><%= t("printers.fields.location") %></th>
+              <th class="p-3 hidden lg:table-cell"><%= t("printers.fields.branch") %></th>
+              <th class="p-3 hidden xl:table-cell"><%= t("printers.fields.station") %></th>
               <th class="p-3"><%= t("printers.fields.status") %></th>
               <th class="p-3 pe-5 text-end"><%= t("printers.fields.actions") %></th>
             </tr>
@@ -91,7 +92,8 @@
                 </td>
                 <td class="p-3 text-gray-700"><%= t("printers.types.#{printer.printer_type}") %></td>
                 <td class="p-3 hidden md:table-cell text-gray-600 font-mono text-xs"><%= printer.connection_summary %></td>
-                <td class="p-3 hidden lg:table-cell text-gray-600"><%= printer.location.presence || "—" %></td>
+                <td class="p-3 hidden lg:table-cell text-gray-600"><%= printer.location&.name || "—" %></td>
+                <td class="p-3 hidden xl:table-cell text-gray-600"><%= printer.station.presence || "—" %></td>
                 <td class="p-3">
                   <% if printer.active? %>
                     <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-200">

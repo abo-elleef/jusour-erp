@@ -5,9 +5,11 @@ require "rails_helper"
 RSpec.describe Printing::PrintReceiptService do
   let(:company) { create(:company) }
   let(:user) { create(:user, company: company) }
+  let(:branch) { create(:location, company: company) }
   let!(:printer) do
     Printer.create!(
       company: company,
+      location: branch,
       name: "Receipt",
       printer_type: "receipt",
       connection_type: "network",
@@ -26,13 +28,13 @@ RSpec.describe Printing::PrintReceiptService do
       Setting.set("print_routing", Printing::Config::ROUTING_CLIENT)
     end
 
-    it "creates a pending print log and broadcasts to POS" do
-      order = create(:order, user: user, company: company, status: "completed",
+    it "creates a pending print log and broadcasts to the branch POS stream" do
+      order = create(:order, user: user, company: company, location: branch, status: "completed",
         subtotal_cents: 1000, tax_cents: 0, total_cents: 1000)
       create(:order_item, order: order, unit_price_cents: 1000)
 
       expect(Turbo::StreamsChannel).to receive(:broadcast_append_to).once.with(
-        "pos_prints_#{company.id}",
+        "pos_prints_#{company.id}_#{branch.id}",
         hash_including(target: "client-print-queue")
       )
 
@@ -50,7 +52,7 @@ RSpec.describe Printing::PrintReceiptService do
     end
 
     it "sends directly via network driver" do
-      order = create(:order, user: user, company: company, status: "completed",
+      order = create(:order, user: user, company: company, location: branch, status: "completed",
         subtotal_cents: 1000, tax_cents: 0, total_cents: 1000)
       create(:order_item, order: order, unit_price_cents: 1000)
 

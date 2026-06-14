@@ -44,7 +44,12 @@
     <%= render "shared/toasts" %>
     <span class="sr-only" data-connectivity-target="syncStatus"></span>
     <% if current_user&.company_id && Printing::Config.client_routing? %>
-      <%= turbo_stream_from "pos_prints_#{current_user.company_id}" %>
+      <% pos_loc_id = session[:pos_location_id] %>
+      <% if pos_loc_id.present? %>
+        <%= turbo_stream_from "pos_prints_#{current_user.company_id}_#{pos_loc_id}" %>
+      <% else %>
+        <%= turbo_stream_from "pos_prints_#{current_user.company_id}" %>
+      <% end %>
       <div id="client-print-queue"
            data-controller="client-printer"
            data-client-printer-config-value="<%= print_agent_config_json %>"

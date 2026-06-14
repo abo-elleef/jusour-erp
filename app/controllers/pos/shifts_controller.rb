@@ -2,6 +2,8 @@
 
 module Pos
   class ShiftsController < ApplicationController
+    include PosLocationScoped
+
     layout "pos"
 
     before_action :require_pos_access!

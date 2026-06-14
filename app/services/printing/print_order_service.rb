@@ -14,7 +14,7 @@ module Printing
     end
 
     def call
-      printer = @printer || Printer.default_for(default_printer_type)
+      printer = @printer || Printer.default_for(default_printer_type, location: @order.location)
       return log_skipped(nil, "no_active_#{@print_type}_printer") unless printer
 
       if printer.usb?
@@ -71,7 +71,7 @@ module Printing
       if @print_type == "pick_station"
         I18n.t("printing.production_ticket.pick_title")
       else
-        printer.location.presence || printer.name
+        printer.station.presence || printer.name
       end
     end
 
@@ -96,7 +96,11 @@ module Printing
     end
 
     def pos_print_stream_name
-      "pos_prints_#{@order.company_id}"
+      if @order.location_id.present?
+        "pos_prints_#{@order.company_id}_#{@order.location_id}"
+      else
+        "pos_prints_#{@order.company_id}"
+      end
     end
 
     def log_success(printer)

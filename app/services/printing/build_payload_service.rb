@@ -23,7 +23,7 @@ module Printing
                     @order,
                     printer: @printer,
                     order_items: @order.order_items.includes(:order_item_modifiers, :menu_item, :combo),
-                    title: @print_type == "pick_station" ? I18n.t("printing.production_ticket.pick_title") : (@printer.location.presence || @printer.name)
+                    title: @print_type == "pick_station" ? I18n.t("printing.production_ticket.pick_title") : (@printer.station.presence || @printer.name)
                   ).build
                 else
                   Escpos::ReceiptBuilder.new(@order, printer: @printer).build
