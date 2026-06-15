@@ -8,9 +8,11 @@
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("admin.locations.menu_items_title") %></h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("admin.locations.menu_items_description") %></p>
     </div>
-    <%= link_to t("admin.locations.bulk_enable_all"), bulk_update_admin_location_menu_items_path(@location),
-          data: { turbo_method: :post, turbo_params: { available: "true", menu_item_ids: MenuItem.pluck(:id) } },
-          class: "inline-flex items-center bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors" %>
+    <%= form_with url: bulk_update_admin_location_menu_items_path(@location), method: :post, class: "inline-flex" do %>
+      <%= hidden_field_tag :available, true %>
+      <%= button_tag t("admin.locations.bulk_enable_all"), type: "submit",
+            class: "inline-flex items-center bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors" %>
+    <% end %>
   </div>
 
   <% @categories.each do |category| %>

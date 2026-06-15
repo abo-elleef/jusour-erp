@@ -87,5 +87,16 @@ RSpec.describe "Admin::Locations::MenuItems", type: :request do
       expect(LocationMenuItem.where(location: location, available: true).count).to eq(2)
       expect(response).to redirect_to(admin_location_menu_items_path(location))
     end
+
+    it "enables all company menu items when no ids are submitted" do
+      item2 = create(:menu_item, company: company, category: category)
+
+      post bulk_update_admin_location_menu_items_path(location), params: {
+        available: true
+      }
+
+      expect(LocationMenuItem.where(location: location, available: true).pluck(:menu_item_id))
+        .to contain_exactly(menu_item.id, item2.id)
+    end
   end
 end

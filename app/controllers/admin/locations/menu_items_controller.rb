@@ -52,10 +52,11 @@ module Admin
       # POST /admin/locations/:location_id/menu_items/bulk_update
       def bulk_update
         authorize @location, :update?, policy_class: LocationPolicy
-        item_ids = params[:menu_item_ids] || []
-        available = params[:available] == "true"
+        available = ActiveModel::Type::Boolean.new.cast(params[:available])
+        item_ids = Array(params[:menu_item_ids]).compact_blank
+        scope = item_ids.any? ? MenuItem.where(id: item_ids) : MenuItem.all
 
-        MenuItem.where(id: item_ids).find_each do |menu_item|
+        scope.find_each do |menu_item|
           lmi = @location.location_menu_items.find_or_initialize_by(menu_item: menu_item) do |record|
             record.available = false
           end
