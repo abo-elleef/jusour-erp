@@ -29,23 +29,22 @@ class MenuItem < ApplicationRecord
   scope :available_at_location, lambda { |location|
     return none if location.blank?
 
-    available.where(
-      <<~SQL.squish,
-        NOT EXISTS (
-          SELECT 1 FROM location_menu_items
-          WHERE location_menu_items.menu_item_id = menu_items.id
-            AND location_menu_items.location_id = :location_id
-            AND location_menu_items.available = FALSE
-        )
-      SQL
-      location_id: location.id
-    )
+    available
+      .joins(:location_menu_items)
+      .where(location_menu_items: { location_id: location.id, available: true })
+      .distinct
   }
 
   def available_at_location?(location)
     return available? if location.blank?
 
-    available? && self.class.available_at_location(location).exists?(id: id)
+    available? && enabled_at_branch?(location)
+  end
+
+  def enabled_at_branch?(location)
+    return false if location.blank?
+
+    location_menu_items.any? { |row| row.location_id == location.id && row.available? }
   end
 
   def price_cents_at(location)

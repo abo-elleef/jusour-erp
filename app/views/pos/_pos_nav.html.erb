@@ -1,7 +1,9 @@
 <nav class="flex flex-wrap items-center gap-2" aria-label="<%= t("nav.pos") %>">
   <%= render "shared/locale_switcher" %>
   <% if @pos_locations.many? %>
-    <%= form_with url: pos_set_location_path, method: :patch, class: "inline-flex items-center gap-2" do %>
+    <%= form_with url: pos_set_location_path, method: :patch,
+          class: "inline-flex items-center gap-2",
+          data: { turbo_frame: "_top" } do %>
       <label for="pos_location_id" class="sr-only"><%= t("pos.location.label") %></label>
       <%= select_tag :location_id,
             options_from_collection_for_select(@pos_locations, :id, :name, @pos_location&.id),

@@ -1134,6 +1134,7 @@ en:
     title: "Saqr POS"
     location:
       label: "Branch"
+      serving: "Menu for %{name}"
     menu:
       select_branch: "Select a branch above to load the menu."
       empty_at_branch: "No menu items are available at %{branch}."
@@ -1361,6 +1362,7 @@ en:
       manage_stock: "Manage Stock"
       menu_items_title: "Location Menu"
       menu_items_description: "Control which items are available at this location."
+      menu_item_globally_inactive: "Inactive company-wide"
       ingredients_title: "Location Stock"
       ingredients_description: "Assign ingredients to this location and manage stock levels here."
       assign_ingredient: "Assign ingredient"

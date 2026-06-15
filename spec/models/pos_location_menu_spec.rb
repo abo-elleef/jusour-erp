@@ -12,20 +12,21 @@ RSpec.describe "POS location menu" do
   before { Current.company = company }
 
   describe MenuItem do
-    it "includes items without a location record" do
-      expect(MenuItem.available_at_location(branch)).to contain_exactly(burger, fries)
+    it "returns no items when the branch menu is not configured yet" do
+      expect(MenuItem.available_at_location(branch)).to be_empty
     end
 
-    it "excludes items explicitly disabled at the branch" do
-      create(:location_menu_item, location: branch, menu_item: fries, available: false)
+    it "shows only explicitly enabled items for the branch" do
+      create(:location_menu_item, location: branch, menu_item: burger, available: true)
 
       expect(MenuItem.available_at_location(branch)).to contain_exactly(burger)
     end
 
-    it "includes items explicitly enabled at the branch" do
+    it "excludes items explicitly disabled at the branch" do
       create(:location_menu_item, location: branch, menu_item: burger, available: true)
+      create(:location_menu_item, location: branch, menu_item: fries, available: false)
 
-      expect(MenuItem.available_at_location(branch)).to contain_exactly(burger, fries)
+      expect(MenuItem.available_at_location(branch)).to contain_exactly(burger)
     end
 
     it "uses branch price override when set" do
@@ -45,10 +46,14 @@ RSpec.describe "POS location menu" do
     end
 
     it "is available when all items are available at the branch" do
+      create(:location_menu_item, location: branch, menu_item: burger, available: true)
+      create(:location_menu_item, location: branch, menu_item: fries, available: true)
+
       expect(Combo.available_at_location(branch)).to contain_exactly(combo)
     end
 
     it "is hidden when any item is disabled at the branch" do
+      create(:location_menu_item, location: branch, menu_item: burger, available: true)
       create(:location_menu_item, location: branch, menu_item: fries, available: false)
 
       expect(Combo.available_at_location(branch)).to be_empty

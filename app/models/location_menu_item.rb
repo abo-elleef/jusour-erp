@@ -4,6 +4,8 @@ class LocationMenuItem < ApplicationRecord
   belongs_to :location
   belongs_to :menu_item
 
+  attribute :available, :boolean, default: false
+
   monetize :price_override_cents, allow_nil: true
 
   validates :menu_item_id, uniqueness: { scope: :location_id }

@@ -22,10 +22,13 @@
       <ul class="divide-y divide-gray-100">
         <% category.menu_items.ordered.each do |menu_item| %>
           <% lmi = @location_menu_items_map[menu_item.id] %>
-          <% available = lmi.nil? || lmi.available? %>
+          <% branch_enabled = lmi&.available? || false %>
           <li class="px-5 py-3 flex items-center gap-4">
             <div class="flex-1 min-w-0">
-              <span class="font-medium text-gray-900 <%= "opacity-50" unless available %>"><%= menu_item.name %></span>
+              <span class="font-medium text-gray-900 <%= "opacity-50" unless branch_enabled %>"><%= menu_item.name %></span>
+              <% unless menu_item.available? %>
+                <span class="text-xs text-red-600 font-medium ml-2"><%= t("admin.locations.menu_item_globally_inactive") %></span>
+              <% end %>
               <% if lmi&.price_override_cents.present? %>
                 <span class="text-xs text-amber-700 font-semibold ml-2"><%= humanized_money_with_symbol(lmi.price_override) %></span>
               <% else %>
@@ -35,7 +38,8 @@
             <%= form_with url: admin_location_menu_item_path(@location, menu_item),
                   method: :patch,
                   data: { controller: "auto-submit" } do |f| %>
-              <%= fields_for :location_menu_item, lmi || LocationMenuItem.new(available: available) do |lmi_form| %>
+              <%= fields_for :location_menu_item,
+                    (lmi || @location.location_menu_items.build(menu_item: menu_item, available: false)) do |lmi_form| %>
                 <label class="relative inline-flex items-center cursor-pointer">
                   <%= lmi_form.check_box :available,
                         class: "sr-only peer",

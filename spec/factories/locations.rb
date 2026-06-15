@@ -46,6 +46,6 @@ FactoryBot.define do
   factory :location_menu_item do
     location
     menu_item
-    available { true }
+    available { false }
   end
 end

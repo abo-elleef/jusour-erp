@@ -5,47 +5,9 @@
       <%= render "pos/pos_nav" %>
     </header>
 
-    <div class="flex gap-2 px-4 py-3 border-b border-gray-200 bg-white overflow-x-auto shrink-0">
-      <button type="button" class="<%= pos_category_pill_class(active: true) %>" data-action="pos#filterCategory" data-category="all"><%= t("actions.all") %></button>
-      <% @categories.each do |cat| %>
-        <button type="button" class="<%= pos_category_pill_class %>" data-action="pos#filterCategory" data-category="<%= cat.id %>"><%= cat.name %></button>
-      <% end %>
-      <button type="button" class="<%= pos_category_pill_class %>" data-action="pos#filterCategory" data-category="combos"><%= t("pos.categories.combos") %></button>
-    </div>
-
-    <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4 overflow-y-auto flex-1 touch-manipulation" id="menu-grid">
-      <% if @pos_location.blank? %>
-        <p class="col-span-full text-center text-gray-500 py-16 text-sm"><%= t("pos.menu.select_branch") %></p>
-      <% elsif @menu_items.empty? && @combos.empty? %>
-        <p class="col-span-full text-center text-gray-500 py-16 text-sm"><%= t("pos.menu.empty_at_branch", branch: @pos_location.name) %></p>
-      <% end %>
-      <% @menu_items.each do |item| %>
-        <div class="menu-card rounded-2xl border border-gray-200 bg-white p-3 hover:border-amber-300 transition-colors flex flex-col" data-category="<%= item.category_id %>">
-          <% if item.image.attached? %>
-            <%= image_tag item.image, class: "w-full h-20 object-cover rounded-xl mb-2" %>
-          <% else %>
-            <div class="w-full h-20 bg-gray-100 rounded-xl mb-2 flex items-center justify-center text-gray-400 text-xs font-medium"><%= item.category.name %></div>
-          <% end %>
-          <p class="font-semibold text-sm leading-tight flex-1 text-gray-900"><%= item.name %></p>
-          <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(item.price_cents_at(@pos_location)) %></p>
-          <% if item.modifier_groups.any? %>
-            <%= link_to t("actions.customize"), pos_modifier_form_path(menu_item_id: item.id),
-                  class: "mt-2 block text-center #{pos_btn_accent_class}",
-                  data: { turbo_frame: "modifier_modal" } %>
-          <% else %>
-            <%= button_to t("actions.add"), pos_order_items_path(menu_item_id: item.id), method: :post, form: pos_order_item_form_data, class: "mt-2 #{pos_btn_accent_class}" %>
-          <% end %>
-        </div>
-      <% end %>
-      <% @combos.each do |combo| %>
-        <div class="menu-card rounded-2xl border border-amber-200 bg-amber-50/50 p-3 hover:border-amber-400 transition-colors flex flex-col" data-category="combos">
-          <div class="w-full h-20 bg-amber-100/80 rounded-xl mb-2 flex items-center justify-center text-amber-800 font-bold text-xs tracking-wide uppercase"><%= t("actions.combo") %></div>
-          <p class="font-semibold text-sm flex-1 text-gray-900"><%= combo.name %></p>
-          <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(combo.price_cents) %></p>
-          <%= button_to t("actions.add"), pos_order_items_path(combo_id: combo.id), method: :post, form: pos_order_item_form_data, class: "mt-2 #{pos_btn_accent_class}" %>
-        </div>
-      <% end %>
-    </div>
+    <%= turbo_frame_tag "pos_menu", class: "flex flex-col flex-1 min-h-0" do %>
+      <%= render "pos/menu_panel" %>
+    <% end %>
   </div>
 
   <aside class="fixed bottom-0 left-0 right-0 max-h-[45vh] lg:static lg:max-h-none lg:w-2/5 flex flex-col bg-white shrink-0 border-t lg:border-t-0 lg:border-s border-gray-200 z-40">

@@ -38,9 +38,10 @@ module Admin
       def toggle
         authorize @location, :update?, policy_class: LocationPolicy
         menu_item = MenuItem.find(params[:menu_item_id])
-        lmi = @location.location_menu_items.find_or_initialize_by(menu_item: menu_item)
-        lmi.available = !lmi.available?
-        lmi.save!
+        lmi = @location.location_menu_items.find_or_initialize_by(menu_item: menu_item) do |record|
+          record.available = false
+        end
+        lmi.update!(available: !lmi.available?)
         respond_to do |format|
           format.html { redirect_to admin_location_menu_items_path(@location) }
           format.turbo_stream
@@ -55,9 +56,10 @@ module Admin
         available = params[:available] == "true"
 
         MenuItem.where(id: item_ids).find_each do |menu_item|
-          lmi = @location.location_menu_items.find_or_initialize_by(menu_item: menu_item)
-          lmi.available = available
-          lmi.save!
+          lmi = @location.location_menu_items.find_or_initialize_by(menu_item: menu_item) do |record|
+            record.available = false
+          end
+          lmi.update!(available: available)
         end
 
         redirect_to admin_location_menu_items_path(@location), notice: t("flash.location_menu_item.bulk_updated")
@@ -70,9 +72,9 @@ module Admin
       end
 
       def set_location_menu_item
-        @location_menu_item = @location.location_menu_items.find_or_initialize_by(
-          menu_item_id: params[:id]
-        )
+        @location_menu_item = @location.location_menu_items.find_or_initialize_by(menu_item_id: params[:id]) do |record|
+          record.available = false
+        end
       end
 
       def location_menu_item_params

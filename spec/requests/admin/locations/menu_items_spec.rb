@@ -43,6 +43,26 @@ RSpec.describe "Admin::Locations::MenuItems", type: :request do
           location_menu_item: { available: false }
         }
       }.to change(LocationMenuItem, :count).by(1)
+
+      expect(LocationMenuItem.find_by(location: location, menu_item: menu_item).available).to be false
+    end
+
+    it "enabling a menu item makes it available in POS for that branch" do
+      patch admin_location_menu_item_path(location, menu_item), params: {
+        location_menu_item: { available: true }
+      }
+
+      expect(MenuItem.available_at_location(location)).to contain_exactly(menu_item)
+    end
+
+    it "disabling a menu item removes it from POS for that branch" do
+      create(:location_menu_item, location: location, menu_item: menu_item, available: true)
+
+      patch admin_location_menu_item_path(location, menu_item), params: {
+        location_menu_item: { available: false }
+      }
+
+      expect(MenuItem.available_at_location(location)).to be_empty
     end
 
     it "sets a price override for the location" do

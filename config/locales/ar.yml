@@ -1139,6 +1139,7 @@ ar:
     title: "صقر POS"
     location:
       label: "الفرع"
+      serving: "قائمة %{name}"
     menu:
       select_branch: "اختر فرعًا أعلاه لعرض القائمة."
       empty_at_branch: "لا توجد عناصر قائمة متاحة في %{branch}."
@@ -1370,6 +1371,7 @@ ar:
       manage_stock: "إدارة المخزون"
       menu_items_title: "قائمة الموقع"
       menu_items_description: "التحكم في العناصر المتاحة في هذا الموقع."
+      menu_item_globally_inactive: "غير نشط على مستوى الشركة"
       ingredients_title: "مخزون الموقع"
       ingredients_description: "عيّن المكونات لهذا الموقع وأدر مستويات المخزون هنا."
       assign_ingredient: "تعيين مكون"
