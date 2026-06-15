@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_29_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_06_30_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -736,11 +736,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "location_id"
+    t.uuid "stock_transfer_id"
     t.index ["adjustment_type"], name: "index_stock_adjustments_on_adjustment_type"
     t.index ["created_at"], name: "index_stock_adjustments_on_created_at"
     t.index ["ingredient_id"], name: "index_stock_adjustments_on_ingredient_id"
     t.index ["location_id"], name: "index_stock_adjustments_on_location_id"
     t.index ["stock_batch_id"], name: "index_stock_adjustments_on_stock_batch_id"
+    t.index ["stock_transfer_id"], name: "index_stock_adjustments_on_stock_transfer_id"
     t.index ["user_id"], name: "index_stock_adjustments_on_user_id"
   end
 
@@ -791,6 +793,44 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_000000) do
     t.index ["company_id"], name: "index_stock_takes_on_company_id"
     t.index ["location_id"], name: "index_stock_takes_on_location_id"
     t.index ["user_id"], name: "index_stock_takes_on_user_id"
+  end
+
+  create_table "stock_transfer_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "stock_transfer_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.decimal "quantity_requested", precision: 10, scale: 3, default: "0.0", null: false
+    t.decimal "quantity_sent", precision: 10, scale: 3
+    t.decimal "quantity_received", precision: 10, scale: 3
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_stock_transfer_lines_on_ingredient_id"
+    t.index ["stock_transfer_id", "ingredient_id"], name: "idx_on_stock_transfer_id_ingredient_id_597e5cba74", unique: true
+    t.index ["stock_transfer_id"], name: "index_stock_transfer_lines_on_stock_transfer_id"
+  end
+
+  create_table "stock_transfers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "from_location_id", null: false
+    t.uuid "to_location_id", null: false
+    t.uuid "requested_by_id", null: false
+    t.uuid "sent_by_id"
+    t.uuid "received_by_id"
+    t.string "transfer_number", null: false
+    t.string "status", default: "requested", null: false
+    t.text "notes"
+    t.datetime "requested_at", null: false
+    t.datetime "sent_at"
+    t.datetime "received_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "transfer_number"], name: "index_stock_transfers_on_company_id_and_transfer_number", unique: true
+    t.index ["company_id"], name: "index_stock_transfers_on_company_id"
+    t.index ["from_location_id"], name: "index_stock_transfers_on_from_location_id"
+    t.index ["received_by_id"], name: "index_stock_transfers_on_received_by_id"
+    t.index ["requested_by_id"], name: "index_stock_transfers_on_requested_by_id"
+    t.index ["sent_by_id"], name: "index_stock_transfers_on_sent_by_id"
+    t.index ["status"], name: "index_stock_transfers_on_status"
+    t.index ["to_location_id"], name: "index_stock_transfers_on_to_location_id"
   end
 
   create_table "supplier_ingredients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1067,6 +1107,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_000000) do
   add_foreign_key "stock_adjustments", "ingredients"
   add_foreign_key "stock_adjustments", "locations"
   add_foreign_key "stock_adjustments", "stock_batches"
+  add_foreign_key "stock_adjustments", "stock_transfers"
   add_foreign_key "stock_adjustments", "users"
   add_foreign_key "stock_batches", "ingredients"
   add_foreign_key "stock_batches", "locations"
@@ -1077,6 +1118,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_29_000000) do
   add_foreign_key "stock_takes", "companies"
   add_foreign_key "stock_takes", "locations"
   add_foreign_key "stock_takes", "users"
+  add_foreign_key "stock_transfer_lines", "ingredients"
+  add_foreign_key "stock_transfer_lines", "stock_transfers"
+  add_foreign_key "stock_transfers", "companies"
+  add_foreign_key "stock_transfers", "locations", column: "from_location_id"
+  add_foreign_key "stock_transfers", "locations", column: "to_location_id"
+  add_foreign_key "stock_transfers", "users", column: "received_by_id"
+  add_foreign_key "stock_transfers", "users", column: "requested_by_id"
+  add_foreign_key "stock_transfers", "users", column: "sent_by_id"
   add_foreign_key "supplier_ingredients", "ingredients"
   add_foreign_key "supplier_ingredients", "suppliers"
   add_foreign_key "supplier_price_histories", "ingredients"

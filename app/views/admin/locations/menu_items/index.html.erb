@@ -32,15 +32,17 @@
                 <span class="text-xs text-gray-500 ml-2"><%= humanized_money_with_symbol(menu_item.base_price) %></span>
               <% end %>
             </div>
-            <%= form_with url: admin_location_menu_item_path(@location, menu_item), method: :patch, local: false do |f| %>
-              <%= f.hidden_field :location_menu_item, value: nil %>
-              <label class="relative inline-flex items-center cursor-pointer">
-                <%= f.check_box :available,
-                      { checked: available, class: "sr-only peer",
-                        data: { action: "change->toggle#submit" },
-                        name: "location_menu_item[available]" } %>
-                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
-              </label>
+            <%= form_with url: admin_location_menu_item_path(@location, menu_item),
+                  method: :patch,
+                  data: { controller: "auto-submit" } do |f| %>
+              <%= fields_for :location_menu_item, lmi || LocationMenuItem.new(available: available) do |lmi_form| %>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <%= lmi_form.check_box :available,
+                        class: "sr-only peer",
+                        data: { action: "change->auto-submit#submit" } %>
+                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+                </label>
+              <% end %>
             <% end %>
           </li>
         <% end %>

@@ -5,12 +5,14 @@ class StockAdjustment < ApplicationRecord
   belongs_to :user
   belongs_to :location, optional: true
   belongs_to :stock_batch, optional: true
+  belongs_to :stock_transfer, optional: true
 
   ADJUSTMENT_TYPES = %w[
     delivery vendor_invoice manual_add manual_remove
     waste_spoilage waste_prep waste_overproduction
     cycle_count_correction consumption
     production_consumption production_output
+    transfer_out transfer_in
   ].freeze
 
   validates :quantity_delta, numericality: true

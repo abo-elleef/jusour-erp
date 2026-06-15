@@ -1,0 +1,170 @@
+<%= render "admin/inventory/tools_nav" %>
+
+<% status_label, status_class = stock_transfer_status_badge(@stock_transfer.status) %>
+
+<div class="max-w-5xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @stock_transfer.transfer_number %></h1>
+        <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= status_class %>"><%= status_label %></span>
+      </div>
+      <p class="text-gray-600 text-sm mt-1">
+        <%= t("inventory.stock_transfers.from_location") %>
+        <%= link_to @stock_transfer.from_location.name, admin_location_path(@stock_transfer.from_location), class: "font-medium text-amber-700 hover:text-amber-800" %>
+        →
+        <%= t("inventory.stock_transfers.to_location") %>
+        <%= link_to @stock_transfer.to_location.name, admin_location_path(@stock_transfer.to_location), class: "font-medium text-amber-700 hover:text-amber-800" %>
+      </p>
+    </div>
+    <% if @stock_transfer.requested? %>
+      <%= link_to t("actions.edit"), edit_admin_inventory_stock_transfer_path(@stock_transfer),
+            class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" %>
+      <%= button_to t("inventory.stock_transfers.cancel"),
+            cancel_admin_inventory_stock_transfer_path(@stock_transfer),
+            method: :post,
+            form: { data: { turbo_confirm: t("inventory.stock_transfers.cancel_confirm") } },
+            class: "inline-flex text-sm font-semibold text-red-700 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors" %>
+    <% end %>
+  </div>
+
+  <% if @stock_transfer.notes.present? %>
+    <div class="rounded-2xl border border-gray-200 bg-white px-5 py-4 mb-6 text-sm text-gray-700">
+      <%= simple_format(@stock_transfer.notes) %>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.stock_transfers.requested_at") %></p>
+      <p class="text-sm font-semibold mt-1 text-gray-900"><%= l(@stock_transfer.requested_at, format: :short) %></p>
+      <p class="text-xs text-gray-500 mt-0.5"><%= @stock_transfer.requested_by.name %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.stock_transfers.sent_at") %></p>
+      <% if @stock_transfer.sent_at %>
+        <p class="text-sm font-semibold mt-1 text-gray-900"><%= l(@stock_transfer.sent_at, format: :short) %></p>
+        <p class="text-xs text-gray-500 mt-0.5"><%= @stock_transfer.sent_by&.name %></p>
+      <% else %>
+        <p class="text-sm text-gray-400 mt-1">—</p>
+      <% end %>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.stock_transfers.received_at") %></p>
+      <% if @stock_transfer.received_at %>
+        <p class="text-sm font-semibold mt-1 text-gray-900"><%= l(@stock_transfer.received_at, format: :short) %></p>
+        <p class="text-xs text-gray-500 mt-0.5"><%= @stock_transfer.received_by&.name %></p>
+      <% else %>
+        <p class="text-sm text-gray-400 mt-1">—</p>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @stock_transfer.requested? %>
+    <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mb-6">
+      <div class="px-5 py-4 border-b border-amber-100">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.send_heading") %></h2>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_transfers.send_hint") %></p>
+      </div>
+      <%= form_with url: send_transfer_admin_inventory_stock_transfer_path(@stock_transfer), method: :post, class: "p-0" do %>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="border-b border-amber-100 bg-white/60 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <tr>
+                <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.available_at_source") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent") %></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-amber-100/80">
+              <% @lines.each do |line| %>
+                <tr>
+                  <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.quantity_requested, precision: 3) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.available_at_source, precision: 3) %></td>
+                  <td class="p-3 text-end">
+                    <%= number_field_tag "lines[#{line.id}]",
+                          line.quantity_requested,
+                          step: 0.001, min: 0,
+                          class: "#{pos_input_class} w-28 text-end ms-auto" %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <div class="px-5 py-4 border-t border-amber-100">
+          <%= submit_tag t("inventory.stock_transfers.mark_sent"), class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold" %>
+        </div>
+      <% end %>
+    </section>
+  <% elsif @stock_transfer.sent? %>
+    <section class="rounded-2xl border border-emerald-200 bg-emerald-50/40 overflow-hidden mb-6">
+      <div class="px-5 py-4 border-b border-emerald-100">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.confirm_heading") %></h2>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_transfers.confirm_hint") %></p>
+      </div>
+      <%= form_with url: confirm_receipt_admin_inventory_stock_transfer_path(@stock_transfer), method: :post, class: "p-0" do %>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="border-b border-emerald-100 bg-white/60 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <tr>
+                <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_received") %></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-emerald-100/80">
+              <% @lines.each do |line| %>
+                <tr>
+                  <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.quantity_requested, precision: 3) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.quantity_sent, precision: 3) %></td>
+                  <td class="p-3 text-end">
+                    <%= number_field_tag "lines[#{line.id}]",
+                          line.quantity_sent,
+                          step: 0.001, min: 0,
+                          class: "#{pos_input_class} w-28 text-end ms-auto" %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <div class="px-5 py-4 border-t border-emerald-100">
+          <%= submit_tag t("inventory.stock_transfers.confirm_receipt"), class: "bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold" %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.line_items") %></h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
+            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
+            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent") %></th>
+            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_received") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @lines.each do |line| %>
+            <tr>
+              <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
+              <td class="p-3 text-end tabular-nums"><%= number_with_precision(line.quantity_requested, precision: 3) %></td>
+              <td class="p-3 text-end tabular-nums text-gray-600"><%= line.quantity_sent ? number_with_precision(line.quantity_sent, precision: 3) : "—" %></td>
+              <td class="p-3 text-end tabular-nums text-gray-600"><%= line.quantity_received ? number_with_precision(line.quantity_received, precision: 3) : "—" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

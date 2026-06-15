@@ -11,12 +11,9 @@ class PosController < ApplicationController
 
   def index
     authorize @order, :show?
+    sync_order_location!
     @order.recalculate_totals!
-    @categories = Category.active.ordered
-    @menu_items = MenuItem.available
-      .includes(:modifier_groups, :category, image_attachment: :blob)
-      .order(:position, :name)
-    @combos = Combo.active.order(:name)
+    load_pos_menu
     @open_orders = Order.open_drafts.where(user: current_user).order(created_at: :desc).limit(10)
   end
 
@@ -184,6 +181,28 @@ class PosController < ApplicationController
     order = Orders::CreateService.call(user: current_user, location: current_pos_location)
     session[:current_order_id] = order.id
     order
+  end
+
+  def sync_order_location!
+    return if @pos_location.blank? || @order.location_id == @pos_location.id
+
+    @order.update!(location: @pos_location)
+  end
+
+  def load_pos_menu
+    if @pos_location.blank?
+      @categories = Category.none
+      @menu_items = MenuItem.none
+      @combos = Combo.none
+      return
+    end
+
+    @menu_items = MenuItem.available_at_location(@pos_location)
+      .includes(:modifier_groups, :category, :location_menu_items, image_attachment: :blob)
+      .order(:position, :name)
+    @combos = Combo.available_at_location(@pos_location).order(:name)
+    category_ids = @menu_items.map(&:category_id).uniq
+    @categories = Category.active.ordered.select { |category| category_ids.include?(category.id) }
   end
 
   def no_cache

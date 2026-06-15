@@ -201,6 +201,13 @@ Rails.application.routes.draw do
       resources :stock_takes, only: %i[index show create update] do
         member { post :complete }
       end
+      resources :stock_transfers, only: %i[index show new create edit update] do
+        member do
+          post :send_transfer
+          post :confirm_receipt
+          post :cancel
+        end
+      end
       resources :manufacturing_templates do
         member { post :run }
         resources :lines, only: %i[create destroy], controller: "manufacturing_template_lines"

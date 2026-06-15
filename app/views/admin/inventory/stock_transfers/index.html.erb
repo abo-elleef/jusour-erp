@@ -1,0 +1,63 @@
+<%= render "admin/inventory/tools_nav" %>
+
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.stock_transfers.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("inventory.stock_transfers.index_description") %></p>
+    </div>
+    <%= link_to t("inventory.stock_transfers.new"), new_admin_inventory_stock_transfer_path,
+          class: "inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors" %>
+  </div>
+
+  <div class="flex flex-wrap gap-2 mb-6">
+    <%= link_to t("inventory.stock_transfers.filters.all"), admin_inventory_stock_transfers_path,
+          class: admin_section_tab_class(params[:status].blank? && params[:location_id].blank?) %>
+    <% StockTransfer::STATUSES.each do |status| %>
+      <%= link_to t("inventory.stock_transfers.statuses.#{status}"),
+            admin_inventory_stock_transfers_path(status: status),
+            class: admin_section_tab_class(params[:status] == status) %>
+    <% end %>
+  </div>
+
+  <% if @stock_transfers.any? %>
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 text-start"><%= t("inventory.stock_transfers.transfer_number") %></th>
+            <th class="p-3 text-start"><%= t("inventory.stock_transfers.from_location") %></th>
+            <th class="p-3 text-start"><%= t("inventory.stock_transfers.to_location") %></th>
+            <th class="p-3 text-start"><%= t("inventory.stock_transfers.status") %></th>
+            <th class="p-3 text-start"><%= t("inventory.stock_transfers.requested_at") %></th>
+            <th class="p-3 text-start"><%= t("inventory.stock_transfers.requested_by") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @stock_transfers.each do |transfer| %>
+            <% status_label, status_class = stock_transfer_status_badge(transfer.status) %>
+            <tr class="hover:bg-gray-50/50">
+              <td class="p-3">
+                <%= link_to transfer.transfer_number, admin_inventory_stock_transfer_path(transfer),
+                      class: "font-semibold text-amber-700 hover:text-amber-800" %>
+              </td>
+              <td class="p-3 text-gray-700"><%= transfer.from_location.name %></td>
+              <td class="p-3 text-gray-700"><%= transfer.to_location.name %></td>
+              <td class="p-3">
+                <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= status_class %>"><%= status_label %></span>
+              </td>
+              <td class="p-3 text-gray-600"><%= l(transfer.requested_at, format: :short) %></td>
+              <td class="p-3 text-gray-600"><%= transfer.requested_by.name %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <div class="rounded-2xl border border-dashed border-gray-200 bg-white p-10 text-center">
+      <p class="text-gray-600"><%= t("inventory.stock_transfers.empty") %></p>
+      <%= link_to t("inventory.stock_transfers.new"), new_admin_inventory_stock_transfer_path,
+            class: "inline-flex mt-4 text-sm font-semibold text-amber-700 hover:text-amber-800" %>
+    </div>
+  <% end %>
+</div>

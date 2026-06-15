@@ -51,14 +51,14 @@ export default class extends Controller {
 
     item.style.transition = "opacity 0.3s ease, transform 0.3s ease"
     item.style.opacity = "0"
-    item.style.transform = "translateY(-0.5rem) scale(0.98)"
+    item.style.transform = "translateY(0.5rem) scale(0.98)"
 
     window.setTimeout(() => item.remove(), 300)
   }
 
   animateIn(item) {
     item.style.opacity = "0"
-    item.style.transform = "translateY(-0.5rem) scale(0.98)"
+    item.style.transform = "translateY(0.5rem) scale(0.98)"
 
     window.requestAnimationFrame(() => {
       item.style.transition = "opacity 0.3s ease, transform 0.3s ease"

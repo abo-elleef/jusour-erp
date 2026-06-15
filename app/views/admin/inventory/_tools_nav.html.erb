@@ -10,6 +10,8 @@
           class: admin_section_tab_class(controller_name == "vendor_invoices") %>
     <%= link_to t("inventory.tools.stock_takes"), admin_inventory_stock_takes_path,
           class: admin_section_tab_class(controller_name == "stock_takes") %>
+    <%= link_to t("inventory.tools.stock_transfers"), admin_inventory_stock_transfers_path,
+          class: admin_section_tab_class(controller_name == "stock_transfers") %>
     <%= link_to t("inventory.tools.valuation"), admin_inventory_reports_valuation_path,
           class: admin_section_tab_class(controller_name == "reports" && action_name == "valuation") %>
     <%= link_to t("inventory.tools.variance"), admin_inventory_reports_variance_path,

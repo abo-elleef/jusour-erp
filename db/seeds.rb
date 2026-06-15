@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "seeds/saqr_catalog"
+
 puts "Seeding Saqr POS..."
 
 company = Company.find_or_create_by!(slug: "default") do |c|
@@ -171,6 +173,11 @@ end
   IngredientCategory.find_or_create_by!(name: name) { |c| c.position = i }
 end
 
+puts "Seeding Saqr catalog (#{SaqrCatalog.deduplicated_names.size} unique items)..."
+SaqrCatalog.seed_ingredients!(company: company)
+SaqrCatalog.seed_menu_items!(company: company)
+puts "  Menu items: #{MenuItem.where(company: company).count}, Ingredients: #{Ingredient.where(company: company).count}"
+
 [
   { name: "Chicken Thighs", unit: "kg", category: "Proteins", reorder_threshold: 5, cost_per_unit_cents: 450, qty: 12 },
   { name: "Beef Patties (4oz)", unit: "pieces", category: "Proteins", reorder_threshold: 50, cost_per_unit_cents: 175, qty: 120 },
@@ -329,6 +336,8 @@ end
 Printer.where(location_id: nil).find_each do |printer|
   printer.update!(location: main_branch)
 end
+
+SaqrCatalog.seed_location_menu!(location: main_branch)
 
 puts "Seed complete. Login: owner@restaurant.com / changeme123"
 

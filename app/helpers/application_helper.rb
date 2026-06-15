@@ -385,6 +385,18 @@ module ApplicationHelper
     end
   end
 
+  def stock_transfer_status_badge(status)
+    label = t("inventory.stock_transfers.statuses.#{status}", default: status.to_s.humanize)
+    badge_class = case status.to_s
+                  when "requested" then "bg-amber-100 text-amber-900 border-amber-200"
+                  when "sent" then "bg-blue-100 text-blue-900 border-blue-200"
+                  when "received" then "bg-green-100 text-green-800 border-green-200"
+                  when "cancelled" then "bg-gray-100 text-gray-700 border-gray-200"
+                  else "bg-gray-100 text-gray-700 border-gray-200"
+                  end
+    [label, badge_class]
+  end
+
   def monthly_payroll_sort_link(label, column, sort:, direction:, payroll_month:)
     next_direction = sort == column && direction == "asc" ? "desc" : "asc"
     link_class = "inline-flex items-center gap-1 hover:text-gray-900 transition-colors"

@@ -21,6 +21,8 @@
             class: "inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors" %>
       <%= link_to t("admin.locations.manage_stock"), admin_location_ingredients_path(@location),
             class: "inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors" %>
+      <%= link_to t("inventory.stock_transfers.title"), admin_inventory_stock_transfers_path(location_id: @location.id),
+            class: "inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors" %>
       <% if policy(@location).update? %>
         <%= link_to t("actions.edit"), edit_admin_location_path(@location),
               class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors" %>

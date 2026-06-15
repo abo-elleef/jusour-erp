@@ -17,6 +17,8 @@ class Location < ApplicationRecord
   has_many :orders, dependent: :nullify
   has_many :vendor_invoices, dependent: :restrict_with_error
   has_many :printers, dependent: :restrict_with_error
+  has_many :outgoing_stock_transfers, class_name: "StockTransfer", foreign_key: :from_location_id, dependent: :restrict_with_error
+  has_many :incoming_stock_transfers, class_name: "StockTransfer", foreign_key: :to_location_id, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :location_type, presence: true, inclusion: { in: TYPES }

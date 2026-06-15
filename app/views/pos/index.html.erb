@@ -14,6 +14,11 @@
     </div>
 
     <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 p-4 overflow-y-auto flex-1 touch-manipulation" id="menu-grid">
+      <% if @pos_location.blank? %>
+        <p class="col-span-full text-center text-gray-500 py-16 text-sm"><%= t("pos.menu.select_branch") %></p>
+      <% elsif @menu_items.empty? && @combos.empty? %>
+        <p class="col-span-full text-center text-gray-500 py-16 text-sm"><%= t("pos.menu.empty_at_branch", branch: @pos_location.name) %></p>
+      <% end %>
       <% @menu_items.each do |item| %>
         <div class="menu-card rounded-2xl border border-gray-200 bg-white p-3 hover:border-amber-300 transition-colors flex flex-col" data-category="<%= item.category_id %>">
           <% if item.image.attached? %>
@@ -22,7 +27,7 @@
             <div class="w-full h-20 bg-gray-100 rounded-xl mb-2 flex items-center justify-center text-gray-400 text-xs font-medium"><%= item.category.name %></div>
           <% end %>
           <p class="font-semibold text-sm leading-tight flex-1 text-gray-900"><%= item.name %></p>
-          <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(item.base_price_cents) %></p>
+          <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(item.price_cents_at(@pos_location)) %></p>
           <% if item.modifier_groups.any? %>
             <%= link_to t("actions.customize"), pos_modifier_form_path(menu_item_id: item.id),
                   class: "mt-2 block text-center #{pos_btn_accent_class}",

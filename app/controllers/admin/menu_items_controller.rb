@@ -62,7 +62,7 @@ module Admin
       authorize @menu_item
       if @menu_item.order_items.exists? || @menu_item.combo_items.exists?
         redirect_to admin_menu_items_path,
-                    alert: "Cannot delete: this item is used in orders or combos."
+                    alert: t("flash.menu_item.cannot_delete_used")
         return
       end
       @menu_item.destroy

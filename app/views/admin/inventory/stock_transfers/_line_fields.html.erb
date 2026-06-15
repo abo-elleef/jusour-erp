@@ -1,0 +1,25 @@
+<%# locals: f, ingredients %>
+<% input_class = pos_input_class %>
+
+<div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-[1fr_10rem_auto] gap-4 items-end"
+     data-stock-transfer-lines-target="row">
+  <%= f.hidden_field :_destroy, value: false, data: { stock_transfer_lines_target: "destroy" } %>
+  <%= f.hidden_field :id %>
+  <div>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.stock_transfers.ingredient") %></label>
+    <%= f.collection_select :ingredient_id, ingredients, :id, :name,
+          { include_blank: t("inventory.stock_transfers.select_ingredient") },
+          class: "#{input_class} appearance-none" %>
+  </div>
+  <div>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.stock_transfers.quantity_requested") %></label>
+    <%= f.number_field :quantity_requested, step: 0.001, min: 0, placeholder: "0", class: input_class %>
+  </div>
+  <div class="pb-0.5">
+    <button type="button"
+            class="text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-2 rounded-xl border border-red-200 transition-colors w-full sm:w-auto"
+            data-action="stock-transfer-lines#remove">
+      <%= t("actions.remove") %>
+    </button>
+  </div>
+</div>
