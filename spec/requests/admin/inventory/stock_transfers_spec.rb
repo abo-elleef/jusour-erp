@@ -26,9 +26,9 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
     )
   end
 
-  def create_transfer_with_line
+  def create_transfer_with_line(requested: 10.0)
     transfer = create(:stock_transfer, company: company, from_location: kitchen, to_location: branch, requested_by: owner)
-    create(:stock_transfer_line, stock_transfer: transfer, ingredient: ingredient, quantity_requested: 4.0)
+    create(:stock_transfer_line, stock_transfer: transfer, ingredient: ingredient, quantity_requested: requested)
     transfer
   end
 
@@ -55,7 +55,7 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
 
   describe "PATCH /admin/inventory/stock_transfers/:id" do
     it "updates lines and removes a nested line" do
-      transfer = create_transfer_with_line
+      transfer = create_transfer_with_line(requested: 4.0)
       item2 = create(:ingredient, company: company, ingredient_category: category)
       line = transfer.stock_transfer_lines.first
 
@@ -78,8 +78,8 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
   end
 
   describe "POST send_transfer" do
-    it "marks transfer as sent with quantities" do
-      transfer = create_transfer_with_line
+    it "marks transfer as awaiting receipt with quantities" do
+      transfer = create_transfer_with_line(requested: 4.0)
       line = transfer.stock_transfer_lines.first
 
       post send_transfer_admin_inventory_stock_transfer_path(transfer), params: {
@@ -87,12 +87,13 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       }
 
       expect(response).to redirect_to(admin_inventory_stock_transfer_path(transfer))
-      expect(transfer.reload).to be_sent
+      expect(transfer.reload).to be_awaiting_receipt
       expect(line.reload.quantity_sent.to_d).to eq(3.5)
+      expect(transfer.stock_transfer_shipments.count).to eq(1)
     end
 
     it "rejects when source stock is insufficient" do
-      transfer = create_transfer_with_line
+      transfer = create_transfer_with_line(requested: 4.0)
       line = transfer.stock_transfer_lines.first
 
       post send_transfer_admin_inventory_stock_transfer_path(transfer), params: {
@@ -103,14 +104,27 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       expect(flash[:alert]).to be_present
       expect(transfer.reload).to be_requested
     end
+    it "rejects send when batch stock is lower than ingredient location on-hand" do
+      transfer = create_transfer_with_line(requested: 10.0)
+      line = transfer.stock_transfer_lines.first
+      IngredientLocation.find_by(location: kitchen, ingredient: ingredient).update!(quantity_on_hand: 10.0)
+      StockBatch.where(ingredient: ingredient, location: kitchen).update_all(quantity_remaining: 2.0)
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: {
+        lines: { line.id => "10" }
+      }
+
+      expect(response).to redirect_to(admin_inventory_stock_transfer_path(transfer))
+      expect(flash[:alert]).to be_present
+      expect(transfer.reload).to be_requested
+    end
   end
 
   describe "POST confirm_receipt" do
     it "moves stock between locations on receipt confirmation" do
-      transfer = create_transfer_with_line
+      transfer = create_transfer_with_line(requested: 4.0)
       line = transfer.stock_transfer_lines.first
-      line.update!(quantity_sent: 3.0)
-      transfer.update!(status: "sent", sent_at: Time.current, sent_by: owner)
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "3.0" } }
 
       expect {
         post confirm_receipt_admin_inventory_stock_transfer_path(transfer), params: {
@@ -118,7 +132,7 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
         }
       }.to change(StockAdjustment, :count).by(2)
 
-      expect(transfer.reload).to be_received
+      expect(transfer.reload).to be_partially_received
       expect(line.reload.quantity_received.to_d).to eq(2.5)
 
       kitchen_il = IngredientLocation.find_by(location: kitchen, ingredient: ingredient)
@@ -126,6 +140,44 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       expect(kitchen_il.quantity_on_hand.to_d).to eq(7.5)
       expect(branch_il.quantity_on_hand.to_d).to eq(2.5)
       expect(ingredient.reload.quantity_on_hand.to_d).to eq(20.0)
+    end
+
+    it "supports partial send, confirm, then send and confirm the remainder" do
+      transfer = create_transfer_with_line(requested: 10.0)
+      line = transfer.stock_transfer_lines.first
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "6" } }
+      expect(transfer.reload).to be_awaiting_receipt
+
+      post confirm_receipt_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "6" } }
+      expect(transfer.reload).to be_partially_received
+      expect(line.reload.quantity_received.to_d).to eq(6.0)
+      expect(line.quantity_pending_send.to_d).to eq(4.0)
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "4" } }
+      expect(transfer.reload).to be_awaiting_receipt
+
+      post confirm_receipt_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "4" } }
+      expect(transfer.reload).to be_completed
+      expect(line.reload.quantity_received.to_d).to eq(10.0)
+      expect(transfer.stock_transfer_shipments.count).to eq(2)
+
+      kitchen_il = IngredientLocation.find_by(location: kitchen, ingredient: ingredient)
+      branch_il = IngredientLocation.find_by(location: branch, ingredient: ingredient)
+      expect(kitchen_il.quantity_on_hand.to_d).to eq(0.0)
+      expect(branch_il.quantity_on_hand.to_d).to eq(10.0)
+    end
+
+    it "blocks sending while a shipment awaits receipt" do
+      transfer = create_transfer_with_line(requested: 10.0)
+      line = transfer.stock_transfer_lines.first
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "6" } }
+      expect(transfer.reload).to be_awaiting_receipt
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "4" } }
+      expect(flash[:alert]).to be_present
+      expect(transfer.reload).to be_awaiting_receipt
     end
   end
 end

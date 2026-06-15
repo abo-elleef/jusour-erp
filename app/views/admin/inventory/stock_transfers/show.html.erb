@@ -41,7 +41,7 @@
       <p class="text-xs text-gray-500 mt-0.5"><%= @stock_transfer.requested_by.name %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.stock_transfers.sent_at") %></p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.stock_transfers.last_sent_at") %></p>
       <% if @stock_transfer.sent_at %>
         <p class="text-sm font-semibold mt-1 text-gray-900"><%= l(@stock_transfer.sent_at, format: :short) %></p>
         <p class="text-xs text-gray-500 mt-0.5"><%= @stock_transfer.sent_by&.name %></p>
@@ -50,7 +50,7 @@
       <% end %>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.stock_transfers.received_at") %></p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.stock_transfers.last_received_at") %></p>
       <% if @stock_transfer.received_at %>
         <p class="text-sm font-semibold mt-1 text-gray-900"><%= l(@stock_transfer.received_at, format: :short) %></p>
         <p class="text-xs text-gray-500 mt-0.5"><%= @stock_transfer.received_by&.name %></p>
@@ -60,11 +60,11 @@
     </div>
   </div>
 
-  <% if @stock_transfer.requested? %>
+  <% if @stock_transfer.can_send? %>
     <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mb-6">
       <div class="px-5 py-4 border-b border-amber-100">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.send_heading") %></h2>
-        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_transfers.send_hint") %></p>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_transfers.send_partial_hint") %></p>
       </div>
       <%= form_with url: send_transfer_admin_inventory_stock_transfer_path(@stock_transfer), method: :post, class: "p-0" do %>
         <div class="overflow-x-auto">
@@ -73,20 +73,28 @@
               <tr>
                 <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
                 <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent_total") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_received_total") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_pending_send") %></th>
                 <th class="p-3 text-end"><%= t("inventory.stock_transfers.available_at_source") %></th>
-                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.send_now") %></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-amber-100/80">
               <% @lines.each do |line| %>
+                <% next if line.quantity_pending_send.zero? %>
                 <tr>
                   <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
                   <td class="p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.quantity_requested, precision: 3) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.available_at_source, precision: 3) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.quantity_sent, precision: 3) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.quantity_received, precision: 3) %></td>
+                  <td class="p-3 text-end tabular-nums font-semibold text-amber-800"><%= number_with_precision(line.quantity_pending_send, precision: 3) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.transferable_quantity_at_source, precision: 3) %></td>
                   <td class="p-3 text-end">
                     <%= number_field_tag "lines[#{line.id}]",
-                          line.quantity_requested,
+                          [line.quantity_pending_send, line.transferable_quantity_at_source].min,
                           step: 0.001, min: 0,
+                          max: [line.quantity_pending_send, line.transferable_quantity_at_source].min,
                           class: "#{pos_input_class} w-28 text-end ms-auto" %>
                   </td>
                 </tr>
@@ -99,11 +107,16 @@
         </div>
       <% end %>
     </section>
-  <% elsif @stock_transfer.sent? %>
+  <% end %>
+
+  <% if @stock_transfer.can_confirm_receipt? && @current_shipment %>
     <section class="rounded-2xl border border-emerald-200 bg-emerald-50/40 overflow-hidden mb-6">
       <div class="px-5 py-4 border-b border-emerald-100">
-        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.confirm_heading") %></h2>
-        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_transfers.confirm_hint") %></p>
+        <h2 class="text-sm font-semibold text-gray-900">
+          <%= t("inventory.stock_transfers.confirm_heading") %>
+          <span class="text-gray-500 font-normal">— <%= t("inventory.stock_transfers.shipment_number", number: @current_shipment.sequence) %></span>
+        </h2>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_transfers.confirm_partial_hint") %></p>
       </div>
       <%= form_with url: confirm_receipt_admin_inventory_stock_transfer_path(@stock_transfer), method: :post, class: "p-0" do %>
         <div class="overflow-x-auto">
@@ -111,21 +124,21 @@
             <thead class="border-b border-emerald-100 bg-white/60 text-xs font-semibold text-gray-500 uppercase tracking-wide">
               <tr>
                 <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
-                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
-                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent") %></th>
+                <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent_this_shipment") %></th>
                 <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_received") %></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-emerald-100/80">
-              <% @lines.each do |line| %>
+              <% @current_shipment.stock_transfer_shipment_lines.each do |shipment_line| %>
+                <% line = shipment_line.stock_transfer_line %>
                 <tr>
                   <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.quantity_requested, precision: 3) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.quantity_sent, precision: 3) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(shipment_line.quantity_sent, precision: 3) %></td>
                   <td class="p-3 text-end">
                     <%= number_field_tag "lines[#{line.id}]",
-                          line.quantity_sent,
+                          shipment_line.quantity_sent,
                           step: 0.001, min: 0,
+                          max: shipment_line.quantity_sent,
                           class: "#{pos_input_class} w-28 text-end ms-auto" %>
                   </td>
                 </tr>
@@ -140,6 +153,51 @@
     </section>
   <% end %>
 
+  <% if @shipments.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.shipment_history") %></h2>
+      </div>
+      <div class="divide-y divide-gray-100">
+        <% @shipments.each do |shipment| %>
+          <div class="px-5 py-4">
+            <div class="flex flex-wrap items-center gap-2 mb-3">
+              <span class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.shipment_number", number: shipment.sequence) %></span>
+              <% ship_label, ship_class = stock_transfer_shipment_status_badge(shipment.status) %>
+              <span class="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border <%= ship_class %>"><%= ship_label %></span>
+              <span class="text-xs text-gray-500">
+                <%= t("inventory.stock_transfers.shipment_sent_by", name: shipment.sent_by.name, at: l(shipment.sent_at, format: :short)) %>
+                <% if shipment.received_at %>
+                  · <%= t("inventory.stock_transfers.shipment_received_by", name: shipment.received_by.name, at: l(shipment.received_at, format: :short)) %>
+                <% end %>
+              </span>
+            </div>
+            <table class="w-full text-sm">
+              <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <tr>
+                  <th class="pb-2 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
+                  <th class="pb-2 text-end"><%= t("inventory.stock_transfers.quantity_sent") %></th>
+                  <th class="pb-2 text-end"><%= t("inventory.stock_transfers.quantity_received") %></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% shipment.stock_transfer_shipment_lines.each do |shipment_line| %>
+                  <tr>
+                    <td class="py-1 text-gray-900"><%= shipment_line.ingredient.name %></td>
+                    <td class="py-1 text-end tabular-nums"><%= number_with_precision(shipment_line.quantity_sent, precision: 3) %></td>
+                    <td class="py-1 text-end tabular-nums text-gray-600">
+                      <%= shipment_line.quantity_received ? number_with_precision(shipment_line.quantity_received, precision: 3) : "—" %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.line_items") %></h2>
@@ -150,8 +208,10 @@
           <tr>
             <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
             <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
-            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent") %></th>
-            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_received") %></th>
+            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent_total") %></th>
+            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_received_total") %></th>
+            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_in_transit") %></th>
+            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_pending_send") %></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -159,8 +219,10 @@
             <tr>
               <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
               <td class="p-3 text-end tabular-nums"><%= number_with_precision(line.quantity_requested, precision: 3) %></td>
-              <td class="p-3 text-end tabular-nums text-gray-600"><%= line.quantity_sent ? number_with_precision(line.quantity_sent, precision: 3) : "—" %></td>
-              <td class="p-3 text-end tabular-nums text-gray-600"><%= line.quantity_received ? number_with_precision(line.quantity_received, precision: 3) : "—" %></td>
+              <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.quantity_sent, precision: 3) %></td>
+              <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.quantity_received, precision: 3) %></td>
+              <td class="p-3 text-end tabular-nums text-blue-700"><%= number_with_precision(line.quantity_in_transit, precision: 3) %></td>
+              <td class="p-3 text-end tabular-nums text-amber-700"><%= number_with_precision(line.quantity_pending_send, precision: 3) %></td>
             </tr>
           <% end %>
         </tbody>

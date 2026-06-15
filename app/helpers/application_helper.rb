@@ -389,9 +389,23 @@ module ApplicationHelper
     label = t("inventory.stock_transfers.statuses.#{status}", default: status.to_s.humanize)
     badge_class = case status.to_s
                   when "requested" then "bg-amber-100 text-amber-900 border-amber-200"
+                  when "awaiting_receipt" then "bg-blue-100 text-blue-900 border-blue-200"
+                  when "partially_received" then "bg-violet-100 text-violet-900 border-violet-200"
+                  when "completed" then "bg-green-100 text-green-800 border-green-200"
+                  when "cancelled" then "bg-gray-100 text-gray-700 border-gray-200"
+                  # legacy
                   when "sent" then "bg-blue-100 text-blue-900 border-blue-200"
                   when "received" then "bg-green-100 text-green-800 border-green-200"
-                  when "cancelled" then "bg-gray-100 text-gray-700 border-gray-200"
+                  else "bg-gray-100 text-gray-700 border-gray-200"
+                  end
+    [label, badge_class]
+  end
+
+  def stock_transfer_shipment_status_badge(status)
+    label = t("inventory.stock_transfers.shipment_statuses.#{status}", default: status.to_s.humanize)
+    badge_class = case status.to_s
+                  when "in_transit" then "bg-blue-100 text-blue-900 border-blue-200"
+                  when "received" then "bg-green-100 text-green-800 border-green-200"
                   else "bg-gray-100 text-gray-700 border-gray-200"
                   end
     [label, badge_class]

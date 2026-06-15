@@ -2,8 +2,6 @@
 
 module Inventory
   class SendStockTransferService
-    class InsufficientStockError < StandardError; end
-
     def initialize(transfer, user, line_quantities:)
       @transfer = transfer
       @user = user
@@ -11,17 +9,36 @@ module Inventory
     end
 
     def call
-      raise ActiveRecord::RecordInvalid, @transfer unless @transfer.requested?
+      unless @transfer.can_send?
+        @transfer.errors.add(:status, I18n.t("inventory.stock_transfers.errors.cannot_send"))
+        raise ActiveRecord::RecordInvalid, @transfer
+      end
 
       ActiveRecord::Base.transaction do
-        @transfer.stock_transfer_lines.each do |line|
-          qty = sent_quantity_for(line)
-          validate_source_stock!(line, qty)
-          line.update!(quantity_sent: qty)
+        shipment_lines = build_shipment_lines
+        if shipment_lines.empty?
+          @transfer.errors.add(:base, I18n.t("inventory.stock_transfers.errors.shipment_empty"))
+          raise ActiveRecord::RecordInvalid, @transfer
+        end
+
+        sequence = (@transfer.stock_transfer_shipments.maximum(:sequence) || 0) + 1
+        shipment = @transfer.stock_transfer_shipments.create!(
+          sequence: sequence,
+          status: "in_transit",
+          sent_by: @user,
+          sent_at: Time.current
+        )
+
+        shipment_lines.each do |line, qty|
+          shipment.stock_transfer_shipment_lines.create!(
+            stock_transfer_line: line,
+            quantity_sent: qty
+          )
+          line.update!(quantity_sent: line.quantity_sent.to_d + qty)
         end
 
         @transfer.update!(
-          status: "sent",
+          status: "awaiting_receipt",
           sent_at: Time.current,
           sent_by: @user
         )
@@ -32,18 +49,43 @@ module Inventory
 
     private
 
-    def sent_quantity_for(line)
+    def build_shipment_lines
+      lines = {}
+
+      @transfer.stock_transfer_lines.each do |line|
+        qty = shipment_quantity_for(line)
+        next if qty.zero?
+
+        validate_pending_quantity!(line, qty)
+        validate_source_stock!(line, qty)
+        lines[line] = qty
+      end
+
+      lines
+    end
+
+    def shipment_quantity_for(line)
       raw = @line_quantities[line.id.to_s]
-      qty = raw.present? ? raw.to_d : line.quantity_requested.to_d
+      qty = if raw.present?
+              raw.to_d
+            else
+              line.quantity_pending_send
+            end
       raise ActiveRecord::RecordInvalid, line if qty.negative?
 
       qty
     end
 
-    def validate_source_stock!(line, qty)
-      return if qty.zero?
+    def validate_pending_quantity!(line, qty)
+      return if qty <= line.quantity_pending_send
 
-      available = line.available_at_source
+      line.errors.add(:quantity_sent, I18n.t("inventory.stock_transfers.errors.exceeds_pending",
+        ingredient: line.ingredient.name, pending: line.quantity_pending_send, quantity: qty))
+      raise ActiveRecord::RecordInvalid, line
+    end
+
+    def validate_source_stock!(line, qty)
+      available = line.transferable_quantity_at_source
       return if available >= qty
 
       line.errors.add(:quantity_sent, I18n.t("inventory.stock_transfers.errors.insufficient_stock",

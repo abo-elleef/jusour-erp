@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_06_30_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_01_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -799,13 +799,41 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_30_000000) do
     t.uuid "stock_transfer_id", null: false
     t.uuid "ingredient_id", null: false
     t.decimal "quantity_requested", precision: 10, scale: 3, default: "0.0", null: false
-    t.decimal "quantity_sent", precision: 10, scale: 3
-    t.decimal "quantity_received", precision: 10, scale: 3
+    t.decimal "quantity_sent", precision: 10, scale: 3, default: "0.0"
+    t.decimal "quantity_received", precision: 10, scale: 3, default: "0.0"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["ingredient_id"], name: "index_stock_transfer_lines_on_ingredient_id"
     t.index ["stock_transfer_id", "ingredient_id"], name: "idx_on_stock_transfer_id_ingredient_id_597e5cba74", unique: true
     t.index ["stock_transfer_id"], name: "index_stock_transfer_lines_on_stock_transfer_id"
+  end
+
+  create_table "stock_transfer_shipment_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "stock_transfer_shipment_id", null: false
+    t.uuid "stock_transfer_line_id", null: false
+    t.decimal "quantity_sent", precision: 10, scale: 3, default: "0.0", null: false
+    t.decimal "quantity_received", precision: 10, scale: 3
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["stock_transfer_line_id"], name: "index_stock_transfer_shipment_lines_on_stock_transfer_line_id"
+    t.index ["stock_transfer_shipment_id", "stock_transfer_line_id"], name: "index_shipment_lines_on_shipment_and_transfer_line", unique: true
+    t.index ["stock_transfer_shipment_id"], name: "idx_on_stock_transfer_shipment_id_5df1410351"
+  end
+
+  create_table "stock_transfer_shipments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "stock_transfer_id", null: false
+    t.integer "sequence", default: 1, null: false
+    t.string "status", default: "in_transit", null: false
+    t.uuid "sent_by_id", null: false
+    t.uuid "received_by_id"
+    t.datetime "sent_at", null: false
+    t.datetime "received_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["received_by_id"], name: "index_stock_transfer_shipments_on_received_by_id"
+    t.index ["sent_by_id"], name: "index_stock_transfer_shipments_on_sent_by_id"
+    t.index ["stock_transfer_id", "sequence"], name: "idx_on_stock_transfer_id_sequence_1bc36b196f", unique: true
+    t.index ["stock_transfer_id"], name: "index_stock_transfer_shipments_on_stock_transfer_id"
   end
 
   create_table "stock_transfers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1120,6 +1148,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_06_30_000000) do
   add_foreign_key "stock_takes", "users"
   add_foreign_key "stock_transfer_lines", "ingredients"
   add_foreign_key "stock_transfer_lines", "stock_transfers"
+  add_foreign_key "stock_transfer_shipment_lines", "stock_transfer_lines"
+  add_foreign_key "stock_transfer_shipment_lines", "stock_transfer_shipments"
+  add_foreign_key "stock_transfer_shipments", "stock_transfers"
+  add_foreign_key "stock_transfer_shipments", "users", column: "received_by_id"
+  add_foreign_key "stock_transfer_shipments", "users", column: "sent_by_id"
   add_foreign_key "stock_transfers", "companies"
   add_foreign_key "stock_transfers", "locations", column: "from_location_id"
   add_foreign_key "stock_transfers", "locations", column: "to_location_id"

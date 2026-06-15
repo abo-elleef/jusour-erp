@@ -3,7 +3,7 @@
 class StockTransfer < ApplicationRecord
   include Tenantable
 
-  STATUSES = %w[requested sent received cancelled].freeze
+  STATUSES = %w[requested awaiting_receipt partially_received completed cancelled].freeze
 
   belongs_to :from_location, class_name: "Location"
   belongs_to :to_location, class_name: "Location"
@@ -11,6 +11,7 @@ class StockTransfer < ApplicationRecord
   belongs_to :sent_by, class_name: "User", optional: true
   belongs_to :received_by, class_name: "User", optional: true
   has_many :stock_transfer_lines, dependent: :destroy
+  has_many :stock_transfer_shipments, dependent: :destroy
   has_many :ingredients, through: :stock_transfer_lines
   has_many :stock_adjustments, dependent: :nullify
 
@@ -26,8 +27,8 @@ class StockTransfer < ApplicationRecord
   validate :locations_must_share_company
 
   scope :recent, -> { order(requested_at: :desc, created_at: :desc) }
-  scope :pending_send, -> { where(status: "requested") }
-  scope :pending_receive, -> { where(status: "sent") }
+  scope :pending_send, -> { where(status: %w[requested partially_received]) }
+  scope :pending_receive, -> { where(status: "awaiting_receipt") }
 
   before_validation :assign_transfer_number, on: :create
   before_validation :stamp_requested_at, on: :create
@@ -36,12 +37,16 @@ class StockTransfer < ApplicationRecord
     status == "requested"
   end
 
-  def sent?
-    status == "sent"
+  def awaiting_receipt?
+    status == "awaiting_receipt"
   end
 
-  def received?
-    status == "received"
+  def partially_received?
+    status == "partially_received"
+  end
+
+  def completed?
+    status == "completed"
   end
 
   def cancelled?
@@ -50,6 +55,22 @@ class StockTransfer < ApplicationRecord
 
   def editable?
     requested?
+  end
+
+  def can_send?
+    requested? || partially_received?
+  end
+
+  def can_confirm_receipt?
+    awaiting_receipt? && current_shipment.present?
+  end
+
+  def fully_fulfilled?
+    stock_transfer_lines.all?(&:fulfilled?)
+  end
+
+  def current_shipment
+    stock_transfer_shipments.in_transit.order(:sequence).last
   end
 
   private

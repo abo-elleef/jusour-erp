@@ -21,6 +21,9 @@ module Admin
       def show
         authorize_inventory!(:show)
         @lines = @stock_transfer.stock_transfer_lines.includes(:ingredient).order("ingredients.name")
+        @shipments = @stock_transfer.stock_transfer_shipments.ordered
+          .includes(stock_transfer_shipment_lines: { stock_transfer_line: :ingredient })
+        @current_shipment = @stock_transfer.current_shipment
       end
 
       def new
@@ -102,7 +105,7 @@ module Admin
         ).call
         redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
           notice: t("flash.stock_transfer.received")
-      rescue Inventory::ConfirmStockTransferService::InsufficientStockError => e
+      rescue ::Inventory::ConfirmStockTransferService::InsufficientStockError => e
         redirect_to admin_inventory_stock_transfer_path(@stock_transfer), alert: e.message
       rescue ActiveRecord::RecordInvalid => e
         redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
