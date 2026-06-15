@@ -1,26 +1,3 @@
-<% if @pos_locations.many? %>
-  <div class="flex items-center gap-3 px-4 py-3 border-b border-gray-200 bg-white shrink-0">
-    <%= form_with url: pos_set_location_path, method: :patch,
-          class: "flex items-center gap-3 w-full max-w-md",
-          data: { turbo_frame: "_top" } do %>
-      <label for="pos_menu_location_id" class="text-sm font-semibold text-gray-700 shrink-0">
-        <%= t("pos.location.label") %>
-      </label>
-      <%= select_tag :location_id,
-            options_from_collection_for_select(@pos_locations, :id, :name, @pos_location&.id),
-            id: "pos_menu_location_id",
-            class: "flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-sm font-semibold text-gray-800 bg-white",
-            onchange: "this.form.requestSubmit()" %>
-    <% end %>
-  </div>
-<% elsif @pos_location %>
-  <div class="px-4 py-2 border-b border-gray-100 bg-white shrink-0">
-    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-      <%= t("pos.location.serving", name: @pos_location.name) %>
-    </p>
-  </div>
-<% end %>
-
 <div class="flex gap-2 px-4 py-3 border-b border-gray-200 bg-white overflow-x-auto shrink-0">
   <button type="button" class="<%= pos_category_pill_class(active: true) %>" data-action="pos#filterCategory" data-category="all"><%= t("actions.all") %></button>
   <% @categories.each do |cat| %>
