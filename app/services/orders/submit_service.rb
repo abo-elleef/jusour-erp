@@ -16,7 +16,7 @@ module Orders
       validate_fulfillment!
       @order.recalculate_totals!
       @order.submit!
-      Printing::DispatchProductionPrintsService.call(order: @order)
+      Printing::DispatchProductionPrintsJob.perform_later(@order.id)
       @order
     end
 
