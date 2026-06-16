@@ -1,5 +1,5 @@
 <%= turbo_stream.replace "cart" do %>
-  <%= render "pos/cart_panel", order: @order %>
+  <%= render "pos/cart_body", order: @order %>
 <% end %>
 <%= turbo_stream.replace "modifier_modal" do %>
   <%= turbo_frame_tag "modifier_modal" %>

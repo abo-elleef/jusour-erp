@@ -1,7 +1,7 @@
 <%# locals: order, customer_form_errors: nil, embedded: false %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 <% form_errors = local_assigns[:customer_form_errors] %>
-<% section_class = local_assigns[:embedded] ? "px-4 pb-3" : "px-5 py-4 border-b border-gray-200 shrink-0 bg-white" %>
+<% section_class = local_assigns[:embedded] ? "px-4 pb-4" : "px-5 py-4 border-b border-stone-200/80 shrink-0 bg-white" %>
 
 <div id="order-customer" class="<%= section_class %>">
   <% if local_assigns[:embedded] %>
@@ -28,7 +28,7 @@
   <% end %>
 
   <% if order.customer %>
-    <div class="rounded-xl border border-amber-200 bg-amber-50/50 px-3 py-2.5">
+    <div class="rounded-2xl bg-amber-50 px-3.5 py-3 ring-1 ring-amber-200/60">
       <p class="font-semibold text-gray-900"><%= order.customer.display_name %></p>
       <p class="text-xs text-gray-600 mt-0.5">
         <% if order.customer.email.present? %><span class="block"><%= order.customer.email %></span><% end %>

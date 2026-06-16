@@ -1164,7 +1164,9 @@ en:
       saved_addresses: "Saved address"
       custom_address: "Enter address manually"
     cart:
-      empty: "Tap a menu item to start the order"
+      current_order: "Current order"
+      empty: "No items yet"
+      empty_hint: "Tap a menu item to start the order"
       new_order: "New Order"
       coupon_placeholder: "Coupon code"
       apply_coupon: "Apply"

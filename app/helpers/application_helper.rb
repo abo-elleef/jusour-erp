@@ -298,6 +298,67 @@ module ApplicationHelper
     "w-full min-h-11 bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
   end
 
+  def pos_cart_chevron_icon
+    tag.svg(
+      class: "w-5 h-5 text-stone-500 transition-transform duration-200 group-open:rotate-180",
+      fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", "aria-hidden": "true"
+    ) do
+      tag.path("stroke-linecap": "round", "stroke-linejoin": "round", "stroke-width": "2", d: "M19 9l-7 7-7-7")
+    end
+  end
+
+  def pos_cart_expansion_summary_class
+    "group/expansion flex items-center justify-between gap-2 px-4 py-3 cursor-pointer list-none " \
+      "hover:bg-stone-100/70 transition-colors [&::-webkit-details-marker]:hidden"
+  end
+
+  def pos_cart_line_item_class
+    "rounded-2xl bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.06)] ring-1 ring-stone-200/50"
+  end
+
+  def pos_cart_qty_minus_btn_class
+    "w-9 h-9 inline-flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 " \
+      "active:bg-red-300 text-red-800 text-lg font-semibold leading-none transition-colors ring-1 ring-red-200/80"
+  end
+
+  def pos_cart_qty_plus_btn_class
+    "w-9 h-9 inline-flex items-center justify-center rounded-full bg-emerald-100 hover:bg-emerald-200 " \
+      "active:bg-emerald-300 text-emerald-800 text-lg font-semibold leading-none transition-colors ring-1 ring-emerald-200/80"
+  end
+
+  def pos_cart_totals_card_class
+    "mx-3 mb-2 rounded-2xl bg-white px-4 py-3 shadow-[0_1px_2px_rgba(0,0,0,0.06)] ring-1 ring-stone-200/50 shrink-0"
+  end
+
+  def pos_cart_filled_btn_class
+    "w-full min-h-11 bg-stone-900 hover:bg-stone-800 active:bg-stone-950 text-white py-3 rounded-full " \
+      "text-sm font-medium transition-colors shadow-sm disabled:opacity-40 disabled:pointer-events-none"
+  end
+
+  def pos_cart_outlined_btn_class
+    "w-full min-h-11 bg-transparent hover:bg-stone-100 active:bg-stone-200 text-stone-800 " \
+      "border border-stone-300 py-3 rounded-full text-sm font-medium transition-colors"
+  end
+
+  def pos_cart_tonal_btn_class
+    "text-sm font-medium text-stone-700 hover:bg-stone-100 active:bg-stone-200 px-3 py-2 " \
+      "rounded-full border border-stone-200 transition-colors shrink-0"
+  end
+
+  def pos_cart_text_btn_class
+    "text-xs font-medium text-red-700 hover:bg-red-50 active:bg-red-100 px-2.5 py-1.5 rounded-full transition-colors"
+  end
+
+  def pos_cart_input_class
+    "w-full min-h-10 text-sm bg-white border border-stone-300 rounded-xl px-3 py-2 text-stone-900 " \
+      "placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-600/20 " \
+      "focus:border-amber-600 transition-shadow"
+  end
+
+  def pos_cart_chip_class
+    "inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900"
+  end
+
 
   def vendor_invoice_payment_badge(status)
     label = t("inventory.vendor_invoices.payment_statuses.#{status}", default: status.to_s.humanize)

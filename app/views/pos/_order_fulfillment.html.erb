@@ -1,16 +1,16 @@
-<div id="order-fulfillment" class="<%= local_assigns[:embedded] ? "px-4 pb-3" : "px-5 py-4 border-b border-gray-200 shrink-0 bg-white" %>" data-controller="order-type">
+<div id="order-fulfillment" class="<%= local_assigns[:embedded] ? "px-4 pb-4" : "px-5 py-4 border-b border-stone-200/80 shrink-0 bg-white" %>" data-controller="order-type">
   <%= form_with url: pos_update_fulfillment_path, method: :patch, data: { turbo_stream: true, order_type_target: "form" } do |f| %>
     <% unless local_assigns[:embedded] %>
-    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2"><%= t("order.labels.order_type") %></p>
+    <p class="text-xs font-medium uppercase tracking-wider text-stone-500 mb-2"><%= t("order.labels.order_type") %></p>
     <% end %>
-    <div class="flex rounded-xl overflow-hidden border border-gray-200 text-sm font-semibold bg-gray-50">
+    <div class="flex p-1 rounded-full bg-stone-200/70 text-sm font-medium">
       <% Order::ORDER_TYPES.each do |type| %>
-        <label class="flex-1 text-center cursor-pointer">
+        <label class="flex-1 text-center cursor-pointer min-w-0">
           <%= f.radio_button :order_type, type,
                 checked: order.order_type == type,
                 class: "sr-only peer",
                 data: { action: "order-type#selectType" } %>
-          <span class="block py-2.5 px-1 transition-colors peer-checked:bg-gray-900 peer-checked:text-white hover:bg-gray-100 <%= order.order_type == type ? 'bg-gray-900 text-white' : 'text-gray-600' %>">
+          <span class="block py-2 px-1 rounded-full transition-all duration-200 peer-checked:bg-white peer-checked:shadow-sm peer-checked:text-stone-900 hover:bg-white/50 <%= order.order_type == type ? 'bg-white shadow-sm text-stone-900' : 'text-stone-600' %>">
             <%= order_type_label(type) %>
           </span>
         </label>

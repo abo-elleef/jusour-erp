@@ -1,7 +1,10 @@
-<div id="order-summary" class="min-w-0">
-  <h2 class="text-lg font-bold tracking-tight text-gray-900 truncate"><%= order.order_number %></h2>
-  <p class="text-xs font-medium text-amber-700 mt-0.5 truncate"><%= order.fulfillment_summary %></p>
-  <% if order.customer %>
-    <p class="text-xs text-gray-500 mt-0.5 truncate"><%= order.customer.display_name %></p>
-  <% end %>
+<div id="order-summary" class="min-w-0 flex-1">
+  <p class="text-[11px] font-medium uppercase tracking-wider text-stone-500 leading-none"><%= t("pos.cart.current_order") %></p>
+  <h2 class="text-base font-medium text-stone-900 truncate mt-1"><%= order.order_number %></h2>
+  <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+    <span class="<%= pos_cart_chip_class %>"><%= order.fulfillment_summary %></span>
+    <% if order.customer %>
+      <span class="text-xs text-stone-500 truncate max-w-full"><%= order.customer.display_name %></span>
+    <% end %>
+  </div>
 </div>

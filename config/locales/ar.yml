@@ -1173,7 +1173,9 @@ ar:
       saved_addresses: "عنوان محفوظ"
       custom_address: "إدخال العنوان يدويًا"
     cart:
-      empty: "اضغط على صنف لبدء الطلب"
+      current_order: "الطلب الحالي"
+      empty: "لا توجد أصناف بعد"
+      empty_hint: "اضغط على صنف لبدء الطلب"
       new_order: "طلب جديد"
       coupon_placeholder: "رمز القسيمة"
       apply_coupon: "تطبيق"
