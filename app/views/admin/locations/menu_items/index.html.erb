@@ -17,42 +17,9 @@
 
   <% @categories.each do |category| %>
     <% next if category.menu_items.empty? %>
-    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-4">
-      <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
-        <h2 class="text-sm font-semibold text-gray-900"><%= category.name %></h2>
-      </div>
-      <ul class="divide-y divide-gray-100">
-        <% category.menu_items.ordered.each do |menu_item| %>
-          <% lmi = @location_menu_items_map[menu_item.id] %>
-          <% branch_enabled = lmi&.available? || false %>
-          <li class="px-5 py-3 flex items-center gap-4">
-            <div class="flex-1 min-w-0">
-              <span class="font-medium text-gray-900 <%= "opacity-50" unless branch_enabled %>"><%= menu_item.name %></span>
-              <% unless menu_item.available? %>
-                <span class="text-xs text-red-600 font-medium ml-2"><%= t("admin.locations.menu_item_globally_inactive") %></span>
-              <% end %>
-              <% if lmi&.price_override_cents.present? %>
-                <span class="text-xs text-amber-700 font-semibold ml-2"><%= humanized_money_with_symbol(lmi.price_override) %></span>
-              <% else %>
-                <span class="text-xs text-gray-500 ml-2"><%= humanized_money_with_symbol(menu_item.base_price) %></span>
-              <% end %>
-            </div>
-            <%= form_with url: admin_location_menu_item_path(@location, menu_item),
-                  method: :patch,
-                  data: { controller: "auto-submit" } do |f| %>
-              <%= fields_for :location_menu_item,
-                    (lmi || @location.location_menu_items.build(menu_item: menu_item, available: false)) do |lmi_form| %>
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <%= lmi_form.check_box :available,
-                        class: "sr-only peer",
-                        data: { action: "change->auto-submit#submit" } %>
-                  <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
-                </label>
-              <% end %>
-            <% end %>
-          </li>
-        <% end %>
-      </ul>
-    </section>
+    <%= render "admin/locations/menu_items/category_section",
+          location: @location,
+          category: category,
+          location_menu_items_map: @location_menu_items_map %>
   <% end %>
 </div>

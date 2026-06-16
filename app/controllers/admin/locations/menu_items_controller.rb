@@ -63,7 +63,14 @@ module Admin
           lmi.update!(available: available)
         end
 
-        redirect_to admin_location_menu_items_path(@location), notice: t("flash.location_menu_item.bulk_updated")
+        respond_to do |format|
+          format.turbo_stream do
+            @category = params[:category_id].present? ? Category.includes(menu_items: :location_menu_items).find(params[:category_id]) : nil
+            @location_menu_items_map = @location.location_menu_items.index_by(&:menu_item_id)
+            render "admin/locations/menu_items/bulk_update"
+          end
+          format.html { redirect_to admin_location_menu_items_path(@location), notice: t("flash.location_menu_item.bulk_updated") }
+        end
       end
 
       private
@@ -73,9 +80,11 @@ module Admin
       end
 
       def set_location_menu_item
-        @location_menu_item = @location.location_menu_items.find_or_initialize_by(menu_item_id: params[:id]) do |record|
-          record.available = false
-        end
+        @location_menu_item = @location.location_menu_items
+          .includes(:menu_item)
+          .find_or_initialize_by(menu_item_id: params[:id]) do |record|
+            record.available = false
+          end
       end
 
       def location_menu_item_params

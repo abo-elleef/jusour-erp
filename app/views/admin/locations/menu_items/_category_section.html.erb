@@ -1,0 +1,32 @@
+<%# locals: location, category, location_menu_items_map %>
+<% category_item_ids = category.menu_items.map(&:id) %>
+<% category_all_enabled = category_item_ids.all? { |id| location_menu_items_map[id]&.available? } %>
+<section id="<%= dom_id(category) %>" class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-4">
+  <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80 flex items-center justify-between">
+    <h2 class="text-sm font-semibold text-gray-900"><%= category.name %></h2>
+    <%= form_with url: bulk_update_admin_location_menu_items_path(location),
+          method: :post,
+          data: { controller: "category-toggle" } do %>
+      <%= hidden_field_tag :category_id, category.id %>
+      <% category_item_ids.each do |item_id| %>
+        <%= hidden_field_tag "menu_item_ids[]", item_id %>
+      <% end %>
+      <%= hidden_field_tag :available, category_all_enabled, data: { "category-toggle-target": "availableField" } %>
+      <label class="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" class="sr-only peer"
+               <%= "checked" if category_all_enabled %>
+               data-category-toggle-target="checkbox"
+               data-action="change->category-toggle#toggle">
+        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-600"></div>
+      </label>
+    <% end %>
+  </div>
+  <ul class="divide-y divide-gray-100">
+    <% category.menu_items.ordered.each do |menu_item| %>
+      <%= render "admin/locations/menu_items/menu_item_row",
+            location: location,
+            menu_item: menu_item,
+            lmi: location_menu_items_map[menu_item.id] %>
+    <% end %>
+  </ul>
+</section>

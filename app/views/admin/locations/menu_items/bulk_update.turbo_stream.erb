@@ -1,0 +1,11 @@
+<% if @category %>
+  <%= turbo_stream.replace dom_id(@category) do %>
+    <%= render "admin/locations/menu_items/category_section",
+          location: @location,
+          category: @category,
+          location_menu_items_map: @location_menu_items_map %>
+  <% end %>
+<% end %>
+<%= turbo_stream.append "toast-container" do %>
+  <%= render "shared/toast", message: t("flash.location_menu_item.bulk_updated"), type: :notice %>
+<% end %>

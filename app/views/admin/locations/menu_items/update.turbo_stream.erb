@@ -1,0 +1,9 @@
+<%= turbo_stream.replace dom_id(@location_menu_item.menu_item, :row) do %>
+  <%= render "admin/locations/menu_items/menu_item_row",
+        location: @location,
+        menu_item: @location_menu_item.menu_item,
+        lmi: @location_menu_item %>
+<% end %>
+<%= turbo_stream.append "toast-container" do %>
+  <%= render "shared/toast", message: t("flash.location_menu_item.updated"), type: :notice %>
+<% end %>
