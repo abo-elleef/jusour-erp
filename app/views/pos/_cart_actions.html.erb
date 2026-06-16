@@ -1,13 +1,16 @@
 <div class="px-3 py-3 space-y-2.5 shrink-0 bg-white border-t border-stone-200/80">
-  <%= form_with url: pos_apply_coupon_path, method: :patch, class: "flex gap-2 items-center" do %>
-    <%= text_field_tag :code, nil, placeholder: t("pos.cart.coupon_placeholder"), class: "#{pos_cart_input_class} flex-1 min-w-0" %>
-    <%= submit_tag t("pos.cart.apply_coupon"), class: "#{pos_cart_tonal_btn_class} !min-h-10" %>
-  <% end %>
+  <% if false  %>
+    <%= form_with url: pos_apply_coupon_path, method: :patch, class: "flex gap-2 items-center" do %>
+      <%= text_field_tag :code, nil, placeholder: t("pos.cart.coupon_placeholder"), class: "#{pos_cart_input_class} flex-1 min-w-0" %>
+      <%= submit_tag t("pos.cart.apply_coupon"), class: "#{pos_cart_tonal_btn_class} !min-h-10" %>
+    <% end %>
 
-  <% if order.customer&.loyalty_points.to_i >= Setting.get_int("loyalty_redeem_threshold", 100) %>
-    <%= button_to t("pos.cart.redeem_points", points: order.customer.loyalty_points), pos_redeem_points_path, method: :patch,
-          class: "w-full bg-violet-50 hover:bg-violet-100 active:bg-violet-200 text-violet-900 border border-violet-200 py-2.5 rounded-full text-sm font-medium transition-colors" %>
+    <% if order.customer&.loyalty_points.to_i >= Setting.get_int("loyalty_redeem_threshold", 100) %>
+      <%= button_to t("pos.cart.redeem_points", points: order.customer.loyalty_points), pos_redeem_points_path, method: :patch,
+            class: "w-full bg-violet-50 hover:bg-violet-100 active:bg-violet-200 text-violet-900 border border-violet-200 py-2.5 rounded-full text-sm font-medium transition-colors" %>
+    <% end %>
   <% end %>
+  
 
   <div class="space-y-2 pt-0.5">
     <button type="button"
