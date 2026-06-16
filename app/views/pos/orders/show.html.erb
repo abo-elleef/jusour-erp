@@ -70,12 +70,7 @@
     </section>
 
     <% if @order.amount_due_cents.positive? && !@from_shift %>
-      <% if Printing::Config.client_routing? %>
-        <div data-print-agent-checkout-blocked class="<%= Printing::Config.client_routing? ? "" : "hidden" %> rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 leading-relaxed">
-          <%= t("printing.agent.checkout_blocked") %>
-        </div>
-      <% end %>
-      <div class="lg:sticky lg:top-5 lg:self-start"<% if Printing::Config.client_routing? %> data-requires-print-agent class="hidden"<% end %>>
+      <div class="lg:sticky lg:top-5 lg:self-start">
         <%= render "pos/payment_modal", order: @order, checkout: true %>
       </div>
     <% end %>

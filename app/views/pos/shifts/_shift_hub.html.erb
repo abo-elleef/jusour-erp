@@ -1,9 +1,7 @@
 <% if @unpaid_orders_count.positive? %>
   <div class="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 mb-4 text-sm text-amber-900" role="alert">
     <%= t("pos.shift.unpaid_orders_warning", count: @unpaid_orders_count) %>
-    <%= link_to t("pos.collect_payment.title"), pos_orders_path,
-          class: "#{class_names("font-semibold underline ms-1", hidden: Printing::Config.client_routing?)}",
-          data: (Printing::Config.client_routing? ? { requires_print_agent: true } : {}) %>
+    <%= link_to t("pos.collect_payment.title"), pos_orders_path, class: "font-semibold underline ms-1" %>
   </div>
 <% end %>
 

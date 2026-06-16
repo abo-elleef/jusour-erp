@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["banner", "queue", "job"]
+  static targets = ["queue", "job"]
   static values = {
     config: Object,
     payloadUrlTemplate: String,
@@ -10,7 +10,6 @@ export default class extends Controller {
 
   connect() {
     this.storageKey = "saqr_register_printer"
-    this.agentHealthy = true
     this.boundBannerDismissed = () => this.hideBanner()
     this.bannerElement = () => document.getElementById("print-agent-banner")
 
@@ -18,13 +17,9 @@ export default class extends Controller {
     if (banner) {
       banner.addEventListener("banner:dismissed", this.boundBannerDismissed)
     }
-    this.boundTurboRender = () => this.updateCheckoutUI(this.agentHealthy)
-    document.addEventListener("turbo:render", this.boundTurboRender)
 
     if (this.configValue?.client_routing) {
-      this.updateCheckoutUI(false)
       this.checkAgentHealth()
-      this.healthCheckInterval = setInterval(() => this.checkAgentHealth(), 30000)
     }
   }
 
@@ -33,8 +28,6 @@ export default class extends Controller {
     if (banner) {
       banner.removeEventListener("banner:dismissed", this.boundBannerDismissed)
     }
-    document.removeEventListener("turbo:render", this.boundTurboRender)
-    clearInterval(this.healthCheckInterval)
   }
 
   jobTargetConnected(element) {
@@ -43,25 +36,20 @@ export default class extends Controller {
   }
 
   async checkAgentHealth() {
-    if (!this.configValue?.client_routing) return
+    if (!this.bannerElement()) return
+    if (this.isBannerDismissed()) return
 
-    let healthy = false
     try {
-      const response = await this.agentFetch("/health")
-      healthy = !!response?.ok
+      const ok = await this.agentFetch("/health")
+      if (ok) {
+        this.hideBanner()
+        return
+      }
     } catch (_error) {
-      healthy = false
+      // fall through
     }
 
-    this.agentHealthy = healthy
-    this.updateCheckoutUI(healthy)
-    this.setHealthCookie(healthy)
-
-    if (healthy) {
-      this.hideBanner()
-    } else {
-      this.showBanner()
-    }
+    this.showBanner()
   }
 
   showBanner() {
@@ -83,30 +71,6 @@ export default class extends Controller {
     const banner = this.bannerElement()
     if (!banner) return null
     return this.application.getControllerForElementAndIdentifier(banner, "dismissible-banner")
-  }
-
-  updateCheckoutUI(healthy) {
-    document.body.dataset.printAgentHealthy = healthy ? "true" : "false"
-
-    if (!healthy) {
-      document.getElementById("payment-modal")?.classList.add("hidden")
-    }
-
-    document.querySelectorAll("[data-requires-print-agent]").forEach((element) => {
-      element.classList.toggle("hidden", !healthy)
-      element.querySelectorAll("button, input[type='submit']").forEach((control) => {
-        control.disabled = !healthy
-      })
-    })
-
-    document.querySelectorAll("[data-print-agent-checkout-blocked]").forEach((element) => {
-      element.classList.toggle("hidden", healthy)
-    })
-  }
-
-  setHealthCookie(healthy) {
-    const value = healthy ? "1" : "0"
-    document.cookie = `print_agent_healthy=${value}; path=/; max-age=60; SameSite=Lax`
   }
 
   async processJob(element) {

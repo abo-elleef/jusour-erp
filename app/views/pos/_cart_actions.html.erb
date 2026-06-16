@@ -10,20 +10,12 @@
   <% end %>
 
   <div class="space-y-2 pt-0.5">
-    <% if Printing::Config.client_routing? %>
-      <p data-print-agent-checkout-blocked class="<%= Printing::Config.client_routing? ? "" : "hidden" %> text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-center leading-snug">
-        <%= t("printing.agent.checkout_blocked") %>
-      </p>
-    <% end %>
-
-    <div data-requires-print-agent class="<%= class_names(hidden: Printing::Config.client_routing?) %>">
-      <button type="button"
-            class="<%= pos_cart_filled_btn_class %>"
-            data-action="pos#openPayment"
-            <%= "disabled" if order.order_items.empty? %>>
-        <%= t("pos.cart.charge", amount: format_money(order.amount_due_cents)) %>
-      </button>
-    </div>
+    <button type="button"
+          class="<%= pos_cart_filled_btn_class %>"
+          data-action="pos#openPayment"
+          <%= "disabled" if order.order_items.empty? %>>
+      <%= t("pos.cart.charge", amount: format_money(order.amount_due_cents)) %>
+    </button>
 
     <%# form_with url: pos_submit_path, method: :patch, data: { turbo_frame: "_top" } do %>
       <%# submit_tag t("pos.cart.send_to_kitchen"),

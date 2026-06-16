@@ -17,10 +17,6 @@ export default class extends Controller {
   }
 
   async submitCash(event) {
-    if (document.body.dataset.printAgentHealthy === "false") {
-      event.preventDefault()
-      return
-    }
     if (navigator.onLine) return
 
     event.preventDefault()
@@ -48,12 +44,6 @@ export default class extends Controller {
 
   async payCard(event) {
     event.preventDefault()
-    if (document.body.dataset.printAgentHealthy === "false") {
-      if (this.hasTerminalStatusTarget) {
-        this.terminalStatusTarget.textContent = this.printAgentBlockedMessage()
-      }
-      return
-    }
     if (!navigator.onLine) {
       if (this.hasTerminalStatusTarget) {
         this.terminalStatusTarget.textContent = "Card payments require an internet connection."
@@ -104,9 +94,5 @@ export default class extends Controller {
         this.terminalStatusTarget.textContent = "Terminal unavailable. Check Stripe keys or use cash."
       }
     }
-  }
-
-  printAgentBlockedMessage() {
-    return document.body.dataset.printAgentBlockedMessage || "Payment is unavailable until the print agent is running."
   }
 }

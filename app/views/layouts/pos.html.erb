@@ -23,7 +23,7 @@
         data-offline-order-saved-message-value="<%= t("pos.offline.saved") %>"
         data-offline-message="<%= t("pos.offline.banner_offline") %>"
         data-online-message="<%= t("pos.offline.banner_online") %>"
-        data-connectivity-online-value="true"<% if Printing::Config.client_routing? %> data-print-agent-checkout="true" data-print-agent-blocked-message="<%= t("printing.agent.checkout_blocked") %>"<% end %>>
+        data-connectivity-online-value="true">
     <div id="pos-fixed-banners"
          data-controller="banner-offset"
          data-banner-offset-target="container"

@@ -31,7 +31,6 @@ export default class extends Controller {
   }
 
   openPayment() {
-    if (document.body.dataset.printAgentHealthy === "false") return
     document.getElementById("payment-modal")?.classList.remove("hidden")
   }
 
