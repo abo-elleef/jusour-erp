@@ -1,7 +1,7 @@
-<div id="order-summary">
-  <h2 class="text-xl font-bold tracking-tight text-gray-900"><%= order.order_number %></h2>
-  <p class="text-sm font-medium text-amber-700 mt-0.5"><%= order.fulfillment_summary %></p>
+<div id="order-summary" class="min-w-0">
+  <h2 class="text-lg font-bold tracking-tight text-gray-900 truncate"><%= order.order_number %></h2>
+  <p class="text-xs font-medium text-amber-700 mt-0.5 truncate"><%= order.fulfillment_summary %></p>
   <% if order.customer %>
-    <p class="text-sm text-gray-500 mt-0.5"><%= order.customer.display_name %></p>
+    <p class="text-xs text-gray-500 mt-0.5 truncate"><%= order.customer.display_name %></p>
   <% end %>
 </div>

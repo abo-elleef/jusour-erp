@@ -1,17 +1,17 @@
-<div class="flex flex-col lg:flex-row h-screen min-h-0 overflow-hidden" data-controller="pos">
-  <div class="flex-1 lg:w-3/5 flex flex-col bg-gray-50 min-w-0 min-h-0">
-    <header class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white shrink-0">
-      <span class="text-xl font-bold tracking-tight text-gray-900"><%= t("pos.title") %></span>
+<div class="flex flex-col lg:flex-row h-[100dvh] min-h-0 overflow-hidden" data-controller="pos">
+  <section class="flex flex-col min-h-0 flex-1 lg:flex-none lg:w-3/4 lg:h-full bg-gray-50 min-w-0">
+    <header class="flex items-center justify-between px-4 py-2.5 border-b border-gray-200 bg-white shrink-0">
+      <span class="text-lg font-bold tracking-tight text-gray-900"><%= t("pos.title") %></span>
       <%= render "pos/pos_nav" %>
     </header>
 
     <%= turbo_frame_tag "pos_menu", class: "flex flex-col flex-1 min-h-0" do %>
       <%= render "pos/menu_panel" %>
     <% end %>
-  </div>
+  </section>
 
-  <aside class="fixed bottom-0 left-0 right-0 max-h-[45vh] lg:static lg:max-h-none lg:w-2/5 flex flex-col bg-white shrink-0 border-t lg:border-t-0 lg:border-s border-gray-200 z-40">
-    <div class="px-5 py-4 border-b border-gray-200 flex justify-between items-start gap-3 shrink-0 bg-gray-50/80">
+  <aside class="flex flex-col min-h-0 shrink-0 h-[52vh] lg:h-full lg:flex-none lg:w-1/4 bg-white border-t lg:border-t-0 lg:border-s border-gray-200 z-40 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] lg:shadow-none">
+    <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center gap-3 shrink-0 bg-gray-50/80">
       <%= render "pos/order_summary", order: @order %>
       <%= button_to t("pos.cart.new_order"), pos_new_order_path, method: :post,
             class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-xl border border-gray-200 transition-colors shrink-0" %>
