@@ -279,7 +279,11 @@ module ApplicationHelper
 
   def pos_category_pill_class(active: false)
     base = "pos-category-btn px-4 py-2 rounded-xl text-sm font-semibold border shrink-0 transition-colors"
-    active ? "#{base} bg-gray-900 text-white border-gray-900" : "#{base} bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
+    if active
+      "#{base} bg-gray-900 text-white border-gray-900 hover:bg-gray-800 hover:text-white"
+    else
+      "#{base} bg-white text-gray-700 border-gray-200 hover:bg-stone-100 hover:text-gray-800"
+    end
   end
 
   POS_INPUT_CLASS = "w-full min-h-11 text-base bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-gray-900 " \

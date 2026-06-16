@@ -102,7 +102,7 @@ module Pos
         raise ItemUnavailableAtLocation
       end
 
-      modifier_ids = Array(params[:modifier_ids])
+      modifier_ids = Array(params[:modifier_ids]) + Array(params[:modifier_group_selections]&.values)
       unit_price = menu_item.price_cents_at(@order.location)
       item = @order.order_items.create!(
         menu_item: menu_item,

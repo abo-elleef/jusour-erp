@@ -16,7 +16,7 @@
                 <% if group.multi_select %>
                   <%= check_box_tag "modifier_ids[]", mod.id, false, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/30" %>
                 <% else %>
-                  <%= radio_button_tag "modifier_ids[]", mod.id, false, required: group.required, class: "border-gray-300 text-amber-600 focus:ring-amber-500/30" %>
+                  <%= radio_button_tag "modifier_group_selections[#{group.id}]", mod.id, false, required: group.required, class: "border-gray-300 text-amber-600 focus:ring-amber-500/30" %>
                 <% end %>
                 <span class="flex-1 text-gray-900"><%= mod.name %></span>
                 <% if mod.price_adjustment_cents != 0 %>
