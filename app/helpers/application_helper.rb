@@ -277,6 +277,14 @@ module ApplicationHelper
     active ? "#{base} bg-gray-900 text-white border-gray-900" : "#{base} bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
   end
 
+  def pos_viewport_min_h_class
+    "min-h-[calc(100dvh-var(--pos-banner-offset,0px))]"
+  end
+
+  def pos_viewport_h_class
+    "h-[calc(100dvh-var(--pos-banner-offset,0px))]"
+  end
+
   def pos_category_pill_class(active: false)
     base = "pos-category-btn px-4 py-2 rounded-xl text-sm font-semibold border shrink-0 transition-colors"
     if active

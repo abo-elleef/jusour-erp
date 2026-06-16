@@ -1,9 +1,10 @@
-<%# locals: id:, message:, hint: nil, variant: "warning", fixed: false, hidden: true, target: nil %>
+<%# locals: id:, message:, hint: nil, variant: "warning", fixed: false, hidden: true, target: nil, html_id: nil %>
 <% variant = local_assigns.fetch(:variant, "warning") %>
 <% fixed = local_assigns.fetch(:fixed, false) %>
 <% hidden = local_assigns.fetch(:hidden, true) %>
 <% hint = local_assigns[:hint] %>
 <% target = local_assigns[:target] %>
+<% html_id = local_assigns[:html_id] %>
 <% variant_classes = {
      "warning" => "bg-amber-50 text-amber-900 border-amber-200",
      "offline" => "bg-yellow-500 text-yellow-900 border-yellow-600",
@@ -13,7 +14,8 @@
 <% data_attrs = { controller: "dismissible-banner", dismissible_banner_id_value: id } %>
 <% data_attrs[:"#{target}_target"] = "banner" if target.present? %>
 
-<%= tag.div role: "alert",
+<%= tag.div id: html_id,
+      role: "alert",
       data: data_attrs,
       class: class_names(
         position_classes,

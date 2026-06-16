@@ -168,6 +168,7 @@ en:
       routing_client: "Print jobs are sent from this computer to the store printer, not from the cloud server."
       banner: "Print agent not running on this register."
       banner_hint: "Start it with: node print_agent/index.js (port %{port})"
+      checkout_blocked: "Payment is unavailable until the print agent is running on this register."
       discover_button: "Scan local network"
       discover_hint: "Discovers printers on this computer's network via the local print agent."
       discover_empty: "No printers found — enter IP manually"

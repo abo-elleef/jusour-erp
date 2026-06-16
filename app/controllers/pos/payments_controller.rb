@@ -2,9 +2,12 @@
 
 module Pos
   class PaymentsController < ApplicationController
+    include PrintAgentCheckout
+
     before_action :require_pos_access!
     before_action :set_order
     before_action :authorize_payment!
+    before_action :require_print_agent_for_checkout!, only: %i[create stripe_intent capture_stripe]
 
     def create
       tip_cents = params[:tip_cents].to_i

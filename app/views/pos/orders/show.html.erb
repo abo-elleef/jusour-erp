@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-gray-100 flex flex-col">
+<div class="<%= pos_viewport_min_h_class %> bg-gray-100 flex flex-col">
   <header class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-gray-200 bg-white shrink-0">
     <div class="flex flex-wrap items-center gap-3">
       <% back_path = @from_shift ? pos_shift_path(tab: "orders") : pos_orders_path(order_type: @order.order_type) %>
@@ -70,7 +70,12 @@
     </section>
 
     <% if @order.amount_due_cents.positive? && !@from_shift %>
-      <div class="lg:sticky lg:top-5 lg:self-start">
+      <% if Printing::Config.client_routing? %>
+        <div data-print-agent-checkout-blocked class="<%= Printing::Config.client_routing? ? "" : "hidden" %> rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 leading-relaxed">
+          <%= t("printing.agent.checkout_blocked") %>
+        </div>
+      <% end %>
+      <div class="lg:sticky lg:top-5 lg:self-start"<% if Printing::Config.client_routing? %> data-requires-print-agent class="hidden"<% end %>>
         <%= render "pos/payment_modal", order: @order, checkout: true %>
       </div>
     <% end %>

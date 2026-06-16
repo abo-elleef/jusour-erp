@@ -15,7 +15,9 @@
     <span class="text-sm font-semibold text-gray-600 px-2 py-1.5"><%= @pos_location.name %></span>
   <% end %>
   <%= link_to t("nav.register"), pos_path, class: pos_nav_link_class(request.path == pos_path) %>
-  <%= link_to t("nav.collect_payment"), pos_orders_path, class: pos_nav_link_class(request.path.start_with?("/pos/orders")) %>
+  <%= link_to t("nav.collect_payment"), pos_orders_path,
+        class: "#{pos_nav_link_class(request.path.start_with?("/pos/orders"))} #{class_names(hidden: Printing::Config.client_routing?)}",
+        data: (Printing::Config.client_routing? ? { requires_print_agent: true } : {}) %>
   <%= link_to t("nav.my_shift"), pos_shift_path, class: pos_nav_link_class(request.path == pos_shift_path || request.path.start_with?("/pos/shift")) %>
   <%= link_to t("nav.kitchen"), kitchen_path, class: pos_nav_link_class(request.path == kitchen_path) %>
   <% if current_user.admin_access? %>

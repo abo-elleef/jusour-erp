@@ -23,23 +23,37 @@
         data-offline-order-saved-message-value="<%= t("pos.offline.saved") %>"
         data-offline-message="<%= t("pos.offline.banner_offline") %>"
         data-online-message="<%= t("pos.offline.banner_online") %>"
-        data-connectivity-online-value="true">
-    <div data-connectivity-target="banner"
-         data-controller="dismissible-banner"
-         data-dismissible-banner-id-value="connectivity-offline"
-         class="hidden fixed top-0 start-0 end-0 z-[60] border-b shadow-sm bg-yellow-500 text-yellow-900 border-yellow-600"
-         role="alert">
-      <div class="flex items-start gap-3 px-4 py-2.5 max-w-5xl mx-auto">
-        <p data-connectivity-banner-message class="flex-1 min-w-0 text-sm font-medium text-center sm:text-start leading-snug"></p>
-        <button type="button"
-                data-action="dismissible-banner#dismiss"
-                class="shrink-0 rounded-lg p-1.5 opacity-70 hover:opacity-100 hover:bg-black/5 transition-colors min-h-9 min-w-9 flex items-center justify-center"
-                aria-label="<%= t("actions.close") %>">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-          </svg>
-        </button>
+        data-connectivity-online-value="true"<% if Printing::Config.client_routing? %> data-print-agent-checkout="true" data-print-agent-blocked-message="<%= t("printing.agent.checkout_blocked") %>"<% end %>>
+    <div id="pos-fixed-banners"
+         data-controller="banner-offset"
+         data-banner-offset-target="container"
+         class="fixed top-0 start-0 end-0 z-[60]">
+      <div data-connectivity-target="banner"
+           data-controller="dismissible-banner"
+           data-dismissible-banner-id-value="connectivity-offline"
+           class="hidden border-b shadow-sm bg-yellow-500 text-yellow-900 border-yellow-600"
+           role="alert">
+        <div class="flex items-start gap-3 px-4 py-2.5 max-w-5xl mx-auto">
+          <p data-connectivity-banner-message class="flex-1 min-w-0 text-sm font-medium text-center sm:text-start leading-snug"></p>
+          <button type="button"
+                  data-action="dismissible-banner#dismiss"
+                  class="shrink-0 rounded-lg p-1.5 opacity-70 hover:opacity-100 hover:bg-black/5 transition-colors min-h-9 min-w-9 flex items-center justify-center"
+                  aria-label="<%= t("actions.close") %>">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
       </div>
+      <% if current_user&.company_id && Printing::Config.client_routing? %>
+        <%= render "shared/dismissible_banner",
+              id: "print-agent",
+              html_id: "print-agent-banner",
+              message: t("printing.agent.banner"),
+              hint: t("printing.agent.banner_hint", port: Printing::Config.agent_port),
+              variant: "warning",
+              hidden: true %>
+      <% end %>
     </div>
     <%= render "shared/toasts" %>
     <span class="sr-only" data-connectivity-target="syncStatus"></span>
@@ -55,13 +69,6 @@
            data-client-printer-config-value="<%= print_agent_config_json %>"
            data-client-printer-payload-url-template-value="<%= payload_pos_print_log_path(":id") %>"
            data-client-printer-confirm-url-template-value="<%= confirm_pos_print_log_path(":id") %>">
-        <%= render "shared/dismissible_banner",
-              id: "print-agent",
-              target: "client_printer",
-              message: t("printing.agent.banner"),
-              hint: t("printing.agent.banner_hint", port: Printing::Config.agent_port),
-              variant: "warning",
-              hidden: true %>
       </div>
     <% end %>
     <%= yield %>

@@ -1,7 +1,9 @@
 <% total = order.total_cents || 0 %>
 <% due = order.amount_due_cents %>
-<div class="bg-white rounded-2xl border border-gray-200 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto text-gray-900"
-     data-controller="payment" data-payment-order-total-value="<%= total %>">
+<div class="bg-white rounded-2xl border border-gray-200 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto text-gray-900 <%= class_names(hidden: Printing::Config.client_routing?) %>"
+     data-controller="payment"
+     data-payment-order-total-value="<%= total %>"
+     <%= tag.attributes(data: { requires_print_agent: true }) if Printing::Config.client_routing? %>>
   <div class="flex justify-between items-center mb-4">
     <h3 class="text-xl font-bold tracking-tight text-gray-900"><%= t("payment.title") %></h3>
     <% if local_assigns[:checkout] %>
