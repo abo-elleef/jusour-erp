@@ -246,6 +246,10 @@ module ApplicationHelper
     t("inventory.ingredients.units.#{unit}", default: unit.to_s)
   end
 
+  def stock_location_option_label(location)
+    "#{location.name} (#{t("admin.locations.type_#{location.location_type}")})"
+  end
+
   def ingredient_suppliers_summary(ingredient)
     suppliers = ingredient.suppliers.sort_by(&:name)
     return tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") if suppliers.empty?

@@ -25,6 +25,7 @@ module Admin
         @adjustments = @ingredient.stock_adjustments.includes(:user).order(created_at: :desc).limit(50)
         @recipes = @ingredient.recipes.includes(:menu_item)
         @supplier_links = @ingredient.supplier_ingredients.includes(:supplier)
+        load_branch_stock
       end
 
       def new
@@ -36,12 +37,21 @@ module Admin
       def create
         @ingredient = Ingredient.new(ingredient_params)
         authorize_inventory!(:create)
-        if @ingredient.save
-          redirect_to admin_inventory_ingredient_path(@ingredient), notice: t("flash.ingredient.created")
-        else
-          load_form_data
-          render :new, status: :unprocessable_entity
+        load_form_data
+
+        if stock_location_required? && stock_location.blank?
+          @ingredient.errors.add(:base, t("inventory.ingredients.form.stock_location_required"))
+          return render :new, status: :unprocessable_entity
         end
+
+        ActiveRecord::Base.transaction do
+          @ingredient.save!
+          assign_initial_stock_location!(@ingredient, stock_location) if stock_location
+        end
+
+        redirect_to admin_inventory_ingredient_path(@ingredient), notice: t("flash.ingredient.created")
+      rescue ActiveRecord::RecordInvalid
+        render :new, status: :unprocessable_entity
       end
 
       def edit
@@ -97,6 +107,33 @@ module Admin
 
       def load_form_data
         @categories = IngredientCategory.active.ordered
+        load_stock_locations if @ingredient&.new_record?
+      end
+
+      def load_stock_locations
+        central_kitchens = Location.active.central_kitchens.ordered.to_a
+        branches = Location.active.branches.ordered.to_a
+        @stock_locations = central_kitchens + branches
+        @default_stock_location = central_kitchens.first || @stock_locations.first
+        @selected_stock_location_id = params[:stock_location_id].presence || @default_stock_location&.id
+      end
+
+      def stock_location
+        return @stock_location if defined?(@stock_location)
+
+        @stock_location = Location.active.find_by(id: params[:stock_location_id])
+      end
+
+      def stock_location_required?
+        @stock_locations&.any?
+      end
+
+      def assign_initial_stock_location!(ingredient, location)
+        ingredient.ingredient_locations.create!(
+          location: location,
+          quantity_on_hand: ingredient.quantity_on_hand,
+          reorder_threshold: ingredient.reorder_threshold
+        )
       end
 
       def apply_stock_filter(scope)
@@ -111,6 +148,15 @@ module Admin
       def load_supplier_links_data
         @supplier_links = @ingredient.supplier_ingredients.includes(:supplier).order("suppliers.name")
         @available_suppliers = Supplier.active.where.not(id: @ingredient.supplier_ids).order(:name)
+      end
+
+      def load_branch_stock
+        central_kitchens = Location.active.central_kitchens.ordered.to_a
+        branches = Location.active.branches.ordered.to_a
+        @stock_locations = central_kitchens + branches
+        @ingredient_locations_by_location_id = @ingredient.ingredient_locations
+          .where(location_id: @stock_locations.map(&:id))
+          .index_by(&:location_id)
       end
 
       def ingredient_params
