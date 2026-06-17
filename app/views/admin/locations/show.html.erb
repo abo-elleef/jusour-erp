@@ -55,12 +55,17 @@
     </div>
   </div>
 
-  <% if @location.address.present? %>
+  <% if @location.address.present? || @location.phone.present? || @location.whatsapp_number.present? %>
     <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-4">
-      <p class="text-sm font-semibold text-gray-700"><%= t("admin.locations.address") %></p>
-      <p class="text-sm text-gray-600 mt-1"><%= @location.address %></p>
+      <% if @location.address.present? %>
+        <p class="text-sm font-semibold text-gray-700"><%= t("admin.locations.address") %></p>
+        <p class="text-sm text-gray-600 mt-1"><%= @location.address %></p>
+      <% end %>
       <% if @location.phone.present? %>
-        <p class="text-sm text-gray-600 mt-1"><%= @location.phone %></p>
+        <p class="text-sm text-gray-600 mt-1" dir="ltr"><%= @location.phone %></p>
+      <% end %>
+      <% if @location.whatsapp_number.present? %>
+        <p class="text-sm text-gray-600 mt-1" dir="ltr"><%= t("admin.locations.fields.whatsapp_number") %>: <%= @location.whatsapp_number %></p>
       <% end %>
     </section>
   <% end %>

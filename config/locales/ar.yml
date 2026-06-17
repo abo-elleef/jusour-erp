@@ -23,6 +23,9 @@ ar:
       empty: "لا توجد عناصر في القائمة في %{branch} بعد."
       switch_branch: "تغيير الفرع"
       footer: "قائمة %{company}"
+      call: "اتصال %{number}"
+      whatsapp: "واتساب %{number}"
+      whatsapp_short: "واتساب"
 
   auth:
     sign_in_title: "تسجيل الدخول"
@@ -1442,6 +1445,9 @@ ar:
         location_type: "النوع"
         address: "العنوان"
         phone: "الهاتف"
+        whatsapp_number: "رقم واتساب"
+        whatsapp_number_placeholder: "+20 10 1234 5678"
+        whatsapp_number_hint: "أدخل رمز الدولة. يظهر في القائمة العامة مع رابط للمحادثة."
         active: "نشط"
     dashboard:
       title: "لوحة التحكم"

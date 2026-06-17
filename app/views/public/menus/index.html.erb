@@ -20,6 +20,9 @@
             <% if location.phone.present? %>
               <p class="text-sm text-amber-700 mt-1 font-medium" dir="ltr"><%= location.phone %></p>
             <% end %>
+            <% if location.whatsapp_url %>
+              <p class="text-sm text-[#128C7E] mt-1 font-medium" dir="ltr"><%= t("public.menu.whatsapp_short") %>: <%= location.whatsapp_number %></p>
+            <% end %>
           <% end %>
         </li>
       <% end %>

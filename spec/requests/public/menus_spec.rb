@@ -50,12 +50,16 @@ RSpec.describe "Public menus", type: :request do
 
   describe "GET /m/:company_slug/:location_slug" do
     it "shows the branch menu without login" do
+      branch.update!(whatsapp_number: "+20 10 1234 5678")
+
       get public_menu_path(company_slug: company.slug, location_slug: branch.slug)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Burger")
       expect(response.body).to include("Downtown")
       expect(response.body).to include(format_money(1500))
+      expect(response.body).to include("wa.me/201012345678")
+      expect(response.body).to include("+20 10 1234 5678")
     end
 
     it "returns not found for inactive company" do

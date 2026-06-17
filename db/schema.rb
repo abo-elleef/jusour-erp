@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_05_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_06_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -341,6 +341,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_05_000000) do
     t.datetime "updated_at", null: false
     t.string "slug", null: false
     t.boolean "public_menu_enabled", default: false, null: false
+    t.string "whatsapp_number"
     t.index ["active"], name: "index_locations_on_active"
     t.index ["company_id", "name"], name: "index_locations_on_company_id_and_name", unique: true
     t.index ["company_id", "slug"], name: "index_locations_on_company_id_and_slug", unique: true

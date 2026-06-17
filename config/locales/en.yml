@@ -23,6 +23,9 @@ en:
       empty: "No menu items are available at %{branch} yet."
       switch_branch: "Switch branch"
       footer: "Menu for %{company}"
+      call: "Call %{number}"
+      whatsapp: "WhatsApp %{number}"
+      whatsapp_short: "WhatsApp"
 
   auth:
     sign_in_title: "Sign in"
@@ -1433,6 +1436,9 @@ en:
         location_type: "Type"
         address: "Address"
         phone: "Phone"
+        whatsapp_number: "WhatsApp number"
+        whatsapp_number_placeholder: "+20 10 1234 5678"
+        whatsapp_number_hint: "Include country code. Shown on the public menu with a chat link."
         active: "Active"
     dashboard:
       title: "Dashboard"

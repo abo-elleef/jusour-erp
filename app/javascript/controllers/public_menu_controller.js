@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
-const ACTIVE_CLASSES = ["bg-gray-900", "text-white", "border-gray-900"]
-const INACTIVE_CLASSES = ["bg-white", "text-gray-700", "border-stone-200"]
+const ACTIVE_CLASSES = ["bg-amber-100", "text-amber-950", "border-amber-300"]
+const INACTIVE_CLASSES = ["bg-stone-50", "text-stone-700", "border-stone-200"]
 
 export default class extends Controller {
   connect() {

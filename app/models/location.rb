@@ -52,6 +52,20 @@ class Location < ApplicationRecord
     ingredient_locations.find_by(ingredient: ingredient)
   end
 
+  def phone_url
+    sanitized = phone.to_s.gsub(/[^\d+]/, "")
+    return if sanitized.blank?
+
+    "tel:#{sanitized}"
+  end
+
+  def whatsapp_url
+    digits = whatsapp_number.to_s.gsub(/\D/, "")
+    return if digits.blank?
+
+    "https://wa.me/#{digits}"
+  end
+
   private
 
   def clear_public_menu_for_non_branches
