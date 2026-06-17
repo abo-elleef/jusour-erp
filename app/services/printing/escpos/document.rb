@@ -15,7 +15,7 @@ module Printing
       end
 
       def text(line = "")
-        @buffer << encode_text(line) << "\n"
+        write_line(prepare_text(line))
       end
 
       def blank(lines = 1)
@@ -23,15 +23,15 @@ module Printing
       end
 
       def row(left, right = "")
-        left_str = left.to_s
-        right_str = right.to_s
+        left_str = prepare_text(left)
+        right_str = prepare_text(right)
         left_str, right_str = right_str, left_str if @rtl
 
         left_len = display_width(left_str)
         right_len = display_width(right_str)
         space = @width - left_len - right_len
         space = 1 if space < 1
-        text("#{left_str}#{' ' * space}#{right_str}")
+        write_line("#{left_str}#{' ' * space}#{right_str}")
       end
 
       def rule(char = "-")
@@ -43,6 +43,7 @@ module Printing
       end
 
       def align(mode)
+        mode = rtl_align_mode(mode)
         code = { left: 0, center: 1, right: 2 }.fetch(mode)
         @buffer << ESC << "a" << code.chr
       end
@@ -69,6 +70,26 @@ module Printing
       def select_code_page
         code_page = Charset.code_page_for(@charset_config)
         @buffer << ESC << "t" << code_page.chr
+      end
+
+      def rtl_align_mode(mode)
+        return mode unless @rtl
+
+        case mode
+        when :left then :right
+        when :right then :left
+        else mode
+        end
+      end
+
+      def prepare_text(value)
+        return value.to_s unless @rtl
+
+        Bidi.visual_for_print(value)
+      end
+
+      def write_line(line)
+        @buffer << encode_text(line) << "\n"
       end
 
       def encode_text(value)

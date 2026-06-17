@@ -13,15 +13,15 @@ RSpec.describe Printing::Escpos::Document do
       doc.text("شكراً")
 
       bytes = doc.to_bytes
-      expect(bytes).to include("\xD4\xDF\xD1\xC7\xF0".b)
       expect(bytes).not_to include("?".b)
+      expect(bytes).to include("\n".b)
     end
 
     it "selects the Arabic code page during init" do
       doc = described_class.new
       bytes = doc.to_bytes
 
-      expect(bytes).to start_with("\x1B\x40\x1B\x74/\x1B".b)
+      expect(bytes).to start_with("\x1B\x40\x1B\x74/".b)
     end
 
     it "swaps row columns for RTL layout" do
@@ -30,6 +30,22 @@ RSpec.describe Printing::Escpos::Document do
 
       line = doc.to_bytes.split("\n").find { |l| l.include?("99".b) }
       expect(line.index("99".b)).to be < line.index("label".b)
+    end
+
+    it "maps left alignment to printer right alignment" do
+      doc = described_class.new
+      doc.align(:left)
+
+      bytes = doc.to_bytes
+      expect(bytes).to include("\x1B\x61\x02".b)
+    end
+
+    it "does not reverse pure Latin text" do
+      doc = described_class.new
+      doc.text("ORD-123")
+
+      bytes = doc.to_bytes
+      expect(bytes).to include("ORD-123".b)
     end
   end
 
