@@ -1,0 +1,126 @@
+<% content_for :title, "#{@location.name} — #{@company.name}" %>
+<% content_for :meta_description, t("public.menu.meta_description", company: @company.name) %>
+
+<div data-controller="public-menu" class="min-h-screen flex flex-col">
+  <header class="bg-white border-b border-stone-200 sticky top-0 z-10">
+    <div class="max-w-3xl mx-auto px-4 py-5">
+      <p class="text-xs font-semibold uppercase tracking-wider text-amber-700"><%= @company.name %></p>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900 mt-0.5"><%= @location.name %></h1>
+      <% if @location.address.present? || @location.phone.present? %>
+        <div class="mt-2 text-sm text-gray-500 space-y-0.5">
+          <% if @location.address.present? %>
+            <p><%= @location.address %></p>
+          <% end %>
+          <% if @location.phone.present? %>
+            <p class="text-amber-700 font-medium" dir="ltr"><%= @location.phone %></p>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if @branches.many? %>
+        <div class="mt-4">
+          <label for="branch-select" class="sr-only"><%= t("public.menu.switch_branch") %></label>
+          <select id="branch-select"
+                  class="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none"
+                  onchange="if (this.value) window.location.href = this.value">
+            <% @branches.each do |branch| %>
+              <option value="<%= public_menu_path(company_slug: @company.slug, location_slug: branch.slug) %>"
+                      <%= "selected" if branch.id == @location.id %>>
+                <%= branch.name %>
+              </option>
+            <% end %>
+          </select>
+        </div>
+      <% end %>
+    </div>
+
+    <% if @categories.any? || @combos.any? %>
+      <div class="max-w-3xl mx-auto px-4 pb-3 flex gap-2 overflow-x-auto">
+        <button type="button"
+                class="public-menu-category-btn shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+                data-action="public-menu#filterCategory"
+                data-category="all">
+          <%= t("actions.all") %>
+        </button>
+        <% @categories.each do |category| %>
+          <button type="button"
+                  class="public-menu-category-btn shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+                  data-action="public-menu#filterCategory"
+                  data-category="<%= category.id %>">
+            <%= category.name %>
+          </button>
+        <% end %>
+        <% if @combos.any? %>
+          <button type="button"
+                  class="public-menu-category-btn shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors"
+                  data-action="public-menu#filterCategory"
+                  data-category="combos">
+            <%= t("pos.categories.combos") %>
+          </button>
+        <% end %>
+      </div>
+    <% end %>
+  </header>
+
+  <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-6">
+    <% if @menu_items.empty? && @combos.empty? %>
+      <p class="text-center text-gray-500 py-20 text-sm"><%= t("public.menu.empty", branch: @location.name) %></p>
+    <% else %>
+      <div class="space-y-4" id="public-menu-grid">
+        <% @menu_items.each do |item| %>
+          <article class="public-menu-card rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-sm"
+                   data-category="<%= item.category_id %>">
+            <div class="flex gap-4 p-4">
+              <% if item.image.attached? %>
+                <%= image_tag item.image, class: "w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl shrink-0" %>
+              <% else %>
+                <div class="w-24 h-24 sm:w-28 sm:h-28 bg-stone-100 rounded-xl shrink-0 flex items-center justify-center text-stone-400 text-xs font-medium px-2 text-center">
+                  <%= item.category.name %>
+                </div>
+              <% end %>
+              <div class="flex-1 min-w-0">
+                <h2 class="font-semibold text-gray-900 leading-tight"><%= item.name %></h2>
+                <% if item.description.present? %>
+                  <p class="text-sm text-gray-500 mt-1 line-clamp-3"><%= item.description %></p>
+                <% end %>
+                <% if item.modifier_groups.any? %>
+                  <div class="mt-2 space-y-1">
+                    <% item.modifier_groups.each do |group| %>
+                      <p class="text-xs text-gray-400">
+                        <span class="font-medium text-gray-500"><%= group.name %>:</span>
+                        <%= group.modifiers.map(&:name).join(", ") %>
+                      </p>
+                    <% end %>
+                  </div>
+                <% end %>
+                <p class="text-amber-700 font-bold mt-2 tabular-nums"><%= format_money(item.price_cents_at(@location)) %></p>
+              </div>
+            </div>
+          </article>
+        <% end %>
+
+        <% @combos.each do |combo| %>
+          <article class="public-menu-card rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden shadow-sm"
+                   data-category="combos">
+            <div class="flex gap-4 p-4">
+              <div class="w-24 h-24 sm:w-28 sm:h-28 bg-amber-100 rounded-xl shrink-0 flex items-center justify-center text-amber-800 font-bold text-xs tracking-wide uppercase px-2 text-center">
+                <%= t("actions.combo") %>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h2 class="font-semibold text-gray-900 leading-tight"><%= combo.name %></h2>
+                <% if combo.description.present? %>
+                  <p class="text-sm text-gray-500 mt-1"><%= combo.description %></p>
+                <% end %>
+                <p class="text-amber-700 font-bold mt-2 tabular-nums"><%= format_money(combo.price_cents) %></p>
+              </div>
+            </div>
+          </article>
+        <% end %>
+      </div>
+    <% end %>
+  </main>
+
+  <footer class="border-t border-stone-200 bg-white py-4 text-center text-xs text-gray-400">
+    <%= t("public.menu.footer", company: @company.name) %>
+  </footer>
+</div>

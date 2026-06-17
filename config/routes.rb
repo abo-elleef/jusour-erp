@@ -66,6 +66,11 @@ Rails.application.routes.draw do
 
   get "receipts/:token", to: "receipts#show", as: :receipt
 
+  scope module: :public, path: "m" do
+    get ":company_slug", to: "menus#index", as: :public_menus
+    get ":company_slug/:location_slug", to: "menus#show", as: :public_menu
+  end
+
   get "staff/payroll/:token", to: "staff_payroll#show", as: :staff_payroll
   post "staff/payroll/:token/verify", to: "staff_payroll#verify", as: :verify_staff_payroll
   delete "staff/payroll/:token", to: "staff_payroll#lock", as: :lock_staff_payroll

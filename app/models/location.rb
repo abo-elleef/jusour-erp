@@ -21,7 +21,11 @@ class Location < ApplicationRecord
   has_many :incoming_stock_transfers, class_name: "StockTransfer", foreign_key: :to_location_id, dependent: :restrict_with_error
 
   validates :name, presence: true, uniqueness: { scope: :company_id }
+  validates :slug, presence: true, uniqueness: { scope: :company_id },
+    format: { with: /\A[a-z0-9\-]+\z/ }
   validates :location_type, presence: true, inclusion: { in: TYPES }
+
+  before_validation :generate_slug, if: -> { slug.blank? && name.present? }
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }
@@ -45,6 +49,18 @@ class Location < ApplicationRecord
   end
 
   private
+
+  def generate_slug
+    base = name.to_s.parameterize.presence || "location"
+    candidate = base
+    counter = 1
+    scope = Location.unscoped.where(company_id: company_id).where.not(id: id)
+    while scope.exists?(slug: candidate)
+      candidate = "#{base}-#{counter}"
+      counter += 1
+    end
+    self.slug = candidate
+  end
 
   def assign_company
     self.company ||= Current.company

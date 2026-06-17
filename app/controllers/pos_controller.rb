@@ -190,19 +190,10 @@ class PosController < ApplicationController
   end
 
   def load_pos_menu
-    if @pos_location.blank?
-      @categories = Category.none
-      @menu_items = MenuItem.none
-      @combos = Combo.none
-      return
-    end
-
-    @menu_items = MenuItem.available_at_location(@pos_location)
-      .includes(:modifier_groups, :category, :location_menu_items, image_attachment: :blob)
-      .order(:position, :name)
-    @combos = Combo.available_at_location(@pos_location).order(:name)
-    category_ids = @menu_items.map(&:category_id).uniq
-    @categories = Category.active.ordered.select { |category| category_ids.include?(category.id) }
+    menu = Menus::ForLocation.call(location: @pos_location)
+    @categories = menu.categories
+    @menu_items = menu.menu_items
+    @combos = menu.combos
   end
 
   def no_cache

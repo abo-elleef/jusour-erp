@@ -15,6 +15,15 @@ ar:
     name: "صقر POS"
     admin_name: "صقر — الإدارة"
 
+  public:
+    menu:
+      meta_description: "تصفح قائمتنا"
+      choose_branch: "اختر فرعاً لعرض القائمة"
+      no_branches: "لا توجد فروع متاحة حالياً."
+      empty: "لا توجد عناصر في القائمة في %{branch} بعد."
+      switch_branch: "تغيير الفرع"
+      footer: "قائمة %{company}"
+
   auth:
     sign_in_title: "تسجيل الدخول"
     sign_in_subtitle: "نقطة البيع والمخزون ولوحة الإدارة"
@@ -1403,6 +1412,7 @@ ar:
       view_all_stock: "عرض كل المخزون"
       manage_menu: "إدارة القائمة"
       manage_stock: "إدارة المخزون"
+      view_public_menu: "عرض القائمة العامة"
       menu_items_title: "قائمة الموقع"
       menu_items_description: "التحكم في العناصر المتاحة في هذا الموقع."
       menu_item_globally_inactive: "غير نشط على مستوى الشركة"
@@ -1423,6 +1433,9 @@ ar:
       confirm_delete: "هل تريد حذف الموقع %{name}؟ لا يمكن التراجع عن هذا الإجراء."
       fields:
         name: "الاسم"
+        slug: "رابط القائمة العامة"
+        slug_placeholder: "فرع-وسط-المدينة"
+        slug_hint: "يُستخدم في رابط قائمة العملاء. يُنشأ تلقائياً من الاسم إذا تُرك فارغاً."
         location_type: "النوع"
         address: "العنوان"
         phone: "الهاتف"

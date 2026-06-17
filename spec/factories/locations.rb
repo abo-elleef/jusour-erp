@@ -4,6 +4,7 @@ FactoryBot.define do
   factory :location do
     company { Current.company }
     sequence(:name) { |n| "Location #{n}" }
+    sequence(:slug) { |n| "location-#{n}" }
     location_type { "branch" }
     active { true }
     position { 0 }

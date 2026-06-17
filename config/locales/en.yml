@@ -15,6 +15,15 @@ en:
     name: "Saqr POS"
     admin_name: "Saqr Admin"
 
+  public:
+    menu:
+      meta_description: "Browse our menu"
+      choose_branch: "Choose a branch to view the menu"
+      no_branches: "No branches are available right now."
+      empty: "No menu items are available at %{branch} yet."
+      switch_branch: "Switch branch"
+      footer: "Menu for %{company}"
+
   auth:
     sign_in_title: "Sign in"
     sign_in_subtitle: "Restaurant POS, inventory, and back office"
@@ -1394,6 +1403,7 @@ en:
       view_all_stock: "View all stock"
       manage_menu: "Manage Menu"
       manage_stock: "Manage Stock"
+      view_public_menu: "View Public Menu"
       menu_items_title: "Location Menu"
       menu_items_description: "Control which items are available at this location."
       menu_item_globally_inactive: "Inactive company-wide"
@@ -1414,6 +1424,9 @@ en:
       confirm_delete: "Delete location %{name}? This cannot be undone."
       fields:
         name: "Name"
+        slug: "Public URL slug"
+        slug_placeholder: "downtown-branch"
+        slug_hint: "Used in the customer menu link. Auto-generated from the name if left blank."
         location_type: "Type"
         address: "Address"
         phone: "Phone"

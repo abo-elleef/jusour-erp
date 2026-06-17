@@ -17,6 +17,11 @@
       </div>
     </div>
     <div class="flex gap-2">
+      <% if @location.branch? && @location.active? %>
+        <%= link_to t("admin.locations.view_public_menu"), public_menu_path(company_slug: Current.company.slug, location_slug: @location.slug),
+              class: "inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-amber-100 transition-colors",
+              target: "_blank", rel: "noopener" %>
+      <% end %>
       <%= link_to t("admin.locations.manage_menu"), admin_location_menu_items_path(@location),
             class: "inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50 transition-colors" %>
       <%= link_to t("admin.locations.manage_stock"), admin_location_ingredients_path(@location),

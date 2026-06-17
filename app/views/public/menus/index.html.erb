@@ -1,0 +1,30 @@
+<% content_for :title, @company.name %>
+<% content_for :meta_description, t("public.menu.choose_branch", company: @company.name) %>
+
+<main class="max-w-lg mx-auto px-4 py-10">
+  <header class="text-center mb-10">
+    <h1 class="text-3xl font-bold tracking-tight text-gray-900"><%= @company.name %></h1>
+    <p class="text-gray-500 mt-2 text-sm"><%= t("public.menu.choose_branch", company: @company.name) %></p>
+  </header>
+
+  <% if @locations.any? %>
+    <ul class="space-y-3">
+      <% @locations.each do |location| %>
+        <li>
+          <%= link_to public_menu_path(company_slug: @company.slug, location_slug: location.slug),
+                class: "block rounded-2xl border border-stone-200 bg-white p-5 shadow-sm hover:border-amber-300 hover:shadow-md transition-all" do %>
+            <p class="font-semibold text-lg text-gray-900"><%= location.name %></p>
+            <% if location.address.present? %>
+              <p class="text-sm text-gray-500 mt-1"><%= location.address %></p>
+            <% end %>
+            <% if location.phone.present? %>
+              <p class="text-sm text-amber-700 mt-1 font-medium" dir="ltr"><%= location.phone %></p>
+            <% end %>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="text-center text-gray-500 py-16 text-sm"><%= t("public.menu.no_branches") %></p>
+  <% end %>
+</main>
