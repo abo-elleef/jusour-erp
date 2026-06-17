@@ -4,6 +4,7 @@ class VendorInvoice < ApplicationRecord
   include Tenantable
 
   PAYMENT_STATUSES = %w[unpaid partially_paid paid void].freeze
+  DISCOUNT_TYPES = %w[percentage fixed_amount].freeze
 
   belongs_to :supplier
   belongs_to :user
@@ -24,6 +25,10 @@ class VendorInvoice < ApplicationRecord
   validates :location, presence: true
   validates :payment_status, inclusion: { in: PAYMENT_STATUSES }
   validates :amount_paid_cents, numericality: { greater_than_or_equal_to: 0 }
+  validates :discount_type, inclusion: { in: DISCOUNT_TYPES }, allow_nil: true
+  validates :discount_value, numericality: { greater_than: 0 }, allow_nil: true
+  validate :discount_type_and_value_consistency
+  validate :discount_percentage_range
   validate :amount_paid_not_above_total
 
   scope :unpaid, -> { where(payment_status: "unpaid") }
@@ -69,6 +74,27 @@ class VendorInvoice < ApplicationRecord
     editable? && stock_intact_for_edit?
   end
 
+  def subtotal_cents
+    vendor_invoice_lines.reject(&:marked_for_destruction?).sum(&:line_total_cents)
+  end
+
+  def discount_cents
+    return 0 if discount_type.blank? || discount_value.blank?
+
+    case discount_type
+    when "percentage"
+      (subtotal_cents * discount_value.to_d / 100).round
+    when "fixed_amount"
+      [discount_value.to_i, subtotal_cents].min
+    else
+      0
+    end
+  end
+
+  def discounted?
+    discount_cents.positive?
+  end
+
   def balance_due_cents
     total_cents - amount_paid_cents
   end
@@ -98,8 +124,26 @@ class VendorInvoice < ApplicationRecord
   private
 
   def recalculate_total
-    lines = vendor_invoice_lines.reject(&:marked_for_destruction?)
-    self.total_cents = lines.sum { |line| (line.quantity.to_d * line.unit_price_cents).round }
+    self.total_cents = [subtotal_cents - discount_cents, 0].max
+  end
+
+  def discount_type_and_value_consistency
+    if discount_type.blank?
+      errors.add(:discount_value, :present) if discount_value.present? && discount_value.to_d.positive?
+      return
+    end
+
+    errors.add(:discount_value, :blank) if discount_value.blank? || discount_value.to_d <= 0
+  end
+
+  def discount_percentage_range
+    return unless discount_type == "percentage"
+    return if discount_value.blank?
+
+    value = discount_value.to_d
+    return if value.positive? && value <= 100
+
+    errors.add(:discount_value, :inclusion, message: "must be between 0 and 100 for percentage discounts")
   end
 
   def amount_paid_not_above_total

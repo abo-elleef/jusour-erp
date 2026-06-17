@@ -172,6 +172,7 @@ module Admin
       def vendor_invoice_params
         permitted = params.require(:vendor_invoice).permit(
           :supplier_id, :location_id, :invoice_number, :invoice_date, :received_on, :notes,
+          :discount_type, :discount_value, :discount_amount_dollars, :discount_notes,
           vendor_invoice_lines_attributes: %i[
             id ingredient_id quantity unit_price_dollars expires_on batch_reference line_notes _destroy
           ]
@@ -180,7 +181,22 @@ module Admin
           dollars = attrs.delete(:unit_price_dollars)
           attrs[:unit_price_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
         end
+        normalize_discount_params!(permitted)
         permitted
+      end
+
+      def normalize_discount_params!(permitted)
+        case permitted[:discount_type]
+        when "fixed_amount"
+          dollars = permitted.delete(:discount_amount_dollars)
+          permitted[:discount_value] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
+        when "percentage"
+          permitted.delete(:discount_amount_dollars)
+        else
+          permitted[:discount_type] = nil
+          permitted[:discount_value] = nil
+          permitted[:discount_notes] = nil
+        end
       end
 
       def invoice_lines_present?(attrs = vendor_invoice_params)

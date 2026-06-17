@@ -96,4 +96,28 @@ RSpec.describe Inventory::ReceiveVendorInvoiceService do
     expect { described_class.new(invoice, user).call }
       .not_to change(SupplierPriceHistory, :count)
   end
+
+  it "applies a percentage discount to the invoice total" do
+    invoice = build_invoice(lines: [{ quantity: 4, unit_price_cents: 250 }])
+    invoice.discount_type = "percentage"
+    invoice.discount_value = 10
+    invoice.discount_notes = "Volume rebate"
+
+    described_class.new(invoice, user).call
+
+    expect(invoice.reload.total_cents).to eq(900)
+    expect(invoice.subtotal_cents).to eq(1_000)
+    expect(invoice.discount_cents).to eq(100)
+    expect(invoice.discount_notes).to eq("Volume rebate")
+  end
+
+  it "applies a fixed discount capped at subtotal" do
+    invoice = build_invoice(lines: [{ quantity: 4, unit_price_cents: 250 }])
+    invoice.discount_type = "fixed_amount"
+    invoice.discount_value = 150
+
+    described_class.new(invoice, user).call
+
+    expect(invoice.reload.total_cents).to eq(850)
+  end
 end

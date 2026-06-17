@@ -402,6 +402,24 @@ module ApplicationHelper
     (cents.to_d / 100).round(2)
   end
 
+  def vendor_invoice_discount_amount_dollars(invoice)
+    return nil unless invoice.discount_type == "fixed_amount"
+    return nil if invoice.discount_value.blank?
+
+    (invoice.discount_value.to_i / 100.0).round(2)
+  end
+
+  def vendor_invoice_discount_label(invoice)
+    return nil unless invoice.discounted?
+
+    case invoice.discount_type
+    when "percentage"
+      t("inventory.vendor_invoices.discount_percentage_label", value: invoice.discount_value)
+    when "fixed_amount"
+      t("inventory.vendor_invoices.discount_fixed_label", amount: format_money(invoice.discount_cents))
+    end
+  end
+
   def ingredient_status_badge(ingredient)
     case ingredient.stock_status
     when :out then [t("inventory.stock_status.out"), "bg-red-100 text-red-800 border border-red-200"]

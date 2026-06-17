@@ -24,7 +24,6 @@ module Inventory
         @invoice.save!
 
         @invoice.vendor_invoice_lines.each { |line| @stock_handler.receive_line(line) }
-        @invoice.update_column(:total_cents, @invoice.vendor_invoice_lines.sum(&:line_total_cents))
         @invoice.reload
         Accounting::SupplierApLedgerService.record_invoice!(invoice: @invoice, user: @user)
       end

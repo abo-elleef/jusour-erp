@@ -48,6 +48,72 @@
   </section>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden"
+           data-controller="vendor-invoice-discount">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.form.discount") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.vendor_invoices.form.discount_hint") %></p>
+    </div>
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div>
+        <%= f.label :discount_type, t("inventory.vendor_invoices.discount_type"), class: label_class %>
+        <%= f.select :discount_type,
+              options_for_select(
+                [[t("inventory.vendor_invoices.discount_none"), ""]] +
+                  VendorInvoice::DISCOUNT_TYPES.map { |type| [t("inventory.vendor_invoices.discount_types.#{type}"), type] },
+                vendor_invoice.discount_type
+              ),
+              {},
+              class: "#{input_class} appearance-none",
+              data: { vendor_invoice_discount_target: "type", action: "change->vendor-invoice-discount#typeChanged" } %>
+      </div>
+      <div data-vendor-invoice-discount-target="percentageWrap"
+           class="<%= "hidden" unless vendor_invoice.discount_type == "percentage" %>">
+        <%= f.label :discount_value, t("inventory.vendor_invoices.discount_percentage"), class: label_class %>
+        <%= f.number_field :discount_value,
+              value: vendor_invoice.discount_type == "percentage" ? vendor_invoice.discount_value : nil,
+              step: 0.01, min: 0, max: 100,
+              class: input_class,
+              data: { vendor_invoice_discount_target: "percentageInput percentageField" },
+              disabled: vendor_invoice.discount_type != "percentage" %>
+      </div>
+      <div data-vendor-invoice-discount-target="fixedWrap"
+           class="<%= "hidden" unless vendor_invoice.discount_type == "fixed_amount" %>">
+        <%= label_tag :discount_amount_dollars, t("inventory.vendor_invoices.discount_amount"), class: label_class %>
+        <%= number_field_tag "vendor_invoice[discount_amount_dollars]",
+              vendor_invoice_discount_amount_dollars(vendor_invoice),
+              step: 0.01, min: 0,
+              class: input_class,
+              data: { vendor_invoice_discount_target: "fixedInput fixedField" },
+              disabled: vendor_invoice.discount_type != "fixed_amount" %>
+      </div>
+      <div class="sm:col-span-2">
+        <%= f.label :discount_notes, t("inventory.vendor_invoices.discount_notes"), class: label_class %>
+        <%= f.text_area :discount_notes, rows: 2,
+              class: "#{input_class} resize-y min-h-[4rem]",
+              placeholder: t("inventory.vendor_invoices.discount_notes_placeholder") %>
+      </div>
+      <% if estimated_cents.positive? %>
+        <div class="sm:col-span-2 rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3 text-sm text-gray-700 space-y-1">
+          <div class="flex justify-between gap-4">
+            <span><%= t("inventory.vendor_invoices.subtotal") %></span>
+            <span class="font-semibold tabular-nums"><%= format_money(estimated_cents) %></span>
+          </div>
+          <% if vendor_invoice.discounted? %>
+            <div class="flex justify-between gap-4 text-emerald-700">
+              <span><%= vendor_invoice_discount_label(vendor_invoice) %></span>
+              <span class="font-semibold tabular-nums">-<%= format_money(vendor_invoice.discount_cents) %></span>
+            </div>
+          <% end %>
+          <div class="flex justify-between gap-4 border-t border-gray-200 pt-2 font-semibold text-gray-900">
+            <span><%= t("inventory.vendor_invoices.total") %></span>
+            <span class="tabular-nums"><%= format_money(vendor_invoice.total_cents.positive? ? vendor_invoice.total_cents : [estimated_cents - vendor_invoice.discount_cents, 0].max) %></span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden"
            data-controller="vendor-invoice-lines"
            data-vendor-invoice-lines-units-value="<%= @ingredient_units.to_json %>">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
