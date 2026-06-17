@@ -72,7 +72,8 @@
       </div>
       <div>
         <%= f.label :image, t("admin.menu_items.image"), class: label_class %>
-        <%= f.file_field :image, class: "text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gray-100 file:font-semibold file:text-gray-700 hover:file:bg-gray-200" %>
+        <%= f.file_field :image, accept: "image/*",
+              class: "text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gray-100 file:font-semibold file:text-gray-700 hover:file:bg-gray-200" %>
         <% if menu_item.image.attached? %>
           <div class="mt-3">
             <%= image_tag menu_item.image, class: "h-20 rounded-xl border border-gray-200 object-cover" %>

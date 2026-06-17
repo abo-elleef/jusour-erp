@@ -12,29 +12,18 @@ cloudinary:
   api_key: <%= ENV["CLOUDINARY_API_KEY"] %>
   api_secret: <%= ENV["CLOUDINARY_API_SECRET"] %>
 
-# Use bin/rails credentials:edit to set the AWS secrets (as aws:access_key_id|secret_access_key)
-# amazon:
-#   service: S3
-#   access_key_id: <%= Rails.application.credentials.dig(:aws, :access_key_id) %>
-#   secret_access_key: <%= Rails.application.credentials.dig(:aws, :secret_access_key) %>
-#   region: us-east-1
-#   bucket: your_own_bucket-<%= Rails.env %>
+<%
+  gcs_credentials_path = ENV["GCS_CREDENTIALS_PATH"].presence || ENV["GOOGLE_APPLICATION_CREDENTIALS"].presence
+  gcs_project = ENV["GCS_PROJECT"].presence
+  if gcs_project.blank? && gcs_credentials_path.present? && File.exist?(gcs_credentials_path)
+    gcs_project = JSON.parse(File.read(gcs_credentials_path)).fetch("project_id", nil)
+  end
+%>
 
-# Remember not to checkin your GCS keyfile to a repository
-# google:
-#   service: GCS
-#   project: your_project
-#   credentials: <%= Rails.root.join("path/to/gcs.keyfile") %>
-#   bucket: your_own_bucket-<%= Rails.env %>
-
-# Use bin/rails credentials:edit to set the Azure Storage secret (as azure_storage:storage_access_key)
-# microsoft:
-#   service: AzureStorage
-#   storage_account_name: your_account_name
-#   storage_access_key: <%= Rails.application.credentials.dig(:azure_storage, :storage_access_key) %>
-#   container: your_container_name-<%= Rails.env %>
-
-# mirror:
-#   service: Mirror
-#   primary: local
-#   mirrors: [ amazon, google, microsoft ]
+google:
+  service: GCS
+  project: <%= gcs_project %>
+  bucket: <%= ENV.fetch("GCS_BUCKET", "saqr-pos-#{Rails.env}") %>
+  <% if gcs_credentials_path.present? %>
+  credentials: <%= gcs_credentials_path %>
+  <% end %>

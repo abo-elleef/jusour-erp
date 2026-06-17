@@ -31,6 +31,7 @@ gem "sidekiq"
 
 # File Upload
 gem "cloudinary"
+gem "google-cloud-storage", require: false
 
 # Email & SMS
 gem "sendgrid-ruby"
