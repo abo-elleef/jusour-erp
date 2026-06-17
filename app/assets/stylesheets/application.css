@@ -23,7 +23,6 @@ button, a, input[type="submit"] {
   user-select: none;
 }
 
-.pos-main {
-  padding-top: var(--pos-banner-offset, 0px);
-  box-sizing: border-box;
+.pos-main--with-banner {
+  margin-top: 65px;
 }

@@ -24,10 +24,7 @@
         data-offline-message="<%= t("pos.offline.banner_offline") %>"
         data-online-message="<%= t("pos.offline.banner_online") %>"
         data-connectivity-online-value="true">
-    <div id="pos-fixed-banners"
-         data-controller="banner-offset"
-         data-banner-offset-target="container"
-         class="fixed top-0 start-0 end-0 z-[60]">
+    <div id="pos-fixed-banners" class="fixed top-0 start-0 end-0 z-[60]">
       <div data-connectivity-target="banner"
            data-controller="dismissible-banner"
            data-dismissible-banner-id-value="connectivity-offline"
@@ -71,7 +68,7 @@
            data-client-printer-confirm-url-template-value="<%= confirm_pos_print_log_path(":id") %>">
       </div>
     <% end %>
-    <div id="pos-main" class="pos-main flex-1 min-h-0 overflow-hidden">
+    <div id="pos-main" class="pos-main flex-1 min-h-0 overflow-hidden<%= " pos-main--with-banner" if Printing::Config.client_routing? %>">
       <%= yield %>
     </div>
     <%= render "pos/manager_pin_modal" %>

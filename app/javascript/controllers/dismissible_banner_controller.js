@@ -4,6 +4,10 @@ export default class extends Controller {
   static values = { id: String }
 
   connect() {
+    if (this.hasIdValue && this.idValue === "print-agent" && this.isPageReload()) {
+      this.clearDismissal()
+    }
+
     if (this.isDismissed()) this.hide()
   }
 
@@ -45,5 +49,12 @@ export default class extends Controller {
 
   storageKey() {
     return `saqr_banner_dismissed_${this.idValue}`
+  }
+
+  isPageReload() {
+    const [nav] = performance.getEntriesByType("navigation")
+    if (nav?.type) return nav.type === "reload"
+
+    return performance.navigation?.type === 1
   }
 }

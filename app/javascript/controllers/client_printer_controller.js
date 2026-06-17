@@ -19,8 +19,15 @@ export default class extends Controller {
     }
 
     if (this.configValue?.client_routing) {
+      this.clearPrintAgentDismissalOnReload()
       this.checkAgentHealth()
     }
+  }
+
+  clearPrintAgentDismissalOnReload() {
+    const [nav] = performance.getEntriesByType("navigation")
+    const reloaded = nav?.type ? nav.type === "reload" : performance.navigation?.type === 1
+    if (reloaded) sessionStorage.removeItem("saqr_banner_dismissed_print-agent")
   }
 
   disconnect() {
