@@ -22,6 +22,7 @@ en:
       no_branches: "No branches are available right now."
       empty: "No menu items are available at %{branch} yet."
       switch_branch: "Switch branch"
+      category_filters: "Menu categories"
       footer: "Menu for %{company}"
       call: "Call %{number}"
       whatsapp: "WhatsApp %{number}"

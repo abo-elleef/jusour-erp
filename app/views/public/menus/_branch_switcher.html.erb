@@ -1,0 +1,35 @@
+<% if branches.many? %>
+  <div class="mt-4">
+    <p class="mb-1.5 hidden text-xs font-medium text-stone-600 md:block">
+      <%= t("public.menu.switch_branch") %>
+    </p>
+
+    <button type="button"
+            class="flex h-12 w-full items-center justify-between rounded-lg border border-stone-400 bg-white px-4 text-sm text-stone-900 transition-colors hover:bg-stone-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700/20 md:hidden"
+            data-action="public-menu#openBranchDrawer"
+            aria-haspopup="dialog"
+            aria-controls="branch-drawer">
+      <span class="font-medium"><%= current_location.name %></span>
+      <svg class="h-5 w-5 shrink-0 text-stone-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M7 10l5 5 5-5H7z"/>
+      </svg>
+    </button>
+
+    <div class="relative hidden md:block">
+      <label for="branch-select" class="sr-only"><%= t("public.menu.switch_branch") %></label>
+      <select id="branch-select"
+              class="h-12 w-full appearance-none rounded-lg border border-stone-400 bg-transparent ps-4 pe-10 text-sm text-stone-900 transition-colors focus:border-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-700/20"
+              onchange="if (this.value) window.location.href = this.value">
+        <% branches.each do |branch| %>
+          <option value="<%= public_menu_path(company_slug: company.slug, location_slug: branch.slug) %>"
+                  <%= "selected" if branch.id == current_location.id %>>
+            <%= branch.name %>
+          </option>
+        <% end %>
+      </select>
+      <svg class="pointer-events-none absolute end-3 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M7 10l5 5 5-5H7z"/>
+      </svg>
+    </div>
+  </div>
+<% end %>

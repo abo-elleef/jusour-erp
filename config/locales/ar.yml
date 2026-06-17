@@ -22,6 +22,7 @@ ar:
       no_branches: "لا توجد فروع متاحة حالياً."
       empty: "لا توجد عناصر في القائمة في %{branch} بعد."
       switch_branch: "تغيير الفرع"
+      category_filters: "فئات القائمة"
       footer: "قائمة %{company}"
       call: "اتصال %{number}"
       whatsapp: "واتساب %{number}"

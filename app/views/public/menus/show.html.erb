@@ -2,7 +2,7 @@
 <% content_for :meta_description, t("public.menu.meta_description", company: @company.name) %>
 
 <div data-controller="public-menu" class="min-h-screen flex flex-col">
-  <header class="bg-white border-b border-stone-200/80 sticky top-0 z-10 shadow-sm">
+  <header class="border-b border-stone-200/80 bg-white">
     <div class="max-w-3xl mx-auto px-4 pt-5 pb-4">
       <div class="space-y-1">
         <p class="text-xs font-medium uppercase tracking-[0.08em] text-amber-800/90"><%= @company.name %></p>
@@ -39,32 +39,14 @@
         </div>
       <% end %>
 
-      <% if @branches.many? %>
-        <div class="mt-4">
-          <label for="branch-select" class="mb-1.5 block text-xs font-medium text-stone-600">
-            <%= t("public.menu.switch_branch") %>
-          </label>
-          <div class="relative">
-            <select id="branch-select"
-                    class="h-12 w-full appearance-none rounded-lg border border-stone-400 bg-transparent ps-4 pe-10 text-sm text-stone-900 transition-colors focus:border-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-700/20"
-                    onchange="if (this.value) window.location.href = this.value">
-              <% @branches.each do |branch| %>
-                <option value="<%= public_menu_path(company_slug: @company.slug, location_slug: branch.slug) %>"
-                        <%= "selected" if branch.id == @location.id %>>
-                  <%= branch.name %>
-                </option>
-              <% end %>
-            </select>
-            <svg class="pointer-events-none absolute end-3 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-500" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M7 10l5 5 5-5H7z"/>
-            </svg>
-          </div>
-        </div>
-      <% end %>
+      <%= render "public/menus/branch_switcher", branches: @branches, current_location: @location, company: @company %>
     </div>
+  </header>
 
-    <% if @categories.any? || @combos.any? %>
-      <div class="max-w-3xl mx-auto flex gap-2 overflow-x-auto px-4 pb-3">
+  <% if @categories.any? || @combos.any? %>
+    <nav class="sticky top-0 z-10 border-b border-stone-200/80 bg-white/95 shadow-sm backdrop-blur-sm"
+         aria-label="<%= t("public.menu.category_filters") %>">
+      <div class="max-w-3xl mx-auto flex gap-2 overflow-x-auto px-4 py-3">
         <button type="button"
                 class="public-menu-category-btn h-8 shrink-0 rounded-lg border px-3 text-sm font-medium transition-colors"
                 data-action="public-menu#filterCategory"
@@ -88,8 +70,8 @@
           </button>
         <% end %>
       </div>
-    <% end %>
-  </header>
+    </nav>
+  <% end %>
 
   <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-6">
     <% if @menu_items.empty? && @combos.empty? %>
@@ -152,4 +134,6 @@
   <footer class="border-t border-stone-200 bg-white py-4 text-center text-xs text-gray-400">
     <%= t("public.menu.footer", company: @company.name) %>
   </footer>
+
+  <%= render "public/menus/branch_drawer", branches: @branches, current_location: @location, company: @company %>
 </div>

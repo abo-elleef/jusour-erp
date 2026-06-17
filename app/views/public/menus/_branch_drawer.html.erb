@@ -1,0 +1,61 @@
+<% if branches.many? %>
+  <div id="branch-drawer"
+       class="fixed inset-0 z-[100] hidden md:hidden"
+       data-public-menu-target="branchDrawer"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="branch-drawer-title">
+    <button type="button"
+            class="absolute inset-0 bg-stone-900/50"
+            data-action="public-menu#closeBranchDrawer"
+            aria-label="<%= t("actions.close") %>"
+            tabindex="-1"></button>
+
+    <div class="branch-drawer-panel absolute inset-x-0 bottom-0 flex max-h-[85vh] translate-y-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl transition-transform duration-300 ease-out"
+         data-public-menu-target="branchPanel">
+      <div class="flex shrink-0 items-center justify-between border-b border-stone-200 px-4 py-4">
+        <h2 id="branch-drawer-title" class="text-base font-semibold text-stone-900">
+          <%= t("public.menu.switch_branch") %>
+        </h2>
+        <button type="button"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-full text-stone-500 transition-colors hover:bg-stone-100"
+                data-action="public-menu#closeBranchDrawer"
+                aria-label="<%= t("actions.close") %>">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M18.3 5.71a1 1 0 00-1.41 0L12 10.59 7.11 5.7A1 1 0 105.7 7.11L10.59 12l-4.89 4.89a1 1 0 101.41 1.41L12 13.41l4.89 4.89a1 1 0 001.41-1.41L13.41 12l4.89-4.89a1 1 0 000-1.4z"/>
+          </svg>
+        </button>
+      </div>
+
+      <ul class="min-h-0 flex-1 space-y-2 overflow-y-auto p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <% branches.each do |branch| %>
+          <% selected = branch.id == current_location.id %>
+          <li>
+            <%= link_to public_menu_path(company_slug: company.slug, location_slug: branch.slug),
+                  class: "block rounded-xl border px-4 py-3.5 transition-colors #{selected ? 'border-amber-300 bg-amber-50' : 'border-stone-200 bg-white hover:border-amber-200 hover:bg-stone-50'}" do %>
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 flex-1 space-y-1">
+                  <p class="text-sm font-semibold text-stone-900"><%= branch.name %></p>
+                  <% if branch.address.present? %>
+                    <p class="text-xs leading-relaxed text-stone-500"><%= branch.address %></p>
+                  <% end %>
+                  <% if branch.phone.present? %>
+                    <p class="text-xs font-medium text-amber-800" dir="ltr"><%= branch.phone %></p>
+                  <% end %>
+                  <% if branch.whatsapp_number.present? %>
+                    <p class="text-xs font-medium text-[#128C7E]" dir="ltr"><%= t("public.menu.whatsapp_short") %>: <%= branch.whatsapp_number %></p>
+                  <% end %>
+                </div>
+                <% if selected %>
+                  <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                  </svg>
+                <% end %>
+              </div>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+<% end %>
