@@ -10,10 +10,13 @@
   <%= f.hidden_field :id %>
   <div class="lg:col-span-3">
     <label class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("inventory.vendor_invoices.form.ingredient") %></label>
-    <%= f.collection_select :ingredient_id, @ingredients, :id, :name,
-          { prompt: t("inventory.vendor_invoices.select_ingredient"), selected: line.ingredient_id },
-          class: "#{input_class} appearance-none",
-          data: { action: "vendor-invoice-lines#ingredientChanged" } %>
+    <%= render "shared/searchable_select",
+          form: f,
+          field: :ingredient_id,
+          selected: line.ingredient_id,
+          placeholder: t("inventory.vendor_invoices.search_ingredient"),
+          input_class: input_class,
+          html: { data: { action: "change->vendor-invoice-lines#ingredientChanged searchable-select:change->vendor-invoice-lines#ingredientChanged" } } %>
   </div>
   <div class="lg:col-span-1 flex items-end pb-2.5">
     <div>

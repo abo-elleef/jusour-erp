@@ -12,6 +12,8 @@ class VendorInvoice < ApplicationRecord
   has_many :vendor_invoice_lines, dependent: :destroy
   has_many :vendor_invoice_payments, dependent: :destroy
 
+  has_one_attached :invoice_image
+
   accepts_nested_attributes_for :vendor_invoice_lines,
     allow_destroy: true,
     reject_if: proc { |attrs| attrs["ingredient_id"].blank? }

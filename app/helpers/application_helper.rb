@@ -246,6 +246,10 @@ module ApplicationHelper
     t("inventory.ingredients.units.#{unit}", default: unit.to_s)
   end
 
+  def ingredient_search_options(ingredients)
+    ingredients.map { |ingredient| { value: ingredient.id, label: ingredient.name } }.to_json
+  end
+
   def stock_location_option_label(location)
     "#{location.name} (#{t("admin.locations.type_#{location.location_type}")})"
   end

@@ -1,0 +1,23 @@
+<%# locals: form, field, selected: nil, placeholder:, input_class:, html: {} %>
+<% selected_value = selected.presence || form.object.public_send(field) %>
+<div class="relative"
+     data-controller="searchable-select"
+     data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>"
+     <%= tag.attributes(html) %>>
+  <%= form.hidden_field field,
+        value: selected_value,
+        data: { searchable_select_target: "hidden" } %>
+  <input type="text"
+         autocomplete="off"
+         spellcheck="false"
+         role="combobox"
+         aria-expanded="false"
+         aria-autocomplete="list"
+         placeholder="<%= placeholder %>"
+         class="<%= input_class %>"
+         data-searchable-select-target="input"
+         data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+  <ul data-searchable-select-target="menu"
+      role="listbox"
+      class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
+</div>

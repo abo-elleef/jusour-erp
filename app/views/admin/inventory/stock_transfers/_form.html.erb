@@ -37,7 +37,8 @@
   </section>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden"
-           data-controller="stock-transfer-lines">
+           data-controller="stock-transfer-lines"
+           data-searchable-select-options="<%= ingredient_search_options(@ingredients) %>">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
       <div>
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.form.line_items") %></h2>
@@ -56,12 +57,12 @@
     </div>
     <div class="divide-y divide-gray-100" data-stock-transfer-lines-target="list">
       <%= f.fields_for :stock_transfer_lines do |line_form| %>
-        <%= render "line_fields", f: line_form, ingredients: @ingredients %>
+        <%= render "line_fields", f: line_form %>
       <% end %>
     </div>
     <template data-stock-transfer-lines-target="template">
       <%= f.fields_for :stock_transfer_lines, StockTransferLine.new, child_index: "NEW_RECORD" do |line_form| %>
-        <%= render "line_fields", f: line_form, ingredients: @ingredients %>
+        <%= render "line_fields", f: line_form %>
       <% end %>
     </template>
   </section>

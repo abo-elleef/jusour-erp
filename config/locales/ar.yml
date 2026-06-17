@@ -85,6 +85,10 @@ ar:
     apply_search: "تطبيق البحث"
     save_changes: "حفظ التغييرات"
 
+  shared:
+    searchable_select:
+      no_results: "لا توجد نتائج"
+
   printers:
     index:
       description: "طابعات الإيصالات والمطبخ والبار في المطعم."
@@ -808,12 +812,18 @@ ar:
       received_at: "استُلم في"
       select_supplier: "اختر مورداً…"
       select_ingredient: "اختر مكوّناً…"
+      search_ingredient: "ابحث عن مكوّن…"
       all_suppliers: "كل الموردين"
       payment_status: "حالة الدفع"
       all_statuses: "كل الحالات"
       total: "الإجمالي"
       subtotal: "المجموع الفرعي"
       notes: "ملاحظات"
+      invoice_image: "صورة الفاتورة"
+      invoice_image_hint: "صورة اختيارية للفاتورة الورقية عند استلام التوريد."
+      invoice_image_show_hint: "يمكن إرفاق أو استبدال صورة الفاتورة في أي وقت، حتى بعد الدفع."
+      invoice_image_attach: "إرفاق صورة"
+      invoice_image_replace: "استبدال الصورة"
       discount_type: "نوع الخصم"
       discount_none: "بدون خصم"
       discount_percentage: "نسبة الخصم"
@@ -952,6 +962,7 @@ ar:
       ingredient: "المكون"
       select_location: "اختر موقعاً…"
       select_ingredient: "اختر مكوناً…"
+      search_ingredient: "ابحث عن مكون…"
       from_location_hint: "الموقع الذي سيرسل المخزون."
       to_location_hint: "الموقع الذي يطلب ويستلم المخزون."
       quantity_requested: "المطلوب"
@@ -2339,6 +2350,9 @@ ar:
       paid: "تم سداد الفاتورة بالكامل."
       voided: "تم إلغاء فاتورة المورد."
       cannot_void: "يمكن إلغاء الفواتير التي لا تحتوي مدفوعات فقط."
+      image_attached: "تم حفظ صورة الفاتورة."
+      image_required: "اختر صورة للرفع."
+      cannot_attach_image: "لا يمكن إرفاق صورة لفاتورة ملغاة."
     recipe:
       added: "تمت إضافة سطر الوصفة."
       removed: "تم حذف سطر الوصفة."

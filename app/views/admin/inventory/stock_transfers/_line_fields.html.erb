@@ -1,4 +1,4 @@
-<%# locals: f, ingredients %>
+<%# locals: f (stock transfer line fields builder) %>
 <% input_class = pos_input_class %>
 
 <div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-[1fr_10rem_auto] gap-4 items-end"
@@ -7,9 +7,12 @@
   <%= f.hidden_field :id %>
   <div>
     <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.stock_transfers.ingredient") %></label>
-    <%= f.collection_select :ingredient_id, ingredients, :id, :name,
-          { include_blank: t("inventory.stock_transfers.select_ingredient") },
-          class: "#{input_class} appearance-none" %>
+    <%= render "shared/searchable_select",
+          form: f,
+          field: :ingredient_id,
+          selected: f.object.ingredient_id,
+          placeholder: t("inventory.stock_transfers.search_ingredient"),
+          input_class: input_class %>
   </div>
   <div>
     <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.stock_transfers.quantity_requested") %></label>

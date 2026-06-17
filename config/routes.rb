@@ -201,6 +201,7 @@ Rails.application.routes.draw do
         member do
           post :record_payment
           patch :void
+          patch :attach_invoice_image
         end
       end
       resources :stock_takes, only: %i[index show create update] do

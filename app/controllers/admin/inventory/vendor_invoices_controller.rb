@@ -3,7 +3,7 @@
 module Admin
   module Inventory
     class VendorInvoicesController < BaseController
-      before_action :set_vendor_invoice, only: %i[show edit update record_payment void]
+      before_action :set_vendor_invoice, only: %i[show edit update record_payment void attach_invoice_image]
 
       def index
         authorize_inventory_index!(VendorInvoice)
@@ -146,6 +146,26 @@ module Admin
         redirect_to admin_inventory_vendor_invoices_path, notice: t("flash.vendor_invoice.voided")
       end
 
+      def attach_invoice_image
+        authorize_inventory!(:update)
+        if @vendor_invoice.void?
+          redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+            alert: t("flash.vendor_invoice.cannot_attach_image")
+          return
+        end
+
+        image = params.dig(:vendor_invoice, :invoice_image)
+        if image.blank?
+          redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+            alert: t("flash.vendor_invoice.image_required")
+          return
+        end
+
+        @vendor_invoice.invoice_image.attach(image)
+        redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+          notice: t("flash.vendor_invoice.image_attached")
+      end
+
       private
 
       def set_vendor_invoice
@@ -172,7 +192,7 @@ module Admin
       def vendor_invoice_params
         permitted = params.require(:vendor_invoice).permit(
           :supplier_id, :location_id, :invoice_number, :invoice_date, :received_on, :notes,
-          :discount_type, :discount_value, :discount_amount_dollars, :discount_notes,
+          :discount_type, :discount_value, :discount_amount_dollars, :discount_notes, :invoice_image,
           vendor_invoice_lines_attributes: %i[
             id ingredient_id quantity unit_price_dollars expires_on batch_reference line_notes _destroy
           ]

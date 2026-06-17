@@ -37,8 +37,8 @@ export default class extends Controller {
     const label = row.querySelector("[data-vendor-invoice-lines-target='unitLabel']")
     if (!label) return
 
-    const select = row.querySelector("select[name*='[ingredient_id]']")
-    const id = ingredientId ?? select?.value
+    const hidden = row.querySelector("input[name*='[ingredient_id]']")
+    const id = ingredientId ?? hidden?.value
     label.textContent = id && this.unitsValue[id] ? this.unitsValue[id] : "—"
   }
 }

@@ -85,6 +85,10 @@ en:
     apply_search: "Apply search"
     save_changes: "Save changes"
 
+  shared:
+    searchable_select:
+      no_results: "No matches"
+
   printers:
     index:
       description: "Receipt, kitchen, and bar printers used across the restaurant."
@@ -808,12 +812,18 @@ en:
       received_at: "Received at"
       select_supplier: "Select supplier…"
       select_ingredient: "Select ingredient…"
+      search_ingredient: "Search ingredient…"
       all_suppliers: "All suppliers"
       payment_status: "Payment status"
       all_statuses: "All statuses"
       total: "Total"
       subtotal: "Subtotal"
       notes: "Notes"
+      invoice_image: "Invoice photo"
+      invoice_image_hint: "Optional photo of the paper invoice when receiving delivery."
+      invoice_image_show_hint: "Attach or replace the paper invoice photo at any time, even after payment."
+      invoice_image_attach: "Attach photo"
+      invoice_image_replace: "Replace photo"
       discount_type: "Discount type"
       discount_none: "No discount"
       discount_percentage: "Discount %"
@@ -951,6 +961,7 @@ en:
       ingredient: "Ingredient"
       select_location: "Select location…"
       select_ingredient: "Select ingredient…"
+      search_ingredient: "Search ingredient…"
       from_location_hint: "Location that will send the stock."
       to_location_hint: "Location requesting and receiving the stock."
       quantity_requested: "Requested"
@@ -2314,6 +2325,9 @@ en:
       paid: "Invoice fully paid."
       voided: "Vendor invoice voided."
       cannot_void: "Only invoices with no payments can be voided."
+      image_attached: "Invoice photo saved."
+      image_required: "Choose a photo to upload."
+      cannot_attach_image: "Cannot attach a photo to a voided invoice."
     recipe:
       added: "Recipe line added."
       removed: "Recipe line removed."
