@@ -20,8 +20,7 @@ module Orders
 
       apply_tip!(order)
       record_cash_payment!(order)
-      submit_if_needed!(order)
-      finalize_if_paid!(order)
+      Orders::FinalizePaidService.call(order)
 
       Result.new(success?: true, order: order.reload, errors: [])
     rescue StandardError => e
@@ -54,19 +53,6 @@ module Orders
         tip_cents: 0,
         user: @user
       )
-    end
-
-    def submit_if_needed!(order)
-      return unless order.draft? && order.order_items.any?
-
-      Orders::SubmitService.call(order)
-    end
-
-    def finalize_if_paid!(order)
-      return unless order.fully_paid?
-
-      order.mark_ready! if order.may_mark_ready?
-      order.complete! if order.may_complete?
     end
 
     def failure(message)

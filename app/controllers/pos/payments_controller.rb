@@ -98,8 +98,7 @@ module Pos
     def finalize_if_paid
       return unless @order.fully_paid?
 
-      @order.mark_ready! if @order.may_mark_ready?
-      @order.complete! if @order.may_complete?
+      Orders::FinalizePaidService.call(@order)
       clear_cart_sessions
       Receipts::SendReceiptJob.perform_later(@order.id, params[:receipt_method], params[:receipt_recipient]) if params[:receipt_method].present?
     end
