@@ -14,10 +14,15 @@
             <%= t("admin.locations.inactive") %>
           </span>
         <% end %>
+        <% if @location.branch? && @location.public_menu_enabled? %>
+          <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+            <%= t("admin.locations.public_menu_on") %>
+          </span>
+        <% end %>
       </div>
     </div>
     <div class="flex gap-2">
-      <% if @location.branch? && @location.active? %>
+      <% if @location.branch? && @location.active? && @location.public_menu_enabled? %>
         <%= link_to t("admin.locations.view_public_menu"), public_menu_path(company_slug: Current.company.slug, location_slug: @location.slug),
               class: "inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-amber-100 transition-colors",
               target: "_blank", rel: "noopener" %>

@@ -67,7 +67,7 @@ module Admin
     end
 
     def location_params
-      params.require(:location).permit(:name, :slug, :location_type, :address, :phone, :active, :position)
+      params.require(:location).permit(:name, :slug, :location_type, :address, :phone, :active, :position, :public_menu_enabled)
     end
   end
 end

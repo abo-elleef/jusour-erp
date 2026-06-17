@@ -7,7 +7,8 @@ RSpec.describe "Public menus", type: :request do
 
   let(:company) { create(:company, slug: "acme-cafe", name: "Acme Cafe") }
   let!(:branch) do
-    create(:location, company: company, name: "Downtown", slug: "downtown", location_type: "branch", active: true)
+    create(:location, company: company, name: "Downtown", slug: "downtown", location_type: "branch",
+      active: true, public_menu_enabled: true)
   end
   let!(:category) { create(:category, company: company, name: "Mains") }
   let!(:menu_item) do
@@ -21,13 +22,23 @@ RSpec.describe "Public menus", type: :request do
 
   describe "GET /m/:company_slug" do
     it "shows branch picker without login" do
-      create(:location, company: company, name: "Uptown", slug: "uptown", location_type: "branch", active: true)
+      create(:location, company: company, name: "Uptown", slug: "uptown", location_type: "branch",
+        active: true, public_menu_enabled: true)
 
       get public_menus_path(company_slug: company.slug)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Downtown")
       expect(response.body).to include("Uptown")
+    end
+
+    it "excludes branches without public menu enabled" do
+      create(:location, company: company, name: "Private Branch", slug: "private", location_type: "branch",
+        active: true, public_menu_enabled: false)
+
+      get public_menus_path(company_slug: company.slug)
+
+      expect(response).to redirect_to(public_menu_path(company_slug: company.slug, location_slug: branch.slug))
     end
 
     it "redirects to the menu when only one branch exists" do
@@ -49,6 +60,14 @@ RSpec.describe "Public menus", type: :request do
 
     it "returns not found for inactive company" do
       company.update!(active: false)
+
+      get public_menu_path(company_slug: company.slug, location_slug: branch.slug)
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns not found when public menu is disabled" do
+      branch.update!(public_menu_enabled: false)
 
       get public_menu_path(company_slug: company.slug, location_slug: branch.slug)
 

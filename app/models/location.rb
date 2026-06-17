@@ -31,6 +31,10 @@ class Location < ApplicationRecord
   scope :ordered, -> { order(:position, :name) }
   scope :branches, -> { where(location_type: "branch") }
   scope :central_kitchens, -> { where(location_type: "central_kitchen") }
+  scope :public_menu_enabled, -> { where(public_menu_enabled: true) }
+  scope :publicly_accessible, -> { active.branches.public_menu_enabled }
+
+  before_validation :clear_public_menu_for_non_branches
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[name location_type active]
@@ -49,6 +53,10 @@ class Location < ApplicationRecord
   end
 
   private
+
+  def clear_public_menu_for_non_branches
+    self.public_menu_enabled = false unless branch?
+  end
 
   def generate_slug
     base = name.to_s.parameterize.presence || "location"

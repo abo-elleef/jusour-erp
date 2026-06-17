@@ -10,7 +10,7 @@ module Public
     layout "public_menu"
 
     def index
-      @locations = Location.active.branches.ordered
+      @locations = Location.publicly_accessible.ordered
       redirect_to public_menu_path(company_slug: @company.slug, location_slug: @locations.first.slug) if @locations.one?
     end
 
@@ -19,7 +19,7 @@ module Public
       @categories = menu.categories
       @menu_items = menu.menu_items
       @combos = menu.combos
-      @branches = Location.active.branches.ordered
+      @branches = Location.publicly_accessible.ordered
     end
 
     private
@@ -30,7 +30,7 @@ module Public
     end
 
     def set_location
-      @location = Location.active.branches.find_by!(slug: params[:location_slug])
+      @location = Location.publicly_accessible.find_by!(slug: params[:location_slug])
     end
 
     def set_locale_from_company
