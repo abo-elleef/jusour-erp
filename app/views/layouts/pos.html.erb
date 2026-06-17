@@ -16,7 +16,7 @@
     <%= javascript_importmap_tags %>
     <script src="https://js.stripe.com/v3/"></script>
   </head>
-  <body class="h-full overflow-hidden bg-gray-100 text-gray-900 pos-screen"
+  <body class="h-full overflow-hidden bg-gray-100 text-gray-900 pos-screen flex flex-col"
         data-turbo-cache="false"
         data-controller="connectivity offline-order"
         data-offline-order-csrf-token-value="<%= form_authenticity_token %>"
@@ -71,7 +71,9 @@
            data-client-printer-confirm-url-template-value="<%= confirm_pos_print_log_path(":id") %>">
       </div>
     <% end %>
-    <%= yield %>
+    <div id="pos-main" class="pos-main flex-1 min-h-0 overflow-hidden">
+      <%= yield %>
+    </div>
     <%= render "pos/manager_pin_modal" %>
   </body>
 </html>

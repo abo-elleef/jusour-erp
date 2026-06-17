@@ -18,11 +18,19 @@ export default class extends Controller {
     if (this.isDismissed()) return false
 
     this.element.classList.remove("hidden")
+    this.notifyOffsetChange()
     return true
   }
 
   hide() {
     this.element.classList.add("hidden")
+    this.notifyOffsetChange()
+  }
+
+  notifyOffsetChange() {
+    requestAnimationFrame(() => {
+      document.dispatchEvent(new CustomEvent("pos-banners:changed"))
+    })
   }
 
   isDismissed() {

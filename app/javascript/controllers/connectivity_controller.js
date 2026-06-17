@@ -74,14 +74,23 @@ export default class extends Controller {
 
     if (type === "success") {
       banner.classList.remove("hidden")
+      this.notifyBannerOffsetChange()
       return
     }
 
     this.dismissibleBanner(banner)?.show() || banner.classList.remove("hidden")
+    this.notifyBannerOffsetChange()
   }
 
   hideBanner() {
     this.dismissibleBanner(this.bannerTarget)?.hide() || this.bannerTarget?.classList.add("hidden")
+    this.notifyBannerOffsetChange()
+  }
+
+  notifyBannerOffsetChange() {
+    requestAnimationFrame(() => {
+      document.dispatchEvent(new CustomEvent("pos-banners:changed"))
+    })
   }
 
   clearOfflineDismissal() {

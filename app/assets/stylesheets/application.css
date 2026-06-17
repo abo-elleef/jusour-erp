@@ -21,5 +21,9 @@ button, a, input[type="submit"] {
 .pos-screen {
   -webkit-user-select: none;
   user-select: none;
+}
+
+.pos-main {
   padding-top: var(--pos-banner-offset, 0px);
+  box-sizing: border-box;
 }

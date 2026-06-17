@@ -282,11 +282,11 @@ module ApplicationHelper
   end
 
   def pos_viewport_min_h_class
-    "min-h-[calc(100dvh-var(--pos-banner-offset,0px))]"
+    "min-h-full"
   end
 
   def pos_viewport_h_class
-    "h-[calc(100dvh-var(--pos-banner-offset,0px))]"
+    "h-full"
   end
 
   def pos_category_pill_class(active: false)

@@ -17,9 +17,9 @@
   <% @menu_items.each do |item| %>
     <div class="menu-card rounded-2xl border border-gray-200 bg-white p-3 hover:border-amber-300 transition-colors flex flex-col" data-category="<%= item.category_id %>">
       <% if item.image.attached? %>
-        <%= image_tag item.image, class: "w-full h-20 object-cover rounded-xl mb-2" %>
+        <%= image_tag item.image, class: "w-full aspect-square object-cover rounded-xl mb-2 shrink-0" %>
       <% else %>
-        <div class="w-full h-20 bg-gray-100 rounded-xl mb-2 flex items-center justify-center text-gray-400 text-xs font-medium"><%= item.category.name %></div>
+        <div class="w-full aspect-square bg-gray-100 rounded-xl mb-2 shrink-0 flex items-center justify-center text-gray-400 text-xs font-medium px-2 text-center"><%= item.category.name %></div>
       <% end %>
       <p class="font-semibold text-sm leading-tight flex-1 text-gray-900"><%= item.name %></p>
       <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(item.price_cents_at(@pos_location)) %></p>
@@ -34,7 +34,7 @@
   <% end %>
   <% @combos.each do |combo| %>
     <div class="menu-card rounded-2xl border border-amber-200 bg-amber-50/50 p-3 hover:border-amber-400 transition-colors flex flex-col" data-category="combos">
-      <div class="w-full h-20 bg-amber-100/80 rounded-xl mb-2 flex items-center justify-center text-amber-800 font-bold text-xs tracking-wide uppercase"><%= t("actions.combo") %></div>
+      <div class="w-full aspect-square bg-amber-100/80 rounded-xl mb-2 shrink-0 flex items-center justify-center text-amber-800 font-bold text-xs tracking-wide uppercase px-2 text-center"><%= t("actions.combo") %></div>
       <p class="font-semibold text-sm flex-1 text-gray-900"><%= combo.name %></p>
       <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(combo.price_cents) %></p>
       <%= button_to t("actions.add"), pos_order_items_path(combo_id: combo.id), method: :post, form: pos_order_item_form_data, class: "mt-2 #{pos_btn_accent_class}" %>
