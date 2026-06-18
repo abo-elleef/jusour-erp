@@ -3,6 +3,7 @@
 class MenuItem < ApplicationRecord
   include Taxable
   include Tenantable
+  include MenuItemImageVariants
 
   belongs_to :category
   has_many :location_menu_items, dependent: :destroy
@@ -14,7 +15,6 @@ class MenuItem < ApplicationRecord
   has_many :combo_items, dependent: :restrict_with_error
   has_many :recipes, dependent: :destroy
   has_many :recipe_ingredients, through: :recipes, source: :ingredient
-  has_one_attached :image
   has_many :printer_menu_items, dependent: :destroy
   has_many :printers, through: :printer_menu_items
 

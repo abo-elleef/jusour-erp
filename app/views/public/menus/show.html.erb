@@ -83,7 +83,7 @@
                    data-category="<%= item.category_id %>">
             <div class="flex gap-4 p-4">
               <% if item.image.attached? %>
-                <%= image_tag item.image, class: "w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl shrink-0" %>
+                <%= menu_item_image_tag item, variant: :public_menu, class: "w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl shrink-0" %>
               <% else %>
                 <div class="w-24 h-24 sm:w-28 sm:h-28 bg-stone-100 rounded-xl shrink-0 flex items-center justify-center text-stone-400 text-xs font-medium px-2 text-center">
                   <%= item.category.name %>
