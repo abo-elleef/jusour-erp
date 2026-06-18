@@ -26,6 +26,7 @@ class Ingredient < ApplicationRecord
   validates :unit, presence: true, inclusion: { in: UNITS }
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_on_hand, numericality: true
+  validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   scope :active, -> { where(active: true) }
   scope :low_stock, -> { where("quantity_on_hand <= reorder_threshold") }
@@ -35,7 +36,7 @@ class Ingredient < ApplicationRecord
   }
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name unit active quantity_on_hand reorder_threshold ingredient_category_id]
+    %w[name unit active quantity_on_hand reorder_threshold ingredient_category_id shelf_life_days]
   end
 
   def self.ransackable_associations(_auth_object = nil)

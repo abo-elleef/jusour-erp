@@ -39,7 +39,20 @@ class VendorInvoice < ApplicationRecord
   scope :outstanding, -> { where(payment_status: %w[unpaid partially_paid]) }
   scope :recent, -> { order(invoice_date: :desc, created_at: :desc) }
 
+  before_validation :assign_invoice_number, on: :create
   before_save :recalculate_total
+
+  def self.next_invoice_number(date: Date.current, company: Current.company)
+    prefix = "VI-#{date.strftime("%Y-%m-%d")}-"
+    return format("%s%04d", prefix, 1) if company.blank?
+
+    last_seq = unscoped_by_company
+      .where(company_id: company.id)
+      .where("invoice_number LIKE ?", "#{prefix}%")
+      .count
+
+    format("%s%04d", prefix, last_seq + 1)
+  end
 
   def unpaid?
     payment_status == "unpaid"
@@ -124,6 +137,12 @@ class VendorInvoice < ApplicationRecord
   end
 
   private
+
+  def assign_invoice_number
+    return if invoice_number.present?
+
+    self.invoice_number = self.class.next_invoice_number(company: company || Current.company)
+  end
 
   def recalculate_total
     self.total_cents = [subtotal_cents - discount_cents, 0].max

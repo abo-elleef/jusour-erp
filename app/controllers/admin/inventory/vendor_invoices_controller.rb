@@ -31,12 +31,14 @@ module Admin
         @vendor_invoice = VendorInvoice.new(
           user: current_user,
           invoice_date: Date.current,
-          received_on: Date.current
+          received_on: Date.current,
+          invoice_number: VendorInvoice.next_invoice_number
         )
         authorize_inventory!(:create)
         prefill_supplier if params[:supplier_id].present?
         build_line_items
         load_form_data
+        @vendor_invoice.location ||= default_receive_location
       end
 
       def create
@@ -187,6 +189,19 @@ module Admin
         @locations = Location.active.ordered
         @ingredients = Ingredient.active.order(:name)
         @ingredient_units = @ingredients.to_h { |i| [i.id, helpers.ingredient_unit_label(i.unit)] }
+        @ingredient_shelf_life_days = @ingredients.each_with_object({}) do |ingredient, map|
+          map[ingredient.id] = ingredient.shelf_life_days if ingredient.shelf_life_days.present?
+        end
+        @ingredient_unit_price_dollars = @ingredients.each_with_object({}) do |ingredient, map|
+          cents = ingredient.cost_per_unit_cents.to_i
+          next if cents.zero?
+
+          map[ingredient.id] = (cents.to_d / 100).round(2)
+        end
+      end
+
+      def default_receive_location
+        Location.active.central_kitchens.ordered.first
       end
 
       def vendor_invoice_params

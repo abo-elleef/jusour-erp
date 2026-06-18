@@ -27,4 +27,15 @@ RSpec.describe Ingredient, type: :model do
     )
     expect(ingredient).to be_low_stock
   end
+
+  it "validates shelf_life_days when present" do
+    ingredient = described_class.new(
+      name: "Perishable",
+      ingredient_category: category,
+      unit: "kg",
+      shelf_life_days: 0
+    )
+    expect(ingredient).not_to be_valid
+    expect(ingredient.errors[:shelf_life_days]).to be_present
+  end
 end

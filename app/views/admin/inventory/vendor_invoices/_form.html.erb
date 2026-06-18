@@ -4,7 +4,16 @@
 <% active_lines = vendor_invoice.vendor_invoice_lines.reject(&:marked_for_destruction?).select { |l| l.ingredient_id.present? } %>
 <% estimated_cents = active_lines.sum { |l| (l.quantity.to_d * l.unit_price_cents.to_i).round } %>
 
-<%= form_with model: [:admin, :inventory, vendor_invoice], class: "space-y-6" do |f| %>
+<%= form_with model: [:admin, :inventory, vendor_invoice],
+      class: "space-y-6",
+      html: { multipart: true },
+      data: {
+        controller: "vendor-invoice-lines",
+        searchable_select_options: ingredient_search_options(@ingredients),
+        vendor_invoice_lines_units_value: @ingredient_units.to_json,
+        vendor_invoice_lines_shelf_life_days_value: @ingredient_shelf_life_days.to_json,
+        vendor_invoice_lines_unit_price_dollars_value: @ingredient_unit_price_dollars.to_json
+      } do |f| %>
   <% if vendor_invoice.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
       <%= vendor_invoice.errors.full_messages.to_sentence %>
@@ -31,6 +40,9 @@
       <div>
         <%= f.label :invoice_number, t("inventory.vendor_invoices.invoice_number"), class: label_class %>
         <%= f.text_field :invoice_number, class: input_class, placeholder: t("inventory.vendor_invoices.invoice_number_placeholder") %>
+        <% if vendor_invoice.new_record? %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.vendor_invoices.invoice_number_auto_hint") %></p>
+        <% end %>
       </div>
       <div>
         <%= f.label :invoice_date, t("inventory.vendor_invoices.invoice_date"), class: label_class %>
@@ -38,22 +50,12 @@
       </div>
       <div>
         <%= f.label :received_on, t("inventory.vendor_invoices.received_on"), class: label_class %>
-        <%= f.date_field :received_on, class: input_class %>
+        <%= f.date_field :received_on, class: input_class,
+              data: { action: "change->vendor-invoice-lines#receivedOnChanged" } %>
       </div>
       <div class="sm:col-span-2">
         <%= f.label :notes, t("inventory.vendor_invoices.notes"), class: label_class %>
         <%= f.text_area :notes, rows: 2, class: "#{input_class} resize-y min-h-[4rem]" %>
-      </div>
-      <div class="sm:col-span-2">
-        <%= f.label :invoice_image, t("inventory.vendor_invoices.invoice_image"), class: label_class %>
-        <%= f.file_field :invoice_image, accept: "image/*", capture: "environment",
-              class: "text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gray-100 file:font-semibold file:text-gray-700 hover:file:bg-gray-200" %>
-        <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.vendor_invoices.invoice_image_hint") %></p>
-        <% if vendor_invoice.invoice_image.attached? %>
-          <div class="mt-3">
-            <%= image_tag vendor_invoice.invoice_image, class: "max-h-48 rounded-xl border border-gray-200 object-contain" %>
-          </div>
-        <% end %>
       </div>
     </div>
   </section>
@@ -124,10 +126,7 @@
     </div>
   </section>
 
-  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden"
-           data-controller="vendor-invoice-lines"
-           data-searchable-select-options="<%= ingredient_search_options(@ingredients) %>"
-           data-vendor-invoice-lines-units-value="<%= @ingredient_units.to_json %>">
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
       <div>
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.form.line_items") %></h2>

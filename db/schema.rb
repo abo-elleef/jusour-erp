@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_06_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_07_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -310,6 +310,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_06_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.integer "shelf_life_days"
     t.index ["active"], name: "index_ingredients_on_active"
     t.index ["company_id", "name"], name: "index_ingredients_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_ingredients_on_company_id"
