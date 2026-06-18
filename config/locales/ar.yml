@@ -523,14 +523,21 @@ ar:
       back_to_inventory: "← المخزون"
       expires_on: "ينتهي %{date}"
       units:
-        kg: "كغ"
-        g: "غ"
-        lbs: "رطل"
-        oz: "أونصة"
+        kg: "كيلو جرام"
+        g: "جرام"
         liters: "لتر"
         ml: "مل"
         pieces: "قطعة"
         packs: "عبوة"
+        gallons: "غالون"
+        bales: "بلتة"
+        bales_2000: '2000 بلتة'
+        bales_1000: '1000 بلتة'
+        bales_500: '500 بلتة'
+        cartons: "كارتونة"
+        checkins: 'دجاجة'
+        bags: 'كيس'
+        batches: 'باتش'
       index:
         description: "متابعة مستويات المخزون والموردين وتكلفة المكونات."
         new_button: "مكون جديد"

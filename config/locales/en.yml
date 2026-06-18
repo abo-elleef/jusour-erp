@@ -523,14 +523,21 @@ en:
       back_to_inventory: "← Inventory"
       expires_on: "Expires %{date}"
       units:
-        kg: "kg"
-        g: "g"
-        lbs: "lbs"
-        oz: "oz"
+        kg: "kilogram"
+        g: "gram"
         liters: "liters"
         ml: "ml"
         pieces: "pieces"
         packs: "packs"
+        gallons: "gallons"
+        bales: "bales"
+        bales_2000: '2000 bales'
+        bales_1000: '1000 bales'
+        bales_500: '500 bales'
+        cartons: "cartons"
+        checkins: 'checkins'
+        bags: 'bags'
+        batches: 'batches'
       index:
         description: "Track stock levels, suppliers, and ingredient costs."
         new_button: "New ingredient"

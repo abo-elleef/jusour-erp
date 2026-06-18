@@ -3,7 +3,7 @@
 class Ingredient < ApplicationRecord
   include Tenantable
 
-  UNITS = %w[kg g lbs oz liters ml pieces packs].freeze
+  UNITS = %w[kg g lbs oz liters ml pieces packs gallons bales].freeze
 
   belongs_to :ingredient_category
   has_many :ingredient_locations, dependent: :destroy
