@@ -108,6 +108,7 @@ class Order < ApplicationRecord
   end
 
   def recalculate_totals!
+    order_items.reset
     subtotal = order_items.sum(&:line_total_cents)
     discount = order_discounts.sum(:amount_cents)
     self.subtotal_cents = subtotal

@@ -9,13 +9,14 @@ module Pos
 
     def create
       authorize @order, :update?
-      if params[:combo_id]
-        add_combo
-      else
-        add_menu_item
+      @order.with_lock do
+        if params[:combo_id]
+          add_combo
+        else
+          add_menu_item
+        end
+        @order.recalculate_totals!
       end
-      @order.reload
-      @order.recalculate_totals!
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to pos_path }
@@ -25,15 +26,16 @@ module Pos
     end
 
     def update
-      item = @order.order_items.find(params[:id])
       authorize @order, :update?
-      if params[:quantity_delta]
-        item.update!(quantity: [item.quantity + params[:quantity_delta].to_i, 1].max)
-      else
-        item.update!(order_item_params)
+      @order.with_lock do
+        item = @order.order_items.find(params[:id])
+        if params[:quantity_delta]
+          item.update!(quantity: [item.quantity + params[:quantity_delta].to_i, 1].max)
+        else
+          item.update!(order_item_params)
+        end
+        @order.recalculate_totals!
       end
-      @order.reload
-      @order.recalculate_totals!
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to pos_path }
@@ -42,9 +44,10 @@ module Pos
 
     def destroy
       authorize @order, :update?
-      @order.order_items.find(params[:id]).destroy
-      @order.reload
-      @order.recalculate_totals!
+      @order.with_lock do
+        @order.order_items.find(params[:id]).destroy
+        @order.recalculate_totals!
+      end
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to pos_path }
