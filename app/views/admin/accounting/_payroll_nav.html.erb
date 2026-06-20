@@ -1,10 +1,11 @@
 <nav class="mb-6 border-b border-gray-200" aria-label="<%= t("accounting.payroll.nav_label") %>">
   <div class="flex flex-wrap gap-x-1 -mb-px">
+    <%= link_to t("accounting.payroll.monthly_tab"),
+      admin_accounting_monthly_payroll_path,
+      class: admin_section_tab_class(controller_name == "monthly_payroll") %>
     <%= link_to t("accounting.payroll.weekly_tab"),
           admin_accounting_payroll_path,
           class: admin_section_tab_class(controller_name == "payroll") %>
-    <%= link_to t("accounting.payroll.monthly_tab"),
-          admin_accounting_monthly_payroll_path,
-          class: admin_section_tab_class(controller_name == "monthly_payroll") %>
+    
   </div>
 </nav>

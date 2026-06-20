@@ -10,7 +10,7 @@ module Printing
         @width = width
         @buffer = +""
         @charset_config = Charset.resolve(charset)
-        @rtl = @charset_config.equal?(Charset::ARABIC)
+        @rtl = @charset_config[:reshape]
         init
       end
 
@@ -69,6 +69,9 @@ module Printing
 
       def select_code_page
         code_page = Charset.code_page_for(@charset_config)
+        # code_page 0 means UTF-8 / printer default — skip the ESC t command
+        return if code_page.zero?
+
         @buffer << ESC << "t" << code_page.chr
       end
 
@@ -85,7 +88,7 @@ module Printing
       def prepare_text(value)
         return value.to_s unless @rtl
 
-        Bidi.visual_for_print(value)
+        Bidi.visual_for_print(value, reshape: @charset_config[:reshape])
       end
 
       def write_line(line)
@@ -93,12 +96,17 @@ module Printing
       end
 
       def encode_text(value)
-        value.to_s.encode(
-          @charset_config[:encoding],
-          invalid: :replace,
-          undef: :replace,
-          replace: "?"
-        )
+        str = value.to_s
+        if @charset_config[:encoding] == Encoding::UTF_8
+          str.encode(Encoding::UTF_8)
+        else
+          str.encode(
+            @charset_config[:encoding],
+            invalid: :replace,
+            undef: :replace,
+            replace: "?"
+          )
+        end
       end
 
       def display_width(value)

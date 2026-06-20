@@ -10,8 +10,8 @@
     <%= link_to t("accounting.nav.discounts"), admin_accounting_discount_rules_path, class: admin_section_tab_class(accounting_nav_active?("discount_rules")) %>
     <%= link_to t("accounting.nav.treasuries"), admin_accounting_treasuries_path, class: admin_section_tab_class(accounting_nav_active?("treasuries")) %>
     <%= link_to t("accounting.nav.budgets"), admin_accounting_budgets_path, class: admin_section_tab_class(accounting_nav_active?("budgets")) %>
-    <%= link_to t("accounting.nav.shifts"), admin_accounting_shift_logs_path, class: admin_section_tab_class(accounting_nav_active?("shift_logs")) %>
-    <%= link_to t("accounting.nav.payroll"), admin_accounting_payroll_path, class: admin_section_tab_class(accounting_nav_active?("payroll", "monthly_payroll")) %>
+    <%= link_to t("accounting.nav.shifts"), admin_accounting_shift_logs_path, class: admin_section_tab_class(accounting_nav_active?("shift_logs")) %>    
+    <%= link_to t("accounting.nav.payroll"), admin_accounting_monthly_payroll_path, class: admin_section_tab_class(accounting_nav_active?("payroll", "monthly_payroll")) %>
     <%= link_to t("accounting.nav.tax"), admin_accounting_tax_reports_path, class: admin_section_tab_class(accounting_nav_active?("tax_reports")) %>
     <%= link_to t("accounting.nav.cash_drawer"), admin_accounting_cash_drawer_index_path, class: admin_section_tab_class(accounting_nav_active?("cash_drawer")) %>
     <% if current_user.owner? %>
