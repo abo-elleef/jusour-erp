@@ -122,6 +122,24 @@
             </div>
           <% end %>
 
+        <% elsif entry[:kind] == :image_row3 %>
+          <% if entry[:png_b64] %>
+            <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">
+          <% else %>
+            <div class="r-row r-fail">
+              <span><%= entry[:value] %></span>
+              <span><%= entry[:center] %></span>
+              <span><%= entry[:label] %></span>
+            </div>
+          <% end %>
+
+        <% elsif entry[:kind] == :text_row3 %>
+          <div class="r-row <%= bold_class %>">
+            <span><%= entry[:left] %></span>
+            <span style="text-align:center"><%= entry[:center] %></span>
+            <span><%= entry[:right] %></span>
+          </div>
+
         <% elsif entry[:kind] == :logo %>
           <% if entry[:png_b64] %>
             <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="Logo">

@@ -96,6 +96,38 @@ module Printing
         CANDIDATE_FONTS.find { |f| File.exist?(f) }
       end
 
+      # Returns raw ESC/POS bytes for a 3-column receipt row (image mode).
+      # item_name_visual: already reshaped+bidi-processed Arabic label
+      # qty_str:          plain quantity string ("1", "2" …)
+      # price_str:        price string ("ج.م.130.00" …)
+      # Layout: [price — West] [qty — center-left] [item name — East]
+      def render_row3(item_name_visual, qty_str, price_str, doc_width: 42)
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        qty_x    = (px_width * 0.26).to_i
+        sep1     = qty_x - 12              # vertical divider: price | qty
+        sep2     = (px_width * 0.46).to_i  # vertical divider: qty | item name
+        h        = FONT_SIZE_PT * 2
+        # All columns right-aligned (East gravity). Offset = distance from right edge.
+        # Text right edge sits 8px inside each column's right boundary.
+        price_rx = px_width - sep1 + 8    # price col right edge → from paper right
+        qty_rx   = px_width - sep2 + 8    # qty col right edge → from paper right
+        font     = arabic_font
+        return nil unless font
+
+        pbm = render_pbm_multi(
+          [
+            { gravity: "East", offset: "+#{price_rx}+0", text: price_str },
+            { gravity: "East", offset: "+#{qty_rx}+0",   text: qty_str },
+            { gravity: "East", offset: "+8+0",            text: item_name_visual },
+            { draw: "line #{sep1},0 #{sep1},#{h}" },
+            { draw: "line #{sep2},0 #{sep2},#{h}" },
+            { draw: "line 0,#{h - 1} #{px_width},#{h - 1}" }  # bottom cell border
+          ],
+          px_width, font
+        )
+        pbm ? pbm_to_escpos(pbm) : nil
+      end
+
       # ── PNG preview variants (for browser debug view) ─────────────────────
 
       # Same as render_line but returns a Base64-encoded PNG string.
@@ -125,6 +157,31 @@ module Printing
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
           "-gravity", "West", "-annotate", "+8+0", ltr_value.to_s,
           "-gravity", "East", "-annotate", "+8+0", arabic_label.to_s.strip
+        ])
+      end
+
+      # Same as render_row3 but returns a Base64-encoded PNG string.
+      def render_row3_png(item_name_visual, qty_str, price_str, doc_width: 42)
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        qty_x    = (px_width * 0.26).to_i
+        sep1     = qty_x - 12
+        sep2     = (px_width * 0.46).to_i
+        h        = FONT_SIZE_PT * 2
+        price_rx = px_width - sep1 + 8
+        qty_rx   = px_width - sep2 + 8
+        font     = arabic_font
+        return nil unless font
+
+        run_to_png([
+          im_command,
+          "-size", "#{px_width}x#{h}", "xc:white",
+          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
+          "-gravity", "East", "-annotate", "+#{price_rx}+0", price_str,
+          "-gravity", "East", "-annotate", "+#{qty_rx}+0",   qty_str,
+          "-gravity", "East", "-annotate", "+8+0",            item_name_visual,
+          "-draw", "line #{sep1},0 #{sep1},#{h}",
+          "-draw", "line #{sep2},0 #{sep2},#{h}",
+          "-draw", "line 0,#{h - 1} #{px_width},#{h - 1}"
         ])
       end
 
@@ -165,7 +222,10 @@ module Printing
         status.success? && stdout.start_with?("P4".b) ? stdout : nil
       end
 
-      # Multiple text annotations in one image → PBM binary.
+      # Multiple text annotations (and optional draw commands) in one image → PBM binary.
+      # Each entry is either:
+      #   { gravity:, offset:, text: }  — text annotation
+      #   { draw: "line x1,y1 x2,y2" } — raw ImageMagick -draw primitive
       def render_pbm_multi(annotations, px_width, font)
         cmd = [
           im_command,
@@ -173,7 +233,11 @@ module Printing
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black"
         ]
         annotations.each do |ann|
-          cmd += ["-gravity", ann[:gravity], "-annotate", ann.fetch(:offset, "+0+0"), ann[:text]]
+          if ann[:draw]
+            cmd += ["-draw", ann[:draw]]
+          else
+            cmd += ["-gravity", ann[:gravity], "-annotate", ann.fetch(:offset, "+0+0"), ann[:text]]
+          end
         end
         cmd += ["-type", "Bilevel", "pbm:-"]
 

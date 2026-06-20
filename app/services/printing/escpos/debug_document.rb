@@ -36,7 +36,8 @@ module Printing
       def text(line = "")
         str = line.to_s
         if @use_images && str.match?(ARABIC_PATTERN)
-          png = ArabicImageRenderer.render_png(str, doc_width: @width, align: @current_align)
+          visual = Printing::Escpos::Bidi.visual_for_print(str, reshape: true)
+          png = ArabicImageRenderer.render_png(visual, doc_width: @width, align: @current_align)
           push kind: :image, content: str, png_b64: png
         else
           push kind: :text, content: str
@@ -49,13 +50,38 @@ module Printing
 
       def row(left, right = "")
         if @use_images && (left.to_s.match?(ARABIC_PATTERN) || right.to_s.match?(ARABIC_PATTERN))
-          png = ArabicImageRenderer.render_row_png(left.to_s, right.to_s, doc_width: @width)
+          visual_label = Printing::Escpos::Bidi.visual_for_print(left.to_s, reshape: true)
+          png = ArabicImageRenderer.render_row_png(visual_label, right.to_s, doc_width: @width)
           push kind: :image_row, left: left.to_s, right: right.to_s, png_b64: png
         else
           left_str  = left.to_s
           right_str = right.to_s
           left_str, right_str = right_str, left_str if @rtl
           push kind: :text_row, left: left_str, right: right_str
+        end
+      end
+
+      def row3(label, center, value)
+        if @use_images && (label.to_s.match?(ARABIC_PATTERN) || value.to_s.match?(ARABIC_PATTERN))
+          visual_label  = Printing::Escpos::Bidi.visual_for_print(label.to_s,  reshape: true)
+          visual_center = Printing::Escpos::Bidi.visual_for_print(center.to_s, reshape: true)
+          visual_value  = Printing::Escpos::Bidi.visual_for_print(value.to_s,  reshape: true)
+          png = ArabicImageRenderer.render_row3_png(visual_label, visual_center, visual_value, doc_width: @width)
+          push kind: :image_row3, label: label.to_s, center: center.to_s, value: value.to_s, png_b64: png
+        else
+          left_str, right_str = @rtl ? [value.to_s, label.to_s] : [label.to_s, value.to_s]
+          push kind: :text_row3, left: left_str, center: center.to_s, right: right_str
+        end
+      end
+
+      def modifier_text(line = "")
+        str = line.to_s
+        if @use_images && str.match?(ARABIC_PATTERN)
+          visual = Printing::Escpos::Bidi.visual_for_print(str, reshape: true)
+          png = ArabicImageRenderer.render_png(visual, doc_width: @width, align: @rtl ? :right : :left)
+          push kind: :image, content: str, png_b64: png
+        else
+          push kind: :text, content: @rtl ? str : "  #{str}"
         end
       end
 

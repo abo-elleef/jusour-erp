@@ -50,6 +50,35 @@ module Printing
         end
       end
 
+      # Three-column receipt row: label (item name) | center (qty) | value (price).
+      # In RTL image mode: label on right, qty in centre-left zone, value on left.
+      def row3(label, center, value)
+        if @use_images && (label.to_s.match?(ARABIC_PATTERN) || value.to_s.match?(ARABIC_PATTERN))
+          write_arabic_row3_image(label.to_s, center.to_s, value.to_s)
+        else
+          label_str  = prepare_text(label)
+          center_str = center.to_s
+          value_str  = prepare_text(value)
+          # RTL: value | center | label;  LTR: label | center | value
+          left_str, right_str = @rtl ? [value_str, label_str] : [label_str, value_str]
+          total = display_width(left_str) + display_width(center_str) + display_width(right_str)
+          gap   = [(@width - total) / 2, 1].max
+          write_line("#{left_str}#{' ' * gap}#{center_str}#{' ' * gap}#{right_str}")
+        end
+      end
+
+      # Render a modifier/add-on line aligned to the item-name column:
+      # right-aligned in RTL mode, left-indented in LTR mode.
+      def modifier_text(line = "")
+        if @rtl
+          align(:right)
+          text(line)
+          align(:left)
+        else
+          text("  #{line}")
+        end
+      end
+
       def rule(char = "-")
         write_line(char * @width)
       end
@@ -134,11 +163,12 @@ module Printing
         end
       end
 
-      # Write Arabic text as a raster image line (handles shaping + RTL).
-      # Uses the requested alignment directly — no flip needed because the image
-      # itself is already correctly oriented by ImageMagick.
+      # Write Arabic text as a raster image line.
+      # Pre-processes with reshape + bidi so ImageMagick (LTR renderer) displays
+      # correctly: reshape assigns correct glyph forms, bidi reorders to visual order.
       def write_arabic_image(text, align: :right)
-        bytes = ArabicImageRenderer.render_line(text, doc_width: @width, align: align)
+        visual = Bidi.visual_for_print(text, reshape: true)
+        bytes  = ArabicImageRenderer.render_line(visual, doc_width: @width, align: align)
         if bytes
           @buffer << bytes.b
         else
@@ -148,8 +178,10 @@ module Printing
 
       # Render a receipt row as a single image: Arabic label on the right,
       # LTR value (price) on the left — both on the same baseline.
+      # Only the Arabic label is reshaped/reordered; the price is passed as-is.
       def write_arabic_row_image(arabic_label, ltr_value)
-        bytes = ArabicImageRenderer.render_row(arabic_label, ltr_value, doc_width: @width)
+        visual_label = Bidi.visual_for_print(arabic_label, reshape: true)
+        bytes = ArabicImageRenderer.render_row(visual_label, ltr_value, doc_width: @width)
         if bytes
           @buffer << bytes.b
         else
@@ -162,6 +194,18 @@ module Printing
 
       def display_width(value)
         value.to_s.length
+      end
+
+      def write_arabic_row3_image(label, center, value)
+        visual_label  = Bidi.visual_for_print(label,  reshape: true)
+        visual_center = Bidi.visual_for_print(center, reshape: true)
+        visual_value  = Bidi.visual_for_print(value,  reshape: true)
+        bytes = ArabicImageRenderer.render_row3(visual_label, visual_center, visual_value, doc_width: @width)
+        if bytes
+          @buffer << bytes.b
+        else
+          write_arabic_row_image("#{label} (#{center})", value)
+        end
       end
     end
   end

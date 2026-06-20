@@ -157,6 +157,7 @@ en:
     receipt:
       thank_you: "Thank you for your order!"
       item: "Item"
+      qty: "Qty"
       price: "Price"
       subtotal: "Subtotal"
       discount: "Discount"

@@ -157,6 +157,7 @@ ar:
     receipt:
       thank_you: "شكراً لطلبكم!"
       item: "الصنف"
+      qty: "الكمية"
       price: "السعر"
       subtotal: "المجموع الفرعي"
       discount: "الخصم"

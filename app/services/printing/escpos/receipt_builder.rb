@@ -46,25 +46,25 @@ module Printing
 
         # ── Items table ────────────────────────────────────────────────────
         doc.align(:left)
+        # Row borders are drawn inside each row3 image (top rule + bottom line per row).
+        # Only a single top rule is needed here; no inter-row rules required.
         doc.rule
-        doc.row(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.price"))
-        doc.rule
+        doc.row3(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.qty"), I18n.t("printing.receipt.price"))
 
         @order.order_items.includes(:order_item_modifiers, :menu_item, :combo).each do |item|
-          doc.row("#{item.quantity}× #{item.display_name}", format_money(item.line_total_cents))
+          doc.row3(item.display_name, item.quantity.to_s, format_money(item.line_total_cents))
           item.order_item_modifiers.each do |modifier|
-            doc.text("  + #{modifier.name}")
+            doc.modifier_text("+ #{modifier.name}")
           end
-          doc.text("  #{item.notes}") if item.notes.present?
+          doc.modifier_text(item.notes) if item.notes.present?
         end
 
         # ── Totals ─────────────────────────────────────────────────────────
-        doc.rule
+        doc.blank
         doc.row(I18n.t("printing.receipt.subtotal"), format_money(@order.subtotal_cents))
         if @order.discount_cents.positive?
           doc.row(I18n.t("printing.receipt.discount"), "-#{format_money(@order.discount_cents)}")
         end
-        doc.row(I18n.t("printing.receipt.tax"), format_money(@order.tax_cents))
         doc.row(I18n.t("printing.receipt.tip"), format_money(@order.tip_cents)) if @order.tip_cents.positive?
 
         doc.bold
