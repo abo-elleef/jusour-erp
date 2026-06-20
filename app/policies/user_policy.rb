@@ -36,6 +36,10 @@ class UserPolicy < ApplicationPolicy
     true
   end
 
+  def activate?
+    user.owner? && !record.active?
+  end
+
   def permitted_roles
     return User::ROLES if user.owner?
 

@@ -72,6 +72,8 @@ en:
     combo: "Combo"
     clear: "Clear"
     view: "View"
+    activate: "Activate"
+    deactivate: "Deactivate"
     details: "Details"
     connect: "Connect"
     disconnect: "Disconnect"
@@ -356,6 +358,8 @@ en:
       active: "Active"
       inactive: "Inactive"
       delete_confirm: "Remove %{name}?"
+      deactivate_confirm: "Deactivate %{name}? They won't be able to log in."
+      activate_confirm: "Reactivate %{name}?"
     payroll:
       title: "Monthly payroll"
       subtitle: "Penalties and bonuses for this month. Each month counts as %{days} work days."
@@ -2279,6 +2283,7 @@ en:
       updated: "Staff member updated."
       removed: "Staff member removed."
       deactivated: "Staff member deactivated."
+      activated: "Staff member reactivated."
     payroll_adjustment:
       created: "Adjustment recorded."
       removed: "Adjustment removed."

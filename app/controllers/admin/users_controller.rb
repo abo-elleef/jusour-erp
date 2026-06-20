@@ -2,7 +2,7 @@
 
 module Admin
   class UsersController < BaseController
-    before_action :set_user, only: %i[show edit update destroy]
+    before_action :set_user, only: %i[show edit update destroy activate]
 
     def index
       authorize User
@@ -62,6 +62,12 @@ module Admin
       authorize @user
       @user.deactivate!
       redirect_to admin_users_path, notice: t("flash.user.deactivated")
+    end
+
+    def activate
+      authorize @user
+      @user.activate!
+      redirect_to admin_user_path(@user), notice: t("flash.user.activated")
     end
 
     private

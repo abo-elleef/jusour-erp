@@ -148,6 +148,10 @@ class User < ApplicationRecord
     update!(active: false)
   end
 
+  def activate!
+    update!(active: true)
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[name email role active created_at]
   end

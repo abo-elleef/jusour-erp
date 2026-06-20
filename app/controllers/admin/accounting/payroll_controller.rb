@@ -27,7 +27,7 @@ module Admin
         @week_start = params[:week_start]&.to_date || Date.current.beginning_of_week
         @week_end = @week_start + 6.days
 
-        @rows = User.where(role: %w[cashier manager]).map do |user|
+        @rows = User.active.where(role: %w[cashier manager]).map do |user|
           shifts = ShiftLog.completed
             .where(user: user)
             .where(clocked_in_at: @week_start.beginning_of_day..@week_end.end_of_day)

@@ -72,6 +72,8 @@ ar:
     combo: "وجبة"
     clear: "مسح"
     view: "عرض"
+    activate: "تفعيل"
+    deactivate: "تعطيل"
     details: "التفاصيل"
     connect: "ربط"
     disconnect: "قطع الاتصال"
@@ -356,6 +358,8 @@ ar:
       active: "نشط"
       inactive: "غير نشط"
       delete_confirm: "إزالة %{name}؟"
+      deactivate_confirm: "تعطيل %{name}؟ لن يتمكن من تسجيل الدخول."
+      activate_confirm: "إعادة تفعيل %{name}؟"
     payroll:
       title: "الراتب الشهري"
       subtitle: "خصومات ومكافآت لهذا الشهر. كل شهر = %{days} يوم عمل."
@@ -2306,6 +2310,7 @@ ar:
       updated: "تم تحديث الموظف."
       removed: "تم حذف الموظف."
       deactivated: "تم تعطيل الموظف."
+      activated: "تم تفعيل الموظف."
     payroll_adjustment:
       created: "تم تسجيل التعديل."
       removed: "تمت إزالة التعديل."
