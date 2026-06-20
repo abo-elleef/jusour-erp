@@ -45,5 +45,12 @@ module Printing
     def arabic_font_path
       Setting.get("arabic_font_path", "")
     end
+
+    # URL or absolute file path of the restaurant logo to print at the top of receipts.
+    # Supports any format ImageMagick can read (PNG, JPEG, GIF, SVG…).
+    # Leave blank to skip logo printing.
+    def receipt_logo_url
+      Setting.get("receipt_logo_url", "")
+    end
   end
 end

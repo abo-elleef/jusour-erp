@@ -156,6 +156,8 @@ ar:
   printing:
     receipt:
       thank_you: "شكراً لطلبكم!"
+      item: "الصنف"
+      price: "السعر"
       subtotal: "المجموع الفرعي"
       discount: "الخصم"
       tax: "الضريبة"

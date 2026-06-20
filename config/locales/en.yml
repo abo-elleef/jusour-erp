@@ -156,6 +156,8 @@ en:
   printing:
     receipt:
       thank_you: "Thank you for your order!"
+      item: "Item"
+      price: "Price"
       subtotal: "Subtotal"
       discount: "Discount"
       tax: "Tax"

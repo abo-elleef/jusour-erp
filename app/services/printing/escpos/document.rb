@@ -35,11 +35,8 @@ module Printing
 
       def row(left, right = "")
         if @use_images && (left.to_s.match?(ARABIC_PATTERN) || right.to_s.match?(ARABIC_PATTERN))
-          # Render as a two-part image: price on left, Arabic label on right
-          price_str  = right.to_s   # price is always LTR
-          label_str  = left.to_s
-          label_str, price_str = price_str, label_str unless @rtl
-          write_arabic_row_image(label_str, price_str)
+          # Single image: Arabic label on right, LTR value (price) on left.
+          write_arabic_row_image(left.to_s, right.to_s)
         else
           left_str  = prepare_text(left)
           right_str = prepare_text(right)
@@ -70,6 +67,15 @@ module Printing
 
       def double_height(on = true)
         @buffer << GS << "!" << (on ? "\x11" : "\x00")
+      end
+
+      # Print a logo image from a file path or URL.
+      # Falls back silently if ImageMagick or the source is unavailable.
+      def logo(source)
+        return if source.blank?
+
+        bytes = ArabicImageRenderer.render_logo(source, doc_width: @width)
+        @buffer << bytes.b if bytes
       end
 
       def cut
@@ -129,45 +135,24 @@ module Printing
       end
 
       # Write Arabic text as a raster image line (handles shaping + RTL).
+      # Uses the requested alignment directly — no flip needed because the image
+      # itself is already correctly oriented by ImageMagick.
       def write_arabic_image(text, align: :right)
-        img_align = @rtl ? rtl_align_mode(align) : align
-        bytes = ArabicImageRenderer.render_line(text, doc_width: @width, align: img_align)
+        bytes = ArabicImageRenderer.render_line(text, doc_width: @width, align: align)
         if bytes
           @buffer << bytes.b
         else
-          # Fallback: render as text if image rendering fails
           write_line(prepare_text(text))
         end
       end
 
-      # Render a label+price row: price printed as text on one side,
-      # Arabic label as an image on the other.
+      # Render a receipt row as a single image: Arabic label on the right,
+      # LTR value (price) on the left — both on the same baseline.
       def write_arabic_row_image(arabic_label, ltr_value)
-        # Encode the LTR value (price/number) as plain text padded to fit
-        value_enc = encode_text(ltr_value.to_s)
-        value_len = ltr_value.to_s.length
-
-        # Render the Arabic label occupying the remaining width as an image
-        label_px_width = ArabicImageRenderer::PAPER_PX_WIDTH.fetch(@width, 576)
-        char_px        = label_px_width / @width
-        label_px       = label_px_width - (value_len * char_px)
-        label_px       = [label_px, char_px * 4].max  # at least 4 chars wide
-
-        img_bytes = ArabicImageRenderer.render_line(
-          arabic_label,
-          doc_width: @width,
-          align: :right
-        )
-
-        if img_bytes
-          # Print the price as plain text first (LTR side), then the image
-          # For RTL: image (Arabic) is on the right, price on the left.
-          # We print them on separate lines since mixing raster+text on one line
-          # isn't reliably supported across ESC/POS implementations.
-          @buffer << encode_text(ltr_value.to_s) << "\n"
-          @buffer << img_bytes.b
+        bytes = ArabicImageRenderer.render_row(arabic_label, ltr_value, doc_width: @width)
+        if bytes
+          @buffer << bytes.b
         else
-          # Fallback to text row
           left_str  = @rtl ? prepare_text(arabic_label) : prepare_text(ltr_value.to_s)
           right_str = @rtl ? prepare_text(ltr_value.to_s) : prepare_text(arabic_label)
           space     = [@width - display_width(left_str) - display_width(right_str), 1].max

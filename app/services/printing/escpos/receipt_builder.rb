@@ -12,25 +12,40 @@ module Printing
         doc = Document.new(width: line_width)
         restaurant = Setting.get("restaurant_name", I18n.t("app.name"))
 
+        # ── Logo ─────────────────────────────────────────────────────────────
+        logo_source = Printing::Config.receipt_logo_url
+        if logo_source.present?
+          doc.align(:center)
+          doc.logo(logo_source)
+          doc.blank
+        end
+
+        # ── Header ────────────────────────────────────────────────────────────
         doc.align(:center)
         doc.bold
         doc.text(restaurant)
         doc.bold(false)
         doc.text(@order.order_number)
-        doc.text(@order.created_at.strftime("%b %d, %Y %l:%M %p"))
+        doc.text(@order.created_at.strftime("%d/%m/%Y %I:%M %p"))
         doc.text(@order.fulfillment_summary)
         doc.blank
+
+        # ── Items table ───────────────────────────────────────────────────────
         doc.align(:left)
+        doc.rule
+        # Table column header: price on left, item name on right (RTL layout)
+        doc.row(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.price"))
         doc.rule
 
         @order.order_items.includes(:order_item_modifiers, :menu_item, :combo).each do |item|
-          doc.row("#{item.quantity}x #{item.display_name}", format_money(item.line_total_cents))
+          doc.row("#{item.quantity}× #{item.display_name}", format_money(item.line_total_cents))
           item.order_item_modifiers.each do |modifier|
             doc.text("  + #{modifier.name}")
           end
           doc.text("  #{item.notes}") if item.notes.present?
         end
 
+        # ── Totals ────────────────────────────────────────────────────────────
         doc.rule
         doc.row(I18n.t("printing.receipt.subtotal"), format_money(@order.subtotal_cents))
         if @order.discount_cents.positive?
