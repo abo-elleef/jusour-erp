@@ -11,6 +11,10 @@ module Printing
     # prints as an isolated glyph. The only reliable fix is to render text as
     # a bitmap using the OS font stack (which handles Arabic joining and RTL),
     # then send the bitmap via the ESC/POS GS v 0 raster image command.
+    #
+    # NOTE: All methods are declared with module_function (including helpers).
+    # Using `private` after `module_function` would make helpers instance-only,
+    # so they would be unreachable when called from module-level singleton methods.
     module ArabicImageRenderer
       PAPER_PX_WIDTH = { 42 => 576, 32 => 384 }.freeze
       FONT_SIZE_PT   = 26
@@ -31,6 +35,8 @@ module Printing
 
       module_function
 
+      # ── Public API ────────────────────────────────────────────────────────
+
       # Returns raw ESC/POS bytes for a single Arabic text line.
       # align: :left | :center | :right
       def render_line(text, doc_width: 42, align: :right)
@@ -43,9 +49,8 @@ module Printing
         pbm ? pbm_to_escpos(pbm) : nil
       end
 
-      # Returns raw ESC/POS bytes for a receipt row rendered as a single image:
-      # Arabic label on the right, LTR value (price / qty) on the left.
-      # This keeps both sides on the same baseline and gives a proper RTL layout.
+      # Returns raw ESC/POS bytes for a receipt row as a single image:
+      # Arabic label on the right, LTR value (price/qty) on the left.
       def render_row(arabic_label, ltr_value, doc_width: 42)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
@@ -62,78 +67,25 @@ module Printing
       end
 
       # Returns raw ESC/POS bytes for a logo image.
-      # source: file path or HTTP(S) URL to a PNG/JPEG/GIF image.
+      # source: file path or HTTP(S) URL.
       def render_logo(source, doc_width: 42)
         return nil if source.blank?
 
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        max_h    = (px_width / 2).to_s
-
         cmd = [
-          im_command,
-          source.to_s,
-          "-resize", "#{px_width}x#{max_h}>",
+          im_command, source.to_s,
+          "-resize", "#{px_width}x#{px_width / 2}>",
           "-gravity", "Center",
           "-background", "white",
           "-extent", "#{px_width}x",
           "-type", "Bilevel",
           "pbm:-"
         ]
-
         stdout, _stderr, status = Open3.capture3(*cmd)
         stdout = stdout.b
         return nil unless status.success? && stdout.start_with?("P4".b)
 
         pbm_to_escpos(stdout)
-      end
-
-      # ── PNG preview variants (for browser debug view) ───────────────────
-
-      # Same as render_line but returns Base64-encoded PNG instead of ESC/POS bytes.
-      def render_png(text, doc_width: 42, align: :right)
-        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        font     = arabic_font
-        return nil unless font
-
-        gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
-        run_to_png([
-          im_command,
-          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}",
-          "xc:white",
-          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
-          "-gravity", gravity, "-annotate", "+0+0", text.to_s.strip
-        ])
-      end
-
-      # Same as render_row but returns Base64-encoded PNG.
-      def render_row_png(arabic_label, ltr_value, doc_width: 42)
-        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        font     = arabic_font
-        return nil unless font
-
-        run_to_png([
-          im_command,
-          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}",
-          "xc:white",
-          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
-          "-gravity", "West",  "-annotate", "+8+0", ltr_value.to_s,
-          "-gravity", "East",  "-annotate", "+8+0", arabic_label.to_s.strip
-        ])
-      end
-
-      # Same as render_logo but returns Base64-encoded PNG.
-      def render_logo_png(source, doc_width: 42)
-        return nil if source.blank?
-
-        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        run_to_png([
-          im_command,
-          source.to_s,
-          "-resize", "#{px_width}x#{px_width / 2}>",
-          "-gravity", "Center",
-          "-background", "white",
-          "-extent", "#{px_width}x"
-        ])
       end
 
       # Returns the path to the first usable Arabic font, or nil.
@@ -144,7 +96,53 @@ module Printing
         CANDIDATE_FONTS.find { |f| File.exist?(f) }
       end
 
-      private
+      # ── PNG preview variants (for browser debug view) ─────────────────────
+
+      # Same as render_line but returns a Base64-encoded PNG string.
+      def render_png(text, doc_width: 42, align: :right)
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        font     = arabic_font
+        return nil unless font
+
+        gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
+        run_to_png([
+          im_command,
+          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}", "xc:white",
+          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
+          "-gravity", gravity, "-annotate", "+0+0", text.to_s.strip
+        ])
+      end
+
+      # Same as render_row but returns a Base64-encoded PNG string.
+      def render_row_png(arabic_label, ltr_value, doc_width: 42)
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        font     = arabic_font
+        return nil unless font
+
+        run_to_png([
+          im_command,
+          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}", "xc:white",
+          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
+          "-gravity", "West", "-annotate", "+8+0", ltr_value.to_s,
+          "-gravity", "East", "-annotate", "+8+0", arabic_label.to_s.strip
+        ])
+      end
+
+      # Same as render_logo but returns a Base64-encoded PNG string.
+      def render_logo_png(source, doc_width: 42)
+        return nil if source.blank?
+
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        run_to_png([
+          im_command, source.to_s,
+          "-resize", "#{px_width}x#{px_width / 2}>",
+          "-gravity", "Center",
+          "-background", "white",
+          "-extent", "#{px_width}x"
+        ])
+      end
+
+      # ── Internal helpers (module_function so they're callable from above) ──
 
       # Auto-detect ImageMagick v7 (`magick`) vs v6 (`convert`).
       def im_command
@@ -153,34 +151,26 @@ module Printing
         @_im_command = system("which magick > /dev/null 2>&1") ? "magick" : "convert"
       end
 
-      # Single text annotation.
+      # Single text annotation → PBM binary.
       def render_pbm_single(text, gravity, px_width, font)
         cmd = [
           im_command,
-          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}",
-          "xc:white",
-          "-font",      font,
-          "-pointsize", FONT_SIZE_PT.to_s,
-          "-fill",      "black",
-          "-gravity",   gravity,
-          "-annotate",  "+0+0", text,
-          "-type",      "Bilevel",
-          "pbm:-"
+          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}", "xc:white",
+          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
+          "-gravity", gravity, "-annotate", "+0+0", text,
+          "-type", "Bilevel", "pbm:-"
         ]
         stdout, _stderr, status = Open3.capture3(*cmd)
         stdout = stdout.b
         status.success? && stdout.start_with?("P4".b) ? stdout : nil
       end
 
-      # Multiple text annotations in one image (e.g. price left + Arabic label right).
+      # Multiple text annotations in one image → PBM binary.
       def render_pbm_multi(annotations, px_width, font)
         cmd = [
           im_command,
-          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}",
-          "xc:white",
-          "-font",      font,
-          "-pointsize", FONT_SIZE_PT.to_s,
-          "-fill",      "black"
+          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}", "xc:white",
+          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black"
         ]
         annotations.each do |ann|
           cmd += ["-gravity", ann[:gravity], "-annotate", ann.fetch(:offset, "+0+0"), ann[:text]]
@@ -192,7 +182,7 @@ module Printing
         status.success? && stdout.start_with?("P4".b) ? stdout : nil
       end
 
-      # Runs an ImageMagick command with `png:-` appended and returns Base64 output.
+      # Runs an ImageMagick command with `png:-` output; returns Base64 string.
       def run_to_png(cmd_prefix)
         stdout, _stderr, status = Open3.capture3(*(cmd_prefix + ["png:-"]))
         status.success? ? Base64.strict_encode64(stdout) : nil
