@@ -4,15 +4,29 @@ module Printing
   module Escpos
     class ReceiptBuilder
       def initialize(order, printer:)
-        @order = order
+        @order   = order
         @printer = printer
       end
 
+      # Returns raw ESC/POS bytes to send to the printer.
       def build
-        doc = Document.new(width: line_width)
+        compose(Document.new(width: line_width)).to_bytes
+      end
+
+      # Returns a DebugDocument with entries captured for browser preview.
+      # Only used when PRINT_DEBUG=true.
+      def build_debug
+        doc = DebugDocument.new(width: line_width)
+        compose(doc)
+        doc
+      end
+
+      private
+
+      def compose(doc)
         restaurant = Setting.get("restaurant_name", I18n.t("app.name"))
 
-        # ── Logo ─────────────────────────────────────────────────────────────
+        # ── Logo ───────────────────────────────────────────────────────────
         logo_source = Printing::Config.receipt_logo_url
         if logo_source.present?
           doc.align(:center)
@@ -20,7 +34,7 @@ module Printing
           doc.blank
         end
 
-        # ── Header ────────────────────────────────────────────────────────────
+        # ── Header ─────────────────────────────────────────────────────────
         doc.align(:center)
         doc.bold
         doc.text(restaurant)
@@ -30,10 +44,9 @@ module Printing
         doc.text(@order.fulfillment_summary)
         doc.blank
 
-        # ── Items table ───────────────────────────────────────────────────────
+        # ── Items table ────────────────────────────────────────────────────
         doc.align(:left)
         doc.rule
-        # Table column header: price on left, item name on right (RTL layout)
         doc.row(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.price"))
         doc.rule
 
@@ -45,7 +58,7 @@ module Printing
           doc.text("  #{item.notes}") if item.notes.present?
         end
 
-        # ── Totals ────────────────────────────────────────────────────────────
+        # ── Totals ─────────────────────────────────────────────────────────
         doc.rule
         doc.row(I18n.t("printing.receipt.subtotal"), format_money(@order.subtotal_cents))
         if @order.discount_cents.positive?
@@ -59,8 +72,8 @@ module Printing
         doc.bold(false)
         doc.rule
 
-        print_payments(doc)
-        print_change(doc)
+        compose_payments(doc)
+        compose_change(doc)
 
         if @order.customer
           doc.blank
@@ -73,10 +86,8 @@ module Printing
         doc.text(I18n.t("printing.receipt.thank_you"))
         doc.blank(2)
         doc.cut
-        doc.to_bytes
+        doc
       end
-
-      private
 
       def line_width
         @printer.paper_width == "58mm" ? 32 : 42
@@ -86,7 +97,7 @@ module Printing
         Money.new(cents.to_i).format(symbol: 'ج.م.')
       end
 
-      def print_payments(doc)
+      def compose_payments(doc)
         payments = @order.payments.where(status: "completed").order(:created_at)
         return if payments.none?
 
@@ -97,7 +108,7 @@ module Printing
         end
       end
 
-      def print_change(doc)
+      def compose_change(doc)
         cash_payments = @order.payments.where(payment_method: "cash", status: "completed")
         return unless cash_payments.one?
 

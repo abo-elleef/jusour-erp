@@ -1,0 +1,97 @@
+# frozen_string_literal: true
+
+module Printing
+  module Escpos
+    # Mirrors the Document public API but records every operation instead of
+    # writing ESC/POS bytes. Used by PrintDebugController to render a browser
+    # preview of what would be sent to the printer.
+    #
+    # Enable with: PRINT_DEBUG=true in your env.
+    class DebugDocument
+      ARABIC_PATTERN = /\p{Arabic}/
+
+      attr_reader :entries, :config_summary
+
+      def initialize(width: 42, charset: nil)
+        @width        = width
+        @charset_config = Charset.resolve(charset)
+        @rtl          = @charset_config[:reshape]
+        @use_images   = @rtl && ArabicImageRenderer.arabic_font.present?
+        @current_align = :left
+        @current_bold  = false
+        @entries       = []
+
+        @config_summary = {
+          use_images: @use_images,
+          rtl: @rtl,
+          font_path: ArabicImageRenderer.arabic_font || "(none — TEXT mode will be used)",
+          charset: @charset_config[:encoding].name,
+          code_page: @charset_config[:code_page],
+          paper_width_chars: @width
+        }
+      end
+
+      # ── Public interface (same as Document) ──────────────────────────────
+
+      def text(line = "")
+        str = line.to_s
+        if @use_images && str.match?(ARABIC_PATTERN)
+          png = ArabicImageRenderer.render_png(str, doc_width: @width, align: @current_align)
+          push kind: :image, content: str, png_b64: png
+        else
+          push kind: :text, content: str
+        end
+      end
+
+      def blank(lines = 1)
+        lines.times { push kind: :blank, content: "" }
+      end
+
+      def row(left, right = "")
+        if @use_images && (left.to_s.match?(ARABIC_PATTERN) || right.to_s.match?(ARABIC_PATTERN))
+          png = ArabicImageRenderer.render_row_png(left.to_s, right.to_s, doc_width: @width)
+          push kind: :image_row, left: left.to_s, right: right.to_s, png_b64: png
+        else
+          left_str  = left.to_s
+          right_str = right.to_s
+          left_str, right_str = right_str, left_str if @rtl
+          push kind: :text_row, left: left_str, right: right_str
+        end
+      end
+
+      def rule(char = "-")
+        push kind: :rule, content: char * @width
+      end
+
+      def bold(on = true)
+        @current_bold = on
+      end
+
+      def align(mode)
+        @current_align = mode
+      end
+
+      def double_height(on = true)
+        @current_dh = on
+      end
+
+      def logo(source)
+        return if source.blank?
+        png = ArabicImageRenderer.render_logo_png(source, doc_width: @width)
+        push kind: :logo, source: source, png_b64: png
+      end
+
+      def cut; end
+
+      def to_bytes
+        "".b
+      end
+
+      private
+
+      def push(entry)
+        @entries << entry.merge(align: @current_align, bold: @current_bold)
+      end
+    end
+  end
+end

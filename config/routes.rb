@@ -101,6 +101,7 @@ Rails.application.routes.draw do
       member { post :test_print }
     end
     get "print_agent/test_payload/:printer_id", to: "print_agent#test_payload", as: :print_agent_test_payload
+    get "print_debug", to: "print_debug#show", as: :print_debug
     resources :orders, only: %i[index show] do
       member do
         post :void

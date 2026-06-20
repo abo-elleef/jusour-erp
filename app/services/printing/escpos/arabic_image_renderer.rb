@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "open3"
+require "base64"
 
 module Printing
   module Escpos
@@ -86,6 +87,55 @@ module Printing
         pbm_to_escpos(stdout)
       end
 
+      # ── PNG preview variants (for browser debug view) ───────────────────
+
+      # Same as render_line but returns Base64-encoded PNG instead of ESC/POS bytes.
+      def render_png(text, doc_width: 42, align: :right)
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        font     = arabic_font
+        return nil unless font
+
+        gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
+        run_to_png([
+          im_command,
+          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}",
+          "xc:white",
+          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
+          "-gravity", gravity, "-annotate", "+0+0", text.to_s.strip
+        ])
+      end
+
+      # Same as render_row but returns Base64-encoded PNG.
+      def render_row_png(arabic_label, ltr_value, doc_width: 42)
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        font     = arabic_font
+        return nil unless font
+
+        run_to_png([
+          im_command,
+          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}",
+          "xc:white",
+          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
+          "-gravity", "West",  "-annotate", "+8+0", ltr_value.to_s,
+          "-gravity", "East",  "-annotate", "+8+0", arabic_label.to_s.strip
+        ])
+      end
+
+      # Same as render_logo but returns Base64-encoded PNG.
+      def render_logo_png(source, doc_width: 42)
+        return nil if source.blank?
+
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        run_to_png([
+          im_command,
+          source.to_s,
+          "-resize", "#{px_width}x#{px_width / 2}>",
+          "-gravity", "Center",
+          "-background", "white",
+          "-extent", "#{px_width}x"
+        ])
+      end
+
       # Returns the path to the first usable Arabic font, or nil.
       def arabic_font
         override = Printing::Config.arabic_font_path
@@ -140,6 +190,12 @@ module Printing
         stdout, _stderr, status = Open3.capture3(*cmd)
         stdout = stdout.b
         status.success? && stdout.start_with?("P4".b) ? stdout : nil
+      end
+
+      # Runs an ImageMagick command with `png:-` appended and returns Base64 output.
+      def run_to_png(cmd_prefix)
+        stdout, _stderr, status = Open3.capture3(*(cmd_prefix + ["png:-"]))
+        status.success? ? Base64.strict_encode64(stdout) : nil
       end
 
       # Converts a binary PBM (P4) blob to ESC/POS GS v 0 raster bytes.
