@@ -2,6 +2,7 @@
 
 require "bidi"
 require_relative "arabic_reshaper"
+require_relative "arabic_image_renderer"
 
 module Printing
   module Escpos

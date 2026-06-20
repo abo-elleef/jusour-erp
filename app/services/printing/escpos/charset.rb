@@ -9,10 +9,12 @@ module Printing
         reshape: false
       }.freeze
 
+      # Windows-1256 cannot encode Arabic Presentation Forms (U+FE70–U+FEFF),
+      # so reshaping is disabled here. RTL reordering still applies.
       ARABIC = {
         encoding: Encoding::Windows_1256,
         code_page: 47,
-        reshape: true
+        reshape: false
       }.freeze
 
       # UTF-8 mode: for printers that support UTF-8 natively (many modern Epson/Star).

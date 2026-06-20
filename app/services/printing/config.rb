@@ -39,5 +39,11 @@ module Printing
     def print_code_page
       Setting.get_int("print_code_page", 0)
     end
+
+    # Optional override path to an Arabic TTF/TTC font for raster image printing.
+    # Leave blank to auto-detect from CANDIDATE_FONTS list.
+    def arabic_font_path
+      Setting.get("arabic_font_path", "")
+    end
   end
 end
