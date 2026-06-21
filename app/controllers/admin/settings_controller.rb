@@ -9,6 +9,7 @@ module Admin
       @print_routing = Setting.get("print_routing", Printing::Config::ROUTING_CLIENT)
       @print_agent_port = Setting.get_int("print_agent_port", Printing::Config::DEFAULT_AGENT_PORT)
       @print_agent_token = Setting.get("print_agent_token", "")
+      @receipt_footer_text = Printing::Config.receipt_footer_text
       @tax_rates = TaxRate.ordered
     end
 
@@ -24,6 +25,7 @@ module Admin
         Setting.set("print_agent_port", params[:print_agent_port].to_i)
       end
       Setting.set("print_agent_token", params[:print_agent_token].to_s)
+      Setting.set("receipt_footer_text", params[:receipt_footer_text].to_s.strip)
       redirect_to admin_settings_path, notice: t("flash.settings.updated")
     end
 

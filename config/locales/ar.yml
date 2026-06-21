@@ -468,6 +468,8 @@ ar:
       agent_port: "منفذ الوكيل"
       agent_token: "رمز الوكيل (اختياري)"
       agent_install: "على كل كاشier شغّل: node print_agent/index.js — المنفذ الافتراضي %{port}"
+      receipt_footer: "رسالة نهاية الإيصال"
+      receipt_footer_hint: "تُطبع في أسفل كل إيصال. اتركها فارغة لاستخدام رسالة الشكر الافتراضية."
     tax_rate_form:
       back: "← الإعدادات"
       new: "معدل ضريبة جديد"

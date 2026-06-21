@@ -52,5 +52,11 @@ module Printing
     def receipt_logo_url
       Setting.get("receipt_logo_url", "")
     end
+
+    # Custom footer message printed at the bottom of each receipt.
+    # Falls back to the I18n thank_you translation when blank.
+    def receipt_footer_text
+      Setting.get("receipt_footer_text", "")
+    end
   end
 end

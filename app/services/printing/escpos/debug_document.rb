@@ -65,7 +65,8 @@ module Printing
         if @use_images && (label.to_s.match?(ARABIC_PATTERN) || value.to_s.match?(ARABIC_PATTERN))
           visual_label  = Printing::Escpos::Bidi.visual_for_print(label.to_s,  reshape: true)
           visual_center = Printing::Escpos::Bidi.visual_for_print(center.to_s, reshape: true)
-          visual_value  = Printing::Escpos::Bidi.visual_for_print(value.to_s,  reshape: true)
+          v = value.to_s
+          visual_value  = v.match?(/[a-zA-Z0-9]/) ? v : Printing::Escpos::Bidi.visual_for_print(v, reshape: true)
           png = ArabicImageRenderer.render_row3_png(visual_label, visual_center, visual_value, doc_width: @width)
           push kind: :image_row3, label: label.to_s, center: center.to_s, value: value.to_s, png_b64: png
         else
@@ -76,13 +77,18 @@ module Printing
 
       def modifier_text(line = "")
         str = line.to_s
-        if @use_images && str.match?(ARABIC_PATTERN)
+        if @use_images
           visual = Printing::Escpos::Bidi.visual_for_print(str, reshape: true)
-          png = ArabicImageRenderer.render_png(visual, doc_width: @width, align: @rtl ? :right : :left)
+          png = ArabicImageRenderer.render_modifier_row_png(visual, doc_width: @width)
           push kind: :image, content: str, png_b64: png
         else
           push kind: :text, content: @rtl ? str : "  #{str}"
         end
+      end
+
+      def separator
+        png = ArabicImageRenderer.render_separator_png(doc_width: @width)
+        push kind: :separator, png_b64: png
       end
 
       def rule(char = "-")

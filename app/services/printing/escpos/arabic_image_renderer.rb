@@ -120,8 +120,7 @@ module Printing
             { gravity: "East", offset: "+#{qty_rx}+0",   text: qty_str },
             { gravity: "East", offset: "+8+0",            text: item_name_visual },
             { draw: "line #{sep1},0 #{sep1},#{h}" },
-            { draw: "line #{sep2},0 #{sep2},#{h}" },
-            { draw: "line 0,#{h - 1} #{px_width},#{h - 1}" }  # bottom cell border
+            { draw: "line #{sep2},0 #{sep2},#{h}" }
           ],
           px_width, font
         )
@@ -180,9 +179,68 @@ module Printing
           "-gravity", "East", "-annotate", "+#{qty_rx}+0",   qty_str,
           "-gravity", "East", "-annotate", "+8+0",            item_name_visual,
           "-draw", "line #{sep1},0 #{sep1},#{h}",
-          "-draw", "line #{sep2},0 #{sep2},#{h}",
-          "-draw", "line 0,#{h - 1} #{px_width},#{h - 1}"
+          "-draw", "line #{sep2},0 #{sep2},#{h}"
         ])
+      end
+
+      # Modifier/notes continuation row: text in the item-name column only,
+      # with the same vertical column separators as a regular row3 image.
+      def render_modifier_row(visual_text, doc_width: 42)
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        qty_x    = (px_width * 0.26).to_i
+        sep1     = qty_x - 12
+        sep2     = (px_width * 0.46).to_i
+        h        = FONT_SIZE_PT * 2
+        font     = arabic_font
+        return nil unless font
+
+        pbm = render_pbm_multi(
+          [
+            { gravity: "East", offset: "+8+0", text: visual_text },
+            { draw: "line #{sep1},0 #{sep1},#{h}" },
+            { draw: "line #{sep2},0 #{sep2},#{h}" }
+          ],
+          px_width, font
+        )
+        pbm ? pbm_to_escpos(pbm) : nil
+      end
+
+      # Same as render_modifier_row but returns a Base64-encoded PNG string.
+      def render_modifier_row_png(visual_text, doc_width: 42)
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        qty_x    = (px_width * 0.26).to_i
+        sep1     = qty_x - 12
+        sep2     = (px_width * 0.46).to_i
+        h        = FONT_SIZE_PT * 2
+        font     = arabic_font
+        return nil unless font
+
+        run_to_png([
+          im_command,
+          "-size", "#{px_width}x#{h}", "xc:white",
+          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
+          "-gravity", "East", "-annotate", "+8+0", visual_text,
+          "-draw", "line #{sep1},0 #{sep1},#{h}",
+          "-draw", "line #{sep2},0 #{sep2},#{h}"
+        ])
+      end
+
+      # Full-width 1px horizontal rule as ESC/POS bytes — used between table rows.
+      def render_separator(doc_width: 42)
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        cmd = [im_command, "-size", "#{px_width}x2", "xc:white",
+               "-draw", "line 0,0 #{px_width},0",
+               "-type", "Bilevel", "pbm:-"]
+        stdout, _stderr, status = Open3.capture3(*cmd)
+        stdout = stdout.b
+        status.success? && stdout.start_with?("P4".b) ? pbm_to_escpos(stdout) : nil
+      end
+
+      # Same as render_separator but returns a Base64-encoded PNG string.
+      def render_separator_png(doc_width: 42)
+        px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
+        run_to_png([im_command, "-size", "#{px_width}x2", "xc:white",
+                    "-draw", "line 0,0 #{px_width},0"])
       end
 
       # Same as render_logo but returns a Base64-encoded PNG string.

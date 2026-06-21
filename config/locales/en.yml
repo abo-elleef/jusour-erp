@@ -468,6 +468,8 @@ en:
       agent_port: "Agent port"
       agent_token: "Agent token (optional)"
       agent_install: "On each register run: node print_agent/index.js — default port %{port}"
+      receipt_footer: "Receipt footer message"
+      receipt_footer_hint: "Printed at the bottom of every receipt. Leave blank to use the default \"Thank you\" message."
     tax_rate_form:
       back: "← Settings"
       new: "New tax rate"

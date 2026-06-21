@@ -122,6 +122,13 @@
             </div>
           <% end %>
 
+        <% elsif entry[:kind] == :separator %>
+          <% if entry[:png_b64] %>
+            <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">
+          <% else %>
+            <div class="r-rule"><%= "-" * 40 %></div>
+          <% end %>
+
         <% elsif entry[:kind] == :image_row3 %>
           <% if entry[:png_b64] %>
             <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">

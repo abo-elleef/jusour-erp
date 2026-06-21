@@ -67,16 +67,22 @@ module Printing
         end
       end
 
-      # Render a modifier/add-on line aligned to the item-name column:
-      # right-aligned in RTL mode, left-indented in LTR mode.
+      # Render a modifier/add-on line inside the item-name column with column borders.
       def modifier_text(line = "")
-        if @rtl
-          align(:right)
-          text(line)
-          align(:left)
-        else
-          text("  #{line}")
+        str = line.to_s
+        if @use_images
+          visual = Bidi.visual_for_print(str, reshape: true)
+          bytes  = ArabicImageRenderer.render_modifier_row(visual, doc_width: @width)
+          return @buffer << bytes.b if bytes
         end
+        # Text fallback
+        @rtl ? (align(:right); text(str); align(:left)) : text("  #{str}")
+      end
+
+      # Full-width horizontal line rendered as an image (used between table rows).
+      def separator
+        bytes = ArabicImageRenderer.render_separator(doc_width: @width)
+        bytes ? @buffer << bytes.b : rule
       end
 
       def rule(char = "-")
@@ -199,7 +205,9 @@ module Printing
       def write_arabic_row3_image(label, center, value)
         visual_label  = Bidi.visual_for_print(label,  reshape: true)
         visual_center = Bidi.visual_for_print(center, reshape: true)
-        visual_value  = Bidi.visual_for_print(value,  reshape: true)
+        # Price column is always LTR (Latin digits). Only apply bidi when the
+        # value is pure Arabic text (e.g. the "السعر" column header).
+        visual_value  = value.match?(/[a-zA-Z0-9]/) ? value : Bidi.visual_for_print(value, reshape: true)
         bytes = ArabicImageRenderer.render_row3(visual_label, visual_center, visual_value, doc_width: @width)
         if bytes
           @buffer << bytes.b

@@ -41,15 +41,17 @@ module Printing
         doc.bold(false)
         doc.text(@order.order_number)
         doc.text(@order.created_at.strftime("%d/%m/%Y %I:%M %p"))
-        doc.text(@order.fulfillment_summary)
+        payment = @order.payments.where(status: "completed").order(:created_at).first
+        payment_label = payment ? I18n.t("payment.methods.#{payment.payment_method}", default: payment.payment_method.humanize) : nil
+        fulfillment_line = [@order.fulfillment_summary, payment_label].compact.join(" | ")
+        doc.text(fulfillment_line)
         doc.blank
 
         # ── Items table ────────────────────────────────────────────────────
         doc.align(:left)
-        # Row borders are drawn inside each row3 image (top rule + bottom line per row).
-        # Only a single top rule is needed here; no inter-row rules required.
-        doc.rule
+        doc.separator
         doc.row3(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.qty"), I18n.t("printing.receipt.price"))
+        doc.separator
 
         @order.order_items.includes(:order_item_modifiers, :menu_item, :combo).each do |item|
           doc.row3(item.display_name, item.quantity.to_s, format_money(item.line_total_cents))
@@ -57,6 +59,7 @@ module Printing
             doc.modifier_text("+ #{modifier.name}")
           end
           doc.modifier_text(item.notes) if item.notes.present?
+          doc.separator
         end
 
         # ── Totals ─────────────────────────────────────────────────────────
@@ -72,9 +75,6 @@ module Printing
         doc.bold(false)
         doc.rule
 
-        compose_payments(doc)
-        compose_change(doc)
-
         if @order.customer
           doc.blank
           doc.align(:center)
@@ -83,7 +83,8 @@ module Printing
 
         doc.blank
         doc.align(:center)
-        doc.text(I18n.t("printing.receipt.thank_you"))
+        footer = Printing::Config.receipt_footer_text.presence || I18n.t("printing.receipt.thank_you")
+        doc.text(footer)
         doc.blank(2)
         doc.cut
         doc
@@ -94,7 +95,7 @@ module Printing
       end
 
       def format_money(cents)
-        Money.new(cents.to_i).format(symbol: 'ج.م.')
+        Money.new(cents.to_i).format(symbol: false)
       end
 
       def compose_payments(doc)
