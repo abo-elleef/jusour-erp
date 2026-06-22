@@ -2,9 +2,10 @@
 
 <style>
   .debug-layout      { display: flex; gap: 2rem; align-items: flex-start; padding: 1.5rem; }
-  .debug-sidebar     { flex: 0 0 300px; position: sticky; top: 1rem; }
-  .debug-paper-wrap  { flex: 1; display: flex; justify-content: center; }
+  .debug-sidebar     { flex: 0 0 260px; position: sticky; top: 1rem; }
+  .debug-main        { flex: 1; min-width: 0; }
 
+  /* Sidebar config card */
   .debug-config { background: #1e293b; color: #e2e8f0; border-radius: 10px; padding: 1.2rem; font-size: 13px; }
   .debug-config h2  { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; margin: 0 0 .8rem; }
   .debug-config dl  { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: .25rem .6rem; }
@@ -12,12 +13,31 @@
   .debug-config dd  { color: #f1f5f9; font-family: monospace; word-break: break-all; margin: 0; }
   .badge-image { background: #22c55e; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
   .badge-text  { background: #ef4444; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+  .badge-type  { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; display: inline-block; }
+  .badge-receipt { background: #3b82f6; color: #fff; }
+  .badge-expo    { background: #8b5cf6; color: #fff; }
+  .badge-kitchen { background: #f59e0b; color: #fff; }
+  .badge-bar     { background: #10b981; color: #fff; }
 
   .debug-actions { margin-top: 1rem; display: flex; flex-direction: column; gap: .5rem; }
   .debug-actions a { display: block; text-align: center; padding: .45rem .8rem; border-radius: 6px; font-size: 13px; font-weight: 600; text-decoration: none; }
   .btn-print { background: #3b82f6; color: #fff; }
   .btn-back  { background: #e2e8f0; color: #1e293b; }
 
+  .no-font-banner { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; padding: .6rem .9rem; margin-top: .8rem; font-size: 12px; color: #991b1b; }
+
+  /* Tabs */
+  .ticket-tabs       { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.2rem; }
+  .ticket-tab        { padding: .35rem .9rem; border-radius: 20px; font-size: 12px; font-weight: 600;
+                       background: #e2e8f0; color: #475569; cursor: pointer; border: 2px solid transparent;
+                       white-space: nowrap; }
+  .ticket-tab.active { background: #1e293b; color: #fff; border-color: #1e293b; }
+
+  .ticket-panels     { display: flex; flex-wrap: wrap; gap: 2rem; }
+  .ticket-panel      { display: none; }
+  .ticket-panel.active { display: block; }
+
+  /* Receipt paper */
   .receipt-paper {
     width: 300px;
     background: #fff;
@@ -39,8 +59,6 @@
   .r-row    { display: flex; justify-content: space-between; padding: .15rem 1rem; }
   .r-row.r-bold { font-weight: 700; }
   .r-fail   { color: #ef4444; font-style: italic; }
-
-  .no-font-banner { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 6px; padding: .6rem .9rem; margin-top: .8rem; font-size: 12px; color: #991b1b; }
 </style>
 
 <div class="debug-layout">
@@ -61,8 +79,6 @@
         <dd><%= @debug.config_summary[:rtl] ? "yes" : "no" %></dd>
         <dt>Charset</dt>
         <dd><%= @debug.config_summary[:charset] %></dd>
-        <dt>Code page</dt>
-        <dd><%= @debug.config_summary[:code_page] %></dd>
         <dt>Width</dt>
         <dd><%= @debug.config_summary[:paper_width_chars] %> chars</dd>
         <dt>Font</dt>
@@ -84,79 +100,110 @@
     </div>
   </aside>
 
-  <main class="debug-paper-wrap">
-    <div class="receipt-paper">
-      <% @debug.entries.each do |entry| %>
-        <% align_class = "r-#{entry[:align]}" %>
-        <% bold_class  = entry[:bold] ? "r-bold" : "" %>
+  <main class="debug-main">
 
-        <% if entry[:kind] == :blank %>
-          <div class="r-blank"></div>
-
-        <% elsif entry[:kind] == :rule %>
-          <div class="r-rule"><%= entry[:content] %></div>
-
-        <% elsif entry[:kind] == :text %>
-          <div class="r-line <%= align_class %> <%= bold_class %>"><%= entry[:content] %></div>
-
-        <% elsif entry[:kind] == :image %>
-          <% if entry[:png_b64] %>
-            <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">
-          <% else %>
-            <div class="r-line r-fail">[image render failed] <%= entry[:content] %></div>
-          <% end %>
-
-        <% elsif entry[:kind] == :text_row %>
-          <div class="r-row <%= bold_class %>">
-            <span><%= entry[:left] %></span>
-            <span><%= entry[:right] %></span>
-          </div>
-
-        <% elsif entry[:kind] == :image_row %>
-          <% if entry[:png_b64] %>
-            <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">
-          <% else %>
-            <div class="r-row r-fail">
-              <span><%= entry[:left] %></span>
-              <span><%= entry[:right] %></span>
-            </div>
-          <% end %>
-
-        <% elsif entry[:kind] == :separator %>
-          <% if entry[:png_b64] %>
-            <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">
-          <% else %>
-            <div class="r-rule"><%= "-" * 40 %></div>
-          <% end %>
-
-        <% elsif entry[:kind] == :image_row3 %>
-          <% if entry[:png_b64] %>
-            <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">
-          <% else %>
-            <div class="r-row r-fail">
-              <span><%= entry[:value] %></span>
-              <span><%= entry[:center] %></span>
-              <span><%= entry[:label] %></span>
-            </div>
-          <% end %>
-
-        <% elsif entry[:kind] == :text_row3 %>
-          <div class="r-row <%= bold_class %>">
-            <span><%= entry[:left] %></span>
-            <span style="text-align:center"><%= entry[:center] %></span>
-            <span><%= entry[:right] %></span>
-          </div>
-
-        <% elsif entry[:kind] == :logo %>
-          <% if entry[:png_b64] %>
-            <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="Logo">
-          <% else %>
-            <div class="r-line r-center r-fail">[logo not rendered]</div>
-          <% end %>
-
-        <% end %>
+    <div class="ticket-tabs">
+      <% @tickets.each_with_index do |ticket, i| %>
+        <button class="ticket-tab <%= i == 0 ? 'active' : '' %>"
+                onclick="showTicket(<%= i %>)"
+                type="button">
+          <span class="badge-type badge-<%= ticket[:printer_type] %>"><%= ticket[:printer_type].upcase %></span>
+          &nbsp;<%= ticket[:label] %>
+        </button>
       <% end %>
     </div>
+
+    <div class="ticket-panels">
+      <% @tickets.each_with_index do |ticket, i| %>
+        <div class="ticket-panel <%= i == 0 ? 'active' : '' %>" id="ticket-panel-<%= i %>">
+          <div class="receipt-paper">
+            <% ticket[:debug].entries.each do |entry| %>
+              <% align_class = "r-#{entry[:align]}" %>
+              <% bold_class  = entry[:bold] ? "r-bold" : "" %>
+              <% dh_style    = entry[:double_height] ? "font-size:1.8em;line-height:1.2;" : "" %>
+
+              <% if entry[:kind] == :blank %>
+                <div class="r-blank"></div>
+
+              <% elsif entry[:kind] == :rule %>
+                <div class="r-rule"><%= entry[:content] %></div>
+
+              <% elsif entry[:kind] == :text %>
+                <div class="r-line <%= align_class %> <%= bold_class %>" style="<%= dh_style %>"><%= entry[:content] %></div>
+
+              <% elsif entry[:kind] == :image %>
+                <% if entry[:png_b64] %>
+                  <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">
+                <% else %>
+                  <div class="r-line r-fail" style="<%= dh_style %>">[image render failed] <%= entry[:content] %></div>
+                <% end %>
+
+              <% elsif entry[:kind] == :text_row %>
+                <div class="r-row <%= bold_class %>">
+                  <span><%= entry[:left] %></span>
+                  <span><%= entry[:right] %></span>
+                </div>
+
+              <% elsif entry[:kind] == :image_row %>
+                <% if entry[:png_b64] %>
+                  <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">
+                <% else %>
+                  <div class="r-row r-fail">
+                    <span><%= entry[:left] %></span>
+                    <span><%= entry[:right] %></span>
+                  </div>
+                <% end %>
+
+              <% elsif entry[:kind] == :separator %>
+                <% if entry[:png_b64] %>
+                  <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">
+                <% else %>
+                  <div class="r-rule"><%= "-" * 40 %></div>
+                <% end %>
+
+              <% elsif entry[:kind] == :image_row3 %>
+                <% if entry[:png_b64] %>
+                  <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="">
+                <% else %>
+                  <div class="r-row r-fail">
+                    <span><%= entry[:value] %></span>
+                    <span><%= entry[:center] %></span>
+                    <span><%= entry[:label] %></span>
+                  </div>
+                <% end %>
+
+              <% elsif entry[:kind] == :text_row3 %>
+                <div class="r-row <%= bold_class %>">
+                  <span><%= entry[:left] %></span>
+                  <span style="text-align:center"><%= entry[:center] %></span>
+                  <span><%= entry[:right] %></span>
+                </div>
+
+              <% elsif entry[:kind] == :logo %>
+                <% if entry[:png_b64] %>
+                  <img class="r-img" src="data:image/png;base64,<%= entry[:png_b64] %>" alt="Logo">
+                <% else %>
+                  <div class="r-line r-center r-fail">[logo not rendered]</div>
+                <% end %>
+
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
   </main>
 
 </div>
+
+<script>
+  function showTicket(index) {
+    document.querySelectorAll('.ticket-tab').forEach(function(t, i) {
+      t.classList.toggle('active', i === index);
+    });
+    document.querySelectorAll('.ticket-panel').forEach(function(p, i) {
+      p.classList.toggle('active', i === index);
+    });
+  }
+</script>

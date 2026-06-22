@@ -172,6 +172,7 @@ ar:
       order_notes: "ملاحظات الطلب:"
     production_ticket:
       pick_title: "التجميع"
+      pick_station: "التجميع"
       order_notes: "ملاحظات الطلب:"
     test:
       title: "طباعة تجريبية"

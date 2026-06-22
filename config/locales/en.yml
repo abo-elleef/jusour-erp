@@ -172,6 +172,7 @@ en:
       order_notes: "Order notes:"
     production_ticket:
       pick_title: "PICK"
+      pick_station: "PICK"
       order_notes: "Order notes:"
     test:
       title: "TEST PRINT"

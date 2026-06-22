@@ -155,7 +155,7 @@ class Order < ApplicationRecord
         I18n.t("order.fulfillment.table")
       end
     when "delivery"
-      delivery_address.presence || I18n.t("order.fulfillment.delivery")
+      I18n.t("order.fulfillment.delivery")
     else
       I18n.t("order.fulfillment.pickup")
     end

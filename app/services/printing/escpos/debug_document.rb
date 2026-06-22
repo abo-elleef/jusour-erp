@@ -19,6 +19,7 @@ module Printing
         @use_images   = @rtl && ArabicImageRenderer.arabic_font.present?
         @current_align = :left
         @current_bold  = false
+        @current_dh    = false
         @entries       = []
 
         @config_summary = {
@@ -37,7 +38,7 @@ module Printing
         str = line.to_s
         if @use_images && str.match?(ARABIC_PATTERN)
           visual = Printing::Escpos::Bidi.visual_for_print(str, reshape: true)
-          png = ArabicImageRenderer.render_png(visual, doc_width: @width, align: @current_align)
+          png = ArabicImageRenderer.render_png(visual, doc_width: @width, align: @current_align, font_scale: @current_dh ? 2 : 1)
           push kind: :image, content: str, png_b64: png
         else
           push kind: :text, content: str
@@ -104,7 +105,7 @@ module Printing
       end
 
       def double_height(on = true)
-        @current_dh = on
+        @current_dh = on ? true : false
       end
 
       def logo(source)
@@ -122,7 +123,7 @@ module Printing
       private
 
       def push(entry)
-        @entries << entry.merge(align: @current_align, bold: @current_bold)
+        @entries << entry.merge(align: @current_align, bold: @current_bold, double_height: @current_dh)
       end
     end
   end

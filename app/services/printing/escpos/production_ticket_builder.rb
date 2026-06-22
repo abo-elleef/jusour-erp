@@ -11,7 +11,18 @@ module Printing
       end
 
       def build
-        doc = Document.new(width: line_width)
+        compose(Document.new(width: line_width)).to_bytes
+      end
+
+      def build_debug
+        doc = DebugDocument.new(width: line_width)
+        compose(doc)
+        doc
+      end
+
+      private
+
+      def compose(doc)
         doc.align(:center)
         doc.bold
         doc.double_height(true)
@@ -20,25 +31,17 @@ module Printing
         doc.bold(false)
         doc.text(@order.order_number)
         doc.text(I18n.l(@order.created_at, format: :short))
-        doc.text(I18n.l(Time.current, format: :short))
+        doc.bold
+        doc.double_height(true)
         doc.text(@order.fulfillment_summary)
+        doc.double_height(false)
+        doc.bold(false)
         doc.blank
-        doc.align(:left)
-        doc.rule
 
-        @order_items.each do |item|
-          doc.bold
-          doc.text("#{item.quantity}x #{item.display_name}")
-          doc.bold(false)
-          item.order_item_modifiers.each do |modifier|
-            doc.text("  + #{modifier.name}")
-          end
-          doc.text("  * #{item.notes}") if item.notes.present?
-          doc.blank
-        end
+        compose_items_table(doc, @order_items)
 
         if @order.notes.present?
-          doc.rule
+          doc.blank
           doc.bold
           doc.text(I18n.t("printing.production_ticket.order_notes"))
           doc.bold(false)
@@ -47,10 +50,28 @@ module Printing
 
         doc.blank(2)
         doc.cut
-        doc.to_bytes
+        doc
       end
 
-      private
+      def compose_items_table(doc, items)
+        doc.align(:left)
+        doc.separator
+        doc.row3(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.qty"), I18n.t("printing.receipt.price"))
+        doc.separator
+
+        items.each do |item|
+          doc.row3(item.display_name, item.quantity.to_s, format_money(item.line_total_cents))
+          item.order_item_modifiers.each do |modifier|
+            doc.modifier_text("+ #{modifier.name}")
+          end
+          doc.modifier_text(item.notes) if item.notes.present?
+          doc.separator
+        end
+      end
+
+      def format_money(cents)
+        Money.new(cents.to_i).format(symbol: false)
+      end
 
       def line_width
         @printer.paper_width == "58mm" ? 32 : 42

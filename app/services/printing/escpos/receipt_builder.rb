@@ -41,10 +41,16 @@ module Printing
         doc.bold(false)
         doc.text(@order.order_number)
         doc.text(@order.created_at.strftime("%d/%m/%Y %I:%M %p"))
-        payment = @order.payments.where(status: "completed").order(:created_at).first
-        payment_label = payment ? I18n.t("payment.methods.#{payment.payment_method}", default: payment.payment_method.humanize) : nil
-        fulfillment_line = [@order.fulfillment_summary, payment_label].compact.join(" | ")
-        doc.text(fulfillment_line)
+        doc.bold
+        doc.double_height
+        doc.text(@order.fulfillment_summary)
+        doc.double_height(false)
+        doc.bold(false)
+        if @order.customer
+          doc.blank
+          doc.text(@order.customer.display_name) if @order.customer.name.present?
+          @order.customer.contact_phones.each { |p| doc.text(p) }
+        end
         doc.blank
 
         # ── Items table ────────────────────────────────────────────────────

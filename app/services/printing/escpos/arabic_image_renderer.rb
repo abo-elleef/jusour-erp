@@ -130,16 +130,18 @@ module Printing
       # ── PNG preview variants (for browser debug view) ─────────────────────
 
       # Same as render_line but returns a Base64-encoded PNG string.
-      def render_png(text, doc_width: 42, align: :right)
+      # font_scale: 2 doubles the point size (used for ESC/POS double-height text preview).
+      def render_png(text, doc_width: 42, align: :right, font_scale: 1)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
 
+        pt      = (FONT_SIZE_PT * font_scale).to_i
         gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
         run_to_png([
           im_command,
-          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}", "xc:white",
-          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
+          "-size", "#{px_width}x#{pt * 2}", "xc:white",
+          "-font", font, "-pointsize", pt.to_s, "-fill", "black",
           "-gravity", gravity, "-annotate", "+0+0", text.to_s.strip
         ])
       end
