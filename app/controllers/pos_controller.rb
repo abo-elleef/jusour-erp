@@ -7,12 +7,13 @@ class PosController < ApplicationController
 
   before_action :require_cashier!
   before_action :set_order, except: %i[new_order submit set_location]
+  before_action :ensure_order_persisted!, only: %i[update_fulfillment attach_customer apply_coupon manager_discount split merge]
   before_action :no_cache, only: :index
 
   def index
     authorize @order, :show?
     sync_order_location!
-    @order.recalculate_totals!
+    @order.recalculate_totals! if @order.persisted?
     load_pos_menu
     @open_orders = Order.open_drafts.where(user: current_user).order(created_at: :desc).limit(10)
   end
@@ -20,6 +21,7 @@ class PosController < ApplicationController
   def new_order
     authorize Order, :create?
     session.delete(:current_order_id)
+    session.delete(:pending_order_params)
     redirect_to pos_path, status: :see_other
   end
 
@@ -167,8 +169,8 @@ class PosController < ApplicationController
   end
 
   def set_order
-    @order = current_draft_order || assign_new_draft_order!
-    @order.recalculate_totals!
+    @order = current_draft_order || build_pending_order!
+    @order.recalculate_totals! if @order.persisted?
   end
 
   def current_draft_order
@@ -177,14 +179,48 @@ class PosController < ApplicationController
     Order.find_by(id: session[:current_order_id], status: "draft")
   end
 
-  def assign_new_draft_order!
-    order = Orders::CreateService.call(user: current_user, location: current_pos_location)
-    session[:current_order_id] = order.id
-    order
+  # Persists the pending order if it hasn't been saved yet (e.g. when the cashier
+  # changes fulfillment type or attaches a customer before adding any items).
+  def ensure_order_persisted!
+    return if @order.persisted?
+
+    pending = session.delete(:pending_order_params) || {}
+    @order = Orders::CreateService.call(
+      user:             current_user,
+      location:         current_pos_location,
+      order_type:       pending["order_type"].presence || "pickup",
+      table_number:     pending["table_number"],
+      delivery_address: pending["delivery_address"]
+    )
+    session[:current_order_id] = @order.id
+  end
+
+  # Returns an unsaved Order so nothing hits the DB until the first item is added.
+  # Params are stored in the session and materialized by order_items_controller.
+  def build_pending_order!
+    session[:pending_order_params] = {
+      "user_id"          => current_user.id,
+      "location_id"      => current_pos_location&.id,
+      "order_type"       => "pickup",
+      "status"           => "draft"
+    }
+    Order.new(
+      user:             current_user,
+      location:         current_pos_location,
+      order_type:       "pickup",
+      status:           "draft",
+      subtotal_cents:   0,
+      tax_cents:        0,
+      discount_cents:   0,
+      tip_cents:        0,
+      total_cents:      0
+    )
   end
 
   def sync_order_location!
-    return if @pos_location.blank? || @order.location_id == @pos_location.id
+    return if @pos_location.blank?
+    return if @order.location_id == @pos_location.id
+    return unless @order.persisted?
 
     @order.update!(location: @pos_location)
   end

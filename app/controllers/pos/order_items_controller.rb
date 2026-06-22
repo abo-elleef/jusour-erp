@@ -76,14 +76,26 @@ module Pos
 
     def set_order
       @order = Order.find_by(id: session[:current_order_id], status: "draft")
-      @order ||= begin
-        order = Orders::CreateService.call(user: current_user, location: current_pos_location)
-        session[:current_order_id] = order.id
-        order
-      end
+      @order ||= materialize_pending_order!
       return if @order.location_id.present? || current_pos_location.blank?
 
       @order.update!(location: current_pos_location)
+    end
+
+    # Creates the DB record from pending session params (set by PosController when
+    # no existing draft was found). Clears pending params once persisted.
+    def materialize_pending_order!
+      pending = session[:pending_order_params] || {}
+      order = Orders::CreateService.call(
+        user:             current_user,
+        location:         current_pos_location,
+        order_type:       pending["order_type"].presence || "pickup",
+        table_number:     pending["table_number"],
+        delivery_address: pending["delivery_address"]
+      )
+      session.delete(:pending_order_params)
+      session[:current_order_id] = order.id
+      order
     end
 
     def add_combo

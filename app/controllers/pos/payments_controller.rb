@@ -109,16 +109,12 @@ module Pos
     end
 
     def checkout_payment?
-      session[:checkout_order_id] == @order.id || !@order.draft?
+      session[:checkout_order_id] == @order.id
     end
 
     def payment_return_path
       if checkout_payment?
-        if @order.fully_paid?
-          pos_orders_path(order_type: @order.order_type, notice: "Payment complete for #{@order.order_number}.")
-        else
-          pos_order_path(@order)
-        end
+        @order.fully_paid? ? pos_orders_path(order_type: @order.order_type) : pos_order_path(@order)
       else
         pos_path
       end
