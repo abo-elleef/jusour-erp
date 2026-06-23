@@ -154,6 +154,9 @@ ar:
     confirm_delete: "حذف هذه الطابعة؟"
 
   printing:
+    actions:
+      print_receipt: "طباعة الإيصال"
+      print_all: "طباعة الكل"
     receipt:
       thank_you: "شكراً لطلبكم!"
       item: "الصنف"
@@ -2271,6 +2274,8 @@ ar:
       order_split: "تم تقسيم الطلب."
       orders_merged: "تم دمج الطلبات."
       payment_recorded: "تم تسجيل الدفع."
+      print_queued: "تم إرسال الإيصال إلى الطابعة."
+      print_all_queued: "تم إرسال جميع المطبوعات إلى الطابعات."
       already_paid: "هذا الطلب مدفوع بالكامل."
       customer_required: "أدخل هاتفًا أو بريدًا للعميل الجديد."
       customer_not_found: "العميل غير موجود."

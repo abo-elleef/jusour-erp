@@ -37,6 +37,10 @@ Rails.application.routes.draw do
     get "modifier_form", to: "order_items#modifier_form", as: :modifier_form
     resources :orders, only: %i[index show] do
       collection { post :sync_offline }
+      member do
+        post :print_receipt
+        post :print_all
+      end
     end
     resources :order_items, only: %i[create update destroy]
     resources :print_logs, only: [] do

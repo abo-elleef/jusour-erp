@@ -7,10 +7,10 @@
   <div class="p-5 max-w-2xl mx-auto w-full flex-1">
     <nav class="mb-6 border-b border-gray-200" aria-label="<%= t("pos.shift.tabs.label") %>">
       <div class="flex flex-wrap gap-x-1 -mb-px">
-        <%= link_to t("pos.shift.tabs.shift"), pos_shift_path(tab: "shift"),
-              class: admin_section_tab_class(@tab == "shift") %>
         <%= link_to t("pos.shift.tabs.orders"), pos_shift_path(tab: "orders"),
               class: admin_section_tab_class(@tab == "orders") %>
+        <%= link_to t("pos.shift.tabs.shift"), pos_shift_path(tab: "shift"),
+              class: admin_section_tab_class(@tab == "shift") %>
       </div>
     </nav>
 

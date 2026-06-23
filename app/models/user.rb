@@ -70,11 +70,21 @@ class User < ApplicationRecord
   def shift_orders_time_range
     ranges = []
 
+    # Active shift: clock-in to now
     if clocked_in?
       ranges << [current_shift.clocked_in_at, Time.current]
     end
 
-    cash_drawer_sessions.where(session_date: Date.current).find_each do |drawer|
+    # Recently completed shift within the last 36 hours (covers overnight shifts)
+    recent_completed = shift_logs.where.not(clocked_out_at: nil)
+                                  .where(clocked_out_at: 36.hours.ago..)
+                                  .order(clocked_in_at: :desc).first
+    if recent_completed && !clocked_in?
+      ranges << [recent_completed.clocked_in_at, recent_completed.clocked_out_at]
+    end
+
+    # Cash drawer sessions from today or yesterday (overnight shifts open on a previous date)
+    cash_drawer_sessions.where(session_date: [Date.current, Date.yesterday]).find_each do |drawer|
       end_time = drawer.status == "open" ? Time.current : drawer.updated_at
       ranges << [drawer.created_at, end_time]
     end

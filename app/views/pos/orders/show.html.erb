@@ -1,5 +1,25 @@
-<div class="<%= pos_viewport_min_h_class %> bg-gray-100 flex flex-col">
+<div class="h-full bg-gray-100 flex flex-col overflow-hidden">
   <header class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-b border-gray-200 bg-white shrink-0">
+    <div class="flex items-center gap-2 flex-wrap">
+      <% print_icon = capture do %>
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+        </svg>
+      <% end %>
+      <%= form_with url: print_receipt_pos_order_path(@order, from: params[:from]), method: :post do |f| %>
+        <%= f.button type: "submit",
+              class: "flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors" do %>
+          <%= print_icon %><%= t("printing.actions.print_receipt") %>
+        <% end %>
+      <% end %>
+      <%= form_with url: print_all_pos_order_path(@order, from: params[:from]), method: :post do |f| %>
+        <%= f.button type: "submit",
+              class: "flex items-center gap-1.5 text-sm font-semibold text-white bg-gray-800 hover:bg-gray-900 px-3 py-1.5 rounded-xl transition-colors" do %>
+          <%= print_icon %><%= t("printing.actions.print_all") %>
+        <% end %>
+      <% end %>
+      <%= render "pos/pos_nav" %>
+    </div>
     <div class="flex flex-wrap items-center gap-3">
       <% back_path = @from_shift ? pos_shift_path(tab: "orders") : pos_orders_path(order_type: @order.order_type) %>
       <% back_label = @from_shift ? t("pos.shift.back_to_shift_orders") : t("nav.orders") %>
@@ -13,11 +33,11 @@
         <%= order_status_label(@order.status) %>
       </span>
     </div>
-    <%= render "pos/pos_nav" %>
   </header>
 
-  <div class="p-5 max-w-6xl mx-auto w-full flex-1 grid grid-cols-1 <%= @order.amount_due_cents.positive? && !@from_shift ? "lg:grid-cols-2" : "" %> gap-6">
-    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <div class="flex-1 min-h-0 overflow-y-auto">
+  <div class="p-5 max-w-6xl mx-auto w-full grid grid-cols-1 <%= @order.amount_due_cents.positive? && !@from_shift ? "lg:grid-cols-2" : "" %> gap-6 pb-8">
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-visible">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("order.labels.items") %></h2>
         <p class="text-xs text-gray-500 mt-0.5"><%= t("pos.collect_payment.lines_count", count: @order_items.size) %></p>
@@ -74,5 +94,6 @@
         <%= render "pos/payment_modal", order: @order, checkout: true %>
       </div>
     <% end %>
+  </div>
   </div>
 </div>

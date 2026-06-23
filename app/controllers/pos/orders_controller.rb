@@ -59,6 +59,21 @@ module Pos
       session[:checkout_order_id] = @order.id
     end
 
+    def print_receipt
+      @order = Order.find(params[:id])
+      authorize @order, :show?
+      Printing::PrintReceiptService.call(order: @order)
+      redirect_to pos_order_path(@order, from: params[:from]), notice: t("flash.pos.print_queued")
+    end
+
+    def print_all
+      @order = Order.find(params[:id])
+      authorize @order, :show?
+      Printing::PrintReceiptService.call(order: @order)
+      Printing::DispatchProductionPrintsService.call(order: @order)
+      redirect_to pos_order_path(@order, from: params[:from]), notice: t("flash.pos.print_all_queued")
+    end
+
     private
 
     def require_pos_access!
