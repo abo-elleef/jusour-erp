@@ -16,6 +16,9 @@
     <button type="button"
           class="<%= pos_cart_filled_btn_class %>"
           data-action="pos#openPayment"
+          data-amount-cents="<%= order.amount_due_cents %>"
+          data-total-cents="<%= order.total_cents %>"
+          data-due-text="<%= t('payment.due', amount: format_money(order.amount_due_cents)) %>"
           <%= "disabled" if order.order_items.empty? %>>
       <%= t("pos.cart.charge", amount: format_money(order.amount_due_cents)) %>
     </button>

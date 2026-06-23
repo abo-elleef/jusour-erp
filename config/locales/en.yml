@@ -1224,6 +1224,9 @@ en:
       banner_online: "Back online — syncing queued payments..."
       saved: "Payment queued offline. It will sync when reconnected."
       syncing: "Syncing %{count} queued payment(s)..."
+    connection:
+      lost: "Live connection lost. Prints and real-time updates may be delayed. Refresh the page if this persists."
+      restored: "Connection restored."
     manager_pin:
       title: "Manager PIN required"
       placeholder: "4-digit PIN"

@@ -23,6 +23,13 @@ button, a, input[type="submit"] {
   user-select: none;
 }
 
+#pos-main {
+  height: 100vh;
+  height: 100dvh;
+}
+
 .pos-main--with-banner {
+  height: calc(100vh - 65px);
+  height: calc(100dvh - 65px);
   margin-top: 65px;
 }

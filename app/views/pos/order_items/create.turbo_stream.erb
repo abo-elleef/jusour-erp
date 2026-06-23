@@ -4,6 +4,6 @@
 <%= turbo_stream.replace "modifier_modal" do %>
   <%= turbo_frame_tag "modifier_modal" %>
 <% end %>
-<%= turbo_stream.replace "payment-modal-content" do %>
+<%= turbo_stream.update "payment-modal-content" do %>
   <%= render "pos/payment_modal", order: @order %>
 <% end %>

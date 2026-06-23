@@ -7,6 +7,6 @@
 <%= turbo_stream.replace "order-summary" do %>
   <%= render "pos/order_summary", order: @order %>
 <% end %>
-<%= turbo_stream.replace "payment-modal-content" do %>
+<%= turbo_stream.update "payment-modal-content" do %>
   <%= render "pos/payment_modal", order: @order %>
 <% end %>

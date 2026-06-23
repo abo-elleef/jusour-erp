@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { showToast } from "../utils/toast"
 
 export default class extends Controller {
   static targets = ["banner", "cardPaymentBtn", "syncStatus"]
@@ -25,12 +26,14 @@ export default class extends Controller {
     this.clearOfflineDismissal()
     this.showBanner(this.bannerOnlineMessage(), "success")
     setTimeout(() => this.hideBanner(), 4000)
+    showToast(this.bannerOnlineMessage(), { type: "notice", dismissAfter: 5000 })
   }
 
   handleOffline() {
     this.onlineValue = false
     this.updateUI()
     this.showBanner(this.bannerOfflineMessage(), "offline")
+    showToast(this.bannerOfflineMessage(), { type: "alert", dismissAfter: 0 })
   }
 
   bannerOfflineMessage() {

@@ -1,6 +1,6 @@
 <%= turbo_stream.replace "cart" do %>
   <%= render "pos/cart_body", order: @order %>
 <% end %>
-<%= turbo_stream.replace "payment-modal-content" do %>
+<%= turbo_stream.update "payment-modal-content" do %>
   <%= render "pos/payment_modal", order: @order %>
 <% end %>

@@ -18,7 +18,9 @@
   </head>
   <body class="h-full overflow-hidden bg-gray-100 text-gray-900 pos-screen flex flex-col"
         data-turbo-cache="false"
-        data-controller="connectivity offline-order"
+        data-controller="connectivity offline-order connection-monitor"
+        data-connection-monitor-disconnected-message-value="<%= t("pos.connection.lost") %>"
+        data-connection-monitor-reconnected-message-value="<%= t("pos.connection.restored") %>"
         data-offline-order-csrf-token-value="<%= form_authenticity_token %>"
         data-offline-order-saved-message-value="<%= t("pos.offline.saved") %>"
         data-offline-message="<%= t("pos.offline.banner_offline") %>"
@@ -65,10 +67,11 @@
            data-controller="client-printer"
            data-client-printer-config-value="<%= print_agent_config_json %>"
            data-client-printer-payload-url-template-value="<%= payload_pos_print_log_path(":id") %>"
-           data-client-printer-confirm-url-template-value="<%= confirm_pos_print_log_path(":id") %>">
+           data-client-printer-confirm-url-template-value="<%= confirm_pos_print_log_path(":id") %>"
+           data-client-printer-pending-url-value="<%= pending_pos_print_logs_path %>">
       </div>
     <% end %>
-    <div id="pos-main" class="pos-main flex-1 min-h-0 overflow-hidden<%= " pos-main--with-banner" if Printing::Config.client_routing? %>">
+    <div id="pos-main" class="pos-main overflow-hidden<%= " pos-main--with-banner" if Printing::Config.client_routing? %>">
       <%= yield %>
     </div>
     <%= render "pos/manager_pin_modal" %>

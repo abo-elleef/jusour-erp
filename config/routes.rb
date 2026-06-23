@@ -40,6 +40,9 @@ Rails.application.routes.draw do
     end
     resources :order_items, only: %i[create update destroy]
     resources :print_logs, only: [] do
+      collection do
+        get :pending
+      end
       member do
         get :payload
         patch :confirm

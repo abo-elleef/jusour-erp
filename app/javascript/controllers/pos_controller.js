@@ -30,7 +30,30 @@ export default class extends Controller {
     }
   }
 
-  openPayment() {
+  openPayment(event) {
+    const btn = event?.currentTarget
+    if (btn) {
+      const amountCents = parseInt(btn.dataset.amountCents, 10)
+      const totalCents = parseInt(btn.dataset.totalCents, 10)
+
+      if (!isNaN(amountCents)) {
+        const modal = document.getElementById("payment-modal-content")
+        if (modal) {
+          // Sync the "Due: X" display text
+          const dueEl = modal.querySelector("[data-payment-due]")
+          if (dueEl && btn.dataset.dueText) dueEl.textContent = btn.dataset.dueText
+
+          // Sync all amount_cents inputs (cash tender + gift card hidden)
+          modal.querySelectorAll("input[name='amount_cents']").forEach(el => { el.value = amountCents })
+
+          // Sync tip controller's order total value for percentage calculation
+          if (!isNaN(totalCents)) {
+            const paymentEl = modal.querySelector("[data-controller='payment']")
+            if (paymentEl) paymentEl.dataset.paymentOrderTotalValue = totalCents
+          }
+        }
+      }
+    }
     document.getElementById("payment-modal")?.classList.remove("hidden")
   }
 

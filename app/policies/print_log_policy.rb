@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class PrintLogPolicy < ApplicationPolicy
+  def pending?
+    user.can_access_pos?
+  end
+
   def payload?
     pos_access_same_company?
   end
