@@ -56,6 +56,7 @@ en:
     apply: "Apply"
     add: "Add"
     remove: "Remove"
+    done: "Done"
     customize: "Customize"
     export_csv: "Export CSV"
     back: "Back"
@@ -288,6 +289,7 @@ en:
       notes: "Notes"
       table_number: "Table #"
       delivery_address: "Delivery address"
+      location: "Location"
     submit:
       errors:
         table_number_required: "Table number is required for table orders."
@@ -893,7 +895,6 @@ en:
         invoice_details: "Invoice details"
         invoice_details_hint: "Supplier, number, and receipt date"
         line_items: "Line items"
-        line_items_hint: "Each line receives stock into inventory"
         ingredient: "Ingredient"
         unit: "Unit"
         quantity: "Qty"
@@ -1250,6 +1251,7 @@ en:
     delivery:
       saved_addresses: "Saved address"
       custom_address: "Enter address manually"
+      customer_required_for_delivery: "Select a customer first to enter a delivery address."
     cart:
       current_order: "Current order"
       empty: "No items yet"
@@ -1258,6 +1260,9 @@ en:
       order_notes: "Order Notes"
       notes_placeholder: "Add a note for the kitchen..."
       add_note: "+ Add note"
+      walk_in: "Walk-in"
+      add_order_note: "+ Order note"
+      order_notes_hint: "Visible to kitchen staff"
       item_note_placeholder: "Note for this item..."
       item_note_modal_title: "Add a note for this item"
       coupon_placeholder: "Coupon code"
@@ -1547,6 +1552,8 @@ en:
       stats_paid: "Paid"
       stats_due: "Due"
       line_items: "Line items"
+      order_details: "Order details"
+      cashier: "Cashier"
       item_count:
         one: "1 item"
         other: "%{count} items"
@@ -1715,6 +1722,7 @@ en:
       quantity: "Quantity"
       select_menu_item: "Select menu item"
       remove: "Remove"
+    done: "Done"
     menu_nav:
       categories: "Categories"
       menu_items: "Menu items"
@@ -1840,6 +1848,7 @@ en:
       create: "Create customer"
     addresses:
       heading: "Delivery addresses"
+      title: "Saved addresses"
       hint: "Saved addresses for delivery orders at the POS"
       add: "Add address"
       entry: "Address"

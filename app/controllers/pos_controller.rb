@@ -95,7 +95,18 @@ class PosController < ApplicationController
 
   def update_fulfillment
     authorize @order, :update?
-    if @order.update(fulfillment_params)
+
+    attrs = fulfillment_params.to_h
+    # Never persist a delivery address without a customer
+    attrs[:delivery_address] = nil if @order.customer.blank?
+
+    if @order.update(attrs)
+      # When switching to delivery with a customer who has a default address,
+      # prefill the delivery address if not already set
+      if @order.delivery? && @order.customer.present? && @order.delivery_address.blank?
+        apply_customer_default_delivery_address!(@order.customer)
+        @order.reload
+      end
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to pos_path }
@@ -112,7 +123,7 @@ class PosController < ApplicationController
     authorize @order, :update?
 
     if params[:clear].present?
-      @order.update!(customer: nil)
+      @order.update!(customer: nil, delivery_address: nil)
       return respond_to_customer_attach
     end
 

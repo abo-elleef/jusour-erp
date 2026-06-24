@@ -1,5 +1,7 @@
-<%= turbo_stream.replace "order-customer" do %>
-  <%= render "pos/order_customer", order: @order, customer_form_errors: @customer_form_errors, embedded: true %>
+<%= turbo_stream.replace "cart-meta-strip" do %>
+  <%= render "pos/cart_meta_strip", order: @order,
+        customer_form_errors: @customer_form_errors,
+        open_customer_dialog: @customer_form_errors&.any? %>
 <% end %>
 <%= turbo_stream.replace "cart" do %>
   <%= render "pos/cart_body", order: @order %>

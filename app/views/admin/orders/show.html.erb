@@ -26,12 +26,6 @@
                 class: "text-amber-700 hover:text-amber-800 font-medium" %>
         <% end %>
       </p>
-      <div class="flex flex-wrap gap-2 mt-2">
-        <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= order_type_class(@order.order_type) %> <%= order_type_border_class(@order.order_type) %>">
-          <%= @order.order_type_label %>
-        </span>
-        <span class="text-xs text-gray-600"><%= @order.fulfillment_summary %></span>
-      </div>
     </div>
     <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full border <%= order_status_class(@order.status) %> <%= order_status_border_class(@order.status) %>">
       <%= order_status_label(@order.status) %>
@@ -86,11 +80,6 @@
             </div>
           <% end %>
         </div>
-        <% if @order.notes.present? %>
-          <div class="px-5 py-4 border-t border-gray-100 bg-gray-50/50 text-sm text-gray-700">
-            <span class="font-semibold text-gray-900"><%= t("admin.orders.order_note") %></span> <%= @order.notes %>
-          </div>
-        <% end %>
       </section>
 
       <% if @payments.any? %>
@@ -132,6 +121,105 @@
     </div>
 
     <div class="space-y-6">
+      <%# ── Order details ──────────────────────────────────────────────── %>
+      <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.orders.order_details") %></h2>
+        </div>
+        <dl class="p-5 space-y-3 text-sm">
+          <div class="flex justify-between gap-2">
+            <dt class="text-gray-500 shrink-0"><%= t("order.labels.order_type") %></dt>
+            <dd class="font-medium text-gray-900 text-right">
+              <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= order_type_class(@order.order_type) %> <%= order_type_border_class(@order.order_type) %>">
+                <%= @order.order_type_label %>
+              </span>
+            </dd>
+          </div>
+          <% if @order.table? && @order.table_number.present? %>
+            <div class="flex justify-between gap-2">
+              <dt class="text-gray-500 shrink-0"><%= t("order.labels.table_number") %></dt>
+              <dd class="font-medium text-gray-900"><%= @order.table_number %></dd>
+            </div>
+          <% end %>
+          <% if @order.delivery? %>
+            <div class="flex flex-col gap-1">
+              <dt class="text-gray-500"><%= t("order.labels.delivery_address") %></dt>
+              <dd class="font-medium text-gray-900 bg-gray-50 rounded-xl px-3 py-2 text-xs leading-relaxed">
+                <%= @order.delivery_address.present? ? @order.delivery_address : tag.span("—", class: "text-gray-400") %>
+              </dd>
+            </div>
+          <% end %>
+          <% if @order.notes.present? %>
+            <div class="flex flex-col gap-1">
+              <dt class="text-gray-500"><%= t("admin.orders.order_note") %></dt>
+              <dd class="text-amber-900 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 text-xs leading-relaxed italic">
+                <%= @order.notes %>
+              </dd>
+            </div>
+          <% end %>
+          <div class="flex justify-between gap-2">
+            <dt class="text-gray-500 shrink-0"><%= t("admin.orders.cashier") %></dt>
+            <dd class="font-medium text-gray-900"><%= @order.user.name %></dd>
+          </div>
+          <% if @order.location.present? %>
+            <div class="flex justify-between gap-2">
+              <dt class="text-gray-500 shrink-0"><%= t("order.labels.location") %></dt>
+              <dd class="font-medium text-gray-900"><%= @order.location.name %></dd>
+            </div>
+          <% end %>
+        </dl>
+      </section>
+
+      <%# ── Customer ───────────────────────────────────────────────────── %>
+      <% if @order.customer %>
+        <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex items-center justify-between">
+            <h2 class="text-sm font-semibold text-gray-900"><%= t("order.labels.customer") %></h2>
+            <%= link_to t("actions.view"), admin_customer_path(@order.customer),
+                  class: "text-xs font-medium text-amber-700 hover:text-amber-800" %>
+          </div>
+          <div class="p-5 space-y-2 text-sm">
+            <p class="font-semibold text-gray-900"><%= @order.customer.display_name %></p>
+            <% @order.customer.contact_phones.each do |phone| %>
+              <p class="text-gray-600 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                </svg>
+                <%= phone %>
+              </p>
+            <% end %>
+            <% if @order.customer.email.present? %>
+              <p class="text-gray-600 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+                <%= @order.customer.email %>
+              </p>
+            <% end %>
+            <% if @order.customer.loyalty_points.positive? %>
+              <p class="text-xs font-semibold text-amber-700 mt-1">
+                <%= customer_loyalty_points_label(@order.customer.loyalty_points) %>
+              </p>
+            <% end %>
+            <% saved = @order.customer.addresses.ordered.to_a %>
+            <% if saved.any? %>
+              <div class="pt-2 border-t border-gray-100 mt-2 space-y-1.5">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("customers.addresses.title") %></p>
+                <% saved.each do |addr| %>
+                  <div class="text-xs text-gray-600 bg-gray-50 rounded-xl px-3 py-2 leading-relaxed">
+                    <% if addr.label.present? %>
+                      <span class="font-medium text-gray-800"><%= addr.label %> · </span>
+                    <% end %>
+                    <%= addr.address %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+
+      <%# ── Order total ─────────────────────────────────────────────────── %>
       <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
           <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.orders.order_total") %></h2>
@@ -151,10 +239,12 @@
             <span><%= t("order.labels.tax") %></span>
             <span class="tabular-nums"><%= format_money(@order.tax_cents) %></span>
           </div>
-          <div class="flex justify-between text-gray-600">
-            <span><%= t("order.labels.tip") %></span>
-            <span class="tabular-nums"><%= format_money(@order.tip_cents) %></span>
-          </div>
+          <% if @order.tip_cents.positive? %>
+            <div class="flex justify-between text-gray-600">
+              <span><%= t("order.labels.tip") %></span>
+              <span class="tabular-nums"><%= format_money(@order.tip_cents) %></span>
+            </div>
+          <% end %>
           <div class="flex justify-between font-bold text-lg text-gray-900 pt-3 border-t border-gray-100">
             <span><%= t("order.labels.total") %></span>
             <span class="tabular-nums"><%= format_money(@order.total_cents) %></span>

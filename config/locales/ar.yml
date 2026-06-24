@@ -56,6 +56,7 @@ ar:
     apply: "تطبيق"
     add: "إضافة"
     remove: "إزالة"
+    done: "تم"
     customize: "اختيارات"
     export_csv: "تصدير CSV"
     back: "رجوع"
@@ -288,6 +289,7 @@ ar:
       notes: "ملاحظات"
       table_number: "رقم الطاولة"
       delivery_address: "عنوان التوصيل"
+      location: "الفرع"
     submit:
       errors:
         table_number_required: "رقم الطاولة مطلوب لطلبات الطاولة."
@@ -1261,6 +1263,7 @@ ar:
     delivery:
       saved_addresses: "عنوان محفوظ"
       custom_address: "إدخال العنوان يدويًا"
+      customer_required_for_delivery: "اختر عميلاً أولاً لإدخال عنوان التوصيل."
     cart:
       current_order: "الطلب الحالي"
       empty: "لا توجد أصناف بعد"
@@ -1269,6 +1272,9 @@ ar:
       order_notes: "ملاحظات الطلب"
       notes_placeholder: "أضف ملاحظة للمطبخ..."
       add_note: "+ إضافة ملاحظة"
+      walk_in: "زبون عابر"
+      add_order_note: "+ ملاحظة الطلب"
+      order_notes_hint: "مرئية لطاقم المطبخ"
       item_note_placeholder: "ملاحظة لهذا الصنف..."
       item_note_modal_title: "أضف ملاحظة لهذا الصنف"
       coupon_placeholder: "رمز القسيمة"
@@ -1558,6 +1564,8 @@ ar:
       stats_paid: "المدفوع"
       stats_due: "المستحق"
       line_items: "بنود الطلب"
+      order_details: "تفاصيل الطلب"
+      cashier: "الكاشير"
       item_count:
         one: "صنف واحد"
         other: "%{count} أصناف"
@@ -1726,6 +1734,7 @@ ar:
       quantity: "الكمية"
       select_menu_item: "اختر صنفاً"
       remove: "إزالة"
+    done: "تم"
     menu_nav:
       categories: "التصنيفات"
       menu_items: "أصناف القائمة"
@@ -1859,6 +1868,7 @@ ar:
       create: "إنشاء عميل"
     addresses:
       heading: "عناوين التوصيل"
+      title: "العناوين المحفوظة"
       hint: "عناوين محفوظة لطلبات التوصيل في نقطة البيع"
       add: "إضافة عنوان"
       entry: "عنوان"

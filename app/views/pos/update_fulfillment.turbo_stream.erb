@@ -1,8 +1,5 @@
-<%= turbo_stream.replace "order-fulfillment" do %>
-  <%= render "pos/order_fulfillment", order: @order, embedded: true %>
-<% end %>
-<%= turbo_stream.replace "order-type-summary" do %>
-  <p id="order-type-summary" class="text-xs text-stone-500 mt-0.5"><%= order_type_label(@order.order_type) %></p>
+<%= turbo_stream.replace "cart-meta-strip" do %>
+  <%= render "pos/cart_meta_strip", order: @order %>
 <% end %>
 <%= turbo_stream.replace "order-summary" do %>
   <%= render "pos/order_summary", order: @order %>
