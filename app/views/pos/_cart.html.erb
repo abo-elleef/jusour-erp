@@ -27,10 +27,44 @@
           </ul>
         <% end %>
         <% if item.notes.present? %>
-          <p class="text-xs text-amber-900 bg-amber-50 rounded-xl px-2.5 py-1.5 mt-2 font-medium">
+          <button type="button" onclick="document.getElementById('note-dialog-<%= item.id %>').showModal()"
+                  class="mt-2 w-full text-left text-xs text-amber-900 bg-amber-50 rounded-xl px-2.5 py-1.5 font-medium hover:bg-amber-100 transition-colors">
             <%= t("pos.cart.note_prefix") %> <%= item.notes %>
-          </p>
+          </button>
+        <% else %>
+          <button type="button" onclick="document.getElementById('note-dialog-<%= item.id %>').showModal()"
+                  class="mt-1.5 text-xs text-stone-400 hover:text-stone-600 transition-colors">
+            <%= t("pos.cart.add_note") %>
+          </button>
         <% end %>
+
+        <dialog id="note-dialog-<%= item.id %>"
+                class="m-auto rounded-[28px] shadow-2xl border-0 p-0 w-[21rem] max-w-[90vw] backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+                onclick="if(event.target===this)this.close()">
+          <div class="px-6 pt-6 pb-4">
+            <h3 class="text-base font-semibold text-stone-900"><%= item.display_name %></h3>
+            <p class="text-sm text-stone-500 mt-0.5"><%= t("pos.cart.item_note_modal_title") %></p>
+          </div>
+          <%= form_with url: pos_order_item_path(item), method: :patch,
+                data: { turbo_stream: true },
+                onsubmit: "this.closest('dialog').close()" do |f| %>
+            <div class="px-6 pb-4">
+              <%= f.text_area "order_item[notes]", value: item.notes,
+                    placeholder: t("pos.cart.item_note_placeholder"),
+                    rows: 3,
+                    autofocus: true,
+                    class: "w-full rounded-2xl border border-stone-300 bg-stone-50 px-4 py-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-500 resize-none" %>
+            </div>
+            <div class="flex justify-end gap-2 px-6 pb-6">
+              <button type="button" onclick="this.closest('dialog').close()"
+                      class="rounded-full px-5 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 transition-colors">
+                <%= t("actions.cancel") %>
+              </button>
+              <%= f.submit t("actions.save"),
+                    class: "rounded-full px-5 py-2 text-sm font-medium bg-stone-800 text-white hover:bg-stone-700 transition-colors cursor-pointer" %>
+            </div>
+          <% end %>
+        </dialog>
         <div class="flex items-center gap-1.5 mt-3">
           <%= button_to "−", pos_order_item_path(item), method: :patch, params: { quantity_delta: -1 }, form: pos_order_item_form_data,
                 class: pos_cart_qty_minus_btn_class %>

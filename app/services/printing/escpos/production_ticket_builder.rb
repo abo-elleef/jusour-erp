@@ -48,7 +48,7 @@ module Printing
           doc.text(@order.notes)
         end
 
-        doc.blank(2)
+        doc.blank(4)
         doc.cut
         doc
       end

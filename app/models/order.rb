@@ -170,9 +170,13 @@ class Order < ApplicationRecord
   def assign_order_number
     return if order_number.present?
 
-    last = Order.where("order_number LIKE ?", "ORD-%").order(:created_at).last
-    num = last ? last.order_number.delete_prefix("ORD-").to_i + 1 : 1
-    self.order_number = format("ORD-%04d", num)
+    last = Order.where(company_id: company_id)
+                .where("order_number ~ '^[0-9]+$'")
+                .order(Arel.sql("order_number::integer DESC"))
+                .limit(1)
+                .lock("FOR UPDATE SKIP LOCKED")
+                .first
+    self.order_number = (last&.order_number.to_i + 1).to_s
   end
 
   def generate_receipt_token

@@ -91,7 +91,7 @@ module Printing
         doc.align(:center)
         footer = Printing::Config.receipt_footer_text.presence || I18n.t("printing.receipt.thank_you")
         doc.text(footer)
-        doc.blank(2)
+        doc.blank(4)
         doc.cut
         doc
       end

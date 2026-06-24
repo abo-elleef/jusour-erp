@@ -7,7 +7,7 @@ class PosController < ApplicationController
 
   before_action :require_cashier!
   before_action :set_order, except: %i[new_order submit set_location]
-  before_action :ensure_order_persisted!, only: %i[update_fulfillment attach_customer apply_coupon manager_discount split merge]
+  before_action :ensure_order_persisted!, only: %i[update_fulfillment update_notes attach_customer apply_coupon manager_discount split merge]
   before_action :no_cache, only: :index
 
   def index
@@ -82,6 +82,15 @@ class PosController < ApplicationController
     redirect_to pos_path, notice: t("flash.pos.sent_to_kitchen"), status: :see_other
   rescue Orders::SubmitService::InvalidFulfillment => e
     redirect_to pos_path, alert: e.message, status: :see_other
+  end
+
+  def update_notes
+    authorize @order, :update?
+    @order.update!(notes: params[:notes].to_s.strip.presence)
+    respond_to do |format|
+      format.turbo_stream
+      format.html { redirect_to pos_path }
+    end
   end
 
   def update_fulfillment

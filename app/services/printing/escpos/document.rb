@@ -113,8 +113,11 @@ module Printing
         @buffer << bytes.b if bytes
       end
 
+      # Feed enough paper to clear the print head → cutter gap (~20 mm),
+      # then perform a full cut. GS V 66 n feeds n × (paper motion unit) dots
+      # before cutting; 150 dots ≈ 19 mm at 203 dpi (8 dots/mm).
       def cut
-        @buffer << GS << "V" << "\x00"
+        @buffer << GS << "V" << "\x42" << 150.chr
       end
 
       def to_bytes
