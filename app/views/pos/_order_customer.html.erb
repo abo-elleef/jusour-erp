@@ -52,7 +52,7 @@
          data-controller="pos-customer"
          data-pos-customer-search-url-value="<%= customers_search_path %>"
          data-pos-customer-open-create-value="<%= form_errors&.any? %>">
-      <div class="relative">
+      <div>
         <label for="customer-search-input" class="<%= label_class %>"><%= t("pos.customer.search_label") %></label>
         <input id="customer-search-input"
                type="search"
@@ -61,10 +61,10 @@
                class="<%= pos_input_class %>"
                data-pos-customer-target="searchInput"
                data-action="input->pos-customer#search focus->pos-customer#showResults" />
-        <div class="hidden absolute z-20 mt-1 w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden max-h-56 overflow-y-auto"
-             data-pos-customer-target="resultsPanel">
-          <%= turbo_frame_tag "customer_search_results", data: { pos_customer_target: "resultsFrame" } %>
-        </div>
+      </div>
+      <div class="hidden w-full rounded-xl border border-gray-200 bg-white shadow-lg overflow-hidden max-h-56 overflow-y-auto"
+           data-pos-customer-target="resultsPanel">
+        <%= turbo_frame_tag "customer_search_results", data: { pos_customer_target: "resultsFrame" } %>
       </div>
 
       <div>
