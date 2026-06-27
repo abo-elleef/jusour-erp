@@ -1,0 +1,91 @@
+<div class="flex items-start justify-between mb-6">
+  <div>
+    <%= link_to "← Dashboard", super_admin_root_path, class: "text-sm text-gray-400 hover:text-gray-200" %>
+    <div class="flex items-center gap-3 mt-2">
+      <h1 class="text-xl font-bold text-white"><%= @company.name %></h1>
+      <% if @company.active? %>
+        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-300">Active</span>
+      <% else %>
+        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-gray-400">Inactive</span>
+      <% end %>
+    </div>
+    <p class="text-sm text-gray-400 mt-1 font-mono"><%= @company.slug %> · <%= @company.currency %> · <%= @company.timezone %></p>
+  </div>
+  <div class="flex gap-2 shrink-0">
+    <%= link_to "Edit", edit_super_admin_company_path(@company),
+          class: "text-sm border border-gray-700 hover:border-gray-500 text-gray-300 hover:text-white px-4 py-2 rounded-lg transition-colors" %>
+    <%= link_to "Impersonate →", impersonate_super_admin_company_path(@company),
+          target: "_blank", rel: "noopener", data: { turbo: false },
+          class: "text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors" %>
+  </div>
+</div>
+
+<%# Stats row %>
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  <div class="rounded-xl border border-gray-800 bg-gray-900 px-5 py-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide">Branches</p>
+    <p class="text-2xl font-bold text-white mt-1"><%= @locations.size %></p>
+  </div>
+  <div class="rounded-xl border border-gray-800 bg-gray-900 px-5 py-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide">Owners</p>
+    <p class="text-2xl font-bold text-white mt-1"><%= @owners.size %></p>
+  </div>
+  <div class="rounded-xl border border-gray-800 bg-gray-900 px-5 py-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide">Orders</p>
+    <p class="text-2xl font-bold text-white mt-1"><%= @stats&.orders_count || 0 %></p>
+  </div>
+  <div class="rounded-xl border border-gray-800 bg-gray-900 px-5 py-4">
+    <p class="text-xs text-gray-500 uppercase tracking-wide">Revenue</p>
+    <p class="text-2xl font-bold text-white mt-1">
+      <%= number_to_currency((@stats&.revenue_cents || 0) / 100.0, unit: @company.currency, format: "%n %u") %>
+    </p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <%# Branches %>
+  <div class="rounded-2xl border border-gray-800 bg-gray-900 overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-800">
+      <h2 class="text-sm font-semibold text-white">Branches</h2>
+      <%= link_to "+ Add branch", new_super_admin_company_location_path(@company),
+            class: "text-xs text-indigo-400 hover:text-indigo-300" %>
+    </div>
+    <% if @locations.any? %>
+      <ul class="divide-y divide-gray-800">
+        <% @locations.each do |loc| %>
+          <li class="flex items-center justify-between px-5 py-3">
+            <div>
+              <p class="text-sm font-medium text-white"><%= loc.name %></p>
+              <p class="text-xs text-gray-500"><%= loc.location_type.humanize %> · <%= loc.active? ? "Active" : "Inactive" %></p>
+            </div>
+            <%= link_to "Edit", edit_super_admin_company_location_path(@company, loc),
+                  class: "text-xs text-gray-400 hover:text-gray-200" %>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="px-5 py-6 text-sm text-gray-500">No branches yet.</p>
+    <% end %>
+  </div>
+
+  <%# Owner accounts %>
+  <div class="rounded-2xl border border-gray-800 bg-gray-900 overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-800">
+      <h2 class="text-sm font-semibold text-white">Owner accounts</h2>
+      <%= link_to "+ Add owner", new_super_admin_company_user_path(@company),
+            class: "text-xs text-indigo-400 hover:text-indigo-300" %>
+    </div>
+    <% if @owners.any? %>
+      <ul class="divide-y divide-gray-800">
+        <% @owners.each do |owner| %>
+          <li class="px-5 py-3">
+            <p class="text-sm font-medium text-white"><%= owner.name %></p>
+            <p class="text-xs text-gray-500"><%= owner.email %></p>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="px-5 py-6 text-sm text-gray-500">No owner accounts yet.</p>
+    <% end %>
+  </div>
+</div>

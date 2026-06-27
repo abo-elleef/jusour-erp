@@ -6,6 +6,19 @@ Rails.application.routes.draw do
     passwords: "users/passwords"
   }
 
+  devise_for :super_admin_users, path: "super_admin/auth", controllers: {
+    sessions: "super_admin/sessions"
+  }, skip: %i[registrations passwords confirmations unlocks]
+
+  namespace :super_admin do
+    root to: "dashboard#index"
+    resources :companies do
+      member { get :impersonate }
+      resources :locations, only: %i[new create edit update]
+      resources :users, only: %i[new create]
+    end
+  end
+
   root "home#index"
 
   patch "locale", to: "locales#update", as: :locale

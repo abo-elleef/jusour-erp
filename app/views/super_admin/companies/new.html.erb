@@ -1,0 +1,8 @@
+<div class="mb-6">
+  <%= link_to "← Dashboard", super_admin_root_path, class: "text-sm text-gray-400 hover:text-gray-200" %>
+  <h1 class="text-xl font-bold text-white mt-2">New Company</h1>
+</div>
+
+<div class="max-w-2xl rounded-2xl border border-gray-800 bg-gray-900 p-6">
+  <%= render "form", company: @company %>
+</div>

@@ -236,7 +236,14 @@ end
 
 SaqrFriedChickenMenu.seed_location_menu!(location: main_branch)
 
+SuperAdminUser.find_or_create_by!(email: "superadmin@saqr.io") do |sa|
+  sa.name = "Super Admin"
+  sa.password = "superadmin123"
+  sa.password_confirmation = "superadmin123"
+end
+
 puts "Seed complete. Login: owner@restaurant.com / changeme123"
+puts "Super admin login: superadmin@saqr.io / superadmin123  →  /super_admin"
 
 Setting.set("print_routing", Printing::Config::ROUTING_CLIENT) if Setting.get("print_routing").blank?
 Setting.set("print_agent_port", Printing::Config::DEFAULT_AGENT_PORT) if Setting.get("print_agent_port").blank?

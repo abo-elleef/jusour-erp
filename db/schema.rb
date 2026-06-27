@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -873,6 +873,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000001) do
     t.index ["sent_by_id"], name: "index_stock_transfers_on_sent_by_id"
     t.index ["status"], name: "index_stock_transfers_on_status"
     t.index ["to_location_id"], name: "index_stock_transfers_on_to_location_id"
+  end
+
+  create_table "super_admin_users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "email", default: "", null: false
+    t.string "encrypted_password", default: "", null: false
+    t.datetime "remember_created_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["email"], name: "index_super_admin_users_on_email", unique: true
   end
 
   create_table "supplier_ingredients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

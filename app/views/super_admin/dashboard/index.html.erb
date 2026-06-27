@@ -1,0 +1,53 @@
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-xl font-bold text-white">Companies</h1>
+  <%= link_to "New Company", new_super_admin_company_path,
+        class: "bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors" %>
+</div>
+
+<div class="rounded-2xl border border-gray-800 bg-gray-900 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-gray-800 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <th class="px-5 py-3 text-left">Company</th>
+        <th class="px-5 py-3 text-left">Slug</th>
+        <th class="px-5 py-3 text-center">Branches</th>
+        <th class="px-5 py-3 text-center">Orders</th>
+        <th class="px-5 py-3 text-right">Revenue</th>
+        <th class="px-5 py-3 text-center">Status</th>
+        <th class="px-5 py-3"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-800">
+      <% @companies.each do |company| %>
+        <tr class="hover:bg-gray-800/50">
+          <td class="px-5 py-4 font-medium text-white">
+            <%= link_to company.name, super_admin_company_path(company), class: "hover:text-indigo-400" %>
+          </td>
+          <td class="px-5 py-4 text-gray-400 font-mono text-xs"><%= company.slug %></td>
+          <td class="px-5 py-4 text-center text-gray-300"><%= company.locations_count %></td>
+          <td class="px-5 py-4 text-center text-gray-300"><%= company.orders_count %></td>
+          <td class="px-5 py-4 text-right text-gray-300">
+            <%= number_to_currency(company.revenue_cents / 100.0, unit: company.currency, format: "%n %u") %>
+          </td>
+          <td class="px-5 py-4 text-center">
+            <% if company.active? %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-300">Active</span>
+            <% else %>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-gray-400">Inactive</span>
+            <% end %>
+          </td>
+          <td class="px-5 py-4 text-right">
+            <%= link_to "Impersonate →", impersonate_super_admin_company_path(company),
+                  target: "_blank", rel: "noopener", data: { turbo: false },
+                  class: "text-indigo-400 hover:text-indigo-300 text-xs font-medium" %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @companies.empty? %>
+        <tr>
+          <td colspan="7" class="px-5 py-10 text-center text-gray-500">No companies yet.</td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
