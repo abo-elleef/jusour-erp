@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_07_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -149,6 +149,25 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_07_000001) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["slug"], name: "index_companies_on_slug", unique: true
+  end
+
+  create_table "company_settings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.integer "loyalty_earn_rate", default: 1, null: false
+    t.integer "loyalty_redeem_threshold", default: 100, null: false
+    t.integer "loyalty_redeem_value_cents", default: 500, null: false
+    t.string "restaurant_name"
+    t.string "print_routing", default: "client", null: false
+    t.integer "print_agent_port", default: 9310, null: false
+    t.string "print_agent_token", default: "", null: false
+    t.string "print_encoding", default: "utf-8", null: false
+    t.integer "print_code_page", default: 22, null: false
+    t.string "arabic_font_path", default: "", null: false
+    t.string "receipt_logo_url", default: "", null: false
+    t.text "receipt_footer_text", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_company_settings_on_company_id", unique: true
   end
 
   create_table "customer_addresses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -705,16 +724,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_07_000001) do
     t.index ["menu_item_id"], name: "index_recipes_on_menu_item_id"
   end
 
-  create_table "settings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "key", null: false
-    t.text "value"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.uuid "company_id", null: false
-    t.index ["company_id", "key"], name: "index_settings_on_company_id_and_key", unique: true
-    t.index ["company_id"], name: "index_settings_on_company_id"
-  end
-
   create_table "shift_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.datetime "clocked_in_at", null: false
@@ -1066,6 +1075,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_07_000001) do
   add_foreign_key "combo_items", "combos"
   add_foreign_key "combo_items", "menu_items"
   add_foreign_key "combos", "companies"
+  add_foreign_key "company_settings", "companies"
   add_foreign_key "customer_addresses", "customers"
   add_foreign_key "customers", "companies"
   add_foreign_key "discount_rules", "companies"
@@ -1138,7 +1148,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_07_000001) do
   add_foreign_key "receipt_logs", "orders"
   add_foreign_key "recipes", "ingredients"
   add_foreign_key "recipes", "menu_items"
-  add_foreign_key "settings", "companies"
   add_foreign_key "shift_logs", "users"
   add_foreign_key "stock_adjustments", "ingredients"
   add_foreign_key "stock_adjustments", "locations"
