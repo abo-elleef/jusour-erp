@@ -6,15 +6,17 @@ module Printing
       LATIN = {
         encoding: Encoding::Windows_1252,
         code_page: 16,
-        reshape: false
+        reshape: false,
+        rtl: false
       }.freeze
 
       # Windows-1256 cannot encode Arabic Presentation Forms (U+FE70–U+FEFF),
-      # so reshaping is disabled here. RTL reordering still applies.
+      # so reshaping is disabled here. RTL reordering and column mirroring still apply.
       ARABIC = {
         encoding: Encoding::Windows_1256,
         code_page: 47,
-        reshape: false
+        reshape: false,
+        rtl: true
       }.freeze
 
       # UTF-8 mode: for printers that support UTF-8 natively (many modern Epson/Star).
@@ -23,7 +25,8 @@ module Printing
       ARABIC_UTF8 = {
         encoding: Encoding::UTF_8,
         code_page: 0,
-        reshape: true
+        reshape: true,
+        rtl: true
       }.freeze
 
       module_function

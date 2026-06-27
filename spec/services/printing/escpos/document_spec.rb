@@ -8,6 +8,12 @@ RSpec.describe Printing::Escpos::Document do
       I18n.with_locale(:ar) { example.run }
     end
 
+    before do
+      # Force text-mode encoding tests — stub out image rendering so the
+      # specs cover the ESC/POS text path regardless of the local font setup.
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return(nil)
+    end
+
     it "encodes Arabic text as Windows-1256 bytes" do
       doc = described_class.new
       doc.text("شكراً")

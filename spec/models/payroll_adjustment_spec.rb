@@ -71,7 +71,7 @@ RSpec.describe PayrollAdjustment, type: :model do
     )
 
     expect(staff.hourly_rate_cents).to eq(1_000)
-    expect(adjustment.amount_cents).to eq(5_000)
+    expect(adjustment.amount_cents).to eq(7_500) # 5 hours * 1_000 * 1.5x overtime rate
     expect(adjustment.unit_label).to include("5")
   end
 

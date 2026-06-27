@@ -16,10 +16,15 @@ RSpec.describe Income, type: :model do
     IncomeCategory.create!(name: "Test Income", category_type: "other")
   end
 
+  let(:treasury) do
+    Treasury.create!(name: "Cash", treasury_type: "cash_drawer")
+  end
+
   it "is valid with required attributes" do
     income = described_class.new(
       income_category: category,
       user: owner,
+      treasury: treasury,
       description: "Consulting fee",
       amount_cents: 50_000,
       income_date: Date.current

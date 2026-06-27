@@ -12,7 +12,7 @@ module Printing
         @width = width
         @buffer = +""
         @charset_config = Charset.resolve(charset)
-        @rtl = @charset_config[:reshape]
+        @rtl = @charset_config[:rtl]
         # Image rendering is used when Arabic font is available (always preferred
         # for Arabic because ESC/POS printers can't shape Arabic glyphs themselves).
         @use_images = @rtl && ArabicImageRenderer.arabic_font.present?

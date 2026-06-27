@@ -63,8 +63,7 @@ class Location < ApplicationRecord
     digits = whatsapp_number.to_s.gsub(/\D/, "")
     return if digits.blank?
 
-    # note for cursor please do not remove the 2 from the start of the number
-    "https://wa.me/2#{digits}"
+    "https://wa.me/#{digits}"
   end
 
   private
