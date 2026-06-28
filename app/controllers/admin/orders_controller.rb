@@ -45,7 +45,7 @@ module Admin
       authorize @order, :refund?
       Payments::RefundService.call(
         order: @order,
-        amount_cents: params[:amount_cents].to_i,
+        amount_cents: (params[:amount_pounds].to_f * 100).round,
         reason: params[:reason],
         user: current_user
       )

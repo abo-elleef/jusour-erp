@@ -7,9 +7,14 @@ export default class extends Controller {
   setTip(event) {
     const pct = parseInt(event.currentTarget.dataset.percent, 10)
     const total = this.orderTotalValue || 0
-    const tip = Math.round(total * pct / 100)
-    if (this.hasTipInputTarget) this.tipInputTarget.value = tip
-    if (this.hasTipHiddenTarget) this.tipHiddenTarget.value = tip
+    const tipCents = Math.round(total * pct / 100)
+    if (this.hasTipInputTarget) this.tipInputTarget.value = (tipCents / 100).toFixed(2)
+    if (this.hasTipHiddenTarget) this.tipHiddenTarget.value = tipCents
+  }
+
+  syncTip(event) {
+    const pounds = parseFloat(event.target.value) || 0
+    if (this.hasTipHiddenTarget) this.tipHiddenTarget.value = Math.round(pounds * 100)
   }
 
   orderId() {
@@ -22,7 +27,8 @@ export default class extends Controller {
     event.preventDefault()
     const form = event.target
     const orderId = form.querySelector('input[name="order_id"]')?.value
-    const amountCents = form.querySelector('input[name="amount_cents"]')?.value
+    const amountPounds = form.querySelector('input[name="amount_pounds"]')?.value
+    const amountCents = Math.round((parseFloat(amountPounds) || 0) * 100)
     const tipCents = form.querySelector('input[name="tip_cents"]')?.value || 0
 
     const offline = this.application.getControllerForElementAndIdentifier(
@@ -79,7 +85,7 @@ export default class extends Controller {
           },
           body: JSON.stringify({
             payment_intent_id: data.payment_intent_id,
-            tip_cents: this.tipInputTarget?.value || 0,
+            tip_cents: this.tipHiddenTarget?.value || 0,
             order_id: this.orderId()
           })
         })

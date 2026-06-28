@@ -2,6 +2,9 @@
 
 class Modifier < ApplicationRecord
   include Tenantable
+  include MoneyInputs
+
+  money_input :price_adjustment_cents
 
   belongs_to :modifier_group
   has_many :order_item_modifiers, dependent: :restrict_with_error

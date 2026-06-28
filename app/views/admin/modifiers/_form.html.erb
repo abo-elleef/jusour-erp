@@ -20,12 +20,9 @@
         <%= f.text_field :name, class: input_class, autofocus: true, required: true %>
       </div>
       <div>
-        <%= f.label :price_adjustment_cents, t("menu.modifiers.price_cents"), class: label_class %>
-        <%= f.number_field :price_adjustment_cents, min: 0, class: input_class %>
+        <%= f.label :price_adjustment_pounds, t("menu.modifiers.price_adjustment"), class: label_class %>
+        <%= f.number_field :price_adjustment_pounds, min: 0, step: "0.01", class: input_class %>
         <p class="text-xs text-gray-500 mt-1.5"><%= t("menu.modifiers.price_hint") %></p>
-        <% if modifier.price_adjustment_cents %>
-          <p class="text-xs text-gray-500 mt-0.5"><%= format_money(modifier.price_adjustment_cents) %></p>
-        <% end %>
       </div>
       <div>
         <%= f.label :position, t("menu.modifiers.position"), class: label_class %>

@@ -2,6 +2,9 @@
 
 class Combo < ApplicationRecord
   include Tenantable
+  include MoneyInputs
+
+  money_input :price_cents
 
   has_many :combo_items, dependent: :destroy
   has_many :menu_items, through: :combo_items

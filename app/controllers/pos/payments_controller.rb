@@ -7,14 +7,18 @@ module Pos
     before_action :authorize_payment!
 
     def create
-      tip_cents = params[:tip_cents].to_i
+      tip_cents = if params[:tip_pounds].present?
+        (params[:tip_pounds].to_f * 100).round
+      else
+        params[:tip_cents].to_i
+      end
       @order.update!(tip_cents: tip_cents) if tip_cents.positive?
 
       case params[:payment_method]
       when "cash"
         Payments::CashPaymentService.call(
           order: @order,
-          amount_cents: params[:amount_cents].to_i,
+          amount_cents: (params[:amount_pounds].to_f * 100).round,
           tip_cents: 0,
           user: current_user
         )
@@ -40,7 +44,7 @@ module Pos
       @order.payments.create!(
         payment_method: "card",
         amount_cents: intent.amount,
-        tip_cents: params[:tip_cents].to_i,
+        tip_cents: params[:tip_cents].to_i, # sent as cents from Stimulus card payment handler
         status: "completed",
         stripe_payment_intent_id: intent.id,
         stripe_charge_id: intent.latest_charge,

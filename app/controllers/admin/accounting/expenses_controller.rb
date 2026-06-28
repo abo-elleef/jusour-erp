@@ -73,7 +73,7 @@ module Admin
 
       def expense_params
         params.require(:expense).permit(
-          :expense_category_id, :treasury_id, :description, :amount_cents, :expense_date,
+          :expense_category_id, :treasury_id, :description, :amount_pounds, :expense_date,
           :recurrence, :reference_number, :receipt_image
         )
       end

@@ -2,6 +2,9 @@
 
 class PayrollAdjustment < ApplicationRecord
   include Tenantable
+  include MoneyInputs
+
+  money_input :amount_cents
 
   KINDS = %w[penalty bonus].freeze
   UNIT_TYPES = %w[full_day half_day quarter_day fixed overtime].freeze

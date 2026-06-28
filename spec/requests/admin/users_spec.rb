@@ -77,7 +77,7 @@ RSpec.describe "Admin::Users", type: :request do
               role: "cashier",
               password: "password123",
               password_confirmation: "password123",
-              monthly_salary_cents: 250_000,
+              monthly_salary_pounds: 2500.00,
               pin: "4321"
             }
           }
@@ -97,7 +97,7 @@ RSpec.describe "Admin::Users", type: :request do
         staff = create(:user, company: company, name: "Before Edit")
 
         patch admin_user_path(staff), params: {
-          user: { name: "After Edit", monthly_salary_cents: 300_000 }
+          user: { name: "After Edit", monthly_salary_pounds: 3000.00 }
         }
 
         expect(response).to redirect_to(admin_user_path(staff))

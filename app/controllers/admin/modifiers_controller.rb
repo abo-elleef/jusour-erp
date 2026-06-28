@@ -55,7 +55,7 @@ module Admin
     end
 
     def modifier_params
-      params.require(:modifier).permit(:name, :price_adjustment_cents, :position)
+      params.require(:modifier).permit(:name, :price_adjustment_pounds, :position)
     end
   end
 end

@@ -24,11 +24,8 @@
         <%= f.text_area :description, rows: 2, class: "#{input_class} resize-y min-h-[4rem]" %>
       </div>
       <div>
-        <%= f.label :price_cents, t("admin.combos.price_cents"), class: label_class %>
-        <%= f.number_field :price_cents, min: 0, class: input_class %>
-        <% if combo.price_cents %>
-          <p class="text-xs text-gray-500 mt-1.5"><%= format_money(combo.price_cents) %></p>
-        <% end %>
+        <%= f.label :price_pounds, t("admin.combos.price"), class: label_class %>
+        <%= f.number_field :price_pounds, min: 0, step: "0.01", class: input_class %>
       </div>
       <div class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
         <label class="inline-flex items-center gap-3 cursor-pointer">

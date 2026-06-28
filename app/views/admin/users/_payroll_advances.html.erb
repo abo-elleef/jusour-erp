@@ -44,8 +44,8 @@
             </div>
 
             <div>
-              <%= f.label :amount_cents, t("staff.payroll.advances.amount_cents"), class: label_class %>
-              <%= f.number_field :amount_cents, min: 1, max: default_max, class: input_class, required: true %>
+              <%= f.label :amount_pounds, t("staff.payroll.advances.amount"), class: label_class %>
+              <%= f.number_field :amount_pounds, min: 0.01, max: (default_max / 100.0), step: "0.01", class: input_class, required: true %>
               <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.payroll.advances.max_hint", max: format_money(default_max)) %></p>
             </div>
 

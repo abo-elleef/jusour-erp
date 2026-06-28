@@ -284,8 +284,8 @@
           <div class="p-5">
             <%= form_with url: refund_admin_order_path(@order), method: :post, class: "space-y-4" do %>
               <div>
-                <%= label_tag :amount_cents, t("admin.orders.refund_amount_cents"), class: label_class %>
-                <%= number_field_tag :amount_cents, @order.total_cents, min: 0, class: input_class %>
+                <%= label_tag :amount_pounds, t("admin.orders.refund_amount"), class: label_class %>
+                <%= number_field_tag :amount_pounds, (@order.total_cents / 100.0), min: 0, step: "0.01", class: input_class %>
                 <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.orders.refund_total_hint", amount: format_money(@order.total_cents)) %></p>
               </div>
               <div>

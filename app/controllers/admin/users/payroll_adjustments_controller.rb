@@ -40,7 +40,7 @@ module Admin
 
       def adjustment_params
         params.require(:payroll_adjustment).permit(
-          :kind, :unit_type, :amount_cents, :overtime_hours, :payroll_month, :happened_at, :notes
+          :kind, :unit_type, :amount_pounds, :overtime_hours, :payroll_month, :happened_at, :notes
         )
       end
 

@@ -14,7 +14,7 @@ module Admin
           user: @user,
           payroll_month: payroll_month,
           advance_slot: advance_params[:advance_slot],
-          amount_cents: advance_params[:amount_cents],
+          amount_cents: (advance_params[:amount_pounds].to_f * 100).round,
           treasury: Treasury.find(advance_params[:treasury_id]),
           paid_by: current_user,
           paid_on: advance_params[:paid_on].presence || Date.current,
@@ -64,7 +64,7 @@ module Admin
       end
 
       def advance_params
-        params.require(:payroll_advance).permit(:amount_cents, :treasury_id, :paid_on, :advance_slot, :notes)
+        params.require(:payroll_advance).permit(:amount_pounds, :treasury_id, :paid_on, :advance_slot, :notes)
       end
 
       def payroll_show_url_params(month)

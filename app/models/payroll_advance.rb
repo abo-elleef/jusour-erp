@@ -2,6 +2,9 @@
 
 class PayrollAdvance < ApplicationRecord
   include Tenantable
+  include MoneyInputs
+
+  money_input :amount_cents
 
   SLOTS = %w[mid_month end_month].freeze
   SLOT_DAYS = { "mid_month" => 15, "end_month" => 25 }.freeze

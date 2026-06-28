@@ -30,7 +30,7 @@ module Admin
 
       def transfer_params
         params.require(:treasury_transfer).permit(
-          :from_treasury_id, :to_treasury_id, :amount_cents, :description, :occurred_on
+          :from_treasury_id, :to_treasury_id, :amount_pounds, :description, :occurred_on
         )
       end
     end

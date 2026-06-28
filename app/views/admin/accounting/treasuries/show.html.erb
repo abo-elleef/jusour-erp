@@ -35,8 +35,8 @@
     <h2 class="text-sm font-semibold text-gray-900 mb-4"><%= t("accounting.treasuries.manual_adjustment") %></h2>
     <%= form_with url: adjust_admin_accounting_treasury_path(@treasury), method: :post, class: "grid sm:grid-cols-4 gap-4 items-end" do %>
       <div>
-        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.amount_cents") %></label>
-        <%= number_field_tag :amount_cents, nil, class: pos_input_class, placeholder: "5000 or -5000", required: true %>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.amount") %></label>
+        <%= number_field_tag :amount_pounds, nil, step: "0.01", class: pos_input_class, placeholder: "50.00 or -50.00", required: true %>
         <p class="text-xs text-gray-500 mt-1"><%= t("accounting.treasuries.adjustment_hint") %></p>
       </div>
       <div>

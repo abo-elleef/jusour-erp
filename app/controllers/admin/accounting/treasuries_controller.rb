@@ -70,7 +70,7 @@ module Admin
 
       def adjust
         authorize @treasury, :update?
-        amount_cents = params[:amount_cents].to_i
+        amount_cents = (params[:amount_pounds].to_f * 100).round
         if amount_cents.zero?
           redirect_to admin_accounting_treasury_path(@treasury), alert: t("flash.accounting.treasury_adjustment_invalid")
           return
@@ -93,7 +93,7 @@ module Admin
       end
 
       def treasury_params
-        params.require(:treasury).permit(:name, :treasury_type, :opening_balance_cents, :active, :is_default, :position, :notes)
+        params.require(:treasury).permit(:name, :treasury_type, :opening_balance_pounds, :active, :is_default, :position, :notes)
       end
 
       def clear_other_defaults!

@@ -35,7 +35,7 @@ RSpec.describe "Admin payroll advances", type: :request do
             payroll_month: payroll_month.strftime("%Y-%m"),
             advance_slot: "mid_month",
             paid_on: "2026-06-10",
-            amount_cents: 100_000,
+            amount_pounds: 1000.00,
             treasury_id: treasury.id
           }
         }

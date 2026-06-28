@@ -2,6 +2,9 @@
 
 class DiscountRule < ApplicationRecord
   include Tenantable
+  include MoneyInputs
+
+  money_input :minimum_order_cents
 
   DISCOUNT_TYPES = %w[percentage fixed_amount].freeze
   APPLIES_TO = %w[order item category].freeze

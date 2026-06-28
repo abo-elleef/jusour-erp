@@ -2,6 +2,9 @@
 
 class Income < ApplicationRecord
   include Tenantable
+  include MoneyInputs
+
+  money_input :amount_cents
 
   RECURRENCES = Expense::RECURRENCES
 

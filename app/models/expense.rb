@@ -2,6 +2,9 @@
 
 class Expense < ApplicationRecord
   include Tenantable
+  include MoneyInputs
+
+  money_input :amount_cents
 
   RECURRENCES = %w[one_time daily weekly monthly annually].freeze
 

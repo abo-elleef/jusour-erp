@@ -73,7 +73,7 @@ module Admin
 
       def income_params
         params.require(:income).permit(
-          :income_category_id, :treasury_id, :description, :amount_cents, :income_date,
+          :income_category_id, :treasury_id, :description, :amount_pounds, :income_date,
           :recurrence, :reference_number, :receipt_image
         )
       end

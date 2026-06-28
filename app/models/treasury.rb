@@ -15,8 +15,12 @@ class Treasury < ApplicationRecord
   has_many :incoming_transfers, class_name: "TreasuryTransfer", foreign_key: :to_treasury_id, dependent: :restrict_with_error
   belongs_to :supplier, optional: true
 
+  include MoneyInputs
+
   monetize :balance_cents
   monetize :opening_balance_cents
+
+  money_input :opening_balance_cents
 
   validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :treasury_type, presence: true, inclusion: { in: TYPES }

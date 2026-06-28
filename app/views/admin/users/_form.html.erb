@@ -27,8 +27,8 @@
 
       <% if policy(user).can_edit_role_and_salary? %>
         <div>
-          <%= f.label :monthly_salary_cents, t("staff.payroll.monthly_salary_cents"), class: label_class %>
-          <%= f.number_field :monthly_salary_cents, min: 0, class: input_class %>
+          <%= f.label :monthly_salary_pounds, t("staff.payroll.monthly_salary"), class: label_class %>
+          <%= f.number_field :monthly_salary_pounds, min: 0, step: "0.01", class: input_class %>
           <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.payroll.salary_hint", days: User::WORK_DAYS_PER_MONTH) %></p>
           <% if user.monthly_salary_cents.to_i.positive? %>
             <p class="text-xs text-gray-600 mt-2">
@@ -54,7 +54,7 @@
         </div>
         <% if user.monthly_salary_cents.to_i.positive? %>
           <div>
-            <p class="<%= label_class %>"><%= t("staff.payroll.monthly_salary_cents") %></p>
+            <p class="<%= label_class %>"><%= t("staff.payroll.monthly_salary") %></p>
             <p class="text-sm text-gray-700 font-medium"><%= format_money(user.monthly_salary_cents) %></p>
           </div>
         <% end %>

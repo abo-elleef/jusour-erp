@@ -56,7 +56,7 @@ module Admin
 
       def rule_params
         permitted = params.require(:discount_rule).permit(
-          :name, :code, :discount_type, :discount_value, :minimum_order_cents,
+          :name, :code, :discount_type, :discount_value, :minimum_order_pounds,
           :applies_to, :applies_to_id, :active, :expires_at, :uses_remaining
         )
         permitted[:applies_to_id] = nil if permitted[:applies_to] == "order"

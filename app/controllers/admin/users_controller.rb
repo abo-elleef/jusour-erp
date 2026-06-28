@@ -137,7 +137,7 @@ module Admin
 
     def user_params
       permitted = %i[name email pin]
-      permitted += %i[role monthly_salary_cents] if current_user.owner?
+      permitted += %i[role monthly_salary_pounds] if current_user.owner?
       changing_password = action_name == "create" || params.dig(:user, :password).present?
       permitted += %i[password password_confirmation] if changing_password
 

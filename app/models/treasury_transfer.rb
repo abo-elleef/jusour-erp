@@ -2,6 +2,9 @@
 
 class TreasuryTransfer < ApplicationRecord
   include Tenantable
+  include MoneyInputs
+
+  money_input :amount_cents
 
   belongs_to :from_treasury, class_name: "Treasury"
   belongs_to :to_treasury, class_name: "Treasury"

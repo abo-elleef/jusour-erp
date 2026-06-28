@@ -113,8 +113,8 @@
           </div>
 
           <div data-payroll-adjustment-target="fixedAmount" class="hidden">
-            <%= f.label :amount_cents, t("staff.payroll.fixed_amount_cents"), class: label_class %>
-            <%= f.number_field :amount_cents, min: 1, class: input_class, placeholder: "5000" %>
+            <%= f.label :amount_pounds, t("staff.payroll.fixed_amount"), class: label_class %>
+            <%= f.number_field :amount_pounds, min: 0.01, step: "0.01", class: input_class, placeholder: "50.00" %>
           </div>
 
           <div data-payroll-adjustment-target="overtimeHours" class="hidden">

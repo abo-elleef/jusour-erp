@@ -25,8 +25,8 @@
       </div>
       <% if treasury.new_record? %>
         <div>
-          <%= f.label :opening_balance_cents, t("accounting.treasuries.opening_balance_cents"), class: label_class %>
-          <%= f.number_field :opening_balance_cents, min: 0, class: pos_input_class %>
+          <%= f.label :opening_balance_pounds, t("accounting.treasuries.opening_balance"), class: label_class %>
+          <%= f.number_field :opening_balance_pounds, min: 0, step: "0.01", class: pos_input_class %>
         </div>
       <% end %>
       <div>

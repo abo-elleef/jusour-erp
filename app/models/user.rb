@@ -4,6 +4,9 @@ require "bcrypt"
 
 class User < ApplicationRecord
   include Tenantable
+  include MoneyInputs
+
+  money_input :monthly_salary_cents
 
   ROLES = %w[owner manager accountant cashier kitchen].freeze
   INDEX_SORTABLE_COLUMNS = %w[name email role monthly_salary_cents created_at].freeze

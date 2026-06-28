@@ -4,6 +4,9 @@ class MenuItem < ApplicationRecord
   include Taxable
   include Tenantable
   include MenuItemImageVariants
+  include MoneyInputs
+
+  money_input :base_price_cents
 
   belongs_to :category
   has_many :location_menu_items, dependent: :destroy

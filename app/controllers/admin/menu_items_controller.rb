@@ -98,7 +98,7 @@ module Admin
 
     def menu_item_params
       params.require(:menu_item).permit(
-        :category_id, :name, :description, :base_price_cents, :tax_category,
+        :category_id, :name, :description, :base_price_pounds, :tax_category,
         :available, :position, :image
       )
     end

@@ -17,8 +17,8 @@
     <%= f.text_field :description, class: pos_input_class %>
   </div>
   <div>
-    <%= f.label :amount_cents, t("accounting.shared.amount_cents"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-    <%= f.number_field :amount_cents, min: 1, class: pos_input_class %>
+    <%= f.label :amount_pounds, t("accounting.shared.amount"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <%= f.number_field :amount_pounds, min: 0.01, step: "0.01", class: pos_input_class %>
   </div>
   <div>
     <%= f.label :expense_date, t("accounting.shared.day"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
