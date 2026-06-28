@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_000002) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_000003) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -627,7 +627,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000002) do
     t.index ["paid_by_id"], name: "index_payroll_advances_on_paid_by_id"
     t.index ["payroll_month"], name: "index_payroll_advances_on_payroll_month"
     t.index ["treasury_id"], name: "index_payroll_advances_on_treasury_id"
-    t.index ["user_id", "payroll_month", "advance_slot"], name: "index_payroll_advances_on_user_month_and_slot", unique: true
     t.index ["user_id"], name: "index_payroll_advances_on_user_id"
   end
 

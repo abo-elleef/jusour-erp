@@ -17,7 +17,6 @@ class PayrollAdvance < ApplicationRecord
   validates :payroll_month, :advance_slot, :paid_on, presence: true
   validates :advance_slot, inclusion: { in: SLOTS }
   validates :amount_cents, numericality: { only_integer: true, greater_than: 0 }
-  validates :user_id, uniqueness: { scope: %i[payroll_month advance_slot] }
   validate :salary_required
   validate :paid_on_in_payroll_month
   validate :payroll_not_finalized
@@ -32,26 +31,15 @@ class PayrollAdvance < ApplicationRecord
     I18n.t("staff.payroll.advances.slots.#{advance_slot}")
   end
 
-  def self.available_slots_for(user, payroll_month)
-    taken = user.payroll_advances.for_month(payroll_month).pluck(:advance_slot)
-    SLOTS - taken
+  def self.available_slots_for(_user, _payroll_month)
+    SLOTS
   end
 
-  def self.max_amount_cents_for(user, payroll_month, advance_slot)
+  def self.max_amount_cents_for(user, payroll_month, _advance_slot)
     summary = Accounting::MonthlyPayrollService.new(user, payroll_month).build_calculated
-    gross_net = summary.net_pay_cents
     advances_so_far = user.payroll_advances.for_month(payroll_month).sum(:amount_cents)
-    remaining = gross_net - advances_so_far
-    return 0 if remaining <= 0
-
-    case advance_slot
-    when "mid_month"
-      [remaining, (user.monthly_salary_cents * MID_MONTH_MAX_SALARY_RATIO).round].min
-    when "end_month"
-      remaining
-    else
-      0
-    end
+    remaining = summary.net_pay_cents - advances_so_far
+    [remaining, 0].max
   end
 
   private

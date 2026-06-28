@@ -1,7 +1,6 @@
 <%# locals: user, payroll_month:, payroll_summary:, treasuries:, readonly:, payroll_sort:, payroll_direction: %>
 <% advances = payroll_summary.advances %>
 <% readonly = local_assigns.fetch(:readonly, false) %>
-<% available_slots = PayrollAdvance.available_slots_for(user, payroll_month) %>
 <% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
@@ -13,16 +12,14 @@
   </div>
 
   <% unless readonly %>
-    <% if policy(PayrollAdvance).create? && !payroll_summary.finalized && available_slots.any? %>
-      <% slot_options = available_slots.filter_map { |slot|
-           max = PayrollAdvance.max_amount_cents_for(user, payroll_month, slot)
-           next if max <= 0
-
-           [t("staff.payroll.advances.slot_option", label: t("staff.payroll.advances.slots.#{slot}"), max: format_money(max)), slot]
+    <% if policy(PayrollAdvance).create? && !payroll_summary.finalized %>
+      <% remaining_max = PayrollAdvance.max_amount_cents_for(user, payroll_month, "end_month") %>
+      <% slot_options = PayrollAdvance::SLOTS.map { |slot|
+           [t("staff.payroll.advances.slots.#{slot}"), slot]
          } %>
-      <% if slot_options.any? %>
-        <% default_slot = slot_options.first.last %>
-        <% default_max = PayrollAdvance.max_amount_cents_for(user, payroll_month, default_slot) %>
+      <% if remaining_max > 0 %>
+        <% default_slot = "mid_month" %>
+        <% default_max = remaining_max %>
         <div class="p-5 border-b border-gray-100">
           <%= form_with model: PayrollAdvance.new(payroll_month: payroll_month, paid_on: Date.current, advance_slot: default_slot),
                 url: admin_user_payroll_advances_path(user),
@@ -71,8 +68,6 @@
       <% else %>
         <p class="p-5 text-sm text-amber-700 border-b border-gray-100"><%= t("staff.payroll.advances.no_remaining") %></p>
       <% end %>
-    <% elsif policy(PayrollAdvance).create? && !payroll_summary.finalized && available_slots.empty? %>
-      <p class="p-5 text-sm text-gray-500 border-b border-gray-100"><%= t("staff.payroll.advances.all_slots_used") %></p>
     <% end %>
   <% end %>
 
