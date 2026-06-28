@@ -10,6 +10,16 @@
         <%= render "pos/pos_nav" %>
       </header>
 
+      <% unless @open_cash_session %>
+        <%= link_to pos_shift_path(tab: "shift"), class: "flex items-center gap-3 px-4 py-2.5 bg-amber-50 border-b border-amber-200 text-amber-800 hover:bg-amber-100 transition-colors shrink-0" do %>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+          <span class="text-sm font-medium"><%= t("pos.shift.no_drawer_banner") %></span>
+          <span class="ms-auto text-sm font-semibold underline underline-offset-2"><%= t("pos.shift.start_shift") %> →</span>
+        <% end %>
+      <% end %>
+
       <%= turbo_frame_tag "pos_menu", class: "flex flex-col flex-1 min-h-0" do %>
         <%= render "pos/menu_panel" %>
       <% end %>

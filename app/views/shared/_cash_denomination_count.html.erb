@@ -2,16 +2,16 @@
 <div data-controller="cash-count">
   <div class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
     <h2 class="text-sm font-semibold mb-3"><%= t("accounting.cash_drawer.denominations") %></h2>
-    <% { "100" => 10000, "50" => 5000, "20" => 2000, "10" => 1000, "5" => 500, "1" => 100 }.each do |label, cents| %>
+    <% { "200" => 20000, "100" => 10000, "50" => 5000, "20" => 2000, "10" => 1000, "5" => 500, "1" => 100 }.each do |label, cents| %>
       <div class="flex justify-between items-center gap-4 mb-2">
-        <label class="text-sm">$<%= label %></label>
+        <label class="text-sm"><%= label %></label>
         <input type="number" min="0" value="0" class="w-20 border rounded-lg px-2 py-1 text-end"
                data-cash-count-target="denom" data-cents="<%= cents %>" data-action="input->cash-count#recalculate">
       </div>
     <% end %>
     <p class="font-bold mt-4">
       <%= t("accounting.cash_drawer.total_counted", amount: "") %>
-      <span data-cash-count-target="total">$0.00</span>
+      <span data-cash-count-target="total">0.00</span>
     </p>
   </div>
 

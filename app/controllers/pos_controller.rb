@@ -16,6 +16,7 @@ class PosController < ApplicationController
     @order.recalculate_totals! if @order.persisted?
     load_pos_menu
     @open_orders = Order.open_drafts.where(user: current_user).order(created_at: :desc).limit(10)
+    @open_cash_session = current_user.open_cash_drawer_session
   end
 
   def new_order

@@ -67,7 +67,7 @@ class User < ApplicationRecord
   end
 
   def todays_cash_drawer_session
-    cash_drawer_sessions.find_by(session_date: Date.current)
+    cash_drawer_sessions.where(session_date: Date.current).order(created_at: :desc).first
   end
 
   def shift_orders_time_range

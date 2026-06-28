@@ -15,8 +15,7 @@ class CashDrawerSession < ApplicationRecord
   validates :session_date, :shift, presence: true
   validates :shift, inclusion: { in: SHIFTS }
   validates :status, inclusion: { in: STATUSES }
-  validates :user_id, uniqueness: { scope: %i[session_date shift] }
-  validates :treasury, presence: true
+validates :treasury, presence: true
 
   scope :open, -> { where(status: "open") }
 end

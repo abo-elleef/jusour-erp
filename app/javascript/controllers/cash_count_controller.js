@@ -28,6 +28,6 @@ export default class extends Controller {
   }
 
   formatCents(cents) {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100)
+    return new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)
   }
 }

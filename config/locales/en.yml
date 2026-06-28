@@ -1314,6 +1314,8 @@ en:
     shift:
       title: "My shift"
       description: "Open your drawer, count cash, and close your shift from the register."
+      no_drawer_banner: "Your drawer is not open. You won't be able to take cash payments."
+      start_shift: "Start shift"
       time_tracking: "Time tracking"
       drawer_open: "Drawer open"
       drawer_reconciled: "Drawer reconciled for today"

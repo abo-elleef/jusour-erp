@@ -45,11 +45,7 @@
       <p class="text-gray-600"><%= t("accounting.shared.treasury") %>: <strong><%= @open_session.treasury.name %></strong></p>
       <p class="text-gray-600">
         <%= t("accounting.cash_drawer.opening_float") %>:
-        <strong class="tabular-nums"><%= format_money(@open_session.opening_float_cents) %></strong>
-      </p>
-      <p class="text-gray-600">
-        <%= t("accounting.cash_drawer.expected") %>:
-        <strong class="tabular-nums"><%= format_money(@open_session.expected_cash_cents || @open_session.opening_float_cents) %></strong>
+        <strong class="tabular-nums"><%= number_with_precision(@open_session.opening_float_cents.to_f / 100, precision: 2, delimiter: ',') %></strong>
       </p>
     </div>
     <div class="px-5 pb-5">
@@ -57,22 +53,24 @@
             class: "block w-full text-center bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-3 rounded-xl" %>
     </div>
   </section>
-<% elsif @today_session&.status == "reconciled" %>
-  <section class="rounded-2xl border border-green-200 bg-green-50/60 overflow-hidden mb-6">
-    <div class="p-5 space-y-2 text-sm">
-      <p class="font-semibold text-green-900"><%= t("pos.shift.drawer_reconciled") %></p>
-      <p class="text-green-800 tabular-nums">
-        <%= t("accounting.cash_drawer.expected") %>: <%= format_money(@today_session.expected_cash_cents) %>
-      </p>
-      <p class="text-green-800 tabular-nums">
-        <%= t("accounting.cash_drawer.counted") %>: <%= format_money(@today_session.counted_cash_cents) %>
-      </p>
-      <p class="text-green-800 tabular-nums">
-        <%= t("accounting.cash_drawer.variance") %>: <%= format_money(@today_session.variance_cents) %>
-      </p>
-    </div>
-  </section>
 <% else %>
+  <% if @today_session&.status == "reconciled" %>
+    <section class="rounded-2xl border border-green-200 bg-green-50/60 overflow-hidden mb-6">
+      <div class="p-5 space-y-2 text-sm">
+        <p class="font-semibold text-green-900"><%= t("pos.shift.drawer_reconciled") %></p>
+        <p class="text-green-800 tabular-nums">
+          <%= t("accounting.cash_drawer.expected") %>: <%= number_with_precision(@today_session.expected_cash_cents.to_f / 100, precision: 2, delimiter: ',') %>
+        </p>
+        <p class="text-green-800 tabular-nums">
+          <%= t("accounting.cash_drawer.counted") %>: <%= number_with_precision(@today_session.counted_cash_cents.to_f / 100, precision: 2, delimiter: ',') %>
+        </p>
+        <p class="text-green-800 tabular-nums">
+          <%= t("accounting.cash_drawer.variance") %>: <%= number_with_precision(@today_session.variance_cents.to_f / 100, precision: 2, delimiter: ',') %>
+        </p>
+      </div>
+    </section>
+  <% end %>
+
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("pos.shift.open_drawer_heading") %></h2>
@@ -94,7 +92,7 @@
         </div>
         <div>
           <%= label_tag :opening_float, t("accounting.cash_drawer.opening_float"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-          <%= number_field_tag :opening_float, 100, step: 0.01, class: "#{pos_input_class} w-full" %>
+          <%= number_field_tag :opening_float, 0, step: 0.01, min: 0, class: "#{pos_input_class} w-full" %>
         </div>
         <%= submit_tag t("accounting.cash_drawer.open_drawer"), class: "w-full bg-gray-900 text-white py-3 rounded-xl font-semibold" %>
       <% end %>

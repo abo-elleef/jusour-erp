@@ -10,8 +10,8 @@ module Pos
     before_action :set_open_session, only: %i[count reconcile]
 
     def show
-      @tab = params[:tab].presence_in(%w[shift orders]) || "orders"
       @open_session = current_user.open_cash_drawer_session
+      @tab = params[:tab].presence_in(%w[shift orders]) || (@open_session ? "orders" : "shift")
       @today_session = current_user.todays_cash_drawer_session
       @drawer_treasuries = Treasury.active.cash_drawers.ordered
       @unpaid_orders_count = unpaid_orders_for(current_user).size

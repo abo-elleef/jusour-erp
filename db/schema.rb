@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_000005) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -104,7 +104,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
     t.datetime "updated_at", null: false
     t.uuid "treasury_id"
     t.index ["treasury_id"], name: "index_cash_drawer_sessions_on_treasury_id"
-    t.index ["user_id", "session_date", "shift"], name: "idx_on_user_id_session_date_shift_04dd8c9892", unique: true
     t.index ["user_id"], name: "index_cash_drawer_sessions_on_user_id"
   end
 

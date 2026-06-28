@@ -17,14 +17,14 @@
               shift: accounting_shift_label(@open_session.shift),
               date: l(@open_session.session_date, format: :long)) %></strong>
       </p>
-      <p><%= t("accounting.cash_drawer.expected_line", amount: format_money(@open_session.expected_cash_cents)) %></p>
+      <p><%= t("accounting.cash_drawer.expected_line", amount: number_with_precision(@open_session.expected_cash_cents.to_f / 100, precision: 2, delimiter: ',')) %></p>
     </div>
 
     <% if @requires_manager_pin %>
       <div class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 mb-6 text-sm space-y-1">
         <p class="font-semibold text-amber-900"><%= t("pos.shift.variance_detected") %></p>
-        <p class="tabular-nums"><%= t("accounting.cash_drawer.counted") %>: <%= format_money(@counted_cents) %></p>
-        <p class="tabular-nums"><%= t("accounting.cash_drawer.variance") %>: <%= format_money(@variance_cents) %></p>
+        <p class="tabular-nums"><%= t("accounting.cash_drawer.counted") %>: <%= number_with_precision(@counted_cents.to_f / 100, precision: 2, delimiter: ',') %></p>
+        <p class="tabular-nums"><%= t("accounting.cash_drawer.variance") %>: <%= number_with_precision(@variance_cents.to_f / 100, precision: 2, delimiter: ',') %></p>
       </div>
 
       <%= form_with url: reconcile_pos_shift_path, method: :patch do %>

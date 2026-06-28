@@ -17,18 +17,19 @@ module Accounting
     end
 
     def compute_expected!
-      shift_start, shift_end = shift_window
+      session_start = @session.created_at
+      session_end   = @session.status == "open" ? Time.current : @session.updated_at
 
       cash_sales = Payment.joins(:order)
         .where(orders: { user_id: @session.user_id })
         .where(payment_method: "cash", status: "completed")
-        .where(created_at: shift_start..shift_end)
+        .where(created_at: session_start..session_end)
         .sum(:amount_cents).to_i
 
       cash_refunds = Payment.joins(:order)
         .where(orders: { user_id: @session.user_id })
         .where(payment_method: "cash")
-        .where(created_at: shift_start..shift_end)
+        .where(created_at: session_start..session_end)
         .sum(:refunded_amount_cents).to_i
 
       expected = @session.opening_float_cents + cash_sales - cash_refunds
