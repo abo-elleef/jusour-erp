@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class TreasuryTransfer < ApplicationRecord
+  include Tenantable
+
   belongs_to :from_treasury, class_name: "Treasury"
   belongs_to :to_treasury, class_name: "Treasury"
   belongs_to :user

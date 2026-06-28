@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Income < ApplicationRecord
+  include Tenantable
+
   RECURRENCES = Expense::RECURRENCES
 
   belongs_to :income_category

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class ShiftLog < ApplicationRecord
+  include Tenantable
+
   STATUSES = %w[active completed adjusted].freeze
 
   belongs_to :user

@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Expense < ApplicationRecord
+  include Tenantable
+
   RECURRENCES = %w[one_time daily weekly monthly annually].freeze
 
   belongs_to :expense_category

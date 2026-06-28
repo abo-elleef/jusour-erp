@@ -34,9 +34,9 @@ class ShiftLogPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
       if user.can_access_admin?
-        scope.all
+        scope.where(company_id: user.company_id)
       elsif user.cashier?
-        scope.where(user_id: user.id)
+        scope.where(user_id: user.id, company_id: user.company_id)
       else
         scope.none
       end

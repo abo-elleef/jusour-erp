@@ -84,6 +84,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
     t.integer "amount_cents", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_budgets_on_company_id"
     t.index ["expense_category_id", "year", "month"], name: "index_budgets_on_expense_category_id_and_year_and_month", unique: true
     t.index ["expense_category_id"], name: "index_budgets_on_expense_category_id"
   end
@@ -242,6 +244,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "treasury_id"
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_expenses_on_company_id"
     t.index ["expense_category_id"], name: "index_expenses_on_expense_category_id"
     t.index ["expense_date"], name: "index_expenses_on_expense_date"
     t.index ["is_auto_generated"], name: "index_expenses_on_is_auto_generated"
@@ -287,6 +291,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "treasury_id"
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_incomes_on_company_id"
     t.index ["income_category_id"], name: "index_incomes_on_income_category_id"
     t.index ["income_date"], name: "index_incomes_on_income_date"
     t.index ["is_auto_generated"], name: "index_incomes_on_is_auto_generated"
@@ -588,6 +594,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
     t.uuid "processed_by_user_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_payments_on_company_id"
     t.index ["order_id"], name: "index_payments_on_order_id"
     t.index ["processed_by_user_id"], name: "index_payments_on_processed_by_user_id"
     t.index ["status"], name: "index_payments_on_status"
@@ -605,6 +613,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
     t.datetime "updated_at", null: false
     t.decimal "overtime_hours", precision: 8, scale: 2
     t.date "happened_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_payroll_adjustments_on_company_id"
     t.index ["payroll_month"], name: "index_payroll_adjustments_on_payroll_month"
     t.index ["recorded_by_id"], name: "index_payroll_adjustments_on_recorded_by_id"
     t.index ["user_id", "payroll_month"], name: "index_payroll_adjustments_on_user_id_and_payroll_month"
@@ -734,7 +744,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
     t.index ["clocked_in_at"], name: "index_shift_logs_on_clocked_in_at"
+    t.index ["company_id"], name: "index_shift_logs_on_company_id"
     t.index ["status"], name: "index_shift_logs_on_status"
     t.index ["user_id"], name: "index_shift_logs_on_user_id"
   end
@@ -971,6 +983,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
     t.integer "balance_after_cents", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_treasury_transactions_on_company_id"
     t.index ["kind"], name: "index_treasury_transactions_on_kind"
     t.index ["occurred_on"], name: "index_treasury_transactions_on_occurred_on"
     t.index ["source_record_type", "source_record_id"], name: "index_treasury_transactions_on_source"
@@ -987,6 +1001,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
     t.date "occurred_on", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_treasury_transfers_on_company_id"
     t.index ["from_treasury_id"], name: "index_treasury_transfers_on_from_treasury_id"
     t.index ["occurred_on"], name: "index_treasury_transfers_on_occurred_on"
     t.index ["to_treasury_id"], name: "index_treasury_transfers_on_to_treasury_id"
@@ -1078,6 +1094,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "audit_log_entries", "companies"
   add_foreign_key "audit_log_entries", "users"
+  add_foreign_key "budgets", "companies"
   add_foreign_key "budgets", "expense_categories"
   add_foreign_key "cash_drawer_sessions", "treasuries"
   add_foreign_key "cash_drawer_sessions", "users"
@@ -1090,11 +1107,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
   add_foreign_key "customers", "companies"
   add_foreign_key "discount_rules", "companies"
   add_foreign_key "expense_categories", "companies"
+  add_foreign_key "expenses", "companies"
   add_foreign_key "expenses", "expense_categories"
   add_foreign_key "expenses", "treasuries"
   add_foreign_key "expenses", "users"
   add_foreign_key "gift_cards", "companies"
   add_foreign_key "income_categories", "companies"
+  add_foreign_key "incomes", "companies"
   add_foreign_key "incomes", "income_categories"
   add_foreign_key "incomes", "treasuries"
   add_foreign_key "incomes", "users"
@@ -1137,8 +1156,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
   add_foreign_key "orders", "locations"
   add_foreign_key "orders", "users"
   add_foreign_key "overtime_rules", "companies"
+  add_foreign_key "payments", "companies"
   add_foreign_key "payments", "orders"
   add_foreign_key "payments", "users", column: "processed_by_user_id"
+  add_foreign_key "payroll_adjustments", "companies"
   add_foreign_key "payroll_adjustments", "users"
   add_foreign_key "payroll_adjustments", "users", column: "recorded_by_id"
   add_foreign_key "payroll_advances", "companies"
@@ -1158,6 +1179,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
   add_foreign_key "receipt_logs", "orders"
   add_foreign_key "recipes", "ingredients"
   add_foreign_key "recipes", "menu_items"
+  add_foreign_key "shift_logs", "companies"
   add_foreign_key "shift_logs", "users"
   add_foreign_key "stock_adjustments", "ingredients"
   add_foreign_key "stock_adjustments", "locations"
@@ -1195,8 +1217,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000004) do
   add_foreign_key "suppliers", "treasuries"
   add_foreign_key "tax_rates", "companies"
   add_foreign_key "treasuries", "companies"
+  add_foreign_key "treasury_transactions", "companies"
   add_foreign_key "treasury_transactions", "treasuries"
   add_foreign_key "treasury_transactions", "users"
+  add_foreign_key "treasury_transfers", "companies"
   add_foreign_key "treasury_transfers", "treasuries", column: "from_treasury_id"
   add_foreign_key "treasury_transfers", "treasuries", column: "to_treasury_id"
   add_foreign_key "treasury_transfers", "users"

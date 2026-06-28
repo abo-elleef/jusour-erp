@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class PayrollAdjustment < ApplicationRecord
+  include Tenantable
+
   KINDS = %w[penalty bonus].freeze
   UNIT_TYPES = %w[full_day half_day quarter_day fixed overtime].freeze
   PENALTY_UNIT_TYPES = %w[full_day half_day quarter_day fixed].freeze

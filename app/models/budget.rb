@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Budget < ApplicationRecord
+  include Tenantable
+
   belongs_to :expense_category
 
   monetize :amount_cents
