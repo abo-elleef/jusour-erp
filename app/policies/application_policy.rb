@@ -46,6 +46,10 @@ class ApplicationPolicy
     user.manager?
   end
 
+  def accountant?
+    user.accountant?
+  end
+
   def admin?
     user.can_access_admin?
   end

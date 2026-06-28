@@ -299,6 +299,7 @@ ar:
     roles:
       owner: "المالك"
       manager: "مدير"
+      accountant: "محاسب"
       cashier: "كاشير"
       kitchen: "مطبخ"
     pin: "رمز المدير (4 أرقام)"
@@ -311,6 +312,7 @@ ar:
       stats_total: "الإجمالي"
       stats_owners: "المالكون"
       stats_managers: "المديرون"
+      stats_accountants: "المحاسبون"
       stats_cashiers: "الكاشير"
       stats_kitchen: "المطبخ"
       filters: "التصفية"

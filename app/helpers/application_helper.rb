@@ -457,6 +457,7 @@ module ApplicationHelper
     case role
     when "owner" then "bg-purple-100 text-purple-800"
     when "manager" then "bg-blue-100 text-blue-800"
+    when "accountant" then "bg-teal-100 text-teal-800"
     when "cashier" then "bg-green-100 text-green-800"
     when "kitchen" then "bg-orange-100 text-orange-800"
     else "bg-gray-100 text-gray-700"
@@ -629,6 +630,7 @@ module ApplicationHelper
     case role
     when "owner" then "border-purple-200"
     when "manager" then "border-blue-200"
+    when "accountant" then "border-teal-200"
     when "cashier" then "border-green-200"
     when "kitchen" then "border-orange-200"
     else "border-gray-200"

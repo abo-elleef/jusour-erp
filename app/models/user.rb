@@ -5,7 +5,7 @@ require "bcrypt"
 class User < ApplicationRecord
   include Tenantable
 
-  ROLES = %w[owner manager cashier kitchen].freeze
+  ROLES = %w[owner manager accountant cashier kitchen].freeze
   INDEX_SORTABLE_COLUMNS = %w[name email role monthly_salary_cents created_at].freeze
   INDEX_DEFAULT_SORT = "name"
   INDEX_DEFAULT_SORT_DIRECTION = "asc"
@@ -104,6 +104,10 @@ class User < ApplicationRecord
     role == "manager"
   end
 
+  def accountant?
+    role == "accountant"
+  end
+
   def cashier?
     role == "cashier"
   end
@@ -113,7 +117,7 @@ class User < ApplicationRecord
   end
 
   def admin_access?
-    owner? || manager?
+    owner? || manager? || accountant?
   end
 
   def can_access_pos?
@@ -121,15 +125,15 @@ class User < ApplicationRecord
   end
 
   def can_access_kds?
-    owner? || manager? || kitchen?
+    owner? || manager? || accountant? || kitchen?
   end
 
   def can_access_production?
-    owner? || manager? || kitchen?
+    owner? || manager? || accountant? || kitchen?
   end
 
   def can_access_admin?
-    owner? || manager?
+    owner? || manager? || accountant?
   end
 
   def can_manage_system?

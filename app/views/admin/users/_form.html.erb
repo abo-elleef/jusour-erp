@@ -25,27 +25,40 @@
         <%= f.email_field :email, class: input_class, required: true, autocomplete: "off" %>
       </div>
 
-      <div>
-        <%= f.label :monthly_salary_cents, t("staff.payroll.monthly_salary_cents"), class: label_class %>
-        <%= f.number_field :monthly_salary_cents, min: 0, class: input_class %>
-        <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.payroll.salary_hint", days: User::WORK_DAYS_PER_MONTH) %></p>
-        <% if user.monthly_salary_cents.to_i.positive? %>
-          <p class="text-xs text-gray-600 mt-2">
-            <%= t("staff.payroll.hourly_rate_auto", rate: format_money(user.hourly_rate_cents), hours: User::WORK_HOURS_PER_MONTH) %>
-          </p>
-        <% end %>
-      </div>
+      <% if policy(user).can_edit_role_and_salary? %>
+        <div>
+          <%= f.label :monthly_salary_cents, t("staff.payroll.monthly_salary_cents"), class: label_class %>
+          <%= f.number_field :monthly_salary_cents, min: 0, class: input_class %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.payroll.salary_hint", days: User::WORK_DAYS_PER_MONTH) %></p>
+          <% if user.monthly_salary_cents.to_i.positive? %>
+            <p class="text-xs text-gray-600 mt-2">
+              <%= t("staff.payroll.hourly_rate_auto", rate: format_money(user.hourly_rate_cents), hours: User::WORK_HOURS_PER_MONTH) %>
+            </p>
+          <% end %>
+        </div>
 
-      <div>
-        <%= f.label :role, t("staff.index.role"), class: label_class %>
-        <% roles = policy(user).create? && current_user.owner? ? User::ROLES : User::ROLES - ["owner"] %>
-        <% roles = %w[cashier kitchen] if current_user.manager? && !current_user.owner? %>
-        <%= f.select :role, roles.map { |r| [user_role_label(r), r] }, {},
-              class: "#{input_class} appearance-none" %>
-        <p class="text-xs text-gray-500 mt-1.5">
-          <%= t("staff.form.role_hint") %>
-        </p>
-      </div>
+        <div>
+          <%= f.label :role, t("staff.index.role"), class: label_class %>
+          <% roles = policy(user).create? && current_user.owner? ? User::ROLES : User::ROLES - ["owner"] %>
+          <% roles = %w[cashier kitchen] if current_user.manager? && !current_user.owner? %>
+          <%= f.select :role, roles.map { |r| [user_role_label(r), r] }, {},
+                class: "#{input_class} appearance-none" %>
+          <p class="text-xs text-gray-500 mt-1.5">
+            <%= t("staff.form.role_hint") %>
+          </p>
+        </div>
+      <% else %>
+        <div>
+          <p class="<%= label_class %>"><%= t("staff.index.role") %></p>
+          <p class="text-sm text-gray-700 font-medium"><%= user_role_label(user.role) %></p>
+        </div>
+        <% if user.monthly_salary_cents.to_i.positive? %>
+          <div>
+            <p class="<%= label_class %>"><%= t("staff.payroll.monthly_salary_cents") %></p>
+            <p class="text-sm text-gray-700 font-medium"><%= format_money(user.monthly_salary_cents) %></p>
+          </div>
+        <% end %>
+      <% end %>
     </div>
   </section>
 

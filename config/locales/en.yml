@@ -299,6 +299,7 @@ en:
     roles:
       owner: "Owner"
       manager: "Manager"
+      accountant: "Accountant"
       cashier: "Cashier"
       kitchen: "Kitchen"
     pin: "Manager PIN (4 digits)"
@@ -311,6 +312,7 @@ en:
       stats_total: "Total"
       stats_owners: "Owners"
       stats_managers: "Managers"
+      stats_accountants: "Accountants"
       stats_cashiers: "Cashiers"
       stats_kitchen: "Kitchen"
       filters: "Filters"

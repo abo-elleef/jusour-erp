@@ -26,7 +26,7 @@ class AccountingPolicy < ApplicationPolicy
   end
 
   def destroy?
-    owner?
+    owner? || accountant?
   end
 
   def export?

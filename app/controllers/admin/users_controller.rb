@@ -14,6 +14,7 @@ module Admin
       @total_count = scope.count
       @owner_count = scope.where(role: "owner").count
       @manager_count = scope.where(role: "manager").count
+      @accountant_count = scope.where(role: "accountant").count
       @cashier_count = scope.where(role: "cashier").count
       @kitchen_count = scope.where(role: "kitchen").count
       @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
@@ -135,7 +136,8 @@ module Admin
     end
 
     def user_params
-      permitted = %i[name email role monthly_salary_cents pin]
+      permitted = %i[name email pin]
+      permitted += %i[role monthly_salary_cents] if current_user.owner?
       changing_password = action_name == "create" || params.dig(:user, :password).present?
       permitted += %i[password password_confirmation] if changing_password
 

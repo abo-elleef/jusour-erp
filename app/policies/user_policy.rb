@@ -2,11 +2,11 @@
 
 class UserPolicy < ApplicationPolicy
   def index?
-    user.owner?
+    user.owner? || user.accountant?
   end
 
   def show?
-    user.owner? || record == user
+    user.owner? || user.accountant? || record == user
   end
 
   def new?
@@ -23,6 +23,7 @@ class UserPolicy < ApplicationPolicy
 
   def update?
     return true if record == user
+    return true if user.accountant?
     return false unless user.owner?
 
     true
@@ -40,6 +41,10 @@ class UserPolicy < ApplicationPolicy
     user.owner? && !record.active?
   end
 
+  def can_edit_role_and_salary?
+    user.owner?
+  end
+
   def permitted_roles
     return User::ROLES if user.owner?
 
@@ -48,7 +53,7 @@ class UserPolicy < ApplicationPolicy
 
   class Scope < Scope
     def resolve
-      user.owner? ? scope.all : scope.where(id: user.id)
+      (user.owner? || user.accountant?) ? scope.all : scope.where(id: user.id)
     end
   end
 end

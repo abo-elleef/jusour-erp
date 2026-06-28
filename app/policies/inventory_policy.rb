@@ -18,7 +18,7 @@ class InventoryPolicy < ApplicationPolicy
   end
 
   def destroy?
-    owner?
+    owner? || accountant?
   end
 
   def adjust?
