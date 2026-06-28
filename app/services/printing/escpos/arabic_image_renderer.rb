@@ -187,44 +187,45 @@ module Printing
 
       # Modifier/notes continuation row: text in the item-name column only,
       # with the same vertical column separators as a regular row3 image.
-      def render_modifier_row(visual_text, doc_width: 42)
+      def render_modifier_row(visual_text, doc_width: 42, columns: 3)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        qty_x    = (px_width * 0.26).to_i
-        sep1     = qty_x - 12
-        sep2     = (px_width * 0.46).to_i
         h        = FONT_SIZE_PT * 2
         font     = arabic_font
         return nil unless font
 
-        pbm = render_pbm_multi(
-          [
-            { gravity: "East", offset: "+8+0", text: visual_text },
-            { draw: "line #{sep1},0 #{sep1},#{h}" },
-            { draw: "line #{sep2},0 #{sep2},#{h}" }
-          ],
-          px_width, font
-        )
+        draws = [{ gravity: "East", offset: "+8+0", text: visual_text }]
+        if columns == 3
+          qty_x = (px_width * 0.26).to_i
+          sep1  = qty_x - 12
+          sep2  = (px_width * 0.46).to_i
+          draws << { draw: "line #{sep1},0 #{sep1},#{h}" }
+          draws << { draw: "line #{sep2},0 #{sep2},#{h}" }
+        end
+
+        pbm = render_pbm_multi(draws, px_width, font)
         pbm ? pbm_to_escpos(pbm) : nil
       end
 
       # Same as render_modifier_row but returns a Base64-encoded PNG string.
-      def render_modifier_row_png(visual_text, doc_width: 42)
+      def render_modifier_row_png(visual_text, doc_width: 42, columns: 3)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        qty_x    = (px_width * 0.26).to_i
-        sep1     = qty_x - 12
-        sep2     = (px_width * 0.46).to_i
         h        = FONT_SIZE_PT * 2
         font     = arabic_font
         return nil unless font
 
-        run_to_png([
+        cmd = [
           im_command,
           "-size", "#{px_width}x#{h}", "xc:white",
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
-          "-gravity", "East", "-annotate", "+8+0", visual_text,
-          "-draw", "line #{sep1},0 #{sep1},#{h}",
-          "-draw", "line #{sep2},0 #{sep2},#{h}"
-        ])
+          "-gravity", "East", "-annotate", "+8+0", visual_text
+        ]
+        if columns == 3
+          qty_x = (px_width * 0.26).to_i
+          sep1  = qty_x - 12
+          sep2  = (px_width * 0.46).to_i
+          cmd += ["-draw", "line #{sep1},0 #{sep1},#{h}", "-draw", "line #{sep2},0 #{sep2},#{h}"]
+        end
+        run_to_png(cmd)
       end
 
       # Full-width 1px horizontal rule as ESC/POS bytes — used between table rows.

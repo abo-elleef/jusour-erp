@@ -58,21 +58,17 @@ module Printing
       def compose_items_table(doc, items)
         doc.align(:left)
         doc.separator
-        doc.row3(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.qty"), I18n.t("printing.receipt.price"))
+        doc.row(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.qty"))
         doc.separator
 
         items.each do |item|
-          doc.row3(item.display_name, item.quantity.to_s, format_money(item.line_total_cents))
+          doc.row(item.display_name, item.quantity.to_s)
           item.order_item_modifiers.each do |modifier|
-            doc.modifier_text("+ #{modifier.name}")
+            doc.modifier_text("+ #{modifier.name}", columns: 2)
           end
-          doc.modifier_text(item.notes) if item.notes.present?
+          doc.modifier_text(item.notes, columns: 2) if item.notes.present?
           doc.separator
         end
-      end
-
-      def format_money(cents)
-        Money.new(cents.to_i).format(symbol: false)
       end
 
       def line_width

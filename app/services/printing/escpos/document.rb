@@ -68,11 +68,11 @@ module Printing
       end
 
       # Render a modifier/add-on line inside the item-name column with column borders.
-      def modifier_text(line = "")
+      def modifier_text(line = "", columns: 3)
         str = line.to_s
         if @use_images
           visual = Bidi.visual_for_print(str, reshape: true)
-          bytes  = ArabicImageRenderer.render_modifier_row(visual, doc_width: @width)
+          bytes  = ArabicImageRenderer.render_modifier_row(visual, doc_width: @width, columns: columns)
           return @buffer << bytes.b if bytes
         end
         # Text fallback
@@ -190,7 +190,8 @@ module Printing
       # Only the Arabic label is reshaped/reordered; the price is passed as-is.
       def write_arabic_row_image(arabic_label, ltr_value)
         visual_label = Bidi.visual_for_print(arabic_label, reshape: true)
-        bytes = ArabicImageRenderer.render_row(visual_label, ltr_value, doc_width: @width)
+        visual_value = ltr_value.to_s.match?(ARABIC_PATTERN) ? Bidi.visual_for_print(ltr_value.to_s, reshape: true) : ltr_value.to_s
+        bytes = ArabicImageRenderer.render_row(visual_label, visual_value, doc_width: @width)
         if bytes
           @buffer << bytes.b
         else
