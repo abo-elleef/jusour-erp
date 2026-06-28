@@ -25,6 +25,10 @@ class CustomerPolicy < ApplicationPolicy
     user.can_access_admin?
   end
 
+  def update_contact?
+    user.can_access_pos? || user.can_access_admin?
+  end
+
   def destroy?
     user.owner?
   end

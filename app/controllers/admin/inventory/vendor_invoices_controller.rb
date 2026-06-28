@@ -208,6 +208,7 @@ module Admin
         permitted = params.require(:vendor_invoice).permit(
           :supplier_id, :location_id, :invoice_number, :invoice_date, :received_on, :notes,
           :discount_type, :discount_value, :discount_amount_dollars, :discount_notes, :invoice_image,
+          :adjustment_amount_dollars,
           vendor_invoice_lines_attributes: %i[
             id ingredient_id quantity unit_price_dollars expires_on batch_reference line_notes _destroy
           ]
@@ -217,7 +218,13 @@ module Admin
           attrs[:unit_price_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
         end
         normalize_discount_params!(permitted)
+        normalize_adjustment_params!(permitted)
         permitted
+      end
+
+      def normalize_adjustment_params!(permitted)
+        dollars = permitted.delete(:adjustment_amount_dollars)
+        permitted[:adjustment_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
       end
 
       def normalize_discount_params!(permitted)

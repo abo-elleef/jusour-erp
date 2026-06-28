@@ -59,6 +59,36 @@ module Pos
       session[:checkout_order_id] = @order.id
     end
 
+    def resume
+      order = Order.find(params[:id])
+      authorize order, :show?
+      raise Pundit::NotAuthorizedError unless order.draft? && order.user == current_user
+
+      session[:current_order_id] = order.id
+      redirect_to pos_path, notice: t("flash.pos.order_resumed")
+    end
+
+    def update_fulfillment
+      @order = Order.find(params[:id])
+      authorize @order, :update?
+      raise Pundit::NotAuthorizedError if @order.cancelled? || @order.voided?
+
+      attrs = params.permit(:order_type, :table_number, :delivery_address).to_h
+      attrs[:delivery_address] = nil if @order.customer.blank?
+
+      if @order.update(attrs)
+        if @order.delivery? && @order.customer.present? && @order.delivery_address.blank?
+          addr = @order.customer.default_address
+          @order.update!(delivery_address: addr.address) if addr.present?
+        end
+        redirect_to pos_order_path(@order, from: params[:from]),
+                    notice: t("flash.pos.order_updated")
+      else
+        redirect_to pos_order_path(@order, from: params[:from]),
+                    alert: @order.errors.full_messages.to_sentence
+      end
+    end
+
     def print_receipt
       @order = Order.find(params[:id])
       authorize @order, :show?

@@ -69,7 +69,7 @@ class OrderPolicy < ApplicationPolicy
 
   class Scope < Scope
     def resolve
-      if user.owner? || user.manager?
+      if user.owner? || user.manager? || user.accountant?
         scope.all
       elsif user.cashier?
         scope.where(user: user)

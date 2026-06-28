@@ -171,6 +171,7 @@ en:
       payments: "Payments:"
       change: "Change"
       loyalty: "Loyalty: %{points} pts"
+      order_notes: "Order notes:"
     kitchen_ticket:
       title: "KITCHEN"
       order_notes: "Order notes:"
@@ -862,6 +863,7 @@ en:
       discount_notes: "Discount notes"
       discount_notes_placeholder: "e.g. Early payment discount, volume rebate…"
       discount_applied: "Discount applied"
+      adjustment_applied: "Rounding adjustment"
       discount_percentage_label: "%{value}% off"
       discount_fixed_label: "%{amount} off"
       discount_types:
@@ -911,6 +913,9 @@ en:
         submit_update: "Save changes"
         discount: "Discount (optional)"
         discount_hint: "Apply a supplier discount to reduce the invoice total."
+        adjustment: "Rounding adjustment (optional)"
+        adjustment_hint: "Positive rounds up, negative rounds down. Adjusts the total without changing line prices."
+        adjustment_amount: "Adjustment amount"
       errors:
         lines_required: "Add at least one line item with an ingredient."
         not_editable: "This invoice cannot be edited after payments have been recorded or once voided."
@@ -1247,6 +1252,8 @@ en:
       attach_new: "Add to order"
       clear: "Remove"
       no_results: "No matching customers."
+      edit_title: "Edit customer"
+      phones_section: "Phone numbers"
       addresses_count:
         one: "%{count} saved address"
         other: "%{count} saved addresses"
@@ -1334,6 +1341,9 @@ en:
         empty: "No orders yet in this shift."
         no_shift: "No active shift to show orders for."
         no_shift_hint: "Clock in or open your drawer to see orders for your shift."
+        resume: "Resume"
+    orders:
+      edit_details: "Edit details"
 
   menu:
     modifier_groups:
@@ -2264,6 +2274,8 @@ en:
       orders_merged: "Orders merged."
       payment_recorded: "Payment recorded."
       print_queued: "Receipt sent to printer."
+      order_resumed: "Order loaded in cart."
+      order_updated: "Order updated."
       print_all_queued: "All prints sent to printers."
       already_paid: "This order is already paid in full."
       customer_required: "Enter a phone or email for the new customer."

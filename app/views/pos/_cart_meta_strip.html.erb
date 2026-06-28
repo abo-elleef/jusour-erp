@@ -1,6 +1,7 @@
-<%# locals: order, customer_form_errors: nil, open_customer_dialog: false %>
+<%# locals: order, customer_form_errors: nil, open_customer_dialog: false, edit_customer_errors: nil %>
 <% customer_form_errors = local_assigns[:customer_form_errors] %>
-<% open_customer_dialog = local_assigns[:open_customer_dialog] || customer_form_errors&.any? %>
+<% edit_customer_errors = local_assigns[:edit_customer_errors] %>
+<% open_customer_dialog = local_assigns[:open_customer_dialog] || customer_form_errors&.any? || edit_customer_errors&.any? %>
 
 <div id="cart-meta-strip">
   <%# ── Compact chips row ───────────────────────────────────────────────── %>
@@ -62,6 +63,7 @@
     </div>
     <%= render "pos/order_customer", order: order,
           customer_form_errors: customer_form_errors,
+          edit_customer_errors: edit_customer_errors,
           embedded: true %>
   </dialog>
 

@@ -56,8 +56,15 @@
               </td>
               <td class="p-3 text-end font-bold text-gray-900 tabular-nums"><%= format_money(order.total_cents) %></td>
               <td class="p-3 pe-5 text-end">
-                <%= link_to t("actions.view"), pos_order_path(order, from: "shift"),
-                      class: "inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+                <% if order.draft? %>
+                  <%= button_to t("pos.shift.orders.resume"), resume_pos_order_path(order),
+                        method: :post,
+                        form: { data: { turbo: false } },
+                        class: "inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+                <% else %>
+                  <%= link_to t("actions.view"), pos_order_path(order, from: "shift"),
+                        class: "inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+                <% end %>
               </td>
             </tr>
           <% end %>

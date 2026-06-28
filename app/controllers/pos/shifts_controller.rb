@@ -136,7 +136,6 @@ module Pos
       @shift_orders = if @shift_time_range
         start_time, end_time = @shift_time_range
         Order.where(user: current_user)
-          .where.not(status: "draft")
           .where(created_at: start_time..end_time)
           .includes(:customer, :payments)
           .order(created_at: :desc)

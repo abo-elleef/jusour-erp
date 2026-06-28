@@ -77,7 +77,7 @@
               ),
               {},
               class: "#{input_class} appearance-none",
-              data: { vendor_invoice_discount_target: "type", action: "change->vendor-invoice-discount#typeChanged" } %>
+              data: { vendor_invoice_discount_target: "type", action: "change->vendor-invoice-discount#typeChanged change->vendor-invoice-lines#recalculate" } %>
       </div>
       <div data-vendor-invoice-discount-target="percentageWrap"
            class="<%= "hidden" unless vendor_invoice.discount_type == "percentage" %>">
@@ -86,7 +86,7 @@
               value: vendor_invoice.discount_type == "percentage" ? vendor_invoice.discount_value : nil,
               step: 0.01, min: 0, max: 100,
               class: input_class,
-              data: { vendor_invoice_discount_target: "percentageInput percentageField" },
+              data: { vendor_invoice_discount_target: "percentageInput percentageField", action: "input->vendor-invoice-lines#recalculate" },
               disabled: vendor_invoice.discount_type != "percentage" %>
       </div>
       <div data-vendor-invoice-discount-target="fixedWrap"
@@ -96,7 +96,7 @@
               vendor_invoice_discount_amount_dollars(vendor_invoice),
               step: 0.01, min: 0,
               class: input_class,
-              data: { vendor_invoice_discount_target: "fixedInput fixedField" },
+              data: { vendor_invoice_discount_target: "fixedInput fixedField", action: "input->vendor-invoice-lines#recalculate" },
               disabled: vendor_invoice.discount_type != "fixed_amount" %>
       </div>
       <div class="sm:col-span-2">
@@ -105,22 +105,59 @@
               class: "#{input_class} resize-y min-h-[4rem]",
               placeholder: t("inventory.vendor_invoices.discount_notes_placeholder") %>
       </div>
-      <% if estimated_cents.positive? %>
-        <div class="sm:col-span-2 rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3 text-sm text-gray-700 space-y-1">
-          <div class="flex justify-between gap-4">
-            <span><%= t("inventory.vendor_invoices.subtotal") %></span>
-            <span class="font-semibold tabular-nums"><%= format_money(estimated_cents) %></span>
+      <div class="sm:col-span-2 rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3 text-sm text-gray-700 space-y-1 <%= "hidden" if estimated_cents.zero? %>"
+           data-vendor-invoice-lines-target="discountPreviewWrap">
+        <div class="flex justify-between gap-4">
+          <span><%= t("inventory.vendor_invoices.subtotal") %></span>
+          <span class="font-semibold tabular-nums"
+                data-vendor-invoice-lines-target="subtotalDisplay"><%= format_money(estimated_cents) %></span>
+        </div>
+        <% if vendor_invoice.discounted? %>
+          <div class="flex justify-between gap-4 text-emerald-700">
+            <span><%= vendor_invoice_discount_label(vendor_invoice) %></span>
+            <span class="font-semibold tabular-nums">-<%= format_money(vendor_invoice.discount_cents) %></span>
           </div>
-          <% if vendor_invoice.discounted? %>
-            <div class="flex justify-between gap-4 text-emerald-700">
-              <span><%= vendor_invoice_discount_label(vendor_invoice) %></span>
-              <span class="font-semibold tabular-nums">-<%= format_money(vendor_invoice.discount_cents) %></span>
-            </div>
-          <% end %>
-          <div class="flex justify-between gap-4 border-t border-gray-200 pt-2 font-semibold text-gray-900">
-            <span><%= t("inventory.vendor_invoices.total") %></span>
-            <span class="tabular-nums"><%= format_money(vendor_invoice.total_cents.positive? ? vendor_invoice.total_cents : [estimated_cents - vendor_invoice.discount_cents, 0].max) %></span>
+        <% end %>
+        <% if vendor_invoice.adjusted? %>
+          <div class="flex justify-between gap-4 text-blue-700">
+            <span><%= t("inventory.vendor_invoices.adjustment_applied") %></span>
+            <span class="font-semibold tabular-nums">
+              <%= vendor_invoice.adjustment_cents.positive? ? "+" : "" %><%= format_money(vendor_invoice.adjustment_cents) %>
+            </span>
           </div>
+        <% end %>
+        <div class="flex justify-between gap-4 border-t border-gray-200 pt-2 font-semibold text-gray-900">
+          <span><%= t("inventory.vendor_invoices.total") %></span>
+          <span class="tabular-nums"
+                data-vendor-invoice-lines-target="grandTotalDisplay"><%= format_money(vendor_invoice.total_cents.positive? ? vendor_invoice.total_cents : [estimated_cents - vendor_invoice.discount_cents + vendor_invoice.adjustment_cents.to_i, 0].max) %></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.form.adjustment") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.vendor_invoices.form.adjustment_hint") %></p>
+    </div>
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div>
+        <%= label_tag "vendor_invoice[adjustment_amount_dollars]",
+              t("inventory.vendor_invoices.form.adjustment_amount"), class: label_class %>
+        <%= number_field_tag "vendor_invoice[adjustment_amount_dollars]",
+              vendor_invoice.adjustment_cents.to_i.zero? ? nil : vendor_invoice.adjustment_cents.to_d / 100,
+              step: 0.01,
+              class: input_class,
+              placeholder: "0",
+              data: { action: "input->vendor-invoice-lines#recalculate" } %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.vendor_invoices.form.adjustment_hint") %></p>
+      </div>
+      <% if vendor_invoice.adjusted? %>
+        <div class="rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3 text-sm self-end">
+          <span class="text-gray-600"><%= t("inventory.vendor_invoices.adjustment_applied") %></span>
+          <span class="font-semibold ms-1 <%= vendor_invoice.adjustment_cents.positive? ? 'text-blue-700' : 'text-red-700' %>">
+            <%= vendor_invoice.adjustment_cents.positive? ? "+" : "" %><%= format_money(vendor_invoice.adjustment_cents) %>
+          </span>
         </div>
       <% end %>
     </div>
@@ -133,9 +170,12 @@
         <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.vendor_invoices.form.line_items_hint") %></p>
       </div>
       <div class="flex flex-wrap items-center gap-3">
-        <% if estimated_cents.positive? %>
-          <p class="text-sm text-gray-600"><%= t("inventory.vendor_invoices.total") %> <span class="font-semibold text-gray-900"><%= format_money(estimated_cents) %></span></p>
-        <% end %>
+        <p class="text-sm text-gray-600 <%= "hidden" if estimated_cents.zero? %>"
+           data-vendor-invoice-lines-target="runningTotalWrap">
+          <%= t("inventory.vendor_invoices.total") %>
+          <span class="font-semibold text-gray-900"
+                data-vendor-invoice-lines-target="runningTotal"><%= format_money(estimated_cents) %></span>
+        </p>
         <button type="button"
                 class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-2 rounded-xl border border-amber-200 transition-colors shrink-0"
                 data-action="vendor-invoice-lines#add">

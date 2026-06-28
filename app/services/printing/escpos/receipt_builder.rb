@@ -81,6 +81,16 @@ module Printing
         doc.bold(false)
         doc.rule
 
+        if @order.notes.present?
+          doc.blank
+          doc.align(:center)
+          doc.bold
+          doc.text(I18n.t("printing.receipt.order_notes"))
+          doc.bold(false)
+          doc.text(@order.notes)
+          doc.rule
+        end
+
         if @order.customer
           doc.blank
           doc.align(:center)

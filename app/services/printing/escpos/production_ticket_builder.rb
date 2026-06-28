@@ -42,10 +42,12 @@ module Printing
 
         if @order.notes.present?
           doc.blank
+          doc.align(:center)
           doc.bold
           doc.text(I18n.t("printing.production_ticket.order_notes"))
           doc.bold(false)
           doc.text(@order.notes)
+          doc.rule
         end
 
         doc.blank(4)

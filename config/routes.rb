@@ -38,6 +38,8 @@ Rails.application.routes.draw do
   post "pos/split", to: "pos#split"
   post "pos/merge", to: "pos#merge"
 
+  patch "pos/customer/:id", to: "pos/customers#update", as: :pos_customer
+
   namespace :pos do
     resource :shift, only: [:show] do
       post :open_drawer
@@ -54,6 +56,8 @@ Rails.application.routes.draw do
       member do
         post :print_receipt
         post :print_all
+        post :resume
+        patch :update_fulfillment
       end
     end
     resources :order_items, only: %i[create update destroy]

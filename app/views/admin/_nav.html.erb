@@ -6,6 +6,8 @@
 <% if current_user.owner? || current_user.manager? %>
   <%= link_to t("nav.menu"), admin_menu_items_path, class: nav_link %>
   <%= link_to t("nav.customers"), admin_customers_path, class: nav_link %>
+<% end %>
+<% if current_user.owner? || current_user.manager? || current_user.accountant? %>
   <%= link_to t("nav.orders"), admin_orders_path, class: nav_link %>
 <% end %>
 <% if current_user.can_access_admin? %>

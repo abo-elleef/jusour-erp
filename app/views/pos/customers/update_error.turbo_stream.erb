@@ -1,0 +1,5 @@
+<%= turbo_stream.replace "cart-meta-strip" do %>
+  <%= render "pos/cart_meta_strip", order: @order,
+        open_customer_dialog: true,
+        edit_customer_errors: @customer_form_errors %>
+<% end %>
