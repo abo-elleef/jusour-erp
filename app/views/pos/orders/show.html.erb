@@ -92,9 +92,11 @@
           <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2"><%= t("order.labels.payments") %></h3>
           <ul class="text-sm space-y-2">
             <% @payments.each do |payment| %>
-              <li class="flex justify-between text-gray-600 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2">
+              <li class="flex items-center justify-between text-gray-600 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2 gap-2">
                 <span class="font-medium text-gray-900"><%= payment_method_label(payment.payment_method) %></span>
-                <span class="tabular-nums font-semibold"><%= format_money(payment.amount_cents) %></span>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="tabular-nums font-semibold"><%= format_money(payment.amount_cents) %></span>
+                </div>
               </li>
             <% end %>
           </ul>

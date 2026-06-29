@@ -2,7 +2,7 @@
 
 module Admin
   class OrdersController < BaseController
-    before_action :set_order, only: %i[show void refund]
+    before_action :set_order, only: %i[show void refund change_payment_method]
 
     def index
       authorize Order
@@ -26,6 +26,29 @@ module Admin
       @order_items = @order.order_items.includes(:menu_item, :combo, :order_item_modifiers)
       @payments = @order.payments.includes(:processed_by_user).order(created_at: :desc)
       @order_events = @order.order_events.includes(:user).order(created_at: :desc)
+    end
+
+    def change_payment_method
+      authorize @order, :change_payment_method?
+
+      payment = @order.payments.find(params[:payment_id])
+      new_method = params[:payment_method].to_s
+
+      unless Payment::METHODS.include?(new_method)
+        return redirect_to admin_order_path(@order), alert: t("flash.pos.invalid_payment_method")
+      end
+
+      old_method = payment.payment_method
+      payment.update!(payment_method: new_method)
+
+      AuditLogEntry.record!(
+        action: "payment.change_method",
+        record: payment,
+        user: current_user,
+        changes_snapshot: { from: old_method, to: new_method }
+      )
+
+      redirect_to admin_order_path(@order), notice: t("flash.pos.payment_method_changed")
     end
 
     def void

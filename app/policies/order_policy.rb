@@ -47,6 +47,10 @@ class OrderPolicy < ApplicationPolicy
     user.owner? || user.manager?
   end
 
+  def change_payment_method?
+    user.owner? || user.manager?
+  end
+
   def void?
     (user.owner? || user.manager?) && !record.completed?
   end

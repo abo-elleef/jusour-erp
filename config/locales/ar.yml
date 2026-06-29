@@ -1371,6 +1371,7 @@ ar:
         resume: "استئناف"
     orders:
       edit_details: "تعديل التفاصيل"
+      change_payment_method: "تغيير طريقة الدفع"
 
   menu:
     modifier_groups:
@@ -2324,6 +2325,8 @@ ar:
       print_queued: "تم إرسال الإيصال إلى الطابعة."
       order_resumed: "تم تحميل الطلب في السلة."
       order_updated: "تم تحديث الطلب."
+      payment_method_changed: "تم تحديث طريقة الدفع."
+      invalid_payment_method: "طريقة دفع غير صالحة."
       print_all_queued: "تم إرسال جميع المطبوعات إلى الطابعات."
       already_paid: "هذا الطلب مدفوع بالكامل."
       customer_required: "أدخل هاتفًا أو بريدًا للعميل الجديد."

@@ -1359,6 +1359,7 @@ en:
         resume: "Resume"
     orders:
       edit_details: "Edit details"
+      change_payment_method: "Change payment method"
 
   menu:
     modifier_groups:
@@ -2296,6 +2297,8 @@ en:
       print_queued: "Receipt sent to printer."
       order_resumed: "Order loaded in cart."
       order_updated: "Order updated."
+      payment_method_changed: "Payment method updated."
+      invalid_payment_method: "Invalid payment method."
       print_all_queued: "All prints sent to printers."
       already_paid: "This order is already paid in full."
       customer_required: "Enter a phone or email for the new customer."

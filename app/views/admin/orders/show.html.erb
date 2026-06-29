@@ -51,6 +51,21 @@
         <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= format_money(@order.amount_due_cents) %></p>
       </div>
     <% end %>
+    <% if @payments.any? %>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.payment_method") %></p>
+        <div class="mt-1 space-y-0.5">
+          <% @payments.group_by(&:payment_method).each do |method, pmts| %>
+            <p class="text-sm font-semibold text-gray-900">
+              <%= payment_method_label(method) %>
+              <% if pmts.size > 1 || @payments.map(&:payment_method).uniq.size > 1 %>
+                <span class="text-xs font-normal text-gray-500 tabular-nums">(<%= format_money(pmts.sum(&:amount_cents)) %>)</span>
+              <% end %>
+            </p>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
   </div>
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -101,7 +116,49 @@
               <tbody class="divide-y divide-gray-100">
                 <% @payments.each do |payment| %>
                   <tr class="hover:bg-gray-50/60 transition-colors">
-                    <td class="p-3 pl-5 font-medium text-gray-900"><%= payment_method_label(payment.payment_method) %></td>
+                    <td class="p-3 pl-5 font-medium text-gray-900">
+                      <%= payment_method_label(payment.payment_method) %>
+                      <% if policy(@order).change_payment_method? %>
+                        <button type="button"
+                                onclick="document.getElementById('change-pm-<%= payment.id %>').showModal()"
+                                class="ms-2 text-xs font-semibold text-gray-400 hover:text-gray-700 px-1.5 py-0.5 rounded-lg hover:bg-gray-100 transition-colors">
+                          <%= t("actions.edit") %>
+                        </button>
+                        <dialog id="change-pm-<%= payment.id %>"
+                                class="m-auto rounded-[28px] shadow-2xl border-0 p-0 w-80 max-w-[95vw] backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+                                onclick="if(event.target===this)this.close()">
+                          <div class="px-6 pt-6 pb-4 border-b border-stone-100 flex items-center justify-between">
+                            <div>
+                              <h3 class="text-base font-semibold text-stone-900"><%= t("pos.orders.change_payment_method") %></h3>
+                              <p class="text-xs text-stone-500 mt-0.5"><%= format_money(payment.amount_cents) %></p>
+                            </div>
+                            <button type="button" onclick="document.getElementById('change-pm-<%= payment.id %>').close()"
+                                    class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-stone-100 text-stone-500 transition-colors">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                          </div>
+                          <%= form_with url: change_payment_method_admin_order_path(@order), method: :patch,
+                                onsubmit: "document.getElementById('change-pm-#{payment.id}').close()" do |f| %>
+                            <%= hidden_field_tag :payment_id, payment.id %>
+                            <div class="px-6 py-4 space-y-2">
+                              <% Payment::METHODS.excluding("card", "apple_pay", "google_pay", "gift_card").each do |method| %>
+                                <label class="flex items-center gap-3 rounded-xl border px-3 py-2.5 cursor-pointer transition-colors <%= payment.payment_method == method ? 'border-stone-400 bg-stone-100' : 'border-stone-200 hover:bg-stone-50' %>">
+                                  <%= radio_button_tag :payment_method, method, payment.payment_method == method, class: "text-stone-800 focus:ring-stone-500" %>
+                                  <span class="text-sm font-medium text-stone-900"><%= payment_method_label(method) %></span>
+                                </label>
+                              <% end %>
+                            </div>
+                            <div class="flex justify-end gap-2 px-6 pb-6">
+                              <button type="button" onclick="document.getElementById('change-pm-<%= payment.id %>').close()"
+                                      class="rounded-full px-5 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 transition-colors">
+                                <%= t("actions.cancel") %>
+                              </button>
+                              <%= f.submit t("actions.save"), class: "rounded-full px-5 py-2 text-sm font-medium bg-stone-800 text-white hover:bg-stone-700 transition-colors cursor-pointer" %>
+                            </div>
+                          <% end %>
+                        </dialog>
+                      <% end %>
+                    </td>
                     <td class="p-3">
                       <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= payment_status_class(payment.status) %> <%= payment_status_border_class(payment.status) %>">
                         <%= payment_status_label(payment.status) %>

@@ -131,6 +131,7 @@ Rails.application.routes.draw do
       member do
         post :void
         post :refund
+        patch :change_payment_method
       end
     end
 
