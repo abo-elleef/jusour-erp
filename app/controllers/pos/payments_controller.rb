@@ -15,12 +15,13 @@ module Pos
       @order.update!(tip_cents: tip_cents) if tip_cents.positive?
 
       case params[:payment_method]
-      when "cash"
+      when "cash", "instapay", "vodafone_cash"
         Payments::CashPaymentService.call(
           order: @order,
           amount_cents: (params[:amount_pounds].to_f * 100).round,
           tip_cents: 0,
-          user: current_user
+          user: current_user,
+          payment_method: params[:payment_method]
         )
       when "card"
         process_card_payment

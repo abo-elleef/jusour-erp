@@ -2,9 +2,9 @@
 
 module Payments
   class CashPaymentService
-    def self.call(order:, amount_cents:, tip_cents:, user:)
+    def self.call(order:, amount_cents:, tip_cents:, user:, payment_method: "cash")
       order.payments.create!(
-        payment_method: "cash",
+        payment_method: payment_method,
         amount_cents: amount_cents,
         tip_cents: tip_cents,
         status: "completed",

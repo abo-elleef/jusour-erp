@@ -507,6 +507,8 @@ en:
       card: "Card"
       gift_card: "Gift card"
       stripe: "Stripe"
+      instapay: "InstaPay"
+      vodafone_cash: "Vodafone Cash"
     statuses:
       pending: "Pending"
       completed: "Completed"
@@ -520,6 +522,10 @@ en:
     pay_cash: "Pay Cash"
     pay_card: "Pay Card (Terminal)"
     gift_card_code: "Gift card code"
+    instapay_amount: "InstaPay amount"
+    pay_instapay: "Pay via InstaPay"
+    vodafone_cash_amount: "Vodafone Cash amount"
+    pay_vodafone_cash: "Pay via Vodafone Cash"
 
   inventory:
     stock_status:
@@ -1318,6 +1324,8 @@ en:
       start_shift: "Start shift"
       time_tracking: "Time tracking"
       drawer_open: "Drawer open"
+      drawer_open_badge: "Drawer open"
+      drawer_closed_badge: "Drawer closed"
       drawer_reconciled: "Drawer reconciled for today"
       open_drawer_heading: "Open drawer"
       open_drawer_hint: "Count your starting float before taking cash payments."
@@ -1332,6 +1340,8 @@ en:
       variance_detected: "Variance detected — manager approval required"
       not_clocked_in: "You are not clocked in."
       back_to_shift_orders: "Shift orders"
+      digital_payments_title: "Digital payments this session"
+      digital_payments_hint: "These amounts are in your mobile wallet — not in the cash drawer."
       tabs:
         label: "Shift sections"
         shift: "Shift"

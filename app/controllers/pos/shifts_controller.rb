@@ -62,6 +62,7 @@ module Pos
       authorize @open_session, :count?
       ::Accounting::CashReconciliationService.new(@open_session).compute_expected!
       @requires_manager_pin = false
+      @digital_payment_totals = load_digital_payment_totals
     end
 
     def reconcile
@@ -141,6 +142,18 @@ module Pos
           .order(created_at: :desc)
       else
         Order.none
+      end
+    end
+
+    def load_digital_payment_totals
+      session_start = @open_session.created_at
+      session_end   = Time.current
+      Payment::DIGITAL_WALLET_METHODS.index_with do |method|
+        Payment.joins(:order)
+          .where(orders: { user_id: @open_session.user_id })
+          .where(payment_method: method, status: "completed")
+          .where(created_at: session_start..session_end)
+          .sum(:amount_cents).to_i
       end
     end
 

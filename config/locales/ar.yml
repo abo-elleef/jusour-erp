@@ -507,6 +507,8 @@ ar:
       card: "بطاقة"
       gift_card: "بطاقة هدية"
       stripe: "Stripe"
+      instapay: "إنستاباي"
+      vodafone_cash: "فودافون كاش"
     statuses:
       pending: "معلّق"
       completed: "مكتمل"
@@ -520,6 +522,10 @@ ar:
     pay_cash: "دفع نقدي"
     pay_card: "دفع بالبطاقة (جهاز)"
     gift_card_code: "رمز بطاقة الهدية"
+    instapay_amount: "مبلغ إنستاباي"
+    pay_instapay: "دفع عبر إنستاباي"
+    vodafone_cash_amount: "مبلغ فودافون كاش"
+    pay_vodafone_cash: "دفع عبر فودافون كاش"
 
   inventory:
     stock_status:
@@ -1330,6 +1336,8 @@ ar:
       start_shift: "بدء الوردية"
       time_tracking: "تتبع الوقت"
       drawer_open: "الصندوق مفتوح"
+      drawer_open_badge: "الصندوق مفتوح"
+      drawer_closed_badge: "الصندوق مغلق"
       drawer_reconciled: "تمت تسوية الصندوق لهذا اليوم"
       open_drawer_heading: "فتح الصندوق"
       open_drawer_hint: "عد رصيد الافتتاح قبل استلام المدفوعات النقدية."
@@ -1344,6 +1352,8 @@ ar:
       variance_detected: "تم رصد فرق — يلزم موافقة المدير"
       not_clocked_in: "لم تسجّل حضورك."
       back_to_shift_orders: "طلبات الوردية"
+      digital_payments_title: "المدفوعات الإلكترونية في هذه الجلسة"
+      digital_payments_hint: "هذه المبالغ في محفظتك الإلكترونية — وليست في درج النقد."
       tabs:
         label: "أقسام الوردية"
         shift: "الوردية"

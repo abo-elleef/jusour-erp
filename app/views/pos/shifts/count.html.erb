@@ -20,6 +20,20 @@
       <p><%= t("accounting.cash_drawer.expected_line", amount: number_with_precision(@open_session.expected_cash_cents.to_f / 100, precision: 2, delimiter: ',')) %></p>
     </div>
 
+    <% if @digital_payment_totals&.any? { |_, v| v.positive? } %>
+      <div class="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 mb-6 text-sm space-y-2">
+        <p class="font-semibold text-blue-900 text-xs uppercase tracking-wide"><%= t("pos.shift.digital_payments_title") %></p>
+        <% @digital_payment_totals.each do |method, cents| %>
+          <% next unless cents.positive? %>
+          <div class="flex justify-between items-center">
+            <span class="text-blue-800 font-medium"><%= payment_method_label(method) %></span>
+            <span class="tabular-nums font-semibold text-blue-900"><%= format_money(cents) %></span>
+          </div>
+        <% end %>
+        <p class="text-xs text-blue-700 mt-1"><%= t("pos.shift.digital_payments_hint") %></p>
+      </div>
+    <% end %>
+
     <% if @requires_manager_pin %>
       <div class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 mb-6 text-sm space-y-1">
         <p class="font-semibold text-amber-900"><%= t("pos.shift.variance_detected") %></p>
