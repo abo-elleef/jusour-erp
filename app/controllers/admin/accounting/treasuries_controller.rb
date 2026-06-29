@@ -9,7 +9,12 @@ module Admin
         authorize Treasury
         @q = Treasury.ransack(params[:q])
         @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
-        @treasuries = @q.result.ordered
+        base = @q.result
+        @type_counts = base.group(:treasury_type).count
+        @active_type = params[:type].presence
+        @active_type = nil unless Treasury::TYPES.include?(@active_type)
+        scoped = @active_type ? base.where(treasury_type: @active_type) : base
+        @treasuries = scoped.ordered
         @total_balance_cents = Treasury.active.payable.sum(:balance_cents)
         @supplier_ap_balance_cents = Treasury.active.supplier_ap.sum(:balance_cents)
       end
