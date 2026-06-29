@@ -916,6 +916,7 @@ ar:
         quantity: "الكمية"
         quantity_unit_hint: "بالوحدة المعروضة"
         unit_price: "سعر الوحدة"
+        line_total: "إجمالي البند"
         expires_on: "تاريخ الانتهاء"
         expires_on_hint: "يُعبَّأ تلقائياً من تاريخ الاستلام + مدة صلاحية المكوّن عند تعيينها."
         batch_reference: "مرجع الدفعة"

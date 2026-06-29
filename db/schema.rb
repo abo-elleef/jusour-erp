@@ -1041,6 +1041,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000005) do
     t.text "line_notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "line_total_cents", default: 0, null: false
     t.index ["ingredient_id"], name: "index_vendor_invoice_lines_on_ingredient_id"
     t.index ["vendor_invoice_id"], name: "index_vendor_invoice_lines_on_vendor_invoice_id"
   end

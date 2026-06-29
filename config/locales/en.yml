@@ -913,6 +913,7 @@ en:
         quantity: "Qty"
         quantity_unit_hint: "In the unit shown"
         unit_price: "Unit price"
+        line_total: "Line total"
         expires_on: "Expires on"
         expires_on_hint: "Prefilled from received date + ingredient shelf life when set."
         batch_reference: "Batch ref"

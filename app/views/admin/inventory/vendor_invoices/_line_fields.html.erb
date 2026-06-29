@@ -4,7 +4,7 @@
 <% ingredient = line.ingredient || @ingredients.find { |i| i.id == line.ingredient_id } %>
 <% unit_text = ingredient ? ingredient_unit_label(ingredient.unit) : "—" %>
 
-<div class="px-5 py-4 lg:grid lg:grid-cols-12 lg:gap-3 lg:items-end space-y-3 lg:space-y-0"
+<div class="px-5 py-4 lg:grid lg:grid-cols-13 lg:gap-3 lg:items-end space-y-3 lg:space-y-0"
      data-vendor-invoice-lines-target="row">
   <%= f.hidden_field :_destroy, value: false, data: { vendor_invoice_lines_target: "destroy" } %>
   <%= f.hidden_field :id %>
@@ -31,10 +31,21 @@
           data: { action: "input->vendor-invoice-lines#recalculate" } %>
     <p class="text-xs text-gray-500 mt-1 lg:hidden"><%= t("inventory.vendor_invoices.form.quantity_unit_hint") %></p>
   </div>
+  <div class="lg:col-span-1 flex items-end pb-2.5">
+    <div>
+      <span class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("inventory.vendor_invoices.form.unit_price") %></span>
+      <span class="text-sm font-medium text-gray-500 tabular-nums"
+            data-vendor-invoice-lines-target="unitPriceDisplay">
+        <%= vendor_invoice_line_unit_price_dollars(line)&.then { |v| "ج.م. #{v}" } || "—" %>
+      </span>
+    </div>
+  </div>
   <div class="lg:col-span-1">
-    <label class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("inventory.vendor_invoices.form.unit_price") %></label>
-    <%= f.number_field :unit_price_dollars, value: vendor_invoice_line_unit_price_dollars(line), step: 0.01, min: 0, placeholder: "0.00", class: input_class,
-          data: { vendor_invoice_lines_target: "unitPriceDollars", action: "input->vendor-invoice-lines#recalculate" } %>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("inventory.vendor_invoices.form.line_total") %></label>
+    <%= number_field_tag "#{f.object_name}[line_total_dollars]",
+          vendor_invoice_line_line_total_dollars(line),
+          step: 0.01, min: 0, placeholder: "0.00", class: input_class,
+          data: { vendor_invoice_lines_target: "lineTotalDollars", action: "input->vendor-invoice-lines#recalculate" } %>
   </div>
   <div class="lg:col-span-2">
     <label class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("inventory.vendor_invoices.form.expires_on") %></label>

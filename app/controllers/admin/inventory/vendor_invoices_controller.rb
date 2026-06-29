@@ -210,12 +210,12 @@ module Admin
           :discount_type, :discount_value, :discount_amount_dollars, :discount_notes, :invoice_image,
           :adjustment_amount_dollars,
           vendor_invoice_lines_attributes: %i[
-            id ingredient_id quantity unit_price_dollars expires_on batch_reference line_notes _destroy
+            id ingredient_id quantity line_total_dollars expires_on batch_reference line_notes _destroy
           ]
         )
         permitted[:vendor_invoice_lines_attributes]&.each_value do |attrs|
-          dollars = attrs.delete(:unit_price_dollars)
-          attrs[:unit_price_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
+          dollars = attrs.delete(:line_total_dollars)
+          attrs[:line_total_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
         end
         normalize_discount_params!(permitted)
         normalize_adjustment_params!(permitted)

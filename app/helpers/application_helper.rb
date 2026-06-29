@@ -406,6 +406,13 @@ module ApplicationHelper
     (cents.to_d / 100).round(2)
   end
 
+  def vendor_invoice_line_line_total_dollars(line)
+    cents = line.line_total_cents.to_i
+    return nil if cents.zero? && line.new_record?
+
+    (cents.to_d / 100).round(2)
+  end
+
   def vendor_invoice_discount_amount_dollars(invoice)
     return nil unless invoice.discount_type == "fixed_amount"
     return nil if invoice.discount_value.blank?

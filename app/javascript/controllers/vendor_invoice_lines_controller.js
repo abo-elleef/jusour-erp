@@ -2,7 +2,8 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = [
-    "list", "template", "row", "unitLabel", "expiresOn", "unitPriceDollars",
+    "list", "template", "row", "unitLabel", "expiresOn",
+    "lineTotalDollars", "unitPriceDisplay",
     "runningTotal", "runningTotalWrap", "subtotalDisplay", "grandTotalDisplay", "discountPreviewWrap"
   ]
   static values = { units: Object, shelfLifeDays: Object, unitPriceDollars: Object }
@@ -75,16 +76,6 @@ export default class extends Controller {
   }
 
   syncRowUnitPrice(row, ingredientId = null) {
-    const priceField = row.querySelector("[data-vendor-invoice-lines-target='unitPriceDollars']")
-    if (!priceField) return
-
-    const hidden = row.querySelector("input[name*='[ingredient_id]']")
-    const id = ingredientId ?? hidden?.value
-    const dollars = id ? this.unitPriceDollarsValue[id] : null
-
-    if (dollars == null) return
-
-    priceField.value = dollars
     this.recalculate()
   }
 
@@ -95,8 +86,19 @@ export default class extends Controller {
       if (row.classList.contains("hidden")) return
 
       const qty = parseFloat(row.querySelector("input[name*='[quantity]']")?.value) || 0
-      const price = parseFloat(row.querySelector("[data-vendor-invoice-lines-target='unitPriceDollars']")?.value) || 0
-      subtotalCents += Math.round(qty * price * 100)
+      const lineTotalDollars = parseFloat(row.querySelector("[data-vendor-invoice-lines-target='lineTotalDollars']")?.value) || 0
+      const lineCents = Math.round(lineTotalDollars * 100)
+      subtotalCents += lineCents
+
+      const unitPriceDisplay = row.querySelector("[data-vendor-invoice-lines-target='unitPriceDisplay']")
+      if (unitPriceDisplay) {
+        if (lineCents > 0 && qty > 0) {
+          const unitCents = lineCents / qty
+          unitPriceDisplay.textContent = this.formatMoney(Math.round(unitCents))
+        } else {
+          unitPriceDisplay.textContent = "—"
+        }
+      }
     })
 
     if (this.hasRunningTotalTarget) {
