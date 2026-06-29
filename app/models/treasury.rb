@@ -25,6 +25,9 @@ class Treasury < ApplicationRecord
   validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :treasury_type, presence: true, inclusion: { in: TYPES }
 
+  # Supplier AP ledgers are system-managed; never let their type be reassigned.
+  before_update :lock_supplier_ap_type
+
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }
   scope :cash_drawers, -> { where(treasury_type: "cash_drawer") }
@@ -44,7 +47,17 @@ class Treasury < ApplicationRecord
     []
   end
 
+  def supplier_ap?
+    treasury_type == "supplier_ap"
+  end
+
   def apply_balance_delta!(delta_cents)
     update!(balance_cents: balance_cents + delta_cents)
+  end
+
+  private
+
+  def lock_supplier_ap_type
+    self.treasury_type = treasury_type_was if treasury_type_changed? && treasury_type_was == "supplier_ap"
   end
 end

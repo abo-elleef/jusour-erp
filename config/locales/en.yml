@@ -2076,6 +2076,7 @@ en:
       types_label: "Filter treasuries by type"
       filter_all: "All"
       no_treasuries: "No treasuries found."
+      supplier_ap_type_locked: "This is a system-managed supplier AP ledger; its type cannot be changed."
       manual_adjustment: "Manual adjustment"
       adjustment_hint: "Use negative cents for money out."
       adjustment_placeholder: "Reason for adjustment"

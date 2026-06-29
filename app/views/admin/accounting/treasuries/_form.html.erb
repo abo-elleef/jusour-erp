@@ -19,9 +19,16 @@
       </div>
       <div>
         <%= f.label :treasury_type, t("accounting.treasuries.treasury_type"), class: label_class %>
-        <%= f.select :treasury_type,
-              (Treasury::TYPES - ["supplier_ap"]).map { |type| [accounting_treasury_type(type), type] },
-              {}, class: "#{pos_input_class} appearance-none" %>
+        <% if treasury.persisted? && treasury.supplier_ap? %>
+          <%= f.text_field :treasury_type, value: accounting_treasury_type(treasury.treasury_type),
+                readonly: true, disabled: true,
+                class: "#{pos_input_class} bg-gray-50 text-gray-500 cursor-not-allowed" %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.treasuries.supplier_ap_type_locked") %></p>
+        <% else %>
+          <%= f.select :treasury_type,
+                Treasury::TYPES.map { |type| [accounting_treasury_type(type), type] },
+                {}, class: "#{pos_input_class} appearance-none" %>
+        <% end %>
       </div>
       <% if treasury.new_record? %>
         <div>

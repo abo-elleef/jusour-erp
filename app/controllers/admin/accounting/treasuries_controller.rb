@@ -96,7 +96,10 @@ module Admin
       end
 
       def treasury_params
-        params.require(:treasury).permit(:name, :treasury_type, :opening_balance_pounds, :active, :is_default, :position, :notes)
+        permitted = params.require(:treasury).permit(:name, :treasury_type, :opening_balance_pounds, :active, :is_default, :position, :notes)
+        # Supplier AP ledgers are managed by the system — their type can never change.
+        permitted.delete(:treasury_type) if @treasury&.supplier_ap?
+        permitted
       end
 
       def clear_other_defaults!
