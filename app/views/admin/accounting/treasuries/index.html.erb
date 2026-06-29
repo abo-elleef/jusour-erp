@@ -37,9 +37,9 @@
     <table class="w-full text-sm">
       <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
         <tr>
-          <th class="p-3 ps-5 text-start"><%= t("accounting.treasuries.name") %></th>
+          <th class="p-3 ps-5 text-start"><%= treasury_index_sort_link(t("accounting.treasuries.name"), "name", sort: @sort, direction: @direction) %></th>
           <th class="p-3 text-start"><%= t("accounting.treasuries.treasury_type") %></th>
-          <th class="p-3 text-end"><%= t("accounting.treasuries.balance") %></th>
+          <th class="p-3 text-end"><%= treasury_index_sort_link(t("accounting.treasuries.balance"), "balance_cents", sort: @sort, direction: @direction) %></th>
           <th class="p-3 text-start"><%= t("accounting.treasuries.status") %></th>
           <th class="p-3 pe-5 text-end"></th>
         </tr>

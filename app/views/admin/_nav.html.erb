@@ -1,44 +1,43 @@
 <%# Role-aware admin navigation %>
-<% nav_link = "block py-2.5 px-2 rounded-lg hover:bg-gray-700 whitespace-nowrap" %>
 <% section = "text-xs uppercase tracking-wide text-gray-400 mt-2 mb-1 block w-full" %>
 
-<%= link_to t("nav.dashboard"), admin_root_path, class: nav_link %>
+<%= link_to t("nav.dashboard"), admin_root_path, class: admin_nav_link_class(admin_nav_active?("admin/dashboard")) %>
 <% if current_user.owner? || current_user.manager? %>
-  <%= link_to t("nav.menu"), admin_menu_items_path, class: nav_link %>
-  <%= link_to t("nav.customers"), admin_customers_path, class: nav_link %>
+  <%= link_to t("nav.menu"), admin_menu_items_path, class: admin_nav_link_class(admin_nav_active?("admin/menu_items", "admin/categories", "admin/combos", "admin/modifiers", "admin/modifier_groups", "admin/tax_rates")) %>
+  <%= link_to t("nav.customers"), admin_customers_path, class: admin_nav_link_class(admin_nav_active?("admin/customers")) %>
 <% end %>
 <% if current_user.owner? || current_user.manager? || current_user.accountant? %>
-  <%= link_to t("nav.orders"), admin_orders_path, class: nav_link %>
+  <%= link_to t("nav.orders"), admin_orders_path, class: admin_nav_link_class(admin_nav_active?("admin/orders")) %>
 <% end %>
 <% if current_user.can_access_admin? %>
-  <%= link_to t("nav.inventory"), admin_inventory_ingredients_path, class: nav_link %>
+  <%= link_to t("nav.inventory"), admin_inventory_ingredients_path, class: admin_nav_link_class(admin_nav_active?("admin/inventory")) %>
 <% end %>
 <% if current_user.owner? || current_user.manager? %>
-  <%= link_to t("nav.locations"), admin_locations_path, class: nav_link %>
+  <%= link_to t("nav.locations"), admin_locations_path, class: admin_nav_link_class(admin_nav_active?("admin/locations")) %>
 <% end %>
 <% if current_user.can_access_admin? %>
-  <%= link_to t("nav.accounting"), admin_accounting_root_path, class: nav_link %>
-  <%= link_to admin_notifications_path, class: "#{nav_link} relative" do %>
+  <%= link_to t("nav.accounting"), admin_accounting_root_path, class: admin_nav_link_class(admin_nav_active?("admin/accounting")) %>
+  <%= link_to admin_notifications_path, class: "#{admin_nav_link_class(admin_nav_active?("admin/notifications"))} relative" do %>
     <%= t("nav.notifications") %>
     <% unread = current_user.notifications.unread.count %>
     <% if unread.positive? %><span class="ms-1 bg-red-500 text-white text-xs px-1.5 rounded-full"><%= unread %></span><% end %>
   <% end %>
 <% end %>
 <% if current_user.owner? || current_user.accountant? %>
-  <%= link_to t("nav.staff"), admin_users_path, class: nav_link %>
+  <%= link_to t("nav.staff"), admin_users_path, class: admin_nav_link_class(admin_nav_active?("admin/users")) %>
 <% end %>
 <% if current_user.owner? %>
-  <%= link_to t("nav.printers"), admin_printers_path, class: nav_link %>
-  <%= link_to t("nav.settings"), admin_settings_path, class: nav_link %>
+  <%= link_to t("nav.printers"), admin_printers_path, class: admin_nav_link_class(admin_nav_active?("admin/printers")) %>
+  <%= link_to t("nav.settings"), admin_settings_path, class: admin_nav_link_class(admin_nav_active?("admin/settings")) %>
 <% elsif current_user.manager? %>
-  <%= link_to t("nav.printers"), admin_printers_path, class: nav_link %>
+  <%= link_to t("nav.printers"), admin_printers_path, class: admin_nav_link_class(admin_nav_active?("admin/printers")) %>
 <% end %>
 <% if current_user.can_access_pos? %>
-  <%= link_to t("nav.pos"), pos_path, class: nav_link %>
+  <%= link_to t("nav.pos"), pos_path, class: admin_nav_link_class %>
 <% end %>
 <% if current_user.can_access_kds? %>
-  <%= link_to t("nav.kitchen"), kitchen_path, class: nav_link %>
+  <%= link_to t("nav.kitchen"), kitchen_path, class: admin_nav_link_class %>
 <% end %>
 <% if current_user.can_access_production? %>
-  <%= link_to t("nav.production"), production_path, class: nav_link %>
+  <%= link_to t("nav.production"), production_path, class: admin_nav_link_class %>
 <% end %>
