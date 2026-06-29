@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "list", "template", "row", "unitLabel", "expiresOn",
-    "lineTotalDollars", "unitPriceDisplay",
+    "lineTotalDollars", "unitPriceDisplay", "detailsModal", "detailsDot",
     "runningTotal", "runningTotalWrap", "subtotalDisplay", "grandTotalDisplay", "discountPreviewWrap"
   ]
   static values = { units: Object, shelfLifeDays: Object, unitPriceDollars: Object }
@@ -36,6 +36,32 @@ export default class extends Controller {
       row.remove()
     }
     this.recalculate()
+  }
+
+  openDetails(event) {
+    event.preventDefault()
+    const row = event.target.closest("[data-vendor-invoice-lines-target='row']")
+    row.querySelector("[data-vendor-invoice-lines-target='detailsModal']")?.classList.remove("hidden")
+  }
+
+  closeDetails(event) {
+    event.preventDefault()
+    const modal = event.target.closest("[data-vendor-invoice-lines-target='detailsModal']")
+    modal?.classList.add("hidden")
+
+    const row = event.target.closest("[data-vendor-invoice-lines-target='row']")
+    this.syncDetailsDot(row)
+  }
+
+  syncDetailsDot(row) {
+    if (!row) return
+
+    const dot = row.querySelector("[data-vendor-invoice-lines-target='detailsDot']")
+    if (!dot) return
+
+    const batch = row.querySelector("input[name*='[batch_reference]']")?.value?.trim()
+    const notes = row.querySelector("[name*='[line_notes]']")?.value?.trim()
+    dot.classList.toggle("hidden", !batch && !notes)
   }
 
   ingredientChanged(event) {

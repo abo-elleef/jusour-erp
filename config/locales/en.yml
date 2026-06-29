@@ -918,6 +918,8 @@ en:
         expires_on_hint: "Prefilled from received date + ingredient shelf life when set."
         batch_reference: "Batch ref"
         line_notes: "Line notes"
+        details: "Details"
+        batch_and_notes: "Batch & notes"
         add_line: "Add line"
         submit: "Receive invoice"
         submit_update: "Save changes"

@@ -48,3 +48,10 @@ class Treasury < ApplicationRecord
     update!(balance_cents: balance_cents + delta_cents)
   end
 end
+
+id = "27e99359-fa78-4e5c-aa77-f55c37e86c64"
+t8 = Treasury.find(id)
+t8.update!(balance_cents: t8.balance_cents * -1)
+
+t8.treasury_transactions.first
+.update!(amount_cents: t8.treasury_transactions.first.amount_cents * -1, balance_after_cents: t8.treasury_transactions.first.amount_cents * -1)

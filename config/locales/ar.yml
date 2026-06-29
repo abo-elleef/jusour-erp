@@ -921,6 +921,8 @@ ar:
         expires_on_hint: "يُعبَّأ تلقائياً من تاريخ الاستلام + مدة صلاحية المكوّن عند تعيينها."
         batch_reference: "مرجع الدفعة"
         line_notes: "ملاحظات البند"
+        details: "تفاصيل"
+        batch_and_notes: "المرجع والملاحظات"
         add_line: "إضافة بند"
         submit: "استلام الفاتورة"
         submit_update: "حفظ التغييرات"
