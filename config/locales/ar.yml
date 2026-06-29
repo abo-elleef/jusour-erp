@@ -2100,6 +2100,7 @@ ar:
       types_label: "تصفية الخزائن حسب النوع"
       filter_all: "الكل"
       no_treasuries: "لا توجد خزائن."
+      filter_total: "إجمالي الأرصدة — %{type}"
       supplier_ap_type_locked: "هذه خزينة ذمم موردين يديرها النظام؛ لا يمكن تغيير نوعها."
       manual_adjustment: "تعديل يدوي"
       adjustment_hint: "استخدم سنتات سالبة للصرف."

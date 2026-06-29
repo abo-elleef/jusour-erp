@@ -11,6 +11,16 @@
           class: "border border-amber-300 text-amber-800 text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-amber-50 shrink-0" %>
   </div>
 
+  <% unless @active_type == "safe" %>
+    <% owed = @active_type == "supplier_ap" %>
+    <div class="rounded-2xl border p-5 mb-6 max-w-sm <%= owed ? 'border-red-200 bg-red-50/70' : 'border-green-200 bg-green-50/70' %>">
+      <p class="text-xs font-semibold uppercase tracking-wide <%= owed ? 'text-red-800' : 'text-green-800' %>">
+        <%= t("accounting.treasuries.filter_total", type: accounting_treasury_type(@active_type)) %>
+      </p>
+      <p class="text-3xl font-bold tabular-nums mt-1 <%= owed ? 'text-red-950' : 'text-green-950' %>"><%= format_money(@filter_total_cents) %></p>
+    </div>
+  <% end %>
+
   <% pill = ->(active) { "inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-colors whitespace-nowrap #{active ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}" } %>
   <% badge = ->(active) { "text-xs px-1.5 py-0.5 rounded-full tabular-nums #{active ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}" } %>
   <nav class="flex flex-wrap gap-2 mb-5" aria-label="<%= t("accounting.treasuries.types_label") %>">

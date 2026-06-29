@@ -15,6 +15,8 @@ module Admin
         @active_type = Treasury::TYPES.first unless Treasury::TYPES.include?(@active_type)
         scoped = @active_type ? base.where(treasury_type: @active_type) : base
         @treasuries = scoped.ordered
+        # Aggregate balance of the treasuries matching the active type filter.
+        @filter_total_cents = scoped.sum(:balance_cents)
       end
 
       def show
