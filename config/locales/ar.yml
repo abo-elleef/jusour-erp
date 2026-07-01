@@ -418,29 +418,23 @@ ar:
       undo_record: "تراجع"
       undo_record_confirm: "إلغاء تسجيل راتب %{name} (%{month})؟ يمكنك تعديل الخصومات والمكافآت والتسجيل مجدداً."
       remaining_pay: "المتبقي للدفع"
+      staff_meals: "وجبات الموظفين"
       paid_from: "دُفع %{amount} من %{treasury} في %{date}"
       fully_advanced_hint: "لا يوجد متبقٍ للدفع — الراتب مُغطّى بالكامل بالسلف."
       record_fully_advanced_confirm: "تسجيل الراتب بدون دفعة من الخزينة؟ الرصيد المتبقي صفر."
       advances:
         title: "السلف"
         heading: "سلف الراتب"
-        hint: "السلف تُدفع مبكراً من راتب الشهر وتُخصم من المتبقي."
-        policy_hint: "السياسة المعتادة: سلفة منتصف الشهر حوالي اليوم 15، وسلفة نهاية الشهر حوالي اليوم 25. يمكنك تسجيل أي نافذة في أي تاريخ."
-        slot_option: "%{label} (حد أقصى %{max})"
-        all_slots_used: "تم استخدام نافذتي السلف لهذا الشهر."
-        slot: "النافذة"
+        hint: "السلف تُدفع مبكراً من الراتب وتُخصم من المتبقي."
         amount: "المبلغ"
         amount_cents: "المبلغ (سنت)"
         treasury: "دُفعت من"
         pay: "دفع سلفة"
-        max_hint: "الحد الأقصى لهذه النافذة: %{max}"
+        max_hint: "الحد الأقصى لهذا الشهر: %{max}"
+        date_hint: "اختر أي تاريخ — تُخصم السلفة من شهر ذلك التاريخ."
         notes_placeholder: "السبب (اختياري)"
-        no_remaining: "لا يوجد راتب متبقٍ متاح لسلفة في هذه النافذة."
         empty: "لا توجد سلف مدفوعة لهذا الشهر."
         remove_confirm: "إزالة هذه السلفة؟ سيُستعاد رصيد الخزينة."
-        slots:
-          mid_month: "منتصف الشهر (15)"
-          end_month: "نهاية الشهر (25)"
     payroll_portal:
       title: "معاينة الراتب"
       pin_title: "أدخل رمز PIN"
@@ -526,6 +520,12 @@ ar:
     pay_instapay: "دفع عبر إنستاباي"
     vodafone_cash_amount: "مبلغ فودافون كاش"
     pay_vodafone_cash: "دفع عبر فودافون كاش"
+    staff_meal: "وجبة موظف"
+    staff_meal_member: "الموظف"
+    select_staff_member: "اختر الموظف…"
+    staff_meal_amount: "الإجمالي للخصم"
+    staff_meal_from_treasury: "سيُخصم من: %{name}"
+    pay_staff_meal: "تسجيل وجبة موظف"
 
   inventory:
     stock_status:
@@ -1356,7 +1356,8 @@ ar:
       not_clocked_in: "لم تسجّل حضورك."
       back_to_shift_orders: "طلبات الوردية"
       digital_payments_title: "المدفوعات الإلكترونية في هذه الجلسة"
-      digital_payments_hint: "هذه المبالغ في محفظتك الإلكترونية — وليست في درج النقد."
+      digital_payments_hint: "ستُضاف هذه المبالغ إلى خزائنها عند إغلاق الدرج."
+      digital_payment_no_treasury: "لم تُحدد خزينة — لن تُسجَّل"
       tabs:
         label: "أقسام الوردية"
         shift: "الوردية"
@@ -1475,6 +1476,17 @@ ar:
         category: "تصنيف القائمة"
 
   admin:
+    accounting:
+      payment_method_treasuries:
+        title: "إعداد خزائن المدفوعات الإلكترونية"
+        description: "حدد الخزينة التي تستقبل أموال كل وسيلة دفع إلكترونية عند إغلاق الكاشير للدرج."
+        mapped_to: "← %{treasury}"
+        not_configured: "لم تُحدد خزينة — لن تُسجَّل المبالغ"
+        select_treasury: "اختر خزينة…"
+        saved: "تم حفظ ربط الخزينة."
+        removed: "تم حذف ربط الخزينة."
+        remove_confirm: "حذف هذا الربط؟ لن تُسجَّل المدفوعات الإلكترونية بهذه الطريقة في أي خزينة حتى تُعيد الربط."
+        hint: "تُسجَّل المبالغ تلقائياً عند إغلاق الكاشير للدرج. إذا لم تُحدد خزينة لوسيلة ما، فسيتم تجاهل مدفوعاتها."
     locations:
       title: "المواقع"
       description: "إدارة الفروع والمطبخ المركزي."
@@ -1939,6 +1951,7 @@ ar:
       cash_drawer: "درج النقد"
       audit_log: "سجل التدقيق"
       integrations: "التكاملات"
+      online_payment_setup: "المدفوعات الإلكترونية"
     shifts:
       morning: "صباحي"
       afternoon: "بعد الظهر"
@@ -1967,6 +1980,7 @@ ar:
       amount: "المبلغ"
       amount_cents: "المبلغ (سنتات)"
       reference_number: "رقم المرجع"
+      staff_meal_description: "وجبة موظف — %{name}"
       receipt: "إيصال"
       auto: "(تلقائي)"
       system: "(نظام)"
@@ -2131,13 +2145,16 @@ ar:
         payroll_salary: "راتب شهري"
         ap_invoice: "ذمم — فاتورة مستلمة"
         ap_payment: "ذمم — دفعة محوّلة"
+        staff_meal: "وجبة موظف"
+        online_payment: "دفع إلكتروني"
       transactions:
         drawer_open: "رصيد افتتاح — %{cashier} (%{shift}، %{date})"
         drawer_reconcile: "تسوية صندوق — %{cashier} (%{shift}، %{date})"
         transfer_out: "تحويل إلى %{treasury} — %{notes}"
         transfer_in: "تحويل من %{treasury} — %{notes}"
-        payroll_advance: "سلفة راتب — %{employee} (%{slot}، %{month})"
+        payroll_advance: "سلفة راتب — %{employee} (%{month})"
         payroll_salary: "راتب شهري — %{employee} (%{month})"
+        online_payment: "%{method} — %{cashier} (%{date})"
     ap_ledger:
       invoice_received: "فاتورة %{invoice_number} مستلمة — %{supplier}"
       payment_made: "دفعة لفاتورة %{invoice_number} — %{supplier}"
@@ -2542,11 +2559,8 @@ ar:
             base:
               salary_required: "يتطلب راتباً شهرياً في ملف الموظف"
               payroll_finalized: "لا يمكن التعديل بعد تسجيل الراتب لهذا الشهر"
-            paid_on:
-              invalid_slot_day: "يجب أن يكون في اليوم %{day} للنافذة المحددة"
-              must_be_in_payroll_month: "يجب أن يكون ضمن شهر الراتب"
             amount_cents:
-              exceeds_limit: "يتجاوز الحد الأقصى المتاح لهذه النافذة (%{limit} سنت)"
+              exceeds_limit: "يتجاوز الحد الأقصى المتاح لذلك الشهر (%{limit} سنت)"
         payroll_snapshot:
           attributes:
             treasury:

@@ -28,12 +28,10 @@ RSpec.describe "Admin payroll advances", type: :request do
   end
 
   describe "POST /admin/users/:user_id/payroll_advances" do
-    it "pays a mid-month advance" do
+    it "pays an advance dated within the month" do
       expect do
         post admin_user_payroll_advances_path(staff), params: {
           payroll_advance: {
-            payroll_month: payroll_month.strftime("%Y-%m"),
-            advance_slot: "mid_month",
             paid_on: "2026-06-10",
             amount_pounds: 1000.00,
             treasury_id: treasury.id
@@ -44,7 +42,7 @@ RSpec.describe "Admin payroll advances", type: :request do
       expect(response).to redirect_to(admin_user_path(staff, payroll_month: payroll_month.strftime("%Y-%m")))
 
       advance = PayrollAdvance.last
-      expect(advance).to have_attributes(amount_cents: 100_000, advance_slot: "mid_month", paid_on: Date.new(2026, 6, 10))
+      expect(advance).to have_attributes(amount_cents: 100_000, payroll_month: payroll_month, paid_on: Date.new(2026, 6, 10))
       expect(treasury.reload.balance_cents).to eq(400_000)
 
       summary = Accounting::MonthlyPayrollService.new(staff, payroll_month).call
@@ -65,10 +63,8 @@ RSpec.describe "Admin payroll advances", type: :request do
         expect do
           post admin_user_payroll_advances_path(staff), params: {
             payroll_advance: {
-              payroll_month: payroll_month.strftime("%Y-%m"),
-              advance_slot: "mid_month",
               paid_on: "2026-06-15",
-              amount_cents: 50_000,
+              amount_pounds: 500.00,
               treasury_id: treasury.id
             }
           }
@@ -84,8 +80,6 @@ RSpec.describe "Admin payroll advances", type: :request do
       travel_to Time.zone.local(2026, 6, 15, 10, 0, 0) do
         advance = Accounting::PayPayrollAdvanceService.new(
           user: staff,
-          payroll_month: payroll_month,
-          advance_slot: "mid_month",
           amount_cents: 100_000,
           treasury: treasury,
           paid_by: owner,

@@ -63,6 +63,9 @@ module Pos
       ::Accounting::CashReconciliationService.new(@open_session).compute_expected!
       @requires_manager_pin = false
       @digital_payment_totals = load_digital_payment_totals
+      @payment_method_treasury_map = PaymentMethodTreasury::SUPPORTED_METHODS.index_with do |method|
+        PaymentMethodTreasury.find_by(payment_method: method)&.treasury
+      end
     end
 
     def reconcile

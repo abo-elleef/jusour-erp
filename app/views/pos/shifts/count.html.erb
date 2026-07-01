@@ -25,9 +25,17 @@
         <p class="font-semibold text-blue-900 text-xs uppercase tracking-wide"><%= t("pos.shift.digital_payments_title") %></p>
         <% @digital_payment_totals.each do |method, cents| %>
           <% next unless cents.positive? %>
-          <div class="flex justify-between items-center">
-            <span class="text-blue-800 font-medium"><%= payment_method_label(method) %></span>
-            <span class="tabular-nums font-semibold text-blue-900"><%= format_money(cents) %></span>
+          <div class="flex justify-between items-start gap-2">
+            <div>
+              <span class="text-blue-800 font-medium"><%= payment_method_label(method) %></span>
+              <% treasury = @payment_method_treasury_map&.fetch(method, nil) %>
+              <% if treasury %>
+                <span class="block text-xs text-blue-600">→ <%= treasury.name %></span>
+              <% else %>
+                <span class="block text-xs text-amber-600"><%= t("pos.shift.digital_payment_no_treasury") %></span>
+              <% end %>
+            </div>
+            <span class="tabular-nums font-semibold text-blue-900 shrink-0"><%= number_with_precision(cents.to_f / 100, precision: 2, delimiter: ',') %></span>
           </div>
         <% end %>
         <p class="text-xs text-blue-700 mt-1"><%= t("pos.shift.digital_payments_hint") %></p>

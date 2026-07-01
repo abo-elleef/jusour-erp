@@ -61,8 +61,6 @@ RSpec.describe "Admin payroll snapshots", type: :request do
     it "debits only remaining pay when advances were already paid" do
       Accounting::PayPayrollAdvanceService.new(
         user: staff,
-        payroll_month: payroll_month,
-        advance_slot: "mid_month",
         amount_cents: 100_000,
         treasury: treasury,
         paid_by: owner,

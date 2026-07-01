@@ -169,6 +169,7 @@ Rails.application.routes.draw do
         member { post :adjust }
       end
       resources :treasury_transfers, only: %i[new create]
+      resources :payment_method_treasuries, only: %i[index create destroy]
       resources :budgets, only: [:index] do
         collection { patch :update }
       end

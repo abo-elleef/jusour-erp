@@ -13,61 +13,42 @@
 
   <% unless readonly %>
     <% if policy(PayrollAdvance).create? && !payroll_summary.finalized %>
-      <% remaining_max = PayrollAdvance.max_amount_cents_for(user, payroll_month, "end_month") %>
-      <% slot_options = PayrollAdvance::SLOTS.map { |slot|
-           [t("staff.payroll.advances.slots.#{slot}"), slot]
-         } %>
-      <% if remaining_max > 0 %>
-        <% default_slot = "mid_month" %>
-        <% default_max = remaining_max %>
-        <div class="p-5 border-b border-gray-100">
-          <%= form_with model: PayrollAdvance.new(payroll_month: payroll_month, paid_on: Date.current, advance_slot: default_slot),
-                url: admin_user_payroll_advances_path(user),
-                class: "grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end" do |f| %>
-            <%= f.hidden_field :payroll_month, value: payroll_month %>
-            <%= hidden_field_tag :payroll_sort, payroll_sort %>
-            <%= hidden_field_tag :payroll_direction, payroll_direction %>
+      <% remaining_max = PayrollAdvance.max_amount_cents_for(user, payroll_month) %>
+      <div class="p-5 border-b border-gray-100">
+        <%= form_with model: PayrollAdvance.new(paid_on: Date.current),
+              url: admin_user_payroll_advances_path(user),
+              class: "grid sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end" do |f| %>
+          <%= hidden_field_tag :payroll_sort, payroll_sort %>
+          <%= hidden_field_tag :payroll_direction, payroll_direction %>
 
-            <div>
-              <%= f.label :advance_slot, t("staff.payroll.advances.slot"), class: label_class %>
-              <%= f.select :advance_slot, slot_options, {},
-                    class: "#{input_class} appearance-none" %>
-            </div>
+          <div>
+            <%= f.label :paid_on, t("staff.payroll.happened_at"), class: label_class %>
+            <%= f.date_field :paid_on, class: input_class, required: true %>
+            <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.payroll.advances.date_hint") %></p>
+          </div>
 
-            <div>
-              <%= f.label :paid_on, t("staff.payroll.happened_at"), class: label_class %>
-              <%= f.date_field :paid_on,
-                    min: payroll_month.beginning_of_month,
-                    max: payroll_month.end_of_month,
-                    class: input_class,
-                    required: true %>
-            </div>
+          <div>
+            <%= f.label :amount_pounds, t("staff.payroll.advances.amount"), class: label_class %>
+            <%= f.number_field :amount_pounds, min: 0.01, step: "0.01", class: input_class, required: true %>
+            <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.payroll.advances.max_hint", max: format_money(remaining_max)) %></p>
+          </div>
 
-            <div>
-              <%= f.label :amount_pounds, t("staff.payroll.advances.amount"), class: label_class %>
-              <%= f.number_field :amount_pounds, min: 0.01, max: (default_max / 100.0), step: "0.01", class: input_class, required: true %>
-              <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.payroll.advances.max_hint", max: format_money(default_max)) %></p>
-            </div>
+          <div>
+            <%= f.label :treasury_id, t("staff.payroll.advances.treasury"), class: label_class %>
+            <%= f.collection_select :treasury_id, treasuries || [], :id, :name, {},
+                  class: "#{input_class} appearance-none", required: true %>
+          </div>
 
-            <div>
-              <%= f.label :treasury_id, t("staff.payroll.advances.treasury"), class: label_class %>
-              <%= f.collection_select :treasury_id, treasuries || [], :id, :name, {},
-                    class: "#{input_class} appearance-none", required: true %>
-            </div>
+          <div>
+            <%= f.label :notes, class: label_class %>
+            <%= f.text_field :notes, class: input_class, placeholder: t("staff.payroll.advances.notes_placeholder") %>
+          </div>
 
-            <div class="sm:col-span-2 lg:col-span-4">
-              <%= f.label :notes, class: label_class %>
-              <%= f.text_field :notes, class: input_class, placeholder: t("staff.payroll.advances.notes_placeholder") %>
-            </div>
-
-            <div>
-              <%= f.submit t("staff.payroll.advances.pay"), class: "bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors w-full sm:w-auto" %>
-            </div>
-          <% end %>
-        </div>
-      <% else %>
-        <p class="p-5 text-sm text-amber-700 border-b border-gray-100"><%= t("staff.payroll.advances.no_remaining") %></p>
-      <% end %>
+          <div class="sm:col-span-2 lg:col-span-4">
+            <%= f.submit t("staff.payroll.advances.pay"), class: "bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors w-full sm:w-auto" %>
+          </div>
+        <% end %>
+      </div>
     <% end %>
   <% end %>
 
@@ -76,8 +57,7 @@
       <table class="w-full text-sm">
         <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
           <tr>
-            <th class="p-3 ps-5 text-start"><%= t("staff.payroll.advances.slot") %></th>
-            <th class="p-3 text-start"><%= t("staff.payroll.happened_at") %></th>
+            <th class="p-3 ps-5 text-start"><%= t("staff.payroll.happened_at") %></th>
             <th class="p-3 text-end"><%= t("staff.payroll.amount") %></th>
             <th class="p-3 text-start"><%= t("staff.payroll.advances.treasury") %></th>
             <th class="p-3 text-start"><%= t("staff.payroll.notes") %></th>
@@ -89,8 +69,7 @@
         <tbody class="divide-y divide-gray-100">
           <% advances.each do |advance| %>
             <tr>
-              <td class="p-3 ps-5 text-gray-700"><%= advance.slot_label %></td>
-              <td class="p-3 text-gray-600 whitespace-nowrap tabular-nums"><%= l(advance.paid_on, format: :long) %></td>
+              <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums"><%= l(advance.paid_on, format: :long) %></td>
               <td class="p-3 text-end font-semibold tabular-nums text-blue-700">−<%= format_money(advance.amount_cents) %></td>
               <td class="p-3 text-gray-600"><%= advance.treasury.name %></td>
               <td class="p-3 text-gray-600"><%= advance.notes.presence || t("accounting.shared.em_dash") %></td>

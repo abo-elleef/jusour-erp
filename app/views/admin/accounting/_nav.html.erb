@@ -17,6 +17,7 @@
     <% if current_user.owner? %>
       <%= link_to t("accounting.nav.audit_log"), admin_accounting_audit_log_index_path, class: admin_section_tab_class(accounting_nav_active?("audit_log")) %>
       <%= link_to t("accounting.nav.integrations"), admin_accounting_integrations_path, class: admin_section_tab_class(accounting_nav_active?("integrations")) %>
+      <%= link_to t("accounting.nav.online_payment_setup"), admin_accounting_payment_method_treasuries_path, class: admin_section_tab_class(accounting_nav_active?("payment_method_treasuries")) %>
     <% end %>
   </div>
 </nav>

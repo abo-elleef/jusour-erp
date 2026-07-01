@@ -36,6 +36,14 @@ module Accounting
       new.sync_payroll_salary!(snapshot)
     end
 
+    def self.record_staff_meal!(treasury:, payment:, user:)
+      new.record_staff_meal!(treasury: treasury, payment: payment, user: user)
+    end
+
+    def self.sync_session_online_payments!(session)
+      new.sync_session_online_payments!(session)
+    end
+
     def sync_expense!(expense)
       remove_for_source(expense)
       return if expense.treasury_id.blank?
@@ -129,6 +137,53 @@ module Accounting
       )
     end
 
+    def sync_session_online_payments!(session)
+      remove_for_source(session, kinds: %w[online_payment])
+
+      session_start = session.created_at
+      session_end   = session.updated_at
+
+      Payment::DIGITAL_WALLET_METHODS.each do |method|
+        mapping = PaymentMethodTreasury.find_by(payment_method: method)
+        next unless mapping
+
+        total_cents = Payment.joins(:order)
+          .where(orders: { user_id: session.user_id })
+          .where(payment_method: method, status: "completed")
+          .where(created_at: session_start..session_end)
+          .sum(:amount_cents).to_i
+
+        next if total_cents.zero?
+
+        record!(
+          treasury: mapping.treasury,
+          user: session.user,
+          amount_cents: total_cents,
+          kind: "online_payment",
+          description: I18n.t(
+            "accounting.treasuries.transactions.online_payment",
+            method: I18n.t("payment.methods.#{method}"),
+            cashier: session.user.name,
+            date: I18n.l(session.session_date, format: :long)
+          ),
+          occurred_on: session.session_date,
+          source: session
+        )
+      end
+    end
+
+    def record_staff_meal!(treasury:, payment:, user:)
+      record!(
+        treasury: treasury,
+        user: user,
+        amount_cents: -payment.amount_cents,
+        kind: "staff_meal",
+        description: I18n.t("accounting.shared.staff_meal_description", name: payment.order.staff_meal_user.name),
+        occurred_on: Date.current,
+        source: payment
+      )
+    end
+
     def record_adjustment!(treasury:, user:, amount_cents:, description:, occurred_on: Date.current)
       record!(
         treasury: treasury,
@@ -183,7 +238,6 @@ module Accounting
       I18n.t(
         "accounting.treasuries.transactions.payroll_advance",
         employee: advance.user.name,
-        slot: advance.slot_label,
         month: I18n.l(advance.payroll_month, format: "%B %Y")
       )
     end

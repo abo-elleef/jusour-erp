@@ -27,6 +27,8 @@ module Pos
         process_card_payment
       when "gift_card"
         process_gift_card
+      when "staff_deduction"
+        process_staff_meal
       end
 
       attach_tip_to_largest_payment(tip_cents)
@@ -79,6 +81,19 @@ module Pos
 
     def process_card_payment
       # Handled via stripe_intent + capture_stripe
+    end
+
+    def process_staff_meal
+      staff_user = User.find(params[:staff_meal_user_id])
+      treasury   = Treasury.default_treasury
+      raise ActiveRecord::RecordNotFound, "No default treasury configured" unless treasury
+
+      Payments::StaffMealPaymentService.call(
+        order: @order,
+        staff_meal_user: staff_user,
+        treasury: treasury,
+        processed_by: current_user
+      )
     end
 
     def process_gift_card

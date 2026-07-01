@@ -73,6 +73,10 @@
       <p class="text-xs font-semibold text-blue-600 uppercase"><%= t("staff.payroll.advances.title") %></p>
       <p class="text-lg font-bold text-blue-700 tabular-nums mt-1">−<%= format_money(payroll_summary.advances_cents) %></p>
     </div>
+    <div class="rounded-xl bg-orange-50 px-4 py-3">
+      <p class="text-xs font-semibold text-orange-600 uppercase"><%= t("staff.payroll.staff_meals") %></p>
+      <p class="text-lg font-bold text-orange-700 tabular-nums mt-1">−<%= format_money(payroll_summary.staff_meals_cents) %></p>
+    </div>
     <div class="rounded-xl bg-amber-50 px-4 py-3">
       <p class="text-xs font-semibold text-amber-700 uppercase"><%= t("staff.payroll.remaining_pay") %></p>
       <p class="text-lg font-bold text-amber-800 tabular-nums mt-1"><%= format_money(payroll_summary.remaining_pay_cents) %></p>

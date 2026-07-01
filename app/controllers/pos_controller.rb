@@ -17,6 +17,7 @@ class PosController < ApplicationController
     load_pos_menu
     @open_orders = Order.open_drafts.where(user: current_user).order(created_at: :desc).limit(10)
     @open_cash_session = current_user.open_cash_drawer_session
+    @staff_users = User.active.order(:name)
   end
 
   def new_order

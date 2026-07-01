@@ -57,8 +57,6 @@ RSpec.describe StaffPayrollController, type: :request do
       travel_to Time.zone.local(2026, 6, 10, 10, 0, 0) do
         Accounting::PayPayrollAdvanceService.new(
           user: staff,
-          payroll_month: payroll_month,
-          advance_slot: "mid_month",
           amount_cents: 100_000,
           treasury: treasury,
           paid_by: owner,
@@ -68,7 +66,6 @@ RSpec.describe StaffPayrollController, type: :request do
         verify_pin!(month: payroll_month)
 
         expect(response.body).to include(I18n.t("staff.payroll_portal.advances_title"))
-        expect(response.body).to include(I18n.t("staff.payroll.advances.slots.mid_month"))
         expect(response.body).to include(format_money(100_000))
         expect(response.body).to include(format_money(200_000))
       end

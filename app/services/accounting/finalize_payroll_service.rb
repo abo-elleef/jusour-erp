@@ -21,6 +21,7 @@ module Accounting
         bonuses_cents: summary.bonuses_cents,
         net_pay_cents: summary.net_pay_cents,
         advances_cents: summary.advances_cents,
+        staff_meals_cents: summary.staff_meals_cents,
         remaining_pay_cents: summary.remaining_pay_cents,
         treasury: summary.remaining_pay_cents.positive? ? @treasury : nil,
         paid_on: summary.remaining_pay_cents.positive? ? resolve_paid_on : nil,

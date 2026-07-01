@@ -44,17 +44,13 @@ RSpec.describe Accounting::MonthlyPayrollService do
         balance_cents: 500_000
       )
 
-      travel_to Time.zone.local(2026, 6, 15, 10, 0, 0) do
-        Accounting::PayPayrollAdvanceService.new(
-          user: staff,
-          payroll_month: payroll_month,
-          advance_slot: "mid_month",
-          amount_cents: 50_000,
-          treasury: treasury,
-          paid_by: owner,
-          paid_on: Date.new(2026, 6, 15)
-        ).call
-      end
+      Accounting::PayPayrollAdvanceService.new(
+        user: staff,
+        amount_cents: 50_000,
+        treasury: treasury,
+        paid_by: owner,
+        paid_on: payroll_month.change(day: 15)
+      ).call
 
       result = described_class.new(staff, payroll_month).call
 

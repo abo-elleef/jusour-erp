@@ -6,10 +6,6 @@ class PayrollAdvance < ApplicationRecord
 
   money_input :amount_cents
 
-  SLOTS = %w[mid_month end_month].freeze
-  SLOT_DAYS = { "mid_month" => 15, "end_month" => 25 }.freeze
-  MID_MONTH_MAX_SALARY_RATIO = 0.5
-
   belongs_to :user
   belongs_to :treasury
   belongs_to :paid_by, class_name: "User"
@@ -17,28 +13,19 @@ class PayrollAdvance < ApplicationRecord
 
   monetize :amount_cents
 
-  validates :payroll_month, :advance_slot, :paid_on, presence: true
-  validates :advance_slot, inclusion: { in: SLOTS }
+  validates :payroll_month, :paid_on, presence: true
   validates :amount_cents, numericality: { only_integer: true, greater_than: 0 }
   validate :salary_required
-  validate :paid_on_in_payroll_month
   validate :payroll_not_finalized
   validate :within_advance_limits
 
-  before_validation :normalize_payroll_month
+  # The advance date drives which month it is deducted from.
+  before_validation :derive_payroll_month_from_paid_on
 
   scope :for_month, ->(month) { where(payroll_month: month.to_date.beginning_of_month) }
   scope :ordered, -> { order(paid_on: :asc, created_at: :asc) }
 
-  def slot_label
-    I18n.t("staff.payroll.advances.slots.#{advance_slot}")
-  end
-
-  def self.available_slots_for(_user, _payroll_month)
-    SLOTS
-  end
-
-  def self.max_amount_cents_for(user, payroll_month, _advance_slot)
+  def self.max_amount_cents_for(user, payroll_month)
     summary = Accounting::MonthlyPayrollService.new(user, payroll_month).build_calculated
     advances_so_far = user.payroll_advances.for_month(payroll_month).sum(:amount_cents)
     remaining = summary.net_pay_cents - advances_so_far
@@ -47,23 +34,16 @@ class PayrollAdvance < ApplicationRecord
 
   private
 
-  def normalize_payroll_month
-    return if payroll_month.blank?
+  def derive_payroll_month_from_paid_on
+    return if paid_on.blank?
 
-    self.payroll_month = payroll_month.to_date.beginning_of_month
+    self.payroll_month = paid_on.to_date.beginning_of_month
   end
 
   def salary_required
     return if user&.monthly_salary_cents.to_i.positive?
 
     errors.add(:base, :salary_required)
-  end
-
-  def paid_on_in_payroll_month
-    return if paid_on.blank? || payroll_month.blank?
-    return if paid_on.beginning_of_month == payroll_month.beginning_of_month
-
-    errors.add(:paid_on, :must_be_in_payroll_month)
   end
 
   def payroll_not_finalized
@@ -74,9 +54,9 @@ class PayrollAdvance < ApplicationRecord
   end
 
   def within_advance_limits
-    return if user.blank? || payroll_month.blank? || advance_slot.blank? || amount_cents.blank?
+    return if user.blank? || payroll_month.blank? || amount_cents.blank?
 
-    max_allowed = self.class.max_amount_cents_for(user, payroll_month, advance_slot)
+    max_allowed = self.class.max_amount_cents_for(user, payroll_month)
     return if amount_cents <= max_allowed
 
     errors.add(:amount_cents, :exceeds_limit, limit: max_allowed)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_000005) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_000009) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -557,6 +557,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000005) do
     t.text "delivery_address"
     t.uuid "company_id", null: false
     t.uuid "location_id"
+    t.uuid "staff_meal_user_id"
     t.index ["company_id", "order_number"], name: "index_orders_on_company_id_and_order_number", unique: true
     t.index ["company_id"], name: "index_orders_on_company_id"
     t.index ["created_at"], name: "index_orders_on_created_at"
@@ -564,6 +565,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000005) do
     t.index ["location_id"], name: "index_orders_on_location_id"
     t.index ["order_type"], name: "index_orders_on_order_type"
     t.index ["receipt_token"], name: "index_orders_on_receipt_token", unique: true
+    t.index ["staff_meal_user_id"], name: "index_orders_on_staff_meal_user_id"
     t.index ["status"], name: "index_orders_on_status"
     t.index ["user_id"], name: "index_orders_on_user_id"
   end
@@ -578,6 +580,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000005) do
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
     t.index ["company_id"], name: "index_overtime_rules_on_company_id"
+  end
+
+  create_table "payment_method_treasuries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "payment_method", null: false
+    t.uuid "treasury_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "payment_method"], name: "idx_on_company_id_payment_method_91108e522b", unique: true
+    t.index ["company_id"], name: "index_payment_method_treasuries_on_company_id"
+    t.index ["treasury_id"], name: "index_payment_method_treasuries_on_treasury_id"
   end
 
   create_table "payments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -626,7 +639,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000005) do
     t.uuid "treasury_id", null: false
     t.uuid "paid_by_id", null: false
     t.date "payroll_month", null: false
-    t.string "advance_slot", null: false
     t.date "paid_on", null: false
     t.integer "amount_cents", null: false
     t.text "notes"
@@ -656,6 +668,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000005) do
     t.integer "remaining_pay_cents", default: 0, null: false
     t.uuid "treasury_id"
     t.date "paid_on"
+    t.integer "staff_meals_cents", default: 0, null: false
     t.index ["company_id", "payroll_month"], name: "index_payroll_snapshots_on_company_id_and_payroll_month"
     t.index ["company_id"], name: "index_payroll_snapshots_on_company_id"
     t.index ["finalized_by_id"], name: "index_payroll_snapshots_on_finalized_by_id"
@@ -1155,7 +1168,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000005) do
   add_foreign_key "orders", "customers"
   add_foreign_key "orders", "locations"
   add_foreign_key "orders", "users"
+  add_foreign_key "orders", "users", column: "staff_meal_user_id"
   add_foreign_key "overtime_rules", "companies"
+  add_foreign_key "payment_method_treasuries", "companies"
+  add_foreign_key "payment_method_treasuries", "treasuries"
   add_foreign_key "payments", "companies"
   add_foreign_key "payments", "orders"
   add_foreign_key "payments", "users", column: "processed_by_user_id"

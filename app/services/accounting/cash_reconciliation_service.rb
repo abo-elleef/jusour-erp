@@ -48,6 +48,7 @@ module Accounting
       )
 
       ::Accounting::TreasuryLedgerService.sync_drawer_reconcile!(@session)
+      ::Accounting::TreasuryLedgerService.sync_session_online_payments!(@session)
 
       AuditLogEntry.record!(
         action: "cash_drawer.reconciled",

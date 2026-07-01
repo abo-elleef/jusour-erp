@@ -4,7 +4,7 @@ module Accounting
   class MonthlyPayrollService
     INDEX_SORTABLE_COLUMNS = %w[
       name base_salary_cents daily_rate_cents penalties_cents bonuses_cents
-      net_pay_cents advances_cents remaining_pay_cents status
+      net_pay_cents advances_cents staff_meals_cents remaining_pay_cents status
     ].freeze
     INDEX_DEFAULT_SORT = "name"
     INDEX_DEFAULT_SORT_DIRECTION = "asc"
@@ -18,6 +18,7 @@ module Accounting
       :bonuses_cents,
       :net_pay_cents,
       :advances_cents,
+      :staff_meals_cents,
       :remaining_pay_cents,
       :adjustments,
       :advances,
@@ -42,13 +43,14 @@ module Accounting
     end
 
     def build_calculated
-      adjustments = sorted_adjustments
-      advances = @user.payroll_advances.for_month(@payroll_month).ordered
-      base = @user.monthly_salary_cents.to_i
-      penalties = adjustments.penalties.sum(:amount_cents)
-      bonuses = adjustments.bonuses.sum(:amount_cents)
-      gross_net = base - penalties + bonuses
+      adjustments    = sorted_adjustments
+      advances       = @user.payroll_advances.for_month(@payroll_month).ordered
+      base           = @user.monthly_salary_cents.to_i
+      penalties      = adjustments.penalties.sum(:amount_cents)
+      bonuses        = adjustments.bonuses.sum(:amount_cents)
+      gross_net      = base - penalties + bonuses
       advances_total = advances.sum(:amount_cents)
+      meals_total    = staff_meals_for_month
 
       Result.new(
         user: @user,
@@ -59,7 +61,8 @@ module Accounting
         bonuses_cents: bonuses,
         net_pay_cents: gross_net,
         advances_cents: advances_total,
-        remaining_pay_cents: gross_net - advances_total,
+        staff_meals_cents: meals_total,
+        remaining_pay_cents: gross_net - advances_total - meals_total,
         adjustments: adjustments,
         advances: advances,
         finalized: false,
@@ -103,6 +106,19 @@ module Accounting
 
     private
 
+    def staff_meals_for_month
+      month_start = @payroll_month.beginning_of_month.beginning_of_day
+      month_end   = @payroll_month.end_of_month.end_of_day
+
+      Payment
+        .joins(:order)
+        .where(payment_method: "staff_deduction", status: "completed")
+        .where(orders: { staff_meal_user_id: @user.id, company_id: @user.company_id })
+        .where(created_at: month_start..month_end)
+        .sum(:amount_cents)
+        .to_i
+    end
+
     def sorted_adjustments
       scope = @user.payroll_adjustments.for_month(@payroll_month).includes(:recorded_by)
 
@@ -130,6 +146,7 @@ module Accounting
         bonuses_cents: snapshot.bonuses_cents,
         net_pay_cents: snapshot.net_pay_cents,
         advances_cents: snapshot.advances_cents,
+        staff_meals_cents: snapshot.staff_meals_cents,
         remaining_pay_cents: snapshot.remaining_pay_cents,
         adjustments: calculated.adjustments,
         advances: calculated.advances,

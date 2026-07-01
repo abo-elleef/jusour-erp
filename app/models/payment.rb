@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 class Payment < ApplicationRecord
-  METHODS = %w[cash card apple_pay google_pay gift_card instapay vodafone_cash].freeze
+  METHODS = %w[cash card apple_pay google_pay gift_card instapay vodafone_cash staff_deduction].freeze
+
+  scope :staff_deduction, -> { where(payment_method: "staff_deduction") }
   DIGITAL_WALLET_METHODS = %w[instapay vodafone_cash].freeze
   STATUSES = %w[pending completed failed refunded partially_refunded].freeze
 

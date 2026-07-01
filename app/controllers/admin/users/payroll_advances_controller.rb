@@ -9,22 +9,22 @@ module Admin
       def create
         authorize PayrollAdvance
 
-        payroll_month = parse_payroll_month
+        paid_on = parse_paid_on
+        # The advance date drives the payroll month it is deducted from.
+        payroll_month = paid_on.beginning_of_month
         ::Accounting::PayPayrollAdvanceService.new(
           user: @user,
-          payroll_month: payroll_month,
-          advance_slot: advance_params[:advance_slot],
           amount_cents: (advance_params[:amount_pounds].to_f * 100).round,
           treasury: Treasury.find(advance_params[:treasury_id]),
           paid_by: current_user,
-          paid_on: advance_params[:paid_on].presence || Date.current,
+          paid_on: paid_on,
           notes: advance_params[:notes]
         ).call
 
         redirect_to admin_user_path(@user, payroll_show_url_params(payroll_month)),
           notice: t("flash.payroll_advance.paid")
       rescue ActiveRecord::RecordInvalid => e
-        redirect_to admin_user_path(@user, payroll_show_url_params(payroll_month)),
+        redirect_to admin_user_path(@user, payroll_show_url_params(parse_paid_on.beginning_of_month)),
           alert: e.record.errors.full_messages.to_sentence
       end
 
@@ -51,20 +51,14 @@ module Admin
         @advance = @user.payroll_advances.find(params[:id])
       end
 
-      def parse_payroll_month
-        if params.dig(:payroll_advance, :payroll_month).present?
-          Date.parse("#{params[:payroll_advance][:payroll_month]}-01")
-        elsif params[:payroll_month].present?
-          Date.parse("#{params[:payroll_month]}-01")
-        else
-          Date.current.beginning_of_month
-        end
+      def parse_paid_on
+        advance_params[:paid_on].present? ? Date.parse(advance_params[:paid_on]) : Date.current
       rescue ArgumentError
-        Date.current.beginning_of_month
+        Date.current
       end
 
       def advance_params
-        params.require(:payroll_advance).permit(:amount_pounds, :treasury_id, :paid_on, :advance_slot, :notes)
+        params.require(:payroll_advance).permit(:amount_pounds, :treasury_id, :paid_on, :notes)
       end
 
       def payroll_show_url_params(month)

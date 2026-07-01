@@ -418,29 +418,23 @@ en:
       undo_record: "Undo"
       undo_record_confirm: "Undo recorded payroll for %{name} (%{month})? You can edit adjustments and record again."
       remaining_pay: "Remaining to pay"
+      staff_meals: "Staff Meals"
       paid_from: "Paid %{amount} from %{treasury} on %{date}"
       fully_advanced_hint: "No remaining payout — salary fully covered by advances."
       record_fully_advanced_confirm: "Record payroll with no treasury payout? Remaining balance is zero."
       advances:
         title: "Advances"
         heading: "Salary advances"
-        hint: "Advances are paid early from this month's salary and reduce the remaining payout."
-        policy_hint: "Typical policy: mid-month advance around the 15th, end-month advance around the 25th. You can record either window on any date."
-        slot_option: "%{label} (max %{max})"
-        all_slots_used: "Both advance windows for this month are already used."
-        slot: "Window"
+        hint: "Advances are paid early from salary and reduce the remaining payout."
         amount: "Amount"
         amount_cents: "Amount (cents)"
         treasury: "Paid from"
         pay: "Pay advance"
-        max_hint: "Max for this window: %{max}"
+        max_hint: "Max for this month: %{max}"
+        date_hint: "Pick any date — the advance is deducted from that date's month."
         notes_placeholder: "Reason (optional)"
-        no_remaining: "No remaining salary available for an advance in this window."
         empty: "No advances paid for this month."
         remove_confirm: "Remove this advance? Treasury balance will be restored."
-        slots:
-          mid_month: "Mid-month (15th)"
-          end_month: "End-month (25th)"
     payroll_portal:
       title: "Salary preview"
       pin_title: "Enter your PIN"
@@ -526,6 +520,12 @@ en:
     pay_instapay: "Pay via InstaPay"
     vodafone_cash_amount: "Vodafone Cash amount"
     pay_vodafone_cash: "Pay via Vodafone Cash"
+    staff_meal: "Staff Meal"
+    staff_meal_member: "Staff Member"
+    select_staff_member: "Select staff member…"
+    staff_meal_amount: "Total to deduct"
+    staff_meal_from_treasury: "Will be deducted from: %{name}"
+    pay_staff_meal: "Record Staff Meal"
 
   inventory:
     stock_status:
@@ -1344,7 +1344,8 @@ en:
       not_clocked_in: "You are not clocked in."
       back_to_shift_orders: "Shift orders"
       digital_payments_title: "Digital payments this session"
-      digital_payments_hint: "These amounts are in your mobile wallet — not in the cash drawer."
+      digital_payments_hint: "These amounts will be credited to their mapped treasuries when you close the drawer."
+      digital_payment_no_treasury: "No treasury configured — won't be recorded"
       tabs:
         label: "Shift sections"
         shift: "Shift"
@@ -1463,6 +1464,17 @@ en:
         category: "Menu category"
 
   admin:
+    accounting:
+      payment_method_treasuries:
+        title: "Online payment treasury setup"
+        description: "Map each online payment method to the treasury that receives the funds when a cashier closes their drawer."
+        mapped_to: "→ %{treasury}"
+        not_configured: "No treasury assigned — funds won't be recorded"
+        select_treasury: "Select treasury…"
+        saved: "Treasury mapping saved."
+        removed: "Treasury mapping removed."
+        remove_confirm: "Remove this mapping? Online payments via this method won't be booked to any treasury until you reassign."
+        hint: "Totals are booked automatically when a cashier closes the drawer. If no treasury is mapped for a method, that method's payments are skipped."
     locations:
       title: "Locations"
       description: "Manage branches and central kitchen."
@@ -1919,6 +1931,7 @@ en:
       cash_drawer: "Cash drawer"
       audit_log: "Audit log"
       integrations: "Integrations"
+      online_payment_setup: "Online payments"
     shifts:
       morning: "Morning"
       afternoon: "Afternoon"
@@ -1944,6 +1957,7 @@ en:
       category: "Category"
       treasury: "Treasury"
       description: "Description"
+      staff_meal_description: "Staff meal — %{name}"
       amount: "Amount"
       amount_cents: "Amount (cents)"
       reference_number: "Reference #"
@@ -2107,13 +2121,16 @@ en:
         payroll_salary: "Payroll salary"
         ap_invoice: "AP — Invoice received"
         ap_payment: "AP — Payment made"
+        staff_meal: "Staff meal"
+        online_payment: "Online payment"
       transactions:
         drawer_open: "Opening float — %{cashier} (%{shift}, %{date})"
         drawer_reconcile: "Drawer reconcile — %{cashier} (%{shift}, %{date})"
         transfer_out: "Transfer to %{treasury} — %{notes}"
         transfer_in: "Transfer from %{treasury} — %{notes}"
-        payroll_advance: "Payroll advance — %{employee} (%{slot}, %{month})"
+        payroll_advance: "Payroll advance — %{employee} (%{month})"
         payroll_salary: "Payroll salary — %{employee} (%{month})"
+        online_payment: "%{method} — %{cashier} (%{date})"
     ap_ledger:
       invoice_received: "Invoice %{invoice_number} received — %{supplier}"
       payment_made: "Payment for invoice %{invoice_number} — %{supplier}"
@@ -2508,11 +2525,8 @@ en:
             base:
               salary_required: "requires a monthly salary on the employee profile"
               payroll_finalized: "cannot be changed after payroll is recorded for this month"
-            paid_on:
-              invalid_slot_day: "must fall on day %{day} for the selected window"
-              must_be_in_payroll_month: "must be in the payroll month"
             amount_cents:
-              exceeds_limit: "exceeds the maximum available for this window (%{limit} cents)"
+              exceeds_limit: "exceeds the maximum available for that month (%{limit} cents)"
         payroll_snapshot:
           attributes:
             treasury:
