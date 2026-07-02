@@ -21,10 +21,17 @@
 
 <% if policy(PayrollSnapshot).create? %>
   <% if finalized %>
-    <span class="<%= btn_class %> bg-emerald-50 text-emerald-800 border-emerald-200"
-          title="<%= t("staff.payroll.recorded_on", date: l(snapshot.finalized_at.to_date, format: :long), name: snapshot.finalized_by.name) %>">
-      <%= t("staff.payroll.recorded") %>
-    </span>
+    <% recorded_meta = t("staff.payroll.recorded_on", date: l(snapshot.finalized_at.to_date, format: :long), name: snapshot.finalized_by.name) %>
+    <% if return_to == "monthly_payroll" %>
+      <span class="inline-flex flex-col items-start gap-1">
+        <span class="<%= btn_class %> bg-emerald-50 text-emerald-800 border-emerald-200"><%= t("staff.payroll.recorded") %></span>
+        <span class="text-[0.65rem] leading-tight text-gray-500 normal-case"><%= recorded_meta %></span>
+      </span>
+    <% else %>
+      <span class="<%= btn_class %> bg-emerald-50 text-emerald-800 border-emerald-200" title="<%= recorded_meta %>">
+        <%= t("staff.payroll.recorded") %>
+      </span>
+    <% end %>
     <% if policy(snapshot).destroy? %>
       <%= button_to t("staff.payroll.undo_record"),
             admin_user_payroll_snapshot_path(user, **snapshot_params),
