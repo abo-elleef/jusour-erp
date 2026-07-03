@@ -112,16 +112,34 @@ module Admin
           @rows.each do |row|
             csv << [
               row.user.name,
-              format_money(row.base_salary_cents),
-              format_money(row.daily_rate_cents),
-              format_money(row.penalties_cents),
-              format_money(row.bonuses_cents),
-              format_money(row.net_pay_cents),
-              format_money(row.advances_cents),
-              format_money(row.remaining_pay_cents)
+              amount(row.base_salary_cents),
+              amount(row.daily_rate_cents),
+              amount(row.penalties_cents),
+              amount(row.bonuses_cents),
+              amount(row.net_pay_cents),
+              amount(row.advances_cents),
+              amount(row.remaining_pay_cents)
             ]
           end
+
+          next if @rows.empty?
+
+          csv << [
+            t("accounting.monthly_payroll.totals"),
+            amount(@rows.sum(&:base_salary_cents)),
+            "",
+            amount(@rows.sum(&:penalties_cents)),
+            amount(@rows.sum(&:bonuses_cents)),
+            amount(@rows.sum(&:net_pay_cents)),
+            amount(@rows.sum(&:advances_cents)),
+            amount(@rows.sum(&:remaining_pay_cents))
+          ]
         end
+      end
+
+      # Plain numeric amount for CSV — no currency symbol or thousands separators.
+      def amount(cents)
+        format("%.2f", cents.to_i / 100.0)
       end
     end
   end
