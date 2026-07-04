@@ -803,6 +803,8 @@ ar:
         subtitle: "%{ingredients} · مهلة توريد %{lead_time}"
       show:
         new_invoice: "فاتورة جديدة"
+        delete: "حذف"
+        delete_confirm: "حذف %{name} نهائياً؟ لا يمكن التراجع عن هذا."
         stats:
           lead_time: "مهلة التوريد"
           days: "أيام"
@@ -2487,6 +2489,8 @@ ar:
       created: "تم إنشاء المورد."
       updated: "تم تحديث المورد."
       deactivated: "تم إلغاء تفعيل المورد."
+      deleted: "تم حذف المورد."
+      cannot_delete: "لا يمكن حذف هذا المورد لوجود فواتير أو مخزون أو رصيد ذمم دائنة. قم بإلغاء تفعيله بدلاً من ذلك."
     stock_take:
       started: "بدأ جرد المخزون."
       saved: "تم حفظ العد."

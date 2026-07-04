@@ -801,6 +801,8 @@ en:
         subtitle: "%{ingredients} · %{lead_time} lead time"
       show:
         new_invoice: "New invoice"
+        delete: "Delete"
+        delete_confirm: "Permanently delete %{name}? This can't be undone."
         stats:
           lead_time: "Lead time"
           days: "days"
@@ -2459,6 +2461,8 @@ en:
       created: "Supplier created."
       updated: "Supplier updated."
       deactivated: "Supplier deactivated."
+      deleted: "Supplier deleted."
+      cannot_delete: "This supplier has invoices, stock, or an accounts-payable balance and can't be deleted. Deactivate it instead."
     stock_take:
       started: "Stock take started."
       saved: "Counts saved."

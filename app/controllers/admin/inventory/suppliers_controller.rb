@@ -76,8 +76,18 @@ module Admin
 
       def destroy
         authorize_inventory!(:destroy)
-        @supplier.update!(active: false)
-        redirect_to admin_inventory_suppliers_path, notice: t("flash.supplier.deactivated")
+
+        unless @supplier.deletable?
+          redirect_to admin_inventory_supplier_path(@supplier), alert: t("flash.supplier.cannot_delete")
+          return
+        end
+
+        ActiveRecord::Base.transaction do
+          treasury = @supplier.ap_treasury
+          @supplier.destroy!   # removes the FK reference from suppliers -> treasuries
+          treasury&.destroy!   # the now-unreferenced, empty AP treasury
+        end
+        redirect_to admin_inventory_suppliers_path, notice: t("flash.supplier.deleted")
       end
 
       private

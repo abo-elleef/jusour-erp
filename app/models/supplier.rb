@@ -24,6 +24,26 @@ class Supplier < ApplicationRecord
     ap_treasury&.balance_cents || 0
   end
 
+  # A supplier can be permanently deleted only when it carries no financial or
+  # inventory history — otherwise deleting would orphan invoices, stock, or AP records.
+  def deletable?
+    deletion_blockers.empty?
+  end
+
+  def deletion_blockers
+    blockers = []
+    blockers << :vendor_invoices if vendor_invoices.exists?
+    blockers << :stock_batches if stock_batches.exists?
+    blockers << :price_histories if supplier_price_histories.exists?
+    blockers << :ap_activity if ap_treasury_has_activity?
+    blockers
+  end
+
+  def ap_treasury_has_activity?
+    ap_treasury.present? &&
+      (ap_treasury.balance_cents != 0 || ap_treasury.treasury_transactions.exists?)
+  end
+
   def ensure_ap_treasury!
     return ap_treasury if ap_treasury.present?
 

@@ -30,6 +30,12 @@
         <%= link_to t("inventory.suppliers.show.new_invoice"), new_admin_inventory_vendor_invoice_path(supplier_id: @supplier.id),
               class: "inline-flex text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-colors" %>
       <% end %>
+      <% if @supplier.deletable? && InventoryPolicy.new(current_user, @supplier).destroy? %>
+        <%= button_to t("inventory.suppliers.show.delete"), admin_inventory_supplier_path(@supplier),
+              method: :delete,
+              form: { data: { turbo_confirm: t("inventory.suppliers.show.delete_confirm", name: @supplier.name) }, class: "inline-flex" },
+              class: "inline-flex text-sm font-semibold text-red-700 hover:bg-red-50 px-4 py-2 rounded-xl border border-red-200 transition-colors" %>
+      <% end %>
     </div>
   </div>
 
