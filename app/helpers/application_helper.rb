@@ -49,6 +49,20 @@ module ApplicationHelper
     t("accounting.treasuries.transaction_kinds.#{kind}", default: kind.to_s.humanize)
   end
 
+  # A transfer's stored description names the counterparty treasury. When that
+  # counterparty is a restricted treasury and the viewer isn't an owner/manager,
+  # mask it so the reserve's existence/name isn't leaked on a visible ledger.
+  def treasury_transaction_description(transaction, user = current_user)
+    transfer = transaction.source_record
+    if transaction.kind == "transfer" && transfer.is_a?(TreasuryTransfer) &&
+       !(user&.owner? || user&.manager?) &&
+       [transfer.from_treasury, transfer.to_treasury].any?(&:restricted?)
+      return t("accounting.treasuries.masked_counterparty")
+    end
+
+    transaction.description
+  end
+
   def menu_item_tax_category(category)
     t("admin.menu_items.tax_categories.#{category}", default: category.to_s.humanize)
   end

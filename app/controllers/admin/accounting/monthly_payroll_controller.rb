@@ -12,7 +12,7 @@ module Admin
         @rows = sorted_payroll_rows
         @finalized_count = @rows.count(&:finalized)
         @pending_count = @rows.count - @finalized_count
-        @treasuries = Treasury.active.payable.ordered
+        @treasuries = Treasury.active.payable.visible_to(current_user).ordered
         @default_treasury = Treasury.default_treasury
 
         respond_to do |format|
@@ -90,7 +90,7 @@ module Admin
         treasury_id = params.dig(:payroll_snapshot, :treasury_id)
         return if treasury_id.blank?
 
-        Treasury.active.payable.find(treasury_id)
+        Treasury.active.payable.visible_to(current_user).find(treasury_id)
       end
 
       def bulk_paid_on

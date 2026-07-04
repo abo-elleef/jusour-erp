@@ -84,7 +84,7 @@ module Admin
       @payroll_sort = parse_payroll_sort_param
       @payroll_direction = parse_payroll_direction_param
       @payroll_summary = @user.monthly_payroll(@payroll_month, sort: @payroll_sort, direction: @payroll_direction)
-      @treasuries = Treasury.active.payable.ordered
+      @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       @default_treasury = Treasury.default_treasury
     end
 
@@ -92,7 +92,7 @@ module Admin
       return unless current_user.admin_access?
 
       @current_payroll_month = Date.current.beginning_of_month
-      @treasuries = Treasury.active.payable.ordered
+      @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       @default_treasury = Treasury.default_treasury
       user_ids = @users.map(&:id)
       @payroll_snapshots_by_user = PayrollSnapshot.for_month(@current_payroll_month)

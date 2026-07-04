@@ -75,7 +75,7 @@
           <tr>
             <td class="p-3 ps-5 whitespace-nowrap"><%= l(tx.occurred_on, format: :long) %></td>
             <td class="p-3 text-gray-600"><%= accounting_treasury_transaction_kind(tx.kind) %></td>
-            <td class="p-3"><%= tx.description %></td>
+            <td class="p-3"><%= treasury_transaction_description(tx, current_user) %></td>
             <td class="p-3 text-end font-semibold tabular-nums <%= tx.inflow? ? 'text-emerald-700' : 'text-red-700' %>">
               <%= tx.inflow? ? "+" : "" %><%= format_money(tx.amount_cents) %>
             </td>

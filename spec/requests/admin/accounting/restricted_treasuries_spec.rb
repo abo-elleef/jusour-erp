@@ -58,6 +58,42 @@ RSpec.describe "Restricted treasuries", type: :request do
     end
   end
 
+  describe "transfer masking on a visible treasury's ledger" do
+    let!(:transfer) do
+      t = TreasuryTransfer.new(from_treasury: open_treasury, to_treasury: reserve,
+        amount_cents: 50_00, description: "Month-end sweep", occurred_on: Date.current, user: owner)
+      Accounting::TreasuryLedgerService.create_transfer!(t)
+      t
+    end
+
+    it "masks the restricted counterparty for the accountant" do
+      sign_in accountant
+      get admin_accounting_treasury_path(open_treasury)
+      expect(response.body).not_to include("Owner Reserve")
+      expect(response.body).to include(I18n.t("accounting.treasuries.masked_counterparty"))
+    end
+
+    it "shows the real counterparty to the owner" do
+      sign_in owner
+      get admin_accounting_treasury_path(open_treasury)
+      expect(response.body).to include("Owner Reserve")
+    end
+  end
+
+  describe "transfer guard" do
+    it "blocks an accountant from moving money into a restricted treasury" do
+      sign_in accountant
+      post admin_accounting_treasury_transfers_path, params: {
+        treasury_transfer: {
+          from_treasury_id: open_treasury.id, to_treasury_id: reserve.id,
+          amount_pounds: "10", description: "x", occurred_on: Date.current.to_s
+        }
+      }
+      expect(response).to have_http_status(:not_found)
+      expect(reserve.reload.balance_cents).to eq(900_00)
+    end
+  end
+
   describe "restricted flag param" do
     it "ignores the restricted flag when set by an accountant" do
       sign_in accountant

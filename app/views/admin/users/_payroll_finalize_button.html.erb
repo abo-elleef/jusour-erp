@@ -11,7 +11,7 @@
      payroll_summary&.remaining_pay_cents || snapshot&.remaining_pay_cents.to_i
    end %>
 <% payout_required = remaining_pay_cents.positive? %>
-<% treasuries = local_assigns[:treasuries] || Treasury.active.payable.ordered %>
+<% treasuries = local_assigns[:treasuries] || Treasury.active.payable.visible_to(current_user).ordered %>
 <% default_treasury = local_assigns[:default_treasury] || Treasury.default_treasury %>
 <% btn_class = compact ? "inline-flex text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors" : "inline-flex text-sm font-semibold px-4 py-2 rounded-xl border transition-colors" %>
 <% input_class = compact ? "bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" : "bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>

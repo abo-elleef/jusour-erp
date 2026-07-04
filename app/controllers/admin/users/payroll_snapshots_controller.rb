@@ -59,7 +59,7 @@ module Admin
         treasury_id = snapshot_params[:treasury_id]
         return if treasury_id.blank?
 
-        Treasury.active.payable.find(treasury_id)
+        Treasury.active.payable.visible_to(current_user).find(treasury_id)
       end
 
       def redirect_path(payroll_month)
