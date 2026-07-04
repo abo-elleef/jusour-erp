@@ -124,7 +124,7 @@ class User < ApplicationRecord
   end
 
   def can_access_pos?
-    owner? || manager? || cashier?
+    owner? || manager? || accountant? || cashier?
   end
 
   def can_access_kds?

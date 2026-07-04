@@ -34,7 +34,7 @@ class AccountingPolicy < ApplicationPolicy
   end
 
   def clock_in?
-    owner? || manager? || user&.cashier?
+    user&.can_access_pos?
   end
 
   def clock_out?
