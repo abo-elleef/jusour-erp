@@ -30,10 +30,13 @@ RSpec.describe Inventory::ReceiveVendorInvoiceService do
       company: Current.company
     )
     lines.each do |attrs|
+      quantity = attrs.fetch(:quantity)
+      unit_price_cents = attrs.fetch(:unit_price_cents, 250)
       invoice.vendor_invoice_lines.build(
         ingredient: ingredient,
-        quantity: attrs.fetch(:quantity),
-        unit_price_cents: attrs.fetch(:unit_price_cents, 250)
+        quantity: quantity,
+        # line_total is the stored source of truth; unit price is derived from it.
+        line_total_cents: quantity * unit_price_cents
       )
     end
     invoice

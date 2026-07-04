@@ -30,7 +30,7 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
       received_on: Date.current,
       company: Current.company
     )
-    invoice.vendor_invoice_lines.build(ingredient: ingredient, quantity: quantity, unit_price_cents: 250)
+    invoice.vendor_invoice_lines.build(ingredient: ingredient, quantity: quantity, line_total_cents: quantity * 250)
     Inventory::ReceiveVendorInvoiceService.new(invoice, user).call
     invoice
   end
@@ -54,7 +54,7 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
             id: line.id,
             ingredient_id: ingredient.id,
             quantity: "6",
-            unit_price_cents: 300
+            line_total_cents: 1_800
           }
         }
       }
@@ -93,7 +93,7 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
               id: line.id,
               ingredient_id: ingredient.id,
               quantity: "3",
-              unit_price_cents: 250
+              line_total_cents: 750
             }
           }
         }

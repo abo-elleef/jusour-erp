@@ -36,7 +36,7 @@ RSpec.describe Accounting::RecordVendorInvoicePaymentService do
         company: Current.company
       ),
       quantity: 10,
-      unit_price_cents: 500
+      line_total_cents: 5_000
     )
     invoice.save!
     invoice
