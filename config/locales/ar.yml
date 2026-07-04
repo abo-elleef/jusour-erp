@@ -2116,6 +2116,8 @@ ar:
       types_label: "تصفية الخزائن حسب النوع"
       filter_all: "الكل"
       no_treasuries: "لا توجد خزائن."
+      search_name: "بحث بالاسم"
+      search_placeholder: "اسم الخزينة…"
       filter_total: "إجمالي الأرصدة — %{type}"
       supplier_ap_type_locked: "هذه خزينة ذمم موردين يديرها النظام؛ لا يمكن تغيير نوعها."
       manual_adjustment: "تعديل يدوي"

@@ -10,7 +10,8 @@ module Admin
         @q = Treasury.ransack(params[:q])
         @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
         base = @q.result
-        @type_counts = base.group(:treasury_type).count
+        # Tab counts reflect all treasuries per type — switching tabs clears the search.
+        @type_counts = Treasury.group(:treasury_type).count
         @active_type = params[:type].presence
         @active_type = Treasury::TYPES.first unless Treasury::TYPES.include?(@active_type)
         scoped = @active_type ? base.where(treasury_type: @active_type) : base

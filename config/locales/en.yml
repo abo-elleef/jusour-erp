@@ -2092,6 +2092,8 @@ en:
       types_label: "Filter treasuries by type"
       filter_all: "All"
       no_treasuries: "No treasuries found."
+      search_name: "Search by name"
+      search_placeholder: "Treasury name…"
       filter_total: "Total balance — %{type}"
       supplier_ap_type_locked: "This is a system-managed supplier AP ledger; its type cannot be changed."
       manual_adjustment: "Manual adjustment"
