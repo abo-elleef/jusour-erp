@@ -7,11 +7,13 @@ module Admin
 
       def index
         authorize Treasury
-        @q = Treasury.ransack(params[:q])
+        # Restricted treasuries are only visible to owners/managers.
+        visible = Treasury.visible_to(current_user)
+        @q = visible.ransack(params[:q])
         @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
         base = @q.result
-        # Tab counts reflect all treasuries per type — switching tabs clears the search.
-        @type_counts = Treasury.group(:treasury_type).count
+        # Tab counts reflect all visible treasuries per type — switching tabs clears the search.
+        @type_counts = visible.group(:treasury_type).count
         @active_type = params[:type].presence
         @active_type = Treasury::TYPES.first unless Treasury::TYPES.include?(@active_type)
         scoped = @active_type ? base.where(treasury_type: @active_type) : base
@@ -97,11 +99,15 @@ module Admin
       private
 
       def set_treasury
-        @treasury = Treasury.find(params[:id])
+        # Accountants/others hitting a restricted treasury's URL get a 404, not a peek.
+        @treasury = Treasury.visible_to(current_user).find(params[:id])
       end
 
       def treasury_params
-        permitted = params.require(:treasury).permit(:name, :treasury_type, :opening_balance_pounds, :active, :is_default, :position, :notes)
+        attrs = %i[name treasury_type opening_balance_pounds active is_default position notes]
+        # Only owners/managers may mark a treasury restricted.
+        attrs << :restricted if current_user.owner? || current_user.manager?
+        permitted = params.require(:treasury).permit(*attrs)
         # Supplier AP ledgers are managed by the system — their type can never change.
         permitted.delete(:treasury_type) if @treasury&.supplier_ap?
         permitted

@@ -35,6 +35,8 @@ class Treasury < ApplicationRecord
   # Exclude supplier AP ledgers from normal cash-flow selections
   scope :payable, -> { where.not(treasury_type: "supplier_ap") }
   scope :supplier_ap, -> { where(treasury_type: "supplier_ap") }
+  # Restricted (owner/manager-only) treasuries are hidden from everyone else.
+  scope :visible_to, ->(user) { (user&.owner? || user&.manager?) ? all : where(restricted: false) }
 
   def self.default_treasury
     active.find_by(is_default: true) || active.ordered.first

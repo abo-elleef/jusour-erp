@@ -70,6 +70,9 @@
               <% if treasury.is_default? %>
                 <span class="ms-2 text-[0.65rem] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800"><%= t("accounting.treasuries.default") %></span>
               <% end %>
+              <% if treasury.restricted? %>
+                <span class="ms-2 text-[0.65rem] font-semibold uppercase px-2 py-0.5 rounded-full bg-purple-100 text-purple-800"><%= t("accounting.treasuries.restricted_badge") %></span>
+              <% end %>
             </td>
             <td class="p-3 text-gray-600"><%= accounting_treasury_type(treasury.treasury_type) %></td>
             <td class="p-3 text-end font-bold tabular-nums"><%= format_money(treasury.balance_cents) %></td>

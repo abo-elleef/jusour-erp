@@ -52,6 +52,15 @@
         <%= f.check_box :is_default, class: "rounded border-gray-300" %>
         <%= f.label :is_default, t("accounting.treasuries.default"), class: "text-sm text-gray-700" %>
       </div>
+      <% if current_user.owner? || current_user.manager? %>
+        <div class="rounded-xl border border-gray-100 bg-gray-50/60 px-4 py-3">
+          <div class="flex items-center gap-2">
+            <%= f.check_box :restricted, class: "rounded border-gray-300" %>
+            <%= f.label :restricted, t("accounting.treasuries.restricted"), class: "text-sm font-medium text-gray-700" %>
+          </div>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.treasuries.restricted_hint") %></p>
+        </div>
+      <% end %>
       <div class="flex flex-wrap gap-2 pt-2">
         <%= f.submit class: "bg-gray-900 hover:bg-gray-800 text-white px-5 py-2.5 rounded-xl font-semibold text-sm transition-colors" %>
         <%= link_to t("actions.cancel"), treasury.persisted? ? admin_accounting_treasury_path(treasury) : admin_accounting_treasuries_path,
