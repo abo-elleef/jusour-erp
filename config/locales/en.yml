@@ -602,6 +602,12 @@ en:
         empty_description_filtered: "Try clearing filters or adjusting your search."
         empty_description: "Get started by adding your first ingredient."
         clear_filters: "Clear filters"
+      units:
+        heading: "Purchase / alternate units"
+        hint: "Add units you buy or measure this ingredient in. Stock, recipes, and costs stay in the base unit above; these convert into it."
+        unit: "Unit"
+        factor: "%{base} per unit"
+        add: "Add unit"
       form:
         category: "Category"
         select_category: "Select category…"
