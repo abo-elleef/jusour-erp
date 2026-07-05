@@ -2549,6 +2549,14 @@ ar:
   activerecord:
     errors:
       models:
+        ingredient:
+          attributes:
+            unit:
+              locked_in_use: "لا يمكن تغييره بعد وجود مخزون أو دفعات أو وحدات بديلة للمكوّن"
+        ingredient_unit:
+          attributes:
+            unit:
+              cannot_equal_base_unit: "يجب أن تختلف عن الوحدة الأساسية للمكوّن"
         treasury_transfer:
           attributes:
             to_treasury_id:

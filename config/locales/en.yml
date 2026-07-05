@@ -2515,6 +2515,14 @@ en:
   activerecord:
     errors:
       models:
+        ingredient:
+          attributes:
+            unit:
+              locked_in_use: "can't be changed once the ingredient has stock, batches, or alternate units"
+        ingredient_unit:
+          attributes:
+            unit:
+              cannot_equal_base_unit: "must be different from the ingredient's base unit"
         treasury_transfer:
           attributes:
             to_treasury_id:
