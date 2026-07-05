@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { cable } from "@hotwired/turbo-rails"
-import { showToast } from "../utils/toast"
+import { showToast } from "utils/toast"
 
 // Monitors the ActionCable/Turbo Streams WebSocket connection and shows
 // user-facing toasts when the socket drops or recovers.

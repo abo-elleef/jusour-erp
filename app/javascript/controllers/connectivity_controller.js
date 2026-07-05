@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { showToast } from "../utils/toast"
+import { showToast } from "utils/toast"
 
 export default class extends Controller {
   static targets = ["banner", "cardPaymentBtn", "syncStatus"]
