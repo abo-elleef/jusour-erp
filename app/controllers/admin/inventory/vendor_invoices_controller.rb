@@ -187,8 +187,10 @@ module Admin
       def load_form_data
         @suppliers = Supplier.active.order(:name)
         @locations = Location.active.ordered
-        @ingredients = Ingredient.active.order(:name)
-        @ingredient_units = @ingredients.to_h { |i| [i.id, helpers.ingredient_unit_label(i.unit)] }
+        @ingredients = Ingredient.active.includes(:ingredient_units).order(:name)
+        @ingredient_available_units = @ingredients.to_h do |i|
+          [i.id, i.available_units.map { |u| [helpers.ingredient_unit_label(u), u] }]
+        end
         @ingredient_shelf_life_days = @ingredients.each_with_object({}) do |ingredient, map|
           map[ingredient.id] = ingredient.shelf_life_days if ingredient.shelf_life_days.present?
         end
@@ -210,7 +212,7 @@ module Admin
           :discount_type, :discount_value, :discount_amount_dollars, :discount_notes, :invoice_image,
           :adjustment_amount_dollars,
           vendor_invoice_lines_attributes: %i[
-            id ingredient_id quantity line_total_dollars expires_on batch_reference line_notes _destroy
+            id ingredient_id quantity unit line_total_dollars expires_on batch_reference line_notes _destroy
           ]
         )
         permitted[:vendor_invoice_lines_attributes]&.each_value do |attrs|

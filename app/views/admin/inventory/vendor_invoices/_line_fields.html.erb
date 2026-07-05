@@ -19,12 +19,14 @@
           input_class: input_class,
           html: { data: { action: "searchable-select:change->vendor-invoice-lines#ingredientChanged" } } %>
   </div>
-  <div class="lg:col-span-1 flex items-end pb-2.5">
-    <div>
-      <span class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("inventory.vendor_invoices.form.unit") %></span>
-      <span class="text-sm font-semibold text-gray-700 tabular-nums"
-            data-vendor-invoice-lines-target="unitLabel"><%= unit_text %></span>
-    </div>
+  <div class="lg:col-span-1">
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("inventory.vendor_invoices.form.unit") %></label>
+    <% unit_opts = ingredient ? ingredient.available_units.map { |u| [ingredient_unit_label(u), u] } : [] %>
+    <%= f.select :unit,
+          options_for_select(unit_opts, line.unit.presence || ingredient&.unit),
+          { include_blank: ingredient.nil? },
+          class: "#{input_class} appearance-none px-2",
+          data: { vendor_invoice_lines_target: "unitSelect" } %>
   </div>
   <div class="lg:col-span-2">
     <label class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("inventory.vendor_invoices.form.quantity") %></label>

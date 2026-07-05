@@ -2,17 +2,15 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = [
-    "list", "template", "row", "unitLabel", "expiresOn",
+    "list", "template", "row", "unitSelect", "expiresOn",
     "lineTotalDollars", "unitPriceDisplay", "detailsModal", "detailsDot",
     "runningTotal", "runningTotalWrap", "subtotalDisplay", "grandTotalDisplay", "discountPreviewWrap"
   ]
-  static values = { units: Object, shelfLifeDays: Object, unitPriceDollars: Object }
+  static values = { availableUnits: Object, shelfLifeDays: Object, unitPriceDollars: Object }
 
   connect() {
-    this.rowTargets.forEach((row) => {
-      this.syncRowUnit(row)
-      this.syncRowExpiry(row)
-    })
+    // Existing rows keep their server-rendered unit selection; only sync expiry.
+    this.rowTargets.forEach((row) => this.syncRowExpiry(row))
     this.recalculate()
   }
 
@@ -79,12 +77,23 @@ export default class extends Controller {
   }
 
   syncRowUnit(row, ingredientId = null) {
-    const label = row.querySelector("[data-vendor-invoice-lines-target='unitLabel']")
-    if (!label) return
+    const select = row.querySelector("[data-vendor-invoice-lines-target='unitSelect']")
+    if (!select) return
 
     const hidden = row.querySelector("input[name*='[ingredient_id]']")
     const id = ingredientId ?? hidden?.value
-    label.textContent = id && this.unitsValue[id] ? this.unitsValue[id] : "—"
+    const options = id ? this.availableUnitsValue[id] : null
+
+    select.innerHTML = ""
+    if (!options) return
+
+    // First option is the ingredient's base unit — default the selection to it.
+    options.forEach(([label, value]) => {
+      const opt = document.createElement("option")
+      opt.value = value
+      opt.textContent = label
+      select.appendChild(opt)
+    })
   }
 
   syncRowExpiry(row, ingredientId = null) {
