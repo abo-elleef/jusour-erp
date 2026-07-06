@@ -28,7 +28,7 @@ module Admin
         authorize @treasury
         parse_date_range
         @transactions = @treasury.treasury_transactions
-          .includes(:user)
+          .includes(:user, :source_record)
           .on_date_range(@start_date, @end_date)
           .recent
           .limit(200)

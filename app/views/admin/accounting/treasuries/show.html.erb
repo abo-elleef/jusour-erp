@@ -78,7 +78,15 @@
           <tr>
             <td class="p-3 ps-5 whitespace-nowrap"><%= l(tx.occurred_on, format: :long) %></td>
             <td class="p-3 text-gray-600"><%= accounting_treasury_transaction_kind(tx.kind) %></td>
-            <td class="p-3"><%= treasury_transaction_description(tx, current_user) %></td>
+            <td class="p-3">
+              <% source_path = treasury_transaction_source_path(tx) %>
+              <% if source_path %>
+                <%= link_to treasury_transaction_description(tx, current_user), source_path,
+                      class: "text-amber-700 hover:text-amber-900 hover:underline underline-offset-2" %>
+              <% else %>
+                <%= treasury_transaction_description(tx, current_user) %>
+              <% end %>
+            </td>
             <td class="p-3 text-end font-semibold tabular-nums <%= tx.inflow? ? 'text-emerald-700' : 'text-red-700' %>">
               <%= tx.inflow? ? "+" : "" %><%= format_money(tx.amount_cents) %>
             </td>

@@ -49,6 +49,24 @@ module ApplicationHelper
     t("accounting.treasuries.transaction_kinds.#{kind}", default: kind.to_s.humanize)
   end
 
+  # Returns the URL for a transaction's linked source record, or nil if not linkable.
+  def treasury_transaction_source_path(transaction)
+    case transaction.source_record_type
+    when "VendorInvoice"
+      admin_inventory_vendor_invoice_path(transaction.source_record_id)
+    when "VendorInvoicePayment"
+      payment = transaction.source_record
+      invoice = payment.vendor_invoice if payment
+      admin_inventory_vendor_invoice_path(invoice) if invoice
+    when "Expense"
+      expense = transaction.source_record
+      return unless expense&.source_record_type == "VendorInvoicePayment"
+      payment = expense.source_record
+      invoice = payment.vendor_invoice if payment
+      admin_inventory_vendor_invoice_path(invoice) if invoice
+    end
+  end
+
   # A transfer's stored description names the counterparty treasury. When that
   # counterparty is a restricted treasury and the viewer isn't an owner/manager,
   # mask it so the reserve's existence/name isn't leaked on a visible ledger.
