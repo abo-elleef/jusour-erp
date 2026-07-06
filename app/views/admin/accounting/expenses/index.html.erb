@@ -13,11 +13,18 @@
   <%= render "admin/accounting/date_range_form" %>
 
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-    <% @totals_by_category.each do |name, cents| %>
-      <div class="rounded-2xl border border-gray-200 bg-white p-3">
-        <p class="text-xs text-gray-500"><%= name %></p>
-        <p class="font-bold tabular-nums"><%= format_money(cents) %></p>
-      </div>
+    <% @totals_by_category.each do |(category_id, category_name), cents| %>
+      <% active = @active_category_id == category_id.to_s %>
+      <% filter_params = { start_date: @start_date, end_date: @end_date } %>
+      <% filter_params[:category_id] = category_id unless active %>
+      <%= link_to admin_accounting_expenses_path(filter_params),
+            class: "rounded-2xl border p-3 transition-colors #{active ? 'border-amber-400 bg-amber-50 ring-1 ring-amber-400' : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/50'}" do %>
+        <p class="text-xs <%= active ? 'text-amber-700 font-semibold' : 'text-gray-500' %>"><%= category_name %></p>
+        <p class="font-bold tabular-nums <%= active ? 'text-amber-900' : '' %>"><%= format_money(cents) %></p>
+        <% if active %>
+          <p class="text-xs text-amber-600 mt-1">✕ <%= t("actions.clear") %></p>
+        <% end %>
+      <% end %>
     <% end %>
   </div>
 

@@ -14,9 +14,10 @@ module Admin
         scope = scope.where(expense_category_id: params[:category_id]) if params[:category_id].present?
 
         @expenses = scope.order(expense_date: :desc, created_at: :desc).limit(200)
+        @active_category_id = params[:category_id].presence
         @totals_by_category = Expense.joins(:expense_category)
           .on_date_range(@start_date, @end_date)
-          .group("expense_categories.name")
+          .group("expense_categories.id", "expense_categories.name")
           .sum(:amount_cents)
         @categories = ExpenseCategory.ordered
       end
