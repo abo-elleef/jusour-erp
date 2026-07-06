@@ -8,7 +8,7 @@ module Admin
       def index
         parse_date_range
         @q = Expense.ransack(params[:q])
-        scope = @q.result.includes(:expense_category, :user, :treasury)
+        scope = @q.result.includes(:expense_category, :user, :treasury, :source_record)
         scope = scope.on_date_range(@start_date, @end_date)
         scope = scope.where(is_auto_generated: false) if params[:manual_only] == "1"
         scope = scope.where(expense_category_id: params[:category_id]) if params[:category_id].present?

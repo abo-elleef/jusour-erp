@@ -49,6 +49,14 @@ module ApplicationHelper
     t("accounting.treasuries.transaction_kinds.#{kind}", default: kind.to_s.humanize)
   end
 
+  # Returns the vendor invoice URL for an expense linked via VendorInvoicePayment, or nil.
+  def expense_source_path(expense)
+    return unless expense.source_record_type == "VendorInvoicePayment"
+    payment = expense.source_record
+    invoice = payment&.vendor_invoice
+    admin_inventory_vendor_invoice_path(invoice) if invoice
+  end
+
   # Returns the URL for a transaction's linked source record, or nil if not linkable.
   def treasury_transaction_source_path(transaction)
     case transaction.source_record_type

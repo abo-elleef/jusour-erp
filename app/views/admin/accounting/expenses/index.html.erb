@@ -40,7 +40,13 @@
             <td class="p-3"><%= expense.expense_category.name %></td>
             <td class="p-3 text-gray-600"><%= expense.treasury&.name || t("accounting.shared.em_dash") %></td>
             <td class="p-3">
-              <%= expense.description %>
+              <% source_path = expense_source_path(expense) %>
+              <% if source_path %>
+                <%= link_to expense.description, source_path,
+                      class: "text-amber-700 hover:text-amber-900 hover:underline underline-offset-2" %>
+              <% else %>
+                <%= expense.description %>
+              <% end %>
               <% if expense.is_auto_generated? %><span class="text-xs text-gray-400"><%= t("accounting.shared.auto") %></span><% end %>
             </td>
             <td class="p-3 text-end font-semibold tabular-nums"><%= format_money(expense.amount_cents) %></td>
