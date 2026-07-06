@@ -2129,6 +2129,7 @@ ar:
       adjustment_placeholder: "سبب التعديل"
       record_adjustment: "تسجيل التعديل"
       transactions_title: "سجل المعاملات"
+      export_csv: "تصدير CSV"
       transaction_kind: "النوع"
       amount: "المبلغ"
       balance_after: "الرصيد بعد"

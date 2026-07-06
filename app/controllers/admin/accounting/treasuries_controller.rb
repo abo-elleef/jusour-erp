@@ -32,6 +32,15 @@ module Admin
           .on_date_range(@start_date, @end_date)
           .recent
           .limit(200)
+
+        respond_to do |format|
+          format.html
+          format.csv do
+            csv_data = build_transactions_csv(@transactions)
+            filename = "#{@treasury.name.parameterize}-#{@start_date}-#{@end_date}.csv"
+            send_data csv_data, filename: filename, type: "text/csv; charset=utf-8", disposition: "attachment"
+          end
+        end
       end
 
       def new
@@ -97,6 +106,32 @@ module Admin
       end
 
       private
+
+      def build_transactions_csv(transactions)
+        require "csv"
+        headers = [
+          t("accounting.shared.day"),
+          t("accounting.treasuries.transaction_kind"),
+          t("accounting.shared.description"),
+          t("accounting.treasuries.amount"),
+          t("accounting.treasuries.balance_after"),
+          t("accounting.treasuries.recorded_by")
+        ]
+        CSV.generate(headers: true, encoding: "UTF-8") do |csv|
+          csv << headers
+          transactions.each do |tx|
+            sign = tx.inflow? ? "+" : ""
+            csv << [
+              tx.occurred_on.iso8601,
+              t("accounting.treasuries.transaction_kinds.#{tx.kind}", default: tx.kind.humanize),
+              helpers.treasury_transaction_description(tx, current_user),
+              "#{sign}#{tx.amount_cents / 100.0}",
+              (tx.balance_after_cents / 100.0).to_s,
+              tx.user.name
+            ]
+          end
+        end
+      end
 
       def set_treasury
         # Accountants/others hitting a restricted treasury's URL get a 404, not a peek.

@@ -2105,6 +2105,7 @@ en:
       adjustment_placeholder: "Reason for adjustment"
       record_adjustment: "Record adjustment"
       transactions_title: "Transaction history"
+      export_csv: "Export CSV"
       transaction_kind: "Type"
       amount: "Amount"
       balance_after: "Balance after"
