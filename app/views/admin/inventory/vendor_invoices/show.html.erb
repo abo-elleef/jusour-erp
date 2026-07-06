@@ -1,3 +1,4 @@
+<% content_for :title, @vendor_invoice.invoice_number %>
 <% table_head = "border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide" %>
 <% pay_label, pay_class = vendor_invoice_payment_badge(@vendor_invoice.payment_status) %>
 

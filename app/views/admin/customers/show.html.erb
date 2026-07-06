@@ -1,3 +1,4 @@
+<% content_for :title, @customer.name.presence || t("customers.default_name") %>
 <% stat_card_class = "rounded-2xl border border-gray-200 bg-white p-4" %>
 <% action_btn_class = "text-sm font-semibold px-4 py-2 rounded-xl transition-colors" %>
 

@@ -1,3 +1,4 @@
+<% content_for :title, @stock_transfer.transfer_number %>
 <%= render "admin/inventory/tools_nav" %>
 
 <% status_label, status_class = stock_transfer_status_badge(@stock_transfer.status) %>
