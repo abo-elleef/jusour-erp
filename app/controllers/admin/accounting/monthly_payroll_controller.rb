@@ -30,6 +30,7 @@ module Admin
         finalized = 0
 
         ::Accounting::MonthlyPayrollService.for_all_staff(@payroll_month).each do |row|
+          next unless row.user.active?
           next if row.finalized
 
           ::Accounting::FinalizePayrollService.new(
