@@ -26,7 +26,8 @@ class Ingredient < ApplicationRecord
   monetize :cost_per_unit_cents
 
   validates :name, presence: true, uniqueness: { scope: :company_id }
-  validates :unit, presence: true, inclusion: { in: UNITS }
+  validates :unit, presence: true
+  validate :unit_available_in_company
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_on_hand, numericality: true
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
@@ -104,6 +105,13 @@ class Ingredient < ApplicationRecord
   end
 
   private
+
+  def unit_available_in_company
+    return if unit.blank? || company.blank?
+    return if company.units.active.where("LOWER(name) = ?", unit.to_s.downcase).exists?
+
+    errors.add(:unit, :not_available)
+  end
 
   # Changing the base unit would silently reinterpret every stored quantity
   # (stock on hand, batches, recipes). Lock it once the ingredient is in use.

@@ -715,6 +715,7 @@ ar:
     tools:
       ingredients: "المكونات"
       ingredient_categories: "التصنيفات"
+      units: "الوحدات"
       suppliers: "الموردون"
       vendor_invoices: "فواتير الموردين"
       stock_takes: "جرد المخزون"
@@ -722,6 +723,25 @@ ar:
       valuation: "تقييم المخزون"
       variance: "فروقات الاستهلاك"
       manufacturing: "التصنيع"
+    units:
+      title: "وحدات القياس"
+      description: "عرّف الوحدات التي تشتري وتخزّن بها شركتك. الوحدات المدمجة متاحة دائماً؛ أضف وحداتك الخاصة."
+      add_heading: "إضافة وحدة مخصّصة"
+      add_hint: "مثال: حجم جالون معيّن، شوال، صفيحة، أو كرتونة يستخدمها موردوك."
+      name: "الاسم"
+      name_placeholder: "مثال: جالون، شوال 20 كجم، صفيحة"
+      add: "إضافة وحدة"
+      type: "النوع"
+      status: "الحالة"
+      built_in: "مدمجة"
+      custom: "مخصّصة"
+      active: "مفعّلة"
+      inactive: "غير مفعّلة"
+      edit_title: "تعديل الوحدة"
+      back: "← الوحدات"
+      active_label: "مفعّلة (متاحة للاختيار)"
+      built_in_name_locked: "لا يمكن إعادة تسمية الوحدات المدمجة."
+      delete_confirm: "حذف الوحدة \"%{name}\"؟"
     ingredient_categories:
       description: "تصنيف المكونات للتصفية والتقارير وجرد المخزون."
       new_button: "تصنيف جديد"
@@ -2501,6 +2521,11 @@ ar:
       assigned: "تم ربط المورد."
       updated: "تم تحديث ربط المورد."
       removed: "تم إزالة المورد."
+    unit:
+      created: "تمت إضافة الوحدة."
+      updated: "تم تحديث الوحدة."
+      removed: "تم حذف الوحدة."
+      cannot_delete_system: "لا يمكن حذف الوحدات المدمجة. قم بإلغاء تفعيلها بدلاً من ذلك."
     supplier:
       created: "تم إنشاء المورد."
       updated: "تم تحديث المورد."
@@ -2561,10 +2586,12 @@ ar:
           attributes:
             unit:
               locked_in_use: "لا يمكن تغييره بعد وجود مخزون أو دفعات أو وحدات بديلة للمكوّن"
+              not_available: "ليست وحدة مُعرّفة لهذه الشركة"
         ingredient_unit:
           attributes:
             unit:
               cannot_equal_base_unit: "يجب أن تختلف عن الوحدة الأساسية للمكوّن"
+              not_available: "ليست وحدة مُعرّفة لهذه الشركة"
         treasury_transfer:
           attributes:
             to_treasury_id:

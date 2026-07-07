@@ -8,10 +8,11 @@ class IngredientUnit < ApplicationRecord
 
   belongs_to :ingredient
 
-  validates :unit, presence: true, inclusion: { in: Ingredient::UNITS }
+  validates :unit, presence: true
   validates :unit, uniqueness: { scope: :ingredient_id }
   validates :base_units_per_unit, numericality: { greater_than: 0 }
   validate :unit_differs_from_base
+  validate :unit_available_in_company
 
   private
 
@@ -20,5 +21,12 @@ class IngredientUnit < ApplicationRecord
     return unless unit == ingredient.unit
 
     errors.add(:unit, :cannot_equal_base_unit)
+  end
+
+  def unit_available_in_company
+    return if unit.blank? || company.blank?
+    return if company.units.active.where("LOWER(name) = ?", unit.to_s.downcase).exists?
+
+    errors.add(:unit, :not_available)
   end
 end

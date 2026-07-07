@@ -713,6 +713,7 @@ en:
     tools:
       ingredients: "Ingredients"
       ingredient_categories: "Categories"
+      units: "Units"
       suppliers: "Suppliers"
       vendor_invoices: "Vendor invoices"
       stock_takes: "Stock takes"
@@ -720,6 +721,25 @@ en:
       valuation: "Valuation"
       variance: "Variance"
       manufacturing: "Manufacturing"
+    units:
+      title: "Units of measure"
+      description: "Define the units your company buys and stocks in. Built-in units are always available; add your own custom units."
+      add_heading: "Add a custom unit"
+      add_hint: "e.g. a specific gallon size, sack, tin, or carton your suppliers use."
+      name: "Name"
+      name_placeholder: "e.g. gallon, 20kg sack, tin"
+      add: "Add unit"
+      type: "Type"
+      status: "Status"
+      built_in: "Built-in"
+      custom: "Custom"
+      active: "Active"
+      inactive: "Inactive"
+      edit_title: "Edit unit"
+      back: "← Units"
+      active_label: "Active (available to select)"
+      built_in_name_locked: "Built-in unit names can't be renamed."
+      delete_confirm: "Delete the unit \"%{name}\"?"
     ingredient_categories:
       description: "Group ingredients for filters, reports, and stock takes."
       new_button: "New category"
@@ -2473,6 +2493,11 @@ en:
       assigned: "Supplier assigned."
       updated: "Supplier link updated."
       removed: "Supplier removed."
+    unit:
+      created: "Unit added."
+      updated: "Unit updated."
+      removed: "Unit removed."
+      cannot_delete_system: "Built-in units can't be deleted. Deactivate it instead."
     supplier:
       created: "Supplier created."
       updated: "Supplier updated."
@@ -2527,10 +2552,12 @@ en:
           attributes:
             unit:
               locked_in_use: "can't be changed once the ingredient has stock, batches, or alternate units"
+              not_available: "is not a unit configured for this company"
         ingredient_unit:
           attributes:
             unit:
               cannot_equal_base_unit: "must be different from the ingredient's base unit"
+              not_available: "is not a unit configured for this company"
         treasury_transfer:
           attributes:
             to_treasury_id:

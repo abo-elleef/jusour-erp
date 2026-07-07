@@ -24,7 +24,7 @@
       <div>
         <%= f.label :unit, class: "block text-sm font-medium text-gray-700 mb-1" %>
         <%= f.select :unit,
-              options_for_select(Ingredient::UNITS.map { |u| [ingredient_unit_label(u), u] }, ingredient.unit),
+              options_for_select(company_unit_options, ingredient.unit),
               { include_blank: t("inventory.ingredients.form.select_unit") },
               class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
       </div>

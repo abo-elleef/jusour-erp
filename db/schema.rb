@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_000017) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_000018) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1039,6 +1039,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000017) do
     t.index ["user_id"], name: "index_treasury_transfers_on_user_id"
   end
 
+  create_table "units", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "name", null: false
+    t.boolean "active", default: true, null: false
+    t.boolean "system", default: false, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "name"], name: "index_units_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_units_on_company_id"
+  end
+
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "role", default: "cashier", null: false
@@ -1263,6 +1275,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000017) do
   add_foreign_key "treasury_transfers", "treasuries", column: "from_treasury_id"
   add_foreign_key "treasury_transfers", "treasuries", column: "to_treasury_id"
   add_foreign_key "treasury_transfers", "users"
+  add_foreign_key "units", "companies"
   add_foreign_key "users", "companies"
   add_foreign_key "vendor_invoice_lines", "ingredients"
   add_foreign_key "vendor_invoice_lines", "vendor_invoices"

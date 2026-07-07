@@ -310,6 +310,11 @@ module ApplicationHelper
     t("inventory.ingredients.units.#{unit}", default: unit.to_s)
   end
 
+  # [label, name] options for the current company's active units.
+  def company_unit_options
+    Current.company.units.active.ordered.map { |u| [ingredient_unit_label(u.name), u.name] }
+  end
+
   def ingredient_search_options(ingredients)
     ingredients.map { |ingredient| { value: ingredient.id, label: ingredient.name } }.to_json
   end
