@@ -310,6 +310,21 @@ module ApplicationHelper
     t("inventory.ingredients.units.#{unit}", default: unit.to_s)
   end
 
+  # Render a stock adjustment's delta in the unit it was entered (system
+  # adjustments are base-unit), with a base-unit helper line when they differ.
+  def stock_adjustment_quantity(adjustment)
+    ingredient = adjustment.ingredient
+    base = adjustment.quantity_delta.to_d
+    sign = base.positive? ? "+" : ""
+    unit = adjustment.unit.presence || ingredient.unit
+    shown = ingredient.from_base(base, adjustment.unit)
+    primary = "#{sign}#{number_with_precision(shown, precision: 3, strip_insignificant_zeros: true)} #{ingredient_unit_label(unit)}"
+    return primary unless adjustment.unit.present? && adjustment.unit != ingredient.unit
+
+    helper = "= #{sign}#{number_with_precision(base, precision: 3, strip_insignificant_zeros: true)} #{ingredient_unit_label(ingredient.unit)}"
+    safe_join([primary, tag.span(helper, class: "block text-xs text-gray-500 font-normal")])
+  end
+
   # [label, name] options for the current company's active units.
   def company_unit_options
     Current.company.units.active.ordered.map { |u| [ingredient_unit_label(u.name), u.name] }

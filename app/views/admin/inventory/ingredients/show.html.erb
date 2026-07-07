@@ -329,7 +329,7 @@
                     </td>
                     <td class="p-3 text-gray-900"><%= inventory_adjustment_type_label(adj.adjustment_type) %></td>
                     <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= adj.quantity_delta.positive? ? "text-green-700" : "text-red-700" %>">
-                      <%= adj.quantity_delta.positive? ? "+#{adj.quantity_delta}" : adj.quantity_delta %>
+                      <%= stock_adjustment_quantity(adj) %>
                     </td>
                   </tr>
                 <% end %>

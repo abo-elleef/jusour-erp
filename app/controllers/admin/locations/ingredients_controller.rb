@@ -72,6 +72,7 @@ module Admin
           user: current_user,
           location: @location,
           quantity_delta: delta,
+          unit: params[:unit].presence,
           adjustment_type: params[:adjustment_type],
           reason_notes: params[:reason_notes]
         )

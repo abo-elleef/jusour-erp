@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_000018) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -789,6 +789,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000018) do
     t.datetime "updated_at", null: false
     t.uuid "location_id"
     t.uuid "stock_transfer_id"
+    t.string "unit"
     t.index ["adjustment_type"], name: "index_stock_adjustments_on_adjustment_type"
     t.index ["created_at"], name: "index_stock_adjustments_on_created_at"
     t.index ["ingredient_id"], name: "index_stock_adjustments_on_ingredient_id"

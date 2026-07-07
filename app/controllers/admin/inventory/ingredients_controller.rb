@@ -79,12 +79,14 @@ module Admin
 
       def adjust
         authorize_inventory!(:adjust)
-        # The delta may be entered in an alternate unit; store it in the base unit.
+        # The delta may be entered in an alternate unit; store it in the base unit
+        # and keep the entered unit for display.
         delta = @ingredient.to_base(BigDecimal(params[:quantity_delta].to_s), params[:unit])
         StockAdjustment.create!(
           ingredient: @ingredient,
           user: current_user,
           quantity_delta: delta,
+          unit: params[:unit].presence,
           adjustment_type: params[:adjustment_type],
           reason_notes: params[:reason_notes]
         )
