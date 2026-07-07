@@ -1,4 +1,5 @@
 <%# locals: form, field, selected: nil, placeholder:, input_class:, html: {} %>
+<% html = local_assigns.fetch(:html, {}) %>
 <% selected_value = selected.presence || form.object.public_send(field) %>
 <div class="relative"
      data-controller="searchable-select"
