@@ -53,7 +53,7 @@
         <%= f.date_field :received_on, class: input_class,
               data: { action: "change->vendor-invoice-lines#receivedOnChanged" } %>
       </div>
-      <div class="sm:col-span-2">
+      <div>
         <%= f.label :notes, t("inventory.vendor_invoices.notes"), class: label_class %>
         <%= f.text_area :notes, rows: 2, class: "#{input_class} resize-y min-h-[4rem]" %>
       </div>
