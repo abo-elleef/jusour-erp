@@ -162,10 +162,10 @@
               <% adj_units = @ingredient.available_units %>
               <% if adj_units.size > 1 %>
                 <div class="flex gap-2">
-                  <%= number_field_tag :quantity_delta, nil, step: 0.001, required: true, class: pos_input_class %>
+                  <%= number_field_tag :quantity_delta, nil, step: 0.001, required: true, class: "#{pos_input_class} basis-2/3 min-w-0" %>
                   <%= select_tag :unit,
                         options_for_select(adj_units.map { |u| [ingredient_unit_label(u), u] }, @ingredient.unit),
-                        class: "#{pos_input_class} appearance-none w-32 shrink-0" %>
+                        class: "#{pos_input_class} appearance-none basis-1/3 min-w-0" %>
                 </div>
               <% else %>
                 <%= number_field_tag :quantity_delta, nil, step: 0.001, required: true, class: pos_input_class %>
