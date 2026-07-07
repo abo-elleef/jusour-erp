@@ -102,6 +102,17 @@ module ApplicationHelper
     transaction.description
   end
 
+  # Render a base-unit transfer quantity in the line's (fixed) unit, with the
+  # base equivalent as a helper line when the unit differs from the base.
+  def transfer_line_quantity(line, base_quantity)
+    unit = line.unit.presence || line.ingredient.unit
+    primary = "#{number_with_precision(line.in_line_unit(base_quantity), precision: 3, strip_insignificant_zeros: true)} #{ingredient_unit_label(unit)}"
+    return primary unless line.unit.present? && line.unit != line.ingredient.unit
+
+    base = "= #{number_with_precision(base_quantity, precision: 3, strip_insignificant_zeros: true)} #{ingredient_unit_label(line.ingredient.unit)}"
+    safe_join([primary, tag.span(base, class: "block text-xs text-gray-500")])
+  end
+
   def menu_item_tax_category(category)
     t("admin.menu_items.tax_categories.#{category}", default: category.to_s.humanize)
   end

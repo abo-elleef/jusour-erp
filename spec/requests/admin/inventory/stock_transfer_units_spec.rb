@@ -40,9 +40,18 @@ RSpec.describe "Stock transfers in a fixed unit", type: :request do
     expect(line.quantity_requested.to_d).to eq(7570)
     expect(line.unit).to eq("gallons")
 
+    # Show page renders the received unit (gallons), not just the base unit.
+    get admin_inventory_stock_transfer_path(transfer)
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("gallon")
+
     # Ship 2 gallons → 7570 ml
     post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "2" } }
     expect(line.reload.quantity_sent.to_d).to eq(7570)
+
+    # Confirm-receipt page renders with the in-transit shipment.
+    get admin_inventory_stock_transfer_path(transfer)
+    expect(response).to have_http_status(:ok)
 
     # Receive 2 gallons → 7570 ml moved kitchen → branch
     post confirm_receipt_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "2" } }

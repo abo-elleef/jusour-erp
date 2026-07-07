@@ -85,17 +85,21 @@
               <% @lines.each do |line| %>
                 <% next if line.quantity_pending_send.zero? %>
                 <tr>
-                  <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.quantity_requested, precision: 3) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.quantity_sent, precision: 3) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.quantity_received, precision: 3) %></td>
-                  <td class="p-3 text-end tabular-nums font-semibold text-amber-800"><%= number_with_precision(line.quantity_pending_send, precision: 3) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.transferable_quantity_at_source, precision: 3) %></td>
+                  <% send_now_base = [line.quantity_pending_send, line.transferable_quantity_at_source].min %>
+                  <td class="p-3 font-medium text-gray-900">
+                    <%= line.ingredient.name %>
+                    <% if line.unit.present? %><span class="block text-xs text-gray-500"><%= t("inventory.stock_transfers.in_unit", unit: ingredient_unit_label(line.unit)) %></span><% end %>
+                  </td>
+                  <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_quantity(line, line.quantity_requested) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_quantity(line, line.quantity_sent) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_quantity(line, line.quantity_received) %></td>
+                  <td class="p-3 text-end tabular-nums font-semibold text-amber-800"><%= transfer_line_quantity(line, line.quantity_pending_send) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_quantity(line, line.transferable_quantity_at_source) %></td>
                   <td class="p-3 text-end">
                     <%= number_field_tag "lines[#{line.id}]",
-                          [line.quantity_pending_send, line.transferable_quantity_at_source].min,
+                          number_with_precision(line.in_line_unit(send_now_base), precision: 3, strip_insignificant_zeros: true),
                           step: 0.001, min: 0,
-                          max: [line.quantity_pending_send, line.transferable_quantity_at_source].min,
+                          max: line.in_line_unit(send_now_base),
                           class: "#{pos_input_class} w-28 text-end ms-auto" %>
                   </td>
                 </tr>
@@ -133,13 +137,16 @@
               <% @current_shipment.stock_transfer_shipment_lines.each do |shipment_line| %>
                 <% line = shipment_line.stock_transfer_line %>
                 <tr>
-                  <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(shipment_line.quantity_sent, precision: 3) %></td>
+                  <td class="p-3 font-medium text-gray-900">
+                    <%= line.ingredient.name %>
+                    <% if line.unit.present? %><span class="block text-xs text-gray-500"><%= t("inventory.stock_transfers.in_unit", unit: ingredient_unit_label(line.unit)) %></span><% end %>
+                  </td>
+                  <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_quantity(line, shipment_line.quantity_sent) %></td>
                   <td class="p-3 text-end">
                     <%= number_field_tag "lines[#{line.id}]",
-                          shipment_line.quantity_sent,
+                          number_with_precision(line.in_line_unit(shipment_line.quantity_sent), precision: 3, strip_insignificant_zeros: true),
                           step: 0.001, min: 0,
-                          max: shipment_line.quantity_sent,
+                          max: line.in_line_unit(shipment_line.quantity_sent),
                           class: "#{pos_input_class} w-28 text-end ms-auto" %>
                   </td>
                 </tr>
@@ -183,11 +190,12 @@
               </thead>
               <tbody>
                 <% shipment.stock_transfer_shipment_lines.each do |shipment_line| %>
+                  <% ship_line = shipment_line.stock_transfer_line %>
                   <tr>
                     <td class="py-1 text-gray-900"><%= shipment_line.ingredient.name %></td>
-                    <td class="py-1 text-end tabular-nums"><%= number_with_precision(shipment_line.quantity_sent, precision: 3) %></td>
+                    <td class="py-1 text-end tabular-nums"><%= transfer_line_quantity(ship_line, shipment_line.quantity_sent) %></td>
                     <td class="py-1 text-end tabular-nums text-gray-600">
-                      <%= shipment_line.quantity_received ? number_with_precision(shipment_line.quantity_received, precision: 3) : "—" %>
+                      <%= shipment_line.quantity_received ? transfer_line_quantity(ship_line, shipment_line.quantity_received) : "—" %>
                     </td>
                   </tr>
                 <% end %>
@@ -218,12 +226,15 @@
         <tbody class="divide-y divide-gray-100">
           <% @lines.each do |line| %>
             <tr>
-              <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
-              <td class="p-3 text-end tabular-nums"><%= number_with_precision(line.quantity_requested, precision: 3) %></td>
-              <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.quantity_sent, precision: 3) %></td>
-              <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_precision(line.quantity_received, precision: 3) %></td>
-              <td class="p-3 text-end tabular-nums text-blue-700"><%= number_with_precision(line.quantity_in_transit, precision: 3) %></td>
-              <td class="p-3 text-end tabular-nums text-amber-700"><%= number_with_precision(line.quantity_pending_send, precision: 3) %></td>
+              <td class="p-3 font-medium text-gray-900">
+                <%= line.ingredient.name %>
+                <% if line.unit.present? %><span class="block text-xs text-gray-500"><%= t("inventory.stock_transfers.in_unit", unit: ingredient_unit_label(line.unit)) %></span><% end %>
+              </td>
+              <td class="p-3 text-end tabular-nums"><%= transfer_line_quantity(line, line.quantity_requested) %></td>
+              <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_quantity(line, line.quantity_sent) %></td>
+              <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_quantity(line, line.quantity_received) %></td>
+              <td class="p-3 text-end tabular-nums text-blue-700"><%= transfer_line_quantity(line, line.quantity_in_transit) %></td>
+              <td class="p-3 text-end tabular-nums text-amber-700"><%= transfer_line_quantity(line, line.quantity_pending_send) %></td>
             </tr>
           <% end %>
         </tbody>

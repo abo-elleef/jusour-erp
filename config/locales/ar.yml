@@ -1026,6 +1026,7 @@ ar:
       from_location_hint: "الموقع الذي سيرسل المخزون."
       to_location_hint: "الموقع الذي يطلب ويستلم المخزون."
       quantity_requested: "المطلوب"
+      in_unit: "بوحدة %{unit}"
       quantity_sent: "المرسل"
       quantity_sent_total: "المرسل (الإجمالي)"
       quantity_sent_this_shipment: "المرسل (هذه الشحنة)"
