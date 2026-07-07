@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_000015) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_000016) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -418,6 +418,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000015) do
     t.decimal "quantity_used", precision: 10, scale: 3, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "unit"
     t.index ["ingredient_id"], name: "index_manufacturing_template_lines_on_ingredient_id"
     t.index ["manufacturing_template_id", "ingredient_id"], name: "index_mfg_template_lines_on_template_and_ingredient", unique: true
     t.index ["manufacturing_template_id"], name: "idx_on_manufacturing_template_id_0bc4795371"
@@ -433,6 +434,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000015) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.string "yield_unit"
     t.index ["active"], name: "index_manufacturing_templates_on_active"
     t.index ["company_id", "name"], name: "index_manufacturing_templates_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_manufacturing_templates_on_company_id"

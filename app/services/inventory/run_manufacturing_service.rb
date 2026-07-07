@@ -32,13 +32,13 @@ module Inventory
         total_input_cost_cents = 0
 
         @template.manufacturing_template_lines.includes(:ingredient).each do |line|
-          quantity = line.quantity_used.to_d * @runs_count
+          quantity = line.base_quantity_used * @runs_count
           total_input_cost_cents += (quantity * line.ingredient.cost_per_unit_cents).round
           deduct_input!(line.ingredient, quantity, run)
           affected_ingredient_ids << line.ingredient_id
         end
 
-        output_quantity = @template.yield_quantity.to_d * @runs_count
+        output_quantity = @template.base_yield_quantity * @runs_count
         add_output!(output_quantity, total_input_cost_cents, run)
         affected_ingredient_ids << @template.output_ingredient_id
       end
