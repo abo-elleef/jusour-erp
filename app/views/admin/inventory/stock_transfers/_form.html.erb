@@ -38,7 +38,8 @@
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden"
            data-controller="stock-transfer-lines"
-           data-searchable-select-options="<%= ingredient_search_options(@ingredients) %>">
+           data-searchable-select-options="<%= ingredient_search_options(@ingredients) %>"
+           data-stock-transfer-lines-available-units-value="<%= @ingredient_available_units.to_json %>">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
       <div>
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.form.line_items") %></h2>

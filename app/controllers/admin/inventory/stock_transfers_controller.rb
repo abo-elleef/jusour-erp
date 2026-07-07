@@ -133,12 +133,25 @@ module Admin
       def stock_transfer_params
         params.require(:stock_transfer).permit(
           :from_location_id, :to_location_id, :notes,
-          stock_transfer_lines_attributes: %i[id ingredient_id quantity_requested _destroy]
+          stock_transfer_lines_attributes: %i[id ingredient_id quantity_requested quantity_requested_input unit _destroy]
         )
       end
 
+      # Ship/receive quantities are entered in each line's fixed unit; convert them
+      # to the base unit before the (base-only) services. Base-unit lines pass
+      # through untouched. Query lines directly so we don't memoize a stale
+      # stock_transfer_lines association that fully_fulfilled? later reads.
       def line_quantity_params
-        params.fetch(:lines, {}).permit!.to_h
+        raw = params.fetch(:lines, {}).permit!.to_h
+        lines_by_id = StockTransferLine.where(stock_transfer_id: @stock_transfer.id).index_by { |l| l.id.to_s }
+        raw.each_with_object({}) do |(line_id, value), converted|
+          line = lines_by_id[line_id.to_s]
+          converted[line_id] = if line&.unit.present? && value.present?
+                                 line.to_base_unit(value).to_s("F")
+                               else
+                                 value
+                               end
+        end
       end
 
       def build_line_items
@@ -157,7 +170,10 @@ module Admin
 
       def load_form_data
         @locations = Location.active.ordered
-        @ingredients = Ingredient.active.order(:name)
+        @ingredients = Ingredient.active.includes(:ingredient_units).order(:name)
+        @ingredient_available_units = @ingredients.to_h do |i|
+          [i.id, i.available_units.map { |u| [helpers.ingredient_unit_label(u), u] }]
+        end
       end
 
       def record_for_policy
