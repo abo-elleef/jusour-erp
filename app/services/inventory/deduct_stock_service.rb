@@ -11,7 +11,7 @@ module Inventory
         next unless item.menu_item_id
 
         item.menu_item.recipes.includes(:ingredient).each do |recipe|
-          quantity_needed = recipe.quantity_used.to_d * item.quantity
+          quantity_needed = recipe.base_quantity_used * item.quantity
           deduct_fifo(recipe.ingredient, quantity_needed)
         end
       end

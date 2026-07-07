@@ -83,7 +83,7 @@ module Admin
     def load_recipes_for_form
       @recipes = @menu_item.recipes.joins(:ingredient).includes(:ingredient).order("ingredients.name")
       assigned_ids = @recipes.map(&:ingredient_id)
-      @recipe_ingredients = Ingredient.active.where.not(id: assigned_ids).order(:name)
+      @recipe_ingredients = Ingredient.active.includes(:ingredient_units).where.not(id: assigned_ids).order(:name)
     end
 
     def sync_modifier_groups!(menu_item)

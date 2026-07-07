@@ -1732,6 +1732,7 @@ en:
       recipes_cost_per_unit: "Ingredient cost per unit: %{amount}"
       recipe_ingredient: "Ingredient"
       recipe_quantity: "Qty used"
+      recipe_unit: "Unit"
       remove_recipe: "Remove"
       recipes_no_ingredients: "No ingredients in inventory yet."
       recipes_create_ingredient: "Create an ingredient"

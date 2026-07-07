@@ -1744,6 +1744,7 @@ ar:
       recipes_cost_per_unit: "تكلفة المكونات لكل وحدة: %{amount}"
       recipe_ingredient: "المكون"
       recipe_quantity: "الكمية المستخدمة"
+      recipe_unit: "الوحدة"
       remove_recipe: "إزالة"
       recipes_no_ingredients: "لا توجد مكونات في المخزون بعد."
       recipes_create_ingredient: "إنشاء مكون"

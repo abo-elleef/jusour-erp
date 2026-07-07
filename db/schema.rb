@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_000013) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_000014) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -752,6 +752,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000013) do
     t.decimal "quantity_used", precision: 10, scale: 4, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "unit"
     t.index ["ingredient_id"], name: "index_recipes_on_ingredient_id"
     t.index ["menu_item_id", "ingredient_id"], name: "index_recipes_on_menu_item_id_and_ingredient_id", unique: true
     t.index ["menu_item_id"], name: "index_recipes_on_menu_item_id"
