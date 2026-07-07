@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="<%= html_lang %>" dir="<%= html_dir %>">
   <head>
-    <%# <title><%= t("app.admin_name") %></title> %>
     <title><%= content_for?(:title) ? "#{yield(:title)}" : t('app.name') %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <%= csrf_meta_tags %>
