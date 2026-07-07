@@ -49,6 +49,19 @@ module ApplicationHelper
     t("accounting.treasuries.transaction_kinds.#{kind}", default: kind.to_s.humanize)
   end
 
+  # "≈ 0.26 gallon · 0.99 liter" — shows a base quantity in the ingredient's
+  # alternate (purchase) units. Returns nil when there are no alternates.
+  def ingredient_alt_unit_hint(ingredient, base_quantity)
+    qty = base_quantity.to_d
+    return if qty.zero? || ingredient.ingredient_units.none?
+
+    parts = ingredient.ingredient_units.map do |iu|
+      converted = number_with_precision(qty / iu.base_units_per_unit, precision: 2, strip_insignificant_zeros: true)
+      "#{converted} #{ingredient_unit_label(iu.unit)}"
+    end
+    "≈ #{parts.join(" · ")}"
+  end
+
   # Returns the vendor invoice URL for an expense linked via VendorInvoicePayment, or nil.
   def expense_source_path(expense)
     return unless expense.source_record_type == "VendorInvoicePayment"

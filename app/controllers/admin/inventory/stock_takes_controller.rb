@@ -44,6 +44,7 @@ module Admin
         params[:stock_take_items]&.each do |id, attrs|
           item = @stock_take.stock_take_items.find(id)
           item.counted_quantity = attrs[:counted_quantity]
+          item.counted_unit = attrs[:counted_unit]
           item.calculate_variance!
           item.save!
         end
@@ -55,6 +56,7 @@ module Admin
         params[:stock_take_items]&.each do |id, attrs|
           item = @stock_take.stock_take_items.find(id)
           item.counted_quantity = attrs[:counted_quantity] if attrs[:counted_quantity].present?
+          item.counted_unit = attrs[:counted_unit] if attrs.key?(:counted_unit)
           item.calculate_variance!
           item.save!
         end
