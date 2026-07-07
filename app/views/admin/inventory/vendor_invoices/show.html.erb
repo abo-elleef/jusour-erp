@@ -238,7 +238,16 @@
               <td class="p-3 ps-5">
                 <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient), class: "font-semibold text-amber-700 hover:text-amber-800" %>
               </td>
-              <td class="p-3 text-end tabular-nums"><%= line.quantity %> <%= ingredient_unit_label(line.ingredient.unit) %></td>
+              <td class="p-3 text-end tabular-nums">
+                <% received_unit = line.unit.presence || line.ingredient.unit %>
+                <%= line.quantity %> <%= ingredient_unit_label(received_unit) %>
+                <% if line.unit.present? && line.unit != line.ingredient.unit %>
+                  <span class="block text-xs text-gray-500">
+                    = <%= number_with_precision(line.base_quantity, precision: 3, strip_insignificant_zeros: true) %>
+                    <%= ingredient_unit_label(line.ingredient.unit) %>
+                  </span>
+                <% end %>
+              </td>
               <td class="p-3 text-end tabular-nums"><%= format_money(line.unit_price_cents) %></td>
               <td class="p-3 text-end tabular-nums font-semibold"><%= format_money(line.line_total_cents) %></td>
               <td class="p-3 pe-5 text-gray-600"><%= line.batch_reference.presence || "—" %></td>
