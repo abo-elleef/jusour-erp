@@ -13,7 +13,7 @@ module Accounting
         next 0 unless item.menu_item_id
 
         item.menu_item.recipes.sum do |recipe|
-          (recipe.quantity_used * item.quantity * recipe.ingredient.cost_per_unit_cents).round
+          (recipe.base_quantity_used * item.quantity * recipe.ingredient.cost_per_unit_cents).round
         end
       end
 

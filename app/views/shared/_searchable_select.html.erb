@@ -1,10 +1,11 @@
 <%# locals: form, field, selected: nil, placeholder:, input_class:, html: {} %>
 <% html = local_assigns.fetch(:html, {}) %>
 <% selected_value = selected.presence || form.object.public_send(field) %>
+<% html_attrs = local_assigns.fetch(:html, {}) || {} %>
 <div class="relative"
      data-controller="searchable-select"
      data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>"
-     <%= tag.attributes(html) %>>
+     <%= tag.attributes(html_attrs) %>>
   <%= form.hidden_field field,
         value: selected_value,
         data: { searchable_select_target: "hidden" } %>

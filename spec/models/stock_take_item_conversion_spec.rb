@@ -1,0 +1,28 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe StockTakeItem, type: :model do
+  let(:category) { IngredientCategory.create!(name: "Oils", position: 1, company: Current.company) }
+  let(:oil) do
+    ing = Ingredient.create!(name: "Oil", ingredient_category: category, unit: "ml",
+      reorder_threshold: 1, cost_per_unit_cents: 2, quantity_on_hand: 1000, company: Current.company)
+    ing.ingredient_units.create!(unit: "liters", base_units_per_unit: 1000, company: Current.company)
+    ing
+  end
+  let(:stock_take) { StockTake.create!(user: create(:user), status: "in_progress", started_at: Time.current) }
+
+  it "computes variance in the base unit when counted in an alternate unit" do
+    item = stock_take.stock_take_items.create!(ingredient: oil, expected_quantity: 1000,
+      counted_quantity: 1.2, counted_unit: "liters")
+    item.calculate_variance!
+    # 1.2 L = 1200 ml counted, expected 1000 ml → +200 ml
+    expect(item.variance).to eq(200)
+  end
+
+  it "treats a blank counted unit as the base unit" do
+    item = stock_take.stock_take_items.create!(ingredient: oil, expected_quantity: 1000, counted_quantity: 900)
+    item.calculate_variance!
+    expect(item.variance).to eq(-100)
+  end
+end

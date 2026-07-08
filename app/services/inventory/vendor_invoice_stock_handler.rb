@@ -11,7 +11,8 @@ module Inventory
 
     def receive_line(line)
       location = @invoice.location
-      qty = line.quantity.to_d
+      # Convert the entered purchase unit (e.g. gallons) to the base stock unit.
+      qty = line.base_quantity
       return if qty <= 0
 
       ensure_ingredient_at_location!(line.ingredient, location)
@@ -23,7 +24,7 @@ module Inventory
         vendor_invoice_line: line,
         quantity_received: qty,
         quantity_remaining: qty,
-        cost_per_unit_cents: line.unit_price_cents,
+        cost_per_unit_cents: line.base_unit_price_cents,
         received_on: @invoice.received_on,
         expires_on: line.expires_on,
         batch_reference: line.batch_reference
@@ -46,7 +47,7 @@ module Inventory
       batch = line.stock_batch
       return unless batch
 
-      qty = line.quantity.to_d
+      qty = line.base_quantity
       if batch.quantity_remaining.to_d < qty
         raise StockConsumedError,
           I18n.t("inventory.vendor_invoices.errors.stock_consumed", ingredient: line.ingredient.name)
@@ -77,17 +78,19 @@ module Inventory
     end
 
     def record_price_history(line)
+      # Track the per-base-unit price so it stays consistent with stock costing.
+      price = line.base_unit_price_cents
       last_price = SupplierPriceHistory
         .where(supplier: @invoice.supplier, ingredient: line.ingredient)
         .order(effective_date: :desc)
         .first&.price_cents
 
-      return if last_price == line.unit_price_cents
+      return if last_price == price
 
       SupplierPriceHistory.create!(
         supplier: @invoice.supplier,
         ingredient: line.ingredient,
-        price_cents: line.unit_price_cents,
+        price_cents: price,
         effective_date: @invoice.invoice_date,
         recorded_by_user: @user
       )

@@ -1,7 +1,8 @@
 <%# locals: menu_item, recipes, recipe_ingredients %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 <% chip_destructive = "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
-<% recipe_cost_cents = recipes.sum { |r| (r.quantity_used.to_d * r.ingredient.cost_per_unit_cents).round } %>
+<% recipe_cost_cents = recipes.sum { |r| (r.base_quantity_used * r.ingredient.cost_per_unit_cents).round } %>
+<% recipe_units_map = recipe_ingredients.to_h { |i| [i.id, i.available_units.map { |u| [ingredient_unit_label(u), u] }] } %>
 
 <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6">
   <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
@@ -24,8 +25,8 @@
             <%= link_to recipe.ingredient.name, admin_inventory_ingredient_path(recipe.ingredient),
                   class: "font-semibold text-amber-700 hover:text-amber-800" %>
             <p class="text-xs text-gray-500 mt-0.5 tabular-nums">
-              <%= recipe.quantity_used %> <%= ingredient_unit_label(recipe.ingredient.unit) %>
-              · <%= format_money((recipe.quantity_used.to_d * recipe.ingredient.cost_per_unit_cents).round) %>
+              <%= recipe.quantity_used %> <%= ingredient_unit_label(recipe.unit.presence || recipe.ingredient.unit) %>
+              · <%= format_money((recipe.base_quantity_used * recipe.ingredient.cost_per_unit_cents).round) %>
             </p>
           </div>
           <%= button_to t("admin.menu_items.remove_recipe"),
@@ -42,17 +43,25 @@
 
   <div class="p-5 border-t border-gray-100 bg-gray-50/50">
     <% if recipe_ingredients.any? %>
-      <%= form_with url: admin_menu_item_recipes_path(menu_item), class: "flex flex-wrap gap-3 items-end" do %>
+      <%= form_with url: admin_menu_item_recipes_path(menu_item), class: "flex flex-wrap gap-3 items-end",
+            data: { controller: "recipe-unit", recipe_unit_units_value: recipe_units_map.to_json } do %>
         <div class="flex-1 min-w-[12rem]">
           <%= label_tag "recipe[ingredient_id]", t("admin.menu_items.recipe_ingredient"), class: label_class %>
           <%= select_tag "recipe[ingredient_id]",
                 options_from_collection_for_select(recipe_ingredients, :id, :name),
-                class: "#{pos_input_class} appearance-none" %>
+                class: "#{pos_input_class} appearance-none",
+                data: { recipe_unit_target: "ingredient", action: "change->recipe-unit#ingredientChanged" } %>
         </div>
         <div class="min-w-[6rem]">
           <%= label_tag "recipe[quantity_used]", t("admin.menu_items.recipe_quantity"), class: label_class %>
           <%= number_field_tag "recipe[quantity_used]", nil, step: 0.0001, min: 0.0001, required: true,
                 class: "#{pos_input_class} tabular-nums" %>
+        </div>
+        <div class="min-w-[6rem]">
+          <%= label_tag "recipe[unit]", t("admin.menu_items.recipe_unit"), class: label_class %>
+          <%= select_tag "recipe[unit]", nil,
+                class: "#{pos_input_class} appearance-none",
+                data: { recipe_unit_target: "unit" } %>
         </div>
         <%= submit_tag t("actions.add"),
               class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shrink-0" %>

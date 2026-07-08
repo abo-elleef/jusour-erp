@@ -4,12 +4,26 @@ class Company < ApplicationRecord
   has_many :users, dependent: :destroy
   has_many :locations, dependent: :destroy
   has_many :orders, dependent: :destroy
+  has_many :units, dependent: :destroy
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true, format: { with: /\A[a-z0-9\-]+\z/ }
   validates :timezone, :currency, :locale, presence: true
 
+  after_create :seed_default_units
+
+  # Names of units this company can use (built-in + custom, active only).
+  def unit_names
+    units.active.pluck(:name)
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[name slug active created_at]
+  end
+
+  private
+
+  def seed_default_units
+    Unit.seed_defaults!(self)
   end
 end

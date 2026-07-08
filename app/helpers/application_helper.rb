@@ -49,6 +49,19 @@ module ApplicationHelper
     t("accounting.treasuries.transaction_kinds.#{kind}", default: kind.to_s.humanize)
   end
 
+  # "≈ 0.26 gallon · 0.99 liter" — shows a base quantity in the ingredient's
+  # alternate (purchase) units. Returns nil when there are no alternates.
+  def ingredient_alt_unit_hint(ingredient, base_quantity)
+    qty = base_quantity.to_d
+    return if qty.zero? || ingredient.ingredient_units.none?
+
+    parts = ingredient.ingredient_units.map do |iu|
+      converted = number_with_precision(qty / iu.base_units_per_unit, precision: 2, strip_insignificant_zeros: true)
+      "#{converted} #{ingredient_unit_label(iu.unit)}"
+    end
+    "≈ #{parts.join(" · ")}"
+  end
+
   # Returns the vendor invoice URL for an expense linked via VendorInvoicePayment, or nil.
   def expense_source_path(expense)
     return unless expense.source_record_type == "VendorInvoicePayment"
@@ -87,6 +100,17 @@ module ApplicationHelper
     end
 
     transaction.description
+  end
+
+  # Render a base-unit transfer quantity in the line's (fixed) unit, with the
+  # base equivalent as a helper line when the unit differs from the base.
+  def transfer_line_quantity(line, base_quantity)
+    unit = line.unit.presence || line.ingredient.unit
+    primary = "#{number_with_precision(line.in_line_unit(base_quantity), precision: 3, strip_insignificant_zeros: true)} #{ingredient_unit_label(unit)}"
+    return primary unless line.unit.present? && line.unit != line.ingredient.unit
+
+    base = "= #{number_with_precision(base_quantity, precision: 3, strip_insignificant_zeros: true)} #{ingredient_unit_label(line.ingredient.unit)}"
+    safe_join([primary, tag.span(base, class: "block text-xs text-gray-500")])
   end
 
   def menu_item_tax_category(category)
@@ -284,6 +308,26 @@ module ApplicationHelper
 
   def ingredient_unit_label(unit)
     t("inventory.ingredients.units.#{unit}", default: unit.to_s)
+  end
+
+  # Render a stock adjustment's delta in the unit it was entered (system
+  # adjustments are base-unit), with a base-unit helper line when they differ.
+  def stock_adjustment_quantity(adjustment)
+    ingredient = adjustment.ingredient
+    base = adjustment.quantity_delta.to_d
+    sign = base.positive? ? "+" : ""
+    unit = adjustment.unit.presence || ingredient.unit
+    shown = ingredient.from_base(base, adjustment.unit)
+    primary = "#{sign}#{number_with_precision(shown, precision: 3, strip_insignificant_zeros: true)} #{ingredient_unit_label(unit)}"
+    return primary unless adjustment.unit.present? && adjustment.unit != ingredient.unit
+
+    helper = "= #{sign}#{number_with_precision(base, precision: 3, strip_insignificant_zeros: true)} #{ingredient_unit_label(ingredient.unit)}"
+    safe_join([primary, tag.span(helper, class: "block text-xs text-gray-500 font-normal")])
+  end
+
+  # [label, name] options for the current company's active units.
+  def company_unit_options
+    Current.company.units.active.ordered.map { |u| [ingredient_unit_label(u.name), u.name] }
   end
 
   def ingredient_search_options(ingredients)

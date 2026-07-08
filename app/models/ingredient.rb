@@ -6,6 +6,9 @@ class Ingredient < ApplicationRecord
   UNITS = %w[kg g lbs oz liters ml pieces packs gallons bales].freeze
 
   belongs_to :ingredient_category
+  has_many :ingredient_units, dependent: :destroy
+  accepts_nested_attributes_for :ingredient_units, allow_destroy: true,
+    reject_if: ->(attrs) { attrs["unit"].blank? && attrs["base_units_per_unit"].blank? }
   has_many :ingredient_locations, dependent: :destroy
   has_many :locations, through: :ingredient_locations
   has_many :recipes, dependent: :destroy
@@ -23,10 +26,12 @@ class Ingredient < ApplicationRecord
   monetize :cost_per_unit_cents
 
   validates :name, presence: true, uniqueness: { scope: :company_id }
-  validates :unit, presence: true, inclusion: { in: UNITS }
+  validates :unit, presence: true
+  validate :unit_available_in_company
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_on_hand, numericality: true
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validate :base_unit_locked_when_in_use, on: :update
 
   scope :active, -> { where(active: true) }
   scope :low_stock, -> { where("quantity_on_hand <= reorder_threshold") }
@@ -69,7 +74,53 @@ class Ingredient < ApplicationRecord
     (quantity_on_hand.to_d * cost_per_unit_cents).round
   end
 
+  # All units this ingredient can be measured in: its base unit plus any
+  # configured alternate units. The base unit is always first.
+  def available_units
+    [unit] + ingredient_units.map(&:unit).reject { |u| u == unit }
+  end
+
+  # How many base units one of `for_unit` equals. The base unit is factor 1.
+  def base_units_per(for_unit)
+    return 1.to_d if for_unit.blank? || for_unit == unit
+
+    row = ingredient_units.detect { |iu| iu.unit == for_unit }
+    row&.base_units_per_unit&.to_d
+  end
+
+  # Convert a quantity entered in `from_unit` into the base unit.
+  def to_base(quantity, from_unit)
+    factor = base_units_per(from_unit)
+    raise ArgumentError, "Unknown unit #{from_unit.inspect} for #{name}" if factor.nil?
+
+    quantity.to_d * factor
+  end
+
+  # Convert a base-unit quantity into `to_unit` for display.
+  def from_base(quantity, to_unit)
+    factor = base_units_per(to_unit)
+    raise ArgumentError, "Unknown unit #{to_unit.inspect} for #{name}" if factor.nil?
+
+    quantity.to_d / factor
+  end
+
   private
+
+  def unit_available_in_company
+    return if unit.blank? || company.blank?
+    return if company.units.active.where("LOWER(name) = ?", unit.to_s.downcase).exists?
+
+    errors.add(:unit, :not_available)
+  end
+
+  # Changing the base unit would silently reinterpret every stored quantity
+  # (stock on hand, batches, recipes). Lock it once the ingredient is in use.
+  def base_unit_locked_when_in_use
+    return unless unit_changed?
+    return unless quantity_on_hand.to_d.nonzero? || stock_batches.exists? || ingredient_units.exists?
+
+    errors.add(:unit, :locked_in_use)
+  end
 
   def assign_company
     self.company ||= ingredient_category&.company || Current.company

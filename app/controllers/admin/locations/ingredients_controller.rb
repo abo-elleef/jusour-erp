@@ -64,13 +64,15 @@ module Admin
         authorize @location, :update?, policy_class: LocationPolicy
         ingredient = Ingredient.find(params[:id])
         ensure_ingredient_assigned!(ingredient)
-        delta = BigDecimal(params[:quantity_delta].to_s)
+        # The delta may be entered in an alternate unit; store it in the base unit.
+        delta = ingredient.to_base(BigDecimal(params[:quantity_delta].to_s), params[:unit])
 
         StockAdjustment.create!(
           ingredient: ingredient,
           user: current_user,
           location: @location,
           quantity_delta: delta,
+          unit: params[:unit].presence,
           adjustment_type: params[:adjustment_type],
           reason_notes: params[:reason_notes]
         )

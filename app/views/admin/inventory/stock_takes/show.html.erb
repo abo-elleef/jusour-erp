@@ -82,8 +82,18 @@
                     <%= item.expected_quantity %> <%= ingredient_unit_label(item.ingredient.unit) %>
                   </td>
                   <td class="p-3 text-right">
-                    <%= number_field_tag "stock_take_items[#{item.id}][counted_quantity]",
-                          item.counted_quantity, step: 0.001, class: "#{input_class} ml-auto" %>
+                    <div class="flex items-center justify-end gap-1.5">
+                      <%= number_field_tag "stock_take_items[#{item.id}][counted_quantity]",
+                            item.counted_quantity, step: 0.001, class: "#{input_class} ml-auto" %>
+                      <% units = item.ingredient.available_units %>
+                      <% if units.size > 1 %>
+                        <%= select_tag "stock_take_items[#{item.id}][counted_unit]",
+                              options_for_select(units.map { |u| [ingredient_unit_label(u), u] }, item.counted_unit.presence || item.ingredient.unit),
+                              class: "#{input_class} appearance-none w-24 shrink-0" %>
+                      <% else %>
+                        <span class="text-xs text-gray-500 shrink-0"><%= ingredient_unit_label(item.ingredient.unit) %></span>
+                      <% end %>
+                    </div>
                   </td>
                   <td class="p-3 pr-5 text-right font-semibold tabular-nums whitespace-nowrap <%= item.variance.to_d.negative? ? 'text-red-700' : (has_variance ? 'text-amber-700' : 'text-gray-500') %>">
                     <%= item.variance.present? ? item.variance : t("accounting.shared.em_dash") %>

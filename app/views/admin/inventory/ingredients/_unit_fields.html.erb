@@ -1,0 +1,27 @@
+<%# locals: f (ingredient_unit fields builder), base_unit %>
+<% base_label = base_unit.present? ? ingredient_unit_label(base_unit) : t("inventory.ingredients.form.unit_fallback") %>
+<div class="flex flex-wrap items-end gap-3 py-2" data-ingredient-units-target="row">
+  <%= f.hidden_field :_destroy, value: false, data: { ingredient_units_target: "destroy" } %>
+  <%= f.hidden_field :id %>
+  <div class="w-32">
+    <label class="block text-xs font-semibold text-gray-600 mb-1"><%= t("inventory.ingredients.units.unit") %></label>
+    <%= f.select :unit,
+          options_for_select(company_unit_options, f.object.unit),
+          { include_blank: t("inventory.ingredients.form.select_unit") },
+          class: "w-full border border-gray-300 rounded-lg px-2 py-2 text-sm" %>
+  </div>
+  <div class="flex items-end gap-1.5">
+    <span class="text-sm text-gray-500 pb-2">1 =</span>
+    <div class="w-32">
+      <label class="block text-xs font-semibold text-gray-600 mb-1"><%= t("inventory.ingredients.units.factor", base: base_label) %></label>
+      <%= f.number_field :base_units_per_unit, step: "any", min: 0,
+            class: "w-full border border-gray-300 rounded-lg px-2 py-2 text-sm",
+            placeholder: "0" %>
+    </div>
+    <span class="text-sm text-gray-500 pb-2"><%= base_label %></span>
+  </div>
+  <button type="button" data-action="ingredient-units#remove"
+          class="text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg border border-red-200">
+    <%= t("actions.remove") %>
+  </button>
+</div>

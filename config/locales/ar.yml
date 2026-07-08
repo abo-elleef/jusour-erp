@@ -602,6 +602,12 @@ ar:
         empty_description_filtered: "جرّب مسح التصفية أو تعديل البحث."
         empty_description: "ابدأ بإضافة أول مكون."
         clear_filters: "مسح التصفية"
+      units:
+        heading: "وحدات الشراء / البديلة"
+        hint: "أضف الوحدات التي تشتري أو تقيس بها هذا المكوّن. يبقى المخزون والوصفات والتكاليف بالوحدة الأساسية أعلاه، وتُحوَّل هذه الوحدات إليها."
+        unit: "الوحدة"
+        factor: "%{base} لكل وحدة"
+        add: "إضافة وحدة"
       form:
         category: "التصنيف"
         select_category: "اختر التصنيف…"
@@ -709,6 +715,7 @@ ar:
     tools:
       ingredients: "المكونات"
       ingredient_categories: "التصنيفات"
+      units: "الوحدات"
       suppliers: "الموردون"
       vendor_invoices: "فواتير الموردين"
       stock_takes: "جرد المخزون"
@@ -716,6 +723,25 @@ ar:
       valuation: "تقييم المخزون"
       variance: "فروقات الاستهلاك"
       manufacturing: "التصنيع"
+    units:
+      title: "وحدات القياس"
+      description: "عرّف الوحدات التي تشتري وتخزّن بها شركتك. الوحدات المدمجة متاحة دائماً؛ أضف وحداتك الخاصة."
+      add_heading: "إضافة وحدة مخصّصة"
+      add_hint: "مثال: حجم جالون معيّن، شوال، صفيحة، أو كرتونة يستخدمها موردوك."
+      name: "الاسم"
+      name_placeholder: "مثال: جالون، شوال 20 كجم، صفيحة"
+      add: "إضافة وحدة"
+      type: "النوع"
+      status: "الحالة"
+      built_in: "مدمجة"
+      custom: "مخصّصة"
+      active: "مفعّلة"
+      inactive: "غير مفعّلة"
+      edit_title: "تعديل الوحدة"
+      back: "← الوحدات"
+      active_label: "مفعّلة (متاحة للاختيار)"
+      built_in_name_locked: "لا يمكن إعادة تسمية الوحدات المدمجة."
+      delete_confirm: "حذف الوحدة \"%{name}\"؟"
     ingredient_categories:
       description: "تصنيف المكونات للتصفية والتقارير وجرد المخزون."
       new_button: "تصنيف جديد"
@@ -1020,6 +1046,7 @@ ar:
       from_location_hint: "الموقع الذي سيرسل المخزون."
       to_location_hint: "الموقع الذي يطلب ويستلم المخزون."
       quantity_requested: "المطلوب"
+      in_unit: "بوحدة %{unit}"
       quantity_sent: "المرسل"
       quantity_sent_total: "المرسل (الإجمالي)"
       quantity_sent_this_shipment: "المرسل (هذه الشحنة)"
@@ -1738,6 +1765,7 @@ ar:
       recipes_cost_per_unit: "تكلفة المكونات لكل وحدة: %{amount}"
       recipe_ingredient: "المكون"
       recipe_quantity: "الكمية المستخدمة"
+      recipe_unit: "الوحدة"
       remove_recipe: "إزالة"
       recipes_no_ingredients: "لا توجد مكونات في المخزون بعد."
       recipes_create_ingredient: "إنشاء مكون"
@@ -2493,6 +2521,11 @@ ar:
       assigned: "تم ربط المورد."
       updated: "تم تحديث ربط المورد."
       removed: "تم إزالة المورد."
+    unit:
+      created: "تمت إضافة الوحدة."
+      updated: "تم تحديث الوحدة."
+      removed: "تم حذف الوحدة."
+      cannot_delete_system: "لا يمكن حذف الوحدات المدمجة. قم بإلغاء تفعيلها بدلاً من ذلك."
     supplier:
       created: "تم إنشاء المورد."
       updated: "تم تحديث المورد."
@@ -2549,6 +2582,16 @@ ar:
   activerecord:
     errors:
       models:
+        ingredient:
+          attributes:
+            unit:
+              locked_in_use: "لا يمكن تغييره بعد وجود مخزون أو دفعات أو وحدات بديلة للمكوّن"
+              not_available: "ليست وحدة مُعرّفة لهذه الشركة"
+        ingredient_unit:
+          attributes:
+            unit:
+              cannot_equal_base_unit: "يجب أن تختلف عن الوحدة الأساسية للمكوّن"
+              not_available: "ليست وحدة مُعرّفة لهذه الشركة"
         treasury_transfer:
           attributes:
             to_treasury_id:

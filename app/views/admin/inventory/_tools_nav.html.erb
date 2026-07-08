@@ -4,6 +4,8 @@
           class: admin_section_tab_class(controller_name == "ingredients" && action_name == "index") %>
     <%= link_to t("inventory.tools.ingredient_categories"), admin_inventory_ingredient_categories_path,
           class: admin_section_tab_class(controller_name == "ingredient_categories") %>
+    <%= link_to t("inventory.tools.units"), admin_inventory_units_path,
+          class: admin_section_tab_class(controller_name == "units") %>
     <%= link_to t("inventory.tools.suppliers"), admin_inventory_suppliers_path,
           class: admin_section_tab_class(controller_name == "suppliers") %>
     <%= link_to t("inventory.tools.vendor_invoices"), admin_inventory_vendor_invoices_path,

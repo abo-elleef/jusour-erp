@@ -21,7 +21,7 @@ module Accounting
         revenue_cents = RevenueCalculator.order_item_revenue(scope)
 
         ingredient_cost_per_unit = item.recipes.sum do |r|
-          (r.quantity_used * r.ingredient.cost_per_unit_cents).round
+          (r.base_quantity_used * r.ingredient.cost_per_unit_cents).round
         end
         total_cost_cents = ingredient_cost_per_unit * units_sold
         food_cost_pct = revenue_cents.positive? ? (total_cost_cents.to_f / revenue_cents * 100).round(1) : 0

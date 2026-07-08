@@ -24,7 +24,7 @@
       <div>
         <%= f.label :unit, class: "block text-sm font-medium text-gray-700 mb-1" %>
         <%= f.select :unit,
-              options_for_select(Ingredient::UNITS.map { |u| [ingredient_unit_label(u), u] }, ingredient.unit),
+              options_for_select(company_unit_options, ingredient.unit),
               { include_blank: t("inventory.ingredients.form.select_unit") },
               class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
       </div>
@@ -87,6 +87,25 @@
         <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.form.active_hint") %></p>
       </div>
     </div>
+  </div>
+
+  <div class="pt-4 border-t border-gray-100" data-controller="ingredient-units">
+    <h3 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.units.heading") %></h3>
+    <p class="text-xs text-gray-500 mt-0.5 mb-2"><%= t("inventory.ingredients.units.hint") %></p>
+    <div data-ingredient-units-target="list">
+      <%= f.fields_for :ingredient_units do |uf| %>
+        <%= render "unit_fields", f: uf, base_unit: ingredient.unit %>
+      <% end %>
+    </div>
+    <template data-ingredient-units-target="template">
+      <%= f.fields_for :ingredient_units, IngredientUnit.new, child_index: "NEW_RECORD" do |uf| %>
+        <%= render "unit_fields", f: uf, base_unit: ingredient.unit %>
+      <% end %>
+    </template>
+    <button type="button" data-action="ingredient-units#add"
+            class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-2 rounded-lg border border-amber-200">
+      <span aria-hidden="true">+</span> <%= t("inventory.ingredients.units.add") %>
+    </button>
   </div>
 
   <div class="flex gap-2 pt-2 border-t border-gray-100">

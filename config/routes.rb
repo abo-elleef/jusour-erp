@@ -216,6 +216,7 @@ Rails.application.routes.draw do
     end
 
     namespace :inventory do
+      resources :units, except: %i[show]
       resources :ingredient_categories do
         collection { patch :reorder }
       end

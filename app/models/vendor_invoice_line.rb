@@ -13,6 +13,20 @@ class VendorInvoiceLine < ApplicationRecord
 
   before_validation :derive_unit_price
 
+  # Quantity entered in `unit` (may be an alternate purchase unit) converted to
+  # the ingredient's base unit — the unit all stock/costing is stored in.
+  def base_quantity
+    return quantity.to_d if ingredient.blank?
+
+    ingredient.to_base(quantity, unit)
+  end
+
+  # Cost per BASE unit — line total is the source of truth, so this never loses money.
+  def base_unit_price_cents
+    base = base_quantity
+    base.nonzero? ? (line_total_cents.to_d / base).round : 0
+  end
+
   private
 
   def derive_unit_price

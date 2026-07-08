@@ -97,7 +97,7 @@ module Admin
           notes: params[:notes].presence
         ).call
 
-        output_qty = runs_count * @template.yield_quantity.to_d
+        output_qty = runs_count * @template.base_yield_quantity
         expires_on = Date.current + shelf_life_days.days
         redirect_to admin_inventory_manufacturing_template_path(@template),
           notice: t(
@@ -122,13 +122,16 @@ module Admin
 
       def template_params
         params.require(:manufacturing_template).permit(
-          :name, :output_ingredient_id, :yield_quantity, :active, :position, :notes,
-          manufacturing_template_lines_attributes: %i[id ingredient_id quantity_used _destroy]
+          :name, :output_ingredient_id, :yield_quantity, :yield_unit, :active, :position, :notes,
+          manufacturing_template_lines_attributes: %i[id ingredient_id quantity_used unit _destroy]
         )
       end
 
       def load_form_data
-        @ingredients = Ingredient.active.order(:name)
+        @ingredients = Ingredient.active.includes(:ingredient_units).order(:name)
+        @ingredient_available_units = @ingredients.to_h do |i|
+          [i.id, i.available_units.map { |u| [helpers.ingredient_unit_label(u), u] }]
+        end
       end
 
       def build_line_items

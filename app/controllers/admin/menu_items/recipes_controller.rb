@@ -28,7 +28,7 @@ module Admin
       end
 
       def recipe_params
-        params.require(:recipe).permit(:ingredient_id, :quantity_used)
+        params.require(:recipe).permit(:ingredient_id, :quantity_used, :unit)
       end
     end
   end

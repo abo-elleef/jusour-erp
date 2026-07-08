@@ -15,9 +15,15 @@ class ManufacturingTemplate < ApplicationRecord
   validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :yield_quantity, numericality: { greater_than: 0 }
   validate :must_have_input_lines, if: :active?
+  validate :yield_unit_valid_for_output
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }
+
+  # yield_quantity converted to the output ingredient's base unit.
+  def base_yield_quantity
+    output_ingredient.to_base(yield_quantity, yield_unit)
+  end
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[name active position]
@@ -29,5 +35,12 @@ class ManufacturingTemplate < ApplicationRecord
     return if manufacturing_template_lines.any?
 
     errors.add(:base, :needs_input_lines)
+  end
+
+  def yield_unit_valid_for_output
+    return if yield_unit.blank? || output_ingredient.blank?
+    return if output_ingredient.available_units.include?(yield_unit)
+
+    errors.add(:yield_unit, :invalid)
   end
 end

@@ -10,7 +10,7 @@
       data: {
         controller: "vendor-invoice-lines",
         searchable_select_options: ingredient_search_options(@ingredients),
-        vendor_invoice_lines_units_value: @ingredient_units.to_json,
+        vendor_invoice_lines_available_units_value: @ingredient_available_units.to_json,
         vendor_invoice_lines_shelf_life_days_value: @ingredient_shelf_life_days.to_json,
         vendor_invoice_lines_unit_price_dollars_value: @ingredient_unit_price_dollars.to_json
       } do |f| %>
@@ -53,13 +53,14 @@
         <%= f.date_field :received_on, class: input_class,
               data: { action: "change->vendor-invoice-lines#receivedOnChanged" } %>
       </div>
-      <div class="sm:col-span-2">
+      <div>
         <%= f.label :notes, t("inventory.vendor_invoices.notes"), class: label_class %>
         <%= f.text_area :notes, rows: 2, class: "#{input_class} resize-y min-h-[4rem]" %>
       </div>
     </div>
   </section>
 
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden"
            data-controller="vendor-invoice-discount">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
@@ -162,6 +163,7 @@
       <% end %>
     </div>
   </section>
+  </div>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
