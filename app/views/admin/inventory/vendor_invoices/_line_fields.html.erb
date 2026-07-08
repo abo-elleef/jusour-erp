@@ -5,7 +5,7 @@
 <% unit_text = ingredient ? ingredient_unit_label(ingredient.unit) : "—" %>
 
 <% has_details = line.batch_reference.present? || line.line_notes.present? %>
-<div class="px-5 py-4 lg:grid lg:grid-cols-12 lg:gap-3 lg:items-end space-y-3 lg:space-y-0"
+<div class="px-5 py-4 lg:grid lg:grid-cols-12 lg:gap-3 lg:items-start space-y-3 lg:space-y-0"
      data-vendor-invoice-lines-target="row">
   <%= f.hidden_field :_destroy, value: false, data: { vendor_invoice_lines_target: "destroy" } %>
   <%= f.hidden_field :id %>
@@ -49,7 +49,7 @@
     <label class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("inventory.vendor_invoices.form.expires_on") %></label>
     <%= f.date_field :expires_on, class: input_class, data: { vendor_invoice_lines_target: "expiresOn" } %>
   </div>
-  <div class="lg:col-span-1 flex items-end justify-end lg:justify-center gap-2">
+  <div class="lg:col-span-1 flex items-end lg:items-start justify-end lg:justify-center gap-2">
     <button type="button"
             class="relative inline-flex items-center justify-center w-9 h-9 text-gray-700 hover:bg-gray-100 rounded-xl border border-gray-200 transition-colors"
             data-action="vendor-invoice-lines#openDetails"
