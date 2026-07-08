@@ -610,6 +610,7 @@ en:
         add: "Add unit"
       form:
         category: "Category"
+        unit: "Base unit"
         select_category: "Select category…"
         select_unit: "Select unit…"
         stock_cost_heading: "Stock & cost"
@@ -739,7 +740,6 @@ en:
       edit_title: "Edit unit"
       back: "← Units"
       active_label: "Active (available to select)"
-      built_in_name_locked: "Built-in unit names can't be renamed."
       delete_confirm: "Delete the unit \"%{name}\"?"
     ingredient_categories:
       description: "Group ingredients for filters, reports, and stock takes."
@@ -2498,7 +2498,6 @@ en:
       created: "Unit added."
       updated: "Unit updated."
       removed: "Unit removed."
-      cannot_delete_system: "Built-in units can't be deleted. Deactivate it instead."
       cannot_delete_in_use: "Can't delete — used by %{count} ingredient(s). Deactivate it instead."
     supplier:
       created: "Supplier created."

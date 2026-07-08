@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 class StockTransferLine < ApplicationRecord
+  include UnitReferenced
+
   belongs_to :stock_transfer
   belongs_to :ingredient
+  references_unit :unit, column: :unit_id
   has_many :stock_transfer_shipment_lines, dependent: :restrict_with_error
 
   # Requested quantity as typed in `unit`; converted to base on the way in so the

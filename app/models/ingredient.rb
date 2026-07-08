@@ -2,13 +2,16 @@
 
 class Ingredient < ApplicationRecord
   include Tenantable
+  include UnitReferenced
 
   UNITS = %w[kg g lbs oz liters ml pieces packs gallons bales].freeze
 
   belongs_to :ingredient_category
+  # Base unit, referenced by id but exposed as a name (`ingredient.unit`).
+  references_unit :unit, column: :unit_id, required: true
   has_many :ingredient_units, dependent: :destroy
   accepts_nested_attributes_for :ingredient_units, allow_destroy: true,
-    reject_if: ->(attrs) { attrs["unit"].blank? && attrs["base_units_per_unit"].blank? }
+    reject_if: ->(attrs) { attrs["unit_id"].blank? && attrs["base_units_per_unit"].blank? }
   has_many :ingredient_locations, dependent: :destroy
   has_many :locations, through: :ingredient_locations
   has_many :recipes, dependent: :destroy
@@ -26,8 +29,7 @@ class Ingredient < ApplicationRecord
   monetize :cost_per_unit_cents
 
   validates :name, presence: true, uniqueness: { scope: :company_id }
-  validates :unit, presence: true
-  validate :unit_available_in_company
+  validate :unit_belongs_to_company
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_on_hand, numericality: true
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
@@ -41,7 +43,7 @@ class Ingredient < ApplicationRecord
   }
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name unit active quantity_on_hand reorder_threshold ingredient_category_id shelf_life_days]
+    %w[name active quantity_on_hand reorder_threshold ingredient_category_id shelf_life_days]
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -80,6 +82,15 @@ class Ingredient < ApplicationRecord
     [unit] + ingredient_units.map(&:unit).reject { |u| u == unit }
   end
 
+  # The same list as Unit records (base first) — for building id-based dropdowns.
+  def available_unit_records
+    ([unit_ref] + ingredient_units.map(&:unit_ref)).compact.uniq
+  end
+
+  def available_unit_ids
+    available_unit_records.map(&:id)
+  end
+
   # How many base units one of `for_unit` equals. The base unit is factor 1.
   def base_units_per(for_unit)
     return 1.to_d if for_unit.blank? || for_unit == unit
@@ -106,9 +117,9 @@ class Ingredient < ApplicationRecord
 
   private
 
-  def unit_available_in_company
-    return if unit.blank? || company.blank?
-    return if company.units.active.where("LOWER(name) = ?", unit.to_s.downcase).exists?
+  def unit_belongs_to_company
+    return if unit_ref.blank? || company.blank?
+    return if unit_ref.company_id == company_id
 
     errors.add(:unit, :not_available)
   end
@@ -116,7 +127,7 @@ class Ingredient < ApplicationRecord
   # Changing the base unit would silently reinterpret every stored quantity
   # (stock on hand, batches, recipes). Lock it once the ingredient is in use.
   def base_unit_locked_when_in_use
-    return unless unit_changed?
+    return unless unit_id_changed?
     return unless quantity_on_hand.to_d.nonzero? || stock_batches.exists? || ingredient_units.exists?
 
     errors.add(:unit, :locked_in_use)

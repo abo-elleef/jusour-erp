@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 class Recipe < ApplicationRecord
+  include UnitReferenced
+
   belongs_to :menu_item
   belongs_to :ingredient
+  references_unit :unit, column: :unit_id
 
   validates :quantity_used, numericality: { greater_than: 0 }
   validates :menu_item_id, uniqueness: { scope: :ingredient_id }

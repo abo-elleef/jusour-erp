@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 class ManufacturingTemplateLine < ApplicationRecord
+  include UnitReferenced
+
   belongs_to :manufacturing_template
   belongs_to :ingredient
+  references_unit :unit, column: :unit_id
 
   validates :quantity_used, numericality: { greater_than: 0 }
   validates :ingredient_id, uniqueness: { scope: :manufacturing_template_id }

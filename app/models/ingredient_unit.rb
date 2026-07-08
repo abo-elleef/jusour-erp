@@ -5,27 +5,28 @@
 # ingredient's base unit one of this unit equals — "1 <unit> = N <base unit>".
 class IngredientUnit < ApplicationRecord
   include Tenantable
+  include UnitReferenced
 
   belongs_to :ingredient
+  references_unit :unit, column: :unit_id, required: true
 
-  validates :unit, presence: true
-  validates :unit, uniqueness: { scope: :ingredient_id }
+  validates :unit_id, uniqueness: { scope: :ingredient_id }
   validates :base_units_per_unit, numericality: { greater_than: 0 }
   validate :unit_differs_from_base
-  validate :unit_available_in_company
+  validate :unit_belongs_to_company
 
   private
 
   def unit_differs_from_base
-    return if ingredient.blank? || unit.blank?
-    return unless unit == ingredient.unit
+    return if ingredient.blank? || unit_id.blank?
+    return unless unit_id == ingredient.unit_id
 
     errors.add(:unit, :cannot_equal_base_unit)
   end
 
-  def unit_available_in_company
-    return if unit.blank? || company.blank?
-    return if company.units.active.where("LOWER(name) = ?", unit.to_s.downcase).exists?
+  def unit_belongs_to_company
+    return if unit_ref.blank? || company.blank?
+    return if unit_ref.company_id == company_id
 
     errors.add(:unit, :not_available)
   end

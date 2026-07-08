@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_08_000020) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -326,19 +326,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
   create_table "ingredient_units", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "ingredient_id", null: false
     t.uuid "company_id", null: false
-    t.string "unit", null: false
     t.decimal "base_units_per_unit", precision: 14, scale: 4, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "unit_id", null: false
     t.index ["company_id"], name: "index_ingredient_units_on_company_id"
-    t.index ["ingredient_id", "unit"], name: "index_ingredient_units_on_ingredient_id_and_unit", unique: true
     t.index ["ingredient_id"], name: "index_ingredient_units_on_ingredient_id"
+    t.index ["unit_id"], name: "index_ingredient_units_on_unit_id"
   end
 
   create_table "ingredients", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "ingredient_category_id", null: false
     t.string "name", null: false
-    t.string "unit", null: false
     t.decimal "reorder_threshold", precision: 10, scale: 3, default: "0.0", null: false
     t.decimal "quantity_on_hand", precision: 10, scale: 3, default: "0.0", null: false
     t.integer "cost_per_unit_cents", default: 0, null: false
@@ -347,11 +346,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
     t.integer "shelf_life_days"
+    t.uuid "unit_id", null: false
     t.index ["active"], name: "index_ingredients_on_active"
     t.index ["company_id", "name"], name: "index_ingredients_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_ingredients_on_company_id"
     t.index ["ingredient_category_id"], name: "index_ingredients_on_ingredient_category_id"
     t.index ["name"], name: "index_ingredients_on_name"
+    t.index ["unit_id"], name: "index_ingredients_on_unit_id"
   end
 
   create_table "location_menu_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -418,10 +419,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
     t.decimal "quantity_used", precision: 10, scale: 3, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "unit"
+    t.uuid "unit_id"
     t.index ["ingredient_id"], name: "index_manufacturing_template_lines_on_ingredient_id"
     t.index ["manufacturing_template_id", "ingredient_id"], name: "index_mfg_template_lines_on_template_and_ingredient", unique: true
     t.index ["manufacturing_template_id"], name: "idx_on_manufacturing_template_id_0bc4795371"
+    t.index ["unit_id"], name: "index_manufacturing_template_lines_on_unit_id"
   end
 
   create_table "manufacturing_templates", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -434,11 +436,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
-    t.string "yield_unit"
+    t.uuid "yield_unit_id"
     t.index ["active"], name: "index_manufacturing_templates_on_active"
     t.index ["company_id", "name"], name: "index_manufacturing_templates_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_manufacturing_templates_on_company_id"
     t.index ["output_ingredient_id"], name: "index_manufacturing_templates_on_output_ingredient_id"
+    t.index ["yield_unit_id"], name: "index_manufacturing_templates_on_yield_unit_id"
   end
 
   create_table "menu_item_modifier_groups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -754,10 +757,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
     t.decimal "quantity_used", precision: 10, scale: 4, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "unit"
+    t.uuid "unit_id"
     t.index ["ingredient_id"], name: "index_recipes_on_ingredient_id"
     t.index ["menu_item_id", "ingredient_id"], name: "index_recipes_on_menu_item_id_and_ingredient_id", unique: true
     t.index ["menu_item_id"], name: "index_recipes_on_menu_item_id"
+    t.index ["unit_id"], name: "index_recipes_on_unit_id"
   end
 
   create_table "shift_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -789,13 +793,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
     t.datetime "updated_at", null: false
     t.uuid "location_id"
     t.uuid "stock_transfer_id"
-    t.string "unit"
+    t.uuid "unit_id"
     t.index ["adjustment_type"], name: "index_stock_adjustments_on_adjustment_type"
     t.index ["created_at"], name: "index_stock_adjustments_on_created_at"
     t.index ["ingredient_id"], name: "index_stock_adjustments_on_ingredient_id"
     t.index ["location_id"], name: "index_stock_adjustments_on_location_id"
     t.index ["stock_batch_id"], name: "index_stock_adjustments_on_stock_batch_id"
     t.index ["stock_transfer_id"], name: "index_stock_adjustments_on_stock_transfer_id"
+    t.index ["unit_id"], name: "index_stock_adjustments_on_unit_id"
     t.index ["user_id"], name: "index_stock_adjustments_on_user_id"
   end
 
@@ -829,7 +834,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
     t.boolean "adjusted", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "counted_unit"
+    t.uuid "counted_unit_id"
+    t.index ["counted_unit_id"], name: "index_stock_take_items_on_counted_unit_id"
     t.index ["ingredient_id"], name: "index_stock_take_items_on_ingredient_id"
     t.index ["stock_take_id"], name: "index_stock_take_items_on_stock_take_id"
   end
@@ -857,10 +863,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
     t.decimal "quantity_received", precision: 10, scale: 3, default: "0.0"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-    t.string "unit"
+    t.uuid "unit_id"
     t.index ["ingredient_id"], name: "index_stock_transfer_lines_on_ingredient_id"
     t.index ["stock_transfer_id", "ingredient_id"], name: "idx_on_stock_transfer_id_ingredient_id_597e5cba74", unique: true
     t.index ["stock_transfer_id"], name: "index_stock_transfer_lines_on_stock_transfer_id"
+    t.index ["unit_id"], name: "index_stock_transfer_lines_on_unit_id"
   end
 
   create_table "stock_transfer_shipment_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1086,8 +1093,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "line_total_cents", default: 0, null: false
-    t.string "unit"
+    t.uuid "unit_id"
     t.index ["ingredient_id"], name: "index_vendor_invoice_lines_on_ingredient_id"
+    t.index ["unit_id"], name: "index_vendor_invoice_lines_on_unit_id"
     t.index ["vendor_invoice_id"], name: "index_vendor_invoice_lines_on_vendor_invoice_id"
   end
 
@@ -1125,13 +1133,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
     t.decimal "discount_value", precision: 10, scale: 2
     t.text "discount_notes"
     t.integer "adjustment_cents", default: 0, null: false
-    t.boolean "is_opening_balance", default: false, null: false
     t.index ["company_id", "supplier_id", "invoice_number"], name: "index_vendor_invoices_on_company_supplier_and_number", unique: true
     t.index ["company_id"], name: "index_vendor_invoices_on_company_id"
     t.index ["invoice_date"], name: "index_vendor_invoices_on_invoice_date"
     t.index ["location_id"], name: "index_vendor_invoices_on_location_id"
     t.index ["payment_status"], name: "index_vendor_invoices_on_payment_status"
-    t.index ["supplier_id", "is_opening_balance"], name: "index_vendor_invoices_on_supplier_id_and_is_opening_balance"
     t.index ["supplier_id"], name: "index_vendor_invoices_on_supplier_id"
     t.index ["user_id"], name: "index_vendor_invoices_on_user_id"
   end
@@ -1169,8 +1175,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
   add_foreign_key "ingredient_locations", "locations"
   add_foreign_key "ingredient_units", "companies"
   add_foreign_key "ingredient_units", "ingredients"
+  add_foreign_key "ingredient_units", "units"
   add_foreign_key "ingredients", "companies"
   add_foreign_key "ingredients", "ingredient_categories"
+  add_foreign_key "ingredients", "units"
   add_foreign_key "location_menu_items", "locations"
   add_foreign_key "location_menu_items", "menu_items"
   add_foreign_key "locations", "companies"
@@ -1181,8 +1189,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
   add_foreign_key "manufacturing_runs", "users"
   add_foreign_key "manufacturing_template_lines", "ingredients"
   add_foreign_key "manufacturing_template_lines", "manufacturing_templates"
+  add_foreign_key "manufacturing_template_lines", "units"
   add_foreign_key "manufacturing_templates", "companies"
   add_foreign_key "manufacturing_templates", "ingredients", column: "output_ingredient_id"
+  add_foreign_key "manufacturing_templates", "units", column: "yield_unit_id"
   add_foreign_key "menu_item_modifier_groups", "menu_items"
   add_foreign_key "menu_item_modifier_groups", "modifier_groups"
   add_foreign_key "menu_items", "categories"
@@ -1231,12 +1241,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
   add_foreign_key "receipt_logs", "orders"
   add_foreign_key "recipes", "ingredients"
   add_foreign_key "recipes", "menu_items"
+  add_foreign_key "recipes", "units"
   add_foreign_key "shift_logs", "companies"
   add_foreign_key "shift_logs", "users"
   add_foreign_key "stock_adjustments", "ingredients"
   add_foreign_key "stock_adjustments", "locations"
   add_foreign_key "stock_adjustments", "stock_batches"
   add_foreign_key "stock_adjustments", "stock_transfers"
+  add_foreign_key "stock_adjustments", "units"
   add_foreign_key "stock_adjustments", "users"
   add_foreign_key "stock_batches", "ingredients"
   add_foreign_key "stock_batches", "locations"
@@ -1244,11 +1256,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
   add_foreign_key "stock_batches", "vendor_invoice_lines"
   add_foreign_key "stock_take_items", "ingredients"
   add_foreign_key "stock_take_items", "stock_takes"
+  add_foreign_key "stock_take_items", "units", column: "counted_unit_id"
   add_foreign_key "stock_takes", "companies"
   add_foreign_key "stock_takes", "locations"
   add_foreign_key "stock_takes", "users"
   add_foreign_key "stock_transfer_lines", "ingredients"
   add_foreign_key "stock_transfer_lines", "stock_transfers"
+  add_foreign_key "stock_transfer_lines", "units"
   add_foreign_key "stock_transfer_shipment_lines", "stock_transfer_lines"
   add_foreign_key "stock_transfer_shipment_lines", "stock_transfer_shipments"
   add_foreign_key "stock_transfer_shipments", "stock_transfers"
@@ -1279,6 +1293,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000019) do
   add_foreign_key "units", "companies"
   add_foreign_key "users", "companies"
   add_foreign_key "vendor_invoice_lines", "ingredients"
+  add_foreign_key "vendor_invoice_lines", "units"
   add_foreign_key "vendor_invoice_lines", "vendor_invoices"
   add_foreign_key "vendor_invoice_payments", "companies"
   add_foreign_key "vendor_invoice_payments", "treasuries"

@@ -2,8 +2,10 @@
 
 class ManufacturingTemplate < ApplicationRecord
   include Tenantable
+  include UnitReferenced
 
   belongs_to :output_ingredient, class_name: "Ingredient"
+  references_unit :yield_unit, column: :yield_unit_id
   has_many :manufacturing_template_lines, dependent: :destroy
   has_many :input_ingredients, through: :manufacturing_template_lines, source: :ingredient
   has_many :manufacturing_runs, dependent: :restrict_with_error

@@ -42,9 +42,7 @@ module Admin
 
       def destroy
         authorize_inventory!(:destroy)
-        if @unit.system?
-          redirect_to admin_inventory_units_path, alert: t("flash.unit.cannot_delete_system")
-        elsif @unit.in_use?
+        if @unit.in_use?
           redirect_to admin_inventory_units_path,
             alert: t("flash.unit.cannot_delete_in_use", count: @unit.ingredients_using.count)
         else
@@ -64,11 +62,10 @@ module Admin
       end
 
       def unit_params
-        # System flag is never user-settable. Built-in unit names are locked so
-        # existing ingredient/recipe unit values keep matching.
-        permitted = params.require(:unit).permit(:name, :active, :position)
-        permitted.delete(:name) if @unit&.system?
-        permitted
+        # The `system` flag is seed provenance only and never user-settable.
+        # Names are freely editable — references are by id, so a rename can't
+        # orphan anything (built-in and custom units are treated identically).
+        params.require(:unit).permit(:name, :active, :position)
       end
     end
   end

@@ -15,10 +15,7 @@
     <%= form_with model: [:admin, :inventory, @unit], class: "space-y-4" do |f| %>
       <div>
         <%= f.label :name, t("inventory.units.name"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-        <%= f.text_field :name, class: input_class, required: true, disabled: @unit.system? %>
-        <% if @unit.system? %>
-          <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.units.built_in_name_locked") %></p>
-        <% end %>
+        <%= f.text_field :name, class: input_class, required: true %>
       </div>
       <div class="flex items-center gap-2">
         <%= f.check_box :active, class: "rounded border-gray-300" %>

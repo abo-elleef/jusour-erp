@@ -610,6 +610,7 @@ ar:
         add: "إضافة وحدة"
       form:
         category: "التصنيف"
+        unit: "الوحدة الأساسية"
         select_category: "اختر التصنيف…"
         select_unit: "اختر الوحدة…"
         stock_cost_heading: "المخزون والتكلفة"
@@ -741,7 +742,6 @@ ar:
       edit_title: "تعديل الوحدة"
       back: "← الوحدات"
       active_label: "مفعّلة (متاحة للاختيار)"
-      built_in_name_locked: "لا يمكن إعادة تسمية الوحدات المدمجة."
       delete_confirm: "حذف الوحدة \"%{name}\"؟"
     ingredient_categories:
       description: "تصنيف المكونات للتصفية والتقارير وجرد المخزون."
@@ -2526,7 +2526,6 @@ ar:
       created: "تمت إضافة الوحدة."
       updated: "تم تحديث الوحدة."
       removed: "تم حذف الوحدة."
-      cannot_delete_system: "لا يمكن حذف الوحدات المدمجة. قم بإلغاء تفعيلها بدلاً من ذلك."
       cannot_delete_in_use: "لا يمكن الحذف — مستخدمة في %{count} مكوّن. قم بإلغاء تفعيلها بدلاً من ذلك."
     supplier:
       created: "تم إنشاء المورد."

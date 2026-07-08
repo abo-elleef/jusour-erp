@@ -34,11 +34,13 @@ RSpec.describe "Company units", type: :model do
     expect(iu).not_to be_valid
   end
 
-  it "enforces unique names per company (case-insensitive) and protects system units" do
+  it "enforces unique names per company (case-insensitive)" do
     dup = company.units.build(name: "KG", active: true)
     expect(dup).not_to be_valid
+  end
 
-    expect(company.units.find_by(name: "kg").deletable?).to be(false)
+  it "treats built-in and custom units identically: both deletable when unused" do
+    expect(company.units.find_by(name: "kg").deletable?).to be(true)
     expect(company.units.create!(name: "carton").deletable?).to be(true)
   end
 
@@ -48,5 +50,28 @@ RSpec.describe "Company units", type: :model do
       reorder_threshold: 1, cost_per_unit_cents: 0, quantity_on_hand: 0, company: company)
     expect(tin.reload.in_use?).to be(true)
     expect(tin.deletable?).to be(false)
+  end
+
+  it "renames an in-use custom unit without orphaning references (FK by id)" do
+    tin = company.units.create!(name: "tin")
+    ing = Ingredient.create!(name: "Ghee", ingredient_category: category, unit: "tin",
+      reorder_threshold: 1, cost_per_unit_cents: 0, quantity_on_hand: 0, company: company)
+
+    tin.update!(name: "canister")
+
+    expect(ing.reload.unit_id).to eq(tin.id)
+    expect(ing.unit).to eq("canister")
+  end
+
+  it "renames a built-in (system) unit too — references follow by id" do
+    kg = company.units.find_by(name: "kg")
+    ing = Ingredient.create!(name: "Flour", ingredient_category: category, unit: "kg",
+      reorder_threshold: 1, cost_per_unit_cents: 0, quantity_on_hand: 0, company: company)
+
+    kg.update!(name: "kilogram")
+
+    expect(kg.reload.system).to be(true)
+    expect(ing.reload.unit_id).to eq(kg.id)
+    expect(ing.unit).to eq("kilogram")
   end
 end

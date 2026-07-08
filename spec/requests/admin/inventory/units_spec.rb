@@ -26,13 +26,12 @@ RSpec.describe "Admin::Inventory::Units", type: :request do
     expect(company.units.find_by(name: "20kg sack").system).to be(false)
   end
 
-  it "removes an unused custom unit but refuses to delete a built-in one" do
+  it "removes any unused unit, built-in or custom" do
     custom = company.units.create!(name: "tin")
     expect { delete admin_inventory_unit_path(custom) }.to change(company.units, :count).by(-1)
 
-    builtin = company.units.find_by(name: "kg")
-    expect { delete admin_inventory_unit_path(builtin) }.not_to change(company.units, :count)
-    expect(flash[:alert]).to be_present
+    builtin = company.units.find_by(name: "gallons")
+    expect { delete admin_inventory_unit_path(builtin) }.to change(company.units, :count).by(-1)
   end
 
   it "refuses to delete a custom unit that an ingredient uses" do
@@ -46,9 +45,10 @@ RSpec.describe "Admin::Inventory::Units", type: :request do
     expect(flash[:alert]).to be_present
   end
 
-  it "does not rename a built-in unit even if forced" do
+  it "renames a built-in unit (references are by id, so nothing orphans)" do
     builtin = company.units.find_by(name: "kg")
     patch admin_inventory_unit_path(builtin), params: { unit: { name: "kilos" } }
-    expect(builtin.reload.name).to eq("kg")
+    expect(builtin.reload.name).to eq("kilos")
+    expect(builtin.system).to be(true)
   end
 end

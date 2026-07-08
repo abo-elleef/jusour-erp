@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 class VendorInvoiceLine < ApplicationRecord
+  include UnitReferenced
+
   belongs_to :vendor_invoice
   belongs_to :ingredient
+  references_unit :unit, column: :unit_id
   has_one :stock_batch, dependent: :nullify
 
   monetize :unit_price_cents

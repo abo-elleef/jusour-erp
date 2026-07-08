@@ -1,8 +1,11 @@
 # frozen_string_literal: true
 
 class StockTakeItem < ApplicationRecord
+  include UnitReferenced
+
   belongs_to :stock_take
   belongs_to :ingredient
+  references_unit :counted_unit, column: :counted_unit_id
 
   # Counted quantity converted to the ingredient's base unit (counted_unit may
   # be an alternate). Expected quantity is already stored in the base unit.

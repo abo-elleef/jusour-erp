@@ -325,9 +325,9 @@ module ApplicationHelper
     safe_join([primary, tag.span(helper, class: "block text-xs text-gray-500 font-normal")])
   end
 
-  # [label, name] options for the current company's active units.
+  # [label, id] options for the current company's active units.
   def company_unit_options
-    Current.company.units.active.ordered.map { |u| [ingredient_unit_label(u.name), u.name] }
+    Current.company.units.active.ordered.map { |u| [ingredient_unit_label(u.name), u.id] }
   end
 
   def ingredient_search_options(ingredients)

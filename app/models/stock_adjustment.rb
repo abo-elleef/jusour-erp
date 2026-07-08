@@ -1,11 +1,14 @@
 # frozen_string_literal: true
 
 class StockAdjustment < ApplicationRecord
+  include UnitReferenced
+
   belongs_to :ingredient
   belongs_to :user
   belongs_to :location, optional: true
   belongs_to :stock_batch, optional: true
   belongs_to :stock_transfer, optional: true
+  references_unit :unit, column: :unit_id
 
   ADJUSTMENT_TYPES = %w[
     delivery vendor_invoice manual_add manual_remove
