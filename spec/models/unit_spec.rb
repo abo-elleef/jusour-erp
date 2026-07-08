@@ -41,4 +41,12 @@ RSpec.describe "Company units", type: :model do
     expect(company.units.find_by(name: "kg").deletable?).to be(false)
     expect(company.units.create!(name: "carton").deletable?).to be(true)
   end
+
+  it "is not deletable while an ingredient uses it (base or alternate)" do
+    tin = company.units.create!(name: "tin")
+    Ingredient.create!(name: "Ghee", ingredient_category: category, unit: "tin",
+      reorder_threshold: 1, cost_per_unit_cents: 0, quantity_on_hand: 0, company: company)
+    expect(tin.reload.in_use?).to be(true)
+    expect(tin.deletable?).to be(false)
+  end
 end

@@ -733,6 +733,7 @@ en:
       status: "Status"
       built_in: "Built-in"
       custom: "Custom"
+      in_use: "In use"
       active: "Active"
       inactive: "Inactive"
       edit_title: "Edit unit"
@@ -2498,6 +2499,7 @@ en:
       updated: "Unit updated."
       removed: "Unit removed."
       cannot_delete_system: "Built-in units can't be deleted. Deactivate it instead."
+      cannot_delete_in_use: "Can't delete — used by %{count} ingredient(s). Deactivate it instead."
     supplier:
       created: "Supplier created."
       updated: "Supplier updated."

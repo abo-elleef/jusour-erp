@@ -42,11 +42,14 @@ module Admin
 
       def destroy
         authorize_inventory!(:destroy)
-        if @unit.deletable?
+        if @unit.system?
+          redirect_to admin_inventory_units_path, alert: t("flash.unit.cannot_delete_system")
+        elsif @unit.in_use?
+          redirect_to admin_inventory_units_path,
+            alert: t("flash.unit.cannot_delete_in_use", count: @unit.ingredients_using.count)
+        else
           @unit.destroy
           redirect_to admin_inventory_units_path, notice: t("flash.unit.removed")
-        else
-          redirect_to admin_inventory_units_path, alert: t("flash.unit.cannot_delete_system")
         end
       end
 

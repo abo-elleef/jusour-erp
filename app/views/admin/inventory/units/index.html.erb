@@ -1,12 +1,11 @@
 <% content_for :title, t("inventory.units.title") %>
+<%= render "admin/inventory/tools_nav" %>
 <% input_class = pos_input_class %>
-<div class="max-w-3xl">
+<div class="max-w-7xl">
   <div class="mb-6">
     <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.units.title") %></h1>
     <p class="text-gray-600 text-sm mt-1"><%= t("inventory.units.description") %></p>
   </div>
-
-  <%= render "admin/inventory/tools_nav" %>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
@@ -41,6 +40,7 @@
       </thead>
       <tbody class="divide-y divide-gray-100">
         <% @units.each do |unit| %>
+          <% in_use = unit.in_use? %>
           <tr class="hover:bg-gray-50/60">
             <td class="p-3 ps-5 font-semibold text-gray-900"><%= ingredient_unit_label(unit.name) %></td>
             <td class="p-3 text-gray-600">
@@ -53,10 +53,12 @@
             </td>
             <td class="p-3 pe-5 text-end whitespace-nowrap">
               <%= link_to t("actions.edit"), edit_admin_inventory_unit_path(unit), class: "text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors" %>
-              <% if unit.deletable? %>
+              <% if !unit.system? && !in_use %>
                 <%= button_to t("actions.delete"), admin_inventory_unit_path(unit), method: :delete,
                       form: { data: { turbo_confirm: t("inventory.units.delete_confirm", name: unit.name) }, class: "inline" },
                       class: "text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
+              <% elsif in_use %>
+                <span class="text-xs text-gray-400"><%= t("inventory.units.in_use") %></span>
               <% end %>
             </td>
           </tr>

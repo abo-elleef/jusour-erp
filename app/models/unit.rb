@@ -13,8 +13,20 @@ class Unit < ApplicationRecord
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }
 
+  # Ingredients that use this unit as their base unit or as an alternate unit.
+  def ingredients_using
+    base = Ingredient.unscoped_by_company.where(company_id: company_id)
+    alt_ids = IngredientUnit.unscoped_by_company.where(company_id: company_id, unit: name).select(:ingredient_id)
+    base.where(unit: name).or(base.where(id: alt_ids))
+  end
+
+  def in_use?
+    ingredients_using.exists?
+  end
+
+  # Only custom units that aren't referenced by any ingredient can be deleted.
   def deletable?
-    !system?
+    !system? && !in_use?
   end
 
   # Seed the built-in units for a company (idempotent).
