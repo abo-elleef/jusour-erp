@@ -10,13 +10,13 @@
   <%= link_to t("nav.orders"), admin_orders_path, class: admin_nav_link_class(admin_nav_active?("admin/orders")) %>
 <% end %>
 <% if current_user.can_access_admin? %>
-  <%= link_to t("nav.inventory"), admin_inventory_ingredients_path, class: admin_nav_link_class(admin_nav_active?("admin/inventory")) %>
+  <%= link_to t("nav.inventory"), admin_inventory_vendor_invoices_path, class: admin_nav_link_class(admin_nav_active?("admin/inventory")) %>
 <% end %>
 <% if current_user.owner? || current_user.manager? %>
   <%= link_to t("nav.locations"), admin_locations_path, class: admin_nav_link_class(admin_nav_active?("admin/locations")) %>
 <% end %>
 <% if current_user.can_access_admin? %>
-  <%= link_to t("nav.accounting"), admin_accounting_root_path, class: admin_nav_link_class(admin_nav_active?("admin/accounting")) %>
+  <%= link_to t("nav.accounting"), admin_accounting_treasuries_path, class: admin_nav_link_class(admin_nav_active?("admin/accounting")) %>
   <%= link_to admin_notifications_path, class: "#{admin_nav_link_class(admin_nav_active?("admin/notifications"))} relative" do %>
     <%= t("nav.notifications") %>
     <% unread = current_user.notifications.unread.count %>

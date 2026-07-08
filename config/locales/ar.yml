@@ -1967,7 +1967,7 @@ ar:
   accounting:
     nav_label: "المحاسبة"
     nav:
-      dashboard: "لوحة التحكم"
+      dashboard: "تحليل المبيعات"
       sales: "المبيعات"
       food_cost: "تكلفة الطعام"
       expenses: "المصروفات"
