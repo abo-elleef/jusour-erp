@@ -1,9 +1,6 @@
 <% content_for :title, @supplier.name %>
-<div class="max-w-5xl">
-  <div class="mb-4">
-    <%= link_to t("inventory.suppliers.back_to_list"), admin_inventory_suppliers_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
-  </div>
-
+<%= render "admin/inventory/tools_nav" %>
+<div class="max-w-7xl">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @supplier.name %></h1>
@@ -40,7 +37,7 @@
     </div>
   </div>
 
-  <%= render "admin/inventory/tools_nav" %>
+  
 
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
@@ -135,6 +132,51 @@
           </li>
         <% end %>
       </ul>
+    </section>
+  <% end %>
+
+  <% if @supplier.ap_balance_cents > 0 && InventoryPolicy.new(current_user, @supplier).update? %>
+    <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mb-6">
+      <div class="px-5 py-4 border-b border-amber-100">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.suppliers.show.direct_ap_payment.title") %></h2>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.suppliers.show.direct_ap_payment.hint") %></p>
+      </div>
+      <%= form_with url: direct_ap_payment_admin_inventory_supplier_path(@supplier), method: :post,
+            class: "px-5 py-4 grid sm:grid-cols-4 gap-4 items-start" do %>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.amount") %></label>
+          <%= number_field_tag :amount_pounds, nil, step: "0.01", min: "0.01",
+                max: (@supplier.ap_balance_cents / 100.0).round(2),
+                placeholder: format("%g", @supplier.ap_balance_cents / 100.0),
+                class: pos_input_class, required: true %>
+          <p class="text-xs text-gray-500 mt-1">
+            <%= t("inventory.suppliers.show.direct_ap_payment.balance_hint", balance: format_money(@supplier.ap_balance_cents)) %>
+          </p>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.treasury") %></label>
+          <% payable_treasuries = Treasury.active.payable.visible_to(current_user).ordered %>
+          <%= select_tag :treasury_id,
+                options_from_collection_for_select(payable_treasuries, :id, :name, Treasury.default_treasury&.id),
+                class: pos_input_class, required: true %>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.day") %></label>
+          <%= date_field_tag :payment_date, Date.current, class: pos_input_class %>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.description") %></label>
+          <%= text_field_tag :description, t("inventory.suppliers.show.direct_ap_payment.default_description", supplier: @supplier.name),
+                class: pos_input_class %>
+        </div>
+        <div class="sm:col-span-4">
+          <%= submit_tag t("inventory.suppliers.show.direct_ap_payment.submit"),
+                class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold",
+                data: { turbo_confirm: t("inventory.suppliers.show.direct_ap_payment.confirm",
+                          supplier: @supplier.name,
+                          balance: format_money(@supplier.ap_balance_cents)) } %>
+        </div>
+      <% end %>
     </section>
   <% end %>
 

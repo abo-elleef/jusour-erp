@@ -3,7 +3,7 @@
 module Admin
   module Inventory
     class SuppliersController < BaseController
-      before_action :set_supplier, only: %i[show edit update destroy]
+      before_action :set_supplier, only: %i[show edit update destroy direct_ap_payment]
 
       def index
         authorize_inventory_index!(Supplier)
@@ -72,6 +72,29 @@ module Admin
         else
           render :edit, status: :unprocessable_entity
         end
+      end
+
+      def direct_ap_payment
+        authorize_inventory!(:update)
+        treasury = Treasury.active.payable.visible_to(current_user).find_by(id: params[:treasury_id])
+        amount_cents = (params[:amount_pounds].to_f * 100).round
+
+        ::Accounting::RecordDirectApPaymentService.new(
+          supplier:     @supplier,
+          user:         current_user,
+          treasury:     treasury,
+          amount_cents: amount_cents,
+          description:  params[:description].presence,
+          payment_date: params[:payment_date].presence&.to_date || Date.current
+        ).call
+
+        redirect_to admin_inventory_supplier_path(@supplier),
+          notice: t("inventory.suppliers.show.direct_ap_payment.success")
+      rescue ::Accounting::RecordDirectApPaymentService::Error => e
+        redirect_to admin_inventory_supplier_path(@supplier), alert: e.message
+      rescue ActiveRecord::RecordNotFound
+        redirect_to admin_inventory_supplier_path(@supplier),
+          alert: t("inventory.suppliers.show.direct_ap_payment.errors.treasury_required")
       end
 
       def destroy

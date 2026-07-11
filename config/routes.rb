@@ -226,7 +226,11 @@ Rails.application.routes.draw do
         resources :recipes, only: %i[create destroy]
         resources :supplier_ingredients, only: %i[create update destroy]
       end
-      resources :suppliers
+      resources :suppliers do
+        member do
+          post :direct_ap_payment
+        end
+      end
       resources :vendor_invoices, only: %i[index show new create edit update] do
         member do
           post :record_payment
