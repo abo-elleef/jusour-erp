@@ -24,6 +24,35 @@ RSpec.describe "Admin::Inventory::ManufacturingTemplates", type: :request do
     expect(response.body).to include("data-controller=\"searchable-select\"")
     expect(response.body).to include("manufacturing-units#lineChanged")
     expect(response.body).to include("data-searchable-select-options")
+    # Dynamic add/remove: a cloneable template and an add-line control wired to
+    # the manufacturing-units controller.
+    expect(response.body).to include("manufacturing-units#add")
+    expect(response.body).to include("data-manufacturing-units-target=\"template\"")
+    expect(response.body).to include("NEW_RECORD")
+  end
+
+  it "seeds exactly one blank input line on the new form" do
+    get new_admin_inventory_manufacturing_template_path
+    expect(controller.instance_variable_get(:@template).manufacturing_template_lines.size).to eq(1)
+  end
+
+  it "creates a template with multiple dynamically-added input lines" do
+    other = create(:ingredient, company: company, ingredient_category: category, name: "Salt")
+
+    expect {
+      post admin_inventory_manufacturing_templates_path, params: {
+        manufacturing_template: {
+          name: "Spice Mix", output_ingredient_id: output.id, yield_quantity: 5,
+          yield_unit: output.unit, active: true,
+          manufacturing_template_lines_attributes: {
+            "0" => { ingredient_id: input.id, quantity_used: 2, unit: input.unit },
+            "1712345678900" => { ingredient_id: other.id, quantity_used: 1, unit: other.unit }
+          }
+        }
+      }
+    }.to change(ManufacturingTemplateLine, :count).by(2)
+
+    expect(ManufacturingTemplate.find_by(name: "Spice Mix").manufacturing_template_lines.count).to eq(2)
   end
 
   it "renders the edit form for a template with an input line" do

@@ -134,10 +134,12 @@ module Admin
         end
       end
 
+      # Input lines are managed dynamically in the form (add/remove). Only seed a
+      # single blank row when there are none, so the user always has one to fill.
       def build_line_items
-        min_rows = @template.new_record? ? 5 : 3
-        remaining = min_rows - @template.manufacturing_template_lines.reject(&:marked_for_destruction?).size
-        remaining.times { @template.manufacturing_template_lines.build } if remaining.positive?
+        return if @template.manufacturing_template_lines.reject(&:marked_for_destruction?).any?
+
+        @template.manufacturing_template_lines.build
       end
     end
   end

@@ -1192,7 +1192,7 @@ en:
         form_intro: "Set the output product, then add one or more input ingredients with quantities per run."
         form_details: "Template details"
         form_details_hint: "Name, output product, and yield for each production run."
-        form_inputs_hint: "Add multiple rows — leave blank rows empty. Required before activating."
+        form_inputs_hint: "Add an input line for each ingredient the recipe consumes. At least one is required before activating."
         name_placeholder: "e.g. Marinate chicken batch"
         output_hint: "The prep item produced (must be an ingredient in inventory)."
         notes_placeholder: "Optional notes for kitchen staff…"
