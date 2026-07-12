@@ -32,6 +32,18 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
     transfer
   end
 
+  describe "GET /admin/inventory/stock_transfers/:id" do
+    it "renders the transfer with a print button and print-only letterhead" do
+      transfer = create_transfer_with_line
+
+      get admin_inventory_stock_transfer_path(transfer)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("window.print()")
+      expect(response.body).to include(I18n.t("inventory.stock_transfers.print_document_title"))
+    end
+  end
+
   describe "POST /admin/inventory/stock_transfers" do
     it "creates a transfer request" do
       expect {

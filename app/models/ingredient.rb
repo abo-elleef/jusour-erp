@@ -34,6 +34,7 @@ class Ingredient < ApplicationRecord
   validates :quantity_on_hand, numericality: true
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :base_unit_locked_when_in_use, on: :update
+  before_validation :discard_alternate_units_on_base_change, on: :update
 
   scope :active, -> { where(active: true) }
   scope :low_stock, -> { where("quantity_on_hand <= reorder_threshold") }
@@ -124,13 +125,25 @@ class Ingredient < ApplicationRecord
     errors.add(:unit, :not_available)
   end
 
-  # Changing the base unit would silently reinterpret every stored quantity
-  # (stock on hand, batches, recipes). Lock it once the ingredient is in use.
+  # Changing the base unit would silently reinterpret every quantity and cost
+  # stored against it (stock on hand, batches). Lock it only while real stock or
+  # batch history exists — a fresh ingredient can still be corrected. Alternate
+  # units don't block the change; they're cleared instead (see below), since
+  # their conversion factors were defined against the old base.
   def base_unit_locked_when_in_use
     return unless unit_id_changed?
-    return unless quantity_on_hand.to_d.nonzero? || stock_batches.exists? || ingredient_units.exists?
+    return unless quantity_on_hand.to_d.nonzero? || stock_batches.exists?
 
     errors.add(:unit, :locked_in_use)
+  end
+
+  # When the base unit is (allowably) changed, drop any alternate units: their
+  # "N base units per unit" factors are meaningless against the new base and
+  # can't be recomputed automatically. The user re-adds them if still needed.
+  def discard_alternate_units_on_base_change
+    return unless persisted? && unit_id_changed?
+
+    ingredient_units.each(&:mark_for_destruction)
   end
 
   def assign_company

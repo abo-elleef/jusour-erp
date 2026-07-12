@@ -1034,6 +1034,9 @@ en:
     stock_transfers:
       title: "Stock transfers"
       index_description: "Request ingredients between locations, ship from the sender, and confirm receipt at the destination."
+      print: "Print"
+      print_document_title: "Stock Transfer Document"
+      printed_at: "Printed %{at}"
       new: "New transfer request"
       edit: "Edit transfer request"
       new_description: "Request ingredients from another location. The sending location will review quantities before dispatch."
@@ -2565,13 +2568,17 @@ en:
         ingredient:
           attributes:
             unit:
-              locked_in_use: "can't be changed once the ingredient has stock, batches, or alternate units"
+              locked_in_use: "can't be changed once the ingredient has stock or batch history"
               not_available: "is not a unit configured for this company"
         ingredient_unit:
           attributes:
             unit:
               cannot_equal_base_unit: "must be different from the ingredient's base unit"
               not_available: "is not a unit configured for this company"
+        stock_transfer:
+          attributes:
+            to_location_id:
+              same_as_source: "must be different from the source location"
         treasury_transfer:
           attributes:
             to_treasury_id:

@@ -1038,6 +1038,9 @@ ar:
     stock_transfers:
       title: "تحويلات المخزون"
       index_description: "طلب مكونات بين المواقع، إرسالها من الموقع المرسل، وتأكيد الاستلام في الموقع المستلم."
+      print: "طباعة"
+      print_document_title: "مستند تحويل مخزون"
+      printed_at: "طُبع في %{at}"
       new: "طلب تحويل جديد"
       edit: "تعديل طلب التحويل"
       new_description: "اطلب مكونات من موقع آخر. سيراجع الموقع المرسل الكميات قبل الإرسال."
@@ -2599,13 +2602,17 @@ ar:
         ingredient:
           attributes:
             unit:
-              locked_in_use: "لا يمكن تغييره بعد وجود مخزون أو دفعات أو وحدات بديلة للمكوّن"
+              locked_in_use: "لا يمكن تغييره بعد وجود مخزون أو سجل دفعات للمكوّن"
               not_available: "ليست وحدة مُعرّفة لهذه الشركة"
         ingredient_unit:
           attributes:
             unit:
               cannot_equal_base_unit: "يجب أن تختلف عن الوحدة الأساسية للمكوّن"
               not_available: "ليست وحدة مُعرّفة لهذه الشركة"
+        stock_transfer:
+          attributes:
+            to_location_id:
+              same_as_source: "يجب أن يختلف عن موقع المصدر"
         treasury_transfer:
           attributes:
             to_treasury_id:

@@ -6,7 +6,11 @@
       url: template.persisted? ? admin_inventory_manufacturing_template_path(template) : admin_inventory_manufacturing_templates_path,
       scope: :manufacturing_template,
       class: "space-y-6",
-      data: { controller: "manufacturing-units", manufacturing_units_units_value: @ingredient_available_units.to_json } do |f| %>
+      data: {
+        controller: "manufacturing-units",
+        manufacturing_units_units_value: @ingredient_available_units.to_json,
+        searchable_select_options: ingredient_search_options(@ingredients)
+      } do |f| %>
 
   <% if template.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
@@ -29,25 +33,24 @@
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
           <%= f.label :output_ingredient_id, t("inventory.manufacturing.templates.output"), class: label_class %>
-          <%= f.collection_select :output_ingredient_id,
-                @ingredients,
-                :id,
-                :name,
-                { prompt: t("inventory.manufacturing.templates.select_ingredient") },
-                class: "#{input_class} appearance-none",
-                required: true,
-                data: { manufacturing_units_target: "outputIngredient", action: "change->manufacturing-units#outputChanged" } %>
+          <%= render "shared/searchable_select",
+                form: f,
+                field: :output_ingredient_id,
+                selected: template.output_ingredient_id,
+                placeholder: t("inventory.manufacturing.templates.select_ingredient"),
+                input_class: input_class,
+                html: { data: { action: "searchable-select:change->manufacturing-units#outputChanged" } } %>
           <p class="text-xs text-gray-500 mt-1"><%= t("inventory.manufacturing.templates.output_hint") %></p>
         </div>
         <div>
           <%= f.label :yield_quantity, t("inventory.manufacturing.templates.yield_per_run"), class: label_class %>
           <% yield_units = template.output_ingredient ? template.output_ingredient.available_units : [] %>
           <div class="flex gap-2">
-            <%= f.number_field :yield_quantity, step: 0.001, min: 0.001, class: "#{input_class} tabular-nums", required: true %>
+            <%= f.number_field :yield_quantity, step: 0.001, min: 0.001, class: "#{input_class} tabular-nums flex-1 min-w-0", required: true %>
             <%= f.select :yield_unit,
                   options_for_select(yield_units.map { |u| [ingredient_unit_label(u), u] }, template.yield_unit.presence || template.output_ingredient&.unit),
                   {},
-                  class: "#{input_class} appearance-none w-32 shrink-0",
+                  class: "#{input_class} appearance-none flex-1 min-w-0",
                   data: { manufacturing_units_target: "yieldUnit" } %>
           </div>
           <p class="text-xs text-gray-500 mt-1"><%= t("inventory.manufacturing.templates.yield_hint") %></p>
@@ -86,27 +89,27 @@
 
     <div class="hidden md:grid md:grid-cols-12 gap-3 px-5 py-3 bg-white text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
       <div class="md:col-span-5"><%= t("inventory.manufacturing.templates.ingredient") %></div>
-      <div class="md:col-span-2"><%= t("inventory.manufacturing.templates.quantity") %></div>
+      <div class="md:col-span-3"><%= t("inventory.manufacturing.templates.quantity") %></div>
       <div class="md:col-span-3"><%= t("inventory.ingredients.units.unit") %></div>
-      <div class="md:col-span-2"></div>
+      <div class="md:col-span-1"></div>
     </div>
 
     <div class="divide-y divide-gray-100">
       <%= f.fields_for :manufacturing_template_lines do |line_f| %>
         <% line = line_f.object %>
         <% line_units = line.ingredient ? line.ingredient.available_units : [] %>
-        <div class="px-5 py-4 md:py-3 md:grid md:grid-cols-12 md:gap-3 md:items-end space-y-3 md:space-y-0" data-mfg-line>
+        <div class="px-5 py-4 md:py-3 md:grid md:grid-cols-12 md:gap-3 md:items-start space-y-3 md:space-y-0" data-mfg-line>
           <div class="md:col-span-5">
             <span class="md:hidden text-xs font-semibold text-gray-600 mb-1.5 block"><%= t("inventory.manufacturing.templates.ingredient") %></span>
-            <%= line_f.collection_select :ingredient_id,
-                  @ingredients,
-                  :id,
-                  :name,
-                  { prompt: t("inventory.manufacturing.templates.select_ingredient") },
-                  class: "#{input_class} appearance-none",
-                  data: { action: "change->manufacturing-units#lineChanged" } %>
+            <%= render "shared/searchable_select",
+                  form: line_f,
+                  field: :ingredient_id,
+                  selected: line.ingredient_id,
+                  placeholder: t("inventory.manufacturing.templates.select_ingredient"),
+                  input_class: input_class,
+                  html: { data: { action: "searchable-select:change->manufacturing-units#lineChanged" } } %>
           </div>
-          <div class="md:col-span-2">
+          <div class="md:col-span-3">
             <span class="md:hidden text-xs font-semibold text-gray-600 mb-1.5 block"><%= t("inventory.manufacturing.templates.quantity") %></span>
             <%= line_f.number_field :quantity_used, step: 0.0001, min: 0.0001,
                   placeholder: "0",
@@ -116,15 +119,16 @@
             <span class="md:hidden text-xs font-semibold text-gray-600 mb-1.5 block"><%= t("inventory.ingredients.units.unit") %></span>
             <%= line_f.select :unit,
                   options_for_select(line_units.map { |u| [ingredient_unit_label(u), u] }, line.unit.presence || line.ingredient&.unit),
-                  {},
-                  class: "#{input_class} appearance-none",
+                  { include_blank: line.ingredient.nil? },
+                  class: "#{input_class} appearance-none px-2",
                   data: { "mfg-line-unit": "" } %>
           </div>
-          <div class="md:col-span-2 flex md:justify-end">
+          <div class="md:col-span-1 flex md:justify-end md:pt-1.5">
             <% unless line.new_record? %>
-              <label class="inline-flex items-center gap-2 text-xs font-medium text-red-700 hover:bg-red-50 rounded-xl px-3 py-2 cursor-pointer transition-colors">
+              <label class="inline-flex items-center justify-center gap-2 text-xs font-medium text-red-700 hover:bg-red-50 rounded-xl px-3 py-2 cursor-pointer transition-colors"
+                     title="<%= t("inventory.manufacturing.templates.remove_line") %>">
                 <%= line_f.check_box :_destroy, class: "rounded border-gray-300 text-red-600 focus:ring-red-500/40" %>
-                <span><%= t("inventory.manufacturing.templates.remove_line") %></span>
+                <span class="md:hidden"><%= t("inventory.manufacturing.templates.remove_line") %></span>
               </label>
             <% end %>
           </div>

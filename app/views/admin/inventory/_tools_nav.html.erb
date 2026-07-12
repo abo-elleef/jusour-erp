@@ -1,4 +1,4 @@
-<nav class="mb-6 border-b border-gray-200" aria-label="<%= t("nav.inventory") %>">
+<nav class="mb-6 border-b border-gray-200 print-hide" aria-label="<%= t("nav.inventory") %>">
   <div class="flex flex-wrap gap-x-1 -mb-px">
       <%= link_to t("inventory.tools.vendor_invoices"), admin_inventory_vendor_invoices_path,
           class: admin_section_tab_class(controller_name == "vendor_invoices") %>

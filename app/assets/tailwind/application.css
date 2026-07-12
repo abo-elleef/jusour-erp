@@ -22,3 +22,45 @@
     transform: none !important;
   }
 }
+
+/* Print: drop the app chrome and let the page content flow across sheets.
+   Mark page-level controls (buttons, action forms) with `.print-hide`, and
+   print-only letterhead blocks with `.print-only`. */
+.print-only {
+  display: none;
+}
+
+@media print {
+  /* Hide the sidebar, mobile header, toasts and any control opted out. */
+  aside[data-sidebar-target="panel"],
+  header.lg\:hidden,
+  [data-controller~="sidebar"] > div[data-sidebar-target="overlay"],
+  .print-hide {
+    display: none !important;
+  }
+
+  /* The admin shell locks scrolling to one viewport — release it for print. */
+  body {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body > div,
+  main {
+    overflow: visible !important;
+    height: auto !important;
+    padding: 0 !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  /* Keep rows and cards intact across page breaks. */
+  tr,
+  section {
+    break-inside: avoid;
+  }
+}
