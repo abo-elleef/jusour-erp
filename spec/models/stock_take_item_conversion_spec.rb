@@ -10,7 +10,8 @@ RSpec.describe StockTakeItem, type: :model do
     ing.ingredient_units.create!(unit: "liters", base_units_per_unit: 1000, company: Current.company)
     ing
   end
-  let(:stock_take) { StockTake.create!(user: create(:user), status: "in_progress", started_at: Time.current) }
+  let(:location) { create(:location, :central_kitchen) }
+  let(:stock_take) { StockTake.create!(user: create(:user), location: location, status: "in_progress", started_at: Time.current) }
 
   it "computes variance in the base unit when counted in an alternate unit" do
     item = stock_take.stock_take_items.create!(ingredient: oil, expected_quantity: 1000,

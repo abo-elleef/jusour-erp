@@ -10,7 +10,9 @@ module Admin
         @total_count = StockTake.count
         @in_progress_count = StockTake.where(status: "in_progress").count
         @completed_count = StockTake.where(status: "completed").count
-        @stock_takes = StockTake.includes(:user, :stock_take_items).recent.limit(30)
+        @stock_takes = StockTake.includes(:user, :location, :stock_take_items).recent.limit(30)
+        @stock_locations = Location.active.central_kitchens.ordered.to_a + Location.active.branches.ordered.to_a
+        @locations_in_progress = StockTake.where(status: "in_progress").pluck(:location_id)
       end
 
       def show
@@ -24,16 +26,32 @@ module Admin
 
       def create
         authorize_inventory!(:create)
+
+        location = Location.find_by(id: params[:location_id])
+        if location.blank?
+          redirect_to admin_inventory_stock_takes_path, alert: t("inventory.stock_takes.index.location_required")
+          return
+        end
+        if StockTake.where(location: location, status: "in_progress").exists?
+          redirect_to admin_inventory_stock_takes_path, alert: t("inventory.stock_takes.index.already_in_progress")
+          return
+        end
+
         stock_take = StockTake.create!(
           user: current_user,
+          location: location,
           status: "in_progress",
           started_at: Time.current,
           notes: params[:notes]
         )
-        Ingredient.active.find_each do |ingredient|
+        # Seed one item per ingredient stocked at this location, with that
+        # location's on-hand as the expected quantity (both in the base unit).
+        IngredientLocation.where(location: location).includes(:ingredient).find_each do |il|
+          next unless il.ingredient.active?
+
           stock_take.stock_take_items.create!(
-            ingredient: ingredient,
-            expected_quantity: ingredient.quantity_on_hand
+            ingredient: il.ingredient,
+            expected_quantity: il.quantity_on_hand
           )
         end
         redirect_to admin_inventory_stock_take_path(stock_take), notice: t("flash.stock_take.started")
@@ -67,9 +85,11 @@ module Admin
           StockAdjustment.create!(
             ingredient: item.ingredient,
             user: current_user,
+            location: @stock_take.location,
             quantity_delta: item.variance,
             adjustment_type: "cycle_count_correction",
-            reason_notes: "Stock take ##{@stock_take.id}"
+            reason_notes: "Stock take ##{@stock_take.id}",
+            maintain_batches: true
           )
           item.update!(adjusted: true)
         end

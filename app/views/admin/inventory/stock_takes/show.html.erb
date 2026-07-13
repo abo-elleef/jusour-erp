@@ -9,6 +9,9 @@
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.stock_takes.show.title") %></h1>
+      <% if @stock_take.location %>
+        <p class="text-amber-700 text-sm font-semibold mt-1"><%= @stock_take.location.name %></p>
+      <% end %>
       <p class="text-gray-600 text-sm mt-1">
         <% started_at = @stock_take.started_at || @stock_take.created_at %>
         <%= l(started_at.to_date, format: :long) %>

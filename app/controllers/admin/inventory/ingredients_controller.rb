@@ -9,10 +9,13 @@ module Admin
         authorize_inventory_index!
 
         @stock_filter = params[:stock].presence
+        @status = %w[active inactive all].include?(params[:status]) ? params[:status] : "active"
         @q = Ingredient.ransack(params[:q])
-        scope = @q.result.active.includes(:ingredient_category, :suppliers, :unit_ref)
+        scope = @q.result.includes(:ingredient_category, :suppliers, :unit_ref)
+        scope = scope.active if @status == "active"
+        scope = scope.where(active: false) if @status == "inactive"
         @ingredients = apply_stock_filter(scope).order(:name)
-        @filtered = @stock_filter.present? || params[:q].present?
+        @filtered = @stock_filter.present? || params[:q].present? || @status != "active"
         @low_stock_count = Ingredient.active.low_stock.count
         @out_of_stock_count = Ingredient.active.out_of_stock.count
         @expiring_count = Ingredient.active.expiring_soon.count

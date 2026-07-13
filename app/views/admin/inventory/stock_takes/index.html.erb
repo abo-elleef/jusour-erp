@@ -35,19 +35,29 @@
       <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.stock_takes.index.start_hint") %></p>
     </div>
     <div class="p-5">
-      <% if @in_progress_count.positive? %>
-        <p class="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-4">
-          <%= t("inventory.stock_takes.index.in_progress_warning") %>
-        </p>
-      <% end %>
-      <%= form_with url: admin_inventory_stock_takes_path, method: :post, class: "space-y-4 max-w-xl" do %>
-        <div>
-          <%= label_tag :notes, t("inventory.stock_takes.index.notes"), class: label_class %>
-          <%= text_area_tag :notes, nil, rows: 2, class: input_class, placeholder: t("inventory.stock_takes.index.notes_placeholder") %>
-        </div>
-        <%= submit_tag t("inventory.stock_takes.index.start_button"),
-              disabled: @in_progress_count.positive?,
-              class: "bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
+      <% if @stock_locations.empty? %>
+        <p class="text-sm text-gray-600"><%= t("inventory.stock_takes.index.no_locations") %></p>
+      <% else %>
+        <%= form_with url: admin_inventory_stock_takes_path, method: :post, class: "space-y-4 max-w-xl" do %>
+          <div>
+            <%= label_tag :location_id, t("inventory.stock_takes.index.location"), class: label_class %>
+            <%= select_tag :location_id,
+                  options_for_select(
+                    @stock_locations.map { |loc| [stock_location_option_label(loc), loc.id] },
+                    disabled: @locations_in_progress
+                  ),
+                  include_blank: t("inventory.stock_takes.index.select_location"),
+                  required: true,
+                  class: "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
+            <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.stock_takes.index.location_hint") %></p>
+          </div>
+          <div>
+            <%= label_tag :notes, t("inventory.stock_takes.index.notes"), class: label_class %>
+            <%= text_area_tag :notes, nil, rows: 2, class: input_class, placeholder: t("inventory.stock_takes.index.notes_placeholder") %>
+          </div>
+          <%= submit_tag t("inventory.stock_takes.index.start_button"),
+                class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
+        <% end %>
       <% end %>
     </div>
   </section>
@@ -63,6 +73,7 @@
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
               <th class="p-3 pl-5"><%= t("inventory.stock_takes.index.table.started") %></th>
+              <th class="p-3"><%= t("inventory.stock_takes.index.table.location") %></th>
               <th class="p-3"><%= t("inventory.stock_takes.index.table.status") %></th>
               <th class="p-3"><%= t("inventory.stock_takes.index.table.counted_by") %></th>
               <th class="p-3 text-right"><%= t("inventory.stock_takes.index.table.items") %></th>
@@ -84,6 +95,7 @@
                     <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.stock_takes.index.completed_on", date: l(st.completed_at.to_date, format: :long)) %></p>
                   <% end %>
                 </td>
+                <td class="p-3 text-gray-700"><%= st.location&.name || t("inventory.stock_takes.index.all_locations") %></td>
                 <td class="p-3">
                   <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= stock_take_status_class(st.status) %> <%= stock_take_status_border_class(st.status) %>">
                     <%= stock_take_status_label(st.status) %>
