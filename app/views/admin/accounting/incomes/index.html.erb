@@ -12,11 +12,14 @@
   <%= render "admin/accounting/date_range_form" %>
 
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-    <% @totals_by_category.each do |name, cents| %>
-      <div class="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3">
-        <p class="text-xs text-gray-600"><%= name %></p>
+    <% @totals_by_category.each do |(id, name), cents| %>
+      <% active = @active_category_id == id.to_s %>
+      <% filter_params = active ? params.to_unsafe_h.except("category_id") : params.to_unsafe_h.merge("category_id" => id) %>
+      <%= link_to admin_accounting_incomes_path(filter_params),
+            class: "rounded-2xl border p-3 transition-colors #{ active ? 'border-emerald-400 bg-emerald-100 ring-1 ring-emerald-300' : 'border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100/70' }" do %>
+        <p class="text-xs text-gray-600 truncate"><%= name %><%= " ✕" if active %></p>
         <p class="font-bold tabular-nums text-emerald-800"><%= format_money(cents) %></p>
-      </div>
+      <% end %>
     <% end %>
   </div>
 

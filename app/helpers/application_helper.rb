@@ -5,6 +5,19 @@ module ApplicationHelper
     I18n.locale.to_s
   end
 
+  # Clickable table header that toggles sort on `key`, preserving all other
+  # query params (search, filters). Shows an arrow on the active column.
+  def sort_header_link(label, key, sort:, direction:)
+    active = sort.to_s == key.to_s
+    next_dir = (active && direction == "asc") ? "desc" : "asc"
+    indicator = active ? (direction == "asc" ? "↑" : "↓") : ""
+    query = request.query_parameters.merge("sort" => key.to_s, "dir" => next_dir)
+    link_to "#{request.path}?#{query.to_query}",
+      class: "inline-flex items-center gap-1 hover:text-gray-900 #{'text-gray-900' if active}" do
+      safe_join([label, tag.span(indicator, class: "text-amber-600")])
+    end
+  end
+
   def html_dir
     I18n.locale == :ar ? "rtl" : "ltr"
   end

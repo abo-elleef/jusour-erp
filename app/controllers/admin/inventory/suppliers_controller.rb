@@ -5,6 +5,8 @@ module Admin
     class SuppliersController < BaseController
       before_action :set_supplier, only: %i[show edit update destroy direct_ap_payment]
 
+      SORT_COLUMNS = %w[name contact lead_time ingredients invoice_total outstanding status].freeze
+
       def index
         authorize_inventory_index!(Supplier)
         @q = Supplier.ransack(params[:q])
@@ -12,8 +14,9 @@ module Admin
         @active_count = Supplier.where(active: true).count
         @inactive_count = @total_count - @active_count
         @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
-        @suppliers = @q.result.includes(:supplier_ingredients).order(:name)
-        supplier_ids = @suppliers.map(&:id)
+
+        suppliers = @q.result.includes(:supplier_ingredients).to_a
+        supplier_ids = suppliers.map(&:id)
 
         @invoice_total_cents_by_supplier = VendorInvoice
           .where(supplier_id: supplier_ids)
@@ -26,6 +29,14 @@ module Admin
           .outstanding
           .group(:supplier_id)
           .sum(Arel.sql("total_cents - amount_paid_cents"))
+
+        @sort = SORT_COLUMNS.include?(params[:sort]) ? params[:sort] : "name"
+        @direction = params[:dir] == "desc" ? "desc" : "asc"
+        # Sort in Ruby so DB columns and computed aggregates (ingredient count,
+        # invoice total, outstanding) sort the same way. The list is small.
+        suppliers = suppliers.sort_by { |s| [supplier_sort_value(s), s.name.to_s.downcase] }
+        suppliers.reverse! if @direction == "desc"
+        @suppliers = suppliers
       end
 
       def show
@@ -117,6 +128,18 @@ module Admin
 
       def set_supplier
         @supplier = Supplier.find(params[:id])
+      end
+
+      def supplier_sort_value(supplier)
+        case @sort
+        when "contact"       then supplier.contact_name.presence&.downcase || supplier.email.to_s.downcase
+        when "lead_time"     then supplier.lead_time_days.to_i
+        when "ingredients"   then supplier.supplier_ingredients.size
+        when "invoice_total" then @invoice_total_cents_by_supplier[supplier.id] || 0
+        when "outstanding"   then @outstanding_cents_by_supplier[supplier.id] || 0
+        when "status"        then supplier.active? ? 1 : 0
+        else                      supplier.name.to_s.downcase
+        end
       end
 
       def supplier_params
