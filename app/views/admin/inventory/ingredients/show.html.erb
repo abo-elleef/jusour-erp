@@ -153,6 +153,15 @@
         <div class="p-5">
           <%= form_with url: adjust_admin_inventory_ingredient_path(@ingredient), method: :post, class: "space-y-4" do %>
             <div>
+              <%= label_tag :location_id, t("inventory.ingredients.show.location"), class: label_class %>
+              <%= select_tag :location_id,
+                    options_for_select(@stock_locations.to_a.map { |loc| [stock_location_option_label(loc), loc.id] }),
+                    include_blank: t("inventory.ingredients.show.select_location"),
+                    required: true,
+                    class: "#{pos_input_class} appearance-none" %>
+              <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.ingredients.show.location_hint") %></p>
+            </div>
+            <div>
               <%= label_tag :quantity_delta, t("inventory.ingredients.show.quantity_delta"), class: label_class %>
               <% adj_units = @ingredient.available_units %>
               <% if adj_units.size > 1 %>

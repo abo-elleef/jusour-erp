@@ -32,6 +32,22 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
     transfer
   end
 
+  describe "manually-added source stock" do
+    it "becomes transferable after a manual add at the source (a batch is created)" do
+      fresh = create(:ingredient, company: company, ingredient_category: category, quantity_on_hand: 0)
+      transfer = create(:stock_transfer, company: company, from_location: kitchen, to_location: branch, requested_by: owner)
+      line = create(:stock_transfer_line, stock_transfer: transfer, ingredient: fresh, quantity_requested: 5)
+
+      # No batch at the source yet → nothing transferable.
+      expect(line.transferable_quantity_at_source).to eq(0)
+
+      StockAdjustment.create!(ingredient: fresh, user: owner, location: kitchen,
+        quantity_delta: 8, adjustment_type: "manual_add", maintain_batches: true)
+
+      expect(line.transferable_quantity_at_source).to eq(8)
+    end
+  end
+
   describe "GET /admin/inventory/stock_transfers/:id" do
     it "renders the transfer with a print button and print-only letterhead" do
       transfer = create_transfer_with_line

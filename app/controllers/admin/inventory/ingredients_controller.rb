@@ -79,16 +79,27 @@ module Admin
 
       def adjust
         authorize_inventory!(:adjust)
+        # A location is mandatory: stock lives at a location, and it's what lets
+        # the adjustment maintain that location's FIFO batch ledger.
+        location = Location.find_by(id: params[:location_id])
+        if location.blank?
+          redirect_to admin_inventory_ingredient_path(@ingredient),
+            alert: t("inventory.ingredients.show.location_required")
+          return
+        end
+
         # The delta may be entered in an alternate unit; store it in the base unit
         # and keep the entered unit for display.
         delta = @ingredient.to_base(BigDecimal(params[:quantity_delta].to_s), params[:unit])
         StockAdjustment.create!(
           ingredient: @ingredient,
           user: current_user,
+          location: location,
           quantity_delta: delta,
           unit: params[:unit].presence,
           adjustment_type: params[:adjustment_type],
-          reason_notes: params[:reason_notes]
+          reason_notes: params[:reason_notes],
+          maintain_batches: true
         )
         ::Inventory::CheckLowStockJob.perform_later(@ingredient.id) if @ingredient.reload.low_stock?
         redirect_to admin_inventory_ingredient_path(@ingredient), notice: t("flash.ingredient.adjusted")

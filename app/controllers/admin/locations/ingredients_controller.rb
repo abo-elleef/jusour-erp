@@ -74,7 +74,8 @@ module Admin
           quantity_delta: delta,
           unit: params[:unit].presence,
           adjustment_type: params[:adjustment_type],
-          reason_notes: params[:reason_notes]
+          reason_notes: params[:reason_notes],
+          maintain_batches: true
         )
 
         redirect_to admin_location_ingredients_path(@location),
