@@ -2,7 +2,9 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["item", "position"]
-  static values = { url: String }
+  // displayOffset shifts only the *shown* position label (e.g. 1 for a 1-based
+  // list); the saved position stays 0-based. Defaults to 0.
+  static values = { url: String, displayOffset: Number }
 
   connect() {
     this.bindItems()
@@ -55,7 +57,7 @@ export default class extends Controller {
   updatePositionLabels() {
     this.itemTargets.forEach((item, index) => {
       const label = item.querySelector("[data-sortable-list-target='position']")
-      if (label) label.textContent = index
+      if (label) label.textContent = `#${index + this.displayOffsetValue}`
     })
   }
 

@@ -8,6 +8,16 @@ module Admin
       def index
         authorize_inventory_index!(ManufacturingTemplate)
         @templates = ManufacturingTemplate.includes(:output_ingredient, :manufacturing_template_lines).ordered
+        @sortable = true
+      end
+
+      def reorder
+        authorize_inventory!(:update)
+        positions = params[:positions].presence || JSON.parse(request.body.read).fetch("positions")
+        positions.each do |id, position|
+          ManufacturingTemplate.where(id: id).update_all(position: position.to_i)
+        end
+        head :ok
       end
 
       def show

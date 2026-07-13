@@ -250,6 +250,7 @@ Rails.application.routes.draw do
       end
       resources :manufacturing_templates do
         member { post :run }
+        collection { patch :reorder }
         resources :lines, only: %i[create destroy], controller: "manufacturing_template_lines"
       end
       resources :manufacturing_runs, only: %i[index show]

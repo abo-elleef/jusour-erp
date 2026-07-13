@@ -24,10 +24,15 @@
   </div>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <% if @sortable && @templates.any? %>
+      <p class="px-5 py-3 text-xs text-gray-500 border-b border-gray-100 bg-gray-50/60"><%= t("inventory.manufacturing.templates.reorder_hint") %></p>
+    <% end %>
     <table class="w-full text-sm">
       <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
         <tr>
-          <th class="p-3 ps-5 text-start"><%= t("inventory.manufacturing.templates.name") %></th>
+          <% if @sortable %><th class="p-3 ps-5 w-10"></th><% end %>
+          <th class="p-3 <%= "ps-5" unless @sortable %> text-start"><%= t("inventory.manufacturing.templates.position") %></th>
+          <th class="p-3 text-start"><%= t("inventory.manufacturing.templates.name") %></th>
           <th class="p-3 text-start"><%= t("inventory.manufacturing.templates.output") %></th>
           <th class="p-3 text-end"><%= t("inventory.manufacturing.templates.yield_per_run") %></th>
           <th class="p-3 text-end"><%= t("inventory.manufacturing.templates.inputs") %></th>
@@ -35,10 +40,25 @@
           <th class="p-3 pe-5 text-end"></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
-        <% @templates.each do |template| %>
-          <tr class="hover:bg-gray-50/60">
-            <td class="p-3 ps-5 font-semibold text-gray-900">
+      <tbody class="divide-y divide-gray-100"
+             <% if @sortable %>
+               data-controller="sortable-list"
+               data-sortable-list-url-value="<%= reorder_admin_inventory_manufacturing_templates_path %>"
+               data-sortable-list-display-offset-value="1"
+             <% end %>>
+        <% @templates.each_with_index do |template, index| %>
+          <tr class="hover:bg-gray-50/60 <%= "cursor-grab active:cursor-grabbing" if @sortable %>"
+              <% if @sortable %>
+                data-sortable-list-target="item"
+                data-id="<%= template.id %>"
+              <% end %>>
+            <% if @sortable %>
+              <td class="p-3 ps-5 text-gray-400 select-none" title="<%= t("inventory.manufacturing.templates.drag_handle") %>" aria-hidden="true">⠿</td>
+            <% end %>
+            <td class="p-3 <%= "ps-5" unless @sortable %> tabular-nums">
+              <span data-sortable-list-target="position" class="text-xs font-semibold text-gray-500 px-2 py-0.5 rounded-full bg-gray-50 border border-gray-200">#<%= index + 1 %></span>
+            </td>
+            <td class="p-3 font-semibold text-gray-900">
               <%= link_to template.name, admin_inventory_manufacturing_template_path(template), class: "hover:text-amber-700" %>
             </td>
             <td class="p-3 text-gray-700"><%= template.output_ingredient.name %></td>

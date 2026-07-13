@@ -16,6 +16,35 @@ RSpec.describe "Admin::Inventory::ManufacturingTemplates", type: :request do
     sign_in owner
   end
 
+  def template_for(name, position:)
+    ManufacturingTemplate.create!(company: company, name: name, yield_quantity: 1, position: position,
+      active: false, output_ingredient: output, yield_unit: output.unit)
+  end
+
+  it "renders the index with a sortable list and a position column" do
+    template_for("Alpha", position: 0)
+
+    get admin_inventory_manufacturing_templates_path
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include("data-controller=\"sortable-list\"")
+    expect(response.body).to include(reorder_admin_inventory_manufacturing_templates_path)
+    expect(response.body).to include(I18n.t("inventory.manufacturing.templates.position"))
+  end
+
+  it "persists a new order via the reorder endpoint" do
+    a = template_for("Alpha", position: 0)
+    b = template_for("Beta", position: 1)
+
+    patch reorder_admin_inventory_manufacturing_templates_path,
+      params: { positions: { a.id => 1, b.id => 0 } }
+
+    expect(response).to have_http_status(:ok)
+    expect(a.reload.position).to eq(1)
+    expect(b.reload.position).to eq(0)
+    expect(ManufacturingTemplate.ordered.pluck(:name)).to eq(%w[Beta Alpha])
+  end
+
   it "renders the new form with searchable ingredient pickers" do
     get new_admin_inventory_manufacturing_template_path
     expect(response).to have_http_status(:ok)

@@ -1185,6 +1185,8 @@ en:
         active: "Active"
         inactive: "Inactive"
         position: "Sort order"
+        reorder_hint: "Drag rows to set the display order."
+        drag_handle: "Drag to reorder"
         notes: "Notes"
         empty: "No manufacturing templates yet."
         delete: "Delete template"
