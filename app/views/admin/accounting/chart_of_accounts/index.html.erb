@@ -1,0 +1,208 @@
+<% content_for :title, t("accounting.chart_of_accounts.title") %>
+<%= render "admin/accounting/nav" %>
+
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.chart_of_accounts.title") %></h1>
+      <p class="text-sm text-gray-500 mt-0.5"><%= t("accounting.chart_of_accounts.description") %></p>
+    </div>
+  </div>
+
+  <%# ── Balance Sheet Summary ─────────────────────────────────────── %>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="rounded-2xl border border-blue-200 bg-blue-50/60 p-5">
+      <p class="text-xs font-semibold text-blue-700 uppercase tracking-wide"><%= t("accounting.chart_of_accounts.total_assets") %></p>
+      <p class="text-3xl font-bold text-blue-900 tabular-nums mt-2"><%= format_money(@coa.total_assets_cents) %></p>
+      <p class="text-xs text-blue-600 mt-1"><%= t("accounting.chart_of_accounts.assets_hint") %></p>
+    </div>
+    <div class="rounded-2xl border border-red-200 bg-red-50/60 p-5">
+      <p class="text-xs font-semibold text-red-700 uppercase tracking-wide"><%= t("accounting.chart_of_accounts.total_liabilities") %></p>
+      <p class="text-3xl font-bold text-red-900 tabular-nums mt-2"><%= format_money(@coa.total_liabilities_cents) %></p>
+      <p class="text-xs text-red-600 mt-1"><%= t("accounting.chart_of_accounts.liabilities_hint") %></p>
+    </div>
+    <div class="rounded-2xl border <%= @coa.total_equity_cents >= 0 ? 'border-emerald-200 bg-emerald-50/60' : 'border-orange-200 bg-orange-50/60' %> p-5">
+      <p class="text-xs font-semibold <%= @coa.total_equity_cents >= 0 ? 'text-emerald-700' : 'text-orange-700' %> uppercase tracking-wide"><%= t("accounting.chart_of_accounts.total_equity") %></p>
+      <p class="text-3xl font-bold <%= @coa.total_equity_cents >= 0 ? 'text-emerald-900' : 'text-orange-900' %> tabular-nums mt-2"><%= format_money(@coa.total_equity_cents) %></p>
+      <p class="text-xs <%= @coa.total_equity_cents >= 0 ? 'text-emerald-600' : 'text-orange-600' %> mt-1"><%= t("accounting.chart_of_accounts.equity_hint") %></p>
+    </div>
+  </div>
+
+  <%# ── P&L Summary ────────────────────────────────────────────────── %>
+  <%# Note: Revenue/Expense totals are all-time P&L figures computed independently from treasury cash flows.
+      Some auto-generated costs (COGS, labor) do not move treasury balances, so Net Income and Equity
+      are intentionally computed on different bases — this is normal before formal closing entries. %>
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.chart_of_accounts.total_revenue") %></p>
+      <p class="text-2xl font-bold text-gray-900 tabular-nums mt-2"><%= format_money(@coa.total_revenue_cents) %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("accounting.chart_of_accounts.all_time") %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.chart_of_accounts.total_expenses") %></p>
+      <p class="text-2xl font-bold text-gray-900 tabular-nums mt-2"><%= format_money(@coa.total_expenses_cents) %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("accounting.chart_of_accounts.all_time") %></p>
+    </div>
+    <div class="rounded-2xl border <%= @coa.net_income_cents >= 0 ? 'border-emerald-200 bg-emerald-50/40' : 'border-red-200 bg-red-50/40' %> p-5">
+      <p class="text-xs font-semibold <%= @coa.net_income_cents >= 0 ? 'text-emerald-700' : 'text-red-700' %> uppercase tracking-wide"><%= t("accounting.chart_of_accounts.net_income") %></p>
+      <p class="text-2xl font-bold <%= @coa.net_income_cents >= 0 ? 'text-emerald-800' : 'text-red-800' %> tabular-nums mt-2"><%= format_money(@coa.net_income_cents) %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("accounting.chart_of_accounts.all_time") %></p>
+    </div>
+  </div>
+
+  <%# ── Account Ledger ─────────────────────────────────────────────── %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.chart_of_accounts.ledger_heading") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.chart_of_accounts.ledger_hint") %></p>
+    </div>
+
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-white text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <tr>
+          <th class="p-3 ps-5 text-start w-20"><%= t("accounting.chart_of_accounts.col_code") %></th>
+          <th class="p-3 text-start"><%= t("accounting.chart_of_accounts.col_account") %></th>
+          <th class="p-3 text-start"><%= t("accounting.chart_of_accounts.col_type") %></th>
+          <th class="p-3 pe-5 text-end"><%= t("accounting.chart_of_accounts.col_balance") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+
+        <%# Assets %>
+        <tr class="bg-blue-50/40">
+          <td colspan="4" class="px-5 py-2 text-xs font-bold text-blue-700 uppercase tracking-widest">
+            <%= t("accounting.chart_of_accounts.group_assets") %>
+          </td>
+        </tr>
+        <% @coa.asset_lines.each do |line| %>
+          <tr class="hover:bg-gray-50/60 transition-colors">
+            <td class="p-3 ps-5 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
+            <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
+            <td class="p-3">
+              <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                <%= t("accounting.chart_of_accounts.subtypes.#{line.subtype}", default: line.subtype.humanize) %>
+              </span>
+            </td>
+            <td class="p-3 pe-5 text-end font-semibold tabular-nums text-blue-800"><%= format_money(line.balance_cents) %></td>
+          </tr>
+        <% end %>
+        <tr class="bg-blue-50/60 border-t border-blue-100">
+          <td colspan="3" class="p-3 ps-5 text-xs font-bold text-blue-800 text-end"><%= t("accounting.chart_of_accounts.total_assets") %></td>
+          <td class="p-3 pe-5 text-end font-bold tabular-nums text-blue-900"><%= format_money(@coa.total_assets_cents) %></td>
+        </tr>
+
+        <%# Liabilities %>
+        <tr class="bg-red-50/40">
+          <td colspan="4" class="px-5 py-2 text-xs font-bold text-red-700 uppercase tracking-widest">
+            <%= t("accounting.chart_of_accounts.group_liabilities") %>
+          </td>
+        </tr>
+        <% if @coa.liability_lines.any? %>
+          <% @coa.liability_lines.each do |line| %>
+            <tr class="hover:bg-gray-50/60 transition-colors">
+              <td class="p-3 ps-5 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
+              <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
+              <td class="p-3">
+                <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-red-100 text-red-800 border border-red-200">
+                  <%= t("accounting.chart_of_accounts.subtypes.accounts_payable") %>
+                </span>
+              </td>
+              <td class="p-3 pe-5 text-end font-semibold tabular-nums text-red-800"><%= format_money(line.balance_cents) %></td>
+            </tr>
+          <% end %>
+        <% else %>
+          <tr>
+            <td colspan="4" class="p-4 ps-5 text-sm text-gray-400"><%= t("accounting.chart_of_accounts.no_liabilities") %></td>
+          </tr>
+        <% end %>
+        <tr class="bg-red-50/60 border-t border-red-100">
+          <td colspan="3" class="p-3 ps-5 text-xs font-bold text-red-800 text-end"><%= t("accounting.chart_of_accounts.total_liabilities") %></td>
+          <td class="p-3 pe-5 text-end font-bold tabular-nums text-red-900"><%= format_money(@coa.total_liabilities_cents) %></td>
+        </tr>
+
+        <%# Equity %>
+        <tr class="bg-emerald-50/40">
+          <td colspan="4" class="px-5 py-2 text-xs font-bold text-emerald-700 uppercase tracking-widest">
+            <%= t("accounting.chart_of_accounts.group_equity") %>
+          </td>
+        </tr>
+        <% @coa.equity_lines.each do |line| %>
+          <tr class="hover:bg-gray-50/60 transition-colors">
+            <td class="p-3 ps-5 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
+            <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
+            <td class="p-3">
+              <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                <%= t("accounting.chart_of_accounts.subtypes.retained_earnings") %>
+              </span>
+            </td>
+            <td class="p-3 pe-5 text-end font-semibold tabular-nums <%= line.balance_cents >= 0 ? 'text-emerald-800' : 'text-red-700' %>">
+              <%= format_money(line.balance_cents) %>
+            </td>
+          </tr>
+        <% end %>
+        <tr class="bg-emerald-50/60 border-t border-emerald-100">
+          <td colspan="3" class="p-3 ps-5 text-xs font-bold text-emerald-800 text-end"><%= t("accounting.chart_of_accounts.total_equity") %></td>
+          <td class="p-3 pe-5 text-end font-bold tabular-nums <%= @coa.total_equity_cents >= 0 ? 'text-emerald-900' : 'text-red-800' %>">
+            <%= format_money(@coa.total_equity_cents) %>
+          </td>
+        </tr>
+
+        <%# Revenue %>
+        <tr class="bg-gray-100/60">
+          <td colspan="4" class="px-5 py-2 text-xs font-bold text-gray-600 uppercase tracking-widest">
+            <%= t("accounting.chart_of_accounts.group_revenue") %>
+          </td>
+        </tr>
+        <% @coa.revenue_lines.each do |line| %>
+          <tr class="hover:bg-gray-50/60 transition-colors">
+            <td class="p-3 ps-5 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
+            <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
+            <td class="p-3">
+              <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                <%= t("accounting.chart_of_accounts.subtypes.income") %>
+              </span>
+            </td>
+            <td class="p-3 pe-5 text-end font-semibold tabular-nums text-gray-800"><%= format_money(line.balance_cents) %></td>
+          </tr>
+        <% end %>
+        <tr class="bg-gray-100/80 border-t border-gray-200">
+          <td colspan="3" class="p-3 ps-5 text-xs font-bold text-gray-700 text-end"><%= t("accounting.chart_of_accounts.total_revenue") %></td>
+          <td class="p-3 pe-5 text-end font-bold tabular-nums text-gray-900"><%= format_money(@coa.total_revenue_cents) %></td>
+        </tr>
+
+        <%# Expenses %>
+        <tr class="bg-gray-100/60">
+          <td colspan="4" class="px-5 py-2 text-xs font-bold text-gray-600 uppercase tracking-widest">
+            <%= t("accounting.chart_of_accounts.group_expenses") %>
+          </td>
+        </tr>
+        <% @coa.expense_lines.each do |line| %>
+          <tr class="hover:bg-gray-50/60 transition-colors">
+            <td class="p-3 ps-5 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
+            <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
+            <td class="p-3">
+              <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                <%= t("accounting.chart_of_accounts.subtypes.expense") %>
+              </span>
+            </td>
+            <td class="p-3 pe-5 text-end font-semibold tabular-nums text-gray-800"><%= format_money(line.balance_cents) %></td>
+          </tr>
+        <% end %>
+        <tr class="bg-gray-100/80 border-t border-gray-200">
+          <td colspan="3" class="p-3 ps-5 text-xs font-bold text-gray-700 text-end"><%= t("accounting.chart_of_accounts.total_expenses") %></td>
+          <td class="p-3 pe-5 text-end font-bold tabular-nums text-gray-900"><%= format_money(@coa.total_expenses_cents) %></td>
+        </tr>
+
+        <%# Net Income footer %>
+        <tr class="border-t-2 border-gray-300 <%= @coa.net_income_cents >= 0 ? 'bg-emerald-50/60' : 'bg-red-50/60' %>">
+          <td colspan="3" class="p-4 ps-5 text-sm font-bold <%= @coa.net_income_cents >= 0 ? 'text-emerald-800' : 'text-red-800' %> text-end">
+            <%= t("accounting.chart_of_accounts.net_income") %>
+          </td>
+          <td class="p-4 pe-5 text-end text-lg font-bold tabular-nums <%= @coa.net_income_cents >= 0 ? 'text-emerald-900' : 'text-red-900' %>">
+            <%= format_money(@coa.net_income_cents) %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>

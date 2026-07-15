@@ -15,6 +15,7 @@
     <%= link_to t("accounting.nav.dashboard"), admin_accounting_root_path, class: admin_section_tab_class(accounting_nav_active?("dashboard")) %>
     <%= link_to t("accounting.nav.food_cost"), admin_accounting_food_costs_path, class: admin_section_tab_class(accounting_nav_active?("food_costs")) %>
     <%= link_to t("accounting.nav.sales"), admin_accounting_sales_reports_path, class: admin_section_tab_class(accounting_nav_active?("sales_reports")) %>
+    <%= link_to t("accounting.nav.chart_of_accounts"), admin_accounting_chart_of_accounts_path, class: admin_section_tab_class(accounting_nav_active?("chart_of_accounts")) %>
     <% if current_user.owner? %>
       <%= link_to t("accounting.nav.audit_log"), admin_accounting_audit_log_index_path, class: admin_section_tab_class(accounting_nav_active?("audit_log")) %>
       <%= link_to t("accounting.nav.integrations"), admin_accounting_integrations_path, class: admin_section_tab_class(accounting_nav_active?("integrations")) %>
