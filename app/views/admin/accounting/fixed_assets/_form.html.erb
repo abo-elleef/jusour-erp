@@ -1,0 +1,74 @@
+<%= form_with model: [:admin, :accounting, fixed_asset], class: "space-y-5" do |f| %>
+  <% if fixed_asset.errors.any? %>
+    <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+      <p class="text-red-700 text-sm"><%= fixed_asset.errors.full_messages.to_sentence %></p>
+    </div>
+  <% end %>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.form.name") %></label>
+      <%= f.text_field :name, class: pos_input_class, required: true,
+            placeholder: t("accounting.fixed_assets.form.name_placeholder") %>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.form.asset_type") %></label>
+      <%= f.select :asset_type,
+            FixedAsset::ASSET_TYPES.map { |t_| [t("accounting.fixed_assets.types.#{t_}"), t_] },
+            { include_blank: t("accounting.fixed_assets.form.select_type") },
+            class: pos_input_class, required: true %>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-3 gap-4">
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.form.purchase_date") %></label>
+      <%= f.date_field :purchase_date, class: pos_input_class, required: true %>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.form.purchase_price") %></label>
+      <%= f.number_field :purchase_price_pounds, step: "0.01", min: "0.01",
+            class: pos_input_class, required: true %>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.form.current_value") %></label>
+      <%= f.number_field :current_value_pounds, step: "0.01", min: "0",
+            class: pos_input_class, required: true %>
+      <p class="text-xs text-gray-500 mt-1"><%= t("accounting.fixed_assets.form.current_value_hint") %></p>
+    </div>
+  </div>
+
+  <div class="grid sm:grid-cols-3 gap-4">
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.form.useful_life") %></label>
+      <%= f.number_field :useful_life_years, step: 1, min: 1,
+            class: pos_input_class,
+            placeholder: t("accounting.fixed_assets.form.useful_life_placeholder") %>
+      <p class="text-xs text-gray-500 mt-1"><%= t("accounting.fixed_assets.form.useful_life_hint") %></p>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.form.serial_number") %></label>
+      <%= f.text_field :serial_number, class: pos_input_class,
+            placeholder: t("accounting.fixed_assets.form.serial_number_placeholder") %>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.form.location") %></label>
+      <%= f.select :location_id,
+            options_from_collection_for_select(@locations, :id, :name, fixed_asset.location_id),
+            { include_blank: t("accounting.fixed_assets.form.no_location") },
+            class: pos_input_class %>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.form.notes") %></label>
+    <%= f.text_area :notes, rows: 3, class: pos_input_class,
+          placeholder: t("accounting.fixed_assets.form.notes_placeholder") %>
+  </div>
+
+  <div class="flex gap-3 pt-2">
+    <%= f.submit t("actions.save"), class: "bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold" %>
+    <%= link_to t("actions.cancel"), admin_accounting_fixed_assets_path,
+          class: "px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 border border-gray-200" %>
+  </div>
+<% end %>

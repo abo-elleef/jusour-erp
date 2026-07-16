@@ -171,6 +171,9 @@ Rails.application.routes.draw do
       resources :treasury_transfers, only: %i[new create]
       resources :payment_method_treasuries, only: %i[index create destroy]
       resources :chart_of_accounts, only: [:index]
+      resources :fixed_assets do
+        member { patch :dispose }
+      end
       resources :budgets, only: [:index] do
         collection { patch :update }
       end

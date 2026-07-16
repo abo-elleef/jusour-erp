@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_08_000020) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_09_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -251,6 +251,28 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000020) do
     t.index ["source_record_type", "source_record_id"], name: "index_expenses_on_source_record_type_and_source_record_id"
     t.index ["treasury_id"], name: "index_expenses_on_treasury_id"
     t.index ["user_id"], name: "index_expenses_on_user_id"
+  end
+
+  create_table "fixed_assets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "location_id"
+    t.uuid "recorded_by_id", null: false
+    t.string "name", null: false
+    t.string "asset_type", null: false
+    t.date "purchase_date", null: false
+    t.integer "purchase_price_cents", default: 0, null: false
+    t.integer "current_value_cents", default: 0, null: false
+    t.integer "useful_life_years"
+    t.string "serial_number"
+    t.text "notes"
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "active"], name: "index_fixed_assets_on_company_id_and_active"
+    t.index ["company_id", "asset_type"], name: "index_fixed_assets_on_company_id_and_asset_type"
+    t.index ["company_id"], name: "index_fixed_assets_on_company_id"
+    t.index ["location_id"], name: "index_fixed_assets_on_location_id"
+    t.index ["recorded_by_id"], name: "index_fixed_assets_on_recorded_by_id"
   end
 
   create_table "gift_cards", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1164,6 +1186,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_08_000020) do
   add_foreign_key "expenses", "expense_categories"
   add_foreign_key "expenses", "treasuries"
   add_foreign_key "expenses", "users"
+  add_foreign_key "fixed_assets", "companies"
+  add_foreign_key "fixed_assets", "locations"
+  add_foreign_key "fixed_assets", "users", column: "recorded_by_id"
   add_foreign_key "gift_cards", "companies"
   add_foreign_key "income_categories", "companies"
   add_foreign_key "incomes", "companies"
