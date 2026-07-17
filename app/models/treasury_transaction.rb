@@ -3,7 +3,7 @@
 class TreasuryTransaction < ApplicationRecord
   include Tenantable
 
-  KINDS = %w[expense income drawer_open drawer_reconcile adjustment transfer ap_invoice ap_payment payroll_advance payroll_salary staff_meal online_payment].freeze
+  KINDS = %w[expense income drawer_open drawer_reconcile adjustment transfer ap_invoice ap_payment payroll_advance payroll_salary staff_meal online_payment journal_entry].freeze
 
   belongs_to :treasury
   belongs_to :user

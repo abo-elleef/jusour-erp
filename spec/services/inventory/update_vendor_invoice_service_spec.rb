@@ -73,6 +73,44 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
     expect(old_il&.quantity_on_hand.to_f).to eq(0.0)
   end
 
+  it "unlinks the old stock batch from the line after edit so subsequent edits work" do
+    invoice = receive_invoice!(quantity: 4)
+    line = invoice.vendor_invoice_lines.first
+    original_batch = line.stock_batch
+
+    # First edit: change quantity from 4 → 6
+    described_class.new(
+      invoice, user,
+      supplier_id: supplier.id, location_id: location.id,
+      invoice_number: invoice.invoice_number,
+      invoice_date: invoice.invoice_date, received_on: invoice.received_on,
+      vendor_invoice_lines_attributes: {
+        "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "6", line_total_cents: 1_500 }
+      }
+    ).call
+
+    line.reload
+    new_batch = line.stock_batch
+
+    # Old batch must be unlinked so line.stock_batch returns the new one
+    expect(new_batch).not_to eq(original_batch)
+    expect(new_batch).not_to be_nil
+    expect(original_batch.reload.vendor_invoice_line_id).to be_nil
+
+    # Second edit must succeed (not raise StockConsumedError on the old zero batch)
+    expect do
+      described_class.new(
+        invoice, user,
+        supplier_id: supplier.id, location_id: location.id,
+        invoice_number: invoice.invoice_number,
+        invoice_date: invoice.invoice_date, received_on: invoice.received_on,
+        vendor_invoice_lines_attributes: {
+          "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "5", line_total_cents: 1_250 }
+        }
+      ).call
+    end.not_to raise_error
+  end
+
   it "raises when stock from the invoice has been consumed" do
     invoice = receive_invoice!(quantity: 4)
     line = invoice.vendor_invoice_lines.first
