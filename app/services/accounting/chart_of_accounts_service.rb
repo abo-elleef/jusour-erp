@@ -17,9 +17,6 @@ module Accounting
       keyword_init: true
     )
 
-    # All treasury types in this system are liquid (convertible within a year) →
-    # current assets. Non-current (fixed) assets are not yet tracked; the 1600
-    # range is reserved for them when a FixedAsset model is introduced.
     CURRENT_ASSET_TYPES = %w[cash_drawer bank safe petty_cash mobile_wallet other].freeze
 
     ASSET_BASE_CODES = {
@@ -29,8 +26,24 @@ module Accounting
       "petty_cash"    => 1300,
       "mobile_wallet" => 1400,
       "other"         => 1500
-      # 1600+ reserved for non-current / fixed assets
     }.freeze
+
+    FIXED_ASSET_BASE_CODES = {
+      "equipment"             => 1600,
+      "furniture"             => 1700,
+      "vehicle"               => 1800,
+      "property"              => 1900,
+      "leasehold_improvement" => 1950,
+      "other"                 => 1980
+    }.freeze
+
+    FIXED_EXPENSE_ACCOUNTS = [
+      { code: JournalEntryService::ADVANCE_CODE,   name_key: "accounting.journal_entries.accounts.payroll_advances" },
+      { code: JournalEntryService::SALARY_CODE,    name_key: "accounting.journal_entries.accounts.salaries" },
+      { code: JournalEntryService::STAFF_MEAL_CODE, name_key: "accounting.journal_entries.accounts.staff_meals" },
+      { code: JournalEntryService::COGS_CODE,      name_key: "accounting.journal_entries.accounts.purchases" },
+      { code: JournalEntryService::INTEREST_CODE,  name_key: "accounting.loans.interest_expense_account" }
+    ].freeze
 
     # ── Current assets ────────────────────────────────────────────────
 
@@ -57,16 +70,6 @@ module Accounting
     end
 
     # ── Non-current assets (fixed assets) ────────────────────────────
-    # Empty until a FixedAsset model is introduced; codes start at 1601.
-
-    FIXED_ASSET_BASE_CODES = {
-      "equipment"             => 1600,
-      "furniture"             => 1700,
-      "vehicle"               => 1800,
-      "property"              => 1900,
-      "leasehold_improvement" => 1950,
-      "other"                 => 1980
-    }.freeze
 
     def non_current_asset_lines
       @non_current_asset_lines ||= begin
@@ -90,8 +93,6 @@ module Accounting
       @total_non_current_assets_cents ||= non_current_asset_lines.sum(&:balance_cents)
     end
 
-    # ── Combined asset total ──────────────────────────────────────────
-
     def asset_lines
       @asset_lines ||= current_asset_lines + non_current_asset_lines
     end
@@ -100,10 +101,10 @@ module Accounting
       @total_assets_cents ||= total_current_assets_cents + total_non_current_assets_cents
     end
 
-    # ── Liabilities ───────────────────────────────────────────────────
+    # ── Accounts Payable (supplier AP, 2001+) ─────────────────────────
 
-    def liability_lines
-      @liability_lines ||= ap_treasuries.each_with_index.map do |t, i|
+    def ap_liability_lines
+      @ap_liability_lines ||= ap_treasuries.each_with_index.map do |t, i|
         AccountLine.new(
           code:           2001 + i,
           name:           t.name,
@@ -115,25 +116,68 @@ module Accounting
       end
     end
 
+    # ── Loans (2100+) ─────────────────────────────────────────────────
+
+    def loan_liability_lines
+      @loan_liability_lines ||= Loan.ordered.map do |loan|
+        AccountLine.new(
+          code:           loan.account_code,
+          name:           loan.name,
+          account_type:   :liability,
+          subtype:        loan.loan_type,
+          balance_cents:  loan.outstanding_balance_cents,
+          normal_balance: :credit
+        )
+      end
+    end
+
+    def liability_lines
+      @liability_lines ||= ap_liability_lines + loan_liability_lines
+    end
+
     def total_liabilities_cents
       @total_liabilities_cents ||= liability_lines.sum(&:balance_cents)
     end
 
     # ── Equity ────────────────────────────────────────────────────────
 
-    def equity_lines
-      @equity_lines ||= [
+    def partner_equity_lines
+      @partner_equity_lines ||= Partner.ordered.map do |partner|
         AccountLine.new(
+          code:           partner.account_code,
+          name:           partner.name,
+          account_type:   :equity,
+          subtype:        "partner_account",
+          balance_cents:  partner.balance_cents,
+          normal_balance: :credit
+        )
+      end
+    end
+
+    def total_partner_equity_cents
+      @total_partner_equity_cents ||= partner_equity_lines.sum(&:balance_cents)
+    end
+
+    # Retained Earnings = total equity residual after partner current accounts
+    def retained_earnings_cents
+      @retained_earnings_cents ||= total_equity_cents - total_partner_equity_cents
+    end
+
+    def equity_lines
+      @equity_lines ||= begin
+        retained = AccountLine.new(
           code:           3001,
           name:           I18n.t("accounting.chart_of_accounts.retained_earnings"),
           account_type:   :equity,
           subtype:        "retained_earnings",
-          balance_cents:  total_equity_cents,
+          balance_cents:  retained_earnings_cents,
           normal_balance: :credit
         )
-      ]
+        [retained] + partner_equity_lines
+      end
     end
 
+    # Assets - Liabilities (now includes loans, so balance sheet holds)
     def total_equity_cents
       @total_equity_cents ||= total_assets_cents - total_liabilities_cents
     end
@@ -157,10 +201,10 @@ module Accounting
       @total_revenue_cents ||= revenue_lines.sum(&:balance_cents)
     end
 
-    # ── Expenses ──────────────────────────────────────────────────────
+    # ── Expenses — dynamic categories ────────────────────────────────
 
-    def expense_lines
-      @expense_lines ||= expense_totals.each_with_index.map do |(category_name, cents), i|
+    def dynamic_expense_lines
+      @dynamic_expense_lines ||= expense_totals.each_with_index.map do |(category_name, cents), i|
         AccountLine.new(
           code:           5001 + i,
           name:           category_name,
@@ -170,6 +214,32 @@ module Accounting
           normal_balance: :debit
         )
       end
+    end
+
+    # ── Expenses — fixed system accounts (payroll, COGS, interest) ───
+
+    def fixed_expense_lines
+      @fixed_expense_lines ||= begin
+        je_scope = JournalEntryLine.joins(:journal_entry)
+                                   .where(journal_entries: { company_id: Current.company.id })
+        FIXED_EXPENSE_ACCOUNTS.filter_map do |acct|
+          total = je_scope.where(account_code: acct[:code]).sum(:debit_cents)
+          next if total == 0
+
+          AccountLine.new(
+            code:           acct[:code],
+            name:           I18n.t(acct[:name_key]),
+            account_type:   :expense,
+            subtype:        "fixed_expense",
+            balance_cents:  total,
+            normal_balance: :debit
+          )
+        end
+      end
+    end
+
+    def expense_lines
+      @expense_lines ||= dynamic_expense_lines + fixed_expense_lines
     end
 
     def total_expenses_cents
