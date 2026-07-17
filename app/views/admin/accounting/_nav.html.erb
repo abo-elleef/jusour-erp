@@ -45,11 +45,13 @@
         <%= link_to t("accounting.nav.shifts"),      admin_accounting_shift_logs_path,          class: admin_section_tab_class(accounting_nav_active?("shift_logs")) %>
         <%= link_to t("accounting.nav.cash_drawer"), admin_accounting_cash_drawer_index_path,   class: admin_section_tab_class(accounting_nav_active?("cash_drawer")) %>
       <% elsif accounting_in_reports_group? %>
-        <%= link_to t("accounting.nav.dashboard"),  admin_accounting_root_path,          class: admin_section_tab_class(accounting_nav_active?("dashboard")) %>
-        <%= link_to t("accounting.nav.sales"),      admin_accounting_sales_reports_path, class: admin_section_tab_class(accounting_nav_active?("sales_reports")) %>
-        <%= link_to t("accounting.nav.food_cost"),  admin_accounting_food_costs_path,    class: admin_section_tab_class(accounting_nav_active?("food_costs")) %>
-        <%= link_to t("accounting.nav.tax"),        admin_accounting_tax_reports_path,   class: admin_section_tab_class(accounting_nav_active?("tax_reports")) %>
-        <%= link_to t("accounting.nav.budgets"),    admin_accounting_budgets_path,       class: admin_section_tab_class(accounting_nav_active?("budgets")) %>
+        <%= link_to t("accounting.nav.dashboard"),      admin_accounting_root_path,                                  class: admin_section_tab_class(accounting_nav_active?("dashboard")) %>
+        <%= link_to t("accounting.nav.sales"),          admin_accounting_sales_reports_path,                         class: admin_section_tab_class(accounting_nav_active?("sales_reports")) %>
+        <%= link_to t("accounting.nav.food_cost"),      admin_accounting_food_costs_path,                            class: admin_section_tab_class(accounting_nav_active?("food_costs")) %>
+        <%= link_to t("accounting.nav.tax"),            admin_accounting_tax_reports_path,                           class: admin_section_tab_class(accounting_nav_active?("tax_reports")) %>
+        <%= link_to t("accounting.nav.budgets"),        admin_accounting_budgets_path,                               class: admin_section_tab_class(accounting_nav_active?("budgets")) %>
+        <%= link_to t("accounting.nav.profit_loss"),    profit_loss_admin_accounting_financial_statements_path,      class: admin_section_tab_class(accounting_nav_active?("financial_statements") && params[:action] == "profit_loss") %>
+        <%= link_to t("accounting.nav.balance_sheet"),  balance_sheet_admin_accounting_financial_statements_path,   class: admin_section_tab_class(accounting_nav_active?("financial_statements") && params[:action] == "balance_sheet") %>
       <% elsif accounting_in_setup_group? %>
         <%= link_to t("accounting.nav.expense_categories"), admin_accounting_expense_categories_path, class: admin_section_tab_class(accounting_nav_active?("expense_categories")) %>
         <%= link_to t("accounting.nav.income_categories"),  admin_accounting_income_categories_path,  class: admin_section_tab_class(accounting_nav_active?("income_categories")) %>

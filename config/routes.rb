@@ -171,6 +171,12 @@ Rails.application.routes.draw do
       resources :treasury_transfers, only: %i[new create]
       resources :payment_method_treasuries, only: %i[index create destroy]
       resources :chart_of_accounts, only: [:index]
+      resources :financial_statements, only: [] do
+        collection do
+          get :profit_loss
+          get :balance_sheet
+        end
+      end
       resources :journal_entries, only: %i[index show new create destroy]
       resources :partners, only: %i[index show new create edit update] do
         member do
