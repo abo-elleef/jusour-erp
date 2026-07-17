@@ -196,6 +196,52 @@ RSpec.describe "Admin::Accounting::FinancialStatements", type: :request do
     end
   end
 
+  # ── Cash Flow ─────────────────────────────────────────────────────────────
+
+  describe "GET /admin/accounting/financial_statements/cash_flow" do
+    it "returns 200" do
+      get cash_flow_admin_accounting_financial_statements_path
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "shows the three section headings" do
+      get cash_flow_admin_accounting_financial_statements_path
+      expect(response.body).to include(I18n.t("accounting.cash_flow.operating_activities"))
+      expect(response.body).to include(I18n.t("accounting.cash_flow.investing_activities"))
+      expect(response.body).to include(I18n.t("accounting.cash_flow.financing_activities"))
+    end
+
+    it "shows the ending balance" do
+      get cash_flow_admin_accounting_financial_statements_path
+      expect(response.body).to include(I18n.t("accounting.cash_flow.ending_balance"))
+    end
+
+    it "defaults to year-to-date" do
+      get cash_flow_admin_accounting_financial_statements_path
+      expect(response.body).to include(Date.current.year.to_s)
+    end
+
+    context "PDF format" do
+      it "returns a valid PDF" do
+        get cash_flow_admin_accounting_financial_statements_path(
+          start_date: Date.current.beginning_of_year.to_s,
+          end_date: Date.current.to_s,
+          format: :pdf
+        )
+        expect(response).to have_http_status(:ok)
+        expect(response.content_type).to eq("application/pdf")
+        expect(response.body[0..3]).to eq("%PDF")
+      end
+
+      it "sets a descriptive filename" do
+        get cash_flow_admin_accounting_financial_statements_path(
+          start_date: "2026-01-01", end_date: "2026-07-17", format: :pdf
+        )
+        expect(response.headers["Content-Disposition"]).to include("cash_flow_2026-01-01_2026-07-17.pdf")
+      end
+    end
+  end
+
   # ── Auth ──────────────────────────────────────────────────────────────────
 
   describe "access control" do

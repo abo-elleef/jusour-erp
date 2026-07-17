@@ -65,14 +65,17 @@ module Admin
           return render :new_advance, status: :unprocessable_entity
         end
 
-        ::Accounting::JournalEntryService.record_partner_advance!(
-          partner: @partner,
-          treasury: treasury,
-          amount_cents: amount_cents,
-          date: date,
-          description: description,
-          user: current_user
-        )
+        ActiveRecord::Base.transaction do
+          je = ::Accounting::JournalEntryService.record_partner_advance!(
+            partner: @partner,
+            treasury: treasury,
+            amount_cents: amount_cents,
+            date: date,
+            description: description,
+            user: current_user
+          )
+          sync_je_treasuries!(je)
+        end
 
         redirect_to admin_accounting_partner_path(@partner),
                     notice: t("accounting.partners.flash.advance_recorded")

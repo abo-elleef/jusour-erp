@@ -1,0 +1,37 @@
+<div class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-4 print:rounded-none print:border print:border-gray-300">
+  <div class="px-5 py-3 bg-gray-50 border-b border-gray-100">
+    <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide"><%= heading %></h2>
+  </div>
+
+  <% if section.lines.any? %>
+    <table class="w-full text-sm">
+      <tbody class="divide-y divide-gray-50">
+        <% section.lines.each do |line| %>
+          <tr class="hover:bg-gray-50/60 print:hover:bg-white">
+            <td class="px-5 py-2.5 text-gray-800"><%= line.label %></td>
+            <td class="px-5 py-2.5 text-end tabular-nums <%= line.amount_cents >= 0 ? 'text-gray-900 font-medium' : 'text-red-700 font-medium' %>">
+              <% if line.amount_cents >= 0 %>
+                <%= format_money(line.amount_cents) %>
+              <% else %>
+                (<%= format_money(line.amount_cents.abs) %>)
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="px-5 py-5 text-sm text-gray-400 text-center"><%= t("accounting.cash_flow.no_activity") %></p>
+  <% end %>
+
+  <div class="px-5 py-3 bg-gray-50 border-t-2 border-gray-200 flex items-center justify-between">
+    <span class="text-sm font-bold text-gray-900"><%= total_label %></span>
+    <span class="text-sm font-bold tabular-nums <%= section.total_cents >= 0 ? 'text-emerald-700' : 'text-red-700' %>">
+      <% if section.total_cents >= 0 %>
+        <%= format_money(section.total_cents) %>
+      <% else %>
+        (<%= format_money(section.total_cents.abs) %>)
+      <% end %>
+    </span>
+  </div>
+</div>

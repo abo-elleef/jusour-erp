@@ -42,6 +42,25 @@ module Admin
           end
         end
       end
+
+      def cash_flow
+        @start_date = params[:start_date]&.to_date || Date.current.beginning_of_year
+        @end_date   = params[:end_date]&.to_date   || Date.current
+        @cf = ::Accounting::CashFlowService.new(start_date: @start_date, end_date: @end_date)
+
+        respond_to do |format|
+          format.html
+          format.pdf do
+            pdf = ::Accounting::CashFlowPdfService.new(
+              @cf, @start_date, @end_date, Current.company
+            ).render
+            send_data pdf,
+                      filename: "cash_flow_#{@start_date}_#{@end_date}.pdf",
+                      type: "application/pdf",
+                      disposition: "inline"
+          end
+        end
+      end
     end
   end
 end

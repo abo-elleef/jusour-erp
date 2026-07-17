@@ -104,37 +104,6 @@ module Admin
         (pounds.to_f * 100).round
       end
 
-      # For each JE line that targets a treasury, create a TreasuryTransaction so
-      # the treasury balance stays in sync with the double-entry ledger.
-      # Amount direction convention (matches TreasuryLedgerService):
-      #   asset treasury  → debit_cents - credit_cents  (DR = money in, CR = money out)
-      #   liability (AP)  → credit_cents - debit_cents  (CR = more owed, DR = payment)
-      def sync_je_treasuries!(je)
-        je.lines.each do |line|
-          next if line.treasury_id.blank?
-
-          treasury = Treasury.lock.find(line.treasury_id)
-          amount_cents = if treasury.treasury_type == "supplier_ap"
-                           line.credit_cents - line.debit_cents
-                         else
-                           line.debit_cents - line.credit_cents
-                         end
-          next if amount_cents.zero?
-
-          treasury.apply_balance_delta!(amount_cents)
-          TreasuryTransaction.create!(
-            treasury:           treasury,
-            user:               je.created_by,
-            amount_cents:       amount_cents,
-            kind:               "journal_entry",
-            description:        je.description,
-            occurred_on:        je.date,
-            source_record:      je,
-            balance_after_cents: treasury.balance_cents
-          )
-        end
-      end
-
       # Undo treasury movements created by sync_je_treasuries! when a manual JE
       # is deleted. Each TreasuryTransaction sourced on the JE is destroyed and
       # the treasury balance is reversed by the same amount.

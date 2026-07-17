@@ -65,10 +65,13 @@ module Admin
           return render :new_disbursement, status: :unprocessable_entity
         end
 
-        ::Accounting::JournalEntryService.record_loan_disbursement!(
-          loan: @loan, treasury: treasury, amount_cents: amount_cents,
-          date: date, description: description, user: current_user
-        )
+        ActiveRecord::Base.transaction do
+          je = ::Accounting::JournalEntryService.record_loan_disbursement!(
+            loan: @loan, treasury: treasury, amount_cents: amount_cents,
+            date: date, description: description, user: current_user
+          )
+          sync_je_treasuries!(je)
+        end
         redirect_to admin_accounting_loan_path(@loan),
                     notice: t("accounting.loans.flash.disbursement_recorded")
       end
@@ -92,10 +95,13 @@ module Admin
           return render :new_repayment, status: :unprocessable_entity
         end
 
-        ::Accounting::JournalEntryService.record_loan_repayment!(
-          loan: @loan, treasury: treasury, amount_cents: amount_cents,
-          date: date, description: description, user: current_user
-        )
+        ActiveRecord::Base.transaction do
+          je = ::Accounting::JournalEntryService.record_loan_repayment!(
+            loan: @loan, treasury: treasury, amount_cents: amount_cents,
+            date: date, description: description, user: current_user
+          )
+          sync_je_treasuries!(je)
+        end
         redirect_to admin_accounting_loan_path(@loan),
                     notice: t("accounting.loans.flash.repayment_recorded")
       end
@@ -119,10 +125,13 @@ module Admin
           return render :new_interest, status: :unprocessable_entity
         end
 
-        ::Accounting::JournalEntryService.record_loan_interest!(
-          loan: @loan, treasury: treasury, amount_cents: amount_cents,
-          date: date, description: description, user: current_user
-        )
+        ActiveRecord::Base.transaction do
+          je = ::Accounting::JournalEntryService.record_loan_interest!(
+            loan: @loan, treasury: treasury, amount_cents: amount_cents,
+            date: date, description: description, user: current_user
+          )
+          sync_je_treasuries!(je)
+        end
         redirect_to admin_accounting_loan_path(@loan),
                     notice: t("accounting.loans.flash.interest_recorded")
       end

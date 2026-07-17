@@ -175,6 +175,7 @@ Rails.application.routes.draw do
         collection do
           get :profit_loss
           get :balance_sheet
+          get :cash_flow
         end
       end
       resources :journal_entries, only: %i[index show new create destroy]
