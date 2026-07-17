@@ -1,0 +1,9 @@
+<nav class="mb-6 border-b border-gray-200" aria-label="<%= t("settings.title") %>">
+  <div class="flex flex-wrap gap-x-1 -mb-px">
+    <%= link_to t("settings.nav.general"), admin_settings_path, class: admin_section_tab_class(controller_name == "settings") %>
+    <% if current_user.owner? %>
+      <%= link_to t("settings.nav.integrations"), admin_accounting_integrations_path, class: admin_section_tab_class(controller_name == "integrations") %>
+      <%= link_to t("settings.nav.online_payments"), admin_accounting_payment_method_treasuries_path, class: admin_section_tab_class(controller_name == "payment_method_treasuries") %>
+    <% end %>
+  </div>
+</nav>

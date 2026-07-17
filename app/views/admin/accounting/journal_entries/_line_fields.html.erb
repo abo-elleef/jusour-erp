@@ -1,0 +1,55 @@
+<%# Used for both real fields_for lines and the JS template (lf=nil, template=true) %>
+<% is_template = local_assigns[:template] %>
+<% prefix = is_template ? "journal_entry[lines_attributes][NEW_LINE]" : nil %>
+
+<div data-journal-entry-lines-target="row"
+     class="grid grid-cols-[1fr_140px_140px_36px] gap-2 px-5 py-3 items-center">
+
+  <%# Account selector %>
+  <% if is_template %>
+    <select name="<%= prefix %>[account_encoded]"
+            class="<%= pos_input_class %> text-sm"
+            required>
+      <option value=""><%= t("accounting.journal_entries.form.select_account") %></option>
+      <%= grouped_options_for_select(@account_groups) %>
+    </select>
+  <% else %>
+    <%= lf.select :account_encoded,
+          grouped_options_for_select(@account_groups),
+          { include_blank: t("accounting.journal_entries.form.select_account") },
+          class: "#{pos_input_class} text-sm", required: true %>
+  <% end %>
+
+  <%# Debit %>
+  <% if is_template %>
+    <input type="number" name="<%= prefix %>[debit_pounds]"
+           step="0.01" min="0" placeholder="0.00"
+           data-side="debit"
+           data-action="input->journal-entry-lines#debitChanged"
+           class="<%= pos_input_class %> text-sm text-end tabular-nums" />
+  <% else %>
+    <%= lf.number_field :debit_pounds, step: "0.01", min: 0, placeholder: "0.00",
+          data: { side: "debit", action: "input->journal-entry-lines#debitChanged" },
+          class: "#{pos_input_class} text-sm text-end tabular-nums" %>
+  <% end %>
+
+  <%# Credit %>
+  <% if is_template %>
+    <input type="number" name="<%= prefix %>[credit_pounds]"
+           step="0.01" min="0" placeholder="0.00"
+           data-side="credit"
+           data-action="input->journal-entry-lines#creditChanged"
+           class="<%= pos_input_class %> text-sm text-end tabular-nums" />
+  <% else %>
+    <%= lf.number_field :credit_pounds, step: "0.01", min: 0, placeholder: "0.00",
+          data: { side: "credit", action: "input->journal-entry-lines#creditChanged" },
+          class: "#{pos_input_class} text-sm text-end tabular-nums" %>
+  <% end %>
+
+  <%# Remove button %>
+  <button type="button"
+          data-action="journal-entry-lines#remove"
+          class="text-gray-300 hover:text-red-500 transition-colors text-xl leading-none text-center">
+    ×
+  </button>
+</div>

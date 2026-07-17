@@ -41,7 +41,7 @@
       <tbody class="divide-y divide-gray-100">
         <% @units.each do |unit| %>
           <% in_use = unit.in_use? %>
-          <tr class="hover:bg-gray-50/60">
+          <tr class="hover:bg-gray-100">
             <td class="p-3 ps-5 font-semibold text-gray-900"><%= ingredient_unit_label(unit.name) %></td>
             <td class="p-3 text-gray-600">
               <%= unit.system? ? t("inventory.units.built_in") : t("inventory.units.custom") %>

@@ -80,7 +80,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @printers.each do |printer| %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5">
                   <%= link_to printer.name, admin_printer_path(printer),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>

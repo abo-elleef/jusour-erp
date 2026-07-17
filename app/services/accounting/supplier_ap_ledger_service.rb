@@ -40,6 +40,7 @@ module Accounting
           balance_after_cents: treasury.balance_cents
         )
       end
+      JournalEntryService.record_vendor_invoice!(invoice)
     end
 
     def record_payment!(payment, user)
@@ -58,6 +59,7 @@ module Accounting
           balance_after_cents: treasury.balance_cents
         )
       end
+      JournalEntryService.record_vendor_invoice_payment!(payment)
     end
 
     def reverse_invoice!(invoice, user)
@@ -69,6 +71,7 @@ module Accounting
             txn.destroy!
           end
         end
+      JournalEntryService.reverse_vendor_invoice!(invoice)
     end
 
     # Creates the AP treasury for the supplier if it does not already exist.

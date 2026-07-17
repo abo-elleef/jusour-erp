@@ -75,7 +75,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @notifications.each do |notification| %>
-              <tr class="<%= notification.unread? ? 'bg-amber-50/40' : '' %> hover:bg-gray-50/60 transition-colors">
+              <tr class="<%= notification.unread? ? 'bg-amber-50/40' : '' %> hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5 align-top">
                   <% if notification.unread? %>
                     <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 mt-1.5" title="<%= t('notifications.index.unread') %>"></span>

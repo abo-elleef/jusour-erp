@@ -1,0 +1,107 @@
+<% content_for :title, t("accounting.journal_entries.new_title") %>
+<%= render "admin/accounting/nav" %>
+
+<div class="max-w-4xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.journal_entries.new_title") %></h1>
+      <p class="text-sm text-gray-500 mt-0.5"><%= t("accounting.journal_entries.new_description") %></p>
+    </div>
+    <%= link_to t("actions.cancel"), admin_accounting_journal_entries_path,
+          class: "text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50" %>
+  </div>
+
+  <%= form_with model: [:admin, :accounting, @journal_entry],
+        data: { controller: "journal-entry-lines" },
+        class: "space-y-6" do |f| %>
+
+    <% if @journal_entry.errors.any? %>
+      <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+        <p class="text-red-700 text-sm"><%= @journal_entry.errors.full_messages.to_sentence %></p>
+      </div>
+    <% end %>
+
+    <%# Header fields %>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 space-y-4">
+      <h2 class="text-sm font-semibold text-gray-700"><%= t("accounting.journal_entries.form.header") %></h2>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.journal_entries.form.date") %></label>
+          <%= f.date_field :date, class: pos_input_class, required: true %>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.journal_entries.form.description") %></label>
+          <%= f.text_field :description, class: pos_input_class, required: true,
+                placeholder: t("accounting.journal_entries.form.description_placeholder") %>
+        </div>
+      </div>
+    </div>
+
+    <%# Lines %>
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex items-center justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.journal_entries.lines_heading") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.journal_entries.form.lines_hint") %></p>
+        </div>
+        <%# Live balance badge %>
+        <span data-journal-entry-lines-target="balanceBadge"
+              data-label-balanced="<%= t('accounting.journal_entries.balanced') %>"
+              data-label-off="<%= t('accounting.journal_entries.off_by') %>"
+              class="text-xs px-3 py-1 rounded-full font-semibold bg-gray-100 text-gray-500 border border-gray-200">
+          —
+        </span>
+      </div>
+
+      <%# Column headers %>
+      <div class="grid grid-cols-[1fr_140px_140px_36px] gap-2 px-5 py-2 border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <div><%= t("accounting.journal_entries.col.account") %></div>
+        <div class="text-end"><%= t("accounting.journal_entries.col.debit") %></div>
+        <div class="text-end"><%= t("accounting.journal_entries.col.credit") %></div>
+        <div></div>
+      </div>
+
+      <%# Line rows %>
+      <div data-journal-entry-lines-target="list" class="divide-y divide-gray-100">
+        <%= f.fields_for :lines do |lf| %>
+          <%= render "line_fields", lf: lf %>
+        <% end %>
+      </div>
+
+      <%# Hidden template for new lines %>
+      <template data-journal-entry-lines-target="template">
+        <%= render "line_fields", lf: nil, template: true %>
+      </template>
+
+      <%# Add line button %>
+      <div class="px-5 py-3 border-t border-gray-100">
+        <button type="button"
+                data-action="journal-entry-lines#add"
+                class="text-sm text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1.5">
+          <span class="text-lg leading-none">+</span>
+          <%= t("accounting.journal_entries.form.add_line") %>
+        </button>
+      </div>
+
+      <%# Totals row %>
+      <div class="grid grid-cols-[1fr_140px_140px_36px] gap-2 px-5 py-3 border-t-2 border-gray-200 bg-gray-50/80">
+        <div class="text-xs font-bold text-gray-600 text-end"><%= t("accounting.journal_entries.totals") %></div>
+        <div class="text-end font-bold tabular-nums text-gray-900 text-sm"
+             data-journal-entry-lines-target="debitTotal">ج.م. 0.00</div>
+        <div class="text-end font-bold tabular-nums text-gray-900 text-sm"
+             data-journal-entry-lines-target="creditTotal">ج.م. 0.00</div>
+        <div></div>
+      </div>
+    </div>
+
+    <%# Submit %>
+    <div class="flex gap-3 pb-4">
+      <%= f.submit t("accounting.journal_entries.form.save"),
+            data: { "journal-entry-lines-target": "submitBtn" },
+            class: "bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors cursor-pointer" %>
+      <%= link_to t("actions.cancel"), admin_accounting_journal_entries_path,
+            class: "px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 border border-gray-200" %>
+    </div>
+
+  <% end %>
+</div>

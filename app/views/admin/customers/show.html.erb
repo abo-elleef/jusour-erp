@@ -79,7 +79,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @orders.each do |o| %>
-              <tr class="hover:bg-gray-50/50 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5 font-medium"><%= o.order_number %></td>
                 <td class="p-3 text-gray-600 whitespace-nowrap"><%= l(o.created_at, format: :short) %></td>
                 <td class="p-3 text-end tabular-nums"><%= format_money(o.total_cents) %></td>

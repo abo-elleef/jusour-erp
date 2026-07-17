@@ -123,7 +123,7 @@
       <tbody class="divide-y divide-gray-100">
         <% if @rows.any? %>
           <% @rows.each do |row| %>
-            <tr class="hover:bg-gray-50/60">
+            <tr class="hover:bg-gray-100">
               <td class="p-3 ps-5 font-medium w-48">
                 <%= row.user.name %>
                 <% unless row.user.active? %>

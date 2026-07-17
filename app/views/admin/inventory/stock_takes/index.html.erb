@@ -84,7 +84,7 @@
             <% @stock_takes.each do |st| %>
               <% variances = st.stock_take_items.count { |i| i.variance.present? && !i.variance.to_d.zero? } %>
               <% started_at = st.started_at || st.created_at %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5 whitespace-nowrap">
                   <%= link_to admin_inventory_stock_take_path(st),
                         class: "font-semibold text-amber-700 hover:text-amber-800" do %>

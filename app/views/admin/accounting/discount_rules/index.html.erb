@@ -30,7 +30,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @discount_rules.each do |rule| %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5 font-semibold text-gray-900"><%= rule.name %></td>
                 <td class="p-3 text-gray-700 font-mono text-xs"><%= rule.code.presence || "—" %></td>
                 <td class="p-3 text-gray-700">

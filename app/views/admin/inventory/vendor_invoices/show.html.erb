@@ -124,7 +124,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @payments.each do |payment| %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5 tabular-nums"><%= l(payment.payment_date) %></td>
                 <td class="p-3 text-end tabular-nums font-semibold"><%= format_money(payment.amount_cents) %></td>
                 <td class="p-3 text-gray-700"><%= payment.treasury.name %></td>
@@ -234,7 +234,7 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <% @lines.each do |line| %>
-            <tr class="hover:bg-gray-50/60 transition-colors">
+            <tr class="hover:bg-gray-100 transition-colors">
               <td class="p-3 ps-5">
                 <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient), class: "font-semibold text-amber-700 hover:text-amber-800" %>
               </td>

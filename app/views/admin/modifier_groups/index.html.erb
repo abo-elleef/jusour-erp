@@ -40,7 +40,7 @@
       </div>
       <ul class="divide-y divide-gray-100">
         <% @modifier_groups.each do |group| %>
-          <li class="px-5 py-4 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-50/60 transition-colors">
+          <li class="px-5 py-4 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-100 transition-colors">
             <div class="min-w-0">
               <%= link_to group.name, admin_modifier_group_path(group),
                     class: "font-semibold text-amber-700 hover:text-amber-800" %>

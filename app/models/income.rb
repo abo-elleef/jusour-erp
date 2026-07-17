@@ -43,9 +43,11 @@ class Income < ApplicationRecord
 
   def sync_treasury_ledger
     Accounting::TreasuryLedgerService.sync_income!(self)
+    Accounting::JournalEntryService.record_income!(self)
   end
 
   def remove_treasury_ledger
     Accounting::TreasuryLedgerService.remove_source!(self)
+    Accounting::JournalEntryService.destroy_for_source!(self)
   end
 end

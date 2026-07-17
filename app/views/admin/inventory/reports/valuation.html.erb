@@ -53,7 +53,7 @@
               </thead>
               <tbody class="divide-y divide-gray-100">
                 <% items.each do |ingredient| %>
-                  <tr class="hover:bg-gray-50/60 transition-colors">
+                  <tr class="hover:bg-gray-100 transition-colors">
                     <td class="p-3 pl-5">
                       <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient),
                             class: "font-semibold text-amber-700 hover:text-amber-800" %>

@@ -46,6 +46,13 @@ module Accounting
             balance_after_cents: ap_treasury.balance_cents
           )
         end
+
+        Accounting::JournalEntryService.record_adjustment!(
+          treasury: @treasury,
+          amount_cents: -@amount_cents,
+          user: @user,
+          description: @description
+        )
       end
     end
 

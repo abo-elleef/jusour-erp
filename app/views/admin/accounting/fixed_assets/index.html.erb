@@ -51,7 +51,7 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <% @fixed_assets.each do |asset| %>
-            <tr class="hover:bg-gray-50/60 transition-colors <%= asset.disposed? ? 'opacity-50' : '' %>">
+            <tr class="hover:bg-gray-100 transition-colors <%= asset.disposed? ? 'opacity-50' : '' %>">
               <td class="p-3 ps-5">
                 <%= link_to asset.name, admin_accounting_fixed_asset_path(asset),
                       class: "font-semibold text-blue-700 hover:text-blue-800" %>

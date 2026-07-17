@@ -119,7 +119,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @users.each do |staff| %>
-              <tr class="hover:bg-gray-50/60 transition-colors<%= " opacity-60" unless staff.active? %>">
+              <tr class="hover:bg-gray-100 transition-colors<%= " opacity-60" unless staff.active? %>">
                 <td class="p-3 pl-5">
                   <% if policy(staff).show? %>
                     <%= link_to staff.name, admin_user_path(staff), class: "font-semibold text-gray-900 hover:text-amber-700 transition-colors" %>
@@ -160,17 +160,6 @@
                     <% if policy(staff).update? %>
                       <%= link_to t("actions.edit"), edit_admin_user_path(staff),
                             class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
-                    <% end %>
-                    <% if current_user.admin_access? && (staff.monthly_salary_cents.positive? || staff.payroll_adjustments.for_month(@current_payroll_month).exists?) %>
-                      <%= render "payroll_finalize_button",
-                            user: staff,
-                            payroll_month: @current_payroll_month,
-                            snapshot: @payroll_snapshots_by_user[staff.id],
-                            remaining_pay_cents: @payroll_remaining_by_user[staff.id],
-                            return_to: "index",
-                            compact: true,
-                            treasuries: @treasuries,
-                            default_treasury: @default_treasury %>
                     <% end %>
                     <% if policy(staff).activate? %>
                       <%= button_to t("actions.activate"), activate_admin_user_path(staff), method: :patch,

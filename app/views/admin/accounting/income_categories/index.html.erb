@@ -91,7 +91,7 @@
               data-sortable-list-url-value="<%= reorder_admin_accounting_income_categories_path %>"
             <% end %>>
             <% @categories.each_with_index do |cat, index| %>
-              <tr class="group hover:bg-gray-50/50 transition-colors<%= ' cursor-grab active:cursor-grabbing' if @sortable %>"
+              <tr class="group hover:bg-gray-100 transition-colors<%= ' cursor-grab active:cursor-grabbing' if @sortable %>"
                 <% if @sortable %>
                   data-sortable-list-target="item"
                   data-id="<%= cat.id %>"

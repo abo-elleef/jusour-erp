@@ -19,7 +19,6 @@ module Admin
       @kitchen_count = scope.where(role: "kitchen").count
       @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
       @pagy, @users = pagy(:offset, @q.result.order(@sort => @sort_direction), limit: 25)
-      load_index_payroll_context
     end
 
     def new
@@ -86,25 +85,6 @@ module Admin
       @payroll_summary = @user.monthly_payroll(@payroll_month, sort: @payroll_sort, direction: @payroll_direction)
       @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       @default_treasury = Treasury.default_treasury
-    end
-
-    def load_index_payroll_context
-      return unless current_user.admin_access?
-
-      @current_payroll_month = Date.current.beginning_of_month
-      @treasuries = Treasury.active.payable.visible_to(current_user).ordered
-      @default_treasury = Treasury.default_treasury
-      user_ids = @users.map(&:id)
-      @payroll_snapshots_by_user = PayrollSnapshot.for_month(@current_payroll_month)
-        .where(user_id: user_ids)
-        .index_by(&:user_id)
-      @payroll_remaining_by_user = {}
-      @users.each do |staff|
-        next if @payroll_snapshots_by_user[staff.id]
-
-        @payroll_remaining_by_user[staff.id] =
-          ::Accounting::MonthlyPayrollService.new(staff, @current_payroll_month).build_calculated.remaining_pay_cents
-      end
     end
 
     def parse_index_sort_param

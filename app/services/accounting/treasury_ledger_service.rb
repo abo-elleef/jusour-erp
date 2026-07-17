@@ -61,6 +61,7 @@ module Accounting
 
     def sync_payroll_advance!(advance)
       remove_for_source(advance)
+      JournalEntryService.destroy_for_source!(advance)
       return if advance.treasury_id.blank?
 
       record!(
@@ -72,10 +73,12 @@ module Accounting
         occurred_on: advance.paid_on,
         source: advance
       )
+      JournalEntryService.record_payroll_advance!(advance)
     end
 
     def sync_payroll_salary!(snapshot)
       remove_for_source(snapshot)
+      JournalEntryService.destroy_for_source!(snapshot)
       return unless snapshot.payout_required?
       return if snapshot.treasury_id.blank?
 
@@ -88,6 +91,7 @@ module Accounting
         occurred_on: snapshot.paid_on,
         source: snapshot
       )
+      JournalEntryService.record_payroll_salary!(snapshot)
     end
 
     def sync_income!(income)
@@ -119,6 +123,7 @@ module Accounting
         occurred_on: session.session_date,
         source: session
       )
+      JournalEntryService.record_drawer_open!(session)
     end
 
     def sync_drawer_reconcile!(session)
@@ -135,6 +140,7 @@ module Accounting
         occurred_on: session.session_date,
         source: session
       )
+      JournalEntryService.record_drawer_reconcile!(session)
     end
 
     def sync_session_online_payments!(session)
@@ -169,6 +175,12 @@ module Accounting
           occurred_on: session.session_date,
           source: session
         )
+        JournalEntryService.record_online_payment!(
+          treasury: mapping.treasury,
+          amount_cents: total_cents,
+          user: session.user,
+          session: session
+        )
       end
     end
 
@@ -182,6 +194,7 @@ module Accounting
         occurred_on: Date.current,
         source: payment
       )
+      JournalEntryService.record_staff_meal!(order: payment.order, treasury: treasury, user: user)
     end
 
     def record_adjustment!(treasury:, user:, amount_cents:, description:, occurred_on: Date.current)
@@ -194,6 +207,8 @@ module Accounting
         occurred_on: occurred_on,
         source: nil
       )
+      JournalEntryService.record_adjustment!(treasury: treasury, amount_cents: amount_cents,
+                                             user: user, description: description)
     end
 
     def create_transfer!(transfer)
@@ -202,6 +217,7 @@ module Accounting
       ApplicationRecord.transaction do
         transfer.save!
         record_transfer_ledger!(transfer)
+        JournalEntryService.record_transfer!(transfer)
         transfer
       end
     end

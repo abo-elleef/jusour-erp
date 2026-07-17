@@ -20,7 +20,7 @@
   <% if recipes.any? %>
     <ul class="divide-y divide-gray-100">
       <% recipes.each do |recipe| %>
-        <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-50/60 transition-colors">
+        <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-100 transition-colors">
           <div class="min-w-0">
             <%= link_to recipe.ingredient.name, admin_inventory_ingredient_path(recipe.ingredient),
                   class: "font-semibold text-amber-700 hover:text-amber-800" %>

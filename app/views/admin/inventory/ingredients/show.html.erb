@@ -85,7 +85,7 @@
           <tbody class="divide-y divide-gray-100">
             <% @stock_locations.each do |location| %>
               <% il = @ingredient_locations_by_location_id[location.id] %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5">
                   <div class="flex flex-wrap items-center gap-2">
                     <%= link_to location.name, admin_location_path(location),
@@ -200,7 +200,7 @@
         <% if @recipes.any? %>
           <ul class="divide-y divide-gray-100">
             <% @recipes.each do |recipe| %>
-              <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-50/60 transition-colors">
+              <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-100 transition-colors">
                 <div class="min-w-0">
                   <p class="font-semibold text-gray-900"><%= recipe.menu_item.name %></p>
                   <p class="text-xs text-gray-500 mt-0.5 tabular-nums">
@@ -256,7 +256,7 @@
               </thead>
               <tbody class="divide-y divide-gray-100">
                 <% @stock_batches.each do |batch| %>
-                  <tr class="hover:bg-gray-50/60 transition-colors">
+                  <tr class="hover:bg-gray-100 transition-colors">
                     <td class="p-3 ps-5 tabular-nums text-gray-900"><%= l(batch.received_on) %></td>
                     <td class="p-3 tabular-nums text-gray-700">
                       <%= batch.quantity_remaining %> <%= ingredient_unit_label(@ingredient.unit) %>
@@ -291,7 +291,7 @@
         <% if @supplier_links.any? %>
           <ul class="divide-y divide-gray-100">
             <% @supplier_links.each do |link| %>
-              <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-2 hover:bg-gray-50/60 transition-colors">
+              <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-2 hover:bg-gray-100 transition-colors">
                 <%= link_to link.supplier.name, admin_inventory_supplier_path(link.supplier),
                       class: "font-semibold text-amber-700 hover:text-amber-800" %>
                 <div class="flex items-center gap-2">
@@ -327,7 +327,7 @@
               </thead>
               <tbody class="divide-y divide-gray-100">
                 <% @adjustments.each do |adj| %>
-                  <tr class="hover:bg-gray-50/60 transition-colors">
+                  <tr class="hover:bg-gray-100 transition-colors">
                     <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums text-xs">
                       <%= l(adj.created_at, format: :short) %>
                     </td>

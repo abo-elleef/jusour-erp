@@ -77,7 +77,7 @@
         <tbody class="divide-y divide-gray-100">
           <% @variance_rows.each do |row| %>
             <% high_variance = row[:variance_pct].abs > 10 %>
-            <tr class="hover:bg-gray-50/60 transition-colors <%= 'bg-red-50/50' if high_variance %>">
+            <tr class="hover:bg-gray-100 transition-colors <%= 'bg-red-50/50' if high_variance %>">
               <td class="p-3 pl-5">
                 <%= link_to row[:ingredient].name, admin_inventory_ingredient_path(row[:ingredient]),
                       class: "font-semibold text-amber-700 hover:text-amber-800" %>

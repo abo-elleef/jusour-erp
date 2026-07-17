@@ -104,7 +104,7 @@
           <tbody class="divide-y divide-gray-100">
             <% if @report[:by_category].any? %>
               <% @report[:by_category].each do |row| %>
-                <tr class="hover:bg-gray-50/50 transition-colors">
+                <tr class="hover:bg-gray-100 transition-colors">
                   <td class="p-3 ps-5 font-medium text-gray-900"><%= row[:category] %></td>
                   <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= format_money(row[:revenue_cents]) %></td>
                 </tr>
@@ -134,7 +134,7 @@
           <tbody class="divide-y divide-gray-100">
             <% if @report[:by_payment_method].any? %>
               <% @report[:by_payment_method].each do |method, cents| %>
-                <tr class="hover:bg-gray-50/50 transition-colors">
+                <tr class="hover:bg-gray-100 transition-colors">
                   <td class="p-3 ps-5 font-medium text-gray-900"><%= payment_method_label(method) %></td>
                   <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= format_money(cents) %></td>
                 </tr>

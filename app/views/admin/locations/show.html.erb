@@ -81,7 +81,7 @@
       <table class="w-full text-sm">
         <tbody class="divide-y divide-gray-100">
           <% @ingredient_locations.first(5).each do |il| %>
-            <tr class="px-5 py-3 hover:bg-gray-50/60">
+            <tr class="px-5 py-3 hover:bg-gray-100">
               <td class="px-5 py-3 font-medium text-gray-900"><%= il.ingredient.name %></td>
               <td class="px-5 py-3 text-gray-600"><%= number_with_precision(il.quantity_on_hand, precision: 2) %> <%= il.ingredient.unit %></td>
               <td class="px-5 py-3">

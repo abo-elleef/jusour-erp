@@ -32,7 +32,7 @@ class UserPolicy < ApplicationPolicy
   def destroy?
     return false unless user.owner?
     return false if record == user
-    return false if record.owner? && User.active.where(role: "owner").where.not(id: record.id).none?
+    return false if record.owner? && (active_owner_ids - [record.id]).empty?
 
     true
   end
@@ -49,6 +49,15 @@ class UserPolicy < ApplicationPolicy
     return User::ROLES if user.owner?
 
     %w[cashier kitchen]
+  end
+
+  private
+
+  # Identical SQL for every record, so Rails' per-request query cache
+  # serves it from memory after the first call — avoids an N+1 across
+  # owner rows when this policy is evaluated in a loop.
+  def active_owner_ids
+    User.active.where(role: "owner").pluck(:id)
   end
 
   class Scope < Scope

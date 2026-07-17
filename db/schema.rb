@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_09_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_16_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -375,6 +375,40 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_09_000001) do
     t.index ["ingredient_category_id"], name: "index_ingredients_on_ingredient_category_id"
     t.index ["name"], name: "index_ingredients_on_name"
     t.index ["unit_id"], name: "index_ingredients_on_unit_id"
+  end
+
+  create_table "journal_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "created_by_id", null: false
+    t.string "entry_number", null: false
+    t.date "date", null: false
+    t.string "description", null: false
+    t.string "source_record_type"
+    t.uuid "source_record_id"
+    t.string "entry_type", default: "auto", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "date"], name: "index_journal_entries_on_company_id_and_date"
+    t.index ["company_id"], name: "index_journal_entries_on_company_id"
+    t.index ["created_by_id"], name: "index_journal_entries_on_created_by_id"
+    t.index ["entry_number"], name: "index_journal_entries_on_entry_number", unique: true
+    t.index ["source_record_type", "source_record_id"], name: "idx_on_source_record_type_source_record_id_459d508040"
+  end
+
+  create_table "journal_entry_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "journal_entry_id", null: false
+    t.uuid "treasury_id"
+    t.integer "account_code", null: false
+    t.string "account_name", null: false
+    t.string "account_type", null: false
+    t.integer "debit_cents", default: 0, null: false
+    t.integer "credit_cents", default: 0, null: false
+    t.string "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["journal_entry_id", "account_code"], name: "index_journal_entry_lines_on_journal_entry_id_and_account_code"
+    t.index ["journal_entry_id"], name: "index_journal_entry_lines_on_journal_entry_id"
+    t.index ["treasury_id"], name: "index_journal_entry_lines_on_treasury_id"
   end
 
   create_table "location_menu_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1204,6 +1238,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_09_000001) do
   add_foreign_key "ingredients", "companies"
   add_foreign_key "ingredients", "ingredient_categories"
   add_foreign_key "ingredients", "units"
+  add_foreign_key "journal_entries", "companies"
+  add_foreign_key "journal_entries", "users", column: "created_by_id"
+  add_foreign_key "journal_entry_lines", "journal_entries"
+  add_foreign_key "journal_entry_lines", "treasuries"
   add_foreign_key "location_menu_items", "locations"
   add_foreign_key "location_menu_items", "menu_items"
   add_foreign_key "locations", "companies"

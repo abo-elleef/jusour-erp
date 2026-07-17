@@ -84,7 +84,7 @@
             <% @suppliers.each do |s| %>
               <% invoice_total_cents = @invoice_total_cents_by_supplier[s.id] || 0 %>
               <% outstanding_cents = @outstanding_cents_by_supplier[s.id] || 0 %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5">
                   <%= link_to s.name, admin_inventory_supplier_path(s),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>

@@ -1,26 +1,62 @@
 <nav class="mb-6 border-b border-gray-200" aria-label="<%= t("accounting.nav_label") %>">
+
+  <%# ── Primary tab row ──────────────────────────────────────────── %>
   <div class="flex flex-wrap gap-x-1 -mb-px">
-    
-    <%= link_to t("accounting.nav.treasuries"), admin_accounting_treasuries_path, class: admin_section_tab_class(accounting_nav_active?("treasuries")) %>
-    <%= link_to t("accounting.nav.expenses"), admin_accounting_expenses_path, class: admin_section_tab_class(accounting_nav_active?("expenses")) %>
-    <%= link_to t("accounting.nav.incomes"), admin_accounting_incomes_path, class: admin_section_tab_class(accounting_nav_active?("incomes")) %>
-    <%= link_to t("accounting.nav.expense_categories"), admin_accounting_expense_categories_path, class: admin_section_tab_class(accounting_nav_active?("expense_categories")) %>
-    <%= link_to t("accounting.nav.income_categories"), admin_accounting_income_categories_path, class: admin_section_tab_class(accounting_nav_active?("income_categories")) %>
-    <%= link_to t("accounting.nav.discounts"), admin_accounting_discount_rules_path, class: admin_section_tab_class(accounting_nav_active?("discount_rules")) %>
-    <%= link_to t("accounting.nav.shifts"), admin_accounting_shift_logs_path, class: admin_section_tab_class(accounting_nav_active?("shift_logs")) %>    
-    <%= link_to t("accounting.nav.payroll"), admin_accounting_monthly_payroll_path, class: admin_section_tab_class(accounting_nav_active?("payroll", "monthly_payroll")) %>
-    <%= link_to t("accounting.nav.budgets"), admin_accounting_budgets_path, class: admin_section_tab_class(accounting_nav_active?("budgets")) %>
-    <%= link_to t("accounting.nav.tax"), admin_accounting_tax_reports_path, class: admin_section_tab_class(accounting_nav_active?("tax_reports")) %>
-    <%= link_to t("accounting.nav.cash_drawer"), admin_accounting_cash_drawer_index_path, class: admin_section_tab_class(accounting_nav_active?("cash_drawer")) %>
-    <%= link_to t("accounting.nav.dashboard"), admin_accounting_root_path, class: admin_section_tab_class(accounting_nav_active?("dashboard")) %>
-    <%= link_to t("accounting.nav.food_cost"), admin_accounting_food_costs_path, class: admin_section_tab_class(accounting_nav_active?("food_costs")) %>
-    <%= link_to t("accounting.nav.sales"), admin_accounting_sales_reports_path, class: admin_section_tab_class(accounting_nav_active?("sales_reports")) %>
-    <%= link_to t("accounting.nav.chart_of_accounts"), admin_accounting_chart_of_accounts_path, class: admin_section_tab_class(accounting_nav_active?("chart_of_accounts")) %>
-    <%= link_to t("accounting.nav.fixed_assets"), admin_accounting_fixed_assets_path, class: admin_section_tab_class(accounting_nav_active?("fixed_assets")) %>
-    <% if current_user.owner? %>
-      <%= link_to t("accounting.nav.audit_log"), admin_accounting_audit_log_index_path, class: admin_section_tab_class(accounting_nav_active?("audit_log")) %>
-      <%= link_to t("accounting.nav.integrations"), admin_accounting_integrations_path, class: admin_section_tab_class(accounting_nav_active?("integrations")) %>
-      <%= link_to t("accounting.nav.online_payment_setup"), admin_accounting_payment_method_treasuries_path, class: admin_section_tab_class(accounting_nav_active?("payment_method_treasuries")) %>
+
+    <%# Ledgers group pill %>
+    <%= link_to admin_accounting_treasuries_path, class: accounting_group_pill_class(accounting_in_ledgers_group?) do %>
+      <%= t("accounting.nav.groups.ledgers") %>
+      <svg class="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
     <% end %>
+
+    <%# Transactions group pill %>
+    <%= link_to admin_accounting_expenses_path, class: accounting_group_pill_class(accounting_in_transactions_group?) do %>
+      <%= t("accounting.nav.groups.transactions") %>
+      <svg class="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+    <% end %>
+
+    <%# Group pills %>
+    <%= link_to admin_accounting_root_path, class: accounting_group_pill_class(accounting_in_reports_group?) do %>
+      <%= t("accounting.nav.groups.reports") %>
+      <svg class="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+    <% end %>
+
+    <%= link_to admin_accounting_expense_categories_path, class: accounting_group_pill_class(accounting_in_setup_group?) do %>
+      <%= t("accounting.nav.groups.setup") %>
+      <svg class="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+    <% end %>
+
   </div>
+
+  <%# ── Sub-tab row (shown only when inside a group) ────────────── %>
+  <% if accounting_in_ledgers_group? || accounting_in_transactions_group? || accounting_in_reports_group? || accounting_in_setup_group? %>
+    <div class="flex flex-wrap gap-x-1 bg-gray-50 border-b border-gray-200 -mb-px ps-2">
+      <% if accounting_in_ledgers_group? %>
+        <%= link_to t("accounting.nav.treasuries"),        admin_accounting_treasuries_path,          class: admin_section_tab_class(accounting_nav_active?("treasuries")) %>
+        <%= link_to t("accounting.nav.journal_entries"),   admin_accounting_journal_entries_path,     class: admin_section_tab_class(accounting_nav_active?("journal_entries")) %>
+        <%= link_to t("accounting.nav.chart_of_accounts"), admin_accounting_chart_of_accounts_path,   class: admin_section_tab_class(accounting_nav_active?("chart_of_accounts")) %>
+        <%= link_to t("accounting.nav.fixed_assets"),      admin_accounting_fixed_assets_path,        class: admin_section_tab_class(accounting_nav_active?("fixed_assets")) %>
+      <% elsif accounting_in_transactions_group? %>
+        <%= link_to t("accounting.nav.expenses"),    admin_accounting_expenses_path,            class: admin_section_tab_class(accounting_nav_active?("expenses")) %>
+        <%= link_to t("accounting.nav.incomes"),     admin_accounting_incomes_path,             class: admin_section_tab_class(accounting_nav_active?("incomes")) %>
+        <%= link_to t("accounting.nav.payroll"),     admin_accounting_monthly_payroll_path,     class: admin_section_tab_class(accounting_nav_active?("payroll", "monthly_payroll")) %>
+        <%= link_to t("accounting.nav.shifts"),      admin_accounting_shift_logs_path,          class: admin_section_tab_class(accounting_nav_active?("shift_logs")) %>
+        <%= link_to t("accounting.nav.cash_drawer"), admin_accounting_cash_drawer_index_path,   class: admin_section_tab_class(accounting_nav_active?("cash_drawer")) %>
+      <% elsif accounting_in_reports_group? %>
+        <%= link_to t("accounting.nav.dashboard"),  admin_accounting_root_path,          class: admin_section_tab_class(accounting_nav_active?("dashboard")) %>
+        <%= link_to t("accounting.nav.sales"),      admin_accounting_sales_reports_path, class: admin_section_tab_class(accounting_nav_active?("sales_reports")) %>
+        <%= link_to t("accounting.nav.food_cost"),  admin_accounting_food_costs_path,    class: admin_section_tab_class(accounting_nav_active?("food_costs")) %>
+        <%= link_to t("accounting.nav.tax"),        admin_accounting_tax_reports_path,   class: admin_section_tab_class(accounting_nav_active?("tax_reports")) %>
+        <%= link_to t("accounting.nav.budgets"),    admin_accounting_budgets_path,       class: admin_section_tab_class(accounting_nav_active?("budgets")) %>
+      <% elsif accounting_in_setup_group? %>
+        <%= link_to t("accounting.nav.expense_categories"), admin_accounting_expense_categories_path, class: admin_section_tab_class(accounting_nav_active?("expense_categories")) %>
+        <%= link_to t("accounting.nav.income_categories"),  admin_accounting_income_categories_path,  class: admin_section_tab_class(accounting_nav_active?("income_categories")) %>
+        <%= link_to t("accounting.nav.discounts"),          admin_accounting_discount_rules_path,     class: admin_section_tab_class(accounting_nav_active?("discount_rules")) %>
+        <% if current_user.owner? %>
+          <%= link_to t("accounting.nav.audit_log"),        admin_accounting_audit_log_index_path,    class: admin_section_tab_class(accounting_nav_active?("audit_log")) %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
 </nav>

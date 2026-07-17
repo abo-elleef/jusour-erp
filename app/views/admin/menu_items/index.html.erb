@@ -80,7 +80,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @menu_items.each do |item| %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5">
                   <% if item.image.attached? %>
                     <%= image_tag item.image, class: "w-12 h-12 rounded-xl object-cover border border-gray-200" %>

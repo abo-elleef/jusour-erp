@@ -65,7 +65,7 @@
           <tr><td colspan="5" class="p-8 text-center text-sm text-gray-500"><%= t("accounting.treasuries.no_treasuries") %></td></tr>
         <% end %>
         <% @treasuries.each do |treasury| %>
-          <tr class="hover:bg-gray-50/60">
+          <tr class="hover:bg-gray-100">
             <td class="p-3 ps-5 font-semibold text-gray-900">
               <%= link_to treasury.name, admin_accounting_treasury_path(treasury), class: "hover:text-amber-700" %>
               <% if treasury.is_default? %>

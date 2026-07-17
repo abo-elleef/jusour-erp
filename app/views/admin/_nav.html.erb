@@ -1,5 +1,7 @@
 <%# Role-aware admin navigation %>
 <% section = "text-xs uppercase tracking-wide text-gray-400 mt-2 mb-1 block w-full" %>
+<%# Integrations & online payments live under the accounting namespace but are surfaced under Settings %>
+<% settings_rehomed = admin_nav_active?("admin/accounting/integrations", "admin/accounting/payment_method_treasuries") %>
 
 <%= link_to t("nav.dashboard"), admin_root_path, class: admin_nav_link_class(admin_nav_active?("admin/dashboard")) %>
 <% if current_user.owner? || current_user.manager? %>
@@ -16,7 +18,7 @@
   <%= link_to t("nav.locations"), admin_locations_path, class: admin_nav_link_class(admin_nav_active?("admin/locations")) %>
 <% end %>
 <% if current_user.can_access_admin? %>
-  <%= link_to t("nav.accounting"), admin_accounting_treasuries_path, class: admin_nav_link_class(admin_nav_active?("admin/accounting")) %>
+  <%= link_to t("nav.accounting"), admin_accounting_treasuries_path, class: admin_nav_link_class(admin_nav_active?("admin/accounting") && !settings_rehomed) %>
   <%= link_to admin_notifications_path, class: "#{admin_nav_link_class(admin_nav_active?("admin/notifications"))} relative" do %>
     <%= t("nav.notifications") %>
     <% unread = current_user.notifications.unread.count %>
@@ -28,7 +30,7 @@
 <% end %>
 <% if current_user.owner? %>
   <%= link_to t("nav.printers"), admin_printers_path, class: admin_nav_link_class(admin_nav_active?("admin/printers")) %>
-  <%= link_to t("nav.settings"), admin_settings_path, class: admin_nav_link_class(admin_nav_active?("admin/settings")) %>
+  <%= link_to t("nav.settings"), admin_settings_path, class: admin_nav_link_class(admin_nav_active?("admin/settings") || settings_rehomed) %>
 <% elsif current_user.manager? %>
   <%= link_to t("nav.printers"), admin_printers_path, class: admin_nav_link_class(admin_nav_active?("admin/printers")) %>
 <% end %>

@@ -76,7 +76,7 @@
             <tbody class="divide-y divide-gray-100">
               <% @items.each do |item| %>
                 <% has_variance = item.variance.present? && !item.variance.to_d.zero? %>
-                <tr class="hover:bg-gray-50/60 transition-colors <%= 'bg-amber-50/40' if has_variance %>">
+                <tr class="hover:bg-gray-100 transition-colors <%= 'bg-amber-50/40' if has_variance %>">
                   <td class="p-3 pl-5">
                     <span class="font-semibold text-gray-900"><%= item.ingredient.name %></span>
                     <span class="text-xs text-gray-500 block"><%= item.ingredient.ingredient_category.name %></span>
@@ -125,7 +125,7 @@
           <tbody class="divide-y divide-gray-100">
             <% @items.each do |item| %>
               <% has_variance = item.variance.present? && !item.variance.to_d.zero? %>
-              <tr class="hover:bg-gray-50/60 transition-colors <%= 'bg-amber-50/40' if has_variance %>">
+              <tr class="hover:bg-gray-100 transition-colors <%= 'bg-amber-50/40' if has_variance %>">
                 <td class="p-3 pl-5">
                   <%= link_to item.ingredient.name, admin_inventory_ingredient_path(item.ingredient),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>

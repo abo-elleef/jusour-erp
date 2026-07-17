@@ -45,9 +45,12 @@ class Expense < ApplicationRecord
 
   def sync_treasury_ledger
     Accounting::TreasuryLedgerService.sync_expense!(self)
+    # Auto-generated expenses (vendor payments, direct AP) get their own JE via their services
+    Accounting::JournalEntryService.record_expense!(self) unless is_auto_generated?
   end
 
   def remove_treasury_ledger
     Accounting::TreasuryLedgerService.remove_source!(self)
+    Accounting::JournalEntryService.destroy_for_source!(self) unless is_auto_generated?
   end
 end

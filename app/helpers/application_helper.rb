@@ -30,6 +30,53 @@ module ApplicationHelper
     controller_names.include?(controller.controller_name)
   end
 
+  ACCOUNTING_REPORTS_GROUP       = %w[dashboard sales_reports food_costs tax_reports budgets].freeze
+  ACCOUNTING_SETUP_GROUP         = %w[expense_categories income_categories discount_rules audit_log].freeze
+  ACCOUNTING_TRANSACTIONS_GROUP  = %w[expenses incomes shift_logs monthly_payroll cash_drawer].freeze
+  ACCOUNTING_LEDGERS_GROUP       = %w[treasuries journal_entries chart_of_accounts fixed_assets].freeze
+
+  INVENTORY_OPERATIONS_GROUP = %w[vendor_invoices stock_transfers stock_takes manufacturing_templates manufacturing_runs manufacturing_template_lines].freeze
+  INVENTORY_SETUP_GROUP      = %w[suppliers ingredients ingredient_categories units].freeze
+  INVENTORY_REPORTS_GROUP    = %w[reports].freeze
+
+  def inventory_in_operations_group?
+    INVENTORY_OPERATIONS_GROUP.include?(controller.controller_name)
+  end
+
+  def inventory_in_setup_group?
+    INVENTORY_SETUP_GROUP.include?(controller.controller_name)
+  end
+
+  def inventory_in_reports_group?
+    INVENTORY_REPORTS_GROUP.include?(controller.controller_name) &&
+      controller.controller_path.start_with?("admin/inventory")
+  end
+
+  def accounting_in_reports_group?
+    ACCOUNTING_REPORTS_GROUP.include?(controller.controller_name)
+  end
+
+  def accounting_in_setup_group?
+    ACCOUNTING_SETUP_GROUP.include?(controller.controller_name)
+  end
+
+  def accounting_in_transactions_group?
+    ACCOUNTING_TRANSACTIONS_GROUP.include?(controller.controller_name)
+  end
+
+  def accounting_in_ledgers_group?
+    ACCOUNTING_LEDGERS_GROUP.include?(controller.controller_name)
+  end
+
+  def accounting_group_pill_class(active)
+    base = "inline-flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap"
+    if active
+      "#{base} border-amber-600 text-amber-800 bg-amber-50/60"
+    else
+      "#{base} border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300"
+    end
+  end
+
   def accounting_shift_label(shift)
     t("accounting.shifts.#{shift}", default: shift.to_s.humanize)
   end
@@ -748,6 +795,17 @@ module ApplicationHelper
     end
 
     t("notifications.messages.#{key}", **raw.symbolize_keys, default: legacy)
+  end
+
+  def account_type_classes(account_type)
+    case account_type
+    when "asset"     then "bg-blue-100 text-blue-700 border border-blue-200"
+    when "liability" then "bg-red-100 text-red-700 border border-red-200"
+    when "equity"    then "bg-emerald-100 text-emerald-700 border border-emerald-200"
+    when "revenue"   then "bg-teal-100 text-teal-700 border border-teal-200"
+    when "expense"   then "bg-orange-100 text-orange-700 border border-orange-200"
+    else                  "bg-gray-100 text-gray-600 border border-gray-200"
+    end
   end
 
   def user_role_border_class(role)

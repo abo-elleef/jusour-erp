@@ -37,7 +37,7 @@
         <tbody class="divide-y divide-gray-100">
           <% @stock_transfers.each do |transfer| %>
             <% status_label, status_class = stock_transfer_status_badge(transfer.status) %>
-            <tr class="hover:bg-gray-50/50">
+            <tr class="hover:bg-gray-100">
               <td class="p-3">
                 <%= link_to transfer.transfer_number, admin_inventory_stock_transfer_path(transfer),
                       class: "font-semibold text-amber-700 hover:text-amber-800" %>

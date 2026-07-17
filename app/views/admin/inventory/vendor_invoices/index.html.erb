@@ -92,7 +92,7 @@
           <tbody class="divide-y divide-gray-100">
             <% @vendor_invoices.each do |invoice| %>
               <% pay_label, pay_class = vendor_invoice_payment_badge(invoice.payment_status) %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5">
                   <%= link_to invoice.invoice_number, admin_inventory_vendor_invoice_path(invoice),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>

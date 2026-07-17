@@ -47,7 +47,7 @@
                data-sortable-list-display-offset-value="1"
              <% end %>>
         <% @templates.each_with_index do |template, index| %>
-          <tr class="hover:bg-gray-50/60 <%= "cursor-grab active:cursor-grabbing" if @sortable %>"
+          <tr class="hover:bg-gray-100 <%= "cursor-grab active:cursor-grabbing" if @sortable %>"
               <% if @sortable %>
                 data-sortable-list-target="item"
                 data-id="<%= template.id %>"

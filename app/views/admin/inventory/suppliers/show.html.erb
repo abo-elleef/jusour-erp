@@ -81,7 +81,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @supplier_ingredients.each do |link| %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5">
                   <%= link_to link.ingredient.name, admin_inventory_ingredient_path(link.ingredient),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>
@@ -121,7 +121,7 @@
       <ul class="divide-y divide-gray-100">
         <% @vendor_invoices.each do |invoice| %>
           <% status_label, status_class = vendor_invoice_payment_badge(invoice.payment_status) %>
-          <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-2 hover:bg-gray-50/60 transition-colors">
+          <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-2 hover:bg-gray-100 transition-colors">
             <%= link_to invoice.invoice_number, admin_inventory_vendor_invoice_path(invoice),
                   class: "font-semibold text-amber-700 hover:text-amber-800" %>
             <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= status_class %>">
@@ -198,7 +198,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @ap_transactions.each do |txn| %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5 text-gray-600 tabular-nums whitespace-nowrap"><%= l(txn.occurred_on) %></td>
                 <td class="p-3 text-gray-900">
                   <div class="flex items-center gap-2">
@@ -243,7 +243,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @price_histories.each do |h| %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5 text-gray-900"><%= h.ingredient.name %></td>
                 <td class="p-3 text-right font-semibold tabular-nums"><%= format_money(h.price_cents) %></td>
                 <td class="p-3 pr-5 text-gray-600 tabular-nums"><%= l(h.effective_date) %></td>

@@ -68,7 +68,7 @@
             data-sortable-list-url-value="<%= reorder_admin_inventory_ingredient_categories_path %>"
           <% end %>>
         <% @categories.each_with_index do |cat, index| %>
-          <li class="group px-5 py-4 flex items-center gap-4 <%= "cursor-grab active:cursor-grabbing hover:bg-gray-50/60 transition-colors" if @sortable %>"
+          <li class="group px-5 py-4 flex items-center gap-4 <%= "cursor-grab active:cursor-grabbing hover:bg-gray-100 transition-colors" if @sortable %>"
               <% if @sortable %>
                 data-sortable-list-target="item"
                 data-id="<%= cat.id %>"

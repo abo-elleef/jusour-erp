@@ -1,3 +1,5 @@
+<%= render "admin/settings/nav" %>
+
 <div class="max-w-2xl">
   <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-2"><%= t("settings.title") %></h1>
   <p class="text-gray-600 text-sm mb-6"><%= t("settings.description") %></p>
@@ -83,7 +85,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @tax_rates.each do |rate| %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5 font-semibold text-gray-900"><%= rate.name %></td>
                 <td class="p-3 text-gray-600"><%= menu_item_tax_category(rate.tax_category) %></td>
                 <td class="p-3 text-end tabular-nums font-semibold text-gray-900"><%= format_tax_rate_percent(rate) %>%</td>

@@ -147,7 +147,7 @@
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @orders.each do |order| %>
-              <tr class="hover:bg-gray-50/60 transition-colors">
+              <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5 font-medium">
                   <%= link_to order.order_number, admin_order_path(order, admin_orders_filter_params),
                         class: "text-amber-700 hover:text-amber-800 font-semibold" %>

@@ -78,7 +78,7 @@
         </div>
         <div class="divide-y divide-gray-100">
           <% @order_items.each do |item| %>
-            <div class="px-5 py-4 flex justify-between gap-4 hover:bg-gray-50/60 transition-colors">
+            <div class="px-5 py-4 flex justify-between gap-4 hover:bg-gray-100 transition-colors">
               <div class="min-w-0">
                 <p class="font-semibold text-gray-900">
                   <%= item.quantity %>× <%= item.display_name %>
@@ -116,7 +116,7 @@
               </thead>
               <tbody class="divide-y divide-gray-100">
                 <% @payments.each do |payment| %>
-                  <tr class="hover:bg-gray-50/60 transition-colors">
+                  <tr class="hover:bg-gray-100 transition-colors">
                     <td class="p-3 pl-5 font-medium text-gray-900">
                       <%= payment_method_label(payment.payment_method) %>
                       <% if policy(@order).change_payment_method? %>
