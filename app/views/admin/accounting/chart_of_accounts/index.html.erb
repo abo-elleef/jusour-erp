@@ -74,23 +74,31 @@
           <th class="p-3 pe-5 text-end"><%= t("accounting.chart_of_accounts.col_balance") %></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
 
-        <%# Assets — header %>
-        <tr class="bg-blue-50/40">
-          <td colspan="4" class="px-5 py-2 text-xs font-bold text-blue-700 uppercase tracking-widest">
-            <%= t("accounting.chart_of_accounts.group_assets") %>
+      <%# ── ASSETS ────────────────────────────────────────────────────── %>
+      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100">
+        <tr class="bg-blue-50/40 cursor-pointer select-none hover:bg-blue-100/40 transition-colors"
+            data-action="click->collapsible-section#toggle">
+          <td colspan="4" class="px-5 py-2.5">
+            <span class="inline-flex items-center gap-2 text-xs font-bold text-blue-700 uppercase tracking-widest">
+              <svg data-collapsible-section-target="chevron"
+                   class="w-3.5 h-3.5 transition-transform duration-200"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              </svg>
+              <%= t("accounting.chart_of_accounts.group_assets") %>
+              <span class="font-normal normal-case tracking-normal text-blue-500 ms-1"><%= format_money(@coa.total_assets_cents) %></span>
+            </span>
           </td>
         </tr>
 
-        <%# Current Assets sub-group %>
-        <tr class="bg-blue-50/20">
+        <tr class="bg-blue-50/20" data-collapsible-section-target="content">
           <td colspan="4" class="px-8 py-1.5 text-xs font-semibold text-blue-600 italic">
             <%= t("accounting.chart_of_accounts.group_current_assets") %>
           </td>
         </tr>
         <% @coa.current_asset_lines.each do |line| %>
-          <tr class="hover:bg-gray-100 transition-colors">
+          <tr class="hover:bg-gray-50 transition-colors" data-collapsible-section-target="content">
             <td class="p-3 ps-8 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
             <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
             <td class="p-3">
@@ -101,20 +109,19 @@
             <td class="p-3 pe-5 text-end font-semibold tabular-nums text-blue-800"><%= format_money(line.balance_cents) %></td>
           </tr>
         <% end %>
-        <tr class="bg-blue-50/30">
+        <tr class="bg-blue-50/30" data-collapsible-section-target="content">
           <td colspan="3" class="p-2 ps-8 text-xs font-semibold text-blue-700 text-end"><%= t("accounting.chart_of_accounts.subtotal_current_assets") %></td>
           <td class="p-2 pe-5 text-end font-semibold tabular-nums text-blue-800"><%= format_money(@coa.total_current_assets_cents) %></td>
         </tr>
 
-        <%# Non-Current Assets sub-group %>
-        <tr class="bg-blue-50/20">
+        <tr class="bg-blue-50/20" data-collapsible-section-target="content">
           <td colspan="4" class="px-8 py-1.5 text-xs font-semibold text-blue-600 italic">
             <%= t("accounting.chart_of_accounts.group_non_current_assets") %>
           </td>
         </tr>
         <% if @coa.non_current_asset_lines.any? %>
           <% @coa.non_current_asset_lines.each do |line| %>
-            <tr class="hover:bg-gray-100 transition-colors">
+            <tr class="hover:bg-gray-50 transition-colors" data-collapsible-section-target="content">
               <td class="p-3 ps-8 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
               <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
               <td class="p-3">
@@ -126,37 +133,46 @@
             </tr>
           <% end %>
         <% else %>
-          <tr>
+          <tr data-collapsible-section-target="content">
             <td colspan="4" class="p-3 ps-8 text-xs text-gray-400 italic"><%= t("accounting.chart_of_accounts.no_non_current_assets") %></td>
           </tr>
         <% end %>
-        <tr class="bg-blue-50/30">
+        <tr class="bg-blue-50/30" data-collapsible-section-target="content">
           <td colspan="3" class="p-2 ps-8 text-xs font-semibold text-blue-700 text-end"><%= t("accounting.chart_of_accounts.subtotal_non_current_assets") %></td>
           <td class="p-2 pe-5 text-end font-semibold tabular-nums text-blue-800"><%= format_money(@coa.total_non_current_assets_cents) %></td>
         </tr>
 
-        <%# Total assets footer %>
-        <tr class="bg-blue-50/60 border-t border-blue-100">
+        <tr class="bg-blue-50/60 border-t border-blue-100" data-collapsible-section-target="content">
           <td colspan="3" class="p-3 ps-5 text-xs font-bold text-blue-800 text-end"><%= t("accounting.chart_of_accounts.total_assets") %></td>
           <td class="p-3 pe-5 text-end font-bold tabular-nums text-blue-900"><%= format_money(@coa.total_assets_cents) %></td>
         </tr>
+      </tbody>
 
-        <%# Liabilities %>
-        <tr class="bg-red-50/40">
-          <td colspan="4" class="px-5 py-2 text-xs font-bold text-red-700 uppercase tracking-widest">
-            <%= t("accounting.chart_of_accounts.group_liabilities") %>
+      <%# ── LIABILITIES ────────────────────────────────────────────────── %>
+      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100">
+        <tr class="bg-red-50/40 cursor-pointer select-none hover:bg-red-100/40 transition-colors"
+            data-action="click->collapsible-section#toggle">
+          <td colspan="4" class="px-5 py-2.5">
+            <span class="inline-flex items-center gap-2 text-xs font-bold text-red-700 uppercase tracking-widest">
+              <svg data-collapsible-section-target="chevron"
+                   class="w-3.5 h-3.5 transition-transform duration-200"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              </svg>
+              <%= t("accounting.chart_of_accounts.group_liabilities") %>
+              <span class="font-normal normal-case tracking-normal text-red-400 ms-1"><%= format_money(@coa.total_liabilities_cents) %></span>
+            </span>
           </td>
         </tr>
 
-        <%# AP sub-group %>
-        <tr class="bg-red-50/20">
+        <tr class="bg-red-50/20" data-collapsible-section-target="content">
           <td colspan="4" class="px-8 py-1.5 text-xs font-semibold text-red-600 italic">
             <%= t("accounting.chart_of_accounts.group_accounts_payable") %>
           </td>
         </tr>
         <% if @coa.ap_liability_lines.any? %>
           <% @coa.ap_liability_lines.each do |line| %>
-            <tr class="hover:bg-gray-100 transition-colors">
+            <tr class="hover:bg-gray-50 transition-colors" data-collapsible-section-target="content">
               <td class="p-3 ps-8 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
               <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
               <td class="p-3">
@@ -168,20 +184,19 @@
             </tr>
           <% end %>
         <% else %>
-          <tr>
+          <tr data-collapsible-section-target="content">
             <td colspan="4" class="p-3 ps-8 text-xs text-gray-400 italic"><%= t("accounting.chart_of_accounts.no_liabilities") %></td>
           </tr>
         <% end %>
 
-        <%# Loans sub-group %>
-        <tr class="bg-red-50/20">
+        <tr class="bg-red-50/20" data-collapsible-section-target="content">
           <td colspan="4" class="px-8 py-1.5 text-xs font-semibold text-red-600 italic">
             <%= t("accounting.chart_of_accounts.group_loans") %>
           </td>
         </tr>
         <% if @coa.loan_liability_lines.any? %>
           <% @coa.loan_liability_lines.each do |line| %>
-            <tr class="hover:bg-gray-100 transition-colors">
+            <tr class="hover:bg-gray-50 transition-colors" data-collapsible-section-target="content">
               <td class="p-3 ps-8 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
               <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
               <td class="p-3">
@@ -193,26 +208,36 @@
             </tr>
           <% end %>
         <% else %>
-          <tr>
+          <tr data-collapsible-section-target="content">
             <td colspan="4" class="p-3 ps-8 text-xs text-gray-400 italic"><%= t("accounting.chart_of_accounts.no_loans") %></td>
           </tr>
         <% end %>
 
-        <tr class="bg-red-50/60 border-t border-red-100">
+        <tr class="bg-red-50/60 border-t border-red-100" data-collapsible-section-target="content">
           <td colspan="3" class="p-3 ps-5 text-xs font-bold text-red-800 text-end"><%= t("accounting.chart_of_accounts.total_liabilities") %></td>
           <td class="p-3 pe-5 text-end font-bold tabular-nums text-red-900"><%= format_money(@coa.total_liabilities_cents) %></td>
         </tr>
+      </tbody>
 
-        <%# Equity %>
-        <tr class="bg-emerald-50/40">
-          <td colspan="4" class="px-5 py-2 text-xs font-bold text-emerald-700 uppercase tracking-widest">
-            <%= t("accounting.chart_of_accounts.group_equity") %>
+      <%# ── EQUITY ────────────────────────────────────────────────────── %>
+      <% retained = @coa.equity_lines.first %>
+      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100">
+        <tr class="bg-emerald-50/40 cursor-pointer select-none hover:bg-emerald-100/40 transition-colors"
+            data-action="click->collapsible-section#toggle">
+          <td colspan="4" class="px-5 py-2.5">
+            <span class="inline-flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-widest">
+              <svg data-collapsible-section-target="chevron"
+                   class="w-3.5 h-3.5 transition-transform duration-200"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              </svg>
+              <%= t("accounting.chart_of_accounts.group_equity") %>
+              <span class="font-normal normal-case tracking-normal <%= @coa.total_equity_cents >= 0 ? 'text-emerald-500' : 'text-red-400' %> ms-1"><%= format_money(@coa.total_equity_cents) %></span>
+            </span>
           </td>
         </tr>
 
-        <%# Retained Earnings (3001) %>
-        <% retained = @coa.equity_lines.first %>
-        <tr class="hover:bg-gray-100 transition-colors">
+        <tr class="hover:bg-gray-50 transition-colors" data-collapsible-section-target="content">
           <td class="p-3 ps-5 text-gray-400 tabular-nums font-mono text-xs"><%= retained.code %></td>
           <td class="p-3 font-medium text-gray-900"><%= retained.name %></td>
           <td class="p-3">
@@ -225,15 +250,14 @@
           </td>
         </tr>
 
-        <%# Partner current accounts (3101+) %>
         <% if @coa.partner_equity_lines.any? %>
-          <tr class="bg-emerald-50/20">
+          <tr class="bg-emerald-50/20" data-collapsible-section-target="content">
             <td colspan="4" class="px-8 py-1.5 text-xs font-semibold text-emerald-600 italic">
               <%= t("accounting.chart_of_accounts.group_partner_accounts") %>
             </td>
           </tr>
           <% @coa.partner_equity_lines.each do |line| %>
-            <tr class="hover:bg-gray-100 transition-colors">
+            <tr class="hover:bg-gray-50 transition-colors" data-collapsible-section-target="content">
               <td class="p-3 ps-8 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
               <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
               <td class="p-3">
@@ -248,21 +272,32 @@
           <% end %>
         <% end %>
 
-        <tr class="bg-emerald-50/60 border-t border-emerald-100">
+        <tr class="bg-emerald-50/60 border-t border-emerald-100" data-collapsible-section-target="content">
           <td colspan="3" class="p-3 ps-5 text-xs font-bold text-emerald-800 text-end"><%= t("accounting.chart_of_accounts.total_equity") %></td>
           <td class="p-3 pe-5 text-end font-bold tabular-nums <%= @coa.total_equity_cents >= 0 ? 'text-emerald-900' : 'text-red-800' %>">
             <%= format_money(@coa.total_equity_cents) %>
           </td>
         </tr>
+      </tbody>
 
-        <%# Revenue %>
-        <tr class="bg-gray-100/60">
-          <td colspan="4" class="px-5 py-2 text-xs font-bold text-gray-600 uppercase tracking-widest">
-            <%= t("accounting.chart_of_accounts.group_revenue") %>
+      <%# ── REVENUE ────────────────────────────────────────────────────── %>
+      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100">
+        <tr class="bg-gray-100/60 cursor-pointer select-none hover:bg-gray-200/40 transition-colors"
+            data-action="click->collapsible-section#toggle">
+          <td colspan="4" class="px-5 py-2.5">
+            <span class="inline-flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-widest">
+              <svg data-collapsible-section-target="chevron"
+                   class="w-3.5 h-3.5 transition-transform duration-200"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              </svg>
+              <%= t("accounting.chart_of_accounts.group_revenue") %>
+              <span class="font-normal normal-case tracking-normal text-gray-400 ms-1"><%= format_money(@coa.total_revenue_cents) %></span>
+            </span>
           </td>
         </tr>
         <% @coa.revenue_lines.each do |line| %>
-          <tr class="hover:bg-gray-100 transition-colors">
+          <tr class="hover:bg-gray-50 transition-colors" data-collapsible-section-target="content">
             <td class="p-3 ps-5 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
             <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
             <td class="p-3">
@@ -273,35 +308,48 @@
             <td class="p-3 pe-5 text-end font-semibold tabular-nums text-gray-800"><%= format_money(line.balance_cents) %></td>
           </tr>
         <% end %>
-        <tr class="bg-gray-100/80 border-t border-gray-200">
+        <tr class="bg-gray-100/80 border-t border-gray-200" data-collapsible-section-target="content">
           <td colspan="3" class="p-3 ps-5 text-xs font-bold text-gray-700 text-end"><%= t("accounting.chart_of_accounts.total_revenue") %></td>
           <td class="p-3 pe-5 text-end font-bold tabular-nums text-gray-900"><%= format_money(@coa.total_revenue_cents) %></td>
         </tr>
+      </tbody>
 
-        <%# Expenses %>
-        <tr class="bg-gray-100/60">
-          <td colspan="4" class="px-5 py-2 text-xs font-bold text-gray-600 uppercase tracking-widest">
-            <%= t("accounting.chart_of_accounts.group_expenses") %>
+      <%# ── EXPENSES ────────────────────────────────────────────────────── %>
+      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100">
+        <tr class="bg-gray-100/60 cursor-pointer select-none hover:bg-gray-200/40 transition-colors"
+            data-action="click->collapsible-section#toggle">
+          <td colspan="4" class="px-5 py-2.5">
+            <span class="inline-flex items-center gap-2 text-xs font-bold text-gray-600 uppercase tracking-widest">
+              <svg data-collapsible-section-target="chevron"
+                   class="w-3.5 h-3.5 transition-transform duration-200"
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+              </svg>
+              <%= t("accounting.chart_of_accounts.group_expenses") %>
+              <span class="font-normal normal-case tracking-normal text-gray-400 ms-1"><%= format_money(@coa.total_expenses_cents) %></span>
+            </span>
           </td>
         </tr>
         <% @coa.expense_lines.each do |line| %>
-          <tr class="hover:bg-gray-100 transition-colors">
+          <tr class="hover:bg-gray-50 transition-colors" data-collapsible-section-target="content">
             <td class="p-3 ps-5 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
             <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
             <td class="p-3">
               <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-gray-100 text-gray-700 border border-gray-200">
-                <%= t("accounting.chart_of_accounts.subtypes.expense") %>
+                <%= t("accounting.chart_of_accounts.subtypes.#{line.subtype}", default: line.subtype.humanize) %>
               </span>
             </td>
             <td class="p-3 pe-5 text-end font-semibold tabular-nums text-gray-800"><%= format_money(line.balance_cents) %></td>
           </tr>
         <% end %>
-        <tr class="bg-gray-100/80 border-t border-gray-200">
+        <tr class="bg-gray-100/80 border-t border-gray-200" data-collapsible-section-target="content">
           <td colspan="3" class="p-3 ps-5 text-xs font-bold text-gray-700 text-end"><%= t("accounting.chart_of_accounts.total_expenses") %></td>
           <td class="p-3 pe-5 text-end font-bold tabular-nums text-gray-900"><%= format_money(@coa.total_expenses_cents) %></td>
         </tr>
+      </tbody>
 
-        <%# Net Income footer %>
+      <%# ── NET INCOME (always visible) ─────────────────────────────────── %>
+      <tbody>
         <tr class="border-t-2 border-gray-300 <%= @coa.net_income_cents >= 0 ? 'bg-emerald-50/60' : 'bg-red-50/60' %>">
           <td colspan="3" class="p-4 ps-5 text-sm font-bold <%= @coa.net_income_cents >= 0 ? 'text-emerald-800' : 'text-red-800' %> text-end">
             <%= t("accounting.chart_of_accounts.net_income") %>
