@@ -172,6 +172,25 @@ Rails.application.routes.draw do
       resources :payment_method_treasuries, only: %i[index create destroy]
       resources :chart_of_accounts, only: [:index]
       resources :journal_entries, only: %i[index show new create]
+      resources :partners, only: %i[index show new create edit update] do
+        member do
+          get  :new_advance,    path: "advance/new"
+          post :create_advance, path: "advance"
+        end
+      end
+      get  "profit_distribution/new",  to: "partners#new_profit_distribution",    as: :new_profit_distribution
+      post "profit_distribution",      to: "partners#create_profit_distribution",  as: :profit_distribution
+
+      resources :loans, only: %i[index show new create edit update] do
+        member do
+          get  :new_disbursement,   path: "disbursement/new"
+          post :create_disbursement, path: "disbursement"
+          get  :new_repayment,      path: "repayment/new"
+          post :create_repayment,   path: "repayment"
+          get  :new_interest,       path: "interest/new"
+          post :create_interest,    path: "interest"
+        end
+      end
       resources :fixed_assets do
         member { patch :dispose }
       end

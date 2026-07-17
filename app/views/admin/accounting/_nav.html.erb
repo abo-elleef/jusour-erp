@@ -36,6 +36,8 @@
         <%= link_to t("accounting.nav.journal_entries"),   admin_accounting_journal_entries_path,     class: admin_section_tab_class(accounting_nav_active?("journal_entries")) %>
         <%= link_to t("accounting.nav.chart_of_accounts"), admin_accounting_chart_of_accounts_path,   class: admin_section_tab_class(accounting_nav_active?("chart_of_accounts")) %>
         <%= link_to t("accounting.nav.fixed_assets"),      admin_accounting_fixed_assets_path,        class: admin_section_tab_class(accounting_nav_active?("fixed_assets")) %>
+        <%= link_to t("accounting.nav.partners"),          admin_accounting_partners_path,            class: admin_section_tab_class(accounting_nav_active?("partners")) %>
+        <%= link_to t("accounting.nav.loans"),             admin_accounting_loans_path,               class: admin_section_tab_class(accounting_nav_active?("loans")) %>
       <% elsif accounting_in_transactions_group? %>
         <%= link_to t("accounting.nav.expenses"),    admin_accounting_expenses_path,            class: admin_section_tab_class(accounting_nav_active?("expenses")) %>
         <%= link_to t("accounting.nav.incomes"),     admin_accounting_incomes_path,             class: admin_section_tab_class(accounting_nav_active?("incomes")) %>

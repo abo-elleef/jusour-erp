@@ -10,7 +10,8 @@ module Accounting
       { code: JournalEntryService::ADVANCE_CODE,    name_key: "accounting.journal_entries.accounts.payroll_advances" },
       { code: JournalEntryService::SALARY_CODE,     name_key: "accounting.journal_entries.accounts.salaries" },
       { code: JournalEntryService::STAFF_MEAL_CODE, name_key: "accounting.journal_entries.accounts.staff_meals" },
-      { code: JournalEntryService::COGS_CODE,       name_key: "accounting.journal_entries.accounts.purchases" }
+      { code: JournalEntryService::COGS_CODE,       name_key: "accounting.journal_entries.accounts.purchases" },
+      { code: JournalEntryService::INTEREST_CODE,   name_key: "accounting.loans.interest_expense_account" }
     ].freeze
 
     # Returns array of [group_label, [[display, value], ...]] for grouped_options_for_select
@@ -35,17 +36,23 @@ module Accounting
     end
 
     def liability_group
-      options = Treasury.active
-                        .where(treasury_type: "supplier_ap")
-                        .order(:name)
-                        .map { |t| [treasury_label(t), encode(:treasury, t.id, t.name, "liability")] }
-      [ I18n.t("accounting.journal_entries.account_types.liability"), options ]
+      ap_options = Treasury.active
+                           .where(treasury_type: "supplier_ap")
+                           .order(:name)
+                           .map { |t| [treasury_label(t), encode(:treasury, t.id, t.name, "liability")] }
+      loan_options = Loan.active.ordered.map do |l|
+        [ "#{l.account_code}  #{l.account_name}", encode(:loan, l.id, l.account_name, "liability") ]
+      end
+      [ I18n.t("accounting.journal_entries.account_types.liability"), ap_options + loan_options ]
     end
 
     def equity_group
       name = I18n.t(EQUITY_ACCOUNT[:name_key])
-      options = [ [ "#{EQUITY_ACCOUNT[:code]}  #{name}", encode(:equity, nil, name, "equity") ] ]
-      [ I18n.t("accounting.journal_entries.account_types.equity"), options ]
+      retained = [ "#{EQUITY_ACCOUNT[:code]}  #{name}", encode(:equity, nil, name, "equity") ]
+      partner_options = Partner.active.ordered.map do |p|
+        [ "#{p.account_code}  #{p.account_name}", encode(:partner, p.id, p.account_name, "equity") ]
+      end
+      [ I18n.t("accounting.journal_entries.account_types.equity"), [retained] + partner_options ]
     end
 
     def revenue_group

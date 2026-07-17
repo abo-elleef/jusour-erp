@@ -33,7 +33,7 @@ module ApplicationHelper
   ACCOUNTING_REPORTS_GROUP       = %w[dashboard sales_reports food_costs tax_reports budgets].freeze
   ACCOUNTING_SETUP_GROUP         = %w[expense_categories income_categories discount_rules audit_log].freeze
   ACCOUNTING_TRANSACTIONS_GROUP  = %w[expenses incomes shift_logs monthly_payroll cash_drawer].freeze
-  ACCOUNTING_LEDGERS_GROUP       = %w[treasuries journal_entries chart_of_accounts fixed_assets].freeze
+  ACCOUNTING_LEDGERS_GROUP       = %w[treasuries journal_entries chart_of_accounts fixed_assets partners loans].freeze
 
   INVENTORY_OPERATIONS_GROUP = %w[vendor_invoices stock_transfers stock_takes manufacturing_templates manufacturing_runs manufacturing_template_lines].freeze
   INVENTORY_SETUP_GROUP      = %w[suppliers ingredients ingredient_categories units].freeze

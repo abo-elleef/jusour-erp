@@ -1,0 +1,75 @@
+<% content_for :title, t("accounting.partners.title") %>
+<%= render "admin/accounting/nav" %>
+
+<div class="max-w-5xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.partners.title") %></h1>
+      <p class="text-sm text-gray-500 mt-0.5"><%= t("accounting.partners.description") %></p>
+    </div>
+    <div class="flex gap-2">
+      <%= link_to t("accounting.partners.distribute_profit"), admin_accounting_new_profit_distribution_path,
+            class: "bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl" %>
+      <%= link_to t("accounting.partners.new_button"), new_admin_accounting_partner_path,
+            class: "bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl" %>
+    </div>
+  </div>
+
+  <%# Ownership summary %>
+  <% if @total_ownership != 100 && @partners.active.any? %>
+    <div class="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-center gap-2">
+      <span class="text-amber-700 text-sm font-medium"><%= t("accounting.partners.ownership_warning", total: @total_ownership) %></span>
+    </div>
+  <% end %>
+
+  <% if @partners.empty? %>
+    <div class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-400 text-sm"><%= t("accounting.partners.empty") %></p>
+    </div>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= t("accounting.partners.col.name") %></th>
+            <th class="p-3 text-start w-28"><%= t("accounting.partners.col.account") %></th>
+            <th class="p-3 text-end w-28"><%= t("accounting.partners.col.ownership") %></th>
+            <th class="p-3 text-end w-36"><%= t("accounting.partners.col.balance") %></th>
+            <th class="p-3 pe-5 text-start w-20"><%= t("accounting.partners.col.status") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @partners.each do |partner| %>
+            <% balance = partner.balance_cents %>
+            <tr class="hover:bg-blue-50/30 transition-colors cursor-pointer"
+                onclick="window.location='<%= admin_accounting_partner_path(partner) %>'">
+              <td class="p-3 ps-5 font-semibold text-gray-900"><%= partner.name %></td>
+              <td class="p-3 font-mono text-xs text-blue-700"><%= partner.account_code %></td>
+              <td class="p-3 text-end tabular-nums text-gray-700"><%= partner.ownership_percentage %>%</td>
+              <td class="p-3 text-end tabular-nums font-semibold <%= balance >= 0 ? 'text-green-700' : 'text-red-600' %>">
+                <%= format_money(balance.abs) %>
+                <span class="text-xs font-normal text-gray-400 ms-1"><%= balance >= 0 ? t("accounting.partners.cr") : t("accounting.partners.dr") %></span>
+              </td>
+              <td class="p-3 pe-5">
+                <% if partner.active? %>
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold"><%= t("accounting.partners.active") %></span>
+                <% else %>
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 font-semibold"><%= t("accounting.partners.inactive") %></span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot class="border-t-2 border-gray-200 bg-gray-50/80">
+          <tr>
+            <td colspan="2" class="p-3 ps-5 text-xs font-bold text-gray-600"><%= t("accounting.partners.total_ownership") %></td>
+            <td class="p-3 text-end font-bold tabular-nums <%= @total_ownership == 100 ? 'text-green-700' : 'text-amber-600' %>">
+              <%= @total_ownership %>%
+            </td>
+            <td colspan="2"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+  <% end %>
+</div>

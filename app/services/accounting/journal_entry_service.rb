@@ -15,11 +15,12 @@ module Accounting
   #     5502       Staff Meals
   #     5503       Cost of Goods Sold (COGS, no treasury)
   class JournalEntryService
-    EQUITY_CODE   = 3001
-    ADVANCE_CODE  = 5500
-    SALARY_CODE   = 5501
-    STAFF_MEAL_CODE = 5502
-    COGS_CODE     = 5503
+    EQUITY_CODE      = 3001
+    ADVANCE_CODE     = 5500
+    SALARY_CODE      = 5501
+    STAFF_MEAL_CODE  = 5502
+    COGS_CODE        = 5503
+    INTEREST_CODE    = 5600
 
     TREASURY_TYPE_BASE = {
       "cash_drawer"   => 1000,
@@ -222,6 +223,61 @@ module Accounting
         end
       end
 
+      # ── Partner Advance / Drawing ─────────────────────────────────────
+      def record_partner_advance!(partner:, treasury:, amount_cents:, date:, description:, user:)
+        create! source: nil, date: date, user: user, description: description do |lines|
+          lines << debit(account_for_partner(partner), amount_cents, "equity")
+          lines << credit(account_for_treasury(treasury), amount_cents, "asset")
+        end
+      end
+
+      # ── Profit Distribution ───────────────────────────────────────────
+      # Creates one JE with DR Retained Earnings and one CR line per partner
+      def distribute_profit!(partners:, total_cents:, date:, description:, user:)
+        create! source: nil, date: date, user: user, description: description do |lines|
+          partners.each do |partner|
+            share = (total_cents * partner.ownership_percentage / 100.0).round
+            next if share == 0
+
+            lines << credit(account_for_partner(partner), share, "equity",
+                            notes: "#{partner.ownership_percentage}%")
+          end
+          # Single debit to retained earnings for the full amount
+          lines << debit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings") },
+                         total_cents, "equity")
+        end
+      end
+
+      # ── Loan Disbursement (money received from lender) ────────────────
+      # DR Treasury → CR Loan account
+      def record_loan_disbursement!(loan:, treasury:, amount_cents:, date:, description:, user:)
+        create! source: nil, date: date, user: user, description: description do |lines|
+          lines << debit(account_for_treasury(treasury), amount_cents, "asset")
+          lines << credit(account_for_loan(loan), amount_cents, "liability")
+        end
+      end
+
+      # ── Loan Repayment (paying back principal) ────────────────────────
+      # DR Loan account → CR Treasury
+      def record_loan_repayment!(loan:, treasury:, amount_cents:, date:, description:, user:)
+        create! source: nil, date: date, user: user, description: description do |lines|
+          lines << debit(account_for_loan(loan), amount_cents, "liability")
+          lines << credit(account_for_treasury(treasury), amount_cents, "asset")
+        end
+      end
+
+      # ── Loan Interest Payment (expense, no change to loan balance) ────
+      # DR Interest Expense → CR Treasury
+      def record_loan_interest!(loan:, treasury:, amount_cents:, date:, description:, user:)
+        create! source: nil, date: date, user: user, description: description do |lines|
+          lines << debit(
+            { code: INTEREST_CODE, name: I18n.t("accounting.loans.interest_expense_account") },
+            amount_cents, "expense"
+          )
+          lines << credit(account_for_treasury(treasury), amount_cents, "asset")
+        end
+      end
+
       # ── Vendor Invoice Voided (reversal) ──────────────────────────────
       def reverse_vendor_invoice!(invoice)
         destroy_for_source!(invoice)
@@ -303,6 +359,14 @@ module Accounting
         siblings = IncomeCategory.unscoped.where(company_id: category.company_id).order(:id)
         idx = siblings.pluck(:id).index(category.id).to_i
         { code: base + idx + 1, name: category.name }
+      end
+
+      def account_for_partner(partner)
+        { code: partner.account_code, name: partner.account_name }
+      end
+
+      def account_for_loan(loan)
+        { code: loan.account_code, name: loan.account_name }
       end
     end
   end

@@ -1,0 +1,87 @@
+<% content_for :title, t("accounting.partners.profit.title") %>
+<%= render "admin/accounting/nav" %>
+
+<div class="max-w-lg">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.partners.profit.title") %></h1>
+      <p class="text-sm text-gray-500 mt-0.5"><%= t("accounting.partners.profit.description") %></p>
+    </div>
+    <%= link_to t("actions.cancel"), admin_accounting_partners_path,
+          class: "text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50" %>
+  </div>
+
+  <% if @total_ownership != 100 %>
+    <div class="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
+      <p class="text-amber-700 text-sm font-medium"><%= t("accounting.partners.ownership_warning", total: @total_ownership) %></p>
+    </div>
+  <% end %>
+
+  <% if @error %>
+    <div class="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+      <p class="text-red-700 text-sm"><%= @error %></p>
+    </div>
+  <% end %>
+
+  <%= form_with url: admin_accounting_profit_distribution_path, method: :post, class: "space-y-4",
+        data: { controller: "profit-calc" } do |f| %>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 space-y-4">
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.partners.profit.date") %></label>
+          <input type="date" name="date" value="<%= Date.current %>" class="<%= pos_input_class %>" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.partners.profit.total_amount") %></label>
+          <input type="number" name="total_amount" step="0.01" min="0.01" placeholder="0.00"
+                 class="<%= pos_input_class %>" required
+                 data-action="input->profit-calc#update"
+                 data-profit-calc-target="total">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.partners.profit.description") %></label>
+        <input type="text" name="description"
+               placeholder="<%= t('accounting.partners.profit.description_placeholder') %>"
+               class="<%= pos_input_class %>">
+      </div>
+    </div>
+
+    <%# Live breakdown %>
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.partners.profit.breakdown") %></h2>
+      </div>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-gray-100">
+          <% @partners.each do |partner| %>
+            <tr>
+              <td class="p-3 ps-5 font-medium text-gray-900"><%= partner.name %></td>
+              <td class="p-3 text-gray-500 tabular-nums"><%= partner.ownership_percentage %>%</td>
+              <td class="p-3 pe-5 text-end font-semibold text-gray-900 tabular-nums"
+                  data-profit-calc-target="share"
+                  data-pct="<%= partner.ownership_percentage %>">—</td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot class="border-t-2 border-gray-200 bg-gray-50/80">
+          <tr>
+            <td class="p-3 ps-5 text-xs font-bold text-gray-600"><%= t("accounting.partners.profit.total") %></td>
+            <td class="p-3 text-xs font-bold tabular-nums <%= @total_ownership == 100 ? 'text-green-700' : 'text-amber-600' %>"><%= @total_ownership %>%</td>
+            <td class="p-3 pe-5 text-end font-bold tabular-nums text-gray-900"
+                data-profit-calc-target="totalDisplay">—</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold">
+        <%= t("accounting.partners.profit.save") %>
+      </button>
+      <%= link_to t("actions.cancel"), admin_accounting_partners_path,
+            class: "px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 border border-gray-200" %>
+    </div>
+  <% end %>
+</div>

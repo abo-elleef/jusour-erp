@@ -1,0 +1,34 @@
+<div class="rounded-2xl border border-gray-200 bg-white p-5 space-y-4">
+  <% if partner.errors.any? %>
+    <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+      <p class="text-red-700 text-sm"><%= partner.errors.full_messages.to_sentence %></p>
+    </div>
+  <% end %>
+
+  <div>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.partners.form.name") %></label>
+    <%= f.text_field :name, class: pos_input_class, required: true %>
+  </div>
+
+  <div>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.partners.form.ownership") %></label>
+    <div class="relative">
+      <%= f.number_field :ownership_percentage, step: "0.01", min: 0, max: 100,
+            class: "#{pos_input_class} pe-8", required: true %>
+      <span class="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">%</span>
+    </div>
+    <p class="text-xs text-gray-400 mt-1"><%= t("accounting.partners.form.ownership_hint") %></p>
+  </div>
+
+  <div>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.partners.form.notes") %></label>
+    <%= f.text_area :notes, rows: 2, class: pos_input_class %>
+  </div>
+
+  <% if f.object.persisted? %>
+    <div class="flex items-center gap-3 pt-1">
+      <%= f.check_box :active, class: "rounded" %>
+      <label class="text-sm text-gray-700 font-medium"><%= t("accounting.partners.form.active") %></label>
+    </div>
+  <% end %>
+</div>

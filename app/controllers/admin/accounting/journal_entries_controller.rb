@@ -92,6 +92,10 @@ module Admin
           5001 + siblings.index(id).to_i
         when "fixed_expense"
           id.to_i
+        when "partner"
+          Partner.find_by(id: id)&.account_code || 3199
+        when "loan"
+          Loan.find_by(id: id)&.account_code || 2199
         else
           5999
         end

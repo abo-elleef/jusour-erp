@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_16_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_17_061625) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -411,6 +411,23 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_16_000001) do
     t.index ["treasury_id"], name: "index_journal_entry_lines_on_treasury_id"
   end
 
+  create_table "loans", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "name", null: false
+    t.string "loan_type", default: "bank_loan", null: false
+    t.integer "account_code", null: false
+    t.bigint "principal_cents", default: 0, null: false
+    t.decimal "interest_rate", precision: 5, scale: 2, default: "0.0"
+    t.date "disbursement_date"
+    t.date "due_date"
+    t.boolean "active", default: true, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "account_code"], name: "index_loans_on_company_id_and_account_code", unique: true
+    t.index ["company_id"], name: "index_loans_on_company_id"
+  end
+
   create_table "location_menu_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "location_id", null: false
     t.uuid "menu_item_id", null: false
@@ -653,6 +670,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_16_000001) do
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
     t.index ["company_id"], name: "index_overtime_rules_on_company_id"
+  end
+
+  create_table "partners", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "name", null: false
+    t.integer "account_code", null: false
+    t.decimal "ownership_percentage", precision: 5, scale: 2, null: false
+    t.boolean "active", default: true, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "account_code"], name: "index_partners_on_company_id_and_account_code", unique: true
+    t.index ["company_id"], name: "index_partners_on_company_id"
   end
 
   create_table "payment_method_treasuries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1242,6 +1272,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_16_000001) do
   add_foreign_key "journal_entries", "users", column: "created_by_id"
   add_foreign_key "journal_entry_lines", "journal_entries"
   add_foreign_key "journal_entry_lines", "treasuries"
+  add_foreign_key "loans", "companies"
   add_foreign_key "location_menu_items", "locations"
   add_foreign_key "location_menu_items", "menu_items"
   add_foreign_key "locations", "companies"
@@ -1279,6 +1310,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_16_000001) do
   add_foreign_key "orders", "users"
   add_foreign_key "orders", "users", column: "staff_meal_user_id"
   add_foreign_key "overtime_rules", "companies"
+  add_foreign_key "partners", "companies"
   add_foreign_key "payment_method_treasuries", "companies"
   add_foreign_key "payment_method_treasuries", "treasuries"
   add_foreign_key "payments", "companies"

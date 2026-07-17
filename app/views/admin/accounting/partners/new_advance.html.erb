@@ -1,0 +1,69 @@
+<% content_for :title, t("accounting.partners.advance.title", name: @partner.name) %>
+<%= render "admin/accounting/nav" %>
+
+<div class="max-w-lg">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <p class="text-xs text-gray-400 mb-1"><%= @partner.name %></p>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.partners.advance.title", name: @partner.name) %></h1>
+      <p class="text-sm text-gray-500 mt-0.5"><%= t("accounting.partners.advance.description") %></p>
+    </div>
+    <%= link_to t("actions.cancel"), admin_accounting_partner_path(@partner),
+          class: "text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50" %>
+  </div>
+
+  <% if @error %>
+    <div class="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+      <p class="text-red-700 text-sm"><%= @error %></p>
+    </div>
+  <% end %>
+
+  <%= form_with url: create_advance_admin_accounting_partner_path(@partner), method: :post, class: "space-y-4" do |f| %>
+    <div class="rounded-2xl border border-gray-200 bg-white p-5 space-y-4">
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.partners.advance.date") %></label>
+          <input type="date" name="date" value="<%= Date.current %>" class="<%= pos_input_class %>" required>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.partners.advance.amount") %></label>
+          <input type="number" name="amount" step="0.01" min="0.01" placeholder="0.00"
+                 class="<%= pos_input_class %>" required>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.partners.advance.treasury") %></label>
+        <select name="treasury_id" class="<%= pos_input_class %>" required>
+          <option value=""><%= t("accounting.partners.advance.select_treasury") %></option>
+          <% @treasuries.each do |t_| %>
+            <option value="<%= t_.id %>"><%= t_.name %></option>
+          <% end %>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.partners.advance.description") %></label>
+        <input type="text" name="description"
+               placeholder="<%= t('accounting.partners.advance.description_placeholder', name: @partner.name) %>"
+               class="<%= pos_input_class %>">
+      </div>
+    </div>
+
+    <%# Journal entry preview %>
+    <div class="rounded-xl bg-blue-50 border border-blue-100 px-4 py-3 text-xs text-blue-700 space-y-1">
+      <p class="font-semibold"><%= t("accounting.partners.advance.je_preview") %></p>
+      <p>↑ DR <%= @partner.account_code %> <%= @partner.account_name %></p>
+      <p>↓ CR <%= t("accounting.partners.advance.selected_treasury") %></p>
+    </div>
+
+    <div class="flex gap-3">
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold">
+        <%= t("accounting.partners.advance.save") %>
+      </button>
+      <%= link_to t("actions.cancel"), admin_accounting_partner_path(@partner),
+            class: "px-6 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 border border-gray-200" %>
+    </div>
+  <% end %>
+</div>
