@@ -65,7 +65,9 @@ module Inventory
         reason_notes: "Reversed vendor invoice #{@invoice.invoice_number} edit"
       )
 
-      batch.update!(quantity_remaining: batch.quantity_remaining.to_d - qty)
+      # Unlink the batch from this line so receive_line can attach a fresh one.
+      batch.update!(quantity_remaining: batch.quantity_remaining.to_d - qty,
+                    vendor_invoice_line_id: nil)
     end
 
     private

@@ -199,7 +199,7 @@ module Accounting
         create! source: invoice, date: invoice.received_on, user: invoice.user,
                 description: I18n.t("accounting.journal_entries.auto.vendor_invoice",
                                     supplier: invoice.supplier.name,
-                                    ref: invoice.reference_number.presence || invoice.id,
+                                    ref: invoice.invoice_number.presence || invoice.id,
                                     default: "Purchase Invoice — #{invoice.supplier.name}") do |lines|
           lines << debit({ code: 5100,
                            name: I18n.t("accounting.journal_entries.accounts.purchases", default: "Purchases / Inventory") },
