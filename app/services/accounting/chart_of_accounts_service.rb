@@ -222,6 +222,9 @@ module Accounting
       @fixed_expense_lines ||= begin
         je_scope = JournalEntryLine.joins(:journal_entry)
                                    .where(journal_entries: { company_id: Current.company.id })
+        if @start_date && @end_date
+          je_scope = je_scope.where(journal_entries: { date: @start_date..@end_date })
+        end
         FIXED_EXPENSE_ACCOUNTS.filter_map do |acct|
           total = je_scope.where(account_code: acct[:code]).sum(:debit_cents)
           next if total == 0
