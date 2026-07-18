@@ -48,6 +48,6 @@ class Income < ApplicationRecord
 
   def remove_treasury_ledger
     Accounting::TreasuryLedgerService.remove_source!(self)
-    Accounting::JournalEntryService.destroy_for_source!(self)
+    # JEs are intentionally preserved on delete — reversals maintain the audit sequence
   end
 end

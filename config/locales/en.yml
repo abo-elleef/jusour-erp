@@ -2265,13 +2265,17 @@ en:
       type:
         auto: "Auto"
         manual: "Manual"
+        reversal: "Reversal"
       flash:
         created: "Journal entry recorded successfully."
         deleted: "Journal entry deleted and treasury balances reversed."
         cannot_delete_auto: "Auto-generated journal entries cannot be deleted. Manage them through their source record."
+        cannot_reverse_auto: "Auto-generated entries cannot be reversed directly. Use the Reverse Entry button on the source record."
+        reversed: "Reversal entry %{number} created. Treasury balances updated."
       actions:
         delete: "Delete Entry"
       confirm_delete: "Delete this journal entry? Treasury balances will be reversed. This cannot be undone."
+      reversal_of: "Reversal of %{number}: %{description}"
       form:
         header: "Entry Details"
         date: "Date"
@@ -2285,6 +2289,7 @@ en:
         all: "All Entries"
         auto: "Auto-generated"
         manual: "Manual"
+        reversal: "Reversals"
       account_types:
         asset: "Asset"
         liability: "Liability"
@@ -2507,6 +2512,16 @@ en:
       units: "Units"
       cost: "Cost"
       food_cost_pct: "Food cost %"
+    reversal:
+      reverse_entry: "Reverse Entry"
+      confirm: "Create a reversal entry? This will create a new journal entry that cancels the accounting effect. The original entry is preserved."
+      reversed_badge: "Reversed"
+      already_reversed: "This entry has already been reversed."
+      no_journal_entry: "No journal entry found for this record."
+      expense_reversed: "Reversal entry created. Expense accounting effect cancelled."
+      income_reversed: "Reversal entry created. Income accounting effect cancelled."
+      reverses_link: "Reversal of:"
+      reversed_by_link: "Reversed by:"
     expenses:
       title: "Expenses"
       new: "New expense"

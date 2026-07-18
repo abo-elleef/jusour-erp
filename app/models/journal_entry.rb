@@ -3,11 +3,14 @@
 class JournalEntry < ApplicationRecord
   include Tenantable
 
-  ENTRY_TYPES = %w[auto manual].freeze
+  ENTRY_TYPES = %w[auto manual reversal].freeze
 
   belongs_to :created_by, class_name: "User"
   has_many   :lines, class_name: "JournalEntryLine", dependent: :destroy
   accepts_nested_attributes_for :lines
+
+  belongs_to :original_entry, class_name: "JournalEntry", foreign_key: :reversal_of_id, optional: true
+  has_one    :reversal_entry, class_name: "JournalEntry", foreign_key: :reversal_of_id
 
   validates :entry_number, presence: true, uniqueness: true
   validates :date,         presence: true
@@ -26,6 +29,8 @@ class JournalEntry < ApplicationRecord
   def balanced?           = total_debits_cents == total_credits_cents
   def auto?               = entry_type == "auto"
   def manual?             = entry_type == "manual"
+  def reversal?           = entry_type == "reversal"
+  def reversed?           = reversal_entry.present?
 
   def self.next_entry_number(company_id)
     last = where(company_id: company_id).maximum(:entry_number)

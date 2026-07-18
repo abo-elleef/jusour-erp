@@ -278,6 +278,36 @@ module Accounting
         end
       end
 
+      # ── Generic Reversal ──────────────────────────────────────────────
+      # Creates a mirror-image JE that cancels the effect of original_je.
+      # All debit/credit amounts are swapped. Gets a new sequential entry number
+      # so the audit sequence has no gaps.
+      def record_reversal!(original_je:, user:, date: nil)
+        raise ArgumentError, "Cannot reverse a reversal entry" if original_je.reversal?
+        raise ArgumentError, "Already reversed" if original_je.reversed?
+
+        JournalEntry.create!(
+          company:            Current.company,
+          created_by:         user,
+          entry_number:       JournalEntry.next_entry_number(Current.company.id),
+          date:               date || Date.current,
+          description:        I18n.t("accounting.journal_entries.reversal_of",
+                                     number:      original_je.entry_number,
+                                     description: original_je.description),
+          entry_type:         "reversal",
+          reversal_of_id:     original_je.id,
+          lines_attributes:   original_je.lines.map do |line|
+            { account_code:  line.account_code,
+              account_name:  line.account_name,
+              account_type:  line.account_type,
+              debit_cents:   line.credit_cents,
+              credit_cents:  line.debit_cents,
+              treasury_id:   line.treasury_id,
+              notes:         line.notes }
+          end
+        )
+      end
+
       # ── Vendor Invoice Voided (reversal) ──────────────────────────────
       def reverse_vendor_invoice!(invoice)
         destroy_for_source!(invoice)

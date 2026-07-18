@@ -3,7 +3,7 @@
 module Admin
   module Accounting
     class ExpensesController < BaseController
-      before_action :set_expense, only: %i[edit update destroy]
+      before_action :set_expense, only: %i[edit update reverse]
 
       def index
         parse_date_range
@@ -17,6 +17,7 @@ module Admin
         @active_category_id = params[:category_id].presence
         @totals_by_category = Expense.joins(:expense_category)
           .on_date_range(@start_date, @end_date)
+          .where(reversed_at: nil)
           .group("expense_categories.id", "expense_categories.name")
           .sum(:amount_cents)
         @categories = ExpenseCategory.ordered
@@ -59,11 +60,31 @@ module Admin
         end
       end
 
-      def destroy
-        authorize @expense
-        AuditLogEntry.record!(action: "expense.delete", record: @expense, user: current_user)
-        @expense.destroy!
-        redirect_to admin_accounting_expenses_path, notice: t("flash.accounting.expense_removed")
+      def reverse
+        authorize @expense, :destroy?
+        je = JournalEntry.for_source(@expense).first
+
+        if je.nil?
+          return redirect_to admin_accounting_expenses_path,
+                             alert: t("accounting.reversal.no_journal_entry")
+        end
+
+        if @expense.reversed_at.present? || je.reversed?
+          return redirect_to admin_accounting_expenses_path,
+                             alert: t("accounting.reversal.already_reversed")
+        end
+
+        ActiveRecord::Base.transaction do
+          reversal = ::Accounting::JournalEntryService.record_reversal!(
+            original_je: je, user: current_user
+          )
+          sync_je_treasuries!(reversal)
+          @expense.update_column(:reversed_at, Time.current)
+          AuditLogEntry.record!(action: "expense.reverse", record: @expense, user: current_user)
+        end
+
+        redirect_to admin_accounting_expenses_path,
+                    notice: t("accounting.reversal.expense_reversed")
       end
 
       private

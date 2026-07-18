@@ -139,42 +139,79 @@ RSpec.describe "Admin::Accounting::JournalEntries", type: :request do
     end
   end
 
-  describe "DELETE /admin/accounting/journal_entries/:id" do
+  describe "POST /admin/accounting/journal_entries/:id/reverse" do
     def create_manual_je(amount_cents: 10_000)
       post_je(debit_treasury: cash, credit_treasury: bank, amount_dollars: amount_cents / 100.0)
       JournalEntry.last
     end
 
-    it "destroys the manual journal entry" do
+    it "creates a reversal journal entry (does not destroy the original)" do
       je = create_manual_je
-      expect { delete admin_accounting_journal_entry_path(je) }
-        .to change(JournalEntry, :count).by(-1)
+      expect { post reverse_admin_accounting_journal_entry_path(je) }
+        .to change(JournalEntry, :count).by(1)
+      expect(JournalEntry.exists?(je.id)).to be true
     end
 
-    it "reverses the treasury balances" do
+    it "reversal entry has entry_type reversal and points back to original" do
+      je = create_manual_je
+      post reverse_admin_accounting_journal_entry_path(je)
+      reversal = JournalEntry.last
+      expect(reversal.entry_type).to eq("reversal")
+      expect(reversal.reversal_of_id).to eq(je.id)
+    end
+
+    it "reversal entry flips debit/credit on all lines" do
       je = create_manual_je(amount_cents: 5_000)
-      cash_before = cash.reload.balance_cents
-      bank_before = bank.reload.balance_cents
-
-      delete admin_accounting_journal_entry_path(je)
-
-      expect(cash.reload.balance_cents).to eq(cash_before - 5_000)
-      expect(bank.reload.balance_cents).to eq(bank_before + 5_000)
+      post reverse_admin_accounting_journal_entry_path(je)
+      reversal = JournalEntry.last
+      original_line = je.lines.first
+      reversal_line = reversal.lines.find { |l| l.account_code == original_line.account_code }
+      expect(reversal_line.debit_cents).to eq(original_line.credit_cents)
+      expect(reversal_line.credit_cents).to eq(original_line.debit_cents)
     end
 
-    it "removes the associated TreasuryTransactions" do
+    it "reversal entry cancels the treasury balance effect (net zero)" do
+      je = create_manual_je(amount_cents: 5_000)
+      cash_after_je = cash.reload.balance_cents
+      bank_after_je = bank.reload.balance_cents
+
+      post reverse_admin_accounting_journal_entry_path(je)
+
+      expect(cash.reload.balance_cents).to eq(cash_after_je - 5_000)
+      expect(bank.reload.balance_cents).to eq(bank_after_je + 5_000)
+    end
+
+    it "creates TreasuryTransactions for the reversal entry" do
+      je = create_manual_je(amount_cents: 4_000)
+      post reverse_admin_accounting_journal_entry_path(je)
+      reversal = JournalEntry.last
+      txns = TreasuryTransaction.where(source_record_type: "JournalEntry", source_record_id: reversal.id)
+      expect(txns.count).to be >= 1
+    end
+
+    it "marks the original entry as reversed" do
       je = create_manual_je
-      expect { delete admin_accounting_journal_entry_path(je) }
-        .to change { TreasuryTransaction.where(source_record_type: "JournalEntry", source_record_id: je.id).count }.to(0)
+      post reverse_admin_accounting_journal_entry_path(je)
+      expect(je.reload.reversed?).to be true
     end
 
-    it "redirects to the index with a notice" do
+    it "redirects to the new reversal entry with a notice" do
       je = create_manual_je
-      delete admin_accounting_journal_entry_path(je)
-      expect(response).to redirect_to(admin_accounting_journal_entries_path)
+      post reverse_admin_accounting_journal_entry_path(je)
+      reversal = JournalEntry.last
+      expect(response).to redirect_to(admin_accounting_journal_entry_path(reversal))
     end
 
-    context "when trying to delete an auto-generated entry" do
+    it "cannot reverse an already-reversed entry" do
+      je = create_manual_je
+      post reverse_admin_accounting_journal_entry_path(je)
+      count_before = JournalEntry.count
+      post reverse_admin_accounting_journal_entry_path(je)
+      expect(JournalEntry.count).to eq(count_before)
+      expect(response).to redirect_to(admin_accounting_journal_entry_path(je))
+    end
+
+    context "when trying to reverse an auto-generated entry" do
       let!(:auto_je) do
         JournalEntry.create!(
           company: company,
@@ -186,8 +223,8 @@ RSpec.describe "Admin::Accounting::JournalEntries", type: :request do
         )
       end
 
-      it "redirects back with an alert and does not destroy the entry" do
-        expect { delete admin_accounting_journal_entry_path(auto_je) }
+      it "redirects back with an alert and does not create a reversal" do
+        expect { post reverse_admin_accounting_journal_entry_path(auto_je) }
           .not_to change(JournalEntry, :count)
 
         expect(response).to redirect_to(admin_accounting_journal_entry_path(auto_je))

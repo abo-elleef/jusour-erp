@@ -17,28 +17,35 @@ module Admin
       end
 
       def show
-        @journal_entry = JournalEntry.includes(:lines, :created_by).find(params[:id])
+        @journal_entry = JournalEntry.includes(:lines, :created_by, :reversal_entry).find(params[:id])
       end
 
-      def destroy
-        @journal_entry = JournalEntry.find(params[:id])
+      def reverse
+        @journal_entry = JournalEntry.includes(:reversal_entry).find(params[:id])
 
         unless @journal_entry.manual?
-          redirect_to admin_accounting_journal_entry_path(@journal_entry),
-                      alert: t("accounting.journal_entries.flash.cannot_delete_auto")
-          return
+          return redirect_to admin_accounting_journal_entry_path(@journal_entry),
+                             alert: t("accounting.journal_entries.flash.cannot_reverse_auto")
         end
 
+        if @journal_entry.reversed?
+          return redirect_to admin_accounting_journal_entry_path(@journal_entry),
+                             alert: t("accounting.reversal.already_reversed")
+        end
+
+        reversal = nil
         ActiveRecord::Base.transaction do
-          reverse_je_treasuries!(@journal_entry)
-          @journal_entry.destroy!
+          reversal = ::Accounting::JournalEntryService.record_reversal!(
+            original_je: @journal_entry, user: current_user
+          )
+          sync_je_treasuries!(reversal)
         end
 
-        redirect_to admin_accounting_journal_entries_path,
-                    notice: t("accounting.journal_entries.flash.deleted")
-      rescue ActiveRecord::RecordNotDestroyed => e
-        redirect_to admin_accounting_journal_entry_path(@journal_entry),
-                    alert: e.message
+        redirect_to admin_accounting_journal_entry_path(reversal),
+                    notice: t("accounting.journal_entries.flash.reversed",
+                              number: reversal.entry_number)
+      rescue ArgumentError => e
+        redirect_to admin_accounting_journal_entry_path(@journal_entry), alert: e.message
       end
 
       def new
@@ -102,20 +109,6 @@ module Admin
 
       def to_cents(pounds)
         (pounds.to_f * 100).round
-      end
-
-      # Undo treasury movements created by sync_je_treasuries! when a manual JE
-      # is deleted. Each TreasuryTransaction sourced on the JE is destroyed and
-      # the treasury balance is reversed by the same amount.
-      def reverse_je_treasuries!(je)
-        TreasuryTransaction
-          .where(source_record_type: "JournalEntry", source_record_id: je.id)
-          .find_each do |txn|
-            txn.treasury.with_lock do
-              txn.treasury.apply_balance_delta!(-txn.amount_cents)
-              txn.destroy!
-            end
-          end
       end
 
       def resolve_code(kind, id, account_type, name)

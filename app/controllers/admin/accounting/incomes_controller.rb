@@ -3,7 +3,7 @@
 module Admin
   module Accounting
     class IncomesController < BaseController
-      before_action :set_income, only: %i[edit update destroy]
+      before_action :set_income, only: %i[edit update reverse]
 
       def index
         parse_date_range
@@ -17,6 +17,7 @@ module Admin
         @active_category_id = params[:category_id].presence
         @totals_by_category = Income.joins(:income_category)
           .on_date_range(@start_date, @end_date)
+          .where(reversed_at: nil)
           .group("income_categories.id", "income_categories.name")
           .sum(:amount_cents)
         @categories = IncomeCategory.ordered
@@ -59,11 +60,31 @@ module Admin
         end
       end
 
-      def destroy
-        authorize @income
-        AuditLogEntry.record!(action: "income.delete", record: @income, user: current_user)
-        @income.destroy!
-        redirect_to admin_accounting_incomes_path, notice: t("flash.accounting.income_removed")
+      def reverse
+        authorize @income, :destroy?
+        je = JournalEntry.for_source(@income).first
+
+        if je.nil?
+          return redirect_to admin_accounting_incomes_path,
+                             alert: t("accounting.reversal.no_journal_entry")
+        end
+
+        if @income.reversed_at.present? || je.reversed?
+          return redirect_to admin_accounting_incomes_path,
+                             alert: t("accounting.reversal.already_reversed")
+        end
+
+        ActiveRecord::Base.transaction do
+          reversal = ::Accounting::JournalEntryService.record_reversal!(
+            original_je: je, user: current_user
+          )
+          sync_je_treasuries!(reversal)
+          @income.update_column(:reversed_at, Time.current)
+          AuditLogEntry.record!(action: "income.reverse", record: @income, user: current_user)
+        end
+
+        redirect_to admin_accounting_incomes_path,
+                    notice: t("accounting.reversal.income_reversed")
       end
 
       private

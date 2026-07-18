@@ -24,6 +24,9 @@
     <%= link_to t("accounting.journal_entries.filter.manual"),
           admin_accounting_journal_entries_path(start_date: params[:start_date], end_date: params[:end_date], entry_type: "manual"),
           class: "text-sm px-4 py-2 rounded-xl border font-medium #{@entry_type == 'manual' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}" %>
+    <%= link_to t("accounting.journal_entries.filter.reversal"),
+          admin_accounting_journal_entries_path(start_date: params[:start_date], end_date: params[:end_date], entry_type: "reversal"),
+          class: "text-sm px-4 py-2 rounded-xl border font-medium #{@entry_type == 'reversal' ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}" %>
   </div>
 
   <% if @journal_entries.empty? %>
@@ -54,6 +57,10 @@
                 <% if entry.auto? %>
                   <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700 border border-blue-200">
                     <%= t("accounting.journal_entries.type.auto") %>
+                  </span>
+                <% elsif entry.reversal? %>
+                  <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                    <%= t("accounting.journal_entries.type.reversal") %>
                   </span>
                 <% else %>
                   <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-700 border border-amber-200">

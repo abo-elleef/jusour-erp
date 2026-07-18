@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_18_000020) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_18_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -246,10 +246,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000020) do
     t.datetime "updated_at", null: false
     t.uuid "treasury_id"
     t.uuid "company_id", null: false
+    t.datetime "reversed_at"
     t.index ["company_id"], name: "index_expenses_on_company_id"
     t.index ["expense_category_id"], name: "index_expenses_on_expense_category_id"
     t.index ["expense_date"], name: "index_expenses_on_expense_date"
     t.index ["is_auto_generated"], name: "index_expenses_on_is_auto_generated"
+    t.index ["reversed_at"], name: "index_expenses_on_reversed_at"
     t.index ["source_record_type", "source_record_id"], name: "index_expenses_on_source_record_type_and_source_record_id"
     t.index ["treasury_id"], name: "index_expenses_on_treasury_id"
     t.index ["user_id"], name: "index_expenses_on_user_id"
@@ -315,10 +317,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000020) do
     t.datetime "updated_at", null: false
     t.uuid "treasury_id"
     t.uuid "company_id", null: false
+    t.datetime "reversed_at"
     t.index ["company_id"], name: "index_incomes_on_company_id"
     t.index ["income_category_id"], name: "index_incomes_on_income_category_id"
     t.index ["income_date"], name: "index_incomes_on_income_date"
     t.index ["is_auto_generated"], name: "index_incomes_on_is_auto_generated"
+    t.index ["reversed_at"], name: "index_incomes_on_reversed_at"
     t.index ["source_record_type", "source_record_id"], name: "index_incomes_on_source_record_type_and_source_record_id"
     t.index ["treasury_id"], name: "index_incomes_on_treasury_id"
     t.index ["user_id"], name: "index_incomes_on_user_id"
@@ -390,10 +394,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000020) do
     t.string "entry_type", default: "auto", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "reversal_of_id"
     t.index ["company_id", "date"], name: "index_journal_entries_on_company_id_and_date"
     t.index ["company_id"], name: "index_journal_entries_on_company_id"
     t.index ["created_by_id"], name: "index_journal_entries_on_created_by_id"
     t.index ["entry_number"], name: "index_journal_entries_on_entry_number", unique: true
+    t.index ["reversal_of_id"], name: "index_journal_entries_on_reversal_of_id"
     t.index ["source_record_type", "source_record_id"], name: "idx_on_source_record_type_source_record_id_459d508040"
   end
 
@@ -1273,6 +1279,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_000020) do
   add_foreign_key "ingredients", "ingredient_categories"
   add_foreign_key "ingredients", "units"
   add_foreign_key "journal_entries", "companies"
+  add_foreign_key "journal_entries", "journal_entries", column: "reversal_of_id"
   add_foreign_key "journal_entries", "users", column: "created_by_id"
   add_foreign_key "journal_entry_lines", "journal_entries"
   add_foreign_key "journal_entry_lines", "treasuries"
