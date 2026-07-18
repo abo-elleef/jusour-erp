@@ -78,13 +78,22 @@ class StockTransfer < ApplicationRecord
   def assign_transfer_number
     return if transfer_number.present?
 
-    date_prefix = Date.current.strftime("%Y-%m-%d")
-    prefix = "ST-#{date_prefix}-"
-    last_seq = self.class.unscoped_by_company
-      .where(company_id: company_id)
-      .where("transfer_number LIKE ?", "#{prefix}%")
-      .count
-    self.transfer_number = format("%s%04d", prefix, last_seq + 1)
+    self.transfer_number = self.class.next_transfer_number(company: company || Current.company)
+  end
+
+  # "ST-<year>-<sequence>", e.g. ST-2026-00001. Company-wide sequence that resets
+  # each year; legacy dated numbers (ST-YYYY-MM-DD-NNNN) are ignored so the yearly
+  # series starts clean. (A class method, so `private` above doesn't hide it.)
+  def self.next_transfer_number(company: Current.company, year: Date.current.year)
+    prefix = "ST-#{year}-"
+    return "#{prefix}00001" if company.blank?
+
+    max_seq = unscoped_by_company
+      .where(company_id: company.id)
+      .where("transfer_number ~ ?", "^ST-#{year}-[0-9]+$")
+      .maximum(Arel.sql("CAST(SUBSTRING(transfer_number FROM #{prefix.length + 1}) AS INTEGER)"))
+
+    format("%s%05d", prefix, (max_seq || 0) + 1)
   end
 
   def stamp_requested_at

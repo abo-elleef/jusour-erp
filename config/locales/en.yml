@@ -902,7 +902,7 @@ en:
       back_to_invoice: "← Back to invoice"
       invoice_number: "Invoice #"
       invoice_number_placeholder: "INV-0001…"
-      invoice_number_auto_hint: "Auto-generated from today's date. Edit to match the supplier's paper invoice if needed."
+      invoice_number_auto_hint: "Auto-generated as VI-<year>-<sequence>. Edit to match the supplier's paper invoice if needed."
       invoice_date: "Invoice date"
       received_on: "Received on"
       supplier: "Supplier"
@@ -1711,6 +1711,9 @@ en:
       form_heading: "Category details"
       form_hint: "Name and visibility on the POS"
       name: "Name"
+      code: "Code"
+      code_placeholder: "e.g. BURG"
+      code_hint: "Short prefix used in this category's menu item codes (e.g. BURG-001). Auto-filled from the name; editable."
       position: "Display position"
       position_hint: "Lower numbers appear first. You can also drag to reorder on the list."
       active_label: "Active on POS"
@@ -1750,13 +1753,19 @@ en:
       available: "Available"
       unavailable: "Unavailable"
       filters: "Filters"
-      filters_hint: "Narrow by category"
+      filters_hint: "Search by name or code, or narrow by category"
+      search: "Search"
+      search_placeholder: "Name or code…"
+      select_category: "Select category…"
+      code_placeholder: "Auto-assigned (e.g. BURG-001)"
+      code_hint: "A short reference code, prefixed by the category. Auto-assigned; you can set a custom one."
       category: "Category"
       all_categories: "All categories"
       showing_items:
         one: "Showing %{count} item"
         other: "Showing %{count} items"
       table:
+        code: "Code"
         name: "Name"
         category: "Category"
         price: "Price"
@@ -2997,6 +3006,10 @@ en:
   activerecord:
     errors:
       models:
+        category:
+          attributes:
+            code:
+              alphanumeric_only: "may only contain letters and numbers"
         ingredient:
           attributes:
             unit:

@@ -904,7 +904,7 @@ ar:
       back_to_invoice: "← العودة إلى الفاتورة"
       invoice_number: "رقم الفاتورة"
       invoice_number_placeholder: "INV-0001…"
-      invoice_number_auto_hint: "يُولَّد تلقائياً من تاريخ اليوم. عدّله ليطابق رقم فاتورة المورد الورقية إن لزم."
+      invoice_number_auto_hint: "يُولَّد تلقائياً بالصيغة VI-<السنة>-<التسلسل>. عدّله ليطابق رقم فاتورة المورد الورقية إن لزم."
       invoice_date: "تاريخ الفاتورة"
       received_on: "تاريخ الاستلام"
       supplier: "المورد"
@@ -1723,6 +1723,9 @@ ar:
       form_heading: "بيانات التصنيف"
       form_hint: "الاسم والظهور على نقطة البيع"
       name: "الاسم"
+      code: "الكود"
+      code_placeholder: "مثال: BURG"
+      code_hint: "بادئة قصيرة تُستخدم في أكواد أصناف هذا التصنيف (مثال: BURG-001). تُملأ تلقائياً من الاسم، وقابلة للتعديل."
       position: "ترتيب العرض"
       position_hint: "الأرقام الأصغر تظهر أولاً. يمكنك أيضاً السحب لإعادة الترتيب من القائمة."
       active_label: "نشط على نقطة البيع"
@@ -1762,13 +1765,19 @@ ar:
       available: "متاح"
       unavailable: "غير متاح"
       filters: "التصفية"
-      filters_hint: "تصفية حسب التصنيف"
+      filters_hint: "ابحث بالاسم أو الكود، أو صفِّ حسب التصنيف"
+      search: "بحث"
+      search_placeholder: "الاسم أو الكود…"
+      select_category: "اختر التصنيف…"
+      code_placeholder: "يُنشأ تلقائياً (مثال: BURG-001)"
+      code_hint: "كود مرجعي قصير مسبوق بكود التصنيف. يُنشأ تلقائياً، ويمكنك تعيين كود مخصص."
       category: "التصنيف"
       all_categories: "كل التصنيفات"
       showing_items:
         one: "عرض %{count} صنف"
         other: "عرض %{count} أصناف"
       table:
+        code: "الكود"
         name: "الاسم"
         category: "التصنيف"
         price: "السعر"
@@ -3029,6 +3038,10 @@ ar:
   activerecord:
     errors:
       models:
+        category:
+          attributes:
+            code:
+              alphanumeric_only: "يجب أن يحتوي على أحرف وأرقام فقط"
         ingredient:
           attributes:
             unit:

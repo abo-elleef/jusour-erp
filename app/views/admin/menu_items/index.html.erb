@@ -43,6 +43,10 @@
       <div class="p-5">
         <%= form_with url: admin_menu_items_path, method: :get, class: "flex flex-wrap items-end gap-4" do %>
           <div class="min-w-[12rem] flex-1 max-w-xs">
+            <%= label_tag :search, t("admin.menu_items.search"), class: label_class %>
+            <%= search_field_tag :search, @search, placeholder: t("admin.menu_items.search_placeholder"), class: input_class %>
+          </div>
+          <div class="min-w-[12rem] flex-1 max-w-xs">
             <%= label_tag :category_id, t("admin.menu_items.category"), class: label_class %>
             <%= select_tag :category_id,
                   options_from_collection_for_select(@categories, :id, :name, @filtered_category_id),
@@ -51,7 +55,7 @@
           </div>
           <%= submit_tag t("actions.apply_filters"),
                 class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
-          <% if @filtered_category_id.present? %>
+          <% if @filtered_category_id.present? || @search.present? %>
             <%= link_to t("actions.clear"), admin_menu_items_path,
                   class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
           <% end %>
@@ -70,6 +74,7 @@
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
               <th class="p-3 pl-5 w-16"></th>
+              <th class="p-3"><%= t("admin.menu_items.table.code") %></th>
               <th class="p-3"><%= t("admin.menu_items.table.name") %></th>
               <th class="p-3"><%= t("admin.menu_items.table.category") %></th>
               <th class="p-3 text-right"><%= t("admin.menu_items.table.price") %></th>
@@ -89,6 +94,9 @@
                       <%= t("accounting.shared.em_dash") %>
                     </div>
                   <% end %>
+                </td>
+                <td class="p-3">
+                  <span class="font-mono text-xs font-semibold text-amber-700 whitespace-nowrap"><%= item.code %></span>
                 </td>
                 <td class="p-3">
                   <span class="font-semibold text-gray-900"><%= item.name %></span>

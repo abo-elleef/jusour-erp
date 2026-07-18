@@ -18,12 +18,19 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div>
           <%= f.label :category_id, t("admin.menu_items.category"), class: label_class %>
-          <%= f.collection_select :category_id, @categories, :id, :name, {},
-                class: "#{input_class} appearance-none" %>
+          <%= f.collection_select :category_id, @categories, :id, :name,
+                { prompt: t("admin.menu_items.select_category") },
+                class: "#{input_class} appearance-none", required: true %>
         </div>
         <div>
           <%= f.label :name, t("admin.menu_items.table.name"), class: label_class %>
           <%= f.text_field :name, class: input_class, autofocus: true %>
+        </div>
+        <div>
+          <%= f.label :code, t("admin.menu_items.table.code"), class: label_class %>
+          <%= f.text_field :code, class: "#{input_class} font-mono",
+                placeholder: t("admin.menu_items.code_placeholder") %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.menu_items.code_hint") %></p>
         </div>
       </div>
 

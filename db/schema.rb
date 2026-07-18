@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_17_061625) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_18_000020) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -114,6 +114,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_17_061625) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.string "code", null: false
+    t.index "company_id, lower((code)::text)", name: "index_categories_on_company_and_lower_code", unique: true
     t.index ["company_id", "name"], name: "index_categories_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_categories_on_company_id"
     t.index ["position"], name: "index_categories_on_position"
@@ -539,6 +541,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_17_061625) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.string "code", null: false
+    t.index "company_id, lower((code)::text)", name: "index_menu_items_on_company_and_lower_code", unique: true
     t.index ["available"], name: "index_menu_items_on_available"
     t.index ["category_id"], name: "index_menu_items_on_category_id"
     t.index ["company_id"], name: "index_menu_items_on_company_id"

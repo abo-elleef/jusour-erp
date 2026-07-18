@@ -15,6 +15,9 @@ module Admin
         @menu_items = @menu_items.where(category_id: params[:category_id])
         @filtered_category_id = params[:category_id]
       end
+      if (@search = params[:search].to_s.strip).present?
+        @menu_items = @menu_items.where("menu_items.name ILIKE :s OR menu_items.code ILIKE :s", s: "%#{@search}%")
+      end
       @categories = Category.active.ordered
       authorize MenuItem
     end
@@ -98,7 +101,7 @@ module Admin
 
     def menu_item_params
       params.require(:menu_item).permit(
-        :category_id, :name, :description, :base_price_pounds, :tax_category,
+        :category_id, :name, :code, :description, :base_price_pounds, :tax_category,
         :available, :position, :image
       )
     end

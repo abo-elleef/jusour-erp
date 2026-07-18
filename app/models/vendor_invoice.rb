@@ -43,16 +43,19 @@ class VendorInvoice < ApplicationRecord
   before_validation :assign_invoice_number, on: :create
   before_save :recalculate_total
 
-  def self.next_invoice_number(date: Date.current, company: Current.company)
-    prefix = "VI-#{date.strftime("%Y-%m-%d")}-"
-    return format("%s%04d", prefix, 1) if company.blank?
+  # "VI-<year>-<sequence>", e.g. VI-2026-00001. The sequence is company-wide and
+  # resets each year. Legacy dated numbers (VI-YYYY-MM-DD-NNNN) are ignored when
+  # computing the next value, so the yearly series starts clean.
+  def self.next_invoice_number(company: Current.company, year: Date.current.year)
+    prefix = "VI-#{year}-"
+    return "#{prefix}00001" if company.blank?
 
-    last_seq = unscoped_by_company
+    max_seq = unscoped_by_company
       .where(company_id: company.id)
-      .where("invoice_number LIKE ?", "#{prefix}%")
-      .count
+      .where("invoice_number ~ ?", "^VI-#{year}-[0-9]+$")
+      .maximum(Arel.sql("CAST(SUBSTRING(invoice_number FROM #{prefix.length + 1}) AS INTEGER)"))
 
-    format("%s%04d", prefix, last_seq + 1)
+    format("%s%05d", prefix, (max_seq || 0) + 1)
   end
 
   def unpaid?

@@ -21,6 +21,13 @@
       </div>
 
       <div>
+        <%= f.label :code, t("admin.categories.code"), class: label_class %>
+        <%= f.text_field :code, class: "#{input_class} font-mono uppercase",
+              placeholder: t("admin.categories.code_placeholder") %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.categories.code_hint") %></p>
+      </div>
+
+      <div>
         <%= f.label :position, t("admin.categories.position"), class: label_class %>
         <%= f.number_field :position, min: 0, class: input_class %>
         <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.categories.position_hint") %></p>
