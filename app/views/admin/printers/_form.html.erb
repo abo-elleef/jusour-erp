@@ -101,6 +101,15 @@
         <% end %>
         <p class="text-xs text-gray-500"><%= t("printers.form.network_hint") %></p>
       </div>
+
+      <div data-printer-form-target="usbFields" class="space-y-3 <%= "hidden" unless printer.usb? %>">
+        <div>
+          <%= f.label :host, t("printers.fields.usb_device"), class: label_class %>
+          <%= f.text_field :host, class: input_class, placeholder: "USB001",
+                data: { printer_form_target: "usbDevice" } %>
+        </div>
+        <p class="text-xs text-gray-500"><%= t("printers.form.usb_hint") %></p>
+      </div>
     </div>
   </section>
 

@@ -19,6 +19,9 @@ class Printer < ApplicationRecord
   validates :paper_width, inclusion: { in: PAPER_WIDTHS }
   validates :port, numericality: { only_integer: true, greater_than: 0, less_than: 65_536 }, allow_nil: true
   validates :host, presence: true, if: :network?
+  validates :host, presence: true, if: :usb?,
+            format: { with: /\A[A-Za-z0-9]+\z/, message: :usb_device_format },
+            allow_blank: false
   validate :host_format, if: :network?
 
   scope :active, -> { where(active: true) }
@@ -47,7 +50,7 @@ class Printer < ApplicationRecord
     if network?
       [host, port].compact.join(":")
     else
-      I18n.t("printers.connection_types.usb")
+      host.present? ? "USB — #{host}" : I18n.t("printers.connection_types.usb")
     end
   end
 
@@ -73,7 +76,8 @@ class Printer < ApplicationRecord
   private
 
   def normalize_host
-    self.host = host.to_s.strip.presence
+    self.host = host.to_s.strip.upcase.presence if usb?
+    self.host = host.to_s.strip.presence if network?
     self.port = nil if usb?
   end
 

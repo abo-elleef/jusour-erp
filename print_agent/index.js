@@ -3,6 +3,7 @@
 
 const http = require("http")
 const net = require("net")
+const fs = require("fs")
 const { execFile, spawn } = require("child_process")
 const { promisify } = require("util")
 
@@ -65,6 +66,29 @@ function sendJson(res, status, body, origin) {
 function authorized(req) {
   if (!TOKEN) return true
   return req.headers["x-print-agent-token"] === TOKEN
+}
+
+// ─── USB print (Windows) ──────────────────────────────────────────────────────
+
+function printToUsb(device, data) {
+  return new Promise((resolve, reject) => {
+    // Windows exposes USB printer ports as \\.\USB001, USB002, etc.
+    // Normalise: accept "USB001" or "\\\\.\\USB001"
+    const devicePath = device.startsWith("\\\\.\\") ? device : `\\\\.\\${device}`
+    fs.open(devicePath, "w", (openErr, fd) => {
+      if (openErr) {
+        return reject(new Error(`Cannot open USB device ${devicePath}: ${openErr.message}`))
+      }
+      fs.write(fd, data, 0, data.length, null, (writeErr) => {
+        fs.close(fd, () => {})
+        if (writeErr) {
+          reject(new Error(`Write to ${devicePath} failed: ${writeErr.message}`))
+        } else {
+          resolve()
+        }
+      })
+    })
+  })
 }
 
 // ─── Network print ────────────────────────────────────────────────────────────
@@ -218,26 +242,50 @@ const server = http.createServer(async (req, res) => {
     // ── POST /print ──────────────────────────────────────────────────────────
     if (req.method === "POST" && req.url === "/print") {
       const body = await readBody(req)
-      const host = (body.host || "").toString().trim()
-      const port = parseInt(body.port || "9100", 10)
+      const connection = (body.connection || "network").toString().trim()
       const dataBase64 = body.data_base64 || ""
 
-      if (!host || !dataBase64) {
-        logWarn("Print request rejected — missing host or data_base64")
-        sendJson(res, 422, { error: "host and data_base64 are required" }, origin)
+      if (!dataBase64) {
+        logWarn("Print request rejected — missing data_base64")
+        sendJson(res, 422, { error: "data_base64 is required" }, origin)
         return
       }
 
       const data = Buffer.from(dataBase64, "base64")
-      logInfo(`Sending ${data.length} bytes to printer ${host}:${port} …`)
 
-      try {
-        await printToNetwork(host, port, data)
-        logOk(`Print SUCCESS — ${data.length} bytes sent to ${host}:${port}`)
-        sendJson(res, 200, { ok: true, bytes: data.length }, origin)
-      } catch (printErr) {
-        logError(`Print FAILED — ${host}:${port} — ${printErr.message}`)
-        sendJson(res, 500, { ok: false, error: printErr.message }, origin)
+      if (connection === "usb") {
+        const device = (body.device || "").toString().trim()
+        if (!device) {
+          logWarn("Print request rejected — missing device for USB connection")
+          sendJson(res, 422, { error: "device is required for USB connection (e.g. USB001)" }, origin)
+          return
+        }
+        logInfo(`Sending ${data.length} bytes to USB device ${device} …`)
+        try {
+          await printToUsb(device, data)
+          logOk(`Print SUCCESS — ${data.length} bytes sent to USB ${device}`)
+          sendJson(res, 200, { ok: true, bytes: data.length }, origin)
+        } catch (printErr) {
+          logError(`Print FAILED — USB ${device} — ${printErr.message}`)
+          sendJson(res, 500, { ok: false, error: printErr.message }, origin)
+        }
+      } else {
+        const host = (body.host || "").toString().trim()
+        const port = parseInt(body.port || "9100", 10)
+        if (!host) {
+          logWarn("Print request rejected — missing host for network connection")
+          sendJson(res, 422, { error: "host is required for network connection" }, origin)
+          return
+        }
+        logInfo(`Sending ${data.length} bytes to printer ${host}:${port} …`)
+        try {
+          await printToNetwork(host, port, data)
+          logOk(`Print SUCCESS — ${data.length} bytes sent to ${host}:${port}`)
+          sendJson(res, 200, { ok: true, bytes: data.length }, origin)
+        } catch (printErr) {
+          logError(`Print FAILED — ${host}:${port} — ${printErr.message}`)
+          sendJson(res, 500, { ok: false, error: printErr.message }, origin)
+        }
       }
       return
     }

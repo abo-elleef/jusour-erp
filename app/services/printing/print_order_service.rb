@@ -17,18 +17,16 @@ module Printing
       printer = @printer || Printer.default_for(default_printer_type, location: @order.location)
       return log_skipped(nil, "no_active_#{@print_type}_printer") unless printer
 
-      if printer.usb?
-        return log_skipped(printer, "usb_printer_requires_local_agent")
-      end
-
       payload = build_payload(printer)
 
-      if Config.client_routing?
+      if printer.usb?
+        print_via_agent_usb(printer, payload)
+      elsif Config.client_routing?
         queue_client_print(printer, payload)
       else
         print_via_server(printer, payload)
       end
-    rescue Drivers::Network::Error, StandardError => e
+    rescue Drivers::Network::Error, Drivers::PrintAgent::Error, StandardError => e
       log_failure(printer, e.message)
       Rails.logger.error("[Printing] #{@print_type} failed for order #{@order.order_number}: #{e.message}")
     end
@@ -73,6 +71,16 @@ module Printing
       else
         printer.station.presence || printer.name
       end
+    end
+
+    def print_via_agent_usb(printer, payload)
+      device = printer.host.to_s.strip
+      if device.blank?
+        return log_skipped(printer, "usb_printer_missing_device_name")
+      end
+
+      Drivers::PrintAgent.print_usb!(device: device, data: payload)
+      log_success(printer)
     end
 
     def print_via_server(printer, payload)

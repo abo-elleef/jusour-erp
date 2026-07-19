@@ -1,17 +1,25 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["connectionType", "networkFields", "printerType", "menuItemsSection"]
+  static targets = ["connectionType", "networkFields", "usbFields", "printerType", "menuItemsSection"]
   static values = { productionTypes: { type: Array, default: ["kitchen", "bar"] } }
 
   connect() {
-    this.toggleNetwork()
+    this.toggleConnection()
     this.toggleMenuItems()
   }
 
+  toggleConnection() {
+    const val = this.connectionTypeTarget.value
+    this.networkFieldsTarget.classList.toggle("hidden", val !== "network")
+    if (this.hasUsbFieldsTarget) {
+      this.usbFieldsTarget.classList.toggle("hidden", val !== "usb")
+    }
+  }
+
+  // kept as alias so existing data-action="change->printer-form#toggleNetwork" still works
   toggleNetwork() {
-    const isNetwork = this.connectionTypeTarget.value === "network"
-    this.networkFieldsTarget.classList.toggle("hidden", !isNetwork)
+    this.toggleConnection()
   }
 
   toggleMenuItems() {
