@@ -45,12 +45,20 @@ module Admin
 
       def edit
         authorize @expense
+        if @expense.reversed_at.present?
+          return redirect_to admin_accounting_expenses_path,
+                             alert: t("accounting.reversal.cannot_edit_reversed")
+        end
         @categories = ExpenseCategory.manual.ordered
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       end
 
       def update
         authorize @expense
+        if @expense.reversed_at.present?
+          return redirect_to admin_accounting_expenses_path,
+                             alert: t("accounting.reversal.cannot_edit_reversed")
+        end
         if @expense.update(expense_params)
           redirect_to admin_accounting_expenses_path, notice: t("flash.accounting.expense_updated")
         else

@@ -323,6 +323,11 @@ module Accounting
           company_id:         Current.company.id
         )
         scope = scope.where("description LIKE ?", "%[#{kind}]%") if kind
+
+        if scope.joins("INNER JOIN journal_entries reversals ON reversals.reversal_of_id = journal_entries.id").exists?
+          raise ArgumentError, I18n.t("accounting.reversal.cannot_edit_reversed")
+        end
+
         scope.destroy_all
       end
 

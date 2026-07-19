@@ -23,6 +23,7 @@ class Expense < ApplicationRecord
   validates :recurrence, inclusion: { in: RECURRENCES }
   validates :amount_cents, numericality: { greater_than: 0 }
   validates :treasury, presence: true, unless: :is_auto_generated?
+  validate :immutable_once_reversed, on: :update
 
   scope :manual, -> { where(is_auto_generated: false) }
   scope :auto_generated, -> { where(is_auto_generated: true) }
@@ -52,5 +53,9 @@ class Expense < ApplicationRecord
   def remove_treasury_ledger
     Accounting::TreasuryLedgerService.remove_source!(self)
     # JEs are intentionally preserved on delete — reversals maintain the audit sequence
+  end
+
+  def immutable_once_reversed
+    errors.add(:base, I18n.t("accounting.reversal.cannot_edit_reversed")) if reversed_at.present?
   end
 end

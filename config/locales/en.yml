@@ -2524,6 +2524,7 @@ en:
       income_reversed: "Reversal entry created. Income accounting effect cancelled."
       reverses_link: "Reversal of:"
       reversed_by_link: "Reversed by:"
+      cannot_edit_reversed: "Reversed records cannot be edited. Create a new entry instead."
     expenses:
       title: "Expenses"
       new: "New expense"

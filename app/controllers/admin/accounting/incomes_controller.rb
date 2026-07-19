@@ -45,12 +45,20 @@ module Admin
 
       def edit
         authorize @income
+        if @income.reversed_at.present?
+          return redirect_to admin_accounting_incomes_path,
+                             alert: t("accounting.reversal.cannot_edit_reversed")
+        end
         @categories = IncomeCategory.manual.ordered
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       end
 
       def update
         authorize @income
+        if @income.reversed_at.present?
+          return redirect_to admin_accounting_incomes_path,
+                             alert: t("accounting.reversal.cannot_edit_reversed")
+        end
         if @income.update(income_params)
           redirect_to admin_accounting_incomes_path, notice: t("flash.accounting.income_updated")
         else
