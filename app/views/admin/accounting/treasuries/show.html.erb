@@ -33,24 +33,22 @@
 
   <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
     <h2 class="text-sm font-semibold text-gray-900 mb-4"><%= t("accounting.treasuries.manual_adjustment") %></h2>
-    <%= form_with url: adjust_admin_accounting_treasury_path(@treasury), method: :post, class: "grid sm:grid-cols-4 gap-4 items-end" do %>
-      <div>
+    <%= form_with url: adjust_admin_accounting_treasury_path(@treasury), method: :post, class: "flex flex-wrap items-end gap-4" do %>
+      <div class="min-w-[10rem]">
         <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.amount") %></label>
         <%= number_field_tag :amount_pounds, nil, step: "0.01", class: pos_input_class, placeholder: "50.00 or -50.00", required: true %>
-        <p class="text-xs text-gray-500 mt-1"><%= t("accounting.treasuries.adjustment_hint") %></p>
       </div>
-      <div>
+      <div class="min-w-[10rem]">
         <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.day") %></label>
         <%= date_field_tag :occurred_on, Date.current, class: pos_input_class %>
       </div>
-      <div class="sm:col-span-2">
+      <div class="flex-1 min-w-[12rem]">
         <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.description") %></label>
         <%= text_field_tag :description, nil, class: pos_input_class, placeholder: t("accounting.treasuries.adjustment_placeholder") %>
       </div>
-      <div>
-        <%= submit_tag t("accounting.treasuries.record_adjustment"), class: "bg-gray-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold w-full sm:w-auto" %>
-      </div>
+      <%= submit_tag t("accounting.treasuries.record_adjustment"), class: "bg-gray-900 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shrink-0" %>
     <% end %>
+    <p class="text-xs text-gray-400 mt-2"><%= t("accounting.treasuries.adjustment_hint") %></p>
   </section>
 
   <%= render "admin/accounting/date_range_form" %>

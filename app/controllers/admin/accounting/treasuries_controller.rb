@@ -27,6 +27,15 @@ module Admin
       def show
         authorize @treasury
         parse_date_range
+        txn_scope = @treasury.treasury_transactions.on_date_range(@start_date, @end_date)
+        @total_count    = txn_scope.count
+        @active_count   = txn_scope.where("amount_cents > 0").count
+        @reversed_count = txn_scope.where("amount_cents < 0").count
+        @count_labels   = {
+          total:    t("accounting.treasuries.stats_total"),
+          active:   t("accounting.treasuries.stats_in"),
+          reversed: t("accounting.treasuries.stats_out")
+        }
         @transactions = @treasury.treasury_transactions
           .includes(:user, :source_record)
           .on_date_range(@start_date, @end_date)

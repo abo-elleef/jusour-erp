@@ -13,6 +13,14 @@ module Admin
         scope = scope.by_type(params[:entry_type]) if params[:entry_type].present?
 
         @entry_type      = params[:entry_type]
+        @total_count     = scope.count
+        @reversed_count  = scope.where(entry_type: "reversal").count
+        @active_count    = @total_count - @reversed_count
+        @count_labels    = {
+          total:    t("accounting.journal_entries.stats_total"),
+          active:   t("accounting.journal_entries.stats_original"),
+          reversed: t("accounting.journal_entries.stats_reversals")
+        }
         @journal_entries = scope
       end
 

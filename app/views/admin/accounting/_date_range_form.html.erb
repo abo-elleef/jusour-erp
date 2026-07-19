@@ -13,18 +13,22 @@
       <% end %>
     </div>
     <% if defined?(@total_count) && @total_count %>
+      <% labels = defined?(@count_labels) && @count_labels ||
+                  { total:    t("accounting.reversal.stats_total"),
+                    active:   t("accounting.reversal.stats_active"),
+                    reversed: t("accounting.reversal.stats_reversed") } %>
       <div class="flex items-center gap-2 text-xs shrink-0">
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-gray-600 font-medium">
           <span class="font-bold text-gray-800 tabular-nums"><%= @total_count %></span>
-          <%= t("accounting.reversal.stats_total") %>
+          <%= labels[:total] %>
         </span>
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-amber-200 text-amber-700 font-medium">
           <span class="font-bold tabular-nums"><%= @active_count %></span>
-          <%= t("accounting.reversal.stats_active") %>
+          <%= labels[:active] %>
         </span>
         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-red-200 text-red-600 font-medium">
           <span class="font-bold tabular-nums"><%= @reversed_count %></span>
-          <%= t("accounting.reversal.stats_reversed") %>
+          <%= labels[:reversed] %>
         </span>
       </div>
     <% end %>
