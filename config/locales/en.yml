@@ -2525,6 +2525,9 @@ en:
       reverses_link: "Reversal of:"
       reversed_by_link: "Reversed by:"
       cannot_edit_reversed: "Reversed records cannot be edited. Create a new entry instead."
+      stats_total: "Total"
+      stats_active: "Counted in totals"
+      stats_reversed: "Reversed"
     expenses:
       title: "Expenses"
       new: "New expense"

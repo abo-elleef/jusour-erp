@@ -13,6 +13,9 @@ module Admin
         scope = scope.where(is_auto_generated: false) if params[:manual_only] == "1"
         scope = scope.where(expense_category_id: params[:category_id]) if params[:category_id].present?
 
+        @total_count    = scope.count
+        @reversed_count = scope.where.not(reversed_at: nil).count
+        @active_count   = scope.where(reversed_at: nil).count
         @expenses = scope.order(expense_date: :desc, created_at: :desc).limit(200)
         @active_category_id = params[:category_id].presence
         @totals_by_category = Expense.joins(:expense_category)

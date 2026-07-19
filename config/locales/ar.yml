@@ -2543,6 +2543,9 @@ ar:
       reverses_link: "عكس للقيد:"
       reversed_by_link: "معكوس بواسطة:"
       cannot_edit_reversed: "لا يمكن تعديل السجلات المعكوسة. أنشئ قيداً جديداً بدلاً من ذلك."
+      stats_total: "الإجمالي"
+      stats_active: "محسوب في الإجماليات"
+      stats_reversed: "معكوس"
     expenses:
       title: "المصروفات"
       new: "مصروف جديد"
