@@ -153,20 +153,20 @@ module ApplicationHelper
     case je.source_record_type
     when "VendorInvoice"
       record = je.source_record
-      record ? "#{t('activerecord.models.vendor_invoice')} #{record.invoice_number}" : fallback_je_source_label(je)
+      record ? "#{t('activerecord.models.vendor_invoice', count: 1)} #{record.invoice_number}" : fallback_je_source_label(je)
     when "VendorInvoicePayment"
       payment = je.source_record
       invoice = payment&.vendor_invoice
-      invoice ? "#{t('activerecord.models.vendor_invoice')} #{invoice.invoice_number} — #{t('accounting.journal_entries.payment_label')}" : fallback_je_source_label(je)
+      invoice ? "#{t('activerecord.models.vendor_invoice', count: 1)} #{invoice.invoice_number} — #{t('accounting.journal_entries.payment_label')}" : fallback_je_source_label(je)
     when "Order"
       record = je.source_record
-      record ? "#{t('activerecord.models.order')} ##{record.order_number}" : fallback_je_source_label(je)
+      record ? "#{t('activerecord.models.order', count: 1)} ##{record.order_number}" : fallback_je_source_label(je)
     when "Expense"
       record = je.source_record
-      record&.description.presence || t("activerecord.models.expense")
+      record&.description.presence || t("activerecord.models.expense", count: 1)
     when "Income"
       record = je.source_record
-      record&.description.presence || t("activerecord.models.income")
+      record&.description.presence || t("activerecord.models.income", count: 1)
     else
       fallback_je_source_label(je)
     end
