@@ -2464,6 +2464,10 @@ en:
       auto: "(auto)"
       system: "(system)"
       em_dash: "—"
+      view_entry: "View entry →"
+      journal_entries_heading: "Journal Entries"
+      invoice_je_label: "Vendor Invoice"
+      payment_je_label: "Payment"
       orders_count:
         one: "%{count} order"
         other: "%{count} orders"

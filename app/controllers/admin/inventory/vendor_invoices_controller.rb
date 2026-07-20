@@ -25,6 +25,13 @@ module Admin
         @lines = @vendor_invoice.vendor_invoice_lines.includes(:ingredient, :stock_batch)
         @payments = @vendor_invoice.vendor_invoice_payments.includes(:user, :treasury).order(payment_date: :desc, created_at: :desc)
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+
+        @invoice_je = JournalEntry.for_source(@vendor_invoice).includes(:lines).first
+        payment_jes = JournalEntry.includes(:lines).where(
+          source_record_type: "VendorInvoicePayment",
+          source_record_id: @payments.map(&:id)
+        )
+        @payment_jes = payment_jes.index_by(&:source_record_id)
       end
 
       def new

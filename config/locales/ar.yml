@@ -2482,6 +2482,10 @@ ar:
       auto: "(تلقائي)"
       system: "(نظام)"
       em_dash: "—"
+      view_entry: "عرض القيد ←"
+      journal_entries_heading: "القيود المحاسبية"
+      invoice_je_label: "فاتورة مورد"
+      payment_je_label: "دفعة"
       orders_count:
         one: "طلب واحد"
         other: "%{count} طلبات"
