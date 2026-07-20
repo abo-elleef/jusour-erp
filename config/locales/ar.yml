@@ -2263,6 +2263,7 @@ ar:
       lines_heading: "أسطر المدين والدائن"
       totals: "الإجماليات"
       source_record: "المصدر"
+      payment_label: "دفعة"
       recorded_by: "سجله %{name}"
       total_entries: "%{count} قيد"
       new_button: "قيد جديد"
@@ -2299,6 +2300,10 @@ ar:
       stats_total: "القيود"
       stats_original: "أصلية"
       stats_reversals: "عكسية"
+      audit_log_heading: "سجل التدقيق"
+      audit:
+        create: "تم إنشاء القيد"
+        reverse: "تم عكس القيد"
       form:
         header: "تفاصيل القيد"
         date: "التاريخ"
@@ -2479,6 +2484,7 @@ ar:
       reference_number: "رقم المرجع"
       staff_meal_description: "وجبة موظف — %{name}"
       receipt: "إيصال"
+      recorded_by: "سجّله"
       auto: "(تلقائي)"
       system: "(نظام)"
       em_dash: "—"
@@ -2553,18 +2559,26 @@ ar:
       stats_total: "الإجمالي"
       stats_active: "محسوب في الإجماليات"
       stats_reversed: "معكوس"
+    recurrence:
+      one_time: "لمرة واحدة"
+      daily: "يومي"
+      weekly: "أسبوعي"
+      monthly: "شهري"
+      annually: "سنوي"
     expenses:
       title: "المصروفات"
       new: "مصروف جديد"
       edit: "تعديل المصروف"
       new_button: "مصروف جديد"
       delete_confirm: "حذف هذا المصروف؟"
+      recurrence: "التكرار"
     incomes:
       title: "الإيرادات"
       new: "إيراد جديد"
       edit: "تعديل الإيراد"
       new_button: "إيراد جديد"
       delete_confirm: "حذف هذا الإيراد؟"
+      recurrence: "التكرار"
     income_categories:
       title: "فئات الإيرادات"
       description: "جمّع الإيرادات حسب الفئة. فئات النظام تُدار تلقائيًا."

@@ -123,11 +123,64 @@
 
   <%# Source reference %>
   <% if @journal_entry.source_record_type.present? %>
+    <% source_path  = journal_entry_source_path(@journal_entry) %>
+    <% source_label = journal_entry_source_label(@journal_entry) %>
     <div class="rounded-xl border border-gray-200 bg-gray-50/60 px-5 py-4">
       <p class="text-xs text-gray-500">
         <%= t("accounting.journal_entries.source_record") %>:
-        <span class="font-medium text-gray-700"><%= @journal_entry.source_record_type %> #<%= @journal_entry.source_record_id %></span>
+        <% if source_path %>
+          <%= link_to source_label, source_path,
+                class: "font-medium text-amber-700 hover:text-amber-800 hover:underline" %>
+        <% else %>
+          <span class="font-medium text-gray-700"><%= source_label %></span>
+        <% end %>
       </p>
+    </div>
+  <% end %>
+
+  <%# Audit trail %>
+  <% if @audit_entries.any? %>
+    <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
+        <h3 class="text-sm font-semibold text-gray-700"><%= t("accounting.journal_entries.audit_log_heading") %></h3>
+      </div>
+      <ol class="divide-y divide-gray-50">
+        <% @audit_entries.each do |entry| %>
+          <li class="flex gap-4 px-5 py-3.5">
+            <div class="mt-0.5 shrink-0 w-2 h-2 rounded-full bg-amber-400 ring-4 ring-amber-50 self-start mt-2"></div>
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span class="text-xs font-semibold text-gray-900"><%= entry.user&.name || t("accounting.shared.em_dash") %></span>
+                <span class="font-mono text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded"><%= t("accounting.journal_entries.audit.#{entry.action.split('.').last}", default: entry.action) %></span>
+                <span class="text-xs text-gray-400 ms-auto tabular-nums"><%= l(entry.created_at, format: :short) %></span>
+              </div>
+              <% if entry.changes_snapshot.present? %>
+                <dl class="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-0.5 text-xs text-gray-600">
+                  <% entry.changes_snapshot.each do |key, value| %>
+                    <% next if value.is_a?(Array) %>
+                    <div class="flex gap-1.5">
+                      <dt class="text-gray-400 shrink-0"><%= key.to_s.humanize %>:</dt>
+                      <dd class="font-medium text-gray-700 truncate"><%= value %></dd>
+                    </div>
+                  <% end %>
+                  <% if entry.changes_snapshot["lines"].is_a?(Array) %>
+                    <div class="col-span-2 mt-1">
+                      <dt class="text-gray-400 mb-0.5"><%= t("accounting.journal_entries.lines_heading") %>:</dt>
+                      <% entry.changes_snapshot["lines"].each do |line| %>
+                        <dd class="font-medium text-gray-700 tabular-nums">
+                          <%= line["account"] %>
+                          <% if line["debit_cents"].to_i > 0 %>— Dr <%= format_money(line["debit_cents"]) %><% end %>
+                          <% if line["credit_cents"].to_i > 0 %>— Cr <%= format_money(line["credit_cents"]) %><% end %>
+                        </dd>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </dl>
+              <% end %>
+            </div>
+          </li>
+        <% end %>
+      </ol>
     </div>
   <% end %>
 </div>

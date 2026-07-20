@@ -3,7 +3,12 @@
 module Admin
   module Accounting
     class ExpensesController < BaseController
-      before_action :set_expense, only: %i[edit update reverse]
+      before_action :set_expense, only: %i[show edit update reverse]
+
+      def show
+        authorize @expense
+        @je = JournalEntry.for_source(@expense).includes(:lines).first
+      end
 
       def index
         parse_date_range

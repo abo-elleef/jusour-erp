@@ -42,22 +42,18 @@
       </thead>
       <tbody class="divide-y divide-gray-100">
         <% @expenses.each do |expense| %>
-          <tr>
+          <tr class="cursor-pointer hover:bg-amber-50/40 transition-colors"
+              data-href="<%= admin_accounting_expense_path(expense) %>"
+              onclick="if(!event.target.closest('a,button,form'))Turbo.visit(this.dataset.href)">
             <td class="p-3 ps-5"><%= l(expense.expense_date, format: :long) %></td>
             <td class="p-3"><%= expense.expense_category.name %></td>
             <td class="p-3 text-gray-600"><%= expense.treasury&.name || t("accounting.shared.em_dash") %></td>
             <td class="p-3">
-              <% source_path = expense_source_path(expense) %>
-              <% if source_path %>
-                <%= link_to expense.description, source_path,
-                      class: "text-amber-700 hover:text-amber-900 hover:underline underline-offset-2" %>
-              <% else %>
-                <%= expense.description %>
-              <% end %>
+              <%= expense.description %>
               <% if expense.is_auto_generated? %><span class="text-xs text-gray-400"><%= t("accounting.shared.auto") %></span><% end %>
             </td>
             <td class="p-3 text-end font-semibold tabular-nums"><%= format_money(expense.amount_cents) %></td>
-            <td class="p-3 pe-5 text-end">
+            <td class="p-3 pe-5 text-end" onclick="event.stopPropagation()">
               <% unless expense.is_auto_generated? %>
                 <% unless expense.reversed_at.present? %>
                   <%= link_to t("actions.edit"), edit_admin_accounting_expense_path(expense), class: "text-amber-700 text-xs font-semibold" %>

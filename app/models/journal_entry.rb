@@ -11,6 +11,7 @@ class JournalEntry < ApplicationRecord
 
   belongs_to :original_entry, class_name: "JournalEntry", foreign_key: :reversal_of_id, optional: true
   has_one    :reversal_entry, class_name: "JournalEntry", foreign_key: :reversal_of_id
+  belongs_to :source_record, polymorphic: true, optional: true
 
   validates :entry_number, presence: true, uniqueness: true
   validates :date,         presence: true

@@ -2245,6 +2245,7 @@ en:
       lines_heading: "Debit & Credit Lines"
       totals: "Totals"
       source_record: "Source Record"
+      payment_label: "Payment"
       recorded_by: "Recorded by %{name}"
       total_entries: "%{count} entries"
       new_button: "New Entry"
@@ -2281,6 +2282,10 @@ en:
       stats_total: "Entries"
       stats_original: "Original"
       stats_reversals: "Reversals"
+      audit_log_heading: "Audit Trail"
+      audit:
+        create: "Entry created"
+        reverse: "Entry reversed"
       form:
         header: "Entry Details"
         date: "Date"
@@ -2461,6 +2466,7 @@ en:
       amount_cents: "Amount (cents)"
       reference_number: "Reference #"
       receipt: "Receipt"
+      recorded_by: "Recorded by"
       auto: "(auto)"
       system: "(system)"
       em_dash: "—"
@@ -2535,18 +2541,26 @@ en:
       stats_total: "Total"
       stats_active: "Counted in totals"
       stats_reversed: "Reversed"
+    recurrence:
+      one_time: "One-time"
+      daily: "Daily"
+      weekly: "Weekly"
+      monthly: "Monthly"
+      annually: "Annually"
     expenses:
       title: "Expenses"
       new: "New expense"
       edit: "Edit expense"
       new_button: "New expense"
       delete_confirm: "Delete this expense?"
+      recurrence: "Recurrence"
     incomes:
       title: "Income"
       new: "New income"
       edit: "Edit income"
       new_button: "New income"
       delete_confirm: "Delete this income entry?"
+      recurrence: "Recurrence"
     income_categories:
       title: "Income categories"
       description: "Group income entries by category. System categories are managed automatically."

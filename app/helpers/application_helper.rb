@@ -130,6 +130,48 @@ module ApplicationHelper
     admin_inventory_vendor_invoice_path(invoice) if invoice
   end
 
+  # Returns the URL for a JE's source record, or nil if the source type has no show page.
+  def journal_entry_source_path(je)
+    case je.source_record_type
+    when "VendorInvoice"
+      admin_inventory_vendor_invoice_path(je.source_record_id)
+    when "VendorInvoicePayment"
+      payment = je.source_record
+      invoice = payment&.vendor_invoice
+      admin_inventory_vendor_invoice_path(invoice) if invoice
+    when "Order"
+      admin_order_path(je.source_record_id)
+    when "Expense"
+      admin_accounting_expense_path(je.source_record_id)
+    when "Income"
+      admin_accounting_income_path(je.source_record_id)
+    end
+  end
+
+  # Returns a human-readable label for the JE's source record.
+  def journal_entry_source_label(je)
+    case je.source_record_type
+    when "VendorInvoice"
+      record = je.source_record
+      record ? "#{t('activerecord.models.vendor_invoice')} #{record.invoice_number}" : fallback_je_source_label(je)
+    when "VendorInvoicePayment"
+      payment = je.source_record
+      invoice = payment&.vendor_invoice
+      invoice ? "#{t('activerecord.models.vendor_invoice')} #{invoice.invoice_number} — #{t('accounting.journal_entries.payment_label')}" : fallback_je_source_label(je)
+    when "Order"
+      record = je.source_record
+      record ? "#{t('activerecord.models.order')} ##{record.order_number}" : fallback_je_source_label(je)
+    when "Expense"
+      record = je.source_record
+      record&.description.presence || t("activerecord.models.expense")
+    when "Income"
+      record = je.source_record
+      record&.description.presence || t("activerecord.models.income")
+    else
+      fallback_je_source_label(je)
+    end
+  end
+
   # Returns the URL for a transaction's linked source record, or nil if not linkable.
   def treasury_transaction_source_path(transaction)
     case transaction.source_record_type
@@ -817,5 +859,12 @@ module ApplicationHelper
     when "kitchen" then "border-orange-200"
     else "border-gray-200"
     end
+  end
+
+  private
+
+  def fallback_je_source_label(je)
+    type_label = je.source_record_type&.underscore&.humanize || "Unknown"
+    "#{type_label} ##{je.source_record_id}"
   end
 end

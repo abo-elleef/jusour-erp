@@ -3,7 +3,12 @@
 module Admin
   module Accounting
     class IncomesController < BaseController
-      before_action :set_income, only: %i[edit update reverse]
+      before_action :set_income, only: %i[show edit update reverse]
+
+      def show
+        authorize @income
+        @je = JournalEntry.for_source(@income).includes(:lines).first
+      end
 
       def index
         parse_date_range

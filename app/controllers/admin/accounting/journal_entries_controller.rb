@@ -26,6 +26,8 @@ module Admin
 
       def show
         @journal_entry = JournalEntry.includes(:lines, :created_by, :reversal_entry).find(params[:id])
+        @audit_entries = AuditLogEntry.where(record_type: "JournalEntry", record_id: @journal_entry.id)
+                                      .includes(:user).order(created_at: :asc)
       end
 
       def reverse
@@ -48,6 +50,12 @@ module Admin
           )
           sync_je_treasuries!(reversal)
         end
+
+        snapshot = { original: @journal_entry.entry_number, reversal: reversal.entry_number }
+        AuditLogEntry.record!(action: "journal_entry.reverse", record: @journal_entry,
+                              user: current_user, changes_snapshot: snapshot)
+        AuditLogEntry.record!(action: "journal_entry.create", record: reversal,
+                              user: current_user, changes_snapshot: snapshot)
 
         redirect_to admin_accounting_journal_entry_path(reversal),
                     notice: t("accounting.journal_entries.flash.reversed",
@@ -79,6 +87,19 @@ module Admin
         end
 
         if saved
+          AuditLogEntry.record!(
+            action: "journal_entry.create",
+            record: @journal_entry,
+            user: current_user,
+            changes_snapshot: {
+              entry_number: @journal_entry.entry_number,
+              date: @journal_entry.date.to_s,
+              description: @journal_entry.description,
+              lines: @journal_entry.lines.map { |l|
+                { account: l.account_name, debit_cents: l.debit_cents, credit_cents: l.credit_cents }
+              }
+            }
+          )
           redirect_to admin_accounting_journal_entry_path(@journal_entry),
                       notice: t("accounting.journal_entries.flash.created")
         else

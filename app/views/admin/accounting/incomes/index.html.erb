@@ -37,7 +37,9 @@
       </thead>
       <tbody class="divide-y divide-gray-100">
         <% @incomes.each do |income| %>
-          <tr>
+          <tr class="cursor-pointer hover:bg-amber-50/40 transition-colors"
+              data-href="<%= admin_accounting_income_path(income) %>"
+              onclick="if(!event.target.closest('a,button,form'))Turbo.visit(this.dataset.href)">
             <td class="p-3 ps-5"><%= l(income.income_date, format: :long) %></td>
             <td class="p-3"><%= income.income_category.name %></td>
             <td class="p-3 text-gray-600"><%= income.treasury&.name || t("accounting.shared.em_dash") %></td>
@@ -46,7 +48,7 @@
               <% if income.is_auto_generated? %><span class="text-xs text-gray-400"><%= t("accounting.shared.auto") %></span><% end %>
             </td>
             <td class="p-3 text-end font-semibold tabular-nums text-emerald-700"><%= format_money(income.amount_cents) %></td>
-            <td class="p-3 pe-5 text-end">
+            <td class="p-3 pe-5 text-end" onclick="event.stopPropagation()">
               <% unless income.is_auto_generated? %>
                 <% unless income.reversed_at.present? %>
                   <%= link_to t("actions.edit"), edit_admin_accounting_income_path(income), class: "text-amber-700 text-xs font-semibold" %>

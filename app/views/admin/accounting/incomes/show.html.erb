@@ -1,0 +1,84 @@
+<% content_for :title, @income.description %>
+<%= render "admin/accounting/nav" %>
+
+<div class="max-w-4xl">
+  <%# Header %>
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <div class="flex flex-wrap items-center gap-2 mb-1">
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @income.description %></h1>
+        <% if @income.reversed_at.present? %>
+          <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-gray-100 text-gray-500 border border-gray-200">
+            <%= t("accounting.reversal.reversed_badge") %>
+          </span>
+        <% end %>
+        <% if @income.is_auto_generated? %>
+          <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+            <%= t("accounting.shared.auto") %>
+          </span>
+        <% end %>
+      </div>
+      <p class="text-3xl font-bold tabular-nums text-green-700 mt-1"><%= format_money(@income.amount_cents) %></p>
+      <p class="text-sm text-gray-500 mt-1">
+        <%= l(@income.income_date, format: :long) %>
+        &middot; <%= @income.income_category.name %>
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2 shrink-0">
+      <% unless @income.is_auto_generated? || @income.reversed_at.present? %>
+        <%= link_to t("actions.edit"), edit_admin_accounting_income_path(@income),
+              class: "border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50" %>
+        <%= button_to t("accounting.reversal.reverse_entry"),
+              reverse_admin_accounting_income_path(@income),
+              class: "border border-red-200 text-red-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-red-50 cursor-pointer",
+              data: { turbo_confirm: t("accounting.reversal.confirm") } %>
+      <% end %>
+      <%= link_to t("accounting.incomes.title"), admin_accounting_incomes_path,
+            class: "border border-gray-200 text-gray-500 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50" %>
+    </div>
+  </div>
+
+  <%# Details card %>
+  <div class="rounded-2xl border border-gray-200 bg-white divide-y divide-gray-100 mb-4">
+    <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-100 rtl:divide-x-reverse">
+      <div class="px-5 py-4">
+        <p class="text-xs text-gray-400 mb-1"><%= t("accounting.shared.treasury") %></p>
+        <p class="text-sm font-semibold text-gray-900"><%= @income.treasury&.name || t("accounting.shared.em_dash") %></p>
+      </div>
+      <div class="px-5 py-4">
+        <p class="text-xs text-gray-400 mb-1"><%= t("accounting.shared.reference_number") %></p>
+        <p class="text-sm font-semibold text-gray-900 font-mono"><%= @income.reference_number.presence || t("accounting.shared.em_dash") %></p>
+      </div>
+      <div class="px-5 py-4">
+        <p class="text-xs text-gray-400 mb-1"><%= t("accounting.incomes.recurrence") %></p>
+        <p class="text-sm font-semibold text-gray-900"><%= t("accounting.recurrence.#{@income.recurrence}") %></p>
+      </div>
+      <div class="px-5 py-4">
+        <p class="text-xs text-gray-400 mb-1"><%= t("accounting.shared.recorded_by") %></p>
+        <p class="text-sm font-semibold text-gray-900"><%= @income.user.name %></p>
+      </div>
+    </div>
+  </div>
+
+  <%# Journal entry %>
+  <% if @je %>
+    <div class="mb-4">
+      <%= render "admin/accounting/journal_entry_card",
+            je: @je,
+            label: t("accounting.shared.journal_entries_heading"),
+            link_path: admin_accounting_journal_entry_path(@je) %>
+    </div>
+  <% end %>
+
+  <%# Receipt image %>
+  <% if @income.receipt_image.attached? %>
+    <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
+        <p class="text-sm font-semibold text-gray-700"><%= t("accounting.shared.receipt") %></p>
+      </div>
+      <div class="p-5">
+        <%= image_tag url_for(@income.receipt_image), class: "max-w-full rounded-xl border border-gray-200" %>
+      </div>
+    </div>
+  <% end %>
+</div>
