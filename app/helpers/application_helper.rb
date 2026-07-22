@@ -204,6 +204,17 @@ module ApplicationHelper
     transaction.description
   end
 
+  # Just the numeric amount of a base quantity expressed in the line's unit.
+  # Used where the unit is shown in its own column.
+  def transfer_line_amount(line, base_quantity)
+    number_with_precision(line.in_line_unit(base_quantity), precision: 3, strip_insignificant_zeros: true)
+  end
+
+  # The line's (fixed) unit label — for a dedicated Unit column.
+  def transfer_line_unit_label(line)
+    ingredient_unit_label(line.unit.presence || line.ingredient.unit)
+  end
+
   # Render a base-unit transfer quantity in the line's (fixed) unit, with the
   # base equivalent as a helper line when the unit differs from the base.
   def transfer_line_quantity(line, base_quantity)

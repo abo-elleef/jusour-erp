@@ -25,7 +25,7 @@ module Admin
       def show
         authorize_inventory!(:show)
         @stock_batches = @ingredient.stock_batches.fifo_order.includes(:supplier)
-        @adjustments = @ingredient.stock_adjustments.includes(:user, :unit_ref).order(created_at: :desc).limit(50)
+        @adjustments = @ingredient.stock_adjustments.includes(:user, :unit_ref, :location).order(created_at: :desc).limit(50)
         @recipes = @ingredient.recipes.includes(:menu_item, :unit_ref)
         @supplier_links = @ingredient.supplier_ingredients.includes(:supplier)
         load_branch_stock
@@ -178,7 +178,7 @@ module Admin
 
       def ingredient_params
         permitted = params.require(:ingredient).permit(
-          :name, :ingredient_category_id, :unit_id, :reorder_threshold,
+          :name, :code, :ingredient_category_id, :unit_id, :reorder_threshold,
           :quantity_on_hand, :cost_per_unit_dollars, :active, :shelf_life_days,
           ingredient_units_attributes: %i[id unit_id base_units_per_unit _destroy]
         )

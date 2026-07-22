@@ -50,7 +50,34 @@
     </div>
   <% end %>
 
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <%# Print-only details table (cards don't print well) — laid out horizontally. %>
+  <% details = [
+       [t("inventory.stock_transfers.from_location"), @stock_transfer.from_location.name],
+       [t("inventory.stock_transfers.to_location"), @stock_transfer.to_location.name],
+       [t("inventory.stock_transfers.requested_at"), "#{l(@stock_transfer.requested_at, format: :short)} — #{@stock_transfer.requested_by.name}"],
+       [t("inventory.stock_transfers.last_sent_at"), @stock_transfer.sent_at ? "#{l(@stock_transfer.sent_at, format: :short)} — #{@stock_transfer.sent_by&.name}" : "—"],
+       [t("inventory.stock_transfers.last_received_at"), @stock_transfer.received_at ? "#{l(@stock_transfer.received_at, format: :short)} — #{@stock_transfer.received_by&.name}" : "—"]
+     ] %>
+  <div class="print-only mb-6">
+    <table class="w-full text-sm border border-gray-300 border-collapse">
+      <thead>
+        <tr class="border-b border-gray-300 bg-gray-50">
+          <% details.each do |label, _| %>
+            <th class="text-start p-2 font-semibold text-gray-600 whitespace-nowrap"><%= label %></th>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <% details.each do |_, value| %>
+            <td class="p-2 text-gray-900 align-top"><%= value %></td>
+          <% end %>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 print-hide">
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.stock_transfers.requested_at") %></p>
       <p class="text-sm font-semibold mt-1 text-gray-900"><%= l(@stock_transfer.requested_at, format: :short) %></p>
@@ -88,6 +115,7 @@
             <thead class="border-b border-amber-100 bg-white/60 text-xs font-semibold text-gray-500 uppercase tracking-wide">
               <tr>
                 <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
+                <th class="p-3 text-start"><%= t("inventory.stock_transfers.unit") %></th>
                 <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
                 <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent_total") %></th>
                 <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_received_total") %></th>
@@ -103,13 +131,14 @@
                   <% send_now_base = [line.quantity_pending_send, line.transferable_quantity_at_source].min %>
                   <td class="p-3 font-medium text-gray-900">
                     <%= line.ingredient.name %>
-                    <% if line.unit.present? %><span class="block text-xs text-gray-500"><%= t("inventory.stock_transfers.in_unit", unit: ingredient_unit_label(line.unit)) %></span><% end %>
+                    <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
                   </td>
-                  <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_quantity(line, line.quantity_requested) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_quantity(line, line.quantity_sent) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_quantity(line, line.quantity_received) %></td>
-                  <td class="p-3 text-end tabular-nums font-semibold text-amber-800"><%= transfer_line_quantity(line, line.quantity_pending_send) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_quantity(line, line.transferable_quantity_at_source) %></td>
+                  <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_amount(line, line.quantity_requested) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_sent) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_received) %></td>
+                  <td class="p-3 text-end tabular-nums font-semibold text-amber-800"><%= transfer_line_amount(line, line.quantity_pending_send) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.transferable_quantity_at_source) %></td>
                   <td class="p-3 text-end">
                     <%= number_field_tag "lines[#{line.id}]",
                           number_with_precision(line.in_line_unit(send_now_base), precision: 3, strip_insignificant_zeros: true),
@@ -144,6 +173,7 @@
             <thead class="border-b border-emerald-100 bg-white/60 text-xs font-semibold text-gray-500 uppercase tracking-wide">
               <tr>
                 <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
+                <th class="p-3 text-start"><%= t("inventory.stock_transfers.unit") %></th>
                 <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent_this_shipment") %></th>
                 <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_received") %></th>
               </tr>
@@ -154,9 +184,10 @@
                 <tr>
                   <td class="p-3 font-medium text-gray-900">
                     <%= line.ingredient.name %>
-                    <% if line.unit.present? %><span class="block text-xs text-gray-500"><%= t("inventory.stock_transfers.in_unit", unit: ingredient_unit_label(line.unit)) %></span><% end %>
+                    <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
                   </td>
-                  <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_quantity(line, shipment_line.quantity_sent) %></td>
+                  <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_amount(line, shipment_line.quantity_sent) %></td>
                   <td class="p-3 text-end">
                     <%= number_field_tag "lines[#{line.id}]",
                           number_with_precision(line.in_line_unit(shipment_line.quantity_sent), precision: 3, strip_insignificant_zeros: true),
@@ -177,7 +208,7 @@
   <% end %>
 
   <% if @shipments.any? %>
-    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6 print-hide">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.shipment_history") %></h2>
       </div>
@@ -199,6 +230,7 @@
               <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 <tr>
                   <th class="pb-2 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
+                  <th class="pb-2 text-start"><%= t("inventory.stock_transfers.unit") %></th>
                   <th class="pb-2 text-end"><%= t("inventory.stock_transfers.quantity_sent") %></th>
                   <th class="pb-2 text-end"><%= t("inventory.stock_transfers.quantity_received") %></th>
                 </tr>
@@ -207,10 +239,14 @@
                 <% shipment.stock_transfer_shipment_lines.each do |shipment_line| %>
                   <% ship_line = shipment_line.stock_transfer_line %>
                   <tr>
-                    <td class="py-1 text-gray-900"><%= shipment_line.ingredient.name %></td>
-                    <td class="py-1 text-end tabular-nums"><%= transfer_line_quantity(ship_line, shipment_line.quantity_sent) %></td>
+                    <td class="py-1 text-gray-900">
+                      <%= shipment_line.ingredient.name %>
+                      <span class="block font-mono text-xs text-amber-700"><%= shipment_line.ingredient.code %></span>
+                    </td>
+                    <td class="py-1 text-gray-700"><%= transfer_line_unit_label(ship_line) %></td>
+                    <td class="py-1 text-end tabular-nums"><%= transfer_line_amount(ship_line, shipment_line.quantity_sent) %></td>
                     <td class="py-1 text-end tabular-nums text-gray-600">
-                      <%= shipment_line.quantity_received ? transfer_line_quantity(ship_line, shipment_line.quantity_received) : "—" %>
+                      <%= shipment_line.quantity_received ? transfer_line_amount(ship_line, shipment_line.quantity_received) : "—" %>
                     </td>
                   </tr>
                 <% end %>
@@ -231,6 +267,7 @@
         <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
           <tr>
             <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
+            <th class="p-3 text-start"><%= t("inventory.stock_transfers.unit") %></th>
             <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
             <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent_total") %></th>
             <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_received_total") %></th>
@@ -242,14 +279,15 @@
           <% @lines.each do |line| %>
             <tr>
               <td class="p-3 font-medium text-gray-900">
-                <%= line.ingredient.name %>
-                <% if line.unit.present? %><span class="block text-xs text-gray-500"><%= t("inventory.stock_transfers.in_unit", unit: ingredient_unit_label(line.unit)) %></span><% end %>
-              </td>
-              <td class="p-3 text-end tabular-nums"><%= transfer_line_quantity(line, line.quantity_requested) %></td>
-              <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_quantity(line, line.quantity_sent) %></td>
-              <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_quantity(line, line.quantity_received) %></td>
-              <td class="p-3 text-end tabular-nums text-blue-700"><%= transfer_line_quantity(line, line.quantity_in_transit) %></td>
-              <td class="p-3 text-end tabular-nums text-amber-700"><%= transfer_line_quantity(line, line.quantity_pending_send) %></td>
+                    <%= line.ingredient.name %>
+                    <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                  </td>
+              <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
+              <td class="p-3 text-end tabular-nums"><%= transfer_line_amount(line, line.quantity_requested) %></td>
+              <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_sent) %></td>
+              <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_received) %></td>
+              <td class="p-3 text-end tabular-nums text-blue-700"><%= transfer_line_amount(line, line.quantity_in_transit) %></td>
+              <td class="p-3 text-end tabular-nums text-amber-700"><%= transfer_line_amount(line, line.quantity_pending_send) %></td>
             </tr>
           <% end %>
         </tbody>

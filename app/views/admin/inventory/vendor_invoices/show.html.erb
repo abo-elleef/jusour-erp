@@ -5,6 +5,12 @@
 <%= render "admin/inventory/tools_nav" %>
 <div class="max-w-7xl">
 
+  <div class="print-only mb-6 pb-4 border-b border-gray-300">
+    <p class="text-lg font-bold text-gray-900"><%= Current.company.name %></p>
+    <p class="text-sm text-gray-600"><%= t("inventory.vendor_invoices.print_document_title") %> · <%= @vendor_invoice.invoice_number %></p>
+    <p class="text-xs text-gray-500 mt-1"><%= t("inventory.vendor_invoices.printed_at", at: l(Time.current, format: :short)) %></p>
+  </div>
+
   <%# ── 1. Header ────────────────────────────────────────────────────────── %>
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
@@ -12,7 +18,7 @@
         <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @vendor_invoice.invoice_number %></h1>
         <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= pay_class %>"><%= pay_label %></span>
       </div>
-      <p class="text-gray-600 text-sm mt-1">
+      <p class="text-gray-600 text-sm mt-1 print-hide">
         <%= link_to @vendor_invoice.supplier.name, admin_inventory_supplier_path(@vendor_invoice.supplier),
               class: "font-medium text-amber-700 hover:text-amber-800" %>
         · <%= t("inventory.vendor_invoices.invoice_date") %> <%= l(@vendor_invoice.invoice_date) %>
@@ -23,7 +29,22 @@
         <% end %>
       </p>
     </div>
-    <div class="flex flex-wrap gap-2 shrink-0">
+    <div class="flex flex-wrap gap-2 shrink-0 print-hide">
+      <button type="button" onclick="window.print()"
+              class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4" aria-hidden="true">
+          <path fill-rule="evenodd" d="M5 2.75C5 1.784 5.784 1 6.75 1h6.5c.966 0 1.75.784 1.75 1.75v3.552c.377.046.752.097 1.126.153A2.212 2.212 0 0 1 18 8.653v4.097A2.25 2.25 0 0 1 15.75 15h-.241l.305 1.984A1.75 1.75 0 0 1 14.084 19H5.916a1.75 1.75 0 0 1-1.73-2.016L4.491 15H4.25A2.25 2.25 0 0 1 2 12.75V8.653c0-1.082.775-2.034 1.874-2.198.374-.056.75-.107 1.126-.153V2.75Zm8.5 3.397a41.533 41.533 0 0 0-7 0V2.75a.25.25 0 0 1 .25-.25h6.5a.25.25 0 0 1 .25.25v3.397ZM6.608 12.5a.25.25 0 0 0-.247.212l-.693 4.5a.25.25 0 0 0 .247.288h8.168a.25.25 0 0 0 .247-.288l-.693-4.5a.25.25 0 0 0-.247-.212H6.608Z" clip-rule="evenodd" />
+        </svg>
+        <%= t("inventory.vendor_invoices.print") %>
+      </button>
+      <%= link_to export_admin_inventory_vendor_invoice_path(@vendor_invoice, format: :csv),
+            class: "inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50 px-4 py-2.5 rounded-xl border border-emerald-200 transition-colors" do %>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4" aria-hidden="true">
+          <path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" />
+          <path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" />
+        </svg>
+        <%= t("inventory.vendor_invoices.export") %>
+      <% end %>
       <% if @vendor_invoice.fully_editable? %>
         <%= link_to t("actions.edit"), edit_admin_inventory_vendor_invoice_path(@vendor_invoice),
               class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" %>
@@ -43,7 +64,28 @@
   </div>
 
   <%# ── 2. Stats grid ─────────────────────────────────────────────────────── %>
-  <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+  <%# Print-only details table (cards don't print well). %>
+  <div class="print-only mb-6">
+    <table class="w-full text-sm border border-gray-300 border-collapse">
+      <tbody>
+        <% [
+             [t("inventory.vendor_invoices.supplier"), @vendor_invoice.supplier.name],
+             [t("inventory.vendor_invoices.invoice_date"), l(@vendor_invoice.invoice_date)],
+             (@vendor_invoice.location ? [t("inventory.vendor_invoices.received_at"), @vendor_invoice.location.name] : nil),
+             [t("inventory.vendor_invoices.received_on"), l(@vendor_invoice.received_on)],
+             [t("inventory.vendor_invoices.subtotal"), format_money(@vendor_invoice.subtotal_cents)],
+             [t("inventory.vendor_invoices.total"), format_money(@vendor_invoice.total_cents)]
+           ].compact.each do |label, value| %>
+          <tr class="border-b border-gray-200">
+            <th class="text-start p-2 font-semibold text-gray-600 bg-gray-50 w-1/3"><%= label %></th>
+            <td class="p-2 text-gray-900 tabular-nums"><%= value %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6 print-hide">
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.vendor_invoices.subtotal") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@vendor_invoice.subtotal_cents) %></p>
@@ -64,11 +106,11 @@
         </p>
       <% end %>
     </div>
-    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4 print-hide">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.vendor_invoices.amount_paid") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@vendor_invoice.amount_paid_cents) %></p>
     </div>
-    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4 print-hide">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.vendor_invoices.balance_due") %></p>
       <p class="text-2xl font-bold mt-1 <%= @vendor_invoice.payable? ? 'text-amber-700' : 'text-gray-900' %> tabular-nums">
         <%= format_money(@vendor_invoice.balance_due_cents) %>
@@ -82,7 +124,7 @@
 
   <%# ── 3. Payment form ───────────────────────────────────────────────────── %>
   <% if @vendor_invoice.payable? %>
-    <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mb-6">
+    <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mb-6 print-hide">
       <div class="px-5 py-4 border-b border-amber-100">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.record_payment_heading") %></h2>
         <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.vendor_invoices.record_payment_hint") %></p>
@@ -117,11 +159,12 @@
       <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.form.line_items") %></h2>
     </div>
     <div class="overflow-x-auto">
-      <table class="w-full text-sm min-w-[36rem]">
+      <table class="w-full text-sm min-w-[42rem]">
         <thead class="<%= table_head %>">
           <tr>
             <th class="p-3 ps-5 text-start"><%= t("inventory.vendor_invoices.form.ingredient") %></th>
             <th class="p-3 text-end"><%= t("inventory.vendor_invoices.form.quantity") %></th>
+            <th class="p-3 text-start"><%= t("inventory.vendor_invoices.form.unit") %></th>
             <th class="p-3 text-end"><%= t("inventory.vendor_invoices.form.unit_price") %></th>
             <th class="p-3 text-end"><%= t("inventory.vendor_invoices.total") %></th>
             <th class="p-3 pe-5 text-start"><%= t("inventory.vendor_invoices.form.batch_reference") %></th>
@@ -134,14 +177,18 @@
                 <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient),
                       class: "font-semibold text-amber-700 hover:text-amber-800" %>
               </td>
+              <% received_unit = line.unit.presence || line.ingredient.unit %>
+              <% converted = line.unit.present? && line.unit != line.ingredient.unit %>
               <td class="p-3 text-end tabular-nums">
-                <% received_unit = line.unit.presence || line.ingredient.unit %>
-                <%= line.quantity %> <%= ingredient_unit_label(received_unit) %>
-                <% if line.unit.present? && line.unit != line.ingredient.unit %>
-                  <span class="block text-xs text-gray-500">
-                    = <%= number_with_precision(line.base_quantity, precision: 3, strip_insignificant_zeros: true) %>
-                    <%= ingredient_unit_label(line.ingredient.unit) %>
-                  </span>
+                <%= line.quantity %>
+                <% if converted %>
+                  <span class="block text-xs text-gray-500">= <%= number_with_precision(line.base_quantity, precision: 3, strip_insignificant_zeros: true) %></span>
+                <% end %>
+              </td>
+              <td class="p-3 text-gray-700">
+                <%= ingredient_unit_label(received_unit) %>
+                <% if converted %>
+                  <span class="block text-xs text-gray-500"><%= ingredient_unit_label(line.ingredient.unit) %></span>
                 <% end %>
               </td>
               <td class="p-3 text-end tabular-nums"><%= format_money(line.unit_price_cents) %></td>
@@ -158,7 +205,7 @@
   <% show_payments = @payments.any? %>
   <% show_jes      = @invoice_je.present? || @payment_jes.any? %>
   <% if show_payments || show_jes %>
-    <div class="<%= (show_payments && show_jes) ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : '' %> mb-6">
+    <div class="<%= (show_payments && show_jes) ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : '' %> mb-6 print-hide">
 
       <% if show_payments %>
         <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -257,7 +304,7 @@
 
       <% if show_image %>
         <% if @vendor_invoice.void? %>
-          <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden print-hide">
             <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
               <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.invoice_image") %></h2>
             </div>
@@ -268,7 +315,7 @@
             </div>
           </section>
         <% else %>
-          <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden print-hide">
             <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
               <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.invoice_image") %></h2>
               <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.vendor_invoices.invoice_image_show_hint") %></p>

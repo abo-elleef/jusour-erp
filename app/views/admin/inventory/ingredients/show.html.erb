@@ -321,6 +321,7 @@
               <thead class="<%= table_head %>">
                 <tr>
                   <th class="p-3 ps-5 text-start"><%= t("accounting.audit_log.time") %></th>
+                  <th class="p-3 text-start"><%= t("inventory.ingredients.show.location") %></th>
                   <th class="p-3 text-start"><%= t("inventory.ingredients.show.adjustment_type") %></th>
                   <th class="p-3 pe-5 text-end"><%= t("inventory.ingredients.show.quantity_short") %></th>
                 </tr>
@@ -330,6 +331,9 @@
                   <tr class="hover:bg-gray-100 transition-colors">
                     <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums text-xs">
                       <%= l(adj.created_at, format: :short) %>
+                    </td>
+                    <td class="p-3 text-gray-700">
+                      <%= adj.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
                     </td>
                     <td class="p-3 text-gray-900"><%= inventory_adjustment_type_label(adj.adjustment_type) %></td>
                     <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= adj.quantity_delta.positive? ? "text-green-700" : "text-red-700" %>">

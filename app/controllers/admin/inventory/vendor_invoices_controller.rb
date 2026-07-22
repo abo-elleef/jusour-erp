@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module Admin
   module Inventory
     class VendorInvoicesController < BaseController
-      before_action :set_vendor_invoice, only: %i[show edit update record_payment void attach_invoice_image]
+      before_action :set_vendor_invoice, only: %i[show export edit update record_payment void attach_invoice_image]
 
       def index
         authorize_inventory_index!(VendorInvoice)
@@ -32,6 +34,48 @@ module Admin
           source_record_id: @payments.map(&:id)
         )
         @payment_jes = payment_jes.index_by(&:source_record_id)
+      end
+
+      # Export the invoice details + line items as a CSV that Excel opens
+      # natively (UTF-8 BOM so Arabic ingredient names render correctly).
+      def export
+        authorize_inventory!(:show)
+        lines = @vendor_invoice.vendor_invoice_lines.includes(:ingredient)
+
+        csv = CSV.generate do |out|
+          out << [t("inventory.vendor_invoices.invoice_number"), @vendor_invoice.invoice_number]
+          out << [t("inventory.vendor_invoices.supplier"), @vendor_invoice.supplier.name]
+          out << [t("inventory.vendor_invoices.invoice_date"), l(@vendor_invoice.invoice_date)]
+          out << [t("inventory.vendor_invoices.received_on"), l(@vendor_invoice.received_on)]
+          out << [t("inventory.vendor_invoices.received_at"), @vendor_invoice.location&.name]
+          out << [t("inventory.vendor_invoices.subtotal"), money_amount(@vendor_invoice.subtotal_cents)]
+          out << [t("inventory.vendor_invoices.total"), money_amount(@vendor_invoice.total_cents)]
+          out << []
+          out << [
+            t("inventory.vendor_invoices.form.ingredient"),
+            t("inventory.ingredients.index.table.code"),
+            t("inventory.vendor_invoices.form.quantity"),
+            t("inventory.vendor_invoices.form.unit"),
+            t("inventory.vendor_invoices.form.unit_price"),
+            t("inventory.vendor_invoices.total"),
+            t("inventory.vendor_invoices.form.batch_reference")
+          ]
+          lines.each do |line|
+            out << [
+              line.ingredient.name,
+              line.ingredient.code,
+              line.quantity,
+              line.unit.presence || line.ingredient.unit,
+              money_amount(line.unit_price_cents),
+              money_amount(line.line_total_cents),
+              line.batch_reference
+            ]
+          end
+        end
+
+        send_data "﻿#{csv}",
+          filename: "#{@vendor_invoice.invoice_number}.csv",
+          type: "text/csv; charset=utf-8"
       end
 
       def new
@@ -176,6 +220,11 @@ module Admin
       end
 
       private
+
+      # Cents → plain decimal string (e.g. 34500 → "345.00") for spreadsheet cells.
+      def money_amount(cents)
+        format("%.2f", cents.to_d / 100)
+      end
 
       def set_vendor_invoice
         @vendor_invoice = VendorInvoice.find(params[:id])

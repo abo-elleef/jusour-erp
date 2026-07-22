@@ -335,6 +335,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_110000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.string "code", null: false
+    t.index "company_id, lower((code)::text)", name: "index_ingredient_categories_on_company_and_lower_code", unique: true
     t.index ["company_id", "name"], name: "index_ingredient_categories_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_ingredient_categories_on_company_id"
   end
@@ -375,6 +377,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_110000) do
     t.uuid "company_id", null: false
     t.integer "shelf_life_days"
     t.uuid "unit_id", null: false
+    t.string "code", null: false
+    t.index "company_id, lower((code)::text)", name: "index_ingredients_on_company_and_lower_code", unique: true
     t.index ["active"], name: "index_ingredients_on_active"
     t.index ["company_id", "name"], name: "index_ingredients_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_ingredients_on_company_id"

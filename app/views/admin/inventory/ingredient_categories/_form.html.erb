@@ -21,6 +21,14 @@
         <%= f.text_field :name, class: input_class, autofocus: true, required: true %>
       </div>
 
+      <% if category.persisted? %>
+        <div>
+          <%= label_tag nil, t("inventory.ingredient_categories.code"), class: label_class %>
+          <p class="font-mono text-sm font-semibold text-amber-700"><%= category.code %></p>
+          <p class="text-xs text-gray-500 mt-1"><%= t("inventory.ingredient_categories.code_hint") %></p>
+        </div>
+      <% end %>
+
       <div>
         <%= f.label :position, t("inventory.ingredient_categories.position"), class: label_class %>
         <%= f.number_field :position, min: 0, class: input_class %>

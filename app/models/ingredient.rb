@@ -28,13 +28,27 @@ class Ingredient < ApplicationRecord
 
   monetize :cost_per_unit_cents
 
+  before_validation :assign_code, on: :create
+
   validates :name, presence: true, uniqueness: { scope: :company_id }
+  validates :code, presence: true, uniqueness: { scope: :company_id, case_sensitive: false }
   validate :unit_belongs_to_company
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_on_hand, numericality: true
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :base_unit_locked_when_in_use, on: :update
   before_validation :discard_alternate_units_on_base_change, on: :update
+
+  # Next auto code for an ingredient in `category`: "<CATEGORY_CODE>-NNN", where
+  # NNN is the highest existing sequence for that prefix + 1. Custom codes that
+  # don't match the "<prefix>-digits" shape are ignored.
+  def self.next_code(category)
+    prefix = category.code.to_s
+    max = unscoped_by_company.where(company_id: category.company_id)
+      .where("code ~ ?", "^#{prefix}-[0-9]+$")
+      .maximum(Arel.sql("CAST(SUBSTRING(code FROM #{prefix.length + 2}) AS INTEGER)"))
+    "#{prefix}-#{((max || 0) + 1).to_s.rjust(3, '0')}"
+  end
 
   scope :active, -> { where(active: true) }
   scope :low_stock, -> { where("quantity_on_hand <= reorder_threshold") }
@@ -44,7 +58,7 @@ class Ingredient < ApplicationRecord
   }
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name active quantity_on_hand reorder_threshold ingredient_category_id shelf_life_days]
+    %w[name code active quantity_on_hand reorder_threshold ingredient_category_id shelf_life_days]
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -144,6 +158,10 @@ class Ingredient < ApplicationRecord
     return unless persisted? && unit_id_changed?
 
     ingredient_units.each(&:mark_for_destruction)
+  end
+
+  def assign_code
+    self.code = self.class.next_code(ingredient_category) if code.blank? && ingredient_category
   end
 
   def assign_company
