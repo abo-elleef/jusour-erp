@@ -7,7 +7,7 @@
       <p class="text-gray-600 text-sm mt-1"><%= @ingredient.name %></p>
     </div>
     <% if @adjustments.any? %>
-      <%= link_to adjustments_admin_inventory_ingredient_path(@ingredient, request.query_parameters.except("page").merge(format: :csv)),
+      <%= link_to adjustments_admin_inventory_ingredient_path(@ingredient, format: :csv, location_id: @location_id, start_date: @start_date, end_date: @end_date),
             class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg border border-gray-200 transition-colors shrink-0" do %>
         <span aria-hidden="true">&darr;</span> <%= t("inventory.ingredients.adjustments.export_csv") %>
       <% end %>
