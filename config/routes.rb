@@ -258,7 +258,10 @@ Rails.application.routes.draw do
         collection { patch :reorder }
       end
       resources :ingredients do
-        member { post :adjust }
+        member do
+          post :adjust
+          get :adjustments
+        end
         collection { get :low_stock }
         resources :recipes, only: %i[create destroy]
         resources :supplier_ingredients, only: %i[create update destroy]

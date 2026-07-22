@@ -1,9 +1,11 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module Admin
   module Inventory
     class IngredientsController < BaseController
-      before_action :set_ingredient, only: %i[show edit update destroy adjust]
+      before_action :set_ingredient, only: %i[show edit update destroy adjust adjustments]
 
       def index
         authorize_inventory_index!
@@ -15,11 +17,21 @@ module Admin
         scope = scope.active if @status == "active"
         scope = scope.where(active: false) if @status == "inactive"
         @ingredients = apply_stock_filter(scope).order(:name)
-        @filtered = @stock_filter.present? || params[:q].present? || @status != "active"
-        @low_stock_count = Ingredient.active.low_stock.count
-        @out_of_stock_count = Ingredient.active.out_of_stock.count
-        @expiring_count = Ingredient.active.expiring_soon.count
-        @total_ingredients = Ingredient.active.count
+
+        respond_to do |format|
+          format.html do
+            @filtered = @stock_filter.present? || params[:q].present? || @status != "active"
+            @low_stock_count = Ingredient.active.low_stock.count
+            @out_of_stock_count = Ingredient.active.out_of_stock.count
+            @expiring_count = Ingredient.active.expiring_soon.count
+            @total_ingredients = Ingredient.active.count
+          end
+          format.csv do
+            send_data stock_by_location_csv(@ingredients),
+              filename: "ingredient-stock-by-location-#{Date.current}.csv",
+              type: "text/csv; charset=utf-8"
+          end
+        end
       end
 
       def show
@@ -29,6 +41,41 @@ module Admin
         @recipes = @ingredient.recipes.includes(:menu_item, :unit_ref)
         @supplier_links = @ingredient.supplier_ingredients.includes(:supplier)
         load_branch_stock
+      end
+
+      # Full, paginated adjustment ledger for one ingredient, filterable by
+      # location and date range (the recent-adjustments panel on #show is capped
+      # at 50 — this is the "view all" drill-down).
+      def adjustments
+        authorize_inventory!(:show)
+
+        @location_id = params[:location_id].presence
+        @start_date = params[:start_date].presence&.to_date
+        @end_date = params[:end_date].presence&.to_date
+
+        scope = @ingredient.stock_adjustments
+          .includes(:user, :unit_ref, :location)
+          .order(created_at: :desc)
+        scope = scope.where(location_id: @location_id) if @location_id
+        scope = scope.where(stock_adjustments: { created_at: @start_date.beginning_of_day.. }) if @start_date
+        scope = scope.where(stock_adjustments: { created_at: ..@end_date.end_of_day }) if @end_date
+
+        respond_to do |format|
+          format.html do
+            @pagy, @adjustments = pagy(:offset, scope, limit: 50)
+            @locations = Location.active.central_kitchens.ordered.to_a +
+                         Location.active.branches.ordered.to_a
+          end
+          format.csv do
+            name = @ingredient.code.to_s.parameterize.presence || "ingredient"
+            send_data adjustments_csv(scope),
+              filename: "adjustments-#{name}-#{Date.current}.csv",
+              type: "text/csv; charset=utf-8"
+          end
+        end
+      rescue Date::Error, ArgumentError
+        redirect_to admin_inventory_ingredient_path(@ingredient),
+          alert: t("inventory.ingredients.adjustments.invalid_dates")
       end
 
       def new
@@ -160,6 +207,61 @@ module Admin
         when "expiring" then scope.expiring_soon.includes(:stock_batches)
         else scope
         end
+      end
+
+      # One row per ingredient, one quantity column per active location, plus the
+      # canonical company-wide total. A leading BOM keeps Excel happy with UTF-8
+      # (Arabic names, currency) — same approach as the vendor-invoice export.
+      def stock_by_location_csv(ingredients)
+        ingredients = ingredients.to_a
+        locations = Location.active.central_kitchens.ordered.to_a +
+                    Location.active.branches.ordered.to_a
+        quantities = IngredientLocation
+          .where(ingredient_id: ingredients.map(&:id))
+          .each_with_object({}) do |il, memo|
+            memo[[il.ingredient_id, il.location_id]] = il.quantity_on_hand
+          end
+        status_labels = { out: "Out of stock", low: "Low", near: "Near low", ok: "OK" }
+
+        body = CSV.generate do |csv|
+          csv << ["Code", "Name", "Category", "Unit", *locations.map(&:name),
+                  "Total on-hand", "Reorder threshold", "Status"]
+          ingredients.each do |ing|
+            csv << [
+              ing.code,
+              ing.name,
+              ing.ingredient_category&.name,
+              ing.unit,
+              *locations.map { |loc| quantities[[ing.id, loc.id]] || 0 },
+              ing.quantity_on_hand,
+              ing.reorder_threshold,
+              status_labels[ing.stock_status]
+            ]
+          end
+        end
+        "﻿#{body}"
+      end
+
+      # Full filtered adjustment ledger as CSV (honours the location/date filters,
+      # ignores pagination). Quantities are the signed base-unit delta so rows for
+      # one ingredient are directly summable. BOM keeps Excel UTF-8-happy.
+      def adjustments_csv(scope)
+        base_unit = @ingredient.unit
+        body = CSV.generate do |csv|
+          csv << ["Time", "Location", "Type", "Quantity", "Unit", "User", "Reason"]
+          scope.each do |adj|
+            csv << [
+              adj.created_at.strftime("%Y-%m-%d %H:%M"),
+              adj.location&.name,
+              helpers.inventory_adjustment_type_label(adj.adjustment_type),
+              adj.quantity_delta,
+              base_unit,
+              adj.user&.name,
+              adj.reason_notes
+            ]
+          end
+        end
+        "﻿#{body}"
       end
 
       def load_supplier_links_data

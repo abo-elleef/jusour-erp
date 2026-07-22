@@ -311,9 +311,14 @@
       </section>
 
       <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div class="<%= section_head %>">
-          <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.recent_adjustments") %></h2>
-          <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.adjustments_hint") %></p>
+        <div class="<%= section_head %> flex flex-wrap justify-between items-center gap-2">
+          <div>
+            <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.recent_adjustments") %></h2>
+            <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.adjustments_hint") %></p>
+          </div>
+          <%= link_to t("inventory.ingredients.adjustments.view_all"),
+                adjustments_admin_inventory_ingredient_path(@ingredient),
+                class: "text-xs font-semibold text-amber-700 hover:text-amber-800 whitespace-nowrap" %>
         </div>
         <% if @adjustments.any? %>
           <div class="overflow-x-auto">

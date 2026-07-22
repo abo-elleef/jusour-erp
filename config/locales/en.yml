@@ -575,6 +575,7 @@ en:
       index:
         description: "Track stock levels, suppliers, and ingredient costs."
         new_button: "New ingredient"
+        export_csv: "Export stock (CSV)"
         stats:
           active: "Active ingredients"
           low_stock: "Low stock"
@@ -729,6 +730,25 @@ en:
           manage: "Manage stock"
           assign: "Assign"
           empty: "No active branches or central kitchens configured. Add locations to track stock per site."
+      adjustments:
+        title: "Adjustment history"
+        view_all: "View all"
+        export_csv: "Export (CSV)"
+        back: "Back to %{name}"
+        count:
+          one: "%{count} adjustment"
+          other: "%{count} adjustments"
+        user: "User"
+        reason: "Reason"
+        empty: "No adjustments match these filters."
+        invalid_dates: "Invalid date range."
+        filters:
+          location: "Location"
+          all_locations: "All locations"
+          from: "From"
+          to: "To"
+          apply: "Apply"
+          clear: "Clear"
     tools:
       groups:
         operations: "Operations"

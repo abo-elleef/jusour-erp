@@ -575,6 +575,7 @@ ar:
       index:
         description: "متابعة مستويات المخزون والموردين وتكلفة المكونات."
         new_button: "مكون جديد"
+        export_csv: "تصدير المخزون (CSV)"
         stats:
           active: "المكونات النشطة"
           low_stock: "مخزون منخفض"
@@ -731,6 +732,25 @@ ar:
           manage: "إدارة المخزون"
           assign: "تعيين"
           empty: "لا توجد فروع أو مطابخ مركزية نشطة. أضف مواقعاً من صفحة المواقع لتتبع المخزون لكل موقع."
+      adjustments:
+        title: "سجل التعديلات"
+        view_all: "عرض الكل"
+        export_csv: "تصدير (CSV)"
+        back: "العودة إلى %{name}"
+        count:
+          one: "تعديل واحد"
+          other: "%{count} تعديل"
+        user: "المستخدم"
+        reason: "السبب"
+        empty: "لا توجد تعديلات مطابقة لهذه الفلاتر."
+        invalid_dates: "نطاق تاريخ غير صالح."
+        filters:
+          location: "الموقع"
+          all_locations: "كل المواقع"
+          from: "من"
+          to: "إلى"
+          apply: "تطبيق"
+          clear: "مسح"
     tools:
       groups:
         operations: "العمليات"
