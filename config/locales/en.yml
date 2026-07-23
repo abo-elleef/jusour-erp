@@ -756,7 +756,7 @@ en:
     tools:
       groups:
         operations: "Operations"
-        setup: "Setup"
+        setup: "Settings"
         reports: "Reports"
       ingredients: "Ingredients"
       ingredient_categories: "Categories"
@@ -2063,7 +2063,7 @@ en:
         ledgers: "Ledgers"
         transactions: "Transactions"
         reports: "Reports"
-        setup: "Setup"
+        setup: "Settings"
     financial_statements:
       profit_loss_title: "Profit & Loss Statement"
       profit_loss_description: "Revenue and expenses for the selected period."
