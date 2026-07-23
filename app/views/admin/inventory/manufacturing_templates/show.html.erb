@@ -90,7 +90,8 @@
         <table class="w-full text-sm">
           <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
             <tr>
-              <th class="p-3 ps-5 text-start"><%= t("inventory.manufacturing.runs.date") %></th>
+              <th class="p-3 ps-5 text-start"><%= t("inventory.manufacturing.runs.number") %></th>
+              <th class="p-3 text-start"><%= t("inventory.manufacturing.runs.date") %></th>
               <th class="p-3 text-start"><%= t("inventory.manufacturing.runs.location") %></th>
               <th class="p-3 text-end"><%= t("inventory.manufacturing.runs.runs_count") %></th>
               <th class="p-3 text-start"><%= t("inventory.manufacturing.runs.expires") %></th>
@@ -101,9 +102,10 @@
             <% @recent_runs.each do |run| %>
               <tr>
                 <td class="p-3 ps-5">
-                  <%= link_to l(run.occurred_on, format: :long), admin_inventory_manufacturing_run_path(run),
-                        class: "font-medium text-amber-700 hover:text-amber-800" %>
+                  <%= link_to run.run_number, admin_inventory_manufacturing_run_path(run),
+                        class: "font-medium text-amber-700 hover:text-amber-800 tabular-nums" %>
                 </td>
+                <td class="p-3 text-gray-700"><%= l(run.occurred_on, format: :long) %></td>
                 <td class="p-3 text-gray-700"><%= run.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
                 <td class="p-3 text-end tabular-nums font-semibold"><%= run.runs_count %></td>
                 <td class="p-3 text-gray-600 tabular-nums"><%= l(run.output_expires_on, format: :short) %></td>

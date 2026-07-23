@@ -129,7 +129,7 @@ module Admin
             output_unit: helpers.ingredient_unit_label(@template.output_ingredient.unit),
             expires_on: l(expires_on, format: :short)
           )
-      rescue Inventory::RunManufacturingService::Error => e
+      rescue ::Inventory::RunManufacturingService::Error => e
         redirect_to admin_inventory_manufacturing_template_path(@template), alert: e.message
       end
 
