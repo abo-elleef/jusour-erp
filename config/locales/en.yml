@@ -2879,7 +2879,7 @@ en:
     invalid_runs: "Enter a positive number of runs."
     invalid_shelf_life: "Enter shelf life of at least 1 day."
     produces: "Produces"
-    success: "Recorded %{runs}× %{template} — added %{output_qty} %{output_unit} of %{output} (expires %{expires_on})."
+    success: "Production run %{number} recorded."
     low_stock_warning: "Some inputs are below required quantity; stock may go negative."
 
   flash:

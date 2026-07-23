@@ -2905,7 +2905,7 @@ ar:
     invalid_runs: "أدخل عدد تشغيلات أكبر من صفر."
     invalid_shelf_life: "أدخل مدة صلاحية يوم واحد على الأقل."
     produces: "ينتج"
-    success: "تم تسجيل %{runs}× %{template} — أُضيف %{output_qty} %{output_unit} من %{output} (ينتهي %{expires_on})."
+    success: "تم تسجيل عملية الإنتاج %{number}."
     low_stock_warning: "بعض المدخلات أقل من الكمية المطلوبة؛ قد يصبح المخزون سالبًا."
 
   flash:

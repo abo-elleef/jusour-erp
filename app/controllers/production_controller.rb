@@ -36,7 +36,7 @@ class ProductionController < ApplicationController
       return
     end
 
-    ::Inventory::RunManufacturingService.new(
+    run = ::Inventory::RunManufacturingService.new(
       template: @template,
       user: current_user,
       location: location,
@@ -45,18 +45,7 @@ class ProductionController < ApplicationController
       notes: params[:notes].presence
     ).call
 
-    output_qty = runs_count * @template.yield_quantity.to_d
-    expires_on = Date.current + shelf_life_days.days
-    redirect_to production_path,
-      notice: t(
-        "production.success",
-        runs: runs_count,
-        template: @template.name,
-        output: @template.output_ingredient.name,
-        output_qty: output_qty,
-        output_unit: helpers.ingredient_unit_label(@template.output_ingredient.unit),
-        expires_on: l(expires_on, format: :short)
-      )
+    redirect_to production_path, notice: t("production.success", number: run.run_number)
   rescue Inventory::RunManufacturingService::Error => e
     redirect_to production_path, alert: e.message
   end

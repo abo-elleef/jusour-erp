@@ -108,7 +108,7 @@ module Admin
           return
         end
 
-        ::Inventory::RunManufacturingService.new(
+        run = ::Inventory::RunManufacturingService.new(
           template: @template,
           user: current_user,
           location: location,
@@ -117,18 +117,8 @@ module Admin
           notes: params[:notes].presence
         ).call
 
-        output_qty = runs_count * @template.base_yield_quantity
-        expires_on = Date.current + shelf_life_days.days
         redirect_to admin_inventory_manufacturing_template_path(@template),
-          notice: t(
-            "production.success",
-            runs: runs_count,
-            template: @template.name,
-            output: @template.output_ingredient.name,
-            output_qty: output_qty,
-            output_unit: helpers.ingredient_unit_label(@template.output_ingredient.unit),
-            expires_on: l(expires_on, format: :short)
-          )
+          notice: t("production.success", number: run.run_number)
       rescue ::Inventory::RunManufacturingService::Error => e
         redirect_to admin_inventory_manufacturing_template_path(@template), alert: e.message
       end
