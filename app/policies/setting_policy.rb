@@ -2,11 +2,11 @@
 
 class SettingPolicy < ApplicationPolicy
   def index?
-    owner?
+    owner? || accountant?
   end
 
   def show?
-    owner?
+    owner? || accountant?
   end
 
   def update?

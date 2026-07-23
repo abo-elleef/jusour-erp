@@ -249,6 +249,10 @@ en:
     kitchen: "Kitchen"
     production: "Production"
     admin: "Admin"
+    groups:
+      sell_serve: "Sell & serve"
+      stock_finance: "Stock & finance"
+      launch: "Launch"
 
   order:
     types:

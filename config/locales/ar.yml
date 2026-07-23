@@ -249,6 +249,10 @@ ar:
     kitchen: "المطبخ"
     production: "الإنتاج"
     admin: "الإدارة"
+    groups:
+      sell_serve: "البيع والخدمة"
+      stock_finance: "المخزون والمالية"
+      launch: "التطبيقات"
 
   order:
     types:

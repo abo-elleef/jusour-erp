@@ -744,12 +744,61 @@ module ApplicationHelper
   end
 
   def admin_nav_link_class(active = false)
-    base = "block py-2.5 px-2 rounded-lg hover:bg-gray-700 whitespace-nowrap"
+    base = "flex items-center gap-3 py-2.5 px-2 rounded-lg hover:bg-gray-700 whitespace-nowrap"
     active ? "#{base} bg-gray-700" : base
+  end
+
+  # Simple, self-authored line icons for the admin sidebar. Kept intentionally
+  # geometric so they render crisply at 20px and can't break like copy-pasted
+  # long icon paths. Inherit color/size from the parent link.
+  ADMIN_NAV_ICON_PATHS = {
+    dashboard: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>',
+    orders: '<path d="M6 3h9l4 4v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8 12h8M8 16h5"/>',
+    menu: '<path d="M4 5a2 2 0 0 1 2-2h5v16H6a2 2 0 0 0-2 2V5z"/><path d="M20 5a2 2 0 0 0-2-2h-5v16h5a2 2 0 0 1 2 2V5z"/>',
+    customers: '<circle cx="8.5" cy="8" r="3"/><circle cx="16" cy="9" r="2.3"/><path d="M3 20a5.5 5.5 0 0 1 11 0"/><path d="M15 14.6a5 5 0 0 1 6 5.4"/>',
+    inventory: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M4 7.5l8 4.5 8-4.5"/><path d="M12 12v9"/>',
+    accounting: '<rect x="5" y="3" width="14" height="18" rx="2"/><rect x="8" y="6" width="8" height="3" rx="0.5"/><path d="M8.5 13h0M12 13h0M15.5 13h0M8.5 16.5h0M12 16.5h0M15.5 16.5h0"/>',
+    settings: '<path d="M4 6h8M16 6h4"/><circle cx="14" cy="6" r="2"/><path d="M4 12h4M12 12h8"/><circle cx="10" cy="12" r="2"/><path d="M4 18h8M16 18h4"/><circle cx="14" cy="18" r="2"/>',
+    pos: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+    kitchen: '<path d="M4 9h16"/><path d="M6 9v7a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V9"/><path d="M2 12h2M20 12h2"/><path d="M11 5c-.5.7-.5 1.3 0 2M14 5c-.5.7-.5 1.3 0 2"/>',
+    production: '<path d="M3 21h18"/><path d="M5 21V11l5 3V11l5 3V8l4 2v11"/><path d="M8 21v-3M12 21v-3M16 21v-3"/>'
+  }.freeze
+
+  def admin_nav_icon(name, css: "w-5 h-5 shrink-0")
+    inner = ADMIN_NAV_ICON_PATHS[name.to_sym]
+    return "".html_safe if inner.nil?
+
+    content_tag(:svg, raw(inner),
+      class: css, viewBox: "0 0 24 24", fill: "none",
+      stroke: "currentColor", "stroke-width": "1.7",
+      "stroke-linecap": "round", "stroke-linejoin": "round",
+      "aria-hidden": "true")
   end
 
   def admin_nav_active?(*prefixes)
     prefixes.any? { |prefix| controller_path == prefix || controller_path.start_with?("#{prefix}/") }
+  end
+
+  # Controllers surfaced under the Settings section (some live in other
+  # namespaces but are presented as Settings tabs).
+  SETTINGS_SECTION_CONTROLLERS = %w[
+    admin/settings admin/users admin/locations admin/printers
+    admin/accounting/integrations admin/accounting/payment_method_treasuries
+  ].freeze
+
+  def in_settings_section?
+    admin_nav_active?(*SETTINGS_SECTION_CONTROLLERS)
+  end
+
+  # Where the sidebar "Settings" link points, per role — the first tab the
+  # current user can actually open. Managers can't see General/Staff, so they
+  # land on Locations.
+  def settings_landing_path
+    if current_user.owner? || current_user.accountant?
+      admin_settings_path
+    else
+      admin_locations_path
+    end
   end
 
   def treasury_index_sort_link(label, column, sort:, direction:)
