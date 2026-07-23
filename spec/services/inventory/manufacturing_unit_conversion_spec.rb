@@ -37,7 +37,7 @@ RSpec.describe "Manufacturing with alternate units", type: :model do
 
   it "consumes inputs and produces output in base units" do
     Inventory::RunManufacturingService.new(
-      template: template, user: user, runs_count: 2, shelf_life_days: 5
+      template: template, user: user, location: location, runs_count: 2, shelf_life_days: 5
     ).call
 
     # Flour: 3 kg × 2 runs = 6000 g consumed → 100000 - 6000

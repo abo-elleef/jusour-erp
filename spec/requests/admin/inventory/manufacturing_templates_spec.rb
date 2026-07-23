@@ -16,6 +16,57 @@ RSpec.describe "Admin::Inventory::ManufacturingTemplates", type: :request do
     sign_in owner
   end
 
+  describe "POST run (location-aware production)" do
+    let(:kitchen) { create(:location, :central_kitchen, company: company) }
+
+    def active_template
+      t = ManufacturingTemplate.create!(company: company, name: "Sauce", yield_quantity: 2,
+        active: false, output_ingredient: output, yield_unit: output.unit)
+      t.manufacturing_template_lines.create!(ingredient: input, quantity_used: 1, unit: input.unit)
+      t.update!(active: true)
+      t
+    end
+
+    it "requires a location and records nothing without one" do
+      template = active_template
+      expect {
+        post run_admin_inventory_manufacturing_template_path(template),
+          params: { runs_count: 1, shelf_life_days: 3 }
+      }.not_to change(ManufacturingRun, :count)
+      expect(flash[:alert]).to be_present
+    end
+
+    it "produces the output batch at the chosen location" do
+      template = active_template
+      post run_admin_inventory_manufacturing_template_path(template),
+        params: { location_id: kitchen.id, runs_count: 1, shelf_life_days: 3 }
+
+      run = ManufacturingRun.last
+      expect(run.location).to eq(kitchen)
+      expect(output.stock_batches.where(location: kitchen).sum(:quantity_remaining).to_d).to eq(2)
+      expect(kitchen.ingredient_stock(output).quantity_on_hand.to_d).to eq(2)
+    end
+  end
+
+  describe "GET manufacturing_run show" do
+    it "renders the run with a print button and inputs/output" do
+      kitchen = create(:location, :central_kitchen, company: company)
+      template = ManufacturingTemplate.create!(company: company, name: "Sauce", yield_quantity: 2,
+        active: false, output_ingredient: output, yield_unit: output.unit)
+      template.manufacturing_template_lines.create!(ingredient: input, quantity_used: 1, unit: input.unit)
+      run = ManufacturingRun.create!(manufacturing_template: template, user: owner,
+        location: kitchen, runs_count: 1, occurred_on: Date.current, shelf_life_days: 3)
+
+      get admin_inventory_manufacturing_run_path(run)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("window.print()")
+      expect(response.body).to include(kitchen.name)
+      expect(response.body).to include(input.name)   # input used
+      expect(response.body).to include(output.name)  # output produced
+    end
+  end
+
   def template_for(name, position:)
     ManufacturingTemplate.create!(company: company, name: name, yield_quantity: 1, position: position,
       active: false, output_ingredient: output, yield_unit: output.unit)

@@ -30,6 +30,15 @@ export default class extends Controller {
     item.dataset.toastPrepared = "true"
     this.animateIn(item)
     this.scheduleDismiss(item)
+
+    // Pause auto-dismiss while the user is hovering (or keyboard-focused on)
+    // the toast; restart the countdown once they move away.
+    const pause = () => this.clearDismissTimer(item)
+    const resume = () => this.scheduleDismiss(item)
+    item.addEventListener("mouseenter", pause)
+    item.addEventListener("mouseleave", resume)
+    item.addEventListener("focusin", pause)
+    item.addEventListener("focusout", resume)
   }
 
   scheduleDismiss(item) {

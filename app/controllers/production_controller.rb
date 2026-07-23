@@ -10,6 +10,8 @@ class ProductionController < ApplicationController
       .includes(:output_ingredient, manufacturing_template_lines: :ingredient)
       .ordered
       .select { |template| template.manufacturing_template_lines.any? }
+    @production_locations = production_locations
+    @default_production_location_id = @production_locations.find(&:central_kitchen?)&.id
   end
 
   def create
@@ -28,9 +30,16 @@ class ProductionController < ApplicationController
       return
     end
 
+    location = production_locations.find { |l| l.id == params[:location_id] }
+    if location.blank?
+      redirect_to production_path, alert: t("production.location_required")
+      return
+    end
+
     ::Inventory::RunManufacturingService.new(
       template: @template,
       user: current_user,
+      location: location,
       runs_count: runs_count,
       shelf_life_days: shelf_life_days,
       notes: params[:notes].presence
@@ -53,6 +62,11 @@ class ProductionController < ApplicationController
   end
 
   private
+
+  # Central kitchens first (the usual production site), then branches.
+  def production_locations
+    Location.active.central_kitchens.ordered.to_a + Location.active.branches.ordered.to_a
+  end
 
   def require_production_access!
     return if current_user&.can_access_production?

@@ -35,6 +35,14 @@
       <%= form_with url: run_admin_inventory_manufacturing_template_path(@template),
             method: :post,
             class: "p-5 flex flex-wrap items-start gap-4" do %>
+        <div class="min-w-[12rem]">
+          <%= label_tag :location_id, t("production.location_label"), class: label_class %>
+          <%= select_tag :location_id,
+                options_for_select(@production_locations.map { |l| [stock_location_option_label(l), l.id] }, @default_production_location_id),
+                include_blank: t("production.select_location"),
+                required: true,
+                class: "#{pos_input_class} appearance-none" %>
+        </div>
         <div class="min-w-[10rem]">
           <%= label_tag :runs_count, t("production.runs_label"), class: label_class %>
           <%= number_field_tag :runs_count, 1, min: 0.001, step: 0.001, required: true, class: pos_input_class %>
@@ -83,6 +91,7 @@
           <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
             <tr>
               <th class="p-3 ps-5 text-start"><%= t("inventory.manufacturing.runs.date") %></th>
+              <th class="p-3 text-start"><%= t("inventory.manufacturing.runs.location") %></th>
               <th class="p-3 text-end"><%= t("inventory.manufacturing.runs.runs_count") %></th>
               <th class="p-3 text-start"><%= t("inventory.manufacturing.runs.expires") %></th>
               <th class="p-3 pe-5 text-start"><%= t("inventory.manufacturing.runs.by") %></th>
@@ -95,6 +104,7 @@
                   <%= link_to l(run.occurred_on, format: :long), admin_inventory_manufacturing_run_path(run),
                         class: "font-medium text-amber-700 hover:text-amber-800" %>
                 </td>
+                <td class="p-3 text-gray-700"><%= run.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
                 <td class="p-3 text-end tabular-nums font-semibold"><%= run.runs_count %></td>
                 <td class="p-3 text-gray-600 tabular-nums"><%= l(run.output_expires_on, format: :short) %></td>
                 <td class="p-3 pe-5 text-gray-600"><%= run.user.name %></td>

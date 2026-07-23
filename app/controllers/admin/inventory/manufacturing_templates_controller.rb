@@ -23,7 +23,9 @@ module Admin
       def show
         authorize_inventory!(:show)
         @lines = @template.manufacturing_template_lines.includes(:ingredient)
-        @recent_runs = @template.manufacturing_runs.includes(:user).recent.limit(20)
+        @recent_runs = @template.manufacturing_runs.includes(:user, :location).recent.limit(20)
+        @production_locations = production_locations
+        @default_production_location_id = @production_locations.find(&:central_kitchen?)&.id
       end
 
       def new
@@ -99,9 +101,17 @@ module Admin
           return
         end
 
+        location = production_locations.find { |l| l.id == params[:location_id] }
+        if location.blank?
+          redirect_to admin_inventory_manufacturing_template_path(@template),
+            alert: t("production.location_required")
+          return
+        end
+
         ::Inventory::RunManufacturingService.new(
           template: @template,
           user: current_user,
+          location: location,
           runs_count: runs_count,
           shelf_life_days: shelf_life_days,
           notes: params[:notes].presence
@@ -128,6 +138,11 @@ module Admin
       def set_template
         @template = ManufacturingTemplate.find(params[:id])
         @manufacturing_template = @template
+      end
+
+      # Central kitchens first (the usual production site), then branches.
+      def production_locations
+        Location.active.central_kitchens.ordered.to_a + Location.active.branches.ordered.to_a
       end
 
       def template_params

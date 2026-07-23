@@ -4,9 +4,10 @@ module Inventory
   class RunManufacturingService
     class Error < StandardError; end
 
-    def initialize(template:, user:, runs_count:, shelf_life_days:, occurred_on: Date.current, notes: nil)
+    def initialize(template:, user:, location:, runs_count:, shelf_life_days:, occurred_on: Date.current, notes: nil)
       @template = template
       @user = user
+      @location = location
       @runs_count = runs_count.to_d
       @shelf_life_days = shelf_life_days.to_i
       @occurred_on = occurred_on
@@ -23,6 +24,7 @@ module Inventory
         run = ManufacturingRun.create!(
           manufacturing_template: @template,
           user: @user,
+          location: @location,
           runs_count: @runs_count,
           occurred_on: @occurred_on,
           shelf_life_days: @shelf_life_days,
@@ -57,12 +59,15 @@ module Inventory
       raise Error, "Runs count must be positive" unless @runs_count.positive?
       raise Error, "Shelf life must be at least 1 day" unless @shelf_life_days.positive?
       raise Error, "Template has no input lines" if @template.manufacturing_template_lines.empty?
+      raise Error, "A production location is required" if @location.blank?
     end
 
+    # Consume the input from this location's FIFO batches, and record the
+    # consumption against the location so its on-hand drops too.
     def deduct_input!(ingredient, quantity, run)
       remaining = quantity
 
-      ingredient.stock_batches.fifo_order.with_stock.each do |batch|
+      ingredient.stock_batches.where(location: @location).fifo_order.with_stock.each do |batch|
         break if remaining <= 0
 
         deductable = [batch.quantity_remaining.to_d, remaining].min
@@ -73,6 +78,7 @@ module Inventory
       StockAdjustment.create!(
         ingredient: ingredient,
         user: @user,
+        location: @location,
         quantity_delta: -quantity,
         adjustment_type: "production_consumption",
         reason_notes: consumption_note(run, ingredient)
@@ -89,17 +95,19 @@ module Inventory
 
       batch = StockBatch.create!(
         ingredient: output_ingredient,
+        location: @location,
         quantity_received: output_quantity,
         quantity_remaining: output_quantity,
         cost_per_unit_cents: cost_per_unit_cents,
         received_on: @occurred_on,
         expires_on: @occurred_on + @shelf_life_days.days,
-        batch_reference: "MFG-#{run.id.to_s.first(8).upcase}"
+        batch_reference: run.run_number
       )
 
       StockAdjustment.create!(
         ingredient: output_ingredient,
         user: @user,
+        location: @location,
         stock_batch: batch,
         quantity_delta: output_quantity,
         adjustment_type: "production_output",

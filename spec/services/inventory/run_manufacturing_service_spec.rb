@@ -52,10 +52,13 @@ RSpec.describe Inventory::RunManufacturingService do
     template
   end
 
+  let(:kitchen) { create(:location, :central_kitchen) }
+
   before do
     [chicken, buttermilk].each do |ingredient|
       StockBatch.create!(
         ingredient: ingredient,
+        location: kitchen,
         quantity_received: ingredient.quantity_on_hand,
         quantity_remaining: ingredient.quantity_on_hand,
         cost_per_unit_cents: ingredient.cost_per_unit_cents,
@@ -65,10 +68,11 @@ RSpec.describe Inventory::RunManufacturingService do
   end
 
   describe "#call" do
-    it "deducts inputs and adds output for multiple runs" do
+    it "deducts inputs and adds output at the production location for multiple runs" do
       described_class.new(
         template: template,
         user: user,
+        location: kitchen,
         runs_count: 2,
         shelf_life_days: 5,
         occurred_on: Date.current
@@ -78,30 +82,34 @@ RSpec.describe Inventory::RunManufacturingService do
       expect(buttermilk.reload.quantity_on_hand.to_d).to eq(4) # 8 - (2 * 2)
       expect(marinated.reload.quantity_on_hand.to_d).to eq(10) # 5 * 2
 
+      # Inputs drawn down from the kitchen's own batches.
+      expect(chicken.stock_batches.where(location: kitchen).sum(:quantity_remaining).to_d).to eq(2)
+
       expect(ManufacturingRun.count).to eq(1)
-      expect(StockAdjustment.where(adjustment_type: "production_consumption").count).to eq(2)
-      expect(StockAdjustment.where(adjustment_type: "production_output").count).to eq(1)
+      expect(ManufacturingRun.last.location).to eq(kitchen)
 
       output_batch = marinated.stock_batches.last
+      expect(output_batch.location).to eq(kitchen)
       expect(output_batch.quantity_remaining.to_d).to eq(10)
       expect(output_batch.expires_on).to eq(Date.current + 5.days)
       expected_cost = (((4 * 2 * 450) + (2 * 2 * 150)).to_d / 10).round
       expect(output_batch.cost_per_unit_cents).to eq(expected_cost)
+
+      # Output landed in the kitchen's on-hand, so it's transferable from there.
+      expect(kitchen.ingredient_stock(marinated).quantity_on_hand.to_d).to eq(10)
 
       run = ManufacturingRun.last
       expect(run.shelf_life_days).to eq(5)
       expect(run.output_expires_on).to eq(Date.current + 5.days)
     end
 
-    it "allows run when input stock is below required" do
+    it "allows a run when input stock is below required" do
       chicken.update!(quantity_on_hand: 1)
       chicken.stock_batches.update_all(quantity_remaining: 1)
 
       described_class.new(
-        template: template,
-        user: user,
-        runs_count: 1,
-        shelf_life_days: 3
+        template: template, user: user, location: kitchen,
+        runs_count: 1, shelf_life_days: 3
       ).call
 
       expect(chicken.reload.quantity_on_hand.to_d).to eq(-3)
@@ -111,12 +119,19 @@ RSpec.describe Inventory::RunManufacturingService do
     it "rejects zero shelf life" do
       expect {
         described_class.new(
-          template: template,
-          user: user,
-          runs_count: 1,
-          shelf_life_days: 0
+          template: template, user: user, location: kitchen,
+          runs_count: 1, shelf_life_days: 0
         ).call
       }.to raise_error(Inventory::RunManufacturingService::Error, "Shelf life must be at least 1 day")
+    end
+
+    it "requires a production location" do
+      expect {
+        described_class.new(
+          template: template, user: user, location: nil,
+          runs_count: 1, shelf_life_days: 3
+        ).call
+      }.to raise_error(Inventory::RunManufacturingService::Error, "A production location is required")
     end
   end
 end

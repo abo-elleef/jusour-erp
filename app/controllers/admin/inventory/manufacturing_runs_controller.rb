@@ -7,7 +7,7 @@ module Admin
 
       def index
         authorize_inventory_index!(ManufacturingRun)
-        @runs = ManufacturingRun.includes(:manufacturing_template, :user, manufacturing_template: :output_ingredient)
+        @runs = ManufacturingRun.includes(:manufacturing_template, :user, :location, manufacturing_template: :output_ingredient)
           .recent
           .limit(100)
       end

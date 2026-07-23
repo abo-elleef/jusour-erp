@@ -492,6 +492,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_110000) do
     t.datetime "updated_at", null: false
     t.uuid "location_id"
     t.integer "shelf_life_days", null: false
+    t.uuid "company_id", null: false
+    t.string "run_number", null: false
+    t.index ["company_id", "run_number"], name: "index_manufacturing_runs_on_company_id_and_run_number", unique: true
+    t.index ["company_id"], name: "index_manufacturing_runs_on_company_id"
     t.index ["location_id"], name: "index_manufacturing_runs_on_location_id"
     t.index ["manufacturing_template_id"], name: "index_manufacturing_runs_on_manufacturing_template_id"
     t.index ["occurred_on"], name: "index_manufacturing_runs_on_occurred_on"
@@ -1293,6 +1297,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_110000) do
   add_foreign_key "locations", "companies"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"
+  add_foreign_key "manufacturing_runs", "companies"
   add_foreign_key "manufacturing_runs", "locations"
   add_foreign_key "manufacturing_runs", "manufacturing_templates"
   add_foreign_key "manufacturing_runs", "users"

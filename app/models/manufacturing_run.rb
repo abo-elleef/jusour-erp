@@ -1,17 +1,52 @@
 # frozen_string_literal: true
 
 class ManufacturingRun < ApplicationRecord
+  include Tenantable
+
   belongs_to :manufacturing_template
   belongs_to :user
   belongs_to :location, optional: true
 
+  before_validation :assign_run_number, on: :create
+
   validates :runs_count, numericality: { greater_than: 0 }
   validates :occurred_on, presence: true
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }
+  validates :run_number, presence: true, uniqueness: { scope: :company_id, case_sensitive: false }
 
   scope :recent, -> { order(occurred_on: :desc, created_at: :desc) }
 
+  # "MFG-<year>-<sequence>", per company, resetting each year — same method as
+  # vendor invoices and journal entries.
+  def self.next_run_number(company: Current.company, year: Date.current.year)
+    prefix = "MFG-#{year}-"
+    return "#{prefix}00001" if company.blank?
+
+    max_seq = unscoped_by_company
+      .where(company_id: company.id)
+      .where("run_number ~ ?", "^MFG-#{year}-[0-9]+$")
+      .maximum(Arel.sql("CAST(SUBSTRING(run_number FROM #{prefix.length + 1}) AS INTEGER)"))
+
+    format("%s%05d", prefix, (max_seq || 0) + 1)
+  end
+
   def output_expires_on
     occurred_on + shelf_life_days.days
+  end
+
+  private
+
+  # A run belongs to the same company as its template.
+  def assign_company
+    self.company ||= manufacturing_template&.company || Current.company
+  end
+
+  def assign_run_number
+    return if run_number.present?
+
+    self.run_number = self.class.next_run_number(
+      company: company || Current.company,
+      year: (occurred_on || Date.current).year
+    )
   end
 end
