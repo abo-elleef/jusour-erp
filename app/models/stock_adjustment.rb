@@ -40,13 +40,14 @@ class StockAdjustment < ApplicationRecord
   end
 
   def update_ingredient_stock
-    new_qty = ingredient.quantity_on_hand.to_d + quantity_delta.to_d
-    ingredient.update_columns(quantity_on_hand: new_qty)
-
     if location_id.present?
+      # Adjust the location; its roll-up recomputes the ingredient's global
+      # on-hand as the sum of all locations, so the two stay consistent.
       il = IngredientLocation.find_or_initialize_by(ingredient: ingredient, location: location)
       il.quantity_on_hand = il.quantity_on_hand.to_d + quantity_delta.to_d
       il.save!
+    else
+      ingredient.update_columns(quantity_on_hand: ingredient.quantity_on_hand.to_d + quantity_delta.to_d)
     end
   end
 

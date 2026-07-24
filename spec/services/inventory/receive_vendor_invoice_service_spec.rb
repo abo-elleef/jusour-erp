@@ -14,7 +14,7 @@ RSpec.describe Inventory::ReceiveVendorInvoiceService do
       unit: "kg",
       reorder_threshold: 5,
       cost_per_unit_cents: 200,
-      quantity_on_hand: 10,
+      quantity_on_hand: 0,
       company: Current.company
     )
   end
@@ -48,7 +48,7 @@ RSpec.describe Inventory::ReceiveVendorInvoiceService do
     described_class.new(invoice, user).call
 
     expect(invoice.reload.total_cents).to eq(1_000)
-    expect(ingredient.reload.quantity_on_hand.to_f).to eq(14.0)
+    expect(ingredient.reload.quantity_on_hand.to_f).to eq(4.0) # sum of locations
 
     il = IngredientLocation.find_by(location: location, ingredient: ingredient)
     expect(il.quantity_on_hand.to_f).to eq(4.0)
@@ -83,7 +83,7 @@ RSpec.describe Inventory::ReceiveVendorInvoiceService do
 
     il = IngredientLocation.find_by(location: location, ingredient: ingredient)
     expect(il.quantity_on_hand.to_f).to eq(5.0)
-    expect(ingredient.reload.quantity_on_hand.to_f).to eq(12.0)
+    expect(ingredient.reload.quantity_on_hand.to_f).to eq(5.0) # sum of locations
   end
 
   it "skips price history when unit price is unchanged" do

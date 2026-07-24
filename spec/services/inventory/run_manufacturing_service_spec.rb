@@ -56,6 +56,7 @@ RSpec.describe Inventory::RunManufacturingService do
 
   before do
     [chicken, buttermilk].each do |ingredient|
+      ingredient.ingredient_locations.create!(location: kitchen, quantity_on_hand: ingredient.quantity_on_hand, reorder_threshold: 0)
       StockBatch.create!(
         ingredient: ingredient,
         location: kitchen,
@@ -104,7 +105,7 @@ RSpec.describe Inventory::RunManufacturingService do
     end
 
     it "allows a run when input stock is below required" do
-      chicken.update!(quantity_on_hand: 1)
+      chicken.ingredient_locations.find_by(location: kitchen).update!(quantity_on_hand: 1)
       chicken.stock_batches.update_all(quantity_remaining: 1)
 
       described_class.new(

@@ -167,7 +167,8 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       branch_il = IngredientLocation.find_by(location: branch, ingredient: ingredient)
       expect(kitchen_il.quantity_on_hand.to_d).to eq(7.5)
       expect(branch_il.quantity_on_hand.to_d).to eq(2.5)
-      expect(ingredient.reload.quantity_on_hand.to_d).to eq(20.0)
+      # Global on-hand = sum of locations (7.5 + 2.5); a transfer just moves it.
+      expect(ingredient.reload.quantity_on_hand.to_d).to eq(10.0)
     end
 
     it "supports partial send, confirm, then send and confirm the remainder" do

@@ -103,7 +103,9 @@ RSpec.describe "Admin::Locations::Ingredients", type: :request do
     end
 
     it "also updates the global ingredient quantity" do
-      original_qty = ingredient.quantity_on_hand
+      # The ingredient's stock lives at the location (global = sum of locations).
+      create(:ingredient_location, location: location, ingredient: ingredient, quantity_on_hand: 10.0)
+      original_qty = ingredient.reload.quantity_on_hand
 
       post adjust_admin_location_ingredient_path(location, ingredient), params: {
         quantity_delta: "4.0",
