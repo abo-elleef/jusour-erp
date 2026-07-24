@@ -2323,6 +2323,7 @@ ar:
         account_type: "النوع"
         debit: "مدين"
         credit: "دائن"
+        notes: "ملاحظات"
       type:
         auto: "تلقائي"
         manual: "يدوي"
@@ -2335,6 +2336,7 @@ ar:
         reversed: "تم إنشاء قيد العكس %{number}. تم تحديث أرصدة الخزائن."
       actions:
         delete: "حذف القيد"
+        print: "طباعة"
       confirm_delete: "هل تريد حذف هذا القيد؟ سيتم عكس أرصدة الخزائن المتأثرة. لا يمكن التراجع عن هذا الإجراء."
       reversal_of: "عكس %{number}: %{description}"
       stats_total: "القيود"
@@ -2352,6 +2354,7 @@ ar:
         lines_hint: "أدخل المبلغ في خانة المدين أو الدائن فقط — لا يمكن ملء الاثنين في نفس السطر."
         add_line: "إضافة سطر"
         select_account: "اختر حساباً…"
+        line_notes_placeholder: "ملاحظة (اختياري)"
         save: "حفظ القيد"
       filter:
         all: "جميع القيود"

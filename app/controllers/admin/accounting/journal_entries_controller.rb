@@ -96,7 +96,7 @@ module Admin
               date: @journal_entry.date.to_s,
               description: @journal_entry.description,
               lines: @journal_entry.lines.map { |l|
-                { account: l.account_name, debit_cents: l.debit_cents, credit_cents: l.credit_cents }
+                { account: l.account_name, debit_cents: l.debit_cents, credit_cents: l.credit_cents, notes: l.notes }
               }
             }
           )
@@ -116,7 +116,7 @@ module Admin
       def journal_entry_params
         params.require(:journal_entry).permit(
           :date, :description,
-          lines_attributes: %i[account_encoded debit_pounds credit_pounds]
+          lines_attributes: %i[account_encoded debit_pounds credit_pounds notes]
         )
       end
 

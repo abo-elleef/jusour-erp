@@ -2305,6 +2305,7 @@ en:
         account_type: "Type"
         debit: "Debit"
         credit: "Credit"
+        notes: "Notes"
       type:
         auto: "Auto"
         manual: "Manual"
@@ -2317,6 +2318,7 @@ en:
         reversed: "Reversal entry %{number} created. Treasury balances updated."
       actions:
         delete: "Delete Entry"
+        print: "Print"
       confirm_delete: "Delete this journal entry? Treasury balances will be reversed. This cannot be undone."
       reversal_of: "Reversal of %{number}: %{description}"
       stats_total: "Entries"
@@ -2334,6 +2336,7 @@ en:
         lines_hint: "Enter debit on one side and credit on the other — each line must have exactly one."
         add_line: "Add line"
         select_account: "Select account…"
+        line_notes_placeholder: "Note (optional)"
         save: "Save Journal Entry"
       filter:
         all: "All Entries"

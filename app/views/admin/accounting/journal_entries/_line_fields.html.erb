@@ -3,7 +3,7 @@
 <% prefix = is_template ? "journal_entry[lines_attributes][NEW_LINE]" : nil %>
 
 <div data-journal-entry-lines-target="row"
-     class="grid grid-cols-[1fr_140px_140px_36px] gap-2 px-5 py-3 items-center">
+     class="grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_120px_120px_36px] gap-2 px-5 py-3 items-center">
 
   <%# Account selector %>
   <% if is_template %>
@@ -18,6 +18,17 @@
           grouped_options_for_select(@account_groups),
           { include_blank: t("accounting.journal_entries.form.select_account") },
           class: "#{pos_input_class} text-sm", required: true %>
+  <% end %>
+
+  <%# Notes %>
+  <% if is_template %>
+    <input type="text" name="<%= prefix %>[notes]"
+           placeholder="<%= t("accounting.journal_entries.form.line_notes_placeholder") %>"
+           class="<%= pos_input_class %> text-sm" />
+  <% else %>
+    <%= lf.text_field :notes,
+          placeholder: t("accounting.journal_entries.form.line_notes_placeholder"),
+          class: "#{pos_input_class} text-sm" %>
   <% end %>
 
   <%# Debit %>

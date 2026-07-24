@@ -1,9 +1,19 @@
 <% content_for :title, @journal_entry.entry_number %>
-<%= render "admin/accounting/nav" %>
+<div class="print:hidden">
+  <%= render "admin/accounting/nav" %>
+</div>
 
-<div class="max-w-4xl">
+<div class="max-w-4xl print:max-w-none">
+  <%# Print-only letterhead (visible only when printing) %>
+  <div class="hidden print:block mb-6">
+    <p class="text-lg font-bold text-gray-900"><%= Current.company.name %></p>
+    <p class="text-base font-semibold text-gray-700"><%= t("accounting.journal_entries.title") %> — <%= @journal_entry.entry_number %></p>
+    <p class="text-sm text-gray-500"><%= l(@journal_entry.date, format: :long) %></p>
+    <p class="text-sm text-gray-600 mt-1"><%= @journal_entry.description %></p>
+  </div>
+
   <%# Header %>
-  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6 print:hidden">
     <div>
       <div class="flex items-center gap-3 mb-1">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 font-mono"><%= @journal_entry.entry_number %></h1>
@@ -54,6 +64,10 @@
       <% end %>
     </div>
     <div class="flex items-center gap-2">
+      <button onclick="window.print()"
+              class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 border border-gray-300 bg-white hover:bg-gray-50 px-4 py-2 rounded-xl transition-colors cursor-pointer">
+        <%= t("accounting.journal_entries.actions.print") %>
+      </button>
       <% if @journal_entry.manual? %>
         <% if @journal_entry.reversed? %>
           <span class="text-sm text-gray-400 border border-gray-200 px-4 py-2 rounded-xl bg-gray-50 cursor-not-allowed">
@@ -82,6 +96,7 @@
           <th class="p-3 ps-5 text-start w-20"><%= t("accounting.journal_entries.col.code") %></th>
           <th class="p-3 text-start"><%= t("accounting.journal_entries.col.account") %></th>
           <th class="p-3 text-start w-28"><%= t("accounting.journal_entries.col.account_type") %></th>
+          <th class="p-3 text-start"><%= t("accounting.journal_entries.col.notes") %></th>
           <th class="p-3 text-end w-36"><%= t("accounting.journal_entries.col.debit") %></th>
           <th class="p-3 pe-5 text-end w-36"><%= t("accounting.journal_entries.col.credit") %></th>
         </tr>
@@ -98,6 +113,7 @@
                 <%= t("accounting.journal_entries.account_types.#{line.account_type}", default: line.account_type.humanize) %>
               </span>
             </td>
+            <td class="p-3 text-gray-600"><%= line.notes.presence || "—" %></td>
             <td class="p-3 text-end tabular-nums <%= line.debit_cents.positive? ? 'font-semibold text-gray-900' : 'text-gray-300' %>">
               <%= line.debit_cents.positive? ? format_money(line.debit_cents) : "—" %>
             </td>
@@ -109,7 +125,7 @@
       </tbody>
       <tfoot class="border-t-2 border-gray-200 bg-gray-50/80">
         <tr>
-          <td colspan="3" class="p-3 ps-5 text-xs font-bold text-gray-600 text-end"><%= t("accounting.journal_entries.totals") %></td>
+          <td colspan="4" class="p-3 ps-5 text-xs font-bold text-gray-600 text-end"><%= t("accounting.journal_entries.totals") %></td>
           <td class="p-3 text-end font-bold tabular-nums <%= @journal_entry.balanced? ? 'text-emerald-700' : 'text-red-600' %>">
             <%= format_money(@journal_entry.total_debits_cents) %>
           </td>
@@ -140,7 +156,7 @@
 
   <%# Audit trail %>
   <% if @audit_entries.any? %>
-    <div class="rounded-xl border border-gray-200 bg-white overflow-hidden">
+    <div class="rounded-xl border border-gray-200 bg-white overflow-hidden print:hidden">
       <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
         <h3 class="text-sm font-semibold text-gray-700"><%= t("accounting.journal_entries.audit_log_heading") %></h3>
       </div>
