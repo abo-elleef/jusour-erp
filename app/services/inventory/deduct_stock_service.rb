@@ -22,7 +22,11 @@ module Inventory
     def deduct_fifo(ingredient, quantity_needed)
       remaining = quantity_needed
 
-      ingredient.stock_batches.fifo_order.with_stock.each do |batch|
+      # Consume from the selling location's own FIFO batches; the location-scoped
+      # adjustment then rolls the location on-hand up into the global total.
+      batches = ingredient.stock_batches.fifo_order.with_stock
+      batches = batches.where(location: @order.location) if @order.location
+      batches.each do |batch|
         break if remaining <= 0
 
         deductable = [batch.quantity_remaining.to_d, remaining].min
@@ -33,6 +37,7 @@ module Inventory
       StockAdjustment.create!(
         ingredient: ingredient,
         user: @order.user,
+        location: @order.location,
         quantity_delta: -quantity_needed,
         adjustment_type: "consumption",
         reason_notes: "Auto-deducted from Order #{@order.order_number}"

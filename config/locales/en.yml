@@ -2870,6 +2870,8 @@ en:
     location_label: "Production location"
     select_location: "Select location…"
     location_required: "Select a production location."
+    occurred_on_label: "Production date"
+    occurred_on_hint: "Defaults to today. Set an earlier date if you're recording it late."
     runs_label: "Number of runs"
     shelf_life_label: "Shelf life (days)"
     shelf_life_hint: "Output expires this many days after production."

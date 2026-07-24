@@ -2896,6 +2896,8 @@ ar:
     location_label: "موقع الإنتاج"
     select_location: "اختر الموقع…"
     location_required: "اختر موقع الإنتاج."
+    occurred_on_label: "تاريخ الإنتاج"
+    occurred_on_hint: "الافتراضي هو اليوم. اختر تاريخاً أسبق إذا كنت تسجّله متأخراً."
     runs_label: "عدد التشغيلات"
     shelf_life_label: "مدة الصلاحية (أيام)"
     shelf_life_hint: "ينتهي المنتج الناتج بعد هذا العدد من الأيام من تاريخ الإنتاج."

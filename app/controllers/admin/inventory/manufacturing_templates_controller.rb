@@ -114,6 +114,7 @@ module Admin
           location: location,
           runs_count: runs_count,
           shelf_life_days: shelf_life_days,
+          occurred_on: production_date(params[:occurred_on]),
           notes: params[:notes].presence
         ).call
 
@@ -133,6 +134,13 @@ module Admin
       # Central kitchens first (the usual production site), then branches.
       def production_locations
         Location.active.central_kitchens.ordered.to_a + Location.active.branches.ordered.to_a
+      end
+
+      # The production date: defaults to today, never in the future (a run can be
+      # backdated when it was recorded late, but not post-dated).
+      def production_date(raw)
+        date = (Date.parse(raw.to_s) rescue Date.current)
+        [date, Date.current].min
       end
 
       def template_params

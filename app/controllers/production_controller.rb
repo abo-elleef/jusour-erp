@@ -42,6 +42,7 @@ class ProductionController < ApplicationController
       location: location,
       runs_count: runs_count,
       shelf_life_days: shelf_life_days,
+      occurred_on: production_date(params[:occurred_on]),
       notes: params[:notes].presence
     ).call
 
@@ -51,6 +52,12 @@ class ProductionController < ApplicationController
   end
 
   private
+
+  # The production date: defaults to today, never in the future.
+  def production_date(raw)
+    date = (Date.parse(raw.to_s) rescue Date.current)
+    [date, Date.current].min
+  end
 
   # Central kitchens first (the usual production site), then branches.
   def production_locations

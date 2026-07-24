@@ -46,6 +46,28 @@ RSpec.describe "Admin::Inventory::ManufacturingTemplates", type: :request do
       expect(output.stock_batches.where(location: kitchen).sum(:quantity_remaining).to_d).to eq(2)
       expect(kitchen.ingredient_stock(output).quantity_on_hand.to_d).to eq(2)
     end
+
+    it "records a backdated production date on the run and its batch" do
+      template = active_template
+      two_days_ago = 2.days.ago.to_date
+
+      post run_admin_inventory_manufacturing_template_path(template),
+        params: { location_id: kitchen.id, runs_count: 1, shelf_life_days: 3, occurred_on: two_days_ago.to_s }
+
+      run = ManufacturingRun.last
+      expect(run.occurred_on).to eq(two_days_ago)
+      batch = output.stock_batches.where(location: kitchen).last
+      expect(batch.received_on).to eq(two_days_ago)
+      expect(batch.expires_on).to eq(two_days_ago + 3.days)
+    end
+
+    it "clamps a future production date to today" do
+      template = active_template
+      post run_admin_inventory_manufacturing_template_path(template),
+        params: { location_id: kitchen.id, runs_count: 1, shelf_life_days: 3, occurred_on: 5.days.from_now.to_date.to_s }
+
+      expect(ManufacturingRun.last.occurred_on).to eq(Date.current)
+    end
   end
 
   describe "GET manufacturing_run show" do
