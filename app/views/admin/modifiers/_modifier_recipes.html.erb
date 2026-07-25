@@ -35,14 +35,29 @@
 
   <div class="p-5 border-t border-gray-100 bg-gray-50/50">
     <% if recipe_ingredients.any? %>
+      <% ingredient_options = recipe_ingredients.map { |i| { value: i.id, label: i.name } }.to_json %>
       <%= form_with url: admin_modifier_group_modifier_modifier_recipes_path(modifier_group, modifier),
-            class: "flex flex-wrap gap-3 items-end" do %>
-        <div class="flex-1 min-w-[14rem]">
+            class: "flex flex-wrap gap-3 items-end",
+            data: { searchable_select_options: ingredient_options } do |f| %>
+        <div class="flex-1 min-w-[14rem]"
+             data-controller="searchable-select"
+             data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
           <%= label_tag "modifier_recipe[ingredient_id]", t("menu.modifiers.recipe_ingredient"), class: label_class %>
-          <%= select_tag "modifier_recipe[ingredient_id]",
-                options_from_collection_for_select(recipe_ingredients, :id, :name),
-                class: "#{pos_input_class} appearance-none",
-                prompt: t("actions.select") %>
+          <%= hidden_field_tag "modifier_recipe[ingredient_id]", nil,
+                data: { searchable_select_target: "hidden" } %>
+          <input type="text"
+                 autocomplete="off"
+                 spellcheck="false"
+                 role="combobox"
+                 aria-expanded="false"
+                 aria-autocomplete="list"
+                 placeholder="<%= t("menu.modifiers.recipe_ingredient") %>"
+                 class="<%= pos_input_class %>"
+                 data-searchable-select-target="input"
+                 data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+          <ul data-searchable-select-target="menu"
+              role="listbox"
+              class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
         </div>
         <div class="min-w-[8rem]">
           <%= label_tag "modifier_recipe[quantity]", t("menu.modifiers.recipe_quantity"), class: label_class %>
