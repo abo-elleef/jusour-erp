@@ -1523,6 +1523,13 @@ en:
       position: "Display order"
       empty: "No modifiers in this group yet."
       confirm_delete: "Delete %{name}?"
+      recipes_heading: "Ingredient impact"
+      recipes_hint: "Ingredients added or removed from stock when this modifier is selected. Use positive quantities to add, negative to remove."
+      recipes_empty: "No ingredient impact configured."
+      recipes_all_assigned: "All ingredients are already assigned to this modifier."
+      recipe_ingredient: "Ingredient"
+      recipe_quantity: "Quantity (± base unit)"
+      recipe_quantity_hint: "Positive = add to deduction (e.g. +1 for extra patty). Negative = reduce deduction (e.g. -1 for no bun)."
     menu_items:
       assign_modifier_groups: "Modifier groups"
       assign_modifier_groups_hint: "Select shared groups shown when customizing this item on POS."
@@ -2948,6 +2955,9 @@ en:
       updated: "Modifier updated."
       removed: "Modifier removed."
       cannot_delete_used: "Cannot delete: this modifier was used on orders."
+    modifier_recipe:
+      added: "Ingredient impact added."
+      removed: "Ingredient impact removed."
     combo:
       created: "Combo created."
       updated: "Combo updated."

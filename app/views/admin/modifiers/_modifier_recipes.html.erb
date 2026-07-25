@@ -1,0 +1,68 @@
+<%# locals: modifier_group, modifier, modifier_recipes, recipe_ingredients %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% chip_destructive = "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
+
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("menu.modifiers.recipes_heading") %></h2>
+    <p class="text-xs text-gray-500 mt-0.5"><%= t("menu.modifiers.recipes_hint") %></p>
+  </div>
+
+  <% if modifier_recipes.any? %>
+    <ul class="divide-y divide-gray-100">
+      <% modifier_recipes.each do |mr| %>
+        <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-100 transition-colors">
+          <div class="min-w-0">
+            <%= link_to mr.ingredient.name, admin_inventory_ingredient_path(mr.ingredient),
+                  class: "font-semibold text-amber-700 hover:text-amber-800" %>
+            <p class="text-xs text-gray-500 mt-0.5 tabular-nums">
+              <% sign = mr.quantity >= 0 ? "+" : "" %>
+              <%= "#{sign}#{number_with_precision(mr.quantity, precision: 4, strip_insignificant_zeros: true)}" %>
+              <%= ingredient_unit_label(mr.ingredient.unit) %>
+            </p>
+          </div>
+          <%= button_to t("actions.remove"),
+                admin_modifier_group_modifier_modifier_recipe_path(modifier_group, modifier, mr),
+                method: :delete,
+                form: { class: "inline" },
+                class: chip_destructive %>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("menu.modifiers.recipes_empty") %></p>
+  <% end %>
+
+  <div class="p-5 border-t border-gray-100 bg-gray-50/50">
+    <% if recipe_ingredients.any? %>
+      <%= form_with url: admin_modifier_group_modifier_modifier_recipes_path(modifier_group, modifier),
+            class: "flex flex-wrap gap-3 items-end" do %>
+        <div class="flex-1 min-w-[14rem]">
+          <%= label_tag "modifier_recipe[ingredient_id]", t("menu.modifiers.recipe_ingredient"), class: label_class %>
+          <%= select_tag "modifier_recipe[ingredient_id]",
+                options_from_collection_for_select(recipe_ingredients, :id, :name),
+                class: "#{pos_input_class} appearance-none",
+                prompt: t("actions.select") %>
+        </div>
+        <div class="min-w-[8rem]">
+          <%= label_tag "modifier_recipe[quantity]", t("menu.modifiers.recipe_quantity"), class: label_class %>
+          <%= number_field_tag "modifier_recipe[quantity]", nil,
+                step: 0.0001, required: true,
+                placeholder: "e.g. 1 or -1",
+                class: "#{pos_input_class} tabular-nums" %>
+        </div>
+        <%= submit_tag t("actions.add"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shrink-0" %>
+      <% end %>
+      <p class="text-xs text-gray-500 mt-2"><%= t("menu.modifiers.recipe_quantity_hint") %></p>
+    <% elsif Ingredient.active.none? %>
+      <p class="text-sm text-gray-500">
+        <%= t("admin.menu_items.recipes_no_ingredients") %>
+        <%= link_to t("admin.menu_items.recipes_create_ingredient"), new_admin_inventory_ingredient_path,
+              class: "font-semibold text-amber-700 hover:text-amber-800" %>.
+      </p>
+    <% else %>
+      <p class="text-sm text-gray-500"><%= t("menu.modifiers.recipes_all_assigned") %></p>
+    <% end %>
+  </div>
+</section>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_18_110000) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_24_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -571,6 +571,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_110000) do
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
     t.index ["company_id"], name: "index_modifier_groups_on_company_id"
+  end
+
+  create_table "modifier_recipes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "modifier_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.decimal "quantity", precision: 10, scale: 4, null: false
+    t.uuid "company_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_modifier_recipes_on_company_id"
+    t.index ["ingredient_id"], name: "index_modifier_recipes_on_ingredient_id"
+    t.index ["modifier_id", "ingredient_id"], name: "index_modifier_recipes_on_modifier_id_and_ingredient_id", unique: true
+    t.index ["modifier_id"], name: "index_modifier_recipes_on_modifier_id"
   end
 
   create_table "modifiers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1312,6 +1325,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_18_110000) do
   add_foreign_key "menu_items", "categories"
   add_foreign_key "menu_items", "companies"
   add_foreign_key "modifier_groups", "companies"
+  add_foreign_key "modifier_recipes", "ingredients"
+  add_foreign_key "modifier_recipes", "modifiers"
   add_foreign_key "modifiers", "companies"
   add_foreign_key "modifiers", "modifier_groups"
   add_foreign_key "notifications", "companies"

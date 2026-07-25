@@ -7,12 +7,30 @@ module Inventory
     end
 
     def call
-      @order.order_items.each do |item|
+      @order.order_items
+            .includes(
+              menu_item: { recipes: :ingredient },
+              order_item_modifiers: { modifier: { modifier_recipes: :ingredient } }
+            )
+            .each do |item|
         next unless item.menu_item_id
 
-        item.menu_item.recipes.includes(:ingredient).each do |recipe|
-          quantity_needed = recipe.base_quantity_used * item.quantity
-          deduct_fifo(recipe.ingredient, quantity_needed)
+        # Accumulate all ingredient quantities in one pass to avoid double FIFO entries
+        totals = Hash.new(0)
+
+        item.menu_item.recipes.each do |recipe|
+          totals[recipe.ingredient] += recipe.base_quantity_used * item.quantity
+        end
+
+        item.order_item_modifiers.each do |oim|
+          oim.modifier.modifier_recipes.each do |mr|
+            totals[mr.ingredient] += mr.quantity.to_d * item.quantity
+          end
+        end
+
+        totals.each do |ingredient, quantity|
+          next if quantity.zero?
+          deduct_fifo(ingredient, quantity)
         end
       end
     end

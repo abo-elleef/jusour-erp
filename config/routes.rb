@@ -109,7 +109,9 @@ Rails.application.routes.draw do
       resources :recipes, only: %i[create destroy], module: :menu_items
     end
     resources :modifier_groups, except: [] do
-      resources :modifiers, except: %i[index show]
+      resources :modifiers, except: %i[index show] do
+        resources :modifier_recipes, only: %i[create destroy], module: :modifiers
+      end
     end
     resources :combos
     resources :customers
