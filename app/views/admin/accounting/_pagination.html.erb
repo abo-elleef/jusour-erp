@@ -1,23 +1,51 @@
-<%# Footer pagination bar. Renders whenever there are records; page links show only when there is more than one page. %>
+<%# Footer pagination bar. Shows a result count plus windowed page links:
+    first · … · current-2 … current+2 · … · last, with Prev/Next arrows. %>
 <% if pagy.count.positive? %>
-  <div class="flex items-center justify-between gap-4 px-5 py-3 border-t border-gray-100 bg-gray-50/60 text-sm">
-    <span class="text-gray-500 tabular-nums">
+  <%
+    current = pagy.page
+    last    = pagy.pages
+    # 1 (first) and last are always shown; the window is current ± 2.
+    window  = ([1, last] + ((current - 2)..(current + 2)).to_a)
+                .uniq.select { |n| n.between?(1, last) }.sort
+  %>
+  <div class="flex flex-wrap items-center justify-between gap-4 px-5 py-3 border-t border-gray-100 bg-gray-50/60 text-sm">
+    <span class="text-gray-500 tabular-nums shrink-0">
       <%= t("accounting.shared.pagination_showing", from: pagy.from, to: pagy.to, count: pagy.count) %>
     </span>
-    <% if pagy.pages > 1 %>
-      <div class="flex items-center gap-4">
+
+    <% if last > 1 %>
+      <nav class="flex items-center gap-1" aria-label="<%= t("accounting.shared.pagination", page: current, pages: last) %>">
+        <%# Previous %>
         <% if pagy.previous %>
-          <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: pagy.previous)), class: "text-amber-700 font-semibold hover:text-amber-800" %>
+          <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: pagy.previous)),
+                class: "px-2.5 py-1 rounded-lg text-amber-700 hover:bg-amber-50 font-semibold" %>
         <% else %>
-          <span class="text-gray-300"><%= t("actions.previous") %></span>
+          <span class="px-2.5 py-1 rounded-lg text-gray-300 font-semibold"><%= t("actions.previous") %></span>
         <% end %>
-        <span class="text-gray-600"><%= t("accounting.shared.pagination", page: pagy.page, pages: pagy.pages) %></span>
+
+        <%# Windowed page numbers with gap markers %>
+        <% prev_n = nil %>
+        <% window.each do |n| %>
+          <% if prev_n && n > prev_n + 1 %>
+            <span class="px-1 text-gray-400">…</span>
+          <% end %>
+          <% if n == current %>
+            <span class="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-semibold tabular-nums" aria-current="page"><%= n %></span>
+          <% else %>
+            <%= link_to n, url_for(request.query_parameters.merge(page: n)),
+                  class: "px-2.5 py-1 rounded-lg text-gray-600 hover:bg-gray-100 font-medium tabular-nums" %>
+          <% end %>
+          <% prev_n = n %>
+        <% end %>
+
+        <%# Next %>
         <% if pagy.next %>
-          <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: pagy.next)), class: "text-amber-700 font-semibold hover:text-amber-800" %>
+          <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: pagy.next)),
+                class: "px-2.5 py-1 rounded-lg text-amber-700 hover:bg-amber-50 font-semibold" %>
         <% else %>
-          <span class="text-gray-300"><%= t("actions.next") %></span>
+          <span class="px-2.5 py-1 rounded-lg text-gray-300 font-semibold"><%= t("actions.next") %></span>
         <% end %>
-      </div>
+      </nav>
     <% end %>
   </div>
 <% end %>

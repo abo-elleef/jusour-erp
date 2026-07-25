@@ -57,6 +57,23 @@ RSpec.describe "Admin::Accounting::Incomes", type: :request do
       get admin_accounting_incomes_path(start_date: "2000-01-01")
       expect(response.body).to include(I18n.t("accounting.shared.pagination_showing", from: 1, to: 3, count: 3))
     end
+
+    it "renders first, last, and a window of numbered page links" do
+      # 8 pages of 50 = 400 records
+      400.times { create_income }
+      get admin_accounting_incomes_path(page: 5, start_date: "2000-01-01")
+      expect(response).to have_http_status(:ok)
+
+      body = response.body
+      # window is current ± 2 (pages 3..7) plus first (1) and last (8)
+      [1, 3, 4, 6, 7, 8].each do |n|
+        expect(body).to include("page=#{n}&amp;start_date") # numbered link href present
+      end
+      # current page (5) is rendered as the highlighted, non-link current marker
+      expect(body).to include('aria-current="page"')
+      # a gap marker sits between first (1) and the window start (3)
+      expect(body).to include("…")
+    end
   end
 
   # ── Reversal ─────────────────────────────────────────────────────────────
