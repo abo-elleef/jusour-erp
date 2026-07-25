@@ -33,14 +33,25 @@
     <section class="rounded-2xl border border-amber-200 bg-amber-50/30 p-5 mb-6">
       <h2 class="text-sm font-semibold text-gray-900 mb-1"><%= t("admin.locations.assign_ingredient") %></h2>
       <p class="text-xs text-gray-500 mb-4"><%= t("admin.locations.assign_ingredient_hint") %></p>
-      <%= form_with url: admin_location_ingredients_path(@location), method: :post, class: "flex flex-wrap items-end gap-3" do %>
-        <div class="flex-1 min-w-[200px]">
+      <% ingredient_options_json = @available_ingredients.map { |i| { value: i.id, label: i.name } }.to_json %>
+      <%= form_with url: admin_location_ingredients_path(@location), method: :post,
+            class: "flex flex-wrap items-end gap-3",
+            data: { searchable_select_options: ingredient_options_json } do %>
+        <div class="flex-1 min-w-[200px]"
+             data-controller="searchable-select"
+             data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
           <%= label_tag :ingredient_id, t("admin.inventory.ingredient"), class: label_class %>
-          <%= select_tag :ingredient_id,
-                options_from_collection_for_select(@available_ingredients, :id, :name),
-                include_blank: t("admin.locations.select_ingredient"),
-                required: true,
-                class: "#{pos_input_class} appearance-none" %>
+          <%= hidden_field_tag :ingredient_id, nil,
+                data: { searchable_select_target: "hidden" } %>
+          <input type="text"
+                 autocomplete="off" spellcheck="false" role="combobox"
+                 aria-expanded="false" aria-autocomplete="list"
+                 placeholder="<%= t("admin.locations.select_ingredient") %>"
+                 class="<%= pos_input_class %>"
+                 data-searchable-select-target="input"
+                 data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+          <ul data-searchable-select-target="menu" role="listbox"
+              class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
         </div>
         <%= submit_tag t("admin.locations.assign_button"),
               class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors cursor-pointer" %>

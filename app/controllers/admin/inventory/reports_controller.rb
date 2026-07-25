@@ -21,28 +21,10 @@ module Admin
         authorize_inventory_index!
         @start_date = params[:start_date].presence&.to_date || 7.days.ago.to_date
         @end_date = params[:end_date].presence&.to_date || Date.current
-        range = @start_date.beginning_of_day..@end_date.end_of_day
 
-        completed_orders = Order.where(status: "completed", created_at: range)
-        @completed_orders_count = completed_orders.count
-        @variance_rows = Ingredient.active.map do |ingredient|
-          theoretical = theoretical_usage(ingredient, completed_orders)
-          actual = ingredient.stock_adjustments
-            .where(adjustment_type: "consumption", created_at: range)
-            .sum("ABS(quantity_delta)")
-            .to_d
-          variance = actual - theoretical
-          variance_pct = theoretical.positive? ? ((variance / theoretical) * 100).round(1) : 0
-
-          {
-            ingredient: ingredient,
-            theoretical: theoretical,
-            actual: actual,
-            variance: variance,
-            variance_pct: variance_pct
-          }
-        end
-
+        result = ::Inventory::IngredientConsumptionService.new(@start_date, @end_date).call
+        @completed_orders_count = result[:completed_orders_count]
+        @variance_rows = result[:rows]
         @ingredient_count = @variance_rows.size
         @high_variance_count = @variance_rows.count { |row| row[:variance_pct].abs > 10 }
 
@@ -53,15 +35,6 @@ module Admin
       end
 
       private
-
-      def theoretical_usage(ingredient, orders)
-        OrderItem
-          .joins(:order, menu_item: :recipes)
-          .where(orders: { id: orders.select(:id) })
-          .where(recipes: { ingredient_id: ingredient.id })
-          .sum("recipes.quantity_used * order_items.quantity")
-          .to_d
-      end
 
       def valuation_csv
         build_csv(

@@ -1,0 +1,110 @@
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-3 mb-2">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.usage_reports.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("accounting.usage_reports.description") %></p>
+    </div>
+    <%= link_to admin_accounting_usage_reports_path(start_date: @start_date, end_date: @end_date, format: :csv),
+          class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg border border-gray-200 transition-colors shrink-0" do %>
+      <span aria-hidden="true">&darr;</span> <%= t("accounting.usage_reports.export_csv") %>
+    <% end %>
+  </div>
+
+  <%= render "admin/accounting/date_range_form" %>
+
+  <% total_units = @food_cost[:items].sum { |i| i[:units_sold] } %>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("accounting.usage_reports.units_sold") %></p>
+      <p class="text-2xl font-bold tabular-nums mt-1"><%= total_units %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("accounting.sales_reports.revenue") %></p>
+      <p class="text-2xl font-bold tabular-nums mt-1"><%= format_money(@food_cost[:total_revenue_cents]) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("accounting.food_costs.cost") %></p>
+      <p class="text-2xl font-bold tabular-nums mt-1"><%= format_money(@food_cost[:total_cost_cents]) %></p>
+    </div>
+    <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("accounting.food_costs.food_cost_pct") %></p>
+      <p class="text-2xl font-bold tabular-nums mt-1"><%= @food_cost[:overall_food_cost_pct] %>%</p>
+    </div>
+  </div>
+
+  <%# ── Section A: menu items sold ─────────────────────────────── %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.usage_reports.items_sold") %></h2>
+      <span class="text-xs text-gray-500"><%= t("accounting.usage_reports.orders_count", count: @completed_orders_count) %></span>
+    </div>
+    <% if @food_cost[:items].any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[560px]">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("accounting.food_costs.item") %></th>
+              <th class="p-3 text-end"><%= t("accounting.food_costs.units") %></th>
+              <th class="p-3 text-end"><%= t("accounting.sales_reports.revenue") %></th>
+              <th class="p-3 text-end"><%= t("accounting.food_costs.cost") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("accounting.food_costs.food_cost_pct") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @food_cost[:items].each do |row| %>
+              <tr class="hover:bg-gray-100 transition-colors">
+                <td class="p-3 ps-5 font-medium text-gray-900"><%= row[:item].name %></td>
+                <td class="p-3 text-end tabular-nums"><%= row[:units_sold] %></td>
+                <td class="p-3 text-end tabular-nums"><%= format_money(row[:revenue_cents]) %></td>
+                <td class="p-3 text-end tabular-nums text-gray-600"><%= format_money(row[:cost_cents]) %></td>
+                <td class="p-3 pe-5 text-end tabular-nums font-semibold"><%= row[:food_cost_pct] %>%</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("accounting.usage_reports.no_sales") %></p>
+    <% end %>
+  </section>
+
+  <%# ── Section B: ingredients consumed (theoretical vs actual) ── %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.usage_reports.consumption") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.usage_reports.consumption_hint") %></p>
+    </div>
+    <% if @consumption_rows.any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[560px]">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("accounting.food_costs.item") %></th>
+              <th class="p-3 text-start"><%= t("inventory.ingredients.show.location") %></th>
+              <th class="p-3 text-end"><%= t("accounting.usage_reports.theoretical") %></th>
+              <th class="p-3 text-end"><%= t("accounting.usage_reports.actual") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("accounting.usage_reports.variance") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @consumption_rows.each do |row| %>
+              <tr class="hover:bg-gray-100 transition-colors">
+                <td class="p-3 ps-5 font-medium text-gray-900"><%= row[:ingredient].name %></td>
+                <td class="p-3 text-gray-500"><%= row[:ingredient].unit %></td>
+                <td class="p-3 text-end tabular-nums"><%= number_with_precision(row[:theoretical], precision: 2, strip_insignificant_zeros: true) %></td>
+                <td class="p-3 text-end tabular-nums"><%= number_with_precision(row[:actual], precision: 2, strip_insignificant_zeros: true) %></td>
+                <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= row[:variance].negative? ? 'text-red-700' : (row[:variance].positive? ? 'text-amber-700' : 'text-gray-500') %>">
+                  <%= number_with_precision(row[:variance], precision: 2, strip_insignificant_zeros: true) %>
+                  <span class="text-xs font-normal text-gray-400">(<%= row[:variance_pct] %>%)</span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("accounting.usage_reports.no_consumption") %></p>
+    <% end %>
+  </section>
+</div>
