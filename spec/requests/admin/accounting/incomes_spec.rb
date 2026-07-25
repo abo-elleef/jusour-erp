@@ -40,15 +40,22 @@ RSpec.describe "Admin::Accounting::Incomes", type: :request do
     it "paginates at 50 per page and preserves filters across pages" do
       51.times { create_income }
 
-      get admin_accounting_incomes_path
+      get admin_accounting_incomes_path(start_date: "2000-01-01")
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(I18n.t("accounting.shared.pagination", page: 1, pages: 2))
+      expect(response.body).to include(I18n.t("accounting.shared.pagination_showing", from: 1, to: 50, count: 51))
 
-      get admin_accounting_incomes_path(page: 2, category_id: category.id)
+      get admin_accounting_incomes_path(page: 2, category_id: category.id, start_date: "2000-01-01")
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(I18n.t("accounting.shared.pagination", page: 2, pages: 2))
       # the category filter is carried into the prev-page link
       expect(response.body).to include("category_id=#{category.id}")
+    end
+
+    it "shows the result count even when there is only one page" do
+      3.times { create_income }
+      get admin_accounting_incomes_path(start_date: "2000-01-01")
+      expect(response.body).to include(I18n.t("accounting.shared.pagination_showing", from: 1, to: 3, count: 3))
     end
   end
 

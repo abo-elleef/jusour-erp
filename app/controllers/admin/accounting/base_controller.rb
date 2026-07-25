@@ -11,8 +11,8 @@ module Admin
         authorize :accounting, :index?
       end
 
-      def parse_date_range
-        @start_date = params[:start_date]&.to_date || 7.days.ago.to_date
+      def parse_date_range(default_start: 7.days.ago.to_date)
+        @start_date = params[:start_date]&.to_date || default_start
         @end_date = params[:end_date]&.to_date || Date.current
       end
 

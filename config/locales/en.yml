@@ -2534,6 +2534,7 @@ en:
       hours_this_week: "%{hours}h this week"
       overtime: "(overtime)"
       pagination: "Page %{page} of %{pages}"
+      pagination_showing: "Showing %{from}–%{to} of %{count}"
     dashboard:
       title: "Accounting"
       net_sales_today: "Net sales today"

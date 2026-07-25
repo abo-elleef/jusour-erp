@@ -2552,6 +2552,7 @@ ar:
       hours_this_week: "%{hours} ساعة هذا الأسبوع"
       overtime: "(وقت إضافي)"
       pagination: "صفحة %{page} من %{pages}"
+      pagination_showing: "عرض %{from}–%{to} من %{count}"
     dashboard:
       title: "المحاسبة"
       net_sales_today: "صافي مبيعات اليوم"

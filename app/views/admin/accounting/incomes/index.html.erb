@@ -70,16 +70,6 @@
         <% end %>
       </tbody>
     </table>
+    <%= render "admin/accounting/pagination", pagy: @pagy %>
   </section>
-  <% if @pagy.pages > 1 %>
-    <div class="mt-4 flex gap-4 text-sm">
-      <% if @pagy.previous %>
-        <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: @pagy.previous)), class: "text-amber-700 font-semibold" %>
-      <% end %>
-      <span class="text-gray-600"><%= t("accounting.shared.pagination", page: @pagy.page, pages: @pagy.pages) %></span>
-      <% if @pagy.next %>
-        <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: @pagy.next)), class: "text-amber-700 font-semibold" %>
-      <% end %>
-    </div>
-  <% end %>
 </div>

@@ -11,7 +11,7 @@ module Admin
       end
 
       def index
-        parse_date_range
+        parse_date_range(default_start: Date.current.beginning_of_month)
         @q = Income.ransack(params[:q])
         scope = @q.result.includes(:income_category, :user, :treasury)
         scope = scope.on_date_range(@start_date, @end_date)
