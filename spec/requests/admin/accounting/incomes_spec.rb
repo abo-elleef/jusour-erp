@@ -34,6 +34,24 @@ RSpec.describe "Admin::Accounting::Incomes", type: :request do
     post reverse_admin_accounting_income_path(income)
   end
 
+  # ── Index pagination ─────────────────────────────────────────────────────
+
+  describe "GET /admin/accounting/incomes (pagination)" do
+    it "paginates at 50 per page and preserves filters across pages" do
+      51.times { create_income }
+
+      get admin_accounting_incomes_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("accounting.shared.pagination", page: 1, pages: 2))
+
+      get admin_accounting_incomes_path(page: 2, category_id: category.id)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("accounting.shared.pagination", page: 2, pages: 2))
+      # the category filter is carried into the prev-page link
+      expect(response.body).to include("category_id=#{category.id}")
+    end
+  end
+
   # ── Reversal ─────────────────────────────────────────────────────────────
 
   describe "POST /admin/accounting/incomes/:id/reverse" do

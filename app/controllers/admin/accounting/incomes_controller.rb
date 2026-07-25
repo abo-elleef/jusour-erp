@@ -21,7 +21,7 @@ module Admin
         @total_count    = scope.count
         @reversed_count = scope.where.not(reversed_at: nil).count
         @active_count   = scope.where(reversed_at: nil).count
-        @incomes = scope.order(income_date: :desc, created_at: :desc).limit(200)
+        @pagy, @incomes = pagy(:offset, scope.order(income_date: :desc, created_at: :desc), limit: 50)
         @active_category_id = params[:category_id].presence
         @totals_by_category = Income.joins(:income_category)
           .on_date_range(@start_date, @end_date)
