@@ -223,6 +223,9 @@ Rails.application.routes.draw do
         end
       end
 
+      get "attendance", to: "attendance#index"
+      patch "attendance", to: "attendance#update"
+
       get "payroll", to: "payroll#index"
       get "payroll/export", to: "payroll#export", as: :payroll_export
       get "monthly_payroll", to: "monthly_payroll#index"

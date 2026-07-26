@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_26_044059) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_27_000007) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -58,6 +58,24 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_26_044059) do
     t.uuid "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "attendance_statuses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "code", null: false
+    t.string "symbol", null: false
+    t.string "label", null: false
+    t.decimal "paid_fraction", precision: 4, scale: 2, default: "1.0", null: false
+    t.decimal "penalty_days", precision: 4, scale: 2, default: "0.0", null: false
+    t.string "color"
+    t.integer "position", default: 0, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.decimal "bonus_days", precision: 4, scale: 2, default: "0.0", null: false
+    t.index ["company_id", "code"], name: "index_attendance_statuses_on_company_id_and_code", unique: true
+    t.index ["company_id", "symbol"], name: "index_attendance_statuses_on_company_id_and_symbol", unique: true
+    t.index ["company_id"], name: "index_attendance_statuses_on_company_id"
   end
 
   create_table "audit_log_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -808,6 +826,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_26_044059) do
     t.uuid "treasury_id"
     t.date "paid_on"
     t.integer "staff_meals_cents", default: 0, null: false
+    t.integer "attendance_pay_cents", default: 0, null: false
+    t.decimal "payable_days", precision: 6, scale: 2, default: "0.0", null: false
+    t.decimal "bonus_days", precision: 6, scale: 2, default: "0.0", null: false
+    t.decimal "penalty_days", precision: 6, scale: 2, default: "0.0", null: false
     t.index ["company_id", "payroll_month"], name: "index_payroll_snapshots_on_company_id_and_payroll_month"
     t.index ["company_id"], name: "index_payroll_snapshots_on_company_id"
     t.index ["finalized_by_id"], name: "index_payroll_snapshots_on_finalized_by_id"
@@ -902,6 +924,23 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_26_044059) do
     t.index ["company_id"], name: "index_shift_logs_on_company_id"
     t.index ["status"], name: "index_shift_logs_on_status"
     t.index ["user_id"], name: "index_shift_logs_on_user_id"
+  end
+
+  create_table "staff_attendances", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "attendance_status_id", null: false
+    t.uuid "recorded_by_id"
+    t.date "date", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["attendance_status_id"], name: "index_staff_attendances_on_attendance_status_id"
+    t.index ["company_id", "date"], name: "index_staff_attendances_on_company_id_and_date"
+    t.index ["company_id"], name: "index_staff_attendances_on_company_id"
+    t.index ["recorded_by_id"], name: "index_staff_attendances_on_recorded_by_id"
+    t.index ["user_id", "date"], name: "index_staff_attendances_on_user_id_and_date", unique: true
+    t.index ["user_id"], name: "index_staff_attendances_on_user_id"
   end
 
   create_table "stock_adjustments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1267,6 +1306,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_26_044059) do
   add_foreign_key "accounting_integrations", "companies"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "attendance_statuses", "companies"
   add_foreign_key "audit_log_entries", "companies"
   add_foreign_key "audit_log_entries", "users"
   add_foreign_key "budgets", "companies"
@@ -1379,6 +1419,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_26_044059) do
   add_foreign_key "recipes", "units"
   add_foreign_key "shift_logs", "companies"
   add_foreign_key "shift_logs", "users"
+  add_foreign_key "staff_attendances", "attendance_statuses"
+  add_foreign_key "staff_attendances", "companies"
+  add_foreign_key "staff_attendances", "users"
+  add_foreign_key "staff_attendances", "users", column: "recorded_by_id"
   add_foreign_key "stock_adjustments", "ingredients"
   add_foreign_key "stock_adjustments", "locations"
   add_foreign_key "stock_adjustments", "stock_batches"

@@ -32,7 +32,7 @@ module ApplicationHelper
 
   ACCOUNTING_REPORTS_GROUP       = %w[dashboard sales_reports food_costs usage_reports tax_reports budgets financial_statements].freeze
   ACCOUNTING_SETUP_GROUP         = %w[expense_categories income_categories discount_rules audit_log].freeze
-  ACCOUNTING_TRANSACTIONS_GROUP  = %w[expenses incomes shift_logs monthly_payroll cash_drawer].freeze
+  ACCOUNTING_TRANSACTIONS_GROUP  = %w[expenses incomes shift_logs monthly_payroll attendance cash_drawer].freeze
   ACCOUNTING_LEDGERS_GROUP       = %w[treasuries journal_entries chart_of_accounts fixed_assets partners loans].freeze
 
   INVENTORY_OPERATIONS_GROUP = %w[vendor_invoices stock_transfers stock_takes manufacturing_templates manufacturing_runs manufacturing_template_lines].freeze
@@ -748,6 +748,21 @@ module ApplicationHelper
             class: link_class do
       safe_join([label, payroll_sort_indicator(sort, direction, column)])
     end
+  end
+
+  # Literal class strings (not interpolated) so Tailwind's purge keeps them.
+  ATTENDANCE_COLOR_CLASSES = {
+    "emerald" => "bg-emerald-100 text-emerald-800",
+    "teal"    => "bg-teal-100 text-teal-800",
+    "blue"    => "bg-blue-100 text-blue-800",
+    "indigo"  => "bg-indigo-100 text-indigo-800",
+    "amber"   => "bg-amber-100 text-amber-800",
+    "red"     => "bg-red-100 text-red-800",
+    "gray"    => "bg-gray-100 text-gray-700"
+  }.freeze
+
+  def attendance_color_classes(color)
+    ATTENDANCE_COLOR_CLASSES[color.to_s] || ATTENDANCE_COLOR_CLASSES["gray"]
   end
 
   def admin_nav_link_class(active = false)

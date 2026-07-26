@@ -13,6 +13,29 @@ RSpec.describe Accounting::MonthlyPayrollService do
 
   before { Current.company = company }
 
+  describe "attendance integration" do
+    def present_status = company.attendance_statuses.find_by!(code: "present")
+
+    it "falls back to the full salary when no attendance is recorded" do
+      result = described_class.new(staff, payroll_month).call
+      expect(result.attendance_recorded).to be(false)
+      expect(result.attendance_pay_cents).to eq(300_000)
+      expect(result.net_pay_cents).to eq(300_000)
+    end
+
+    it "drives net pay from recorded attendance" do
+      15.times do |i|
+        StaffAttendance.create!(company: company, user: staff, recorded_by: owner,
+                                attendance_status: present_status, date: payroll_month + i.days)
+      end
+      result = described_class.new(staff, payroll_month).call
+      expect(result.attendance_recorded).to be(true)
+      expect(result.payable_days).to eq(15)
+      expect(result.attendance_pay_cents).to eq(150_000) # 15 * (300_000 / 30)
+      expect(result.net_pay_cents).to eq(150_000)
+    end
+  end
+
   describe "#call" do
     it "returns calculated payroll when no snapshot exists" do
       PayrollAdjustment.create!(

@@ -5,12 +5,15 @@ class Company < ApplicationRecord
   has_many :locations, dependent: :destroy
   has_many :orders, dependent: :destroy
   has_many :units, dependent: :destroy
+  has_many :attendance_statuses, dependent: :destroy
+  has_many :staff_attendances, dependent: :destroy
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true, format: { with: /\A[a-z0-9\-]+\z/ }
   validates :timezone, :currency, :locale, presence: true
 
   after_create :seed_default_units
+  after_create :seed_default_attendance_statuses
 
   # Names of units this company can use (built-in + custom, active only).
   def unit_names
@@ -25,5 +28,9 @@ class Company < ApplicationRecord
 
   def seed_default_units
     Unit.seed_defaults!(self)
+  end
+
+  def seed_default_attendance_statuses
+    AttendanceStatus.seed_defaults!(self)
   end
 end

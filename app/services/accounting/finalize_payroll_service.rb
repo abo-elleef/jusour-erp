@@ -16,6 +16,10 @@ module Accounting
       snapshot = PayrollSnapshot.find_or_initialize_by(user: @user, payroll_month: @payroll_month)
       snapshot.assign_attributes(
         base_salary_cents: summary.base_salary_cents,
+        attendance_pay_cents: summary.attendance_pay_cents,
+        payable_days: summary.payable_days,
+        bonus_days: summary.bonus_days,
+        penalty_days: summary.penalty_days,
         daily_rate_cents: summary.daily_rate_cents,
         penalties_cents: summary.penalties_cents,
         bonuses_cents: summary.bonuses_cents,

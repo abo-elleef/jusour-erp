@@ -103,6 +103,7 @@ module Admin
           csv << [
             t("accounting.shift_logs.employee"),
             t("accounting.monthly_payroll.base_salary"),
+            t("accounting.monthly_payroll.attendance_pay"),
             t("accounting.monthly_payroll.daily_rate"),
             t("accounting.monthly_payroll.penalties"),
             t("accounting.monthly_payroll.bonuses"),
@@ -114,6 +115,7 @@ module Admin
             csv << [
               row.user.name,
               amount(row.base_salary_cents),
+              amount(row.attendance_pay_cents),
               amount(row.daily_rate_cents),
               amount(row.penalties_cents),
               amount(row.bonuses_cents),
@@ -128,6 +130,7 @@ module Admin
           csv << [
             t("accounting.monthly_payroll.totals"),
             amount(@rows.sum(&:base_salary_cents)),
+            amount(@rows.sum(&:attendance_pay_cents)),
             "",
             amount(@rows.sum(&:penalties_cents)),
             amount(@rows.sum(&:bonuses_cents)),

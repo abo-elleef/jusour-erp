@@ -46,6 +46,7 @@
         <%= link_to t("accounting.nav.expenses"),    admin_accounting_expenses_path,            class: admin_section_tab_class(accounting_nav_active?("expenses")) %>
         <%= link_to t("accounting.nav.incomes"),     admin_accounting_incomes_path,             class: admin_section_tab_class(accounting_nav_active?("incomes")) %>
         <%= link_to t("accounting.nav.payroll"),     admin_accounting_monthly_payroll_path,     class: admin_section_tab_class(accounting_nav_active?("payroll", "monthly_payroll")) %>
+        <%= link_to t("accounting.nav.attendance"),  admin_accounting_attendance_path,          class: admin_section_tab_class(accounting_nav_active?("attendance")) %>
         <%= link_to t("accounting.nav.shifts"),      admin_accounting_shift_logs_path,          class: admin_section_tab_class(accounting_nav_active?("shift_logs")) %>
         <%= link_to t("accounting.nav.cash_drawer"), admin_accounting_cash_drawer_index_path,   class: admin_section_tab_class(accounting_nav_active?("cash_drawer")) %>
       <% elsif accounting_in_reports_group? %>

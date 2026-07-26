@@ -13,6 +13,11 @@ module Accounting
       :user,
       :payroll_month,
       :base_salary_cents,
+      :attendance_pay_cents,
+      :attendance_recorded,
+      :payable_days,
+      :bonus_days,
+      :penalty_days,
       :daily_rate_cents,
       :penalties_cents,
       :bonuses_cents,
@@ -45,17 +50,30 @@ module Accounting
     def build_calculated
       adjustments    = sorted_adjustments
       advances       = @user.payroll_advances.for_month(@payroll_month).ordered
-      base           = @user.monthly_salary_cents.to_i
+      full_salary    = @user.monthly_salary_cents.to_i
+
+      # Attendance drives the base pay. If nothing is recorded for the month,
+      # fall back to the full salary so existing/legacy months are unaffected
+      # until the grid is actually used.
+      attendance     = AttendanceMonthService.new(@user, @payroll_month).call
+      recorded       = attendance.marked_days.positive?
+      attendance_pay = recorded ? attendance.base_pay_cents : full_salary
+
       penalties      = adjustments.penalties.sum(:amount_cents)
       bonuses        = adjustments.bonuses.sum(:amount_cents)
-      gross_net      = base - penalties + bonuses
+      gross_net      = attendance_pay - penalties + bonuses
       advances_total = advances.sum(:amount_cents)
       meals_total    = staff_meals_for_month
 
       Result.new(
         user: @user,
         payroll_month: @payroll_month,
-        base_salary_cents: base,
+        base_salary_cents: full_salary,
+        attendance_pay_cents: attendance_pay,
+        attendance_recorded: recorded,
+        payable_days: attendance.payable_days,
+        bonus_days: attendance.bonus_days,
+        penalty_days: attendance.penalty_days,
         daily_rate_cents: @user.daily_rate_cents,
         penalties_cents: penalties,
         bonuses_cents: bonuses,
@@ -137,10 +155,16 @@ module Accounting
     end
 
     def with_snapshot(calculated, snapshot)
+      recorded = (snapshot.payable_days.to_d + snapshot.bonus_days.to_d + snapshot.penalty_days.to_d).positive?
       Result.new(
         user: calculated.user,
         payroll_month: calculated.payroll_month,
         base_salary_cents: snapshot.base_salary_cents,
+        attendance_pay_cents: recorded ? snapshot.attendance_pay_cents : snapshot.base_salary_cents,
+        attendance_recorded: recorded,
+        payable_days: snapshot.payable_days,
+        bonus_days: snapshot.bonus_days,
+        penalty_days: snapshot.penalty_days,
         daily_rate_cents: snapshot.daily_rate_cents,
         penalties_cents: snapshot.penalties_cents,
         bonuses_cents: snapshot.bonuses_cents,
