@@ -2636,6 +2636,8 @@ en:
     income_categories:
       title: "Income categories"
       description: "Group income entries by category. System categories are managed automatically."
+      code: "Code"
+      code_hint: "The account code is assigned automatically and stays fixed for this category."
       list_heading: "All categories"
       list_hint:
         one: "%{count} category"
@@ -2759,6 +2761,8 @@ en:
     expense_categories:
       title: "Expense categories"
       description: "Group expenses and budgets by category. System categories are managed automatically."
+      code: "Code"
+      code_hint: "The account code is assigned automatically and stays fixed for this category."
       list_heading: "All categories"
       list_hint:
         one: "%{count} category"

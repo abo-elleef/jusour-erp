@@ -79,6 +79,7 @@
             <tr>
               <% if @sortable %><th class="p-3 ps-5 w-12" aria-label="<%= t("accounting.expense_categories.drag_handle") %>"></th><% end %>
               <th class="p-3 <%= @sortable ? '' : 'ps-5' %> text-start min-w-[12rem]"><%= t("accounting.expense_categories.name") %></th>
+              <th class="p-3 text-start w-24"><%= t("accounting.expense_categories.code") %></th>
               <th class="p-3 text-start"><%= t("accounting.expense_categories.category_type") %></th>
               <th class="p-3 text-center w-24"><%= t("accounting.expense_categories.position") %></th>
               <th class="p-3 text-start"><%= t("accounting.expense_categories.management") %></th>
@@ -104,6 +105,7 @@
                   </td>
                 <% end %>
                 <td class="p-3 <%= @sortable ? '' : 'ps-5' %> font-semibold text-gray-900"><%= cat.name %></td>
+                <td class="p-3 font-mono tabular-nums text-gray-500"><%= cat.account_code %></td>
                 <td class="p-3">
                   <span class="<%= type_chip_class %>"><%= accounting_expense_category_type(cat.category_type) %></span>
                 </td>

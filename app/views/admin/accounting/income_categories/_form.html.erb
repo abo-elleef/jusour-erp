@@ -15,6 +15,13 @@
           <%= category.errors.full_messages.to_sentence %>
         </div>
       <% end %>
+      <% if category.persisted? %>
+        <div>
+          <span class="<%= label_class %>"><%= t("accounting.income_categories.code") %></span>
+          <span class="inline-flex items-center rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 font-mono text-sm text-gray-700 tabular-nums"><%= category.account_code %></span>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.income_categories.code_hint") %></p>
+        </div>
+      <% end %>
       <div>
         <%= f.label :name, t("accounting.income_categories.name"), class: label_class %>
         <%= f.text_field :name, class: pos_input_class, autocomplete: "off" %>
