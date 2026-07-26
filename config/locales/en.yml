@@ -1051,6 +1051,8 @@ en:
         already_in_progress: "This location already has a stock take in progress. Complete it before starting another."
         no_locations: "Add a branch or central kitchen before running a stock take."
         all_locations: "All locations"
+        count_date: "Count date"
+        count_date_hint: "The date the physical count was taken. Defaults to today; cannot be in the future."
         notes: "Notes (optional)"
         notes_placeholder: "e.g. Monthly count — back room…"
         start_button: "Start new stock take"
@@ -1092,6 +1094,11 @@ en:
         confirm_button: "Confirm & apply adjustments"
         confirm_message: "Apply variances to inventory? This cannot be undone."
         save_first_hint: "Save counts first if you just entered new values."
+        cancel_heading: "Cancel stock take"
+        cancel_hint: "Abandon this count without applying any adjustments. Inventory stays unchanged and the location is freed for a new count."
+        cancel_button: "Cancel stock take"
+        cancel_message: "Cancel this stock take? Counted values will be discarded and no adjustments applied."
+        cancel_not_allowed: "Only an in-progress stock take can be cancelled."
       statuses:
         in_progress: "In progress"
         completed: "Completed"
@@ -3143,6 +3150,7 @@ en:
       started: "Stock take started."
       saved: "Counts saved."
       completed: "Stock take completed and adjustments applied."
+      cancelled: "Stock take cancelled. No adjustments were applied."
     accounting:
       owner_only: "Owner access only."
       expense_recorded: "Expense recorded."

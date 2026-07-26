@@ -286,7 +286,10 @@ Rails.application.routes.draw do
         end
       end
       resources :stock_takes, only: %i[index show create update] do
-        member { post :complete }
+        member do
+          post :complete
+          post :cancel
+        end
       end
       resources :stock_transfers, only: %i[index show new create edit update] do
         member do

@@ -165,5 +165,18 @@
         <% end %>
       </div>
     </section>
+
+    <section class="rounded-2xl border border-red-200 bg-red-50/30 overflow-hidden mt-6">
+      <div class="px-5 py-4 border-b border-red-100 bg-red-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_takes.show.cancel_heading") %></h2>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_takes.show.cancel_hint") %></p>
+      </div>
+      <div class="p-5">
+        <%= button_to t("inventory.stock_takes.show.cancel_button"),
+              cancel_admin_inventory_stock_take_path(@stock_take), method: :post,
+              class: "bg-white hover:bg-red-50 text-red-700 text-sm font-semibold px-6 py-2.5 rounded-xl border border-red-300 shadow-sm transition-colors",
+              form: { data: { turbo_confirm: t("inventory.stock_takes.show.cancel_message") } } %>
+      </div>
+    </section>
   <% end %>
 </div>

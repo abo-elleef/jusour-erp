@@ -3,7 +3,7 @@
 module Admin
   module Inventory
     class StockTakesController < BaseController
-      before_action :set_stock_take, only: %i[show update complete]
+      before_action :set_stock_take, only: %i[show update complete cancel]
 
       def index
         authorize_inventory_index!(StockTake)
@@ -41,7 +41,7 @@ module Admin
           user: current_user,
           location: location,
           status: "in_progress",
-          started_at: Time.current,
+          started_at: count_started_at,
           notes: params[:notes]
         )
         # Seed one item per ingredient stocked at this location, with that
@@ -98,10 +98,36 @@ module Admin
         redirect_to admin_inventory_stock_takes_path, notice: t("flash.stock_take.completed")
       end
 
+      def cancel
+        authorize_inventory!(:complete)
+        unless @stock_take.status == "in_progress"
+          redirect_to admin_inventory_stock_take_path(@stock_take), alert: t("inventory.stock_takes.show.cancel_not_allowed")
+          return
+        end
+
+        # Abandon the count: no variances are applied, so inventory is untouched.
+        # The location is freed for a fresh take (the guard only blocks in_progress).
+        @stock_take.update!(status: "cancelled")
+        redirect_to admin_inventory_stock_takes_path, notice: t("flash.stock_take.cancelled")
+      end
+
       private
 
       def set_stock_take
         @stock_take = StockTake.find(params[:id])
+      end
+
+      # Anchors the count to the user-entered date. A blank or future date falls
+      # back to now; a past date keeps the current time-of-day for ordering.
+      def count_started_at
+        date = begin
+          Date.parse(params[:count_date].to_s)
+        rescue ArgumentError, TypeError
+          nil
+        end
+        return Time.current if date.nil? || date >= Date.current
+
+        date.to_time.change(hour: Time.current.hour, min: Time.current.min)
       end
 
       def record_for_policy
