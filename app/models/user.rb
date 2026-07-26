@@ -121,6 +121,11 @@ class User < ApplicationRecord
     role == "kitchen"
   end
 
+  # Roles whose pay is driven by daily attendance (vs a fixed monthly salary).
+  def attendance_paid?
+    cashier? || kitchen?
+  end
+
   def admin_access?
     owner? || manager? || accountant?
   end

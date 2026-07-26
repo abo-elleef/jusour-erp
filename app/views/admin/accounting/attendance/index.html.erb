@@ -84,7 +84,7 @@
               <td class="text-end px-2 tabular-nums text-gray-700" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="payable"><%= number_with_precision(summary.payable_days, precision: 2, strip_insignificant_zeros: true) %></td>
               <td class="text-end px-2 tabular-nums text-teal-700" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="bonus"><%= number_with_precision(summary.bonus_days, precision: 2, strip_insignificant_zeros: true) %></td>
               <td class="text-end px-2 tabular-nums text-red-700" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="penalty"><%= number_with_precision(summary.penalty_days, precision: 2, strip_insignificant_zeros: true) %></td>
-              <td class="text-end px-3 tabular-nums font-semibold text-gray-900" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="pay"><%= format_money(summary.base_pay_cents) %></td>
+              <td class="text-end px-3 tabular-nums font-semibold text-gray-900" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="pay"><%= user.attendance_paid? ? format_money(summary.base_pay_cents) : t("accounting.shared.em_dash") %></td>
             </tr>
           <% end %>
         </tbody>
