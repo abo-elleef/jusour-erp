@@ -3,8 +3,7 @@
 module Accounting
   class PnlService
     def initialize(start_date, end_date)
-      @start = start_date.beginning_of_day
-      @end = end_date.end_of_day
+      @range = BusinessDay.range_between(start_date, end_date)
       @date_range = start_date..end_date
     end
 
@@ -20,7 +19,7 @@ module Accounting
     private
 
     def completed_orders
-      @completed_orders ||= Order.completed.where(created_at: @start..@end)
+      @completed_orders ||= Order.completed.where(created_at: @range)
     end
 
     def gross_revenue_cents

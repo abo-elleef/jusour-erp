@@ -9,7 +9,7 @@ module Accounting
 
     def call
       completed_orders = Order.completed.where(
-        created_at: @start.beginning_of_day..@end.end_of_day
+        created_at: BusinessDay.range_between(@start, @end)
       )
       order_ids = completed_orders.select(:id)
 

@@ -63,11 +63,11 @@ class User < ApplicationRecord
   end
 
   def open_cash_drawer_session
-    cash_drawer_sessions.open.find_by(session_date: Date.current)
+    cash_drawer_sessions.open.find_by(session_date: BusinessDay.today)
   end
 
   def todays_cash_drawer_session
-    cash_drawer_sessions.where(session_date: Date.current).order(created_at: :desc).first
+    cash_drawer_sessions.where(session_date: BusinessDay.today).order(created_at: :desc).first
   end
 
   def shift_orders_time_range
@@ -86,8 +86,9 @@ class User < ApplicationRecord
       ranges << [recent_completed.clocked_in_at, recent_completed.clocked_out_at]
     end
 
-    # Cash drawer sessions from today or yesterday (overnight shifts open on a previous date)
-    cash_drawer_sessions.where(session_date: [Date.current, Date.yesterday]).find_each do |drawer|
+    # Cash drawer sessions from the current or previous operating day (overnight
+    # shifts open on a previous date)
+    cash_drawer_sessions.where(session_date: [BusinessDay.today, BusinessDay.today - 1]).find_each do |drawer|
       end_time = drawer.status == "open" ? Time.current : drawer.updated_at
       ranges << [drawer.created_at, end_time]
     end
@@ -95,7 +96,7 @@ class User < ApplicationRecord
     if ranges.any?
       [ranges.map(&:first).min, ranges.map(&:last).max]
     else
-      [Time.zone.today.beginning_of_day, Time.current]
+      [BusinessDay.range(BusinessDay.today).begin, Time.current]
     end
   end
 

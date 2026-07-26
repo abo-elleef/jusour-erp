@@ -4,7 +4,7 @@ module Admin
   module Accounting
     class DashboardController < BaseController
       def index
-        today = Date.current
+        today = BusinessDay.today
         month_start = today.beginning_of_month
 
         @today_report = ::Accounting::SalesReportService.new(today, today).call

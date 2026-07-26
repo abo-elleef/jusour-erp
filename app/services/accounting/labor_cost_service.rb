@@ -19,7 +19,7 @@ module Accounting
         user: @shift.user,
         description: labor_description,
         amount_cents: labor_cost_cents,
-        expense_date: @shift.clocked_in_at.to_date,
+        expense_date: BusinessDay.for(@shift.clocked_in_at),
         recurrence: "one_time",
         is_auto_generated: true,
         source_record: @shift

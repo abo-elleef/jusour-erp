@@ -1,0 +1,140 @@
+<% content_for :title, @shift.user.name %>
+<%= render "admin/accounting/nav" %>
+
+<%
+  status_badge = case @shift.status
+                 when "active"    then "bg-emerald-100 text-emerald-700 border-emerald-200"
+                 when "adjusted"  then "bg-amber-100 text-amber-700 border-amber-200"
+                 else                  "bg-gray-100 text-gray-600 border-gray-200"
+                 end
+%>
+
+<div class="max-w-5xl">
+  <%# ── Header ─────────────────────────────────────────────────── %>
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <div class="flex items-center gap-3 mb-1">
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @shift.user.name %></h1>
+        <span class="text-xs px-2.5 py-1 rounded-full font-semibold border <%= status_badge %>">
+          <%= t("accounting.shift_logs.statuses.#{@shift.status}", default: @shift.status.humanize) %>
+        </span>
+      </div>
+      <p class="text-sm text-gray-600"><%= t("accounting.shift_logs.show.subtitle") %></p>
+      <p class="text-xs text-gray-400 mt-1">
+        <%= l(@shift.clocked_in_at.to_date, format: :long) %> &middot;
+        <%= l(@shift.clocked_in_at, format: :short_time) %>
+        <%= t("accounting.shared.em_dash") %>
+        <%= @shift.clocked_out_at ? l(@shift.clocked_out_at, format: :short_time) : t("accounting.shift_logs.show.still_active") %>
+      </p>
+    </div>
+    <%= link_to t("actions.back"), admin_accounting_shift_logs_path(date: BusinessDay.for(@shift.clocked_in_at)),
+          class: "text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50" %>
+  </div>
+
+  <%# ── Money summary cards ────────────────────────────────────── %>
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+    <div class="rounded-2xl border border-gray-200 bg-white px-5 py-4">
+      <p class="text-xs text-gray-500"><%= t("accounting.shift_logs.show.gross_sales") %></p>
+      <p class="text-xl font-bold tabular-nums text-gray-900 mt-1"><%= format_money(@gross_sales_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white px-5 py-4">
+      <p class="text-xs text-gray-500"><%= t("accounting.shift_logs.show.completed_orders") %></p>
+      <p class="text-xl font-bold tabular-nums text-gray-900 mt-1">
+        <%= @completed_orders.size %>
+        <span class="text-xs font-medium text-gray-400">/ <%= @orders.size %> <%= t("accounting.shift_logs.show.total_orders").downcase %></span>
+      </p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white px-5 py-4">
+      <p class="text-xs text-gray-500"><%= t("accounting.shift_logs.show.collected") %></p>
+      <p class="text-xl font-bold tabular-nums text-gray-900 mt-1"><%= format_money(@collected_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white px-5 py-4">
+      <p class="text-xs text-gray-500"><%= t("accounting.shift_logs.show.avg_order") %></p>
+      <p class="text-xl font-bold tabular-nums text-gray-900 mt-1"><%= format_money(@avg_order_cents) %></p>
+    </div>
+  </div>
+
+  <%# ── Shift + labor + tips detail ────────────────────────────── %>
+  <div class="grid sm:grid-cols-2 gap-4 mb-6">
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <dl class="space-y-2.5 text-sm">
+        <div class="flex justify-between"><dt class="text-gray-500"><%= t("accounting.shift_logs.show.hours_worked") %></dt>
+          <dd class="font-semibold tabular-nums"><%= @shift.clocked_out_at ? @shift.hours_worked.round(2) : t("accounting.shift_logs.show.still_active") %></dd></div>
+        <div class="flex justify-between"><dt class="text-gray-500"><%= t("accounting.shift_logs.show.hourly_rate") %></dt>
+          <dd class="font-semibold tabular-nums"><%= format_money(@shift.hourly_rate_cents) %></dd></div>
+        <div class="flex justify-between"><dt class="text-gray-500"><%= t("accounting.shift_logs.show.labor_cost") %></dt>
+          <dd class="font-semibold tabular-nums"><%= @shift.clocked_out_at ? format_money(@shift.labor_cost_cents) : t("accounting.shared.em_dash") %></dd></div>
+        <div class="flex justify-between"><dt class="text-gray-500"><%= t("accounting.shift_logs.show.tips") %></dt>
+          <dd class="font-semibold tabular-nums"><%= format_money(@shift.tips_cents) %></dd></div>
+      </dl>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3"><%= t("accounting.shift_logs.show.payment_methods") %></p>
+      <% if @payments_by_method.any? %>
+        <dl class="space-y-2.5 text-sm">
+          <% @payments_by_method.each do |method, cents| %>
+            <div class="flex justify-between">
+              <dt class="text-gray-600"><%= payment_method_label(method) %></dt>
+              <dd class="font-semibold tabular-nums"><%= format_money(cents) %></dd>
+            </div>
+          <% end %>
+        </dl>
+      <% else %>
+        <p class="text-sm text-gray-400"><%= t("accounting.shared.em_dash") %></p>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Orders in this shift ───────────────────────────────────── %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.shift_logs.show.orders_heading") %></h2>
+    </div>
+    <% if @orders.any? %>
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= t("accounting.shift_logs.show.col_number") %></th>
+            <th class="p-3 text-start"><%= t("accounting.shift_logs.show.col_time") %></th>
+            <th class="p-3 text-start"><%= t("accounting.shift_logs.show.col_type") %></th>
+            <th class="p-3 text-start"><%= t("accounting.shift_logs.show.col_status") %></th>
+            <th class="p-3 text-end"><%= t("accounting.shift_logs.show.col_items") %></th>
+            <th class="p-3 text-end"><%= t("accounting.shift_logs.show.col_total") %></th>
+            <th class="p-3 pe-5 text-end"><%= t("accounting.shift_logs.show.col_paid") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @orders.each do |order| %>
+            <tr class="cursor-pointer hover:bg-amber-50/40 transition-colors"
+                data-href="<%= admin_order_path(order) %>"
+                onclick="if(!event.target.closest('a,button,form'))Turbo.visit(this.dataset.href)">
+              <td class="p-3 ps-5">
+                <%= link_to order.order_number, admin_order_path(order), class: "text-amber-700 hover:text-amber-800 font-semibold" %>
+              </td>
+              <td class="p-3 text-gray-600 tabular-nums"><%= l(order.created_at, format: :short_time) %></td>
+              <td class="p-3 text-gray-600"><%= order.order_type_label %></td>
+              <td class="p-3">
+                <span class="text-xs uppercase font-semibold px-2.5 py-1 rounded-full <%= order_status_class(order.status) %>">
+                  <%= order_status_label(order.status) %>
+                </span>
+              </td>
+              <td class="p-3 text-end tabular-nums text-gray-600"><%= order.order_items.size %></td>
+              <td class="p-3 text-end tabular-nums font-medium"><%= format_money(order.total_cents) %></td>
+              <td class="p-3 pe-5 text-end tabular-nums text-gray-600"><%= format_money(order.paid_cents) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot class="border-t-2 border-gray-200 bg-gray-50/80">
+          <tr>
+            <td colspan="5" class="p-3 ps-5 text-xs font-bold text-gray-600 text-end"><%= t("accounting.shift_logs.show.gross_sales") %></td>
+            <td class="p-3 text-end font-bold tabular-nums text-gray-900"><%= format_money(@gross_sales_cents) %></td>
+            <td class="p-3 pe-5 text-end font-bold tabular-nums text-gray-900"><%= format_money(@collected_cents) %></td>
+          </tr>
+        </tfoot>
+      </table>
+    <% else %>
+      <p class="px-5 py-8 text-center text-sm text-gray-400"><%= t("accounting.shift_logs.show.no_orders") %></p>
+    <% end %>
+  </section>
+</div>

@@ -6,15 +6,39 @@ module Admin
       before_action :set_shift, only: %i[show clock_out]
 
       def index
-        @date = params[:date]&.to_date || Date.current
+        @date = params[:date]&.to_date || BusinessDay.today
         @shifts = policy_scope(ShiftLog)
-          .where(clocked_in_at: @date.beginning_of_day..@date.end_of_day)
+          .where(clocked_in_at: BusinessDay.range(@date))
           .includes(:user)
           .order(clocked_in_at: :desc)
+
+        # Per-shift completed-order count + sales total. One aggregate query per
+        # shift; the set is a single day's shifts, so N stays small.
+        @order_stats = @shifts.each_with_object({}) do |shift, stats|
+          count, total = shift.orders.completed.pick(
+            Arel.sql("COUNT(*)"), Arel.sql("COALESCE(SUM(total_cents), 0)")
+          )
+          stats[shift.id] = { count: count.to_i, total_cents: total.to_i }
+        end
       end
 
       def show
         authorize @shift
+
+        @orders = @shift.orders
+          .includes(:customer, :payments, :order_items)
+          .order(created_at: :desc)
+
+        @completed_orders  = @orders.select { |o| o.status == "completed" }
+        @gross_sales_cents = @completed_orders.sum { |o| o.total_cents.to_i }
+        @avg_order_cents   = @completed_orders.any? ? (@gross_sales_cents / @completed_orders.size) : 0
+
+        settled = @orders.flat_map(&:payments)
+                         .select { |p| %w[completed partially_refunded].include?(p.status) }
+        @collected_cents    = settled.sum(&:amount_cents)
+        @payments_by_method = settled.group_by(&:payment_method)
+                                     .transform_values { |ps| ps.sum(&:amount_cents) }
+                                     .sort_by { |_method, cents| -cents }
       end
 
       def clock_in

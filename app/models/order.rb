@@ -83,8 +83,7 @@ class Order < ApplicationRecord
     where.not(status: %w[draft cancelled]).order(created_at: :desc)
   }
   scope :on_date, ->(date) {
-    day = date.is_a?(Date) ? date : Date.parse(date.to_s)
-    where(created_at: day.beginning_of_day..day.end_of_day)
+    where(created_at: BusinessDay.range(date))
   }
   scope :completed, -> { where(status: "completed") }
   scope :open_orders, -> { where(status: %w[submitted in_progress ready]) }

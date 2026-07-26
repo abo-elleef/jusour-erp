@@ -24,7 +24,7 @@ module Accounting
         user: @order.user,
         description: "COGS — Order ##{@order.order_number}",
         amount_cents: ingredient_cost_cents,
-        expense_date: @order.created_at.to_date,
+        expense_date: BusinessDay.for(@order.created_at),
         recurrence: "one_time",
         is_auto_generated: true,
         source_record: @order

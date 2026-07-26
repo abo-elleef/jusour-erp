@@ -7,7 +7,7 @@ module Admin
     class TaxReportsController < BaseController
       def index
         parse_date_range
-        completed_orders = Order.completed.where(created_at: @start_date.beginning_of_day..@end_date.end_of_day)
+        completed_orders = Order.completed.where(created_at: BusinessDay.range_between(@start_date, @end_date))
         order_ids = completed_orders.pluck(:id)
 
         @tax_rows = TaxRate.active.map do |rate|

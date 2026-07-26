@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_24_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_25_205710) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -170,6 +170,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_24_000001) do
     t.text "receipt_footer_text", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "business_day_start_hour", default: 6, null: false
     t.index ["company_id"], name: "index_company_settings_on_company_id", unique: true
   end
 

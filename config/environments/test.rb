@@ -39,6 +39,13 @@ Rails.application.configure do
 
   config.action_mailer.perform_caching = false
 
+  # Enqueue jobs into an inspectable in-memory list instead of running them on a
+  # background thread. The default :async adapter runs jobs on a thread pool that
+  # deadlocks against RSpec's shared transactional-fixture DB connection (a job
+  # thread and the example thread contend for the same connection), which hangs
+  # the suite. :test also lets have_enqueued_job / perform_enqueued_jobs work.
+  config.active_job.queue_adapter = :test
+
   # Tell Action Mailer not to deliver emails to the real world.
   # The :test delivery method accumulates sent emails in the
   # ActionMailer::Base.deliveries array.

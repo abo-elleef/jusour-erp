@@ -3,8 +3,7 @@
 module Accounting
   class SalesReportService
     def initialize(start_date, end_date)
-      @start = start_date.beginning_of_day
-      @end = end_date.end_of_day
+      @range = BusinessDay.range_between(start_date, end_date)
     end
 
     def call
@@ -21,7 +20,7 @@ module Accounting
     private
 
     def completed_orders
-      @completed_orders ||= Order.completed.where(created_at: @start..@end)
+      @completed_orders ||= Order.completed.where(created_at: @range)
     end
 
     def order_ids
@@ -88,12 +87,12 @@ module Accounting
     end
 
     def hourly_distribution
-      completed_orders.group_by_hour(:created_at, time_zone: Time.zone, range: @start..@end).count
+      completed_orders.group_by_hour(:created_at, time_zone: Time.zone, range: @range).count
     end
 
     def daily_totals
       completed_orders
-        .group_by_day(:created_at, time_zone: Time.zone, range: @start..@end)
+        .group_by_day(:created_at, time_zone: Time.zone, day_start: BusinessDay.start_hour, range: @range)
         .sum(Arel.sql(RevenueCalculator::ORDER_NET_SALES))
     end
   end

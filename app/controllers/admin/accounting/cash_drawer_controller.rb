@@ -6,7 +6,7 @@ module Admin
       before_action :set_session, only: %i[count reconcile]
 
       def index
-        @date = params[:date]&.to_date || Date.current
+        @date = params[:date]&.to_date || BusinessDay.today
         @sessions = CashDrawerSession.where(session_date: @date).includes(:user, :treasury).order(:shift)
         @drawer_treasuries = Treasury.active.cash_drawers.ordered
       end
@@ -16,7 +16,7 @@ module Admin
         @session = CashDrawerSession.create!(
           user: current_user,
           treasury: treasury,
-          session_date: Date.current,
+          session_date: BusinessDay.today,
           shift: params[:shift],
           opening_float_cents: (params[:opening_float].to_f * 100).to_i,
           status: "open"

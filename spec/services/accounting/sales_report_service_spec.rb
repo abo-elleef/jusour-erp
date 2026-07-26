@@ -39,6 +39,22 @@ RSpec.describe Accounting::SalesReportService do
       expect(report[:daily_totals][today]).not_to eq(1180)
     end
 
+    it "assigns a post-midnight order to the previous operating day (default 6 AM cutoff)" do
+      one_am = today.beginning_of_day + 1.hour # 01:00 on `today` → operating day is yesterday
+      order = create(:order, user: user, company: company, status: "completed",
+        subtotal_cents: 500, discount_cents: 0, tax_cents: 0, tip_cents: 0, total_cents: 500,
+        created_at: one_am)
+      create(:order_item, order: order, menu_item: menu_item, quantity: 1, unit_price_cents: 500)
+
+      yesterday = today - 1
+      report = described_class.new(yesterday, today).call
+      expect(report[:daily_totals][yesterday]).to eq(500) # counted the night before
+      expect(report[:daily_totals][today].to_i).to eq(0)  # not the calendar day it was placed
+
+      # A report scoped to `today` alone excludes the 1 AM order entirely.
+      expect(described_class.new(today, today).call[:summary][:net_sales_cents]).to eq(0)
+    end
+
     it "includes modifier revenue in category breakdown" do
       order = create(:order, user: user, company: company, status: "completed",
         subtotal_cents: 1200, discount_cents: 0, tax_cents: 0, total_cents: 1200, created_at: today.noon)

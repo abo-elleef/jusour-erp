@@ -27,6 +27,23 @@ class ShiftLog < ApplicationRecord
     [elapsed - (break_minutes / 60.0), 0].max
   end
 
+  # When the shift's order window ends: clock-out time, or "now" while active.
+  def orders_ended_at
+    clocked_out_at || Time.current
+  end
+
+  # Orders placed by this cashier during the shift. There is no FK from orders
+  # to shifts, so association is by user + creation time window (mirrors
+  # User#shift_orders_time_range used by the POS shift screen).
+  def orders
+    Order.where(user_id: user_id, created_at: clocked_in_at..orders_ended_at)
+  end
+
+  # Estimated wage cost for the hours worked (excludes tips).
+  def labor_cost_cents
+    (hours_worked * hourly_rate_cents).round
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[status clocked_in_at clocked_out_at user_id]
   end

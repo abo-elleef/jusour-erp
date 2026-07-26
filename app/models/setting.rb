@@ -7,12 +7,12 @@ class Setting
     loyalty_earn_rate loyalty_redeem_threshold loyalty_redeem_value_cents
     restaurant_name print_routing print_agent_port print_agent_token
     print_encoding print_code_page arabic_font_path receipt_logo_url
-    receipt_footer_text
+    receipt_footer_text business_day_start_hour
   ].freeze
 
   INTEGER_COLUMNS = %w[
     loyalty_earn_rate loyalty_redeem_threshold loyalty_redeem_value_cents
-    print_agent_port print_code_page
+    print_agent_port print_code_page business_day_start_hour
   ].freeze
 
   def self.get(key, default = nil)

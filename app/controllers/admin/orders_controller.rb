@@ -90,7 +90,7 @@ module Admin
     end
 
     def load_order_stats
-      today = Date.current
+      today = BusinessDay.today
       @today_count = Order.on_date(today).count
       @today_revenue_cents = Order.on_date(today).where(status: "completed").sum(:total_cents)
       @open_count = Order.open_orders.count

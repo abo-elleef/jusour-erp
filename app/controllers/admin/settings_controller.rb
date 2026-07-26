@@ -10,6 +10,7 @@ module Admin
       @print_agent_port = Setting.get_int("print_agent_port", Printing::Config::DEFAULT_AGENT_PORT)
       @print_agent_token = Setting.get("print_agent_token", "")
       @receipt_footer_text = Printing::Config.receipt_footer_text
+      @business_day_start_hour = Setting.get_int("business_day_start_hour", BusinessDay::DEFAULT_START_HOUR)
       @tax_rates = TaxRate.ordered
     end
 
@@ -26,6 +27,9 @@ module Admin
       end
       Setting.set("print_agent_token", params[:print_agent_token].to_s)
       Setting.set("receipt_footer_text", params[:receipt_footer_text].to_s.strip)
+      if params[:business_day_start_hour].present?
+        Setting.set("business_day_start_hour", params[:business_day_start_hour].to_i.clamp(0, 23))
+      end
       redirect_to admin_settings_path, notice: t("flash.settings.updated")
     end
 

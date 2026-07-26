@@ -267,6 +267,13 @@ module ApplicationHelper
     Money.new(cents).format(locale: I18n.locale, symbol: 'ج.م.')
   end
 
+  # The operating day currently in progress (day boundary shifted to the
+  # per-company business-day cutoff hour). Use instead of Date.current in views
+  # that mean "today's business day".
+  def business_today
+    BusinessDay.today
+  end
+
   def order_status_class(status)
     case status
     when "completed" then "bg-green-100 text-green-800"

@@ -77,12 +77,24 @@
       <p class="text-xs text-gray-500 mt-0.5"><%= t("pos.shift.open_drawer_hint") %></p>
     </div>
     <div class="p-5">
-      <%= form_with url: open_drawer_pos_shift_path, method: :post, class: "space-y-4" do %>
-        <div>
+      <% default_drawer_id = @drawer_treasuries.find(&:is_default)&.id || @drawer_treasuries.first&.id %>
+      <% treasury_options_json = @drawer_treasuries.map { |t| { value: t.id, label: t.name } }.to_json %>
+      <%= form_with url: open_drawer_pos_shift_path, method: :post, class: "space-y-4",
+            data: { searchable_select_options: treasury_options_json } do %>
+        <div data-controller="searchable-select"
+             data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
           <%= label_tag :treasury_id, t("accounting.shared.treasury"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-          <%= select_tag :treasury_id,
-                options_from_collection_for_select(@drawer_treasuries, :id, :name, Treasury.default_treasury&.id),
-                class: "#{pos_input_class} appearance-none w-full", required: true %>
+          <%= hidden_field_tag :treasury_id, default_drawer_id,
+                data: { searchable_select_target: "hidden" } %>
+          <input type="text"
+                 autocomplete="off" spellcheck="false" role="combobox"
+                 aria-expanded="false" aria-autocomplete="list"
+                 placeholder="<%= t("accounting.shared.treasury") %>"
+                 class="<%= pos_input_class %>"
+                 data-searchable-select-target="input"
+                 data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+          <ul data-searchable-select-target="menu" role="listbox"
+              class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
         </div>
         <div>
           <%= label_tag :shift, t("accounting.cash_drawer.shift"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>

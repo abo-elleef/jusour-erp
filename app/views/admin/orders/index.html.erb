@@ -15,15 +15,15 @@
   </div>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <%= link_to admin_orders_filter_url(date: Date.current, focus: nil),
-          class: orders_stat_card_class(@filter_date == Date.current.to_s && @focus.blank?) do %>
+    <%= link_to admin_orders_filter_url(date: business_today, focus: nil),
+          class: orders_stat_card_class(@filter_date == business_today.to_s && @focus.blank?) do %>
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.stats_today") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @today_count %></p>
       <p class="text-xs text-amber-700 mt-1.5 font-medium"><%= t("admin.hints.click_to_filter") %></p>
     <% end %>
 
-    <%= link_to admin_orders_filter_url(date: Date.current, focus: nil, q: { status_eq: "completed" }),
-          class: orders_stat_card_class(@filter_date == Date.current.to_s && params.dig(:q, :status_eq) == "completed" && @focus.blank?) do %>
+    <%= link_to admin_orders_filter_url(date: business_today, focus: nil, q: { status_eq: "completed" }),
+          class: orders_stat_card_class(@filter_date == business_today.to_s && params.dig(:q, :status_eq) == "completed" && @focus.blank?) do %>
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.orders.stats_revenue_today") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@today_revenue_cents) %></p>
       <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.orders.stats_completed_orders") %></p>
@@ -93,7 +93,7 @@
                 class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
           <%= link_to t("actions.clear"), admin_orders_path,
                 class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
-          <%= link_to t("admin.orders.today_link"), admin_orders_filter_url(date: Date.current, focus: nil, q: params[:q]&.to_unsafe_h),
+          <%= link_to t("admin.orders.today_link"), admin_orders_filter_url(date: business_today, focus: nil, q: params[:q]&.to_unsafe_h),
                 class: "text-sm font-medium text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
           <% if @filtered %>
             <%= link_to t("admin.orders.all_orders"), admin_orders_path,
