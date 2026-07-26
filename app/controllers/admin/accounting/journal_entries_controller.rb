@@ -152,11 +152,9 @@ module Admin
         when "equity"
           3001
         when "income_category"
-          siblings = IncomeCategory.order(:name).pluck(:id)
-          4001 + siblings.index(id).to_i
+          IncomeCategory.find_by(id: id)&.account_code || IncomeCategory::ACCOUNT_CODE_BASE + 1
         when "expense_category"
-          siblings = ExpenseCategory.order(:name).pluck(:id)
-          5001 + siblings.index(id).to_i
+          ExpenseCategory.find_by(id: id)&.account_code || ExpenseCategory::ACCOUNT_CODE_BASE + 1
         when "fixed_expense"
           id.to_i
         when "partner"

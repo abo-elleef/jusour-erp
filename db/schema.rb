@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_25_205710) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_26_044059) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -228,6 +228,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_25_205710) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.integer "account_code", null: false
+    t.index ["company_id", "account_code"], name: "index_expense_categories_on_company_id_and_account_code", unique: true
     t.index ["company_id", "name"], name: "index_expense_categories_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_expense_categories_on_company_id"
   end
@@ -299,6 +301,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_25_205710) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.integer "account_code", null: false
+    t.index ["company_id", "account_code"], name: "index_income_categories_on_company_id_and_account_code", unique: true
     t.index ["company_id", "name"], name: "index_income_categories_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_income_categories_on_company_id"
   end

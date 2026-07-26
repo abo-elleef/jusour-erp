@@ -56,17 +56,15 @@ module Accounting
     end
 
     def revenue_group
-      options = IncomeCategory.order(:name).each_with_index.map do |cat, i|
-        code = 4001 + i
-        [ "#{code}  #{cat.name}", encode(:income_category, cat.id, cat.name, "revenue") ]
+      options = IncomeCategory.ordered.map do |cat|
+        [ "#{cat.account_code}  #{cat.name}", encode(:income_category, cat.id, cat.name, "revenue") ]
       end
       [ I18n.t("accounting.journal_entries.account_types.revenue"), options ]
     end
 
     def expense_group
-      dynamic = ExpenseCategory.order(:name).each_with_index.map do |cat, i|
-        code = 5001 + i
-        [ "#{code}  #{cat.name}", encode(:expense_category, cat.id, cat.name, "expense") ]
+      dynamic = ExpenseCategory.ordered.map do |cat|
+        [ "#{cat.account_code}  #{cat.name}", encode(:expense_category, cat.id, cat.name, "expense") ]
       end
       fixed = FIXED_EXPENSE_ACCOUNTS.map do |acct|
         name = I18n.t(acct[:name_key])

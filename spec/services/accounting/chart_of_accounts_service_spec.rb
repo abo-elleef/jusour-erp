@@ -160,4 +160,47 @@ RSpec.describe Accounting::ChartOfAccountsService do
       expect(coa.total_revenue_cents).to eq(30_000)
     end
   end
+
+  # ── Codes must be fixed per category, not derived from the date filter ──
+
+  describe "stable account codes" do
+    let!(:cash) do
+      Treasury.create!(name: "Cash", treasury_type: "cash_drawer",
+                       balance_cents: 0, opening_balance_cents: 0, company: Current.company)
+    end
+    let!(:alpha) { IncomeCategory.create!(name: "Alpha", category_type: "sales", company: Current.company) }
+    let!(:beta)  { IncomeCategory.create!(name: "Beta", category_type: "services", company: Current.company) }
+
+    def add_income(category, date, cents)
+      Income.create!(income_category: category, user: user, treasury: cash,
+                     description: "x", amount_cents: cents, income_date: date,
+                     recurrence: "one_time", company: Current.company)
+    end
+
+    before do
+      add_income(alpha, Date.new(2025, 1, 10), 10_000) # only in January
+      add_income(beta,  Date.new(2025, 3, 10), 20_000) # only in March
+    end
+
+    it "shows each category's own stored code regardless of which categories have activity in the range" do
+      jan = described_class.new(start_date: Date.new(2025, 1, 1), end_date: Date.new(2025, 1, 31))
+      mar = described_class.new(start_date: Date.new(2025, 3, 1), end_date: Date.new(2025, 3, 31))
+
+      # Alpha is the only revenue line in January, Beta the only one in March.
+      expect(jan.revenue_lines.map(&:name)).to contain_exactly("Alpha")
+      expect(mar.revenue_lines.map(&:name)).to contain_exactly("Beta")
+
+      # Beta keeps its own code in March instead of collapsing to 4001 (the old bug).
+      beta_line = mar.revenue_lines.first
+      expect(beta_line.code).to eq(beta.account_code)
+      expect(beta_line.code).not_to eq(4001)
+      expect(alpha.account_code).not_to eq(beta.account_code)
+    end
+
+    it "matches the code the auto-posted journal entry stamps for the same category" do
+      income = add_income(alpha, Date.new(2025, 6, 1), 5_000)
+      revenue_line = JournalEntry.for_source(income).first.lines.find { |l| l.account_type == "revenue" }
+      expect(revenue_line.account_code).to eq(alpha.account_code)
+    end
+  end
 end

@@ -382,18 +382,11 @@ module Accounting
       end
 
       def account_for_expense_category(category)
-        # Assign deterministic codes 5001+ by category creation order
-        base = 5000
-        siblings = ExpenseCategory.unscoped.where(company_id: category.company_id).order(:id)
-        idx = siblings.pluck(:id).index(category.id).to_i
-        { code: base + idx + 1, name: category.name }
+        { code: category.account_code, name: category.name }
       end
 
       def account_for_income_category(category)
-        base = 4000
-        siblings = IncomeCategory.unscoped.where(company_id: category.company_id).order(:id)
-        idx = siblings.pluck(:id).index(category.id).to_i
-        { code: base + idx + 1, name: category.name }
+        { code: category.account_code, name: category.name }
       end
 
       def account_for_partner(partner)

@@ -185,9 +185,9 @@ module Accounting
     # ── Revenue ───────────────────────────────────────────────────────
 
     def revenue_lines
-      @revenue_lines ||= income_totals.each_with_index.map do |(category_name, cents), i|
+      @revenue_lines ||= income_totals.map do |(code, category_name), cents|
         AccountLine.new(
-          code:           4001 + i,
+          code:           code,
           name:           category_name,
           account_type:   :revenue,
           subtype:        "income",
@@ -204,9 +204,9 @@ module Accounting
     # ── Expenses — dynamic categories ────────────────────────────────
 
     def dynamic_expense_lines
-      @dynamic_expense_lines ||= expense_totals.each_with_index.map do |(category_name, cents), i|
+      @dynamic_expense_lines ||= expense_totals.map do |(code, category_name), cents|
         AccountLine.new(
-          code:           5001 + i,
+          code:           code,
           name:           category_name,
           account_type:   :expense,
           subtype:        "expense",
@@ -273,7 +273,9 @@ module Accounting
       @income_totals ||= begin
         scope = Income.joins(:income_category)
         scope = scope.on_date_range(@start_date, @end_date) if @start_date && @end_date
-        scope.group("income_categories.name").order("income_categories.name").sum(:amount_cents)
+        scope.group("income_categories.account_code", "income_categories.name")
+             .order("income_categories.account_code")
+             .sum(:amount_cents)
       end
     end
 
@@ -281,7 +283,9 @@ module Accounting
       @expense_totals ||= begin
         scope = Expense.joins(:expense_category)
         scope = scope.on_date_range(@start_date, @end_date) if @start_date && @end_date
-        scope.group("expense_categories.name").order("expense_categories.name").sum(:amount_cents)
+        scope.group("expense_categories.account_code", "expense_categories.name")
+             .order("expense_categories.account_code")
+             .sum(:amount_cents)
       end
     end
   end
