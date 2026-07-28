@@ -123,6 +123,7 @@ Rails.application.routes.draw do
     end
     get "settings", to: "settings#index", as: :settings
     patch "settings", to: "settings#update"
+    resources :roles, except: %i[show]
     resources :tax_rates, only: %i[new create edit update destroy]
     resources :printers do
       member { post :test_print }

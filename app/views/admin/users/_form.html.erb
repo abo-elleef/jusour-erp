@@ -38,11 +38,15 @@
         </div>
 
         <div>
-          <%= f.label :role, t("staff.index.role"), class: label_class %>
-          <% roles = policy(user).create? && current_user.owner? ? User::ROLES : User::ROLES - ["owner"] %>
-          <% roles = %w[cashier kitchen] if current_user.manager? && !current_user.owner? %>
-          <%= f.select :role, roles.map { |r| [user_role_label(r), r] }, {},
-                class: "#{input_class} appearance-none" %>
+          <%= f.label :role_id, t("staff.index.role"), class: label_class %>
+          <% if current_user.owner? %>
+            <%= f.select :role_id, Role.ordered.map { |r| [r.name, r.id] },
+                  { selected: user.role_id || Role.find_by(key: user.role)&.id },
+                  class: "#{input_class} appearance-none" %>
+          <% else %>
+            <%= f.select :role, %w[cashier kitchen].map { |r| [user_role_label(r), r] }, {},
+                  class: "#{input_class} appearance-none" %>
+          <% end %>
           <p class="text-xs text-gray-500 mt-1.5">
             <%= t("staff.form.role_hint") %>
           </p>

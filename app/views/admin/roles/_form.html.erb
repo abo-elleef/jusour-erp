@@ -1,0 +1,49 @@
+<%= form_with model: [:admin, role], class: "space-y-6" do |f| %>
+  <% if role.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <%= role.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name, t("roles.name"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <% if role.built_in? %>
+      <p class="text-sm font-semibold text-gray-900"><%= role.name %>
+        <span class="ms-2 text-[11px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full"><%= t("roles.built_in") %></span>
+      </p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("roles.built_in_hint") %></p>
+    <% else %>
+      <%= f.text_field :name, class: pos_input_class, autofocus: true %>
+    <% end %>
+  </div>
+
+  <div>
+    <p class="block text-xs font-semibold text-gray-600 mb-2"><%= t("roles.permissions") %></p>
+    <%# empty submission so unchecking everything clears the list %>
+    <%= hidden_field_tag "role[permissions][]", "" %>
+    <div class="space-y-4">
+      <% Permission::CATALOG.group_by { |p| p[:group] }.each do |group, perms| %>
+        <fieldset class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+          <legend class="sr-only"><%= permission_group_label(group) %></legend>
+          <div class="px-4 py-2.5 border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <%= permission_group_label(group) %>
+          </div>
+          <div class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <% perms.each do |perm| %>
+              <label class="flex items-center gap-2.5 text-sm text-gray-800 rounded-lg px-2 py-1.5 hover:bg-gray-50 cursor-pointer">
+                <%= check_box_tag "role[permissions][]", perm[:key], role.permission_keys.include?(perm[:key]),
+                      class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+                <%= permission_label(perm[:key]) %>
+              </label>
+            <% end %>
+          </div>
+        </fieldset>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <%= f.submit t("actions.save"), class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+    <%= link_to t("actions.cancel"), admin_roles_path, class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+  </div>
+<% end %>

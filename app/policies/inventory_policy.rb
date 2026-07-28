@@ -2,40 +2,34 @@
 
 class InventoryPolicy < ApplicationPolicy
   def index?
-    manager_access?
+    user&.can?("inventory:view")
   end
 
   def show?
-    manager_access?
+    user&.can?("inventory:view")
   end
 
   def create?
-    manager_access?
+    user&.can?("inventory:manage")
   end
 
   def update?
-    manager_access?
+    user&.can?("inventory:manage")
   end
 
   def destroy?
-    owner? || accountant?
+    user&.can?("inventory:manage")
   end
 
   def adjust?
-    manager_access?
+    user&.can?("inventory:manage")
   end
 
   def complete?
-    manager_access?
+    user&.can?("inventory:manage")
   end
 
   def record_vendor_invoice_payment?
-    manager_access?
-  end
-
-  private
-
-  def manager_access?
-    user&.can_access_admin?
+    user&.can?("inventory:manage")
   end
 end

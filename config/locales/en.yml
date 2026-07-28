@@ -461,11 +461,75 @@ en:
       copy_link: "Copy link"
       copied: "Copied!"
 
+  roles:
+    title: "Roles & permissions"
+    description: "Define what each role can see and do. Assign roles to staff from their profile."
+    new_button: "New role"
+    name: "Role"
+    permissions: "Permissions"
+    staff: "Staff"
+    built_in: "Built-in"
+    built_in_hint: "Built-in role — its name is fixed, but you can adjust its permissions."
+    delete_confirm: "Delete this role?"
+    cannot_delete_builtin: "Built-in roles can't be deleted."
+  permissions:
+    groups:
+      operations: "Operations"
+      inventory: "Inventory"
+      accounting: "Accounting"
+      staff: "Staff & attendance"
+      settings: "Settings"
+      apps: "Apps"
+    keys:
+      dashboard:
+        view: "View dashboard"
+      orders:
+        view: "View orders"
+        refund: "Void & refund orders"
+      menu:
+        manage: "Manage menu"
+      customers:
+        manage: "Manage customers"
+      inventory:
+        view: "View inventory"
+        manage: "Manage inventory"
+      accounting:
+        ledgers: "Ledgers"
+        transactions: "Transactions"
+        reports: "Reports"
+        setup: "Setup"
+        audit: "Audit log"
+      attendance:
+        log: "Log attendance"
+        view: "View attendance & shifts"
+      staff:
+        view: "View staff"
+        manage: "Manage staff"
+      payroll:
+        view: "View payroll"
+        manage: "Manage payroll"
+      settings:
+        general: "General settings"
+      locations:
+        manage: "Manage locations"
+      printers:
+        manage: "Manage printers"
+      integrations:
+        manage: "Manage integrations"
+      payments:
+        manage: "Online payments"
+      pos:
+        access: "POS access"
+      kitchen:
+        access: "Kitchen (KDS) access"
+      production:
+        access: "Production access"
   settings:
     title: "System settings"
     description: "Loyalty, tax rates, and owner-only configuration."
     nav:
       general: "General"
+      roles: "Roles"
       integrations: "Integrations"
       online_payments: "Online payments"
     operations:
@@ -3054,6 +3118,10 @@ en:
       removed: "Staff member removed."
       deactivated: "Staff member deactivated."
       activated: "Staff member reactivated."
+    role:
+      created: "Role created."
+      updated: "Role updated."
+      deleted: "Role deleted."
     payroll_adjustment:
       created: "Adjustment recorded."
       removed: "Adjustment removed."

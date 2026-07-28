@@ -49,12 +49,12 @@ class ApplicationController < ActionController::Base
   def after_sign_in_path_for(resource)
     return root_path if resource.nil?
 
-    if resource.kitchen?
-      kitchen_path
-    elsif resource.can_access_admin?
+    if resource.can_access_admin?
       admin_root_path
     elsif resource.can_access_pos?
       pos_path
+    elsif resource.can_access_kds?
+      kitchen_path
     else
       root_path
     end

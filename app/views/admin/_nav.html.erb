@@ -1,23 +1,30 @@
-<%# Role-aware admin navigation — grouped, config folded into Settings, apps split out %>
+<%# Permission-driven admin navigation — every item gated by current_user.can?,
+    section links land on the first accessible destination so a click never 403s. %>
 <% section = "text-xs uppercase tracking-wide text-gray-400 mt-3 mb-1 px-2 block w-full" %>
 <% in_settings = in_settings_section? %>
 <% launch_pill = "inline-flex items-center gap-1.5 text-sm text-gray-300 border border-gray-700 rounded-lg px-3 py-2 hover:bg-gray-700 hover:text-white transition-colors" %>
 
 <%# ── Overview ─────────────────────────────────────────────── %>
-<%= link_to admin_root_path, class: admin_nav_link_class(admin_nav_active?("admin/dashboard")) do %>
-  <%= admin_nav_icon(:dashboard) %><span><%= t("nav.dashboard") %></span>
+<% if current_user.can?("dashboard:view") %>
+  <%= link_to admin_root_path, class: admin_nav_link_class(admin_nav_active?("admin/dashboard")) do %>
+    <%= admin_nav_icon(:dashboard) %><span><%= t("nav.dashboard") %></span>
+  <% end %>
 <% end %>
 
 <%# ── Sell & serve ─────────────────────────────────────────── %>
-<% if current_user.owner? || current_user.manager? || current_user.accountant? %>
+<% if current_user.can?("orders:view") || current_user.can?("menu:manage") || current_user.can?("customers:manage") %>
   <span class="<%= section %>"><%= t("nav.groups.sell_serve") %></span>
-  <%= link_to admin_orders_path, class: admin_nav_link_class(admin_nav_active?("admin/orders")) do %>
-    <%= admin_nav_icon(:orders) %><span><%= t("nav.orders") %></span>
+  <% if current_user.can?("orders:view") %>
+    <%= link_to admin_orders_path, class: admin_nav_link_class(admin_nav_active?("admin/orders")) do %>
+      <%= admin_nav_icon(:orders) %><span><%= t("nav.orders") %></span>
+    <% end %>
   <% end %>
-  <% if current_user.owner? || current_user.manager? %>
+  <% if current_user.can?("menu:manage") %>
     <%= link_to admin_menu_items_path, class: admin_nav_link_class(admin_nav_active?("admin/menu_items", "admin/categories", "admin/combos", "admin/modifiers", "admin/modifier_groups", "admin/tax_rates")) do %>
       <%= admin_nav_icon(:menu) %><span><%= t("nav.menu") %></span>
     <% end %>
+  <% end %>
+  <% if current_user.can?("customers:manage") %>
     <%= link_to admin_customers_path, class: admin_nav_link_class(admin_nav_active?("admin/customers")) do %>
       <%= admin_nav_icon(:customers) %><span><%= t("nav.customers") %></span>
     <% end %>
@@ -25,18 +32,22 @@
 <% end %>
 
 <%# ── Stock & finance ──────────────────────────────────────── %>
-<% if current_user.can_access_admin? %>
+<% if current_user.can?("inventory:view") || accounting_any_access? %>
   <span class="<%= section %>"><%= t("nav.groups.stock_finance") %></span>
-  <%= link_to admin_inventory_vendor_invoices_path, class: admin_nav_link_class(admin_nav_active?("admin/inventory")) do %>
-    <%= admin_nav_icon(:inventory) %><span><%= t("nav.inventory") %></span>
+  <% if current_user.can?("inventory:view") %>
+    <%= link_to admin_inventory_vendor_invoices_path, class: admin_nav_link_class(admin_nav_active?("admin/inventory")) do %>
+      <%= admin_nav_icon(:inventory) %><span><%= t("nav.inventory") %></span>
+    <% end %>
   <% end %>
-  <%= link_to admin_accounting_treasuries_path, class: admin_nav_link_class(admin_nav_active?("admin/accounting") && !in_settings) do %>
-    <%= admin_nav_icon(:accounting) %><span><%= t("nav.accounting") %></span>
+  <% if accounting_any_access? %>
+    <%= link_to accounting_landing_path, class: admin_nav_link_class(admin_nav_active?("admin/accounting") && !in_settings) do %>
+      <%= admin_nav_icon(:accounting) %><span><%= t("nav.accounting") %></span>
+    <% end %>
   <% end %>
 <% end %>
 
 <%# ── Settings (folds in Staff, Locations, Printers, Integrations, Online payments) %>
-<% if current_user.can_access_admin? %>
+<% if settings_any_access? %>
   <div class="my-2 border-t border-gray-800"></div>
   <%= link_to settings_landing_path, class: admin_nav_link_class(in_settings) do %>
     <%= admin_nav_icon(:settings) %><span><%= t("nav.settings") %></span>
@@ -44,21 +55,21 @@
 <% end %>
 
 <%# ── Launch (operational apps — switch into a different workspace) %>
-<% if current_user.can_access_pos? || current_user.can_access_kds? || current_user.can_access_production? %>
+<% if current_user.can?("pos:access") || current_user.can?("kitchen:access") || current_user.can?("production:access") %>
   <div class="my-2 border-t border-gray-800"></div>
   <span class="<%= section %>"><%= t("nav.groups.launch") %></span>
   <div class="flex flex-wrap gap-1.5 px-1 mt-1">
-    <% if current_user.can_access_pos? %>
+    <% if current_user.can?("pos:access") %>
       <%= link_to pos_path, class: launch_pill do %>
         <%= admin_nav_icon(:pos, css: "w-4 h-4 shrink-0") %><span><%= t("nav.pos") %></span>
       <% end %>
     <% end %>
-    <% if current_user.can_access_kds? %>
+    <% if current_user.can?("kitchen:access") %>
       <%= link_to kitchen_path, class: launch_pill do %>
         <%= admin_nav_icon(:kitchen, css: "w-4 h-4 shrink-0") %><span><%= t("nav.kitchen") %></span>
       <% end %>
     <% end %>
-    <% if current_user.can_access_production? %>
+    <% if current_user.can?("production:access") %>
       <%= link_to production_path, class: launch_pill do %>
         <%= admin_nav_icon(:production, css: "w-4 h-4 shrink-0") %><span><%= t("nav.production") %></span>
       <% end %>

@@ -7,8 +7,12 @@ module Admin
 
       private
 
+      # Permission-based section gate: each accounting controller requires its
+      # mapped permission (AccountingNav), so e.g. a sub-manager reaches Attendance
+      # (attendance:log) but not the ledgers (accounting:ledgers).
       def authorize_accounting!
-        authorize :accounting, :index?
+        permission = AccountingNav.permission_for(controller_name)
+        raise Pundit::NotAuthorizedError if permission.nil? || !current_user.can?(permission)
       end
 
       def parse_date_range(default_start: 7.days.ago.to_date)

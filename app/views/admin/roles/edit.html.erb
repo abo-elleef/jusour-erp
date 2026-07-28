@@ -1,0 +1,9 @@
+<%= render "admin/settings/nav" %>
+
+<div class="max-w-4xl">
+  <%= link_to admin_roles_path, class: "text-sm text-amber-700 hover:text-amber-800 font-semibold inline-flex items-center gap-1 mb-4" do %>
+    <span aria-hidden="true">&larr;</span> <%= t("roles.title") %>
+  <% end %>
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-6"><%= @role.name %></h1>
+  <%= render "form", role: @role %>
+</div>

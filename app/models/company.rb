@@ -14,6 +14,7 @@ class Company < ApplicationRecord
 
   after_create :seed_default_units
   after_create :seed_default_attendance_statuses
+  after_create :seed_default_roles
 
   # Names of units this company can use (built-in + custom, active only).
   def unit_names
@@ -32,5 +33,9 @@ class Company < ApplicationRecord
 
   def seed_default_attendance_statuses
     AttendanceStatus.seed_defaults!(self)
+  end
+
+  def seed_default_roles
+    Roles::Seeder.call(self)
   end
 end

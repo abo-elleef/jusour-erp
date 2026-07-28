@@ -8,7 +8,7 @@ module Admin
       private
 
       def authorize_inventory_access!
-        return if current_user.can_access_admin?
+        return if current_user.can?("inventory:view")
 
         flash[:alert] = t("flash.inventory_access")
         redirect_to root_path

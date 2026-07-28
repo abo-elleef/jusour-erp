@@ -9,6 +9,7 @@
       <%= link_to t("nav.printers"), admin_printers_path, class: admin_section_tab_class(controller_name == "printers") %>
     <% end %>
     <% if current_user.owner? %>
+      <%= link_to t("settings.nav.roles"), admin_roles_path, class: admin_section_tab_class(controller_name == "roles") %>
       <%= link_to t("settings.nav.integrations"), admin_accounting_integrations_path, class: admin_section_tab_class(controller_name == "integrations") %>
       <%= link_to t("settings.nav.online_payments"), admin_accounting_payment_method_treasuries_path, class: admin_section_tab_class(controller_name == "payment_method_treasuries") %>
     <% end %>

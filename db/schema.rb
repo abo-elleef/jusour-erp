@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_27_000007) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_28_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -908,6 +908,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_27_000007) do
     t.index ["unit_id"], name: "index_recipes_on_unit_id"
   end
 
+  create_table "roles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "key"
+    t.string "name", null: false
+    t.jsonb "permissions", default: [], null: false
+    t.boolean "built_in", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "key"], name: "index_roles_on_company_id_and_key", unique: true, where: "(key IS NOT NULL)"
+    t.index ["company_id"], name: "index_roles_on_company_id"
+  end
+
   create_table "shift_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.datetime "clocked_in_at", null: false
@@ -1236,11 +1248,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_27_000007) do
     t.integer "monthly_salary_cents", default: 0, null: false
     t.string "payroll_access_token", null: false
     t.uuid "company_id", null: false
+    t.uuid "role_id"
     t.index ["active"], name: "index_users_on_active"
     t.index ["company_id", "email"], name: "index_users_on_company_id_and_email", unique: true
     t.index ["company_id"], name: "index_users_on_company_id"
     t.index ["payroll_access_token"], name: "index_users_on_payroll_access_token", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
+    t.index ["role_id"], name: "index_users_on_role_id"
   end
 
   create_table "vendor_invoice_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1471,6 +1485,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_27_000007) do
   add_foreign_key "treasury_transfers", "users"
   add_foreign_key "units", "companies"
   add_foreign_key "users", "companies"
+  add_foreign_key "users", "roles"
   add_foreign_key "vendor_invoice_lines", "ingredients"
   add_foreign_key "vendor_invoice_lines", "units"
   add_foreign_key "vendor_invoice_lines", "vendor_invoices"

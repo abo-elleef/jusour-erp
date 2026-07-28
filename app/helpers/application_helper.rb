@@ -828,6 +828,65 @@ module ApplicationHelper
     end
   end
 
+  # ── Permission-driven accounting nav ─────────────────────────────
+  # Only tabs the user can? see are rendered; group/section links land on the
+  # first accessible tab, so clicking never 403s.
+  def accounting_visible_tabs(group)
+    group[:tabs].select { |tab| current_user.can?(tab[:permission]) }
+  end
+
+  def accounting_visible_groups
+    AccountingNav::GROUPS.select { |group| accounting_visible_tabs(group).any? }
+  end
+
+  def accounting_group_landing_path(group)
+    tab = accounting_visible_tabs(group).first
+    tab && public_send(tab[:path])
+  end
+
+  def accounting_landing_path
+    accounting_visible_groups.each do |group|
+      path = accounting_group_landing_path(group)
+      return path if path
+    end
+    nil
+  end
+
+  def accounting_any_access?
+    accounting_landing_path.present?
+  end
+
+  def accounting_current_group
+    AccountingNav::GROUPS.find do |group|
+      group[:tabs].any? { |tab| tab[:controller] == controller.controller_name }
+    end
+  end
+
+  def accounting_tab_active?(tab)
+    return false unless controller.controller_name == tab[:controller]
+
+    tab[:action].nil? || params[:action] == tab[:action]
+  end
+
+  # Sidebar "Settings" visibility — any settings/staff tab the user can reach.
+  SETTINGS_SECTION_PERMISSIONS = %w[
+    settings:general staff:view staff:manage locations:manage
+    printers:manage integrations:manage payments:manage
+  ].freeze
+
+  def settings_any_access?
+    SETTINGS_SECTION_PERMISSIONS.any? { |perm| current_user.can?(perm) }
+  end
+
+  def permission_label(key)
+    fallback = key.to_s.split(":").map { |part| part.tr("_", " ").humanize }.join(" · ")
+    t("permissions.keys.#{key.to_s.tr(':', '.')}", default: fallback)
+  end
+
+  def permission_group_label(group)
+    t("permissions.groups.#{group}", default: group.to_s.humanize)
+  end
+
   def treasury_index_sort_link(label, column, sort:, direction:)
     next_direction = sort == column && direction == "asc" ? "desc" : "asc"
     link_class = "inline-flex items-center gap-1 hover:text-gray-900 transition-colors"

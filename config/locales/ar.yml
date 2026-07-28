@@ -461,11 +461,75 @@ ar:
       copy_link: "نسخ الرابط"
       copied: "تم النسخ!"
 
+  roles:
+    title: "الأدوار والصلاحيات"
+    description: "حدّد ما يمكن لكل دور رؤيته والقيام به. عيّن الأدوار للموظفين من ملفاتهم."
+    new_button: "دور جديد"
+    name: "الدور"
+    permissions: "الصلاحيات"
+    staff: "الموظفون"
+    built_in: "مدمج"
+    built_in_hint: "دور مدمج — اسمه ثابت، لكن يمكنك تعديل صلاحياته."
+    delete_confirm: "هل تريد حذف هذا الدور؟"
+    cannot_delete_builtin: "لا يمكن حذف الأدوار المدمجة."
+  permissions:
+    groups:
+      operations: "العمليات"
+      inventory: "المخزون"
+      accounting: "المحاسبة"
+      staff: "الموظفون والحضور"
+      settings: "الإعدادات"
+      apps: "التطبيقات"
+    keys:
+      dashboard:
+        view: "عرض لوحة التحكم"
+      orders:
+        view: "عرض الطلبات"
+        refund: "إلغاء واسترداد الطلبات"
+      menu:
+        manage: "إدارة القائمة"
+      customers:
+        manage: "إدارة العملاء"
+      inventory:
+        view: "عرض المخزون"
+        manage: "إدارة المخزون"
+      accounting:
+        ledgers: "الدفاتر"
+        transactions: "المعاملات"
+        reports: "التقارير"
+        setup: "الإعدادات"
+        audit: "سجل التدقيق"
+      attendance:
+        log: "تسجيل الحضور"
+        view: "عرض الحضور والورديات"
+      staff:
+        view: "عرض الموظفين"
+        manage: "إدارة الموظفين"
+      payroll:
+        view: "عرض الرواتب"
+        manage: "إدارة الرواتب"
+      settings:
+        general: "الإعدادات العامة"
+      locations:
+        manage: "إدارة المواقع"
+      printers:
+        manage: "إدارة الطابعات"
+      integrations:
+        manage: "إدارة التكاملات"
+      payments:
+        manage: "المدفوعات الإلكترونية"
+      pos:
+        access: "الوصول لنقطة البيع"
+      kitchen:
+        access: "الوصول للمطبخ"
+      production:
+        access: "الوصول للإنتاج"
   settings:
     title: "إعدادات النظام"
     description: "الولاء والضرائب وإعدادات المالك فقط."
     nav:
       general: "عام"
+      roles: "الأدوار"
       integrations: "التكاملات"
       online_payments: "المدفوعات الإلكترونية"
     operations:
@@ -3080,6 +3144,10 @@ ar:
       removed: "تم حذف الموظف."
       deactivated: "تم تعطيل الموظف."
       activated: "تم تفعيل الموظف."
+    role:
+      created: "تم إنشاء الدور."
+      updated: "تم تحديث الدور."
+      deleted: "تم حذف الدور."
     payroll_adjustment:
       created: "تم تسجيل التعديل."
       removed: "تمت إزالة التعديل."

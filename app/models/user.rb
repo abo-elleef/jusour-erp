@@ -8,7 +8,8 @@ class User < ApplicationRecord
 
   money_input :monthly_salary_cents
 
-  ROLES = %w[owner manager accountant cashier kitchen].freeze
+  ROLES = %w[owner super_manager manager sub_manager accountant cashier kitchen custom].freeze
+  BUILTIN_ROLE_KEYS = %w[owner super_manager manager sub_manager accountant cashier kitchen].freeze
   INDEX_SORTABLE_COLUMNS = %w[name email role monthly_salary_cents created_at].freeze
   INDEX_DEFAULT_SORT = "name"
   INDEX_DEFAULT_SORT_DIRECTION = "asc"
@@ -43,6 +44,16 @@ class User < ApplicationRecord
   has_many :processed_payments, class_name: "Payment", foreign_key: :processed_by_user_id, dependent: :nullify
   has_many :shift_logs, dependent: :nullify
   has_many :cash_drawer_sessions, dependent: :nullify
+
+  # Permission bundle (DB-backed). `role` string stays as the built-in identity
+  # for the owner?/manager?/… predicates during the migration to permissions.
+  belongs_to :assigned_role, class_name: "Role", foreign_key: :role_id,
+    inverse_of: :users, optional: true
+
+  # Keep `role_id` (the permission source of truth) and the `role` string in
+  # sync in both directions: forms pick a role_id → derive the string; seeds set
+  # a string → link the matching built-in role so `can?` reads live DB perms.
+  before_validation :reconcile_role
   has_many :expenses, dependent: :nullify
   has_many :incomes, dependent: :nullify
   has_many :payroll_adjustments, dependent: :destroy
@@ -121,29 +132,69 @@ class User < ApplicationRecord
     role == "kitchen"
   end
 
+  def sub_manager?
+    role == "sub_manager"
+  end
+
+  def super_manager?
+    role == "super_manager"
+  end
+
+  # Permission-based check — the way ALL new authorization should be written
+  # (policies + views), instead of branching on role names. Reads the user's
+  # assigned Role's permissions; falls back to the built-in defaults for the
+  # string role while surfaces are still being migrated.
+  def can?(permission)
+    perm = permission.to_s
+    if assigned_role
+      assigned_role.can?(perm)
+    else
+      Array(Permission::BUILTIN_ROLES.dig(role, :permissions)).include?(perm)
+    end
+  end
+
+  def reconcile_role
+    return if company_id.blank?
+
+    if will_save_change_to_role_id? && assigned_role
+      self.role = assigned_role.built_in? && assigned_role.key.present? ? assigned_role.key : "custom"
+    elsif role_id.blank? && role.present?
+      match = Role.unscoped.find_by(company_id: company_id, key: role)
+      self.role_id = match.id if match
+    end
+  end
+
   # Roles whose pay is driven by daily attendance (vs a fixed monthly salary).
   def attendance_paid?
     cashier? || kitchen?
   end
 
-  def admin_access?
-    owner? || manager? || accountant?
+  # Effective permission keys for this user — the assigned role's, or (during
+  # migration / for role_id-less users) the built-in defaults for the string role.
+  def permission_keys
+    assigned_role&.permission_keys || Array(Permission::BUILTIN_ROLES.dig(role, :permissions))
   end
 
+  # "Admin area" = holding any capability that isn't a pure operational-app
+  # launch (POS/KDS/Production). Permission-based so new/custom roles route
+  # correctly instead of falling through to an infinite redirect.
+  ADMIN_PERMISSION_KEYS = (Permission::KEYS - %w[pos:access kitchen:access production:access]).freeze
+
+  def admin_access?
+    (permission_keys & ADMIN_PERMISSION_KEYS).any?
+  end
+  alias_method :can_access_admin?, :admin_access?
+
   def can_access_pos?
-    owner? || manager? || accountant? || cashier?
+    can?("pos:access")
   end
 
   def can_access_kds?
-    owner? || manager? || accountant? || kitchen?
+    can?("kitchen:access")
   end
 
   def can_access_production?
-    owner? || manager? || accountant? || kitchen?
-  end
-
-  def can_access_admin?
-    owner? || manager? || accountant?
+    can?("production:access")
   end
 
   def can_manage_system?
