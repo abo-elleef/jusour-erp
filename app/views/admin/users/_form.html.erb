@@ -51,6 +51,29 @@
             <%= t("staff.form.role_hint") %>
           </p>
         </div>
+
+        <% if current_user.owner? %>
+          <div>
+            <%= f.label :all_locations, t("staff.form.locations_label"), class: label_class %>
+            <label class="flex items-center gap-2.5 text-sm text-gray-800 mt-1">
+              <%= f.check_box :all_locations, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+              <%= t("staff.form.all_locations") %>
+            </label>
+            <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.form.all_locations_hint") %></p>
+
+            <%= hidden_field_tag "user[location_ids][]", "" %>
+            <div class="grid grid-cols-2 gap-2 mt-3">
+              <% Location.active.ordered.each do |loc| %>
+                <label class="flex items-center gap-2.5 text-sm text-gray-800">
+                  <%= check_box_tag "user[location_ids][]", loc.id, user.location_ids.include?(loc.id),
+                        class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+                  <%= loc.name %>
+                </label>
+              <% end %>
+            </div>
+            <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.form.locations_hint") %></p>
+          </div>
+        <% end %>
       <% else %>
         <div>
           <p class="<%= label_class %>"><%= t("staff.index.role") %></p>

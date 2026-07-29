@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_28_000001) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_28_000002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1232,6 +1232,15 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_28_000001) do
     t.index ["company_id"], name: "index_units_on_company_id"
   end
 
+  create_table "user_locations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "user_id", null: false
+    t.uuid "location_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["location_id"], name: "index_user_locations_on_location_id"
+    t.index ["user_id", "location_id"], name: "index_user_locations_on_user_id_and_location_id", unique: true
+  end
+
   create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "role", default: "cashier", null: false
@@ -1249,6 +1258,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_28_000001) do
     t.string "payroll_access_token", null: false
     t.uuid "company_id", null: false
     t.uuid "role_id"
+    t.boolean "all_locations", default: true, null: false
     t.index ["active"], name: "index_users_on_active"
     t.index ["company_id", "email"], name: "index_users_on_company_id_and_email", unique: true
     t.index ["company_id"], name: "index_users_on_company_id"
@@ -1484,6 +1494,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_28_000001) do
   add_foreign_key "treasury_transfers", "treasuries", column: "to_treasury_id"
   add_foreign_key "treasury_transfers", "users"
   add_foreign_key "units", "companies"
+  add_foreign_key "user_locations", "locations"
+  add_foreign_key "user_locations", "users"
   add_foreign_key "users", "companies"
   add_foreign_key "users", "roles"
   add_foreign_key "vendor_invoice_lines", "ingredients"

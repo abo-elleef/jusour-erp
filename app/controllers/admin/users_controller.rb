@@ -117,11 +117,15 @@ module Admin
 
     def user_params
       permitted = %i[name email pin]
-      permitted += %i[role_id monthly_salary_pounds] if current_user.owner?
+      permitted += %i[role_id monthly_salary_pounds all_locations] if current_user.owner?
       changing_password = action_name == "create" || params.dig(:user, :password).present?
       permitted += %i[password password_confirmation] if changing_password
 
-      attrs = params.require(:user).permit(permitted)
+      permit_args = permitted.dup
+      permit_args << { location_ids: [] } if current_user.owner?
+
+      attrs = params.require(:user).permit(*permit_args)
+      attrs[:location_ids] = Array(attrs[:location_ids]).reject(&:blank?) if attrs.key?(:location_ids)
       attrs[:role] = sanitize_role(attrs[:role]) if attrs[:role].present?
       attrs.delete(:pin) if attrs[:pin].blank?
       attrs

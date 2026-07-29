@@ -50,6 +50,12 @@ class User < ApplicationRecord
   belongs_to :assigned_role, class_name: "Role", foreign_key: :role_id,
     inverse_of: :users, optional: true
 
+  # Location scope — the "where" axis of authorization (permissions are "what").
+  # `all_locations` users operate company-wide; otherwise they're limited to
+  # their assigned locations.
+  has_many :user_locations, dependent: :destroy
+  has_many :locations, through: :user_locations
+
   # Keep `role_id` (the permission source of truth) and the `role` string in
   # sync in both directions: forms pick a role_id → derive the string; seeds set
   # a string → link the matching built-in role so `can?` reads live DB perms.
@@ -141,16 +147,24 @@ class User < ApplicationRecord
   end
 
   # Permission-based check — the way ALL new authorization should be written
-  # (policies + views), instead of branching on role names. Reads the user's
-  # assigned Role's permissions; falls back to the built-in defaults for the
-  # string role while surfaces are still being migrated.
+  # (policies + views), instead of branching on role names.
   def can?(permission)
-    perm = permission.to_s
-    if assigned_role
-      assigned_role.can?(perm)
-    else
-      Array(Permission::BUILTIN_ROLES.dig(role, :permissions)).include?(perm)
-    end
+    role_record = effective_role
+    return role_record.can?(permission) if role_record
+
+    # Last resort only if the company somehow has no matching DB role.
+    Array(Permission::BUILTIN_ROLES.dig(role, :permissions)).include?(permission.to_s)
+  end
+
+  # The live DB Role driving this user's permissions: the explicitly assigned
+  # role, or (for role_id-less users) the company's built-in role matching the
+  # string role. Resolving from the DB — never a frozen code copy — is what makes
+  # role edits in the UI take effect immediately for everyone.
+  def effective_role
+    return @effective_role if defined?(@effective_role)
+
+    @effective_role = assigned_role ||
+      (role.present? && company_id.present? ? Role.unscoped.find_by(company_id: company_id, key: role) : nil)
   end
 
   def reconcile_role
@@ -172,7 +186,7 @@ class User < ApplicationRecord
   # Effective permission keys for this user — the assigned role's, or (during
   # migration / for role_id-less users) the built-in defaults for the string role.
   def permission_keys
-    assigned_role&.permission_keys || Array(Permission::BUILTIN_ROLES.dig(role, :permissions))
+    effective_role&.permission_keys || Array(Permission::BUILTIN_ROLES.dig(role, :permissions))
   end
 
   # "Admin area" = holding any capability that isn't a pure operational-app
@@ -199,6 +213,19 @@ class User < ApplicationRecord
 
   def can_manage_system?
     owner?
+  end
+
+  # The location ids this user may operate on — every active company location
+  # when global, otherwise just their assigned set.
+  def accessible_location_ids
+    all_locations? ? Location.active.ids : location_ids
+  end
+
+  def can_access_location?(location)
+    return true if all_locations?
+
+    location_id = location.respond_to?(:id) ? location.id : location
+    location_ids.include?(location_id)
   end
 
   def pin=(raw)

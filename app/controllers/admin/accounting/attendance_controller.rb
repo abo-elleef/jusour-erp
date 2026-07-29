@@ -27,7 +27,7 @@ module Admin
         affected = []
 
         (params[:cells] || []).each do |cell|
-          user = company_users.find_by(id: cell[:user_id])
+          user = scoped_staff.find_by(id: cell[:user_id])
           next if user.blank?
 
           date = cell[:date].to_date
@@ -64,7 +64,18 @@ module Admin
       end
 
       def staff_scope
-        company_users.where("monthly_salary_cents > 0").order(:name)
+        scoped_staff.where("monthly_salary_cents > 0").order(:name)
+      end
+
+      # Staff the current user may see/log for: everyone when global, otherwise
+      # only staff assigned to a location the user is scoped to.
+      def scoped_staff
+        scope = company_users
+        return scope if current_user.all_locations?
+
+        scope.joins(:user_locations)
+          .where(user_locations: { location_id: current_user.location_ids })
+          .distinct
       end
 
       def company_users
