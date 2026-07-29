@@ -54,7 +54,6 @@
             <th class="sticky top-0 z-10 bg-gray-50 text-end text-xs font-semibold text-gray-500 uppercase px-2 py-2 border-b border-s border-gray-200 min-w-[3rem]"><%= t("accounting.attendance.payable") %></th>
             <th class="sticky top-0 z-10 bg-gray-50 text-end text-xs font-semibold text-gray-500 uppercase px-2 py-2 border-b border-gray-200 min-w-[3rem]"><%= t("accounting.attendance.bonus") %></th>
             <th class="sticky top-0 z-10 bg-gray-50 text-end text-xs font-semibold text-gray-500 uppercase px-2 py-2 border-b border-gray-200 min-w-[3rem]"><%= t("accounting.attendance.penalty") %></th>
-            <th class="sticky top-0 z-10 bg-gray-50 text-end text-xs font-semibold text-gray-500 uppercase px-3 py-2 border-b border-gray-200 min-w-[5rem]"><%= t("accounting.attendance.pay") %></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
@@ -84,7 +83,6 @@
               <td class="text-end px-2 tabular-nums text-gray-700" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="payable"><%= number_with_precision(summary.payable_days, precision: 2, strip_insignificant_zeros: true) %></td>
               <td class="text-end px-2 tabular-nums text-teal-700" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="bonus"><%= number_with_precision(summary.bonus_days, precision: 2, strip_insignificant_zeros: true) %></td>
               <td class="text-end px-2 tabular-nums text-red-700" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="penalty"><%= number_with_precision(summary.penalty_days, precision: 2, strip_insignificant_zeros: true) %></td>
-              <td class="text-end px-3 tabular-nums font-semibold text-gray-900" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="pay"><%= user.attendance_paid? ? format_money(summary.base_pay_cents) : t("accounting.shared.em_dash") %></td>
             </tr>
           <% end %>
         </tbody>

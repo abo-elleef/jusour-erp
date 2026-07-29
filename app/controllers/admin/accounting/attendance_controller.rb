@@ -86,8 +86,7 @@ module Admin
         {
           payable: format_days(result.payable_days),
           bonus: format_days(result.bonus_days),
-          penalty: format_days(result.penalty_days),
-          pay: result.user.attendance_paid? ? helpers.format_money(result.base_pay_cents) : t("accounting.shared.em_dash")
+          penalty: format_days(result.penalty_days)
         }
       end
 
