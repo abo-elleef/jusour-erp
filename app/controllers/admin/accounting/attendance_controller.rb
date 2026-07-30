@@ -20,6 +20,27 @@ module Admin
         @summaries = @staff.index_with do |user|
           ::Accounting::AttendanceMonthService.new(user, @payroll_month).call
         end
+
+        @day_adjustments = day_adjustments_for(@staff, @days)
+      end
+
+      # Upsert/delete the per-day extra-hours bonus and late-penalty adjustments
+      # for a single staff member (right-click popover on the grid). Same
+      # PayrollAdjustment records as the user show page, so payroll stays in sync.
+      def adjustment
+        user = scoped_staff.find_by(id: params[:user_id])
+        return render(json: { ok: false }, status: :not_found) if user.blank?
+
+        date = params[:date].to_date
+        month = date.beginning_of_month
+        upsert_overtime_bonus(user, date, month, params[:overtime_hours])
+        upsert_penalty(user, date, month, params[:penalty])
+
+        render json: { ok: true }.merge(day_state(user, date))
+      rescue ActiveRecord::RecordInvalid => e
+        render json: { ok: false, error: e.record.errors.full_messages.to_sentence }, status: :unprocessable_entity
+      rescue Date::Error, ArgumentError
+        render json: { ok: false, error: "invalid" }, status: :unprocessable_entity
       end
 
       def update
@@ -88,6 +109,51 @@ module Admin
           bonus: format_days(result.bonus_days),
           penalty: format_days(result.penalty_days)
         }
+      end
+
+      DAY_PENALTY_UNITS = %w[quarter_day half_day full_day].freeze
+
+      # { [user_id, date] => { overtime_hours:, penalty_unit: } } for the month.
+      def day_adjustments_for(staff, days)
+        map = {}
+        PayrollAdjustment.where(user_id: staff.map(&:id), happened_at: days).find_each do |adj|
+          key = [adj.user_id, adj.happened_at]
+          bucket = (map[key] ||= {})
+          if adj.kind == "bonus" && adj.unit_type == "overtime"
+            bucket[:overtime_hours] = adj.overtime_hours
+          elsif adj.kind == "penalty" && DAY_PENALTY_UNITS.include?(adj.unit_type)
+            bucket[:penalty_unit] = adj.unit_type
+          end
+        end
+        map
+      end
+
+      def upsert_overtime_bonus(user, date, month, hours)
+        hours = hours.to_d
+        adj = user.payroll_adjustments.find_or_initialize_by(kind: "bonus", unit_type: "overtime", happened_at: date)
+        if hours.positive?
+          adj.assign_attributes(payroll_month: month, overtime_hours: hours, recorded_by: current_user)
+          adj.save!
+        elsif adj.persisted?
+          adj.destroy!
+        end
+      end
+
+      def upsert_penalty(user, date, month, unit)
+        adj = user.payroll_adjustments.where(kind: "penalty", happened_at: date, unit_type: DAY_PENALTY_UNITS).first
+        if DAY_PENALTY_UNITS.include?(unit)
+          adj ||= user.payroll_adjustments.build(kind: "penalty", happened_at: date)
+          adj.assign_attributes(unit_type: unit, payroll_month: month, recorded_by: current_user)
+          adj.save!
+        elsif adj
+          adj.destroy!
+        end
+      end
+
+      def day_state(user, date)
+        ot = user.payroll_adjustments.find_by(kind: "bonus", unit_type: "overtime", happened_at: date)
+        pen = user.payroll_adjustments.where(kind: "penalty", happened_at: date, unit_type: DAY_PENALTY_UNITS).first
+        { overtime_hours: ot&.overtime_hours&.to_f, penalty_unit: pen&.unit_type }
       end
 
       def format_days(value)

@@ -226,6 +226,7 @@ Rails.application.routes.draw do
 
       get "attendance", to: "attendance#index"
       patch "attendance", to: "attendance#update"
+      post "attendance/adjustment", to: "attendance#adjustment", as: :attendance_adjustment
 
       get "payroll", to: "payroll#index"
       get "payroll/export", to: "payroll#export", as: :payroll_export

@@ -3,9 +3,10 @@ import { Controller } from "@hotwired/stimulus"
 // Spreadsheet-style attendance grid: click a cell and type P/O/A/X, arrow-key
 // navigate, shift-click a range then type to fill, and autosave in batches.
 export default class extends Controller {
-  static targets = ["cell", "summary", "status"]
+  static targets = ["cell", "summary", "status", "popover", "popoverTitle", "otInput", "penaltyGroup"]
   static values = {
     url: String,
+    adjustmentUrl: String,
     symbols: Array,
     colors: Object,
     saving: String,
@@ -19,17 +20,35 @@ export default class extends Controller {
     this.pending = new Map()
     this.buffer = ""
     this.buildGrid()
+    this.cellTargets.forEach((cell) => this.renderDots(cell))
 
     this.onClick = this.handleClick.bind(this)
     this.onKeydown = this.handleKeydown.bind(this)
+    this.onContextMenu = this.handleContextMenu.bind(this)
+    this.onDocDown = this.handleDocPointerDown.bind(this)
     this.element.addEventListener("click", this.onClick)
     this.element.addEventListener("keydown", this.onKeydown)
+    this.element.addEventListener("contextmenu", this.onContextMenu)
+    document.addEventListener("pointerdown", this.onDocDown)
+
+    // Long-press for touch devices.
+    this.onTouchStart = this.handleTouchStart.bind(this)
+    this.onTouchEnd = this.handleTouchEnd.bind(this)
+    this.element.addEventListener("touchstart", this.onTouchStart, { passive: true })
+    this.element.addEventListener("touchend", this.onTouchEnd)
+    this.element.addEventListener("touchmove", this.onTouchEnd)
   }
 
   disconnect() {
     this.element.removeEventListener("click", this.onClick)
     this.element.removeEventListener("keydown", this.onKeydown)
+    this.element.removeEventListener("contextmenu", this.onContextMenu)
+    this.element.removeEventListener("touchstart", this.onTouchStart)
+    this.element.removeEventListener("touchend", this.onTouchEnd)
+    this.element.removeEventListener("touchmove", this.onTouchEnd)
+    document.removeEventListener("pointerdown", this.onDocDown)
     if (this.saveTimer) clearTimeout(this.saveTimer)
+    if (this.longPressTimer) clearTimeout(this.longPressTimer)
   }
 
   buildGrid() {
@@ -50,11 +69,25 @@ export default class extends Controller {
     if (event.shiftKey && this.anchor) {
       this.selectRange(this.anchor, cell)
     } else {
+      // First click just selects; clicking an already-selected cell cycles it.
+      const alreadySelected = this.selected.length === 1 && this.selected[0] === cell
       this.anchor = cell
       this.selectOnly(cell)
+      if (alreadySelected) this.cycleCell(cell)
     }
     this.resetBuffer()
     cell.focus()
+  }
+
+  // Cycle a cell through the status symbols, then blank, and autosave —
+  // shift-click still selects a range (for type-to-fill), keyboard is unchanged.
+  cycleCell(cell) {
+    const sequence = [...this.symbolsValue, ""]
+    const current = cell.dataset.symbol || ""
+    const index = sequence.indexOf(current)
+    const next = sequence[(index + 1) % sequence.length]
+    this.setCellSymbol(cell, next)
+    this.scheduleSave()
   }
 
   handleKeydown(event) {
@@ -176,6 +209,7 @@ export default class extends Controller {
     if (sym && this.colorsValue[sym]) cell.classList.add(...this.colorsValue[sym].split(" "))
     cell.textContent = sym || ""
     cell.dataset.symbol = sym || ""
+    this.renderDots(cell) // textContent wiped the dot spans — restore them
     this.pending.set(`${cell.dataset.userId}|${cell.dataset.date}`, {
       user_id: cell.dataset.userId,
       date: cell.dataset.date,
@@ -231,5 +265,124 @@ export default class extends Controller {
 
   csrfToken() {
     return document.querySelector('meta[name="csrf-token"]')?.content
+  }
+
+  // ── per-day adjustments popover (right-click / long-press) ─────
+  handleContextMenu(event) {
+    const cell = event.target.closest(".attendance-cell")
+    if (!cell) return
+    event.preventDefault()
+    this.openPopover(cell)
+  }
+
+  handleTouchStart(event) {
+    const cell = event.target.closest(".attendance-cell")
+    if (!cell) return
+    this.longPressTimer = setTimeout(() => this.openPopover(cell), 500)
+  }
+
+  handleTouchEnd() {
+    if (this.longPressTimer) clearTimeout(this.longPressTimer)
+  }
+
+  handleDocPointerDown(event) {
+    if (!this.hasPopoverTarget || this.popoverTarget.classList.contains("hidden")) return
+    if (this.popoverTarget.contains(event.target)) return
+    if (event.target.closest(".attendance-cell")) return
+    this.closePopover()
+  }
+
+  openPopover(cell) {
+    this.activeCell = cell
+    const pop = this.popoverTarget
+
+    const name = cell.closest("tr")?.querySelector("th span")?.textContent.trim() || ""
+    if (this.hasPopoverTitleTarget) this.popoverTitleTarget.textContent = `${name} · ${cell.dataset.date}`
+    if (this.hasOtInputTarget) this.otInputTarget.value = cell.dataset.otHours || ""
+    this.activePenalty = cell.dataset.penaltyUnit || ""
+    this.highlightPenalty(this.activePenalty)
+
+    pop.classList.remove("hidden")
+    const rect = cell.getBoundingClientRect()
+    let left = rect.left
+    let top = rect.bottom + 6
+    if (left + pop.offsetWidth > window.innerWidth - 8) left = window.innerWidth - pop.offsetWidth - 8
+    if (top + pop.offsetHeight > window.innerHeight - 8) top = rect.top - pop.offsetHeight - 6
+    pop.style.left = `${Math.max(8, left)}px`
+    pop.style.top = `${Math.max(8, top)}px`
+    if (this.hasOtInputTarget) this.otInputTarget.focus()
+  }
+
+  closePopover() {
+    if (this.hasPopoverTarget) this.popoverTarget.classList.add("hidden")
+    this.activeCell = null
+  }
+
+  selectPenalty(event) {
+    // Selection only — nothing is persisted until the Save button is clicked.
+    this.activePenalty = event.currentTarget.dataset.penalty || ""
+    this.highlightPenalty(this.activePenalty)
+  }
+
+  highlightPenalty(value) {
+    if (!this.hasPenaltyGroupTarget) return
+    this.penaltyGroupTarget.querySelectorAll(".attendance-penalty-btn").forEach((btn) => {
+      const on = (btn.dataset.penalty || "") === (value || "")
+      btn.classList.toggle("bg-gray-900", on)
+      btn.classList.toggle("text-white", on)
+      btn.classList.toggle("border-gray-900", on)
+      // Keep the selected button dark on hover (the base hover:bg-gray-50 would
+      // otherwise lighten the background under white text).
+      btn.classList.toggle("hover:bg-gray-50", !on)
+      btn.classList.toggle("hover:bg-gray-800", on)
+    })
+  }
+
+  saveAdjustment() {
+    const cell = this.activeCell
+    if (!cell) return
+    const overtime = this.hasOtInputTarget ? this.otInputTarget.value : ""
+    this.setStatus(this.savingValue)
+
+    fetch(this.adjustmentUrlValue, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-CSRF-Token": this.csrfToken()
+      },
+      body: JSON.stringify({
+        user_id: cell.dataset.userId,
+        date: cell.dataset.date,
+        overtime_hours: overtime,
+        penalty: this.activePenalty || ""
+      })
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.ok) return this.setStatus(this.errorValue)
+        cell.dataset.otHours = data.overtime_hours != null ? data.overtime_hours : ""
+        cell.dataset.penaltyUnit = data.penalty_unit || ""
+        if (this.hasOtInputTarget) this.otInputTarget.value = cell.dataset.otHours
+        this.activePenalty = cell.dataset.penaltyUnit
+        this.highlightPenalty(this.activePenalty)
+        this.renderDots(cell)
+        this.setStatus(this.savedValue)
+        this.closePopover()
+      })
+      .catch(() => this.setStatus(this.errorValue))
+  }
+
+  renderDots(cell) {
+    cell.querySelectorAll(".adj-dot").forEach((d) => d.remove())
+    const mk = (color, pos) => {
+      const s = document.createElement("span")
+      s.className = "adj-dot"
+      s.style.cssText = `position:absolute;width:6px;height:6px;border-radius:9999px;background:${color};${pos}`
+      cell.appendChild(s)
+    }
+    const ot = cell.dataset.otHours
+    if (ot && ot !== "" && parseFloat(ot) > 0) mk("#f59e0b", "top:2px;inset-inline-end:2px;")
+    if (cell.dataset.penaltyUnit && cell.dataset.penaltyUnit !== "") mk("#f43f5e", "bottom:2px;inset-inline-end:2px;")
   }
 }

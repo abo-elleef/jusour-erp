@@ -2678,6 +2678,10 @@ en:
       saving: "Saving…"
       saved: "Saved ✓"
       save_error: "Couldn't save — retry"
+      extra_hours: "Extra hours (overtime)"
+      penalty_none: "None"
+      penalty_full: "Full"
+      adjustment_hint: "Right-click a day to add extra hours or a late penalty. Applied to payroll for that day."
     usage_reports:
       title: "Sales & consumption"
       description: "What you sold and what it consumed in ingredients, over a date range."
