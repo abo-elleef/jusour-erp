@@ -1,11 +1,13 @@
 <%= render "admin/accounting/nav" %>
 <div class="max-w-3xl">
+  <% treasury_options_json = @treasuries.map { |t| { value: t.id, label: t.name } }.to_json %>
   <div class="mb-6">
     <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.treasury_transfers.new") %></h1>
     <p class="text-gray-600 text-sm mt-1"><%= t("accounting.treasury_transfers.description") %></p>
   </div>
 
-  <%= form_with model: @transfer, url: admin_accounting_treasury_transfers_path, class: "space-y-5" do |f| %>
+  <%= form_with model: @transfer, url: admin_accounting_treasury_transfers_path,
+        class: "space-y-5", data: { searchable_select_options: treasury_options_json } do |f| %>
     <% if @transfer.errors.any? %>
       <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
         <%= @transfer.errors.full_messages.to_sentence %>
@@ -16,15 +18,21 @@
       <div class="grid sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.treasury_transfers.from") %></label>
-          <%= f.collection_select :from_treasury_id, @treasuries, :id, :name,
-                { include_blank: t("accounting.treasury_transfers.select_treasury") },
-                class: pos_input_class, required: true %>
+          <%= render "shared/searchable_select",
+                form: f,
+                field: :from_treasury_id,
+                selected: @transfer.from_treasury_id,
+                placeholder: t("accounting.treasury_transfers.select_treasury"),
+                input_class: pos_input_class %>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.treasury_transfers.to") %></label>
-          <%= f.collection_select :to_treasury_id, @treasuries, :id, :name,
-                { include_blank: t("accounting.treasury_transfers.select_treasury") },
-                class: pos_input_class, required: true %>
+          <%= render "shared/searchable_select",
+                form: f,
+                field: :to_treasury_id,
+                selected: @transfer.to_treasury_id,
+                placeholder: t("accounting.treasury_transfers.select_treasury"),
+                input_class: pos_input_class %>
         </div>
       </div>
 
