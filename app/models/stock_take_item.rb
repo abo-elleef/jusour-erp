@@ -16,4 +16,12 @@ class StockTakeItem < ApplicationRecord
   def calculate_variance!
     self.variance = base_counted_quantity - expected_quantity.to_d
   end
+
+  # Estimated inventory impact using the ingredient's current unit cost.
+  # Safe with eager-loaded ingredients — no extra queries.
+  def variance_value_cents
+    return nil if variance.blank?
+
+    (variance.to_d * ingredient.cost_per_unit_cents.to_i).round
+  end
 end

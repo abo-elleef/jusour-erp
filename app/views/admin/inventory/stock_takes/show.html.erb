@@ -29,7 +29,7 @@
 
   <%= render "admin/inventory/tools_nav" %>
 
-  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.stock_takes.show.stats.ingredients") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @items.size %></p>
@@ -40,6 +40,13 @@
         <%= @variance_count %>
       </p>
       <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.stock_takes.show.stats.variances_hint") %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.stock_takes.show.stats.variance_value") %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums <%= @variance_value_cents.negative? ? 'text-red-700' : (@variance_value_cents.positive? ? 'text-amber-700' : 'text-gray-900') %>">
+        <%= format_money(@variance_value_cents) %>
+      </p>
+      <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.stock_takes.show.stats.variance_value_hint") %></p>
     </div>
     <% if @stock_take.completed_at %>
       <div class="rounded-2xl border border-gray-200 bg-white p-4">
@@ -70,36 +77,38 @@
                 <th class="p-3 pl-5 text-left"><%= t("inventory.stock_takes.show.table.ingredient") %></th>
                 <th class="p-3 text-right"><%= t("inventory.stock_takes.show.table.expected") %></th>
                 <th class="p-3 text-right"><%= t("inventory.stock_takes.show.table.counted") %></th>
-                <th class="p-3 pr-5 text-right"><%= t("inventory.stock_takes.show.table.variance") %></th>
+                <th class="p-3 text-right"><%= t("inventory.stock_takes.show.table.variance") %></th>
+                <th class="p-3 text-right"><%= t("inventory.stock_takes.show.table.variance_value") %></th>
+                <th class="p-3 pr-5 text-left"><%= t("inventory.stock_takes.show.table.unit") %></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100">
               <% @items.each do |item| %>
                 <% has_variance = item.variance.present? && !item.variance.to_d.zero? %>
+                <% unit = item.ingredient.unit %>
+                <% counted_in_base = item.counted_quantity.present? ? item.base_counted_quantity : nil %>
+                <% value_cents = item.variance_value_cents %>
                 <tr class="hover:bg-gray-100 transition-colors <%= 'bg-amber-50/40' if has_variance %>">
                   <td class="p-3 pl-5">
                     <span class="font-semibold text-gray-900"><%= item.ingredient.name %></span>
                     <span class="text-xs text-gray-500 block"><%= item.ingredient.ingredient_category.name %></span>
                   </td>
                   <td class="p-3 text-right text-gray-600 tabular-nums whitespace-nowrap">
-                    <%= item.expected_quantity %> <%= ingredient_unit_label(item.ingredient.unit) %>
+                    <%= item.expected_quantity %>
                   </td>
                   <td class="p-3 text-right">
-                    <div class="flex items-center justify-end gap-1.5">
-                      <%= number_field_tag "stock_take_items[#{item.id}][counted_quantity]",
-                            item.counted_quantity, step: 0.001, class: "#{input_class} ml-auto" %>
-                      <% units = item.ingredient.available_units %>
-                      <% if units.size > 1 %>
-                        <%= select_tag "stock_take_items[#{item.id}][counted_unit]",
-                              options_for_select(units.map { |u| [ingredient_unit_label(u), u] }, item.counted_unit.presence || item.ingredient.unit),
-                              class: "#{input_class} appearance-none w-24 shrink-0" %>
-                      <% else %>
-                        <span class="text-xs text-gray-500 shrink-0"><%= ingredient_unit_label(item.ingredient.unit) %></span>
-                      <% end %>
-                    </div>
+                    <%= number_field_tag "stock_take_items[#{item.id}][counted_quantity]",
+                          counted_in_base, step: 0.001, class: "#{input_class} ml-auto" %>
+                    <%= hidden_field_tag "stock_take_items[#{item.id}][counted_unit]", unit %>
                   </td>
-                  <td class="p-3 pr-5 text-right font-semibold tabular-nums whitespace-nowrap <%= item.variance.to_d.negative? ? 'text-red-700' : (has_variance ? 'text-amber-700' : 'text-gray-500') %>">
+                  <td class="p-3 text-right font-semibold tabular-nums whitespace-nowrap <%= item.variance.to_d.negative? ? 'text-red-700' : (has_variance ? 'text-amber-700' : 'text-gray-500') %>">
                     <%= item.variance.present? ? item.variance : t("accounting.shared.em_dash") %>
+                  </td>
+                  <td class="p-3 text-right tabular-nums whitespace-nowrap <%= value_cents.to_i.negative? ? 'text-red-700' : (value_cents.to_i.positive? ? 'text-amber-700' : 'text-gray-500') %>">
+                    <%= value_cents ? format_money(value_cents) : t("accounting.shared.em_dash") %>
+                  </td>
+                  <td class="p-3 pr-5 text-left text-gray-500 whitespace-nowrap">
+                    <%= ingredient_unit_label(unit) %>
                   </td>
                 </tr>
               <% end %>
@@ -119,25 +128,35 @@
               <th class="p-3 pl-5 text-left"><%= t("inventory.stock_takes.show.table.ingredient") %></th>
               <th class="p-3 text-right"><%= t("inventory.stock_takes.show.table.expected") %></th>
               <th class="p-3 text-right"><%= t("inventory.stock_takes.show.table.counted") %></th>
-              <th class="p-3 pr-5 text-right"><%= t("inventory.stock_takes.show.table.variance") %></th>
+              <th class="p-3 text-right"><%= t("inventory.stock_takes.show.table.variance") %></th>
+              <th class="p-3 text-right"><%= t("inventory.stock_takes.show.table.variance_value") %></th>
+              <th class="p-3 pr-5 text-left"><%= t("inventory.stock_takes.show.table.unit") %></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @items.each do |item| %>
               <% has_variance = item.variance.present? && !item.variance.to_d.zero? %>
+              <% unit = item.ingredient.unit %>
+              <% value_cents = item.variance_value_cents %>
               <tr class="hover:bg-gray-100 transition-colors <%= 'bg-amber-50/40' if has_variance %>">
                 <td class="p-3 pl-5">
                   <%= link_to item.ingredient.name, admin_inventory_ingredient_path(item.ingredient),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>
                 </td>
                 <td class="p-3 text-right text-gray-600 tabular-nums whitespace-nowrap">
-                  <%= item.expected_quantity %> <%= ingredient_unit_label(item.ingredient.unit) %>
+                  <%= item.expected_quantity %>
                 </td>
                 <td class="p-3 text-right text-gray-900 tabular-nums whitespace-nowrap">
-                  <%= item.counted_quantity %> <%= ingredient_unit_label(item.ingredient.unit) %>
+                  <%= item.counted_quantity.present? ? item.base_counted_quantity : t("accounting.shared.em_dash") %>
                 </td>
-                <td class="p-3 pr-5 text-right font-semibold tabular-nums whitespace-nowrap <%= item.variance.to_d.negative? ? 'text-red-700' : (has_variance ? 'text-amber-700' : 'text-gray-500') %>">
+                <td class="p-3 text-right font-semibold tabular-nums whitespace-nowrap <%= item.variance.to_d.negative? ? 'text-red-700' : (has_variance ? 'text-amber-700' : 'text-gray-500') %>">
                   <%= item.variance.present? ? item.variance : t("accounting.shared.em_dash") %>
+                </td>
+                <td class="p-3 text-right tabular-nums whitespace-nowrap <%= value_cents.to_i.negative? ? 'text-red-700' : (value_cents.to_i.positive? ? 'text-amber-700' : 'text-gray-500') %>">
+                  <%= value_cents ? format_money(value_cents) : t("accounting.shared.em_dash") %>
+                </td>
+                <td class="p-3 pr-5 text-left text-gray-500 whitespace-nowrap">
+                  <%= ingredient_unit_label(unit) %>
                 </td>
               </tr>
             <% end %>
@@ -156,7 +175,9 @@
       <div class="p-5">
         <%= form_with url: complete_admin_inventory_stock_take_path(@stock_take), method: :post, class: "flex flex-wrap items-center gap-3" do %>
           <% @items.each do |item| %>
-            <%= hidden_field_tag "stock_take_items[#{item.id}][counted_quantity]", item.counted_quantity %>
+            <%= hidden_field_tag "stock_take_items[#{item.id}][counted_quantity]",
+                  item.counted_quantity.present? ? item.base_counted_quantity : item.counted_quantity %>
+            <%= hidden_field_tag "stock_take_items[#{item.id}][counted_unit]", item.ingredient.unit %>
           <% end %>
           <%= submit_tag t("inventory.stock_takes.show.confirm_button"),
                 class: "bg-green-700 hover:bg-green-800 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors",

@@ -22,6 +22,7 @@ module Admin
           .joins(ingredient: :ingredient_category)
           .order("ingredient_categories.position ASC, ingredients.name ASC")
         @variance_count = @items.count { |i| i.variance.present? && !i.variance.to_d.zero? }
+        @variance_value_cents = @items.sum { |i| i.variance_value_cents.to_i }
       end
 
       def create
