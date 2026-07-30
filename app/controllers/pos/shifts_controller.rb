@@ -13,7 +13,7 @@ module Pos
       @open_session = current_user.open_cash_drawer_session
       @tab = params[:tab].presence_in(%w[shift orders]) || (@open_session ? "orders" : "shift")
       @today_session = current_user.todays_cash_drawer_session
-      @drawer_treasuries = Treasury.active.cash_drawers.ordered
+      @assigned_treasury = current_user.assigned_treasury
       @unpaid_orders_count = unpaid_orders_for(current_user).size
       @has_draft_cart = draft_order_for(current_user).present?
       load_shift_orders if @tab == "orders"
@@ -26,7 +26,11 @@ module Pos
         return redirect_to pos_shift_path, alert: t("flash.pos.shift.drawer_already_open")
       end
 
-      treasury = Treasury.find(params[:treasury_id])
+      treasury = current_user.assigned_treasury
+      unless treasury&.active? && treasury.treasury_type == "cash_drawer"
+        return redirect_to pos_shift_path, alert: t("flash.pos.shift.no_assigned_treasury")
+      end
+
       session = CashDrawerSession.create!(
         user: current_user,
         treasury: treasury,
@@ -89,7 +93,8 @@ module Pos
       end
 
       ::Accounting::CashReconciliationService.new(@open_session).reconcile!(counted_cents)
-      redirect_to pos_shift_path, notice: t("flash.accounting.drawer_reconciled")
+      redirect_to pos_shift_path, notice: t("flash.accounting.drawer_reconciled_to_treasury",
+            treasury: @open_session.treasury.name)
     end
 
     def clock_out

@@ -77,36 +77,29 @@
       <p class="text-xs text-gray-500 mt-0.5"><%= t("pos.shift.open_drawer_hint") %></p>
     </div>
     <div class="p-5">
-      <% default_drawer_id = @drawer_treasuries.find(&:is_default)&.id || @drawer_treasuries.first&.id %>
-      <% treasury_options_json = @drawer_treasuries.map { |t| { value: t.id, label: t.name } }.to_json %>
-      <%= form_with url: open_drawer_pos_shift_path, method: :post, class: "space-y-4",
-            data: { searchable_select_options: treasury_options_json } do %>
-        <div data-controller="searchable-select"
-             data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
-          <%= label_tag :treasury_id, t("accounting.shared.treasury"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-          <%= hidden_field_tag :treasury_id, default_drawer_id,
-                data: { searchable_select_target: "hidden" } %>
-          <input type="text"
-                 autocomplete="off" spellcheck="false" role="combobox"
-                 aria-expanded="false" aria-autocomplete="list"
-                 placeholder="<%= t("accounting.shared.treasury") %>"
-                 class="<%= pos_input_class %>"
-                 data-searchable-select-target="input"
-                 data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
-          <ul data-searchable-select-target="menu" role="listbox"
-              class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
+      <% if @assigned_treasury %>
+        <%= form_with url: open_drawer_pos_shift_path, method: :post, class: "space-y-4" do %>
+          <div>
+            <p class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.treasury") %></p>
+            <p class="text-sm font-medium text-gray-900"><%= @assigned_treasury.name %></p>
+            <p class="text-xs text-gray-500 mt-1"><%= t("pos.shift.assigned_treasury_locked") %></p>
+          </div>
+          <div>
+            <%= label_tag :shift, t("accounting.cash_drawer.shift"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+            <%= select_tag :shift,
+                  options_for_select(CashDrawerSession::SHIFTS.map { |s| [accounting_shift_label(s), s] }),
+                  class: "#{pos_input_class} appearance-none w-full" %>
+          </div>
+          <div>
+            <%= label_tag :opening_float, t("accounting.cash_drawer.opening_float"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+            <%= number_field_tag :opening_float, 0, step: 0.01, min: 0, class: "#{pos_input_class} w-full" %>
+          </div>
+          <%= submit_tag t("accounting.cash_drawer.open_drawer"), class: "w-full bg-gray-900 text-white py-3 rounded-xl font-semibold" %>
+        <% end %>
+      <% else %>
+        <div class="rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-900" role="alert">
+          <%= t("pos.shift.no_assigned_treasury") %>
         </div>
-        <div>
-          <%= label_tag :shift, t("accounting.cash_drawer.shift"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-          <%= select_tag :shift,
-                options_for_select(CashDrawerSession::SHIFTS.map { |s| [accounting_shift_label(s), s] }),
-                class: "#{pos_input_class} appearance-none w-full" %>
-        </div>
-        <div>
-          <%= label_tag :opening_float, t("accounting.cash_drawer.opening_float"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-          <%= number_field_tag :opening_float, 0, step: 0.01, min: 0, class: "#{pos_input_class} w-full" %>
-        </div>
-        <%= submit_tag t("accounting.cash_drawer.open_drawer"), class: "w-full bg-gray-900 text-white py-3 rounded-xl font-semibold" %>
       <% end %>
     </div>
   </section>

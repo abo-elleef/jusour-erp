@@ -2,7 +2,8 @@
 
 module Admin
   class UsersController < BaseController
-    before_action :set_user, only: %i[show edit update destroy activate]
+    before_action :set_user, only: %i[show edit update destroy activate create_assigned_treasury]
+    before_action :load_drawer_treasuries, only: %i[new create edit update]
 
     def index
       authorize User
@@ -70,10 +71,32 @@ module Admin
       redirect_to admin_user_path(@user), notice: t("flash.user.activated")
     end
 
+    def create_assigned_treasury
+      authorize @user, :update?
+
+      unless current_user.owner? || current_user.accountant?
+        return redirect_to admin_user_path(@user), alert: t("flash.unauthorized")
+      end
+
+      if @user.assigned_treasury_id.present?
+        return redirect_to edit_admin_user_path(@user), alert: t("flash.user.assigned_treasury_exists")
+      end
+
+      treasury = Treasury.create_staff_drawer!(user_name: @user.name)
+      @user.update!(assigned_treasury: treasury)
+      redirect_to edit_admin_user_path(@user), notice: t("flash.user.assigned_treasury_created", name: treasury.name)
+    rescue ActiveRecord::RecordInvalid => e
+      redirect_to edit_admin_user_path(@user), alert: e.record.errors.full_messages.to_sentence
+    end
+
     private
 
     def set_user
       @user = User.find(params[:id])
+    end
+
+    def load_drawer_treasuries
+      @drawer_treasuries = Treasury.active.cash_drawers.ordered
     end
 
     def load_payroll_context
@@ -118,6 +141,7 @@ module Admin
     def user_params
       permitted = %i[name email pin]
       permitted += %i[role_id monthly_salary_pounds all_locations] if current_user.owner?
+      permitted += %i[assigned_treasury_id] if current_user.owner? || current_user.accountant?
       changing_password = action_name == "create" || params.dig(:user, :password).present?
       permitted += %i[password password_confirmation] if changing_password
 
@@ -128,6 +152,7 @@ module Admin
       attrs[:location_ids] = Array(attrs[:location_ids]).reject(&:blank?) if attrs.key?(:location_ids)
       attrs[:role] = sanitize_role(attrs[:role]) if attrs[:role].present?
       attrs.delete(:pin) if attrs[:pin].blank?
+      attrs.delete(:assigned_treasury_id) if attrs[:assigned_treasury_id].blank?
       attrs
     end
 

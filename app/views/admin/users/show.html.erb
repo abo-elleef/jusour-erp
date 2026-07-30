@@ -88,6 +88,24 @@
         <dt class="text-gray-500"><%= t("staff.show.status") %></dt>
         <dd class="font-medium text-gray-900"><%= @user.active? ? t("staff.show.active") : t("staff.show.inactive") %></dd>
       </div>
+      <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
+        <dt class="text-gray-500"><%= t("staff.show.assigned_treasury") %></dt>
+        <dd class="font-medium text-gray-900">
+          <% if @user.assigned_treasury %>
+            <% if policy(@user.assigned_treasury).show? %>
+              <%= link_to @user.assigned_treasury.name, admin_accounting_treasury_path(@user.assigned_treasury),
+                    class: "text-amber-700 hover:text-amber-800 underline underline-offset-2" %>
+            <% else %>
+              <%= @user.assigned_treasury.name %>
+            <% end %>
+            <span class="text-gray-500 tabular-nums ms-2">
+              (<%= format_money(@user.assigned_treasury.balance_cents) %>)
+            </span>
+          <% else %>
+            <span class="text-gray-400"><%= t("staff.show.assigned_treasury_none") %></span>
+          <% end %>
+        </dd>
+      </div>
     </dl>
   </section>
 

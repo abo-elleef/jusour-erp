@@ -89,6 +89,37 @@
     </div>
   </section>
 
+  <% if current_user.owner? || current_user.accountant? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.form.assigned_treasury_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("staff.form.assigned_treasury_hint") %></p>
+      </div>
+      <div class="p-5 space-y-4">
+        <div>
+          <%= f.label :assigned_treasury_id, t("staff.form.assigned_treasury"), class: label_class %>
+          <% treasury_select_options = {} %>
+          <% treasury_select_options[:include_blank] = t("staff.form.assigned_treasury_auto") if user.assigned_treasury_id.blank? %>
+          <%= f.collection_select :assigned_treasury_id,
+                @drawer_treasuries || [], :id, :name,
+                treasury_select_options,
+                class: "#{input_class} appearance-none",
+                required: user.assigned_treasury_id.present? %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.form.assigned_treasury_required_hint") %></p>
+        </div>
+        <% if user.persisted? && user.assigned_treasury_id.blank? %>
+          <div class="flex flex-wrap items-center gap-3">
+            <%= link_to t("staff.form.create_assigned_treasury"),
+                  create_assigned_treasury_admin_user_path(user),
+                  data: { turbo_method: :post },
+                  class: "text-sm font-semibold text-amber-700 hover:text-amber-800 underline underline-offset-2" %>
+            <span class="text-xs text-gray-500"><%= t("staff.form.create_assigned_treasury_hint") %></span>
+          </div>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("user.pin") %></h2>

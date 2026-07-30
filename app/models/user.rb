@@ -49,6 +49,11 @@ class User < ApplicationRecord
   # for the owner?/manager?/… predicates during the migration to permissions.
   belongs_to :assigned_role, class_name: "Role", foreign_key: :role_id,
     inverse_of: :users, optional: true
+  belongs_to :assigned_treasury, class_name: "Treasury", optional: true
+
+  validates :assigned_treasury, presence: true, on: :update
+  before_create :ensure_assigned_treasury
+  validate :assigned_treasury_must_be_valid_cash_drawer, if: -> { assigned_treasury.present? }
 
   # Location scope — the "where" axis of authorization (permissions are "what").
   # `all_locations` users operate company-wide; otherwise they're limited to
@@ -289,6 +294,27 @@ class User < ApplicationRecord
   end
 
   private
+
+  def ensure_assigned_treasury
+    return if assigned_treasury_id.present? || assigned_treasury.present?
+    return if name.blank?
+
+    self.assigned_treasury = Treasury.create_staff_drawer!(
+      user_name: name,
+      company: company || Current.company
+    )
+  end
+
+  def assigned_treasury_must_be_valid_cash_drawer
+    treasury = assigned_treasury
+    return if treasury.blank?
+
+    unless treasury.treasury_type == "cash_drawer"
+      errors.add(:assigned_treasury_id, :must_be_cash_drawer)
+    end
+    errors.add(:assigned_treasury_id, :must_be_active) unless treasury.active?
+    errors.add(:assigned_treasury_id, :must_be_same_company) if treasury.company_id != company_id
+  end
 
   def email_required?
     true

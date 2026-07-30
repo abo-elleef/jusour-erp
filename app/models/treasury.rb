@@ -11,6 +11,8 @@ class Treasury < ApplicationRecord
   has_many :payroll_advances, dependent: :restrict_with_error
   has_many :payroll_snapshots, dependent: :restrict_with_error
   has_many :cash_drawer_sessions, dependent: :restrict_with_error
+  has_many :assigned_users, class_name: "User", foreign_key: :assigned_treasury_id,
+    dependent: :restrict_with_error, inverse_of: :assigned_treasury
   has_many :outgoing_transfers, class_name: "TreasuryTransfer", foreign_key: :from_treasury_id, dependent: :restrict_with_error
   has_many :incoming_transfers, class_name: "TreasuryTransfer", foreign_key: :to_treasury_id, dependent: :restrict_with_error
   belongs_to :supplier, optional: true
@@ -40,6 +42,29 @@ class Treasury < ApplicationRecord
 
   def self.default_treasury
     active.find_by(is_default: true) || active.ordered.first
+  end
+
+  def self.create_staff_drawer!(user_name:, company: nil)
+    company ||= Current.company
+    raise ArgumentError, "company is required" if company.blank?
+
+    base_name = I18n.t("staff.form.drawer_name", name: user_name)
+    name = base_name
+    suffix = 2
+    while unscoped.exists?(company_id: company.id, name: name)
+      name = "#{base_name} (#{suffix})"
+      suffix += 1
+    end
+
+    unscoped.create!(
+      company: company,
+      name: name,
+      treasury_type: "cash_drawer",
+      restricted: false,
+      active: true,
+      opening_balance_cents: 0,
+      balance_cents: 0
+    )
   end
 
   def self.ransackable_attributes(_auth_object = nil)

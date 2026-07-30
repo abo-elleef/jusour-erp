@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_28_000002) do
+ActiveRecord::Schema[7.1].define(version: 2026_07_30_063435) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1259,7 +1259,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_28_000002) do
     t.uuid "company_id", null: false
     t.uuid "role_id"
     t.boolean "all_locations", default: true, null: false
+    t.uuid "assigned_treasury_id"
     t.index ["active"], name: "index_users_on_active"
+    t.index ["assigned_treasury_id"], name: "index_users_on_assigned_treasury_id"
     t.index ["company_id", "email"], name: "index_users_on_company_id_and_email", unique: true
     t.index ["company_id"], name: "index_users_on_company_id"
     t.index ["payroll_access_token"], name: "index_users_on_payroll_access_token", unique: true
@@ -1498,6 +1500,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_28_000002) do
   add_foreign_key "user_locations", "users"
   add_foreign_key "users", "companies"
   add_foreign_key "users", "roles"
+  add_foreign_key "users", "treasuries", column: "assigned_treasury_id", on_delete: :nullify
   add_foreign_key "vendor_invoice_lines", "ingredients"
   add_foreign_key "vendor_invoice_lines", "units"
   add_foreign_key "vendor_invoice_lines", "vendor_invoices"

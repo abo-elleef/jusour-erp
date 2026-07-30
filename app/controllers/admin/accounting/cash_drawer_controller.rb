@@ -9,12 +9,18 @@ module Admin
         @date = params[:date]&.to_date || BusinessDay.today
         @sessions = CashDrawerSession.where(session_date: @date).includes(:user, :treasury).order(:shift)
         @drawer_treasuries = Treasury.active.cash_drawers.ordered
+        @cashiers = User.active.includes(:assigned_treasury).order(:name)
+        @default_user = current_user
+        @default_treasury_id = current_user.assigned_treasury_id ||
+          Treasury.default_treasury&.id ||
+          @drawer_treasuries.first&.id
       end
 
       def open_session
-        treasury = Treasury.find(params[:treasury_id])
+        user = User.active.find(params[:user_id].presence || current_user.id)
+        treasury = resolve_open_treasury(user)
         @session = CashDrawerSession.create!(
-          user: current_user,
+          user: user,
           treasury: treasury,
           session_date: BusinessDay.today,
           shift: params[:shift],
@@ -26,6 +32,8 @@ module Admin
         redirect_to admin_accounting_cash_drawer_index_path, notice: t("flash.accounting.drawer_opened")
       rescue ActiveRecord::RecordInvalid => e
         redirect_to admin_accounting_cash_drawer_index_path, alert: e.record.errors.full_messages.to_sentence
+      rescue ActiveRecord::RecordNotFound
+        redirect_to admin_accounting_cash_drawer_index_path, alert: t("flash.accounting.drawer_open_invalid")
       end
 
       def count
@@ -35,13 +43,24 @@ module Admin
       def reconcile
         counted_cents = (params[:counted_cash].to_f * 100).to_i
         ::Accounting::CashReconciliationService.new(@session).reconcile!(counted_cents)
-        redirect_to admin_accounting_cash_drawer_index_path, notice: t("flash.accounting.drawer_reconciled")
+        redirect_to admin_accounting_cash_drawer_index_path,
+              notice: t("flash.accounting.drawer_reconciled_to_treasury", treasury: @session.treasury.name)
       end
 
       private
 
       def set_session
         @session = CashDrawerSession.find(params[:id])
+      end
+
+      def resolve_open_treasury(user)
+        if params[:treasury_id].present?
+          Treasury.active.cash_drawers.find(params[:treasury_id])
+        elsif user.assigned_treasury&.active? && user.assigned_treasury.treasury_type == "cash_drawer"
+          user.assigned_treasury
+        else
+          raise ActiveRecord::RecordNotFound
+        end
       end
     end
   end

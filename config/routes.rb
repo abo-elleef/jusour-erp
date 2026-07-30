@@ -116,7 +116,10 @@ Rails.application.routes.draw do
     resources :combos
     resources :customers
     resources :users do
-      member { patch :activate }
+      member do
+        patch :activate
+        post :create_assigned_treasury
+      end
       resources :payroll_adjustments, only: %i[create destroy], module: :users
       resources :payroll_advances, only: %i[create destroy], module: :users
       resource :payroll_snapshot, only: %i[create destroy], module: :users

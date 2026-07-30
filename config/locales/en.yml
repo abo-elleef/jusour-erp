@@ -366,6 +366,15 @@ en:
       password: "Password"
       confirm_password: "Confirm password"
       create_button: "Create staff member"
+      assigned_treasury_heading: "Cash drawer treasury"
+      assigned_treasury_hint: "Assigned automatically when this person opens a POS drawer. Cash settles here on close until accounting transfers it."
+      assigned_treasury: "Assigned treasury"
+      assigned_treasury_blank: "— None —"
+      assigned_treasury_auto: "— Create automatically —"
+      assigned_treasury_required_hint: "Required. Leave blank on create to auto-create a personal cash drawer treasury."
+      create_assigned_treasury: "Create drawer for this staff"
+      create_assigned_treasury_hint: "Creates a cash-drawer treasury and assigns it."
+      drawer_name: "Drawer — %{name}"
     new_subtitle: "Create an account for your team."
     show:
       back_to_list: "← Staff"
@@ -381,6 +390,8 @@ en:
       status: "Status"
       active: "Active"
       inactive: "Inactive"
+      assigned_treasury: "Assigned treasury"
+      assigned_treasury_none: "Not assigned"
       delete_confirm: "Remove %{name}?"
       deactivate_confirm: "Deactivate %{name}? They won't be able to log in."
       activate_confirm: "Reactivate %{name}?"
@@ -1528,6 +1539,8 @@ en:
       drawer_reconciled: "Drawer reconciled for today"
       open_drawer_heading: "Open drawer"
       open_drawer_hint: "Count your starting float before taking cash payments."
+      assigned_treasury_locked: "Your assigned treasury is selected automatically."
+      no_assigned_treasury: "No treasury is assigned to you. Ask an accountant or owner to assign a cash drawer treasury before opening."
       start_count: "Count & close drawer"
       back_to_shift: "Back to shift"
       back_to_register: "Back to register"
@@ -3081,6 +3094,7 @@ en:
       shift:
         drawer_already_open: "Your drawer is already open for today."
         no_open_drawer: "No open drawer session. Open your drawer first."
+        no_assigned_treasury: "No treasury is assigned to you. Ask an accountant or owner to assign a cash drawer treasury before opening."
         count_required: "Enter a counted cash amount greater than zero."
         manager_pin_required: "Manager PIN required for this variance."
         not_clocked_in: "You are not clocked in."
@@ -3127,6 +3141,8 @@ en:
       removed: "Staff member removed."
       deactivated: "Staff member deactivated."
       activated: "Staff member reactivated."
+      assigned_treasury_created: "Created and assigned treasury “%{name}”."
+      assigned_treasury_exists: "This staff member already has an assigned treasury."
     role:
       created: "Role created."
       updated: "Role updated."
@@ -3254,6 +3270,8 @@ en:
       budget_saved: "Budget saved."
       drawer_opened: "Drawer opened."
       drawer_reconciled: "Drawer reconciled."
+      drawer_reconciled_to_treasury: "Drawer reconciled. Counted cash is now in %{treasury} — transfer to Main when ready."
+      drawer_open_invalid: "Select a valid cashier and cash drawer treasury."
       already_clocked_in: "Already clocked in."
       clocked_in: "Clocked in at %{time}."
       clocked_out: "Clocked out."
@@ -3295,6 +3313,13 @@ en:
               inactive: "must be active"
             amount_cents:
               insufficient_balance: "exceeds available balance in the source treasury"
+        user:
+          attributes:
+            assigned_treasury_id:
+              blank: "must be assigned"
+              must_be_cash_drawer: "must be an active cash drawer treasury"
+              must_be_active: "must be an active cash drawer treasury"
+              must_be_same_company: "must belong to the same company"
         manufacturing_template:
           attributes:
             base:

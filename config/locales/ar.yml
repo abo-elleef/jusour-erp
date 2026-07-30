@@ -366,6 +366,15 @@ ar:
       password: "كلمة المرور"
       confirm_password: "تأكيد كلمة المرور"
       create_button: "إنشاء موظف"
+      assigned_treasury_heading: "خزينة درج النقد"
+      assigned_treasury_hint: "تُختار تلقائياً عند فتح الدرج من نقطة البيع. يستقر النقد هنا عند الإغلاق حتى ينقله المحاسب."
+      assigned_treasury: "الخزينة المخصصة"
+      assigned_treasury_blank: "— بدون —"
+      assigned_treasury_auto: "— إنشاء تلقائي —"
+      assigned_treasury_required_hint: "مطلوبة. اتركها فارغة عند الإنشاء ليُنشأ درج نقد شخصي تلقائياً."
+      create_assigned_treasury: "إنشاء درج لهذا الموظف"
+      create_assigned_treasury_hint: "ينشئ خزينة درج نقد ويخصصها لهذا الموظف."
+      drawer_name: "درج — %{name}"
     new_subtitle: "أنشئ حساباً لعضو في فريقك."
     show:
       back_to_list: "← الموظفون"
@@ -381,6 +390,8 @@ ar:
       status: "الحالة"
       active: "نشط"
       inactive: "غير نشط"
+      assigned_treasury: "الخزينة المخصصة"
+      assigned_treasury_none: "غير مخصصة"
       delete_confirm: "إزالة %{name}؟"
       deactivate_confirm: "تعطيل %{name}؟ لن يتمكن من تسجيل الدخول."
       activate_confirm: "إعادة تفعيل %{name}؟"
@@ -1540,6 +1551,8 @@ ar:
       drawer_reconciled: "تمت تسوية الصندوق لهذا اليوم"
       open_drawer_heading: "فتح الصندوق"
       open_drawer_hint: "عد رصيد الافتتاح قبل استلام المدفوعات النقدية."
+      assigned_treasury_locked: "خزينتك المخصصة تُختار تلقائياً."
+      no_assigned_treasury: "لا توجد خزينة مخصصة لك. اطلب من المحاسب أو المالك تخصيص خزينة درج نقد قبل الفتح."
       start_count: "عد النقد وأغلق الصندوق"
       back_to_shift: "العودة للوردية"
       back_to_register: "العودة للكاشير"
@@ -3107,6 +3120,7 @@ ar:
       shift:
         drawer_already_open: "صندوقك مفتوح بالفعل لهذا اليوم."
         no_open_drawer: "لا توجد جلسة صندوق مفتوحة. افتح الصندوق أولاً."
+        no_assigned_treasury: "لا توجد خزينة مخصصة لك. اطلب من المحاسب أو المالك تخصيص خزينة درج نقد قبل الفتح."
         count_required: "أدخل مبلغًا نقديًا محسوبًا أكبر من صفر."
         manager_pin_required: "يلزم رمز المدير لهذا الفرق."
         not_clocked_in: "لم تسجّل حضورك."
@@ -3153,6 +3167,8 @@ ar:
       removed: "تم حذف الموظف."
       deactivated: "تم تعطيل الموظف."
       activated: "تم تفعيل الموظف."
+      assigned_treasury_created: "تم إنشاء وتخصيص الخزينة «%{name}»."
+      assigned_treasury_exists: "هذا الموظف لديه خزينة مخصصة بالفعل."
     role:
       created: "تم إنشاء الدور."
       updated: "تم تحديث الدور."
@@ -3280,6 +3296,8 @@ ar:
       budget_saved: "تم حفظ الميزانية."
       drawer_opened: "تم فتح الدرج."
       drawer_reconciled: "تم تسوية الدرج."
+      drawer_reconciled_to_treasury: "تم تسوية الدرج. النقد المحسوب الآن في %{treasury} — انقله إلى الرئيسية عند الجاهزية."
+      drawer_open_invalid: "اختر كاشيرًا وخزينة درج نقد صالحين."
       already_clocked_in: "مسجّل الدخول مسبقًا."
       clocked_in: "تسجيل دخول الساعة %{time}."
       clocked_out: "تم تسجيل الخروج."
@@ -3327,6 +3345,13 @@ ar:
               inactive: "يجب أن تكون نشطة"
             amount_cents:
               insufficient_balance: "يتجاوز الرصيد المتاح في خزينة المصدر"
+        user:
+          attributes:
+            assigned_treasury_id:
+              blank: "يجب تخصيص خزينة"
+              must_be_cash_drawer: "يجب أن تكون خزينة درج نقد نشطة"
+              must_be_active: "يجب أن تكون خزينة درج نقد نشطة"
+              must_be_same_company: "يجب أن تنتمي لنفس الشركة"
         manufacturing_template:
           attributes:
             base:
