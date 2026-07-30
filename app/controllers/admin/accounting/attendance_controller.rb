@@ -100,7 +100,7 @@ module Admin
       end
 
       def company_users
-        User.where(company_id: Current.company.id)
+        User.where(company_id: Current.company.id).active
       end
 
       def summary_json(result)
