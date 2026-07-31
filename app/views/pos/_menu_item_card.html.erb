@@ -1,0 +1,29 @@
+<%# locals: item, location:, promo:, category: %>
+<div class="menu-card relative rounded-2xl border <%= promo ? 'border-rose-300 bg-rose-50/40' : 'border-gray-200 bg-white' %> p-3 hover:border-amber-300 transition-colors flex flex-col" data-category="<%= category %>">
+  <% if promo %>
+    <span class="absolute top-2 end-2 z-[1] rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+      <%= promo.label.presence || t("promos.badge") %>
+    </span>
+  <% end %>
+  <% if item.image.attached? %>
+    <%= menu_item_image_tag item, variant: :pos, class: "w-full aspect-square object-cover rounded-xl mb-2 shrink-0" %>
+  <% else %>
+    <div class="w-full aspect-square bg-gray-100 rounded-xl mb-2 shrink-0 flex items-center justify-center text-gray-400 text-xs font-medium px-2 text-center"><%= item.category.name %></div>
+  <% end %>
+  <p class="font-semibold text-sm leading-tight flex-1 text-gray-900"><%= item.name %></p>
+  <% if promo %>
+    <p class="mt-1 flex items-baseline gap-1.5 tabular-nums">
+      <span class="text-xs text-gray-400 line-through"><%= format_money(promo.list_price_cents) %></span>
+      <span class="text-rose-700 font-bold"><%= format_money(promo.promo_price_cents) %></span>
+    </p>
+  <% else %>
+    <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(item.price_cents_at(location)) %></p>
+  <% end %>
+  <% if item.modifier_groups.any? %>
+    <%= link_to t("actions.customize"), pos_modifier_form_path(menu_item_id: item.id),
+          class: "mt-2 block text-center #{pos_btn_accent_class}",
+          data: { turbo_frame: "modifier_modal" } %>
+  <% else %>
+    <%= button_to t("actions.add"), pos_order_items_path(menu_item_id: item.id), method: :post, form: pos_order_item_form_data, class: "mt-2 #{pos_btn_accent_class}" %>
+  <% end %>
+</div>

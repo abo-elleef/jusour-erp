@@ -1,5 +1,12 @@
+<% offer_items = @menu_items.select { |item| @promos_by_item_id&.[](item.id).present? } %>
+<% offer_combos = @combos.select(&:highlighted_now?) %>
+<% has_offers = offer_items.any? || offer_combos.any? %>
+
 <div class="flex gap-2 px-4 py-3 border-b border-gray-200 bg-white overflow-x-auto shrink-0">
   <button type="button" class="<%= pos_category_pill_class(active: true) %>" data-action="pos#filterCategory" data-category="all"><%= t("actions.all") %></button>
+  <% if has_offers %>
+    <button type="button" class="<%= pos_category_pill_class %> border-rose-200 text-rose-800" data-action="pos#filterCategory" data-category="offers"><%= t("pos.categories.offers") %></button>
+  <% end %>
   <% @categories.each do |cat| %>
     <button type="button" class="<%= pos_category_pill_class %>" data-action="pos#filterCategory" data-category="<%= cat.id %>"><%= cat.name %></button>
   <% end %>
@@ -8,54 +15,49 @@
   <% end %>
 </div>
 
-<div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 p-4 overflow-y-auto flex-1 touch-manipulation" id="menu-grid">
+<div class="overflow-y-auto flex-1 touch-manipulation p-4 space-y-6" id="menu-scroll">
   <% if @pos_location.blank? %>
-    <p class="col-span-full text-center text-gray-500 py-16 text-sm"><%= t("pos.menu.select_branch") %></p>
+    <p class="text-center text-gray-500 py-16 text-sm"><%= t("pos.menu.select_branch") %></p>
   <% elsif @menu_items.empty? && @combos.empty? %>
-    <p class="col-span-full text-center text-gray-500 py-16 text-sm"><%= t("pos.menu.empty_at_branch", branch: @pos_location.name) %></p>
-  <% end %>
-  <% @menu_items.each do |item| %>
-    <% promo = @promos_by_item_id&.[](item.id) %>
-    <div class="menu-card relative rounded-2xl border <%= promo&.highlight ? 'border-rose-300 bg-rose-50/40' : 'border-gray-200 bg-white' %> p-3 hover:border-amber-300 transition-colors flex flex-col" data-category="<%= item.category_id %>">
-      <% if promo&.highlight %>
-        <span class="absolute top-2 end-2 z-[1] rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-          <%= promo.label.presence || t("promos.badge") %>
-        </span>
+    <p class="text-center text-gray-500 py-16 text-sm"><%= t("pos.menu.empty_at_branch", branch: @pos_location.name) %></p>
+  <% else %>
+    <% if has_offers %>
+      <section data-pos-target="offersSection">
+        <div class="mb-3">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("pos.menu.offers") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("pos.menu.offers_hint") %></p>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+          <% offer_items.each do |item| %>
+            <%= render "pos/menu_item_card",
+                  item: item,
+                  location: @pos_location,
+                  promo: @promos_by_item_id[item.id],
+                  category: "offers" %>
+          <% end %>
+          <% offer_combos.each do |combo| %>
+            <%= render "pos/combo_card", combo: combo, category: "offers" %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
+    <section data-pos-target="menuGrid">
+      <% if has_offers %>
+        <h2 class="text-sm font-semibold text-gray-900 mb-3"><%= t("pos.menu.full_menu") %></h2>
       <% end %>
-      <% if item.image.attached? %>
-        <%= menu_item_image_tag item, variant: :pos, class: "w-full aspect-square object-cover rounded-xl mb-2 shrink-0" %>
-      <% else %>
-        <div class="w-full aspect-square bg-gray-100 rounded-xl mb-2 shrink-0 flex items-center justify-center text-gray-400 text-xs font-medium px-2 text-center"><%= item.category.name %></div>
-      <% end %>
-      <p class="font-semibold text-sm leading-tight flex-1 text-gray-900"><%= item.name %></p>
-      <% if promo %>
-        <p class="mt-1 flex items-baseline gap-1.5 tabular-nums">
-          <span class="text-xs text-gray-400 line-through"><%= format_money(promo.list_price_cents) %></span>
-          <span class="text-rose-700 font-bold"><%= format_money(promo.promo_price_cents) %></span>
-        </p>
-      <% else %>
-        <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(item.price_cents_at(@pos_location)) %></p>
-      <% end %>
-      <% if item.modifier_groups.any? %>
-        <%= link_to t("actions.customize"), pos_modifier_form_path(menu_item_id: item.id),
-              class: "mt-2 block text-center #{pos_btn_accent_class}",
-              data: { turbo_frame: "modifier_modal" } %>
-      <% else %>
-        <%= button_to t("actions.add"), pos_order_items_path(menu_item_id: item.id), method: :post, form: pos_order_item_form_data, class: "mt-2 #{pos_btn_accent_class}" %>
-      <% end %>
-    </div>
-  <% end %>
-  <% @combos.each do |combo| %>
-    <div class="menu-card relative rounded-2xl border <%= combo.highlighted_now? ? 'border-rose-300 bg-rose-50/50' : 'border-amber-200 bg-amber-50/50' %> p-3 hover:border-amber-400 transition-colors flex flex-col" data-category="combos">
-      <% if combo.highlighted_now? %>
-        <span class="absolute top-2 end-2 z-[1] rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
-          <%= t("promos.deal_badge") %>
-        </span>
-      <% end %>
-      <div class="w-full aspect-square <%= combo.highlighted_now? ? 'bg-rose-100/80 text-rose-800' : 'bg-amber-100/80 text-amber-800' %> rounded-xl mb-2 shrink-0 flex items-center justify-center font-bold text-xs tracking-wide uppercase px-2 text-center"><%= t("actions.combo") %></div>
-      <p class="font-semibold text-sm flex-1 text-gray-900"><%= combo.name %></p>
-      <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(combo.price_cents) %></p>
-      <%= button_to t("actions.add"), pos_order_items_path(combo_id: combo.id), method: :post, form: pos_order_item_form_data, class: "mt-2 #{pos_btn_accent_class}" %>
-    </div>
+      <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3" id="menu-grid">
+        <% @menu_items.each do |item| %>
+          <%= render "pos/menu_item_card",
+                item: item,
+                location: @pos_location,
+                promo: @promos_by_item_id&.[](item.id),
+                category: item.category_id %>
+        <% end %>
+        <% @combos.each do |combo| %>
+          <%= render "pos/combo_card", combo: combo, category: "combos" %>
+        <% end %>
+      </div>
+    </section>
   <% end %>
 </div>

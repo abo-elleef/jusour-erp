@@ -1469,6 +1469,9 @@ ar:
     menu:
       select_branch: "اختر فرعًا أعلاه لعرض القائمة."
       empty_at_branch: "لا توجد عناصر قائمة متاحة في %{branch}."
+      offers: "العروض"
+      offers_hint: "أسعار محدودة المدة ووجبات العرض"
+      full_menu: "القائمة الكاملة"
     offline:
       banner_offline: "أنت غير متصل. الدفع نقداً فقط. ستتم مزامنة الطلبات عند الاتصال."
       banner_online: "عدت للاتصال — جاري مزامنة المدفوعات المؤجلة..."
@@ -1550,6 +1553,7 @@ ar:
         one: "سطر واحد"
         other: "%{count} أسطر"
     categories:
+      offers: "العروض"
       combos: "الوجبات المركبة"
     shift:
       title: "ورديتي"
