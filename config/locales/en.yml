@@ -2587,11 +2587,6 @@ en:
         fixed_expense: "System Account"
         income: "Income"
         expense: "Expense"
-    shifts:
-      morning: "Morning"
-      afternoon: "Afternoon"
-      evening: "Evening"
-      night: "Night"
     cash_drawer:
       statuses:
         open: "Open"
@@ -2642,7 +2637,7 @@ en:
       food_cost_mtd: "Food cost % MTD"
       net_profit_mtd: "Net profit MTD"
       alerts: "Alerts"
-      open_drawer: "Open cash drawer: %{name} (%{shift})"
+      open_drawer: "Open cash drawer: %{name}"
       daily_sales_chart: "Daily net sales (30 days)"
       sales_by_category_chart: "Sales by category (MTD)"
     sales_reports:
@@ -2682,6 +2677,8 @@ en:
     attendance:
       title: "Attendance"
       hint: "Mark each staff member's day with the symbols below. Blank days aren't paid."
+      location: "Location"
+      all_locations: "All locations"
       paid: "paid"
       unpaid: "unpaid"
       penalty: "penalty"
@@ -2853,8 +2850,8 @@ en:
         staff_meal: "Staff meal"
         online_payment: "Online payment"
       transactions:
-        drawer_open: "Opening float — %{cashier} (%{shift}, %{date})"
-        drawer_reconcile: "Drawer reconcile — %{cashier} (%{shift}, %{date})"
+        drawer_open: "Opening float — %{cashier} (%{date})"
+        drawer_reconcile: "Drawer reconcile — %{cashier} (%{date})"
         transfer_out: "Transfer to %{treasury} — %{notes}"
         transfer_in: "Transfer from %{treasury} — %{notes}"
         payroll_advance: "Payroll advance — %{employee} (%{month})"
@@ -3004,13 +3001,13 @@ en:
       open_drawer: "Open drawer"
       opening_float: "Opening float ($)"
       cashier: "Cashier"
-      shift: "Shift"
+      opened_at: "Opened"
       status: "Status"
       expected: "Expected"
       counted: "Counted"
       variance: "Variance"
       count_title: "Count cash drawer"
-      session_line: "%{name} — %{shift} (%{date})"
+      session_line: "%{name} — %{date}"
       expected_line: "Expected: %{amount}"
       denominations: "Denominations"
       total_counted: "Total counted:"

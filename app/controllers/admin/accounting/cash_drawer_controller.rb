@@ -7,7 +7,7 @@ module Admin
 
       def index
         @date = params[:date]&.to_date || BusinessDay.today
-        @sessions = CashDrawerSession.where(session_date: @date).includes(:user, :treasury).order(:shift)
+        @sessions = CashDrawerSession.where(session_date: @date).includes(:user, :treasury).order(:created_at)
         @drawer_treasuries = Treasury.active.cash_drawers.ordered
         @cashiers = User.active.includes(:assigned_treasury).order(:name)
         @default_user = current_user
@@ -23,7 +23,6 @@ module Admin
           user: user,
           treasury: treasury,
           session_date: BusinessDay.today,
-          shift: params[:shift],
           opening_float_cents: (params[:opening_float].to_f * 100).to_i,
           status: "open"
         )

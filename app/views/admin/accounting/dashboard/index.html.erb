@@ -38,7 +38,7 @@
         <% end %>
         <% @open_cash_sessions.each do |s| %>
           <li>
-            <%= t("accounting.dashboard.open_drawer", name: s.user.name, shift: accounting_shift_label(s.shift)) %>
+            <%= t("accounting.dashboard.open_drawer", name: s.user.name) %>
             — <%= link_to t("actions.reconcile"), count_admin_accounting_cash_drawer_path(s), class: "underline font-medium" %>
           </li>
         <% end %>

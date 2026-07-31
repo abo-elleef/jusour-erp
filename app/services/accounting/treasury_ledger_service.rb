@@ -270,7 +270,6 @@ module Accounting
       I18n.t(
         "accounting.treasuries.transactions.drawer_open",
         cashier: session.user.name,
-        shift: session.shift,
         date: I18n.l(session.session_date, format: :long)
       )
     end
@@ -279,7 +278,6 @@ module Accounting
       I18n.t(
         "accounting.treasuries.transactions.drawer_reconcile",
         cashier: session.user.name,
-        shift: session.shift,
         date: I18n.l(session.session_date, format: :long)
       )
     end

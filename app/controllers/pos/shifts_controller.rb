@@ -35,7 +35,6 @@ module Pos
         user: current_user,
         treasury: treasury,
         session_date: BusinessDay.today,
-        shift: params[:shift],
         opening_float_cents: (params[:opening_float].to_f * 100).to_i,
         status: "open"
       )

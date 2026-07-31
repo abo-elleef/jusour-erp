@@ -2,18 +2,10 @@
 
 module Accounting
   class CashReconciliationService
-    SHIFT_START_HOURS = { "morning" => 0, "afternoon" => 8, "evening" => 16, "night" => 20 }.freeze
     VARIANCE_ALERT_THRESHOLD_CENTS = 1000
 
     def initialize(session)
       @session = session
-    end
-
-    def self.shift_window_for(session)
-      day_start = session.session_date.in_time_zone.beginning_of_day
-      offset_hours = SHIFT_START_HOURS.fetch(session.shift, 0)
-      shift_start = day_start + offset_hours.hours
-      [shift_start, shift_start + 8.hours]
     end
 
     def compute_expected!
@@ -73,12 +65,6 @@ module Accounting
       end
 
       @session
-    end
-
-    private
-
-    def shift_window
-      self.class.shift_window_for(@session)
     end
   end
 end

@@ -2605,11 +2605,6 @@ ar:
         fixed_expense: "حساب نظامي"
         income: "إيراد"
         expense: "مصروف"
-    shifts:
-      morning: "صباحي"
-      afternoon: "بعد الظهر"
-      evening: "مسائي"
-      night: "ليلي"
     cash_drawer:
       statuses:
         open: "مفتوح"
@@ -2660,7 +2655,7 @@ ar:
       food_cost_mtd: "تكلفة الطعام % للشهر"
       net_profit_mtd: "صافي الربح للشهر"
       alerts: "تنبيهات"
-      open_drawer: "درج نقد مفتوح: %{name} (%{shift})"
+      open_drawer: "درج نقد مفتوح: %{name}"
       daily_sales_chart: "صافي المبيعات اليومية (30 يومًا)"
       sales_by_category_chart: "المبيعات حسب التصنيف (الشهر)"
     sales_reports:
@@ -2700,6 +2695,8 @@ ar:
     attendance:
       title: "الحضور"
       hint: "سجّل يوم كل موظف بالرموز الموضّحة أدناه. الأيام الفارغة لا تُحتسب في الراتب."
+      location: "الموقع"
+      all_locations: "كل المواقع"
       paid: "مدفوع"
       unpaid: "غير مدفوع"
       penalty: "خصم"
@@ -2875,8 +2872,8 @@ ar:
         staff_meal: "وجبة موظف"
         online_payment: "دفع إلكتروني"
       transactions:
-        drawer_open: "رصيد افتتاح — %{cashier} (%{shift}، %{date})"
-        drawer_reconcile: "تسوية صندوق — %{cashier} (%{shift}، %{date})"
+        drawer_open: "رصيد افتتاح — %{cashier} (%{date})"
+        drawer_reconcile: "تسوية صندوق — %{cashier} (%{date})"
         transfer_out: "تحويل إلى %{treasury} — %{notes}"
         transfer_in: "تحويل من %{treasury} — %{notes}"
         payroll_advance: "سلفة راتب — %{employee} (%{month})"
@@ -3030,13 +3027,13 @@ ar:
       open_drawer: "فتح الدرج"
       opening_float: "رصيد الافتتاح ($)"
       cashier: "أمين الصندوق"
-      shift: "الوردية"
+      opened_at: "وقت الفتح"
       status: "الحالة"
       expected: "المتوقع"
       counted: "المعدود"
       variance: "الفرق"
       count_title: "عدّ درج النقد"
-      session_line: "%{name} — %{shift} (%{date})"
+      session_line: "%{name} — %{date}"
       expected_line: "المتوقع: %{amount}"
       denominations: "الفئات النقدية"
       total_counted: "إجمالي المعدود:"

@@ -14,7 +14,6 @@
       <p>
         <strong><%= t("accounting.cash_drawer.session_line",
               name: @open_session.user.name,
-              shift: accounting_shift_label(@open_session.shift),
               date: l(@open_session.session_date, format: :long)) %></strong>
       </p>
       <p><%= t("accounting.cash_drawer.expected_line", amount: number_with_precision(@open_session.expected_cash_cents.to_f / 100, precision: 2, delimiter: ',')) %></p>

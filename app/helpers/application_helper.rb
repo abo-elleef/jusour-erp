@@ -77,10 +77,6 @@ module ApplicationHelper
     end
   end
 
-  def accounting_shift_label(shift)
-    t("accounting.shifts.#{shift}", default: shift.to_s.humanize)
-  end
-
   def accounting_drawer_status(status)
     t("accounting.cash_drawer.statuses.#{status}", default: status.to_s.humanize)
   end

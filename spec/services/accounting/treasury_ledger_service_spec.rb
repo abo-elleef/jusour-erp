@@ -90,7 +90,6 @@ RSpec.describe Accounting::TreasuryLedgerService do
         user: user,
         treasury: drawer,
         session_date: Date.current,
-        shift: "morning",
         opening_float_cents: 10_000,
         status: "open"
       )

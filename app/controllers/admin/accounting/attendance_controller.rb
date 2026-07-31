@@ -8,6 +8,8 @@ module Admin
     class AttendanceController < BaseController
       def index
         @payroll_month = parse_month
+        @filter_locations = filterable_locations
+        @location = selected_location
         @days = (@payroll_month.beginning_of_month..@payroll_month.end_of_month).to_a
         @statuses = AttendanceStatus.active.ordered.to_a
         @staff = staff_scope
@@ -19,6 +21,13 @@ module Admin
 
         @summaries = @staff.index_with do |user|
           ::Accounting::AttendanceMonthService.new(user, @payroll_month).call
+        end
+
+        @status_counts = @staff.index_with do |user|
+          @statuses.to_h do |status|
+            count = @days.count { |day| @cells[[user.id, day]]&.symbol == status.symbol }
+            [status.symbol, count]
+          end
         end
 
         @day_adjustments = day_adjustments_for(@staff, @days)
@@ -60,6 +69,7 @@ module Admin
         month ||= parse_month
         summaries = affected.uniq.index_with do |user|
           summary_json(::Accounting::AttendanceMonthService.new(user, month).call)
+            .merge(counts: symbol_counts_for(user, month))
         end.transform_keys(&:id)
 
         render json: { ok: true, summaries: summaries }
@@ -85,7 +95,13 @@ module Admin
       end
 
       def staff_scope
-        scoped_staff.where("monthly_salary_cents > 0").order(:name)
+        scope = scoped_staff.where("monthly_salary_cents > 0")
+        if @location
+          scope = scope.joins(:user_locations)
+            .where(user_locations: { location_id: @location.id })
+            .distinct
+        end
+        scope.order(:name)
       end
 
       # Staff the current user may see/log for: everyone when global, otherwise
@@ -99,6 +115,16 @@ module Admin
           .distinct
       end
 
+      def filterable_locations
+        Location.active.ordered.where(id: current_user.accessible_location_ids)
+      end
+
+      def selected_location
+        return if params[:location_id].blank?
+
+        filterable_locations.find_by(id: params[:location_id])
+      end
+
       def company_users
         User.where(company_id: Current.company.id).active
       end
@@ -109,6 +135,15 @@ module Admin
           bonus: format_days(result.bonus_days),
           penalty: format_days(result.penalty_days)
         }
+      end
+
+      def symbol_counts_for(user, month)
+        days = month.beginning_of_month..month.end_of_month
+        tallies = user.staff_attendances.where(date: days)
+          .joins(:attendance_status)
+          .group("attendance_statuses.symbol")
+          .count
+        AttendanceStatus.active.ordered.to_h { |s| [s.symbol, tallies[s.symbol].to_i] }
       end
 
       DAY_PENALTY_UNITS = %w[quarter_day half_day full_day].freeze

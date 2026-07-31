@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class CashDrawerSession < ApplicationRecord
-  SHIFTS = %w[morning afternoon evening night].freeze
   STATUSES = %w[open counted reconciled].freeze
 
   belongs_to :user
@@ -12,10 +11,9 @@ class CashDrawerSession < ApplicationRecord
   monetize :counted_cash_cents, allow_nil: true
   monetize :variance_cents, allow_nil: true
 
-  validates :session_date, :shift, presence: true
-  validates :shift, inclusion: { in: SHIFTS }
+  validates :session_date, presence: true
   validates :status, inclusion: { in: STATUSES }
-validates :treasury, presence: true
+  validates :treasury, presence: true
 
   scope :open, -> { where(status: "open") }
 end

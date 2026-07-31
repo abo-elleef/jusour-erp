@@ -18,11 +18,23 @@
     <span data-attendance-grid-target="status" class="text-xs text-gray-400 mt-2"></span>
   </div>
 
-  <%= form_with url: admin_accounting_attendance_path, method: :get, class: "flex gap-4 items-end mb-4" do %>
+  <%= form_with url: admin_accounting_attendance_path, method: :get, class: "flex flex-wrap gap-4 items-end mb-4" do %>
     <div>
       <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("staff.payroll.month") %></label>
       <%= month_field_tag :payroll_month, @payroll_month.strftime("%Y-%m"), class: pos_input_class, onchange: "this.form.requestSubmit()" %>
     </div>
+    <% if @filter_locations.size > 1 %>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.attendance.location") %></label>
+        <%= select_tag :location_id,
+              options_for_select(
+                [[t("accounting.attendance.all_locations"), ""]] + @filter_locations.map { |l| [l.name, l.id] },
+                @location&.id.to_s
+              ),
+              class: "#{pos_input_class} appearance-none min-w-[12rem]",
+              onchange: "this.form.requestSubmit()" %>
+      </div>
+    <% end %>
   <% end %>
 
   <%# Legend (also guarantees Tailwind compiles every status color used below) %>
@@ -47,19 +59,24 @@
             <th class="sticky start-0 top-0 z-20 bg-gray-50 text-start text-xs font-semibold text-gray-500 uppercase p-3 min-w-[10rem] border-b border-e border-gray-200"><%= t("accounting.shift_logs.employee") %></th>
             <% @days.each do |day| %>
               <% weekend = day.friday? || day.saturday? %>
-              <th class="sticky top-0 z-10 <%= weekend ? 'bg-gray-100' : 'bg-gray-50' %> text-center px-0 py-2 border-b border-gray-200 min-w-[2.25rem]">
+              <th class="sticky top-0 z-10 <%= weekend ? 'bg-gray-100' : 'bg-gray-50' %> text-center px-0 py-2 border-b border-e border-gray-200 min-w-[2.25rem]">
                 <div class="text-xs font-semibold text-gray-700 tabular-nums"><%= day.day %></div>
                 <div class="text-[10px] text-gray-400"><%= l(day, format: "%a") %></div>
               </th>
             <% end %>
-            <th class="sticky top-0 z-10 bg-gray-50 text-end text-xs font-semibold text-gray-500 uppercase px-2 py-2 border-b border-s border-gray-200 min-w-[3rem]"><%= t("accounting.attendance.payable") %></th>
-            <th class="sticky top-0 z-10 bg-gray-50 text-end text-xs font-semibold text-gray-500 uppercase px-2 py-2 border-b border-gray-200 min-w-[3rem]"><%= t("accounting.attendance.bonus") %></th>
-            <th class="sticky top-0 z-10 bg-gray-50 text-end text-xs font-semibold text-gray-500 uppercase px-2 py-2 border-b border-gray-200 min-w-[3rem]"><%= t("accounting.attendance.penalty") %></th>
+            <th class="sticky top-0 z-10 bg-gray-50 text-end text-xs font-semibold text-gray-500 uppercase px-2 py-2 border-b border-s border-e border-gray-200 min-w-[3rem]"><%= t("accounting.attendance.payable") %></th>
+            <th class="sticky top-0 z-10 bg-gray-50 text-end text-xs font-semibold text-gray-500 uppercase px-2 py-2 border-b border-e border-gray-200 min-w-[3rem]"><%= t("accounting.attendance.bonus") %></th>
+            <th class="sticky top-0 z-10 bg-gray-50 text-end text-xs font-semibold text-gray-500 uppercase px-2 py-2 border-b border-e border-gray-200 min-w-[3rem]"><%= t("accounting.attendance.penalty") %></th>
+            <% @statuses.each do |status| %>
+              <th class="sticky top-0 z-10 bg-gray-50 text-center text-xs font-semibold uppercase px-1.5 py-2 border-b border-e border-gray-200 min-w-[2rem] <%= attendance_color_classes(status.color) %>"
+                  title="<%= status.label %>"><%= status.symbol %></th>
+            <% end %>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-200">
           <% @staff.each do |user| %>
             <% summary = @summaries[user] %>
+            <% counts = @status_counts[user] %>
             <tr>
               <th class="sticky start-0 z-10 bg-white text-start p-3 min-w-[10rem] border-e border-gray-200">
                 <div class="flex items-center justify-between gap-2">
@@ -73,7 +90,7 @@
                 <% status = @cells[[user.id, day]] %>
                 <% adj = @day_adjustments[[user.id, day]] || {} %>
                 <% weekend = day.friday? || day.saturday? %>
-                <td class="p-0.5 text-center <%= 'bg-gray-50/50' if weekend %>">
+                <td class="p-0.5 text-center border-e border-gray-200 <%= 'bg-gray-50/50' if weekend %>">
                   <div tabindex="0"
                        data-attendance-grid-target="cell"
                        data-user-id="<%= user.id %>"
@@ -84,9 +101,16 @@
                        class="attendance-cell relative w-8 h-8 mx-auto flex items-center justify-center rounded cursor-pointer select-none font-semibold text-gray-800 hover:ring-1 hover:ring-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 <%= attendance_color_classes(status.color) if status %>"><%= status&.symbol %></div>
                 </td>
               <% end %>
-              <td class="text-end px-2 tabular-nums text-gray-700" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="payable"><%= number_with_precision(summary.payable_days, precision: 2, strip_insignificant_zeros: true) %></td>
-              <td class="text-end px-2 tabular-nums text-teal-700" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="bonus"><%= number_with_precision(summary.bonus_days, precision: 2, strip_insignificant_zeros: true) %></td>
-              <td class="text-end px-2 tabular-nums text-red-700" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="penalty"><%= number_with_precision(summary.penalty_days, precision: 2, strip_insignificant_zeros: true) %></td>
+              <td class="text-end px-2 tabular-nums text-gray-700 border-s border-e border-gray-200" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="payable"><%= number_with_precision(summary.payable_days, precision: 2, strip_insignificant_zeros: true) %></td>
+              <td class="text-end px-2 tabular-nums text-teal-700 border-e border-gray-200" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="bonus"><%= number_with_precision(summary.bonus_days, precision: 2, strip_insignificant_zeros: true) %></td>
+              <td class="text-end px-2 tabular-nums text-red-700 border-e border-gray-200" data-attendance-grid-target="summary" data-user-id="<%= user.id %>" data-field="penalty"><%= number_with_precision(summary.penalty_days, precision: 2, strip_insignificant_zeros: true) %></td>
+              <% @statuses.each do |status| %>
+                <td class="text-center px-1.5 tabular-nums text-gray-700 border-e border-gray-200 font-medium"
+                    data-attendance-grid-target="count"
+                    data-user-id="<%= user.id %>"
+                    data-symbol="<%= status.symbol %>"
+                    title="<%= status.label %>"><%= counts[status.symbol].to_i %></td>
+              <% end %>
             </tr>
           <% end %>
         </tbody>

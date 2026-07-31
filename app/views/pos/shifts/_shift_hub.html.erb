@@ -40,7 +40,6 @@
     <div class="p-5 space-y-2 text-sm">
       <p><%= t("accounting.cash_drawer.session_line",
             name: @open_session.user.name,
-            shift: accounting_shift_label(@open_session.shift),
             date: l(@open_session.session_date, format: :long)) %></p>
       <p class="text-gray-600"><%= t("accounting.shared.treasury") %>: <strong><%= @open_session.treasury.name %></strong></p>
       <p class="text-gray-600">
@@ -83,12 +82,6 @@
             <p class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.treasury") %></p>
             <p class="text-sm font-medium text-gray-900"><%= @assigned_treasury.name %></p>
             <p class="text-xs text-gray-500 mt-1"><%= t("pos.shift.assigned_treasury_locked") %></p>
-          </div>
-          <div>
-            <%= label_tag :shift, t("accounting.cash_drawer.shift"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-            <%= select_tag :shift,
-                  options_for_select(CashDrawerSession::SHIFTS.map { |s| [accounting_shift_label(s), s] }),
-                  class: "#{pos_input_class} appearance-none w-full" %>
           </div>
           <div>
             <%= label_tag :opening_float, t("accounting.cash_drawer.opening_float"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>

@@ -6,7 +6,6 @@
     <p>
       <strong><%= t("accounting.cash_drawer.session_line",
             name: @session.user.name,
-            shift: accounting_shift_label(@session.shift),
             date: l(@session.session_date, format: :long)) %></strong>
     </p>
     <p><%= t("accounting.cash_drawer.expected_line", amount: format_money(@session.expected_cash_cents)) %></p>

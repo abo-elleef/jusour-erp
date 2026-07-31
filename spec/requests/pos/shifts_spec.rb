@@ -20,6 +20,7 @@ RSpec.describe "POS shift flow", type: :request do
 
   before do
     Current.company = company
+    cashier.update!(assigned_treasury: treasury)
     sign_in cashier
   end
 
@@ -50,12 +51,11 @@ RSpec.describe "POS shift flow", type: :request do
       expect(response.body).to include(I18n.t("pos.shift.orders.title"))
     end
 
-    it "lists orders from an open drawer even outside the accounting shift window" do
+    it "lists orders from an open drawer session" do
       drawer = CashDrawerSession.create!(
         user: cashier,
         treasury: treasury,
         session_date: Date.current,
-        shift: "morning",
         opening_float_cents: 10_000,
         status: "open",
         created_at: 1.hour.ago
@@ -84,8 +84,6 @@ RSpec.describe "POS shift flow", type: :request do
   describe "opening and reconciling a drawer" do
     it "lets the cashier open, count, and reconcile their drawer" do
       post open_drawer_pos_shift_path, params: {
-        treasury_id: treasury.id,
-        shift: "morning",
         opening_float: "100.00"
       }
       expect(response).to redirect_to(pos_shift_path)
@@ -108,8 +106,6 @@ RSpec.describe "POS shift flow", type: :request do
 
     it "requires a manager PIN when variance exceeds the threshold" do
       post open_drawer_pos_shift_path, params: {
-        treasury_id: treasury.id,
-        shift: "afternoon",
         opening_float: "100.00"
       }
 

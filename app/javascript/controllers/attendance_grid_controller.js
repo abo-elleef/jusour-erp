@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 // Spreadsheet-style attendance grid: click a cell and type P/O/A/X, arrow-key
 // navigate, shift-click a range then type to fill, and autosave in batches.
 export default class extends Controller {
-  static targets = ["cell", "summary", "status", "popover", "popoverTitle", "otInput", "penaltyGroup"]
+  static targets = ["cell", "summary", "count", "status", "popover", "popoverTitle", "otInput", "penaltyGroup"]
   static values = {
     url: String,
     adjustmentUrl: String,
@@ -215,6 +215,22 @@ export default class extends Controller {
       date: cell.dataset.date,
       symbol: sym || ""
     })
+    this.updateCounts(cell.dataset.userId)
+  }
+
+  updateCounts(userId) {
+    if (!this.hasCountTarget) return
+
+    const counts = Object.fromEntries(this.symbolsValue.map((s) => [s, 0]))
+    this.cellTargets.forEach((cell) => {
+      if (cell.dataset.userId !== userId) return
+      const sym = cell.dataset.symbol
+      if (sym && counts[sym] !== undefined) counts[sym] += 1
+    })
+    this.countTargets.forEach((el) => {
+      if (el.dataset.userId !== userId) return
+      el.textContent = counts[el.dataset.symbol] || 0
+    })
   }
 
   // ── save ───────────────────────────────────────────────────
@@ -255,6 +271,15 @@ export default class extends Controller {
       const summary = summaries[el.dataset.userId]
       if (summary && summary[el.dataset.field] !== undefined) {
         el.textContent = summary[el.dataset.field]
+      }
+    })
+
+    if (!this.hasCountTarget) return
+    this.countTargets.forEach((el) => {
+      const summary = summaries[el.dataset.userId]
+      const counts = summary?.counts
+      if (counts && counts[el.dataset.symbol] !== undefined) {
+        el.textContent = counts[el.dataset.symbol]
       }
     })
   }
