@@ -38,8 +38,6 @@
           <% end %>
         </div>
       <% end %>
-
-      <%= render "public/menus/branch_switcher", branches: @branches, current_location: @location, company: @company %>
     </div>
   </header>
 
@@ -134,6 +132,4 @@
   <footer class="border-t border-stone-200 bg-white py-4 text-center text-xs text-gray-400">
     <%= t("public.menu.footer", company: @company.name) %>
   </footer>
-
-  <%= render "public/menus/branch_drawer", branches: @branches, current_location: @location, company: @company %>
 </div>

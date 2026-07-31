@@ -19,7 +19,6 @@ module Public
       @categories = menu.categories
       @menu_items = menu.menu_items
       @combos = menu.combos
-      @branches = Location.publicly_accessible.ordered
     end
 
     private
