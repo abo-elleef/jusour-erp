@@ -9,6 +9,8 @@ module Admin
       def index
         @payroll_month = parse_month
         @filter_locations = filterable_locations
+        @location_filter = params[:location_id].to_s
+        @company_wide_staff = @location_filter == COMPANY_WIDE_FILTER
         @location = selected_location
         @days = (@payroll_month.beginning_of_month..@payroll_month.end_of_month).to_a
         @statuses = AttendanceStatus.active.ordered.to_a
@@ -79,6 +81,8 @@ module Admin
 
       private
 
+      COMPANY_WIDE_FILTER = "company_wide"
+
       def apply_cell(user, date, symbol)
         if symbol.blank?
           user.staff_attendances.where(date: date).destroy_all
@@ -96,7 +100,9 @@ module Admin
 
       def staff_scope
         scope = scoped_staff.where("monthly_salary_cents > 0")
-        if @location
+        if @company_wide_staff
+          scope = scope.where(all_locations: true)
+        elsif @location
           scope = scope.joins(:user_locations)
             .where(user_locations: { location_id: @location.id })
             .distinct
@@ -120,9 +126,9 @@ module Admin
       end
 
       def selected_location
-        return if params[:location_id].blank?
+        return if @location_filter.blank? || @company_wide_staff
 
-        filterable_locations.find_by(id: params[:location_id])
+        filterable_locations.find_by(id: @location_filter)
       end
 
       def company_users

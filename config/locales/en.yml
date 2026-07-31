@@ -2679,6 +2679,7 @@ en:
       hint: "Mark each staff member's day with the symbols below. Blank days aren't paid."
       location: "Location"
       all_locations: "All locations"
+      company_wide_staff: "Company-wide staff only"
       paid: "paid"
       unpaid: "unpaid"
       penalty: "penalty"
