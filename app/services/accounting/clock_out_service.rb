@@ -21,8 +21,6 @@ module Accounting
         .sum(:tip_cents).to_i
       @shift.update!(tips_cents: tips)
 
-      LaborCostService.new(@shift).call
-
       checker = OvertimeCheckService.new(@shift.user)
       if checker.over_overtime?
         NotifyService.deliver_to_managers(
