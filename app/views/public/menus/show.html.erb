@@ -1,5 +1,8 @@
 <% content_for :title, "#{@location.name} — #{@company.name}" %>
 <% content_for :meta_description, t("public.menu.meta_description", company: @company.name) %>
+<% offer_items = @menu_items.select { |item| @promos_by_item_id&.[](item.id).present? } %>
+<% offer_combos = @combos.select(&:highlighted_now?) %>
+<% has_offers = offer_items.any? || offer_combos.any? %>
 
 <div data-controller="public-menu" class="min-h-screen flex flex-col">
   <header class="border-b border-stone-200/80 bg-white">
@@ -41,7 +44,7 @@
     </div>
   </header>
 
-  <% if @categories.any? || @combos.any? %>
+  <% if @categories.any? || @combos.any? || has_offers %>
     <nav class="sticky top-0 z-10 border-b border-stone-200/80 bg-white/95 shadow-sm backdrop-blur-sm"
          aria-label="<%= t("public.menu.category_filters") %>">
       <div class="max-w-3xl mx-auto flex gap-2 overflow-x-auto px-4 py-3">
@@ -51,6 +54,14 @@
                 data-category="all">
           <%= t("actions.all") %>
         </button>
+        <% if has_offers %>
+          <button type="button"
+                  class="public-menu-category-btn h-8 shrink-0 rounded-lg border border-rose-200 px-3 text-sm font-medium text-rose-800 transition-colors"
+                  data-action="public-menu#filterCategory"
+                  data-category="offers">
+            <%= t("public.menu.offers") %>
+          </button>
+        <% end %>
         <% @categories.each do |category| %>
           <button type="button"
                   class="public-menu-category-btn h-8 shrink-0 rounded-lg border px-3 text-sm font-medium transition-colors"
@@ -75,55 +86,43 @@
     <% if @menu_items.empty? && @combos.empty? %>
       <p class="text-center text-gray-500 py-20 text-sm"><%= t("public.menu.empty", branch: @location.name) %></p>
     <% else %>
-      <div class="space-y-4" id="public-menu-grid">
-        <% @menu_items.each do |item| %>
-          <article class="public-menu-card rounded-2xl border border-stone-200 bg-white overflow-hidden shadow-sm"
-                   data-category="<%= item.category_id %>">
-            <div class="flex gap-4 p-4">
-              <% if item.image.attached? %>
-                <%= menu_item_image_tag item, variant: :public_menu, class: "w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl shrink-0" %>
-              <% else %>
-                <div class="w-24 h-24 sm:w-28 sm:h-28 bg-stone-100 rounded-xl shrink-0 flex items-center justify-center text-stone-400 text-xs font-medium px-2 text-center">
-                  <%= item.category.name %>
-                </div>
-              <% end %>
-              <div class="flex-1 min-w-0">
-                <h2 class="font-semibold text-gray-900 leading-tight"><%= item.name %></h2>
-                <% if item.description.present? %>
-                  <p class="text-sm text-gray-500 mt-1 line-clamp-3"><%= item.description %></p>
-                <% end %>
-                <% if item.modifier_groups.any? %>
-                  <div class="mt-2 space-y-1">
-                    <% item.modifier_groups.each do |group| %>
-                      <p class="text-xs text-gray-400">
-                        <span class="font-medium text-gray-500"><%= group.name %>:</span>
-                        <%= group.modifiers.map(&:name).join(", ") %>
-                      </p>
-                    <% end %>
-                  </div>
-                <% end %>
-                <p class="text-amber-700 font-bold mt-2 tabular-nums"><%= format_money(item.price_cents_at(@location)) %></p>
-              </div>
+      <% if has_offers %>
+        <section class="mb-8" data-public-menu-target="offersSection" data-offers-section>
+          <div class="mb-3 flex items-end justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-semibold text-stone-900"><%= t("public.menu.offers") %></h2>
+              <p class="text-sm text-stone-500 mt-0.5"><%= t("public.menu.offers_hint") %></p>
             </div>
-          </article>
+          </div>
+          <div class="space-y-4">
+            <% offer_items.each do |item| %>
+              <%= render "public/menus/menu_item_card",
+                    item: item,
+                    location: @location,
+                    promo: @promos_by_item_id[item.id],
+                    category: "offers" %>
+            <% end %>
+            <% offer_combos.each do |combo| %>
+              <%= render "public/menus/combo_card", combo: combo, category: "offers" %>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+
+      <div class="space-y-4" id="public-menu-grid" data-public-menu-target="menuGrid">
+        <% if has_offers %>
+          <h2 class="text-lg font-semibold text-stone-900 pt-1"><%= t("public.menu.full_menu") %></h2>
+        <% end %>
+        <% @menu_items.each do |item| %>
+          <%= render "public/menus/menu_item_card",
+                item: item,
+                location: @location,
+                promo: @promos_by_item_id&.[](item.id),
+                category: item.category_id %>
         <% end %>
 
         <% @combos.each do |combo| %>
-          <article class="public-menu-card rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden shadow-sm"
-                   data-category="combos">
-            <div class="flex gap-4 p-4">
-              <div class="w-24 h-24 sm:w-28 sm:h-28 bg-amber-100 rounded-xl shrink-0 flex items-center justify-center text-amber-800 font-bold text-xs tracking-wide uppercase px-2 text-center">
-                <%= t("actions.combo") %>
-              </div>
-              <div class="flex-1 min-w-0">
-                <h2 class="font-semibold text-gray-900 leading-tight"><%= combo.name %></h2>
-                <% if combo.description.present? %>
-                  <p class="text-sm text-gray-500 mt-1"><%= combo.description %></p>
-                <% end %>
-                <p class="text-amber-700 font-bold mt-2 tabular-nums"><%= format_money(combo.price_cents) %></p>
-              </div>
-            </div>
-          </article>
+          <%= render "public/menus/combo_card", combo: combo, category: "combos" %>
         <% end %>
       </div>
     <% end %>

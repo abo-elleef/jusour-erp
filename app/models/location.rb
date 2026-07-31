@@ -10,6 +10,7 @@ class Location < ApplicationRecord
   has_many :ingredients, through: :ingredient_locations
   has_many :location_menu_items, dependent: :destroy
   has_many :menu_items, through: :location_menu_items
+  has_many :menu_promos, dependent: :nullify
   has_many :stock_batches, dependent: :nullify
   has_many :stock_adjustments, dependent: :nullify
   has_many :stock_takes, dependent: :nullify

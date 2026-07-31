@@ -31,11 +31,13 @@ module Accounting
       count = completed_orders.count
       gross = completed_orders.sum(:subtotal_cents).to_i
       discounts = completed_orders.sum(:discount_cents).to_i
+      promo_cost = OrderDiscount.promos.where(order_id: order_ids).sum(:amount_cents).to_i
       refunds = RevenueCalculator.refunds_cents(order_ids)
       {
         order_count: count,
         gross_sales_cents: gross,
         discount_cents: discounts,
+        promo_cost_cents: promo_cost,
         tax_cents: completed_orders.sum(:tax_cents).to_i,
         tip_cents: completed_orders.sum(:tip_cents).to_i,
         refunds_cents: refunds,

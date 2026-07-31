@@ -1,0 +1,89 @@
+<%= render "admin/menu_nav" %>
+<div class="max-w-5xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("admin.menu_promos.description") %></p>
+    </div>
+    <%= link_to new_admin_menu_promo_path,
+          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
+      <span aria-hidden="true">+</span> <%= t("admin.menu_promos.new_button") %>
+    <% end %>
+  </div>
+
+  <% if @menu_promos.any? %>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.menu_promos.stats_total") %></p>
+        <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @menu_promos.size %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.menu_promos.stats_active_now") %></p>
+        <p class="text-2xl font-bold mt-1 text-rose-700 tabular-nums"><%= @active_now_count %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.menu_promos.stats_upcoming") %></p>
+        <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= @upcoming_count %></p>
+      </div>
+    </div>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[40rem]">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("admin.menu_promos.name") %></th>
+              <th class="p-3 text-start"><%= t("admin.menu_promos.menu_item") %></th>
+              <th class="p-3 text-start"><%= t("admin.menu_promos.location") %></th>
+              <th class="p-3 text-start"><%= t("admin.menu_promos.price") %></th>
+              <th class="p-3 text-start"><%= t("admin.menu_promos.window") %></th>
+              <th class="p-3 text-start"><%= t("admin.menu_promos.status") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("customers.table.actions") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @menu_promos.each do |promo| %>
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="p-3 ps-5 font-semibold text-gray-900"><%= promo.name %></td>
+                <td class="p-3 text-gray-700"><%= promo.menu_item.name %></td>
+                <td class="p-3 text-gray-700"><%= promo.location&.name || t("admin.menu_promos.all_branches") %></td>
+                <td class="p-3 text-gray-900 tabular-nums"><%= format_money(promo.promo_price_cents) %></td>
+                <td class="p-3 text-gray-600 text-xs">
+                  <%= l(promo.starts_at, format: :short) %>
+                  –
+                  <%= l(promo.ends_at, format: :short) %>
+                </td>
+                <td class="p-3">
+                  <% if promo.active_now? %>
+                    <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                      <%= t("admin.menu_promos.active_now") %>
+                    </span>
+                  <% elsif promo.active? && promo.starts_at > Time.current %>
+                    <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                      <%= t("admin.menu_promos.upcoming") %>
+                    </span>
+                  <% else %>
+                    <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                      <%= t("admin.menu_promos.inactive") %>
+                    </span>
+                  <% end %>
+                </td>
+                <td class="p-3 pe-5 text-end">
+                  <%= link_to t("actions.edit"), edit_admin_menu_promo_path(promo),
+                        class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("admin.menu_promos.empty_title") %></p>
+      <p class="text-gray-500 text-sm mb-5"><%= t("admin.menu_promos.empty_description") %></p>
+      <%= link_to t("admin.menu_promos.new_button"), new_admin_menu_promo_path,
+            class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+    </section>
+  <% end %>
+</div>

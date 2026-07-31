@@ -8,5 +8,7 @@
           class: admin_section_tab_class(controller_name == "modifier_groups" || controller_name == "modifiers") %>
     <%= link_to t("admin.menu_nav.combos"), admin_combos_path,
           class: admin_section_tab_class(controller_name == "combos") %>
+    <%= link_to t("admin.menu_nav.menu_promos"), admin_menu_promos_path,
+          class: admin_section_tab_class(controller_name == "menu_promos") %>
   </div>
 </nav>

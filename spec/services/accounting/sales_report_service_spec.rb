@@ -27,6 +27,25 @@ RSpec.describe Accounting::SalesReportService do
       expect(report[:summary][:net_sales_cents]).to eq(1300)
     end
 
+    it "tracks promo cost separately within discounts" do
+      order = create(:order, user: user, company: company, status: "completed",
+        subtotal_cents: 2000, discount_cents: 500, tax_cents: 0, tip_cents: 0, total_cents: 1500,
+        created_at: today.noon)
+      item = create(:order_item, order: order, menu_item: menu_item, quantity: 1, unit_price_cents: 2000)
+      promo = create(:menu_promo, company: company, menu_item: menu_item, promo_price_cents: 500)
+      order.order_discounts.create!(
+        menu_promo: promo,
+        order_item: item,
+        description: "Promo: Test",
+        amount_cents: 500
+      )
+
+      report = described_class.new(today, today).call
+
+      expect(report[:summary][:discount_cents]).to eq(500)
+      expect(report[:summary][:promo_cost_cents]).to eq(500)
+    end
+
     it "charts daily net sales instead of order totals with tax and tips" do
       order = create(:order, user: user, company: company, status: "completed",
         subtotal_cents: 1000, discount_cents: 0, tax_cents: 80, tip_cents: 100, total_cents: 1180,

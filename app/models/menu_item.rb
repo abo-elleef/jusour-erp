@@ -17,6 +17,7 @@ class MenuItem < ApplicationRecord
   has_many :order_items, dependent: :restrict_with_error
   has_many :combo_items, dependent: :restrict_with_error
   has_many :recipes, dependent: :destroy
+  has_many :menu_promos, dependent: :destroy
   has_many :recipe_ingredients, through: :recipes, source: :ingredient
   has_many :printer_menu_items, dependent: :destroy
   has_many :printers, through: :printer_menu_items

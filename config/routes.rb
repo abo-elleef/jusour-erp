@@ -108,6 +108,7 @@ Rails.application.routes.draw do
     resources :menu_items, except: [:show] do
       resources :recipes, only: %i[create destroy], module: :menu_items
     end
+    resources :menu_promos, except: [:show]
     resources :modifier_groups, except: [] do
       resources :modifiers, except: %i[index show] do
         resources :modifier_recipes, only: %i[create destroy], module: :modifiers

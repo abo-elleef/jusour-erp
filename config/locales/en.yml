@@ -23,10 +23,18 @@ en:
       empty: "No menu items are available at %{branch} yet."
       switch_branch: "Switch branch"
       category_filters: "Menu categories"
+      offers: "Offers"
+      offers_hint: "Limited-time prices and meal deals"
+      full_menu: "Full menu"
       footer: "Menu for %{company}"
       call: "Call %{number}"
       whatsapp: "WhatsApp %{number}"
       whatsapp_short: "WhatsApp"
+
+  promos:
+    badge: "Promo"
+    deal_badge: "Deal"
+    order_discount_description: "Promo: %{name}"
 
   auth:
     sign_in_title: "Sign in"
@@ -1992,6 +2000,11 @@ en:
       price_cents: "Price (cents)"
       active_label: "Active on POS"
       active_hint: "Inactive combos are hidden from cashiers"
+      highlight_label: "Highlight as meal deal"
+      highlight_hint: "Show a deal badge on POS and the public menu"
+      starts_at: "Starts at"
+      ends_at: "Ends at"
+      schedule_hint: "Leave blank for always available while active"
       included_items_heading: "Included items"
       included_items_hint: "Leave a row empty to skip it"
       menu_item: "Menu item"
@@ -2004,6 +2017,36 @@ en:
       menu_items: "Menu items"
       modifier_groups: "Modifier groups"
       combos: "Combos"
+      menu_promos: "Promos"
+    menu_promos:
+      description: "Time-bound item discounts with list price kept for promo cost reporting."
+      new_button: "New promo"
+      create_button: "Create promo"
+      stats_total: "Total"
+      stats_active_now: "Active now"
+      stats_upcoming: "Upcoming"
+      name: "Promo name"
+      menu_item: "Menu item"
+      location: "Branch"
+      all_branches: "All branches"
+      location_hint: "Leave blank to apply at every branch."
+      price: "Promo price"
+      window: "Window"
+      status: "Status"
+      active_now: "Active now"
+      upcoming: "Upcoming"
+      inactive: "Inactive"
+      empty_title: "No promos yet"
+      empty_description: "Create a short-window price for an item. Cashiers still ring the list price; the markdown is recorded as a discount."
+      form_heading: "Promo details"
+      form_hint: "Customers see the promo price; sales reports keep list price and promo cost."
+      select_menu_item: "Select menu item"
+      starts_at: "Starts at"
+      ends_at: "Ends at"
+      highlight_label: "Highlight on menus"
+      highlight_hint: "Show a badge on POS and the public menu"
+      active_label: "Active"
+      active_hint: "Turn off without deleting the promo"
     pages:
       categories:
         title: "Categories"
@@ -2013,6 +2056,10 @@ en:
         title: "Menu items"
         new: "New menu item"
         edit: "Edit menu item"
+      menu_promos:
+        title: "Promos"
+        new: "New promo"
+        edit: "Edit promo"
       modifier_groups:
         title: "Modifier groups"
         new: "New modifier group"
@@ -2647,6 +2694,8 @@ en:
       gross_sales: "Gross sales"
       avg_ticket: "Avg ticket"
       discounts: "Discounts"
+      promo_cost: "Promo cost"
+      promo_cost_line: "Of which promos %{amount}"
       refunds: "Refunds"
       combos_category: "Combos"
       tips_line: "Tips %{amount}"
@@ -3132,6 +3181,10 @@ en:
       created: "Combo created."
       updated: "Combo updated."
       removed: "Combo removed."
+    menu_promo:
+      created: "Promo created."
+      updated: "Promo updated."
+      removed: "Promo removed."
     customer:
       created: "Customer created."
       updated: "Customer updated."
@@ -3292,6 +3345,16 @@ en:
           attributes:
             code:
               alphanumeric_only: "may only contain letters and numbers"
+        menu_promo:
+          attributes:
+            ends_at:
+              must_be_after_starts: "must be after the start time"
+            promo_price_cents:
+              must_be_below_list: "must be below the item list price"
+        combo:
+          attributes:
+            ends_at:
+              must_be_after_starts: "must be after the start time"
         ingredient:
           attributes:
             unit:

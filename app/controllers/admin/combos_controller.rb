@@ -72,7 +72,7 @@ module Admin
 
     def combo_params
       params.require(:combo).permit(
-        :name, :description, :price_pounds, :active,
+        :name, :description, :price_pounds, :active, :highlight, :starts_at, :ends_at,
         combo_items_attributes: %i[id menu_item_id quantity _destroy]
       )
     end

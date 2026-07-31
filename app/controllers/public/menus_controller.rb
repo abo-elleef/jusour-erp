@@ -19,6 +19,7 @@ module Public
       @categories = menu.categories
       @menu_items = menu.menu_items
       @combos = menu.combos
+      @promos_by_item_id = menu.promos_by_item_id
     end
 
     private

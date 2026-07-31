@@ -49,4 +49,16 @@ FactoryBot.define do
     menu_item
     available { false }
   end
+
+  factory :menu_promo do
+    company { Current.company }
+    menu_item
+    sequence(:name) { |n| "Promo #{n}" }
+    promo_price_cents { 500 }
+    starts_at { 1.hour.ago }
+    ends_at { 2.days.from_now }
+    highlight { true }
+    active { true }
+    location { nil }
+  end
 end

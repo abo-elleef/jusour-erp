@@ -36,6 +36,26 @@
           </span>
         </label>
       </div>
+      <div class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+        <label class="inline-flex items-center gap-3 cursor-pointer">
+          <%= f.check_box :highlight, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+          <span>
+            <span class="block text-sm font-semibold text-gray-900"><%= t("admin.combos.highlight_label") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("admin.combos.highlight_hint") %></span>
+          </span>
+        </label>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <%= f.label :starts_at, t("admin.combos.starts_at"), class: label_class %>
+          <%= f.datetime_local_field :starts_at, class: input_class %>
+          <p class="text-xs text-gray-500 mt-1"><%= t("admin.combos.schedule_hint") %></p>
+        </div>
+        <div>
+          <%= f.label :ends_at, t("admin.combos.ends_at"), class: label_class %>
+          <%= f.datetime_local_field :ends_at, class: input_class %>
+        </div>
+      </div>
     </div>
   </section>
 

@@ -20,7 +20,7 @@
     <% end %>
   <% end %>
   <% if current_user.can?("menu:manage") %>
-    <%= link_to admin_menu_items_path, class: admin_nav_link_class(admin_nav_active?("admin/menu_items", "admin/categories", "admin/combos", "admin/modifiers", "admin/modifier_groups", "admin/tax_rates")) do %>
+    <%= link_to admin_menu_items_path, class: admin_nav_link_class(admin_nav_active?("admin/menu_items", "admin/categories", "admin/combos", "admin/menu_promos", "admin/modifiers", "admin/modifier_groups", "admin/tax_rates")) do %>
       <%= admin_nav_icon(:menu) %><span><%= t("nav.menu") %></span>
     <% end %>
   <% end %>

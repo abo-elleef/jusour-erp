@@ -7,6 +7,7 @@ class OrderItem < ApplicationRecord
   belongs_to :menu_item, optional: true
   belongs_to :combo, optional: true
   has_many :order_item_modifiers, dependent: :destroy
+  has_many :order_discounts, dependent: :destroy
 
   monetize :unit_price_cents
 

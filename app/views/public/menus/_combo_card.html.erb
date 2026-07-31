@@ -1,0 +1,24 @@
+<%# locals: combo, category: %>
+<% highlighted = combo.highlighted_now? %>
+<article class="public-menu-card rounded-2xl border <%= highlighted ? 'border-rose-300 bg-rose-50/40' : 'border-amber-200 bg-amber-50/40' %> overflow-hidden shadow-sm"
+         data-category="<%= category %>">
+  <div class="flex gap-4 p-4">
+    <div class="w-24 h-24 sm:w-28 sm:h-28 <%= highlighted ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800' %> rounded-xl shrink-0 flex items-center justify-center font-bold text-xs tracking-wide uppercase px-2 text-center">
+      <%= t("actions.combo") %>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-start justify-between gap-2">
+        <h2 class="font-semibold text-gray-900 leading-tight"><%= combo.name %></h2>
+        <% if highlighted %>
+          <span class="shrink-0 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+            <%= t("promos.deal_badge") %>
+          </span>
+        <% end %>
+      </div>
+      <% if combo.description.present? %>
+        <p class="text-sm text-gray-500 mt-1"><%= combo.description %></p>
+      <% end %>
+      <p class="text-amber-700 font-bold mt-2 tabular-nums"><%= format_money(combo.price_cents) %></p>
+    </div>
+  </div>
+</article>

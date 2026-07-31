@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_07_31_211500) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -156,6 +156,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_31_211500) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.datetime "starts_at"
+    t.datetime "ends_at"
+    t.boolean "highlight", default: false, null: false
     t.index ["company_id"], name: "index_combos_on_company_id"
   end
 
@@ -584,6 +587,25 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_31_211500) do
     t.index ["company_id"], name: "index_menu_items_on_company_id"
   end
 
+  create_table "menu_promos", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "menu_item_id", null: false
+    t.uuid "location_id"
+    t.string "name", null: false
+    t.integer "promo_price_cents", null: false
+    t.datetime "starts_at", null: false
+    t.datetime "ends_at", null: false
+    t.boolean "highlight", default: true, null: false
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "starts_at", "ends_at"], name: "index_menu_promos_on_company_id_and_starts_at_and_ends_at"
+    t.index ["company_id"], name: "index_menu_promos_on_company_id"
+    t.index ["location_id"], name: "index_menu_promos_on_location_id"
+    t.index ["menu_item_id", "starts_at", "ends_at"], name: "index_menu_promos_on_menu_item_id_and_starts_at_and_ends_at"
+    t.index ["menu_item_id"], name: "index_menu_promos_on_menu_item_id"
+  end
+
   create_table "modifier_groups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.boolean "required", default: false, null: false
@@ -641,8 +663,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_31_211500) do
     t.integer "amount_cents", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "menu_promo_id"
+    t.uuid "order_item_id"
     t.index ["discount_rule_id"], name: "index_order_discounts_on_discount_rule_id"
+    t.index ["menu_promo_id"], name: "index_order_discounts_on_menu_promo_id"
     t.index ["order_id"], name: "index_order_discounts_on_order_id"
+    t.index ["order_item_id"], name: "index_order_discounts_on_order_item_id"
   end
 
   create_table "order_events", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1394,6 +1420,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_31_211500) do
   add_foreign_key "menu_item_modifier_groups", "modifier_groups"
   add_foreign_key "menu_items", "categories"
   add_foreign_key "menu_items", "companies"
+  add_foreign_key "menu_promos", "companies"
+  add_foreign_key "menu_promos", "locations"
+  add_foreign_key "menu_promos", "menu_items"
   add_foreign_key "modifier_groups", "companies"
   add_foreign_key "modifier_recipes", "ingredients"
   add_foreign_key "modifier_recipes", "modifiers"
@@ -1401,6 +1430,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_07_31_211500) do
   add_foreign_key "modifiers", "modifier_groups"
   add_foreign_key "notifications", "companies"
   add_foreign_key "order_discounts", "discount_rules"
+  add_foreign_key "order_discounts", "menu_promos"
+  add_foreign_key "order_discounts", "order_items"
   add_foreign_key "order_discounts", "orders"
   add_foreign_key "order_events", "orders"
   add_foreign_key "order_events", "users"

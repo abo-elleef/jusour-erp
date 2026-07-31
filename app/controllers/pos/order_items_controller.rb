@@ -34,6 +34,7 @@ module Pos
         else
           item.update!(order_item_params)
         end
+        Promos::SyncOrderItemDiscount.call(order_item: item) if item.menu_item_id.present?
         @order.recalculate_totals!
       end
       respond_to do |format|
@@ -132,6 +133,7 @@ module Pos
           price_adjustment_cents: mod.price_adjustment_cents
         )
       end
+      Promos::SyncOrderItemDiscount.call(order_item: item)
     end
 
     def order_item_params
