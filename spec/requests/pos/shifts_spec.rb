@@ -6,6 +6,7 @@ RSpec.describe "POS shift flow", type: :request do
   include Devise::Test::IntegrationHelpers
 
   let(:company) { create(:company) }
+  let!(:branch) { create(:location, company: company, name: "Main Branch") }
   let(:cashier) { create(:user, company: company, role: "cashier") }
   let(:manager) { create(:user, :manager, company: company, pin: "9999") }
   let!(:treasury) do
@@ -52,10 +53,11 @@ RSpec.describe "POS shift flow", type: :request do
     end
 
     it "lists orders from an open drawer session" do
-      drawer = CashDrawerSession.create!(
+      CashDrawerSession.create!(
         user: cashier,
         treasury: treasury,
-        session_date: Date.current,
+        location: branch,
+        session_date: BusinessDay.today(location: branch),
         opening_float_cents: 10_000,
         status: "open",
         created_at: 1.hour.ago
@@ -88,12 +90,16 @@ RSpec.describe "POS shift flow", type: :request do
       }
       expect(response).to redirect_to(pos_shift_path)
 
-      session = cashier.reload.open_cash_drawer_session
+      session = cashier.reload.open_cash_drawer_session(location: branch)
       expect(session).to be_present
+      expect(session.location_id).to eq(branch.id)
+      expect(session.session_date).to eq(BusinessDay.today(location: branch))
       expect(session.opening_float_cents).to eq(10_000)
 
       get count_pos_shift_path
       expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("pos.shift.sales_summary_title"))
+      expect(response.body).to include(I18n.t("pos.shift.count_cash_heading"))
 
       patch reconcile_pos_shift_path, params: { counted_cash: "100.00" }
       expect(response).to redirect_to(pos_shift_path)
@@ -119,7 +125,7 @@ RSpec.describe "POS shift flow", type: :request do
       manager
       patch reconcile_pos_shift_path, params: { counted_cash: "50.00", manager_pin: "9999" }
       expect(response).to redirect_to(pos_shift_path)
-      expect(cashier.reload.todays_cash_drawer_session.status).to eq("reconciled")
+      expect(cashier.reload.todays_cash_drawer_session(location: branch).status).to eq("reconciled")
     end
   end
 end

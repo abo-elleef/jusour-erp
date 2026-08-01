@@ -1,0 +1,127 @@
+<%= render "admin/accounting/nav" %>
+
+<div class="max-w-5xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.digital_wallet_day_closes.title") %></h1>
+      <p class="text-sm text-gray-600 mt-1"><%= t("accounting.digital_wallet_day_closes.description") %></p>
+    </div>
+    <%= form_with url: admin_accounting_digital_wallet_day_close_path, method: :get, class: "flex flex-wrap gap-2 items-end" do %>
+      <%= date_field_tag :date, @date, class: "border border-gray-200 rounded-xl px-3 py-2 text-sm" %>
+      <%= select_tag :location_id,
+            options_from_collection_for_select(@locations, :id, :name, @location&.id),
+            include_blank: t("accounting.digital_wallet_day_closes.all_branches"),
+            class: "border border-gray-200 rounded-xl px-3 py-2 text-sm" %>
+      <%= submit_tag t("actions.apply"), class: "bg-gray-900 text-white text-sm font-semibold px-4 py-2 rounded-xl" %>
+    <% end %>
+  </div>
+
+  <div class="rounded-2xl border border-blue-200 bg-blue-50/50 p-4 mb-6 text-sm text-blue-900">
+    <%= t("accounting.digital_wallet_day_closes.shared_hint") %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.digital_wallet_day_closes.cashiers_heading") %></h2>
+    </div>
+    <% if @report.rows.any? %>
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= t("accounting.cash_drawer.cashier") %></th>
+            <th class="p-3 text-start"><%= t("accounting.cash_drawer.status") %></th>
+            <th class="p-3 text-end"><%= payment_method_label("instapay") %></th>
+            <th class="p-3 text-end"><%= payment_method_label("vodafone_cash") %></th>
+            <th class="p-3 pe-5 text-end"><%= t("accounting.digital_wallet_day_closes.digital_total") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @report.rows.each do |row| %>
+            <tr>
+              <td class="p-3 ps-5 font-medium text-gray-900"><%= row.user.name %></td>
+              <td class="p-3"><%= accounting_drawer_status(row.status) %></td>
+              <td class="p-3 text-end tabular-nums"><%= format_money(row.instapay_cents) %></td>
+              <td class="p-3 text-end tabular-nums"><%= format_money(row.vodafone_cash_cents) %></td>
+              <td class="p-3 pe-5 text-end tabular-nums font-semibold"><%= format_money(row.total_digital_cents) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot class="border-t-2 border-gray-200 bg-gray-50/80">
+          <tr>
+            <td colspan="2" class="p-3 ps-5 text-xs font-bold text-gray-600"><%= t("accounting.digital_wallet_day_closes.expected_from_pos") %></td>
+            <td class="p-3 text-end font-bold tabular-nums"><%= format_money(@report.expected_instapay_cents) %></td>
+            <td class="p-3 text-end font-bold tabular-nums"><%= format_money(@report.expected_vodafone_cash_cents) %></td>
+            <td class="p-3 pe-5 text-end font-bold tabular-nums">
+              <%= format_money(@report.expected_instapay_cents + @report.expected_vodafone_cash_cents) %>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    <% else %>
+      <p class="px-5 py-8 text-center text-sm text-gray-400"><%= t("accounting.digital_wallet_day_closes.no_sessions") %></p>
+    <% end %>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
+    <h2 class="text-sm font-semibold text-gray-900 mb-1"><%= t("accounting.digital_wallet_day_closes.statement_heading") %></h2>
+    <p class="text-xs text-gray-500 mb-4"><%= t("accounting.digital_wallet_day_closes.statement_hint") %></p>
+
+    <%= form_with url: admin_accounting_digital_wallet_day_close_path(date: @date, location_id: @location&.id), method: :patch, class: "space-y-4 max-w-md" do %>
+      <%= hidden_field_tag :location_id, @location&.id if @location %>
+      <div>
+        <%= label_tag :instapay_statement,
+              "#{payment_method_label("instapay")}#{@treasury_map["instapay"] ? " → #{@treasury_map["instapay"].name}" : ""}",
+              class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= number_field_tag :instapay_statement,
+              (@day_close&.instapay_statement_cents.to_i / 100.0),
+              step: 0.01, min: 0,
+              class: "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" %>
+      </div>
+      <div>
+        <%= label_tag :vodafone_cash_statement,
+              "#{payment_method_label("vodafone_cash")}#{@treasury_map["vodafone_cash"] ? " → #{@treasury_map["vodafone_cash"].name}" : ""}",
+              class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= number_field_tag :vodafone_cash_statement,
+              (@day_close&.vodafone_cash_statement_cents.to_i / 100.0),
+              step: 0.01, min: 0,
+              class: "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" %>
+      </div>
+      <div>
+        <%= label_tag :notes, t("accounting.shared.description"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= text_area_tag :notes, @day_close&.notes, rows: 2,
+              class: "w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm" %>
+      </div>
+      <%= submit_tag t("accounting.digital_wallet_day_closes.save"),
+            class: "bg-gray-900 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+    <% end %>
+  </section>
+
+  <% if @day_close&.persisted? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.digital_wallet_day_closes.variance_heading") %></h2>
+      </div>
+      <dl class="p-5 space-y-3 text-sm">
+        <div class="flex justify-between gap-3">
+          <dt class="text-gray-600"><%= payment_method_label("instapay") %> <%= t("accounting.cash_drawer.variance").downcase %></dt>
+          <dd class="font-semibold tabular-nums <%= @report.instapay_variance_cents.zero? ? "text-green-700" : "text-amber-800" %>">
+            <%= format_money(@report.instapay_variance_cents) %>
+          </dd>
+        </div>
+        <div class="flex justify-between gap-3">
+          <dt class="text-gray-600"><%= payment_method_label("vodafone_cash") %> <%= t("accounting.cash_drawer.variance").downcase %></dt>
+          <dd class="font-semibold tabular-nums <%= @report.vodafone_cash_variance_cents.zero? ? "text-green-700" : "text-amber-800" %>">
+            <%= format_money(@report.vodafone_cash_variance_cents) %>
+          </dd>
+        </div>
+        <p class="text-xs text-gray-500 pt-1"><%= t("accounting.digital_wallet_day_closes.variance_hint") %></p>
+        <% if @day_close.recorded_by %>
+          <p class="text-xs text-gray-400">
+            <%= t("accounting.shared.recorded_by") %>: <%= @day_close.recorded_by.name %>
+            · <%= l(@day_close.updated_at, format: :short) %>
+          </p>
+        <% end %>
+      </dl>
+    </section>
+  <% end %>
+</div>

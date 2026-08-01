@@ -85,12 +85,16 @@ class User < ApplicationRecord
     shift_logs.active.order(clocked_in_at: :desc).first
   end
 
-  def open_cash_drawer_session
-    cash_drawer_sessions.open.find_by(session_date: BusinessDay.today)
+  def open_cash_drawer_session(location: nil)
+    scope = cash_drawer_sessions.open
+    scope = scope.where(location_id: location.id) if location
+    scope.find_by(session_date: BusinessDay.today(location: location))
   end
 
-  def todays_cash_drawer_session
-    cash_drawer_sessions.where(session_date: BusinessDay.today).order(created_at: :desc).first
+  def todays_cash_drawer_session(location: nil)
+    scope = cash_drawer_sessions
+    scope = scope.where(location_id: location.id) if location
+    scope.where(session_date: BusinessDay.today(location: location)).order(created_at: :desc).first
   end
 
   def shift_orders_time_range

@@ -10,6 +10,7 @@ class Payment < ApplicationRecord
   belongs_to :company
   belongs_to :order
   belongs_to :processed_by_user, class_name: "User", optional: true
+  belongs_to :cash_drawer_session, optional: true
 
   monetize :amount_cents
   monetize :tip_cents, allow_nil: false

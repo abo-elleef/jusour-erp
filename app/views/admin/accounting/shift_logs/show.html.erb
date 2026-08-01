@@ -54,6 +54,57 @@
     </div>
   </div>
 
+  <%# ── Cashier sales accountability (cash + digital) ──────────── %>
+  <div class="grid sm:grid-cols-2 gap-4 mb-6">
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+        <%= t("accounting.shift_logs.show.sales_by_method") %>
+      </p>
+      <%= render "shared/session_sales_summary", summary: @sales_summary, compact: true %>
+      <p class="text-xs text-gray-500 mt-3"><%= t("accounting.shift_logs.show.sales_by_method_hint") %></p>
+    </div>
+
+    <div class="rounded-2xl border border-gray-200 bg-white p-5">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+        <%= t("accounting.shift_logs.show.payment_methods") %>
+      </p>
+      <% if @payments_by_method.any? %>
+        <dl class="space-y-2.5 text-sm">
+          <% @payments_by_method.each do |method, cents| %>
+            <div class="flex justify-between">
+              <dt class="text-gray-600"><%= payment_method_label(method) %></dt>
+              <dd class="font-semibold tabular-nums"><%= format_money(cents) %></dd>
+            </div>
+          <% end %>
+        </dl>
+      <% else %>
+        <p class="text-sm text-gray-400"><%= t("accounting.shared.em_dash") %></p>
+      <% end %>
+
+      <% if @drawer_session %>
+        <div class="mt-4 pt-4 border-t border-gray-100 text-sm space-y-1.5">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            <%= t("accounting.shift_logs.show.drawer_session") %>
+          </p>
+          <div class="flex justify-between">
+            <span class="text-gray-600"><%= t("accounting.cash_drawer.status") %></span>
+            <span class="font-medium"><%= accounting_drawer_status(@drawer_session.status) %></span>
+          </div>
+          <% if @drawer_session.status == "reconciled" %>
+            <div class="flex justify-between">
+              <span class="text-gray-600"><%= t("accounting.cash_drawer.counted") %></span>
+              <span class="font-semibold tabular-nums"><%= format_money(@drawer_session.counted_cash_cents) %></span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600"><%= t("accounting.cash_drawer.variance") %></span>
+              <span class="font-semibold tabular-nums"><%= format_money(@drawer_session.variance_cents) %></span>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
   <%# ── Shift + labor + tips detail ────────────────────────────── %>
   <div class="grid sm:grid-cols-2 gap-4 mb-6">
     <div class="rounded-2xl border border-gray-200 bg-white p-5">
@@ -67,22 +118,6 @@
         <div class="flex justify-between"><dt class="text-gray-500"><%= t("accounting.shift_logs.show.tips") %></dt>
           <dd class="font-semibold tabular-nums"><%= format_money(@shift.tips_cents) %></dd></div>
       </dl>
-    </div>
-
-    <div class="rounded-2xl border border-gray-200 bg-white p-5">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3"><%= t("accounting.shift_logs.show.payment_methods") %></p>
-      <% if @payments_by_method.any? %>
-        <dl class="space-y-2.5 text-sm">
-          <% @payments_by_method.each do |method, cents| %>
-            <div class="flex justify-between">
-              <dt class="text-gray-600"><%= payment_method_label(method) %></dt>
-              <dd class="font-semibold tabular-nums"><%= format_money(cents) %></dd>
-            </div>
-          <% end %>
-        </dl>
-      <% else %>
-        <p class="text-sm text-gray-400"><%= t("accounting.shared.em_dash") %></p>
-      <% end %>
     </div>
   </div>
 

@@ -1,43 +1,96 @@
 # frozen_string_literal: true
 
-# Central definition of the "operating day" for a restaurant that trades past
-# midnight. The day boundary is shifted from 00:00 to a per-company cutoff hour
-# (default 6 AM, Cairo time): everything from midnight up to the cutoff counts
-# toward the PREVIOUS operating day.
+# Operating day for the restaurant.
 #
-#   business_day(timestamp) = (timestamp − cutoff_hours).to_date
-#
-# `created_at` timestamps remain the single source of truth — this only shifts
-# where the day boundary sits, so range queries keep using the created_at index.
+# Mode is per branch (automatic | manual).
+# Automatic: day boundary from start hour (branch override, else company default).
+# Manual: each branch has an open LocationOperatingDay advanced by owners.
 module BusinessDay
   DEFAULT_START_HOUR = 6
+  MODES = %w[automatic manual].freeze
+  DEFAULT_MODE = "automatic"
 
-  # Per-company cutoff hour (0–23). Falls back to the default when there is no
-  # current company (rake tasks, console) or no stored setting.
-  def self.start_hour
+  module_function
+
+  def mode(location:)
+    raise ArgumentError, "location is required" if location.blank?
+
+    value = location.business_day_mode.to_s
+    MODES.include?(value) ? value : DEFAULT_MODE
+  end
+
+  def automatic?(location:)
+    mode(location: location) == "automatic"
+  end
+
+  def manual?(location:)
+    mode(location: location) == "manual"
+  end
+
+  # Company-wide default start hour (Business days hub header).
+  def company_start_hour
     Setting.get_int("business_day_start_hour", DEFAULT_START_HOUR)
   end
 
-  # The operating day a given instant belongs to.
-  def self.for(time)
-    (time.in_time_zone - start_hour.hours).to_date
+  # Effective cutoff hour. Branch override when set, otherwise company default.
+  def start_hour(location: nil)
+    if location.present? && location.business_day_start_hour.present?
+      location.business_day_start_hour
+    else
+      company_start_hour
+    end
   end
 
-  # The operating day that is currently in progress.
-  def self.today
-    self.for(Time.current)
+  # Clock-derived date. With +location+, uses that branch's effective start hour.
+  def clock_today(location: nil)
+    (Time.current.in_time_zone - start_hour(location: location).hours).to_date
   end
 
-  # Half-open created_at range [start, next_start) covering one operating day,
-  # e.g. operating day 2026-01-09 with a 6 AM cutoff → [Jan 9 06:00, Jan 10 06:00).
-  def self.range(date)
+  # Operating day for a timestamp. Manual branch → open operating day.
+  # Automatic branch (or no location) → clock formula with effective hour.
+  def for(time, location: nil)
+    if location.present? && manual?(location: location)
+      today(location: location)
+    else
+      (time.in_time_zone - start_hour(location: location).hours).to_date
+    end
+  end
+
+  # Current operating day. Manual branch → open LocationOperatingDay.
+  # Automatic / no location → clock with effective hour.
+  def today(location: nil)
+    if location.present? && manual?(location: location)
+      ensure_current_day!(location).business_date
+    else
+      clock_today(location: location)
+    end
+  end
+
+  def range(date, location: nil)
     d = date.to_date
-    start = Time.zone.local(d.year, d.month, d.day, start_hour)
+    hour = start_hour(location: location)
+    start = Time.zone.local(d.year, d.month, d.day, hour)
     start...(start + 1.day)
   end
 
-  # Half-open created_at range spanning operating days from_date..to_date (inclusive).
-  def self.range_between(from_date, to_date)
-    range(from_date).begin...range(to_date).end
+  def range_between(from_date, to_date, location: nil)
+    range(from_date, location: location).begin...range(to_date, location: location).end
+  end
+
+  def ensure_current_day!(location, user: nil)
+    LocationOperatingDay.current_for(location) ||
+      LocationOperatingDay.ensure_open!(location, date: clock_today(location: location), user: user)
+  end
+
+  def apply_mode!(location, mode, user: nil)
+    raise ArgumentError, "location is required" if location.blank?
+
+    next_mode = mode.to_s
+    raise ArgumentError, "invalid mode" unless MODES.include?(next_mode)
+
+    previous = mode(location: location)
+    location.update!(business_day_mode: next_mode)
+    ensure_current_day!(location, user: user) if previous != "manual" && next_mode == "manual"
+    location
   end
 end

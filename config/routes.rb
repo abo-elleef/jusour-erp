@@ -250,6 +250,17 @@ Rails.application.routes.draw do
         end
       end
 
+      resource :digital_wallet_day_close, only: %i[show update], controller: "digital_wallet_day_closes"
+
+      resources :business_days, only: [:index] do
+        collection do
+          patch :update_defaults
+          post :advance
+          post :advance_all
+        end
+      end
+      patch "business_days/:location_id", to: "business_days#update", as: :business_day
+
       resources :audit_log, only: [:index], controller: "audit_log"
 
       resources :integrations, only: [:index] do

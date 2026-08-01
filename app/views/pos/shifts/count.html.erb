@@ -1,6 +1,6 @@
 <div class="<%= pos_viewport_min_h_class %> bg-gray-100 flex flex-col">
   <header class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white shrink-0">
-    <span class="text-xl font-bold tracking-tight text-gray-900"><%= t("accounting.cash_drawer.count_title") %></span>
+    <span class="text-xl font-bold tracking-tight text-gray-900"><%= t("pos.shift.close_title") %></span>
     <%= render "pos/pos_nav" %>
   </header>
 
@@ -10,42 +10,21 @@
             class: "text-sm font-semibold text-amber-700 hover:text-amber-800" %>
     </div>
 
-    <div class="rounded-2xl border border-gray-200 bg-gray-50/80 p-4 mb-6 text-sm space-y-1">
-      <p>
-        <strong><%= t("accounting.cash_drawer.session_line",
+    <div class="rounded-2xl border border-gray-200 bg-gray-50/80 p-4 mb-4 text-sm">
+      <p class="font-semibold text-gray-900">
+        <%= t("accounting.cash_drawer.session_line",
               name: @open_session.user.name,
-              date: l(@open_session.session_date, format: :long)) %></strong>
+              date: l(@open_session.session_date, format: :long)) %>
       </p>
-      <p><%= t("accounting.cash_drawer.expected_line", amount: number_with_precision(@open_session.expected_cash_cents.to_f / 100, precision: 2, delimiter: ',')) %></p>
     </div>
 
-    <% if @digital_payment_totals&.any? { |_, v| v.positive? } %>
-      <div class="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 mb-6 text-sm space-y-2">
-        <p class="font-semibold text-blue-900 text-xs uppercase tracking-wide"><%= t("pos.shift.digital_payments_title") %></p>
-        <% @digital_payment_totals.each do |method, cents| %>
-          <% next unless cents.positive? %>
-          <div class="flex justify-between items-start gap-2">
-            <div>
-              <span class="text-blue-800 font-medium"><%= payment_method_label(method) %></span>
-              <% treasury = @payment_method_treasury_map&.fetch(method, nil) %>
-              <% if treasury %>
-                <span class="block text-xs text-blue-600">→ <%= treasury.name %></span>
-              <% else %>
-                <span class="block text-xs text-amber-600"><%= t("pos.shift.digital_payment_no_treasury") %></span>
-              <% end %>
-            </div>
-            <span class="tabular-nums font-semibold text-blue-900 shrink-0"><%= number_with_precision(cents.to_f / 100, precision: 2, delimiter: ',') %></span>
-          </div>
-        <% end %>
-        <p class="text-xs text-blue-700 mt-1"><%= t("pos.shift.digital_payments_hint") %></p>
-      </div>
-    <% end %>
+    <%= render "shared/session_sales_summary", summary: @sales_summary %>
 
     <% if @requires_manager_pin %>
       <div class="rounded-2xl border border-amber-200 bg-amber-50/70 p-4 mb-6 text-sm space-y-1">
         <p class="font-semibold text-amber-900"><%= t("pos.shift.variance_detected") %></p>
-        <p class="tabular-nums"><%= t("accounting.cash_drawer.counted") %>: <%= number_with_precision(@counted_cents.to_f / 100, precision: 2, delimiter: ',') %></p>
-        <p class="tabular-nums"><%= t("accounting.cash_drawer.variance") %>: <%= number_with_precision(@variance_cents.to_f / 100, precision: 2, delimiter: ',') %></p>
+        <p class="tabular-nums"><%= t("accounting.cash_drawer.counted") %>: <%= format_money(@counted_cents) %></p>
+        <p class="tabular-nums"><%= t("accounting.cash_drawer.variance") %>: <%= format_money(@variance_cents) %></p>
       </div>
 
       <%= form_with url: reconcile_pos_shift_path, method: :patch do %>
@@ -59,9 +38,13 @@
         <%= submit_tag t("accounting.cash_drawer.reconcile_drawer"), class: "w-full bg-gray-900 text-white py-3 rounded-xl font-bold" %>
       <% end %>
     <% else %>
-      <%= render "shared/cash_denomination_count",
-            reconcile_url: reconcile_pos_shift_path,
-            submit_label: t("accounting.cash_drawer.reconcile_drawer") %>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4 mb-2">
+        <h2 class="text-sm font-semibold text-gray-900 mb-1"><%= t("pos.shift.count_cash_heading") %></h2>
+        <p class="text-xs text-gray-500 mb-4"><%= t("pos.shift.count_cash_hint") %></p>
+        <%= render "shared/cash_denomination_count",
+              reconcile_url: reconcile_pos_shift_path,
+              submit_label: t("accounting.cash_drawer.reconcile_drawer") %>
+      </div>
     <% end %>
   </div>
 </div>

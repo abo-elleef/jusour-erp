@@ -9,24 +9,13 @@ module Accounting
     end
 
     def compute_expected!
-      session_start = @session.created_at
-      session_end   = @session.status == "open" ? Time.current : @session.updated_at
-
-      cash_sales = Payment.joins(:order)
-        .where(orders: { user_id: @session.user_id })
-        .where(payment_method: "cash", status: "completed")
-        .where(created_at: session_start..session_end)
-        .sum(:amount_cents).to_i
-
-      cash_refunds = Payment.joins(:order)
-        .where(orders: { user_id: @session.user_id })
-        .where(payment_method: "cash")
-        .where(created_at: session_start..session_end)
-        .sum(:refunded_amount_cents).to_i
-
-      expected = @session.opening_float_cents + cash_sales - cash_refunds
+      expected = sales_summary.expected_cash_cents
       @session.update!(expected_cash_cents: expected)
       expected
+    end
+
+    def sales_summary
+      @sales_summary ||= SessionSalesSummary.for_session(@session)
     end
 
     def reconcile!(counted_cents)
@@ -49,7 +38,9 @@ module Accounting
         changes_snapshot: {
           variance_cents: variance,
           counted: counted_cents,
-          expected: expected
+          expected: expected,
+          instapay_cents: sales_summary.instapay_cents,
+          vodafone_cash_cents: sales_summary.vodafone_cash_cents
         }
       )
 

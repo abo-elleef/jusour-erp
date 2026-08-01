@@ -2,16 +2,21 @@
 <div class="max-w-lg">
   <h1 class="text-2xl font-bold mb-2"><%= t("accounting.cash_drawer.count_title") %></h1>
 
-  <div class="rounded-2xl border border-gray-200 bg-gray-50/80 p-4 mb-6 text-sm space-y-1">
-    <p>
-      <strong><%= t("accounting.cash_drawer.session_line",
+  <div class="rounded-2xl border border-gray-200 bg-gray-50/80 p-4 mb-4 text-sm">
+    <p class="font-semibold text-gray-900">
+      <%= t("accounting.cash_drawer.session_line",
             name: @session.user.name,
-            date: l(@session.session_date, format: :long)) %></strong>
+            date: l(@session.session_date, format: :long)) %>
     </p>
-    <p><%= t("accounting.cash_drawer.expected_line", amount: format_money(@session.expected_cash_cents)) %></p>
   </div>
 
-  <%= render "shared/cash_denomination_count",
-        reconcile_url: reconcile_admin_accounting_cash_drawer_path(@session),
-        submit_label: t("accounting.cash_drawer.reconcile_drawer") %>
+  <%= render "shared/session_sales_summary", summary: @sales_summary %>
+
+  <div class="rounded-2xl border border-gray-200 bg-white p-4">
+    <h2 class="text-sm font-semibold text-gray-900 mb-1"><%= t("pos.shift.count_cash_heading") %></h2>
+    <p class="text-xs text-gray-500 mb-4"><%= t("pos.shift.count_cash_hint") %></p>
+    <%= render "shared/cash_denomination_count",
+          reconcile_url: reconcile_admin_accounting_cash_drawer_path(@session),
+          submit_label: t("accounting.cash_drawer.reconcile_drawer") %>
+  </div>
 </div>

@@ -89,6 +89,7 @@ RSpec.describe Accounting::TreasuryLedgerService do
       session = CashDrawerSession.create!(
         user: user,
         treasury: drawer,
+        location: create(:location, company: Current.company),
         session_date: Date.current,
         opening_float_cents: 10_000,
         status: "open"

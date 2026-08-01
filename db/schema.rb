@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_01_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -120,6 +120,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "treasury_id"
+    t.uuid "location_id"
+    t.index ["location_id"], name: "index_cash_drawer_sessions_on_location_id"
     t.index ["treasury_id"], name: "index_cash_drawer_sessions_on_treasury_id"
     t.index ["user_id"], name: "index_cash_drawer_sessions_on_user_id"
   end
@@ -191,6 +193,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.integer "business_day_start_hour", default: 6, null: false
+    t.string "business_day_mode", default: "automatic", null: false
     t.index ["company_id"], name: "index_company_settings_on_company_id", unique: true
   end
 
@@ -219,6 +222,22 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
     t.index ["company_id", "phone"], name: "index_customers_on_company_id_and_phone", unique: true, where: "((phone IS NOT NULL) AND ((phone)::text <> ''::text))"
     t.index ["company_id", "phone_secondary"], name: "index_customers_on_company_id_and_phone_secondary", unique: true, where: "(phone_secondary IS NOT NULL)"
     t.index ["company_id"], name: "index_customers_on_company_id"
+  end
+
+  create_table "digital_wallet_day_closes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.date "business_date", null: false
+    t.integer "instapay_statement_cents", default: 0, null: false
+    t.integer "vodafone_cash_statement_cents", default: 0, null: false
+    t.text "notes"
+    t.uuid "recorded_by_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "location_id"
+    t.index ["company_id", "business_date", "location_id"], name: "index_digital_wallet_day_closes_on_company_date_location", unique: true
+    t.index ["company_id"], name: "index_digital_wallet_day_closes_on_company_id"
+    t.index ["location_id"], name: "index_digital_wallet_day_closes_on_location_id"
+    t.index ["recorded_by_id"], name: "index_digital_wallet_day_closes_on_recorded_by_id"
   end
 
   create_table "discount_rules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -477,6 +496,24 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
     t.index ["menu_item_id"], name: "index_location_menu_items_on_menu_item_id"
   end
 
+  create_table "location_operating_days", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "location_id", null: false
+    t.date "business_date", null: false
+    t.datetime "opened_at", null: false
+    t.uuid "opened_by_id"
+    t.datetime "closed_at"
+    t.uuid "closed_by_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["closed_by_id"], name: "index_location_operating_days_on_closed_by_id"
+    t.index ["company_id", "location_id", "business_date"], name: "idx_on_company_id_location_id_business_date_e26ae21c0d"
+    t.index ["company_id"], name: "index_location_operating_days_on_company_id"
+    t.index ["location_id"], name: "index_location_operating_days_on_location_id"
+    t.index ["location_id"], name: "index_location_operating_days_one_open_per_location", unique: true, where: "(closed_at IS NULL)"
+    t.index ["opened_by_id"], name: "index_location_operating_days_on_opened_by_id"
+  end
+
   create_table "locations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.string "name", null: false
@@ -490,6 +527,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
     t.string "slug", null: false
     t.boolean "public_menu_enabled", default: false, null: false
     t.string "whatsapp_number"
+    t.integer "business_day_start_hour"
+    t.string "business_day_mode", default: "automatic", null: false
     t.index ["active"], name: "index_locations_on_active"
     t.index ["company_id", "name"], name: "index_locations_on_company_id_and_name", unique: true
     t.index ["company_id", "slug"], name: "index_locations_on_company_id_and_slug", unique: true
@@ -789,6 +828,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
+    t.uuid "cash_drawer_session_id"
+    t.index ["cash_drawer_session_id"], name: "index_payments_on_cash_drawer_session_id"
     t.index ["company_id"], name: "index_payments_on_company_id"
     t.index ["order_id"], name: "index_payments_on_order_id"
     t.index ["processed_by_user_id"], name: "index_payments_on_processed_by_user_id"
@@ -1362,6 +1403,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
   add_foreign_key "audit_log_entries", "users"
   add_foreign_key "budgets", "companies"
   add_foreign_key "budgets", "expense_categories"
+  add_foreign_key "cash_drawer_sessions", "locations"
   add_foreign_key "cash_drawer_sessions", "treasuries"
   add_foreign_key "cash_drawer_sessions", "users"
   add_foreign_key "categories", "companies"
@@ -1371,6 +1413,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
   add_foreign_key "company_settings", "companies"
   add_foreign_key "customer_addresses", "customers"
   add_foreign_key "customers", "companies"
+  add_foreign_key "digital_wallet_day_closes", "companies"
+  add_foreign_key "digital_wallet_day_closes", "locations"
+  add_foreign_key "digital_wallet_day_closes", "users", column: "recorded_by_id"
   add_foreign_key "discount_rules", "companies"
   add_foreign_key "expense_categories", "companies"
   add_foreign_key "expenses", "companies"
@@ -1403,6 +1448,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
   add_foreign_key "loans", "companies"
   add_foreign_key "location_menu_items", "locations"
   add_foreign_key "location_menu_items", "menu_items"
+  add_foreign_key "location_operating_days", "companies"
+  add_foreign_key "location_operating_days", "locations"
+  add_foreign_key "location_operating_days", "users", column: "closed_by_id"
+  add_foreign_key "location_operating_days", "users", column: "opened_by_id"
   add_foreign_key "locations", "companies"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"
@@ -1449,6 +1498,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_000000) do
   add_foreign_key "partners", "companies"
   add_foreign_key "payment_method_treasuries", "companies"
   add_foreign_key "payment_method_treasuries", "treasuries"
+  add_foreign_key "payments", "cash_drawer_sessions"
   add_foreign_key "payments", "companies"
   add_foreign_key "payments", "orders"
   add_foreign_key "payments", "users", column: "processed_by_user_id"

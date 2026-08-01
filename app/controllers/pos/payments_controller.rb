@@ -51,7 +51,8 @@ module Pos
         status: "completed",
         stripe_payment_intent_id: intent.id,
         stripe_charge_id: intent.latest_charge,
-        processed_by_user: current_user
+        processed_by_user: current_user,
+        cash_drawer_session: current_user.open_cash_drawer_session
       )
       finalize_if_paid
       render json: { success: true, redirect_url: payment_return_path }
@@ -104,7 +105,8 @@ module Pos
         payment_method: "gift_card",
         amount_cents: amount,
         status: "completed",
-        processed_by_user: current_user
+        processed_by_user: current_user,
+        cash_drawer_session: current_user.open_cash_drawer_session
       )
     end
 

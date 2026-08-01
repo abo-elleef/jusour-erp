@@ -10,19 +10,27 @@ module Pos
     before_action :set_open_session, only: %i[count reconcile]
 
     def show
-      @open_session = current_user.open_cash_drawer_session
+      @open_session = current_user.open_cash_drawer_session(location: @pos_location)
       @tab = params[:tab].presence_in(%w[shift orders]) || (@open_session ? "orders" : "shift")
-      @today_session = current_user.todays_cash_drawer_session
+      @today_session = current_user.todays_cash_drawer_session(location: @pos_location)
       @assigned_treasury = current_user.assigned_treasury
+      @business_day = BusinessDay.today(location: @pos_location)
       @unpaid_orders_count = unpaid_orders_for(current_user).size
       @has_draft_cart = draft_order_for(current_user).present?
+      if @today_session
+        @today_sales_summary = ::Accounting::SessionSalesSummary.for_session(@today_session)
+      end
       load_shift_orders if @tab == "orders"
     end
 
     def open_drawer
       authorize CashDrawerSession, :open_drawer?
 
-      if current_user.open_cash_drawer_session
+      if @pos_location.blank?
+        return redirect_to pos_shift_path, alert: t("flash.pos.shift.select_branch_first")
+      end
+
+      if current_user.open_cash_drawer_session(location: @pos_location)
         return redirect_to pos_shift_path, alert: t("flash.pos.shift.drawer_already_open")
       end
 
@@ -34,7 +42,8 @@ module Pos
       session = CashDrawerSession.create!(
         user: current_user,
         treasury: treasury,
-        session_date: BusinessDay.today,
+        location: @pos_location,
+        session_date: BusinessDay.today(location: @pos_location),
         opening_float_cents: (params[:opening_float].to_f * 100).to_i,
         status: "open"
       )
@@ -63,12 +72,10 @@ module Pos
 
     def count
       authorize @open_session, :count?
-      ::Accounting::CashReconciliationService.new(@open_session).compute_expected!
+      service = ::Accounting::CashReconciliationService.new(@open_session)
+      service.compute_expected!
+      @sales_summary = service.sales_summary
       @requires_manager_pin = false
-      @digital_payment_totals = load_digital_payment_totals
-      @payment_method_treasury_map = PaymentMethodTreasury::SUPPORTED_METHODS.index_with do |method|
-        PaymentMethodTreasury.find_by(payment_method: method)&.treasury
-      end
     end
 
     def reconcile
@@ -79,7 +86,8 @@ module Pos
         return redirect_to count_pos_shift_path, alert: t("flash.pos.shift.count_required")
       end
 
-      expected = ::Accounting::CashReconciliationService.new(@open_session).compute_expected!
+      service = ::Accounting::CashReconciliationService.new(@open_session)
+      expected = service.compute_expected!
       variance = counted_cents - expected
 
       if variance.abs > ::Accounting::CashReconciliationService::VARIANCE_ALERT_THRESHOLD_CENTS &&
@@ -87,11 +95,12 @@ module Pos
         @requires_manager_pin = true
         @variance_cents = variance
         @counted_cents = counted_cents
+        @sales_summary = service.sales_summary
         flash.now[:alert] = t("flash.pos.shift.manager_pin_required")
         return render :count, status: :unprocessable_entity
       end
 
-      ::Accounting::CashReconciliationService.new(@open_session).reconcile!(counted_cents)
+      service.reconcile!(counted_cents)
       redirect_to pos_shift_path, notice: t("flash.accounting.drawer_reconciled_to_treasury",
             treasury: @open_session.treasury.name)
     end
@@ -119,7 +128,7 @@ module Pos
     end
 
     def set_open_session
-      @open_session = current_user.open_cash_drawer_session
+      @open_session = current_user.open_cash_drawer_session(location: @pos_location)
       return if @open_session
 
       redirect_to pos_shift_path, alert: t("flash.pos.shift.no_open_drawer")
@@ -149,18 +158,6 @@ module Pos
           .order(created_at: :desc)
       else
         Order.none
-      end
-    end
-
-    def load_digital_payment_totals
-      session_start = @open_session.created_at
-      session_end   = Time.current
-      Payment::DIGITAL_WALLET_METHODS.index_with do |method|
-        Payment.joins(:order)
-          .where(orders: { user_id: @open_session.user_id })
-          .where(payment_method: method, status: "completed")
-          .where(created_at: session_start..session_end)
-          .sum(:amount_cents).to_i
       end
     end
 

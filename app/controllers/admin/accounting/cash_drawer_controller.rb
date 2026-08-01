@@ -6,8 +6,12 @@ module Admin
       before_action :set_session, only: %i[count reconcile]
 
       def index
-        @date = params[:date]&.to_date || BusinessDay.today
-        @sessions = CashDrawerSession.where(session_date: @date).includes(:user, :treasury).order(:created_at)
+        @locations = Location.active.branches.ordered
+        @location = @locations.find { |l| l.id == params[:location_id] } || @locations.first
+        @date = params[:date]&.to_date || BusinessDay.today(location: @location)
+        sessions = CashDrawerSession.where(session_date: @date).includes(:user, :treasury, :location).order(:created_at)
+        sessions = sessions.where(location_id: @location.id) if @location
+        @sessions = sessions
         @drawer_treasuries = Treasury.active.cash_drawers.ordered
         @cashiers = User.active.includes(:assigned_treasury).order(:name)
         @default_user = current_user
@@ -19,16 +23,19 @@ module Admin
       def open_session
         user = User.active.find(params[:user_id].presence || current_user.id)
         treasury = resolve_open_treasury(user)
+        location = Location.active.branches.find(params[:location_id])
         @session = CashDrawerSession.create!(
           user: user,
           treasury: treasury,
-          session_date: BusinessDay.today,
+          location: location,
+          session_date: BusinessDay.today(location: location),
           opening_float_cents: (params[:opening_float].to_f * 100).to_i,
           status: "open"
         )
         ::Accounting::CashReconciliationService.new(@session).compute_expected!
         ::Accounting::TreasuryLedgerService.sync_drawer_open!(@session)
-        redirect_to admin_accounting_cash_drawer_index_path, notice: t("flash.accounting.drawer_opened")
+        redirect_to admin_accounting_cash_drawer_index_path(date: @session.session_date, location_id: location.id),
+              notice: t("flash.accounting.drawer_opened")
       rescue ActiveRecord::RecordInvalid => e
         redirect_to admin_accounting_cash_drawer_index_path, alert: e.record.errors.full_messages.to_sentence
       rescue ActiveRecord::RecordNotFound
@@ -36,7 +43,9 @@ module Admin
       end
 
       def count
-        ::Accounting::CashReconciliationService.new(@session).compute_expected!
+        service = ::Accounting::CashReconciliationService.new(@session)
+        service.compute_expected!
+        @sales_summary = service.sales_summary
       end
 
       def reconcile

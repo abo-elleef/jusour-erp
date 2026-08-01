@@ -1,0 +1,36 @@
+<%# locals: summary:, compact: false %>
+<% compact = local_assigns.fetch(:compact, false) %>
+<div class="<%= compact ? "space-y-2 text-sm" : "rounded-2xl border border-gray-200 bg-white p-4 mb-6 text-sm space-y-2.5" %>">
+  <% unless compact %>
+    <p class="font-semibold text-gray-900 text-xs uppercase tracking-wide mb-1">
+      <%= t("pos.shift.sales_summary_title") %>
+    </p>
+  <% end %>
+
+  <div class="flex justify-between gap-3">
+    <span class="text-gray-600"><%= t("accounting.cash_drawer.opening_float") %></span>
+    <span class="tabular-nums font-medium text-gray-900"><%= format_money(summary.opening_float_cents) %></span>
+  </div>
+  <div class="flex justify-between gap-3">
+    <span class="text-gray-600"><%= payment_method_label("cash") %></span>
+    <span class="tabular-nums font-medium text-gray-900"><%= format_money(summary.cash_net_cents) %></span>
+  </div>
+  <div class="flex justify-between gap-3">
+    <span class="text-gray-600"><%= payment_method_label("instapay") %></span>
+    <span class="tabular-nums font-medium text-gray-900"><%= format_money(summary.instapay_cents) %></span>
+  </div>
+  <div class="flex justify-between gap-3">
+    <span class="text-gray-600"><%= payment_method_label("vodafone_cash") %></span>
+    <span class="tabular-nums font-medium text-gray-900"><%= format_money(summary.vodafone_cash_cents) %></span>
+  </div>
+
+  <div class="flex justify-between gap-3 pt-2 border-t border-gray-100 font-semibold">
+    <span class="text-gray-800"><%= t("pos.shift.total_sales") %></span>
+    <span class="tabular-nums text-gray-900"><%= format_money(summary.total_sales_cents) %></span>
+  </div>
+
+  <% unless compact %>
+    <p class="text-xs text-gray-500 pt-1"><%= t("pos.shift.sales_summary_hint") %></p>
+    <p class="text-xs text-gray-500"><%= t("pos.shift.expected_cash_line", amount: format_money(summary.expected_cash_cents)) %></p>
+  <% end %>
+</div>

@@ -1,3 +1,16 @@
+<% if @business_day.present? && @pos_location.present? %>
+  <div class="rounded-2xl border border-gray-200 bg-white px-4 py-3 mb-4 text-sm text-gray-700 flex flex-wrap items-center justify-between gap-2">
+    <span>
+      <%= t("pos.shift.business_day_badge",
+            date: l(@business_day, format: :long),
+            branch: @pos_location.name) %>
+      <% if BusinessDay.manual?(location: @pos_location) %>
+        <span class="text-xs text-amber-700 ms-1">(<%= t("accounting.business_days.mode_manual") %>)</span>
+      <% end %>
+    </span>
+  </div>
+<% end %>
+
 <% if @unpaid_orders_count.positive? %>
   <div class="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 mb-4 text-sm text-amber-900" role="alert">
     <%= t("pos.shift.unpaid_orders_warning", count: @unpaid_orders_count) %>
@@ -55,17 +68,22 @@
 <% else %>
   <% if @today_session&.status == "reconciled" %>
     <section class="rounded-2xl border border-green-200 bg-green-50/60 overflow-hidden mb-6">
-      <div class="p-5 space-y-2 text-sm">
+      <div class="p-5 space-y-3 text-sm">
         <p class="font-semibold text-green-900"><%= t("pos.shift.drawer_reconciled") %></p>
-        <p class="text-green-800 tabular-nums">
-          <%= t("accounting.cash_drawer.expected") %>: <%= number_with_precision(@today_session.expected_cash_cents.to_f / 100, precision: 2, delimiter: ',') %>
-        </p>
-        <p class="text-green-800 tabular-nums">
-          <%= t("accounting.cash_drawer.counted") %>: <%= number_with_precision(@today_session.counted_cash_cents.to_f / 100, precision: 2, delimiter: ',') %>
-        </p>
-        <p class="text-green-800 tabular-nums">
-          <%= t("accounting.cash_drawer.variance") %>: <%= number_with_precision(@today_session.variance_cents.to_f / 100, precision: 2, delimiter: ',') %>
-        </p>
+        <% if @today_sales_summary %>
+          <%= render "shared/session_sales_summary", summary: @today_sales_summary, compact: true %>
+        <% end %>
+        <div class="pt-2 border-t border-green-200/80 space-y-1 text-green-800">
+          <p class="tabular-nums">
+            <%= t("accounting.cash_drawer.expected") %>: <%= format_money(@today_session.expected_cash_cents) %>
+          </p>
+          <p class="tabular-nums">
+            <%= t("accounting.cash_drawer.counted") %>: <%= format_money(@today_session.counted_cash_cents) %>
+          </p>
+          <p class="tabular-nums">
+            <%= t("accounting.cash_drawer.variance") %>: <%= format_money(@today_session.variance_cents) %>
+          </p>
+        </div>
       </div>
     </section>
   <% end %>

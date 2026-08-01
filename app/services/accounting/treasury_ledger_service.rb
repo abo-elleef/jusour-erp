@@ -146,19 +146,13 @@ module Accounting
     def sync_session_online_payments!(session)
       remove_for_source(session, kinds: %w[online_payment])
 
-      session_start = session.created_at
-      session_end   = session.updated_at
+      summary = SessionSalesSummary.for_session(session)
 
       Payment::DIGITAL_WALLET_METHODS.each do |method|
         mapping = PaymentMethodTreasury.find_by(payment_method: method)
         next unless mapping
 
-        total_cents = Payment.joins(:order)
-          .where(orders: { user_id: session.user_id })
-          .where(payment_method: method, status: "completed")
-          .where(created_at: session_start..session_end)
-          .sum(:amount_cents).to_i
-
+        total_cents = summary.digital_totals.fetch(method, 0)
         next if total_cents.zero?
 
         record!(

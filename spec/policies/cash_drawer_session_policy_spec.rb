@@ -4,6 +4,7 @@ require "rails_helper"
 
 RSpec.describe CashDrawerSessionPolicy do
   let(:company) { create(:company) }
+  let(:branch) { create(:location, company: company) }
   let(:cashier) { create(:user, company: company, role: "cashier") }
   let(:other_cashier) { create(:user, company: company, role: "cashier", email: "other@example.com") }
   let(:manager) { create(:user, :manager, company: company) }
@@ -20,6 +21,7 @@ RSpec.describe CashDrawerSessionPolicy do
     CashDrawerSession.create!(
       user: cashier,
       treasury: treasury,
+      location: branch,
       session_date: Date.current,
       opening_float_cents: 10_000,
       status: "open"

@@ -18,6 +18,8 @@ class Location < ApplicationRecord
   has_many :orders, dependent: :nullify
   has_many :vendor_invoices, dependent: :restrict_with_error
   has_many :printers, dependent: :restrict_with_error
+  has_many :cash_drawer_sessions, dependent: :nullify
+  has_many :location_operating_days, dependent: :destroy
   has_many :outgoing_stock_transfers, class_name: "StockTransfer", foreign_key: :from_location_id, dependent: :restrict_with_error
   has_many :incoming_stock_transfers, class_name: "StockTransfer", foreign_key: :to_location_id, dependent: :restrict_with_error
 
@@ -25,8 +27,13 @@ class Location < ApplicationRecord
   validates :slug, presence: true, uniqueness: { scope: :company_id },
     format: { with: /\A[a-z0-9\-]+\z/ }
   validates :location_type, presence: true, inclusion: { in: TYPES }
+  validates :business_day_start_hour,
+            numericality: { only_integer: true, in: 0..23, allow_nil: true }
+  validates :business_day_mode, inclusion: { in: BusinessDay::MODES }
 
   before_validation :generate_slug, if: -> { slug.blank? && name.present? }
+  before_validation :normalize_business_day_start_hour
+  before_validation :normalize_business_day_mode
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }
@@ -36,6 +43,7 @@ class Location < ApplicationRecord
   scope :publicly_accessible, -> { active.branches.public_menu_enabled }
 
   before_validation :clear_public_menu_for_non_branches
+  before_validation :clear_business_day_settings_for_non_branches
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[name location_type active]
@@ -47,6 +55,22 @@ class Location < ApplicationRecord
 
   def branch?
     location_type == "branch"
+  end
+
+  def effective_business_day_start_hour
+    BusinessDay.start_hour(location: self)
+  end
+
+  def business_day_start_hour_overridden?
+    business_day_start_hour.present?
+  end
+
+  def manual_business_day?
+    BusinessDay.manual?(location: self)
+  end
+
+  def automatic_business_day?
+    BusinessDay.automatic?(location: self)
   end
 
   def ingredient_stock(ingredient)
@@ -71,6 +95,21 @@ class Location < ApplicationRecord
 
   def clear_public_menu_for_non_branches
     self.public_menu_enabled = false unless branch?
+  end
+
+  def clear_business_day_settings_for_non_branches
+    return if branch?
+
+    self.business_day_start_hour = nil
+    self.business_day_mode = BusinessDay::DEFAULT_MODE
+  end
+
+  def normalize_business_day_start_hour
+    self.business_day_start_hour = nil if business_day_start_hour.blank?
+  end
+
+  def normalize_business_day_mode
+    self.business_day_mode = BusinessDay::DEFAULT_MODE if business_day_mode.blank?
   end
 
   def generate_slug

@@ -10,18 +10,10 @@
       <h2 class="text-sm font-semibold text-gray-900"><%= t("settings.operations.title") %></h2>
       <p class="text-xs text-gray-500 mt-0.5"><%= t("settings.operations.hint") %></p>
     </div>
-    <div class="p-5">
-      <%= form_with url: admin_settings_path, method: :patch, class: "space-y-4" do %>
-        <div>
-          <%= label_tag :business_day_start_hour, t("settings.operations.business_day_start_hour"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-          <div class="flex items-center gap-2">
-            <%= number_field_tag :business_day_start_hour, @business_day_start_hour, min: 0, max: 23, class: "#{pos_input_class} max-w-28" %>
-            <span class="text-sm text-gray-500"><%= t("settings.operations.oclock") %></span>
-          </div>
-          <p class="text-xs text-gray-500 mt-1.5"><%= t("settings.operations.business_day_hint") %></p>
-        </div>
-        <%= submit_tag t("actions.save"), class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
-      <% end %>
+    <div class="p-5 text-sm text-gray-700">
+      <p><%= t("settings.operations.moved_to_business_days") %></p>
+      <%= link_to t("accounting.nav.business_days"), admin_accounting_business_days_path,
+            class: "inline-flex mt-3 text-sm font-semibold text-amber-700 hover:underline" %>
     </div>
   </section>
 

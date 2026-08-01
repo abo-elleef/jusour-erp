@@ -39,6 +39,20 @@ module Admin
         @payments_by_method = settled.group_by(&:payment_method)
                                      .transform_values { |ps| ps.sum(&:amount_cents) }
                                      .sort_by { |_method, cents| -cents }
+
+        @sales_summary = ::Accounting::SessionSalesSummary.for_user_window(
+          user_id: @shift.user_id,
+          start_time: @shift.clocked_in_at,
+          end_time: @shift.orders_ended_at
+        )
+
+        @drawer_session = CashDrawerSession
+          .where(user_id: @shift.user_id, session_date: BusinessDay.for(@shift.clocked_in_at))
+          .order(created_at: :desc)
+          .first
+        if @drawer_session
+          @drawer_sales_summary = ::Accounting::SessionSalesSummary.for_session(@drawer_session)
+        end
       end
 
       def clock_in
