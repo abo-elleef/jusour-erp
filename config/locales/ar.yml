@@ -3081,6 +3081,7 @@ ar:
       status: "الحالة"
       status_recorded: "مُسجّل"
       status_draft: "مسودة"
+      salary_link: "رابط راتب الموظف"
       record_all: "تسجيل الكل"
       record_all_confirm: "تسجيل رواتب %{count} موظفين؟ سيتم حفظ المبالغ لهذا الشهر."
       recorded_summary: "%{recorded} / %{total} مُسجّل"

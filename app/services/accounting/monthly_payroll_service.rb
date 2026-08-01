@@ -92,7 +92,7 @@ module Accounting
     def self.for_all_staff(payroll_month)
       snapshots = PayrollSnapshot.for_month(payroll_month).index_by(&:user_id)
 
-      User.order(:name).filter_map do |user|
+      User.active.order(:name).filter_map do |user|
         next unless payroll_row?(user, payroll_month, snapshots[user.id])
 
         new(user, payroll_month).call

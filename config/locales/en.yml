@@ -3055,6 +3055,7 @@ en:
       status: "Status"
       status_recorded: "Recorded"
       status_draft: "Draft"
+      salary_link: "Staff salary link"
       record_all: "Record all"
       record_all_confirm: "Record payroll for %{count} staff members? Locked amounts will be saved for this month."
       recorded_summary: "%{recorded} / %{total} recorded"

@@ -2,6 +2,8 @@
 
 module Admin
   class BaseController < ApplicationController
+    include PayrollMonthParam
+
     before_action :require_admin!
 
     layout "admin"

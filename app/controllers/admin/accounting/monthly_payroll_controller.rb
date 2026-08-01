@@ -77,16 +77,6 @@ module Admin
         params[:direction].to_s == "desc" ? "desc" : ::Accounting::MonthlyPayrollService::INDEX_DEFAULT_SORT_DIRECTION
       end
 
-      def parse_payroll_month
-        if params[:payroll_month].present?
-          Date.parse("#{params[:payroll_month]}-01")
-        else
-          Date.current.beginning_of_month
-        end
-      rescue ArgumentError
-        Date.current.beginning_of_month
-      end
-
       def resolve_bulk_treasury
         treasury_id = params.dig(:payroll_snapshot, :treasury_id)
         return if treasury_id.blank?

@@ -41,16 +41,6 @@ module Admin
         @user = User.find(params[:user_id])
       end
 
-      def parse_payroll_month
-        if params[:payroll_month].present?
-          Date.parse("#{params[:payroll_month]}-01")
-        else
-          Date.current.beginning_of_month
-        end
-      rescue ArgumentError
-        Date.current.beginning_of_month
-      end
-
       def snapshot_params
         params.fetch(:payroll_snapshot, {}).permit(:treasury_id, :paid_on)
       end

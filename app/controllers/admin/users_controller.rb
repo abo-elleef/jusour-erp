@@ -102,7 +102,7 @@ module Admin
     def load_payroll_context
       return unless current_user.admin_access?
 
-      @payroll_month = parse_payroll_month_param
+      @payroll_month = parse_payroll_month
       @payroll_sort = parse_payroll_sort_param
       @payroll_direction = parse_payroll_direction_param
       @payroll_summary = @user.monthly_payroll(@payroll_month, sort: @payroll_sort, direction: @payroll_direction)
@@ -126,16 +126,6 @@ module Admin
 
     def parse_payroll_direction_param
       params[:payroll_direction].to_s == "asc" ? "asc" : PayrollAdjustment::DEFAULT_SORT_DIRECTION
-    end
-
-    def parse_payroll_month_param
-      if params[:payroll_month].present?
-        Date.parse("#{params[:payroll_month]}-01")
-      else
-        Date.current.beginning_of_month
-      end
-    rescue ArgumentError
-      Date.current.beginning_of_month
     end
 
     def user_params

@@ -127,6 +127,17 @@ RSpec.describe Accounting::MonthlyPayrollService do
     end
   end
 
+  describe ".for_all_staff" do
+    it "includes only active staff" do
+      active = create(:user, company: company, name: "Active Staff", monthly_salary_cents: 300_000)
+      create(:user, company: company, name: "Former Staff", monthly_salary_cents: 300_000, active: false)
+
+      rows = described_class.for_all_staff(payroll_month)
+
+      expect(rows.map { |row| row.user.id }).to eq([active.id])
+    end
+  end
+
   describe ".sort_rows" do
     let(:low_row) do
       described_class.new(staff, payroll_month).build_calculated

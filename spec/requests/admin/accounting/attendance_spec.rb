@@ -4,6 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Admin::Accounting::Attendance", type: :request do
   include Devise::Test::IntegrationHelpers
+  include ActiveSupport::Testing::TimeHelpers
 
   let(:company) { Current.company }
   let(:owner)   { create(:user, :owner, company: company) }
@@ -17,6 +18,22 @@ RSpec.describe "Admin::Accounting::Attendance", type: :request do
       get admin_accounting_attendance_path(payroll_month: "2026-04")
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(staff.name)
+    end
+
+    it "defaults to the previous month through the 5th of the new month" do
+      travel_to Date.new(2026, 8, 1) do
+        get admin_accounting_attendance_path
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include('value="2026-07"')
+      end
+    end
+
+    it "defaults to the current month from the 6th onward" do
+      travel_to Date.new(2026, 8, 6) do
+        get admin_accounting_attendance_path
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include('value="2026-08"')
+      end
     end
   end
 

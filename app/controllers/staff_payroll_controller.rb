@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class StaffPayrollController < ApplicationController
+  include PayrollMonthParam
+
   skip_before_action :authenticate_user!
 
   before_action :set_user
@@ -50,16 +52,6 @@ class StaffPayrollController < ApplicationController
 
     @payroll_month = parse_payroll_month
     render :pin
-  end
-
-  def parse_payroll_month
-    if params[:payroll_month].present?
-      Date.parse("#{params[:payroll_month]}-01")
-    else
-      Date.current.beginning_of_month
-    end
-  rescue ArgumentError
-    Date.current.beginning_of_month
   end
 
   def pin_access_granted?

@@ -117,18 +117,17 @@
           <th class="p-3 text-center">
             <%= monthly_payroll_sort_link(t("accounting.monthly_payroll.status"), "status", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
           </th>
+          <th class="p-3 text-start"><%= t("accounting.monthly_payroll.salary_link") %></th>
           <th class="p-3 pe-5 text-end"><%= t("staff.index.table.actions") %></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
         <% if @rows.any? %>
+          <% month_param = @payroll_month.strftime("%Y-%m") %>
           <% @rows.each do |row| %>
             <tr class="hover:bg-gray-100">
               <td class="p-3 ps-5 font-medium w-48">
                 <%= row.user.name %>
-                <% unless row.user.active? %>
-                  <span class="ms-1.5 text-xs font-semibold text-gray-400 border border-gray-200 rounded-full px-2 py-0.5"><%= t("staff.show.inactive") %></span>
-                <% end %>
               </td>
               <td class="p-3 text-end tabular-nums">
                 <%= format_money(row.attendance_pay_cents) %>
@@ -147,9 +146,34 @@
                   <span class="text-xs font-semibold uppercase px-2.5 py-1 rounded-full bg-amber-100 text-amber-800"><%= t("accounting.monthly_payroll.status_draft") %></span>
                 <% end %>
               </td>
+              <td class="p-3 align-middle">
+                <% if row.user.payroll_access_token.present? %>
+                  <% portal_url = staff_payroll_url(token: row.user.payroll_access_token, payroll_month: month_param) %>
+                  <div class="flex items-center gap-1.5 max-w-[16rem]"
+                       data-controller="clipboard"
+                       data-clipboard-text-value="<%= portal_url %>"
+                       data-clipboard-copied-label-value="<%= t("staff.payroll_portal.copied") %>">
+                    <input type="text"
+                           readonly
+                           value="<%= portal_url %>"
+                           class="min-w-0 flex-1 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 text-[11px] text-gray-600 font-mono truncate"
+                           data-clipboard-target="source"
+                           data-action="click->clipboard#copy"
+                           onclick="this.select()"
+                           aria-label="<%= t("accounting.monthly_payroll.salary_link") %>">
+                    <button type="button"
+                            data-action="clipboard#copy"
+                            data-clipboard-target="button"
+                            class="shrink-0 text-xs font-semibold text-amber-700 hover:bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 transition-colors">
+                      <%= t("staff.payroll_portal.copy_link") %>
+                    </button>
+                  </div>
+                <% else %>
+                  <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+                <% end %>
+              </td>
               <td class="p-3 pe-5 text-end whitespace-nowrap">
                 <div class="inline-flex gap-2">
-                  <% if row.user.active? || row.finalized %>
                     <%= render "admin/users/payroll_finalize_button",
                           user: row.user,
                           payroll_month: @payroll_month,
@@ -158,8 +182,7 @@
                           compact: true,
                           treasuries: @treasuries,
                           default_treasury: @default_treasury %>
-                  <% end %>
-                  <%= link_to t("staff.payroll.manage"), admin_user_path(row.user, payroll_month: @payroll_month.strftime("%Y-%m")),
+                  <%= link_to t("staff.payroll.manage"), admin_user_path(row.user, payroll_month: month_param),
                         class: "inline-flex text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors" %>
                 </div>
               </td>
@@ -167,7 +190,7 @@
           <% end %>
         <% else %>
           <tr>
-            <td colspan="8" class="p-8 text-center text-gray-500"><%= t("accounting.monthly_payroll.empty") %></td>
+            <td colspan="9" class="p-8 text-center text-gray-500"><%= t("accounting.monthly_payroll.empty") %></td>
           </tr>
         <% end %>
       </tbody>
@@ -181,6 +204,7 @@
             <td class="p-3 text-end tabular-nums text-blue-700">−<%= format_money(@rows.sum(&:advances_cents)) %></td>
             <td class="p-3 text-end tabular-nums text-amber-800"><%= format_money(@rows.sum(&:remaining_pay_cents)) %></td>
             <td class="p-3 text-center text-xs text-gray-500"><%= t("accounting.monthly_payroll.recorded_summary", recorded: @finalized_count, total: @rows.size) %></td>
+            <td class="p-3"></td>
             <td class="p-3 pe-5"></td>
           </tr>
         </tfoot>

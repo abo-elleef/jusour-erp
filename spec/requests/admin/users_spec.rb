@@ -105,6 +105,20 @@ RSpec.describe "Admin::Users", type: :request do
       end
     end
 
+    describe "GET /admin/users/:id payroll month default" do
+      include ActiveSupport::Testing::TimeHelpers
+
+      it "defaults the payroll section to the previous month through the 5th" do
+        staff = create(:user, company: company, monthly_salary_cents: 300_000)
+
+        travel_to Date.new(2026, 8, 1) do
+          get admin_user_path(staff)
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include('value="2026-07"')
+        end
+      end
+    end
+
     describe "DELETE /admin/users/:id" do
       it "deactivates a staff member" do
         staff = create(:user, company: company)

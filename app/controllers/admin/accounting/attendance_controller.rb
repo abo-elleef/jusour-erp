@@ -7,7 +7,7 @@ module Admin
     # summaries so the pay column stays live.
     class AttendanceController < BaseController
       def index
-        @payroll_month = parse_month
+        @payroll_month = parse_payroll_month
         @filter_locations = filterable_locations
         @location_filter = params[:location_id].to_s
         @company_wide_staff = @location_filter == COMPANY_WIDE_FILTER
@@ -68,7 +68,7 @@ module Admin
           apply_cell(user, date, cell[:symbol].to_s.strip)
         end
 
-        month ||= parse_month
+        month ||= parse_payroll_month
         summaries = affected.uniq.index_with do |user|
           summary_json(::Accounting::AttendanceMonthService.new(user, month).call)
             .merge(counts: symbol_counts_for(user, month))
@@ -199,16 +199,6 @@ module Admin
 
       def format_days(value)
         helpers.number_with_precision(value, precision: 2, strip_insignificant_zeros: true)
-      end
-
-      def parse_month
-        if params[:payroll_month].present?
-          Date.parse("#{params[:payroll_month]}-01")
-        else
-          Date.current.beginning_of_month
-        end
-      rescue ArgumentError
-        Date.current.beginning_of_month
       end
     end
   end
