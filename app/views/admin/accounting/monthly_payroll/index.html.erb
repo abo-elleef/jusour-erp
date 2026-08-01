@@ -132,10 +132,8 @@
               </td>
               <td class="p-3 text-end tabular-nums">
                 <%= format_money(row.attendance_pay_cents) %>
-                <% if row.attendance_recorded %>
-                  <div class="text-[11px] font-normal text-gray-400 whitespace-nowrap">
-                    <%= number_with_precision(row.payable_days, precision: 2, strip_insignificant_zeros: true) %><%= t("accounting.monthly_payroll.days_short") %><%= " +#{number_with_precision(row.bonus_days, precision: 2, strip_insignificant_zeros: true)}" if row.bonus_days.to_d.positive? %><%= " −#{number_with_precision(row.penalty_days, precision: 2, strip_insignificant_zeros: true)}" if row.penalty_days.to_d.positive? %>
-                  </div>
+                <% if (days_label = payroll_attendance_days_label(row)) %>
+                  <div class="text-[11px] font-normal text-gray-400 whitespace-nowrap"><%= days_label %></div>
                 <% end %>
               </td>
               <td class="p-3 text-end tabular-nums text-red-700">−<%= format_money(row.penalties_cents) %></td>

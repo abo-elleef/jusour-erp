@@ -32,14 +32,6 @@
       <% end %>
     </div>
     <div class="flex flex-wrap items-end gap-2">
-      <% unless readonly %>
-        <%= render "admin/users/payroll_finalize_button",
-              user: user,
-              payroll_month: payroll_month,
-              payroll_summary: payroll_summary,
-              treasuries: local_assigns[:treasuries],
-              default_treasury: local_assigns[:default_treasury] %>
-      <% end %>
     <%= form_with url: month_url, method: :get, class: "flex items-end gap-2" do %>
       <div>
         <%= label_tag :payroll_month, t("staff.payroll.month"), class: label_class %>
@@ -54,8 +46,18 @@
 
   <div class="p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 border-b border-gray-100">
     <div class="rounded-xl bg-gray-50 px-4 py-3">
-      <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("staff.payroll.base_salary") %></p>
-      <p class="text-lg font-bold text-gray-900 tabular-nums mt-1"><%= format_money(payroll_summary.base_salary_cents) %></p>
+      <p class="text-xs font-semibold text-gray-500 uppercase">
+        <%= payroll_summary.attendance_recorded ? t("accounting.monthly_payroll.attendance_pay") : t("staff.payroll.base_salary") %>
+      </p>
+      <p class="text-lg font-bold text-gray-900 tabular-nums mt-1"><%= format_money(payroll_summary.attendance_pay_cents) %></p>
+      <% if (days_label = payroll_attendance_days_label(payroll_summary)) %>
+        <p class="text-[11px] font-normal text-gray-400 mt-0.5 whitespace-nowrap"><%= days_label %></p>
+      <% end %>
+      <% if payroll_summary.attendance_recorded && payroll_summary.attendance_pay_cents != payroll_summary.base_salary_cents %>
+        <p class="text-[11px] text-gray-400 mt-0.5">
+          <%= t("staff.payroll.base_salary") %>: <%= format_money(payroll_summary.base_salary_cents) %>
+        </p>
+      <% end %>
     </div>
     <div class="rounded-xl bg-gray-50 px-4 py-3">
       <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("staff.payroll.daily_rate") %></p>

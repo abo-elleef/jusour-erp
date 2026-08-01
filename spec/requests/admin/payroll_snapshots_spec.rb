@@ -96,9 +96,16 @@ RSpec.describe "Admin payroll snapshots", type: :request do
 
       get admin_user_path(staff, payroll_month: payroll_month.strftime("%Y-%m"))
 
+      snapshot = PayrollSnapshot.find_by!(user: staff, payroll_month: payroll_month)
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(I18n.t("staff.payroll.recorded"))
-      expect(PayrollSnapshot.find_by!(user: staff, payroll_month: payroll_month).net_pay_cents).to eq(300_000)
+      expect(response.body).to include(
+        I18n.t(
+          "staff.payroll.recorded_on",
+          date: I18n.l(snapshot.finalized_at.to_date, format: :long),
+          name: owner.name
+        )
+      )
+      expect(snapshot.net_pay_cents).to eq(300_000)
     end
   end
 
@@ -125,8 +132,8 @@ RSpec.describe "Admin payroll snapshots", type: :request do
       expect(response).to redirect_to(admin_user_path(staff, payroll_month: payroll_month.strftime("%Y-%m")))
       follow_redirect!
 
-      expect(response.body).to include(I18n.t("staff.payroll.record_payroll"))
-      expect(response.body).not_to include(I18n.t("staff.payroll.recorded"))
+      expect(response).to have_http_status(:ok)
+      expect(PayrollSnapshot.find_by(user: staff, payroll_month: payroll_month)).to be_nil
     end
 
     it "returns to monthly payroll when requested" do

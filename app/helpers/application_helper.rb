@@ -930,6 +930,21 @@ module ApplicationHelper
     }.compact
   end
 
+  # e.g. "15d +1 −0.5" — matches monthly payroll attendance breakdown.
+  def payroll_attendance_days_label(summary)
+    return unless summary&.attendance_recorded
+
+    label = +"#{number_with_precision(summary.payable_days, precision: 2, strip_insignificant_zeros: true)}"
+    label << t("accounting.monthly_payroll.days_short")
+    if summary.bonus_days.to_d.positive?
+      label << " +#{number_with_precision(summary.bonus_days, precision: 2, strip_insignificant_zeros: true)}"
+    end
+    if summary.penalty_days.to_d.positive?
+      label << " −#{number_with_precision(summary.penalty_days, precision: 2, strip_insignificant_zeros: true)}"
+    end
+    label
+  end
+
   def notification_type_label(type)
     return t("notifications.types.unknown") if type.blank?
 
