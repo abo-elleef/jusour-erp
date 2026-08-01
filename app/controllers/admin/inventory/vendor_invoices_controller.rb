@@ -183,20 +183,15 @@ module Admin
 
       def void
         authorize_inventory!(:destroy)
-        unless @vendor_invoice.amount_paid_cents.zero?
-          redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
-            alert: t("flash.vendor_invoice.cannot_void")
-          return
-        end
 
-        ActiveRecord::Base.transaction do
-          @vendor_invoice.update!(payment_status: "void")
-          ::Accounting::SupplierApLedgerService.reverse_invoice!(
-            invoice: @vendor_invoice,
-            user: current_user
-          )
-        end
+        ::Accounting::UndoVendorInvoiceService.new(
+          invoice: @vendor_invoice,
+          user: current_user
+        ).call
+
         redirect_to admin_inventory_vendor_invoices_path, notice: t("flash.vendor_invoice.voided")
+      rescue ::Accounting::UndoVendorInvoiceService::Error => e
+        redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice), alert: e.message
       end
 
       def attach_invoice_image

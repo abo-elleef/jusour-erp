@@ -21,6 +21,10 @@ module Accounting
       new(invoice.supplier).reverse_invoice!(invoice, user)
     end
 
+    def self.reverse_payment!(payment:, user:)
+      new(payment.vendor_invoice.supplier).reverse_payment!(payment, user)
+    end
+
     def initialize(supplier)
       @supplier = supplier
     end
@@ -72,6 +76,18 @@ module Accounting
           end
         end
       JournalEntryService.reverse_vendor_invoice!(invoice)
+    end
+
+    def reverse_payment!(payment, _user)
+      TreasuryTransaction
+        .where(source_record: payment, kind: "ap_payment")
+        .find_each do |txn|
+          txn.treasury.with_lock do
+            txn.treasury.apply_balance_delta!(-txn.amount_cents)
+            txn.destroy!
+          end
+        end
+      JournalEntryService.destroy_for_source!(payment)
     end
 
     # Creates the AP treasury for the supplier if it does not already exist.
