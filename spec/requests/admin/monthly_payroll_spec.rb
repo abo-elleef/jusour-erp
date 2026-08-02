@@ -51,6 +51,16 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       )
     end
 
+    it "shows base salary and attendance pay side by side" do
+      create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000)
+
+      get admin_accounting_monthly_payroll_path, params: { payroll_month: "2026-07" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("accounting.monthly_payroll.base_salary"))
+      expect(response.body).to include(I18n.t("accounting.monthly_payroll.attendance_pay"))
+    end
+
     it "filters staff by location" do
       downtown = create(:location, company: company, name: "Downtown")
       uptown = create(:location, company: company, name: "Uptown")
@@ -77,6 +87,45 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(response.body.index("Higher Paid")).to be < response.body.index("Lower Paid")
+    end
+  end
+
+  describe "GET /admin/accounting/monthly_payroll/export" do
+    before { sign_in owner }
+
+    it "exports CSV with base salary and attendance pay columns" do
+      create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000)
+
+      get admin_accounting_monthly_payroll_export_path, params: { payroll_month: "2026-07" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.headers["Content-Disposition"]).to include("monthly-payroll-2026-07.csv")
+      expect(response.body).to include(I18n.t("accounting.monthly_payroll.base_salary"))
+      expect(response.body).to include(I18n.t("accounting.monthly_payroll.attendance_pay"))
+    end
+
+    it "includes the location slug in the filename when filtered" do
+      downtown = create(:location, company: company, name: "Downtown", slug: "downtown")
+      create(:location, company: company, name: "Uptown", slug: "uptown")
+      create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000)
+
+      get admin_accounting_monthly_payroll_export_path,
+        params: { payroll_month: "2026-07", location_id: downtown.id }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.headers["Content-Disposition"]).to include("monthly-payroll-2026-07-downtown.csv")
+    end
+
+    it "includes company-wide in the filename for that filter" do
+      create(:location, company: company, name: "Downtown")
+      create(:location, company: company, name: "Uptown")
+      create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000, all_locations: true)
+
+      get admin_accounting_monthly_payroll_export_path,
+        params: { payroll_month: "2026-07", location_id: StaffLocationFilter::COMPANY_WIDE_FILTER }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.headers["Content-Disposition"]).to include("monthly-payroll-2026-07-company-wide.csv")
     end
   end
 end

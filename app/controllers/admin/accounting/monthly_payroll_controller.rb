@@ -20,7 +20,7 @@ module Admin
 
         respond_to do |format|
           format.html
-          format.csv { send_data generate_csv, filename: "monthly-payroll-#{@payroll_month.strftime('%Y-%m')}.csv" }
+          format.csv { send_data generate_csv, filename: export_filename }
         end
       end
 
@@ -62,7 +62,7 @@ module Admin
         @sort_direction = parse_index_sort_direction_param
         @rows = sorted_payroll_rows
         send_data generate_csv,
-          filename: "monthly-payroll-#{@payroll_month.strftime('%Y-%m')}.csv",
+          filename: export_filename,
           type: "text/csv"
       end
 
@@ -88,6 +88,22 @@ module Admin
           payroll_month: @payroll_month.strftime("%Y-%m"),
           location_id: @location_filter.presence
         }.compact
+      end
+
+      def export_filename
+        parts = ["monthly-payroll", @payroll_month.strftime("%Y-%m")]
+        if @company_wide_staff
+          parts << "company-wide"
+        elsif @location
+          parts << location_filename_slug(@location)
+        end
+        "#{parts.join('-')}.csv"
+      end
+
+      def location_filename_slug(location)
+        slug = location.slug.to_s.parameterize.presence
+        slug ||= location.name.to_s.parameterize.presence
+        slug.presence || location.id.to_s
       end
 
       def parse_index_sort_param

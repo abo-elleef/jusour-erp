@@ -115,6 +115,11 @@
           </th>
           <th class="p-3 text-end">
             <div class="flex justify-end">
+              <%= monthly_payroll_sort_link(t("accounting.monthly_payroll.attendance_pay"), "attendance_pay_cents", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
+            </div>
+          </th>
+          <th class="p-3 text-end">
+            <div class="flex justify-end">
               <%= monthly_payroll_sort_link(t("accounting.monthly_payroll.penalties"), "penalties_cents", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
             </div>
           </th>
@@ -147,6 +152,9 @@
             <tr class="hover:bg-gray-100">
               <td class="p-3 ps-5 font-medium w-48">
                 <%= row.user.name %>
+              </td>
+              <td class="p-3 text-end tabular-nums text-gray-700">
+                <%= format_money(row.base_salary_cents) %>
               </td>
               <td class="p-3 text-end tabular-nums">
                 <%= format_money(row.attendance_pay_cents) %>
@@ -209,7 +217,7 @@
           <% end %>
         <% else %>
           <tr>
-            <td colspan="9" class="p-8 text-center text-gray-500"><%= t("accounting.monthly_payroll.empty") %></td>
+            <td colspan="10" class="p-8 text-center text-gray-500"><%= t("accounting.monthly_payroll.empty") %></td>
           </tr>
         <% end %>
       </tbody>
@@ -218,6 +226,7 @@
           <tr>
             <td class="p-3 ps-5"><%= t("accounting.monthly_payroll.totals") %></td>
             <td class="p-3 text-end tabular-nums"><%= format_money(@rows.sum(&:base_salary_cents)) %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(@rows.sum(&:attendance_pay_cents)) %></td>
             <td class="p-3 text-end tabular-nums text-red-700">−<%= format_money(@rows.sum(&:penalties_cents)) %></td>
             <td class="p-3 text-end tabular-nums text-emerald-700">+<%= format_money(@rows.sum(&:bonuses_cents)) %></td>
             <td class="p-3 text-end tabular-nums text-blue-700">−<%= format_money(@rows.sum(&:advances_cents)) %></td>
