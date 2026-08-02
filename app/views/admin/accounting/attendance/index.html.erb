@@ -30,7 +30,7 @@
               options_for_select(
                 [
                   [t("accounting.attendance.all_locations"), ""],
-                  [t("accounting.attendance.company_wide_staff"), "company_wide"]
+                  [t("accounting.attendance.company_wide_staff"), StaffLocationFilter::COMPANY_WIDE_FILTER]
                 ] + @filter_locations.map { |l| [l.name, l.id] },
                 @location_filter
               ),

@@ -46,6 +46,37 @@ RSpec.describe "Admin::Users", type: :request do
         expect(response.body).not_to include("Inactive Staff")
       end
 
+      it "filters staff by location" do
+        downtown = create(:location, company: company, name: "Downtown")
+        uptown = create(:location, company: company, name: "Uptown")
+        branch_staff = create(:user, company: company, name: "Branch Cashier", all_locations: false)
+        branch_staff.locations = [downtown]
+        other_staff = create(:user, company: company, name: "Other Branch", all_locations: false)
+        other_staff.locations = [uptown]
+        create(:user, company: company, name: "Company Wide", all_locations: true)
+
+        get admin_users_path, params: { location_id: downtown.id }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Branch Cashier")
+        expect(response.body).not_to include("Other Branch")
+        expect(response.body).not_to include("Company Wide")
+      end
+
+      it "filters to company-wide staff only" do
+        downtown = create(:location, company: company, name: "Downtown")
+        create(:location, company: company, name: "Uptown")
+        branch_staff = create(:user, company: company, name: "Branch Cashier", all_locations: false)
+        branch_staff.locations = [downtown]
+        create(:user, company: company, name: "Company Wide", all_locations: true)
+
+        get admin_users_path, params: { location_id: StaffLocationFilter::COMPANY_WIDE_FILTER }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Company Wide")
+        expect(response.body).not_to include("Branch Cashier")
+      end
+
       it "sorts staff by name descending" do
         create(:user, company: company, name: "Zara Staff")
         create(:user, company: company, name: "Adam Staff")

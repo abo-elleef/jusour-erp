@@ -5,8 +5,11 @@ require "csv"
 module Admin
   module Accounting
     class MonthlyPayrollController < BaseController
+      include StaffLocationFilter
+
       def index
         @payroll_month = parse_payroll_month
+        load_staff_location_filter
         @sort = parse_index_sort_param
         @sort_direction = parse_index_sort_direction_param
         @rows = sorted_payroll_rows
@@ -25,11 +28,12 @@ module Admin
         authorize PayrollSnapshot, :create?
 
         @payroll_month = parse_payroll_month
+        load_staff_location_filter
         treasury = resolve_bulk_treasury
         paid_on = bulk_paid_on
         finalized = 0
 
-        ::Accounting::MonthlyPayrollService.for_all_staff(@payroll_month).each do |row|
+        payroll_staff_rows.each do |row|
           next unless row.user.active?
           next if row.finalized
 
@@ -44,15 +48,16 @@ module Admin
         end
 
         notice = finalized.positive? ? t("flash.payroll_snapshot.bulk_recorded", count: finalized) : t("flash.payroll_snapshot.all_recorded")
-        redirect_to admin_accounting_monthly_payroll_path(payroll_month: @payroll_month.strftime("%Y-%m")), notice: notice
+        redirect_to admin_accounting_monthly_payroll_path(payroll_index_params), notice: notice
       rescue ActiveRecord::RecordInvalid => e
-        redirect_to admin_accounting_monthly_payroll_path(payroll_month: @payroll_month.strftime("%Y-%m")),
+        redirect_to admin_accounting_monthly_payroll_path(payroll_index_params),
           alert: e.record.errors.full_messages.to_sentence
       end
 
       def export
         authorize :accounting, :export?
         @payroll_month = parse_payroll_month
+        load_staff_location_filter
         @sort = parse_index_sort_param
         @sort_direction = parse_index_sort_direction_param
         @rows = sorted_payroll_rows
@@ -64,8 +69,25 @@ module Admin
       private
 
       def sorted_payroll_rows
-        rows = ::Accounting::MonthlyPayrollService.for_all_staff(@payroll_month)
-        ::Accounting::MonthlyPayrollService.sort_rows(rows, sort: @sort, direction: @sort_direction)
+        ::Accounting::MonthlyPayrollService.sort_rows(
+          payroll_staff_rows,
+          sort: @sort,
+          direction: @sort_direction
+        )
+      end
+
+      def payroll_staff_rows
+        ::Accounting::MonthlyPayrollService.for_all_staff(
+          @payroll_month,
+          users: apply_staff_location_filter(User.active)
+        )
+      end
+
+      def payroll_index_params
+        {
+          payroll_month: @payroll_month.strftime("%Y-%m"),
+          location_id: @location_filter.presence
+        }.compact
       end
 
       def parse_index_sort_param

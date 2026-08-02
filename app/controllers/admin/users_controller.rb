@@ -2,14 +2,17 @@
 
 module Admin
   class UsersController < BaseController
+    include StaffLocationFilter
+
     before_action :set_user, only: %i[show edit update destroy activate create_assigned_treasury]
     before_action :load_drawer_treasuries, only: %i[new create edit update]
 
     def index
       authorize User
+      load_staff_location_filter
 
       scope = policy_scope(User)
-      @q = scope.ransack(params[:q])
+      @q = apply_staff_location_filter(scope).ransack(params[:q])
       @sort = parse_index_sort_param
       @sort_direction = parse_index_sort_direction_param
       @total_count = scope.count
@@ -18,7 +21,7 @@ module Admin
       @accountant_count = scope.where(role: "accountant").count
       @cashier_count = scope.where(role: "cashier").count
       @kitchen_count = scope.where(role: "kitchen").count
-      @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
+      @filtered = ransack_filtered? || @location_filter.present?
       @pagy, @users = pagy(:offset, @q.result.order(@sort => @sort_direction), limit: 25)
     end
 
@@ -126,6 +129,10 @@ module Admin
 
     def parse_payroll_direction_param
       params[:payroll_direction].to_s == "asc" ? "asc" : PayrollAdjustment::DEFAULT_SORT_DIRECTION
+    end
+
+    def ransack_filtered?
+      params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
     end
 
     def user_params

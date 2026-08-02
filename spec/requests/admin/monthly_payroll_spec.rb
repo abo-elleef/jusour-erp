@@ -51,6 +51,24 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       )
     end
 
+    it "filters staff by location" do
+      downtown = create(:location, company: company, name: "Downtown")
+      uptown = create(:location, company: company, name: "Uptown")
+      branch_staff = create(:user, company: company, name: "Branch Cashier", role: "cashier",
+                            monthly_salary_cents: 300_000, all_locations: false)
+      branch_staff.locations = [downtown]
+      other_staff = create(:user, company: company, name: "Other Branch", role: "cashier",
+                           monthly_salary_cents: 300_000, all_locations: false)
+      other_staff.locations = [uptown]
+
+      get admin_accounting_monthly_payroll_path,
+        params: { payroll_month: Date.current.strftime("%Y-%m"), location_id: downtown.id }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to match(%r{font-medium w-48">\s*Branch Cashier\s*</td>})
+      expect(response.body).not_to match(%r{font-medium w-48">\s*Other Branch\s*</td>})
+    end
+
     it "sorts rows by net pay descending" do
       create(:user, company: company, name: "Lower Paid", role: "cashier", monthly_salary_cents: 100_000)
       create(:user, company: company, name: "Higher Paid", role: "kitchen", monthly_salary_cents: 400_000)
