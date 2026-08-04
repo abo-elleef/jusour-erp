@@ -2,7 +2,9 @@
 <html lang="<%= html_lang %>" dir="<%= html_dir %>">
   <head>
     <title><%= content_for?(:title) ? "#{yield(:title)}" : t('app.name') %></title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%# Date filters live in the session; Turbo page cache would show stale defaults. %>
+    <meta name="turbo-cache-control" content="no-cache">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>

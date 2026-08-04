@@ -26,7 +26,8 @@
       </p>
     </div>
     <div class="p-5">
-      <%= form_with url: admin_inventory_reports_variance_path, method: :get, class: "flex flex-wrap items-end gap-4" do %>
+      <%= form_with url: admin_inventory_reports_variance_path, method: :get,
+            class: "flex flex-wrap items-end gap-4", data: { turbo: false } do %>
         <div class="min-w-[10rem]">
           <%= label_tag :start_date, t("accounting.shared.start"), class: label_class %>
           <%= date_field_tag :start_date, @start_date, class: input_class %>

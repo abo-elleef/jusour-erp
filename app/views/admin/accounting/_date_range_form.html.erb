@@ -34,7 +34,8 @@
     <% end %>
   </div>
   <div class="p-5">
-    <%= form_with url: request.path, method: :get, class: "flex flex-wrap items-end gap-4" do %>
+    <%= form_with url: request.path, method: :get, class: "flex flex-wrap items-end gap-4",
+                  data: { turbo: false } do %>
       <% params.except(:start_date, :end_date, :controller, :action, :format).each do |key, value| %>
         <% if value.is_a?(Hash) %>
           <% value.each do |k, v| %>
