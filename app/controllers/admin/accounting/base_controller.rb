@@ -3,6 +3,8 @@
 module Admin
   module Accounting
     class BaseController < Admin::BaseController
+      include SessionDateRange
+
       before_action :authorize_accounting!
 
       private
@@ -13,11 +15,6 @@ module Admin
       def authorize_accounting!
         permission = AccountingNav.permission_for(controller_name)
         raise Pundit::NotAuthorizedError if permission.nil? || !current_user.can?(permission)
-      end
-
-      def parse_date_range(default_start: 7.days.ago.to_date)
-        @start_date = params[:start_date]&.to_date || default_start
-        @end_date = params[:end_date]&.to_date || Date.current
       end
 
       # For each JE line that targets a treasury, apply the balance delta and

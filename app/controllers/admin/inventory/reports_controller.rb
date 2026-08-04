@@ -19,8 +19,7 @@ module Admin
 
       def variance
         authorize_inventory_index!
-        @start_date = params[:start_date].presence&.to_date || 7.days.ago.to_date
-        @end_date = params[:end_date].presence&.to_date || Date.current
+        parse_date_range
 
         result = ::Inventory::IngredientConsumptionService.new(@start_date, @end_date).call
         @completed_orders_count = result[:completed_orders_count]

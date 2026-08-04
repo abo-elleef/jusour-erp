@@ -3,6 +3,8 @@
 module Admin
   module Inventory
     class BaseController < Admin::BaseController
+      include SessionDateRange
+
       before_action :authorize_inventory_access!
 
       private

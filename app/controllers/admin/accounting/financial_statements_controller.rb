@@ -4,8 +4,7 @@ module Admin
   module Accounting
     class FinancialStatementsController < BaseController
       def profit_loss
-        @start_date = params[:start_date]&.to_date || Date.current.beginning_of_year
-        @end_date   = params[:end_date]&.to_date   || Date.current
+        parse_date_range(default_start: Date.current.beginning_of_year)
         @coa = ::Accounting::ChartOfAccountsService.new(start_date: @start_date, end_date: @end_date)
 
         respond_to do |format|
@@ -44,8 +43,7 @@ module Admin
       end
 
       def cash_flow
-        @start_date = params[:start_date]&.to_date || Date.current.beginning_of_year
-        @end_date   = params[:end_date]&.to_date   || Date.current
+        parse_date_range(default_start: Date.current.beginning_of_year)
         @cf = ::Accounting::CashFlowService.new(start_date: @start_date, end_date: @end_date)
 
         respond_to do |format|
