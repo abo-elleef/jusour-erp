@@ -52,10 +52,9 @@ module Accounting
       advances       = @user.payroll_advances.for_month(@payroll_month).ordered
       full_salary    = @user.monthly_salary_cents.to_i
 
-      # Attendance drives the base pay only for attendance-paid roles
-      # (cashier/kitchen); everyone else keeps their fixed monthly salary. If a
-      # month has nothing recorded, fall back to the full salary so legacy months
-      # are unaffected until the grid is used.
+      # Attendance drives base pay for everyone except owners. Owners keep a
+      # fixed monthly salary. If a month has nothing recorded, fall back to the
+      # full salary so legacy months are unaffected until the grid is used.
       attendance     = AttendanceMonthService.new(@user, @payroll_month).call
       recorded       = @user.attendance_paid? && attendance.marked_days.positive?
       attendance_pay = recorded ? attendance.base_pay_cents : full_salary

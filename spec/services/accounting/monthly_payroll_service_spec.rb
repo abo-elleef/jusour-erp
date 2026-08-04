@@ -23,7 +23,7 @@ RSpec.describe Accounting::MonthlyPayrollService do
       expect(result.net_pay_cents).to eq(300_000)
     end
 
-    it "drives net pay from recorded attendance for a cashier" do
+    it "drives net pay from recorded attendance for non-owner staff" do
       15.times do |i|
         StaffAttendance.create!(company: company, user: staff, recorded_by: owner,
                                 attendance_status: present_status, date: payroll_month + i.days)
@@ -35,13 +35,25 @@ RSpec.describe Accounting::MonthlyPayrollService do
       expect(result.net_pay_cents).to eq(150_000)
     end
 
-    it "ignores attendance for non-attendance-paid roles (keeps full salary)" do
+    it "drives pay from attendance for managers and sub-managers" do
       manager = create(:user, :manager, company: company, monthly_salary_cents: 300_000)
       5.times do |i|
         StaffAttendance.create!(company: company, user: manager, recorded_by: owner,
                                 attendance_status: present_status, date: payroll_month + i.days)
       end
       result = described_class.new(manager, payroll_month).call
+      expect(result.attendance_recorded).to be(true)
+      expect(result.attendance_pay_cents).to eq(50_000) # 5 * (300_000 / 30)
+      expect(result.net_pay_cents).to eq(50_000)
+    end
+
+    it "ignores attendance for owners (keeps full salary)" do
+      salaried_owner = create(:user, :owner, company: company, monthly_salary_cents: 300_000)
+      5.times do |i|
+        StaffAttendance.create!(company: company, user: salaried_owner, recorded_by: owner,
+                                attendance_status: present_status, date: payroll_month + i.days)
+      end
+      result = described_class.new(salaried_owner, payroll_month).call
       expect(result.attendance_recorded).to be(false)
       expect(result.net_pay_cents).to eq(300_000)
     end

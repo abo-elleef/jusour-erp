@@ -187,9 +187,10 @@ class User < ApplicationRecord
     end
   end
 
-  # Roles whose pay is driven by daily attendance (vs a fixed monthly salary).
+  # Everyone except owners is paid from daily attendance. Owners keep a fixed
+  # monthly salary even if attendance is logged for them.
   def attendance_paid?
-    cashier? || kitchen?
+    !owner?
   end
 
   # Effective permission keys for this user — the assigned role's, or (during
