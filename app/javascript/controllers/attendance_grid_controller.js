@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 // Spreadsheet-style attendance grid: click a cell and type P/O/A/X, arrow-key
 // navigate, shift-click a range then type to fill, and autosave in batches.
 export default class extends Controller {
-  static targets = ["cell", "summary", "count", "status", "popover", "popoverTitle", "otInput", "penaltyGroup"]
+  static targets = ["cell", "summary", "count", "status", "popover", "popoverTitle", "otInput", "penaltyGroup", "table"]
   static values = {
     url: String,
     adjustmentUrl: String,
@@ -19,6 +19,10 @@ export default class extends Controller {
     this.anchor = null
     this.pending = new Map()
     this.buffer = ""
+    this.pinnedRow = null
+    this.pinnedCol = null
+    this.hoverRow = null
+    this.hoverCol = null
     this.buildGrid()
     this.cellTargets.forEach((cell) => this.renderDots(cell))
 
@@ -26,9 +30,13 @@ export default class extends Controller {
     this.onKeydown = this.handleKeydown.bind(this)
     this.onContextMenu = this.handleContextMenu.bind(this)
     this.onDocDown = this.handleDocPointerDown.bind(this)
+    this.onMouseOver = this.handleMouseOver.bind(this)
+    this.onMouseOut = this.handleMouseOut.bind(this)
     this.element.addEventListener("click", this.onClick)
     this.element.addEventListener("keydown", this.onKeydown)
     this.element.addEventListener("contextmenu", this.onContextMenu)
+    this.element.addEventListener("mouseover", this.onMouseOver)
+    this.element.addEventListener("mouseout", this.onMouseOut)
     document.addEventListener("pointerdown", this.onDocDown)
 
     // Long-press for touch devices.
@@ -43,6 +51,8 @@ export default class extends Controller {
     this.element.removeEventListener("click", this.onClick)
     this.element.removeEventListener("keydown", this.onKeydown)
     this.element.removeEventListener("contextmenu", this.onContextMenu)
+    this.element.removeEventListener("mouseover", this.onMouseOver)
+    this.element.removeEventListener("mouseout", this.onMouseOut)
     this.element.removeEventListener("touchstart", this.onTouchStart)
     this.element.removeEventListener("touchend", this.onTouchEnd)
     this.element.removeEventListener("touchmove", this.onTouchEnd)
@@ -104,6 +114,17 @@ export default class extends Controller {
         this.selectOnly(next)
         next.focus()
       }
+      return
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault()
+      this.pinnedRow = null
+      this.pinnedCol = null
+      this.hoverRow = null
+      this.hoverCol = null
+      this.clearSelectionRings()
+      this.renderCrosshair()
       return
     }
 
@@ -189,6 +210,86 @@ export default class extends Controller {
     this.selected.forEach((c) => c.classList.remove("ring-2", "ring-amber-400", "ring-inset"))
     this.selected = cells
     cells.forEach((c) => c.classList.add("ring-2", "ring-amber-400", "ring-inset"))
+    if (cells.length === 1) {
+      this.pinnedRow = cells[0].closest("tr")
+      this.pinnedCol = cells[0].dataset.date
+    }
+    this.renderCrosshair()
+  }
+
+  pinColumn(event) {
+    const date = event.currentTarget.dataset.date
+    this.pinnedCol = this.pinnedCol === date ? null : date
+    this.pinnedRow = null
+    this.clearSelectionRings()
+    this.renderCrosshair()
+  }
+
+  pinRow(event) {
+    if (event.target.closest("a, button")) return
+    const tr = event.currentTarget.closest("tr")
+    this.pinnedRow = this.pinnedRow === tr ? null : tr
+    this.pinnedCol = null
+    this.clearSelectionRings()
+    this.renderCrosshair()
+  }
+
+  clearSelectionRings() {
+    this.selected.forEach((c) => c.classList.remove("ring-2", "ring-amber-400", "ring-inset"))
+    this.selected = []
+    this.anchor = null
+  }
+
+  handleMouseOver(event) {
+    const dayHeader = event.target.closest("[data-attendance-day]")
+    if (dayHeader) {
+      this.hoverCol = dayHeader.dataset.date
+      this.hoverRow = null
+      this.renderCrosshair()
+      return
+    }
+
+    const rowLabel = event.target.closest("[data-attendance-row-label]")
+    if (rowLabel) {
+      this.hoverRow = rowLabel.closest("tr")
+      this.hoverCol = null
+      this.renderCrosshair()
+      return
+    }
+
+    const cell = event.target.closest(".attendance-cell")
+    if (cell) {
+      this.hoverRow = cell.closest("tr")
+      this.hoverCol = cell.dataset.date
+      this.renderCrosshair()
+    }
+  }
+
+  handleMouseOut(event) {
+    const next = event.relatedTarget
+    const table = this.hasTableTarget ? this.tableTarget : this.element.querySelector(".attendance-grid-table")
+    if (next && table?.contains(next)) return
+
+    this.hoverRow = null
+    this.hoverCol = null
+    this.renderCrosshair()
+  }
+
+  renderCrosshair() {
+    const table = this.hasTableTarget ? this.tableTarget : this.element.querySelector(".attendance-grid-table")
+    if (!table) return
+
+    table.querySelectorAll(".att-row-hl").forEach((el) => el.classList.remove("att-row-hl"))
+    table.querySelectorAll(".att-col-hl").forEach((el) => el.classList.remove("att-col-hl"))
+
+    const row = this.hoverRow || this.pinnedRow
+    const col = this.hoverCol || this.pinnedCol
+    if (!row && !col) return
+
+    if (row) row.classList.add("att-row-hl")
+    if (col) {
+      table.querySelectorAll(`[data-attendance-col="${col}"]`).forEach((el) => el.classList.add("att-col-hl"))
+    }
   }
 
   neighbor(cell, dr, dc) {
@@ -321,7 +422,7 @@ export default class extends Controller {
     this.activeCell = cell
     const pop = this.popoverTarget
 
-    const name = cell.closest("tr")?.querySelector("th span")?.textContent.trim() || ""
+    const name = cell.closest("tr")?.querySelector("[data-staff-name]")?.textContent.trim() || ""
     if (this.hasPopoverTitleTarget) this.popoverTitleTarget.textContent = `${name} · ${cell.dataset.date}`
     if (this.hasOtInputTarget) this.otInputTarget.value = cell.dataset.otHours || ""
     this.activePenalty = cell.dataset.penaltyUnit || ""

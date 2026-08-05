@@ -20,6 +20,13 @@ RSpec.describe "Admin::Accounting::Attendance", type: :request do
       expect(response.body).to include(staff.name)
     end
 
+    it "links each staff name to their profile for the same payroll month" do
+      staff
+      get admin_accounting_attendance_path(payroll_month: "2026-04")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(admin_user_path(staff, payroll_month: "2026-04"))
+    end
+
     it "defaults to the previous month through the 5th of the new month" do
       travel_to Date.new(2026, 8, 1) do
         get admin_accounting_attendance_path

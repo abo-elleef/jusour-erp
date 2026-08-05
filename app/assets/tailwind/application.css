@@ -64,3 +64,40 @@
     break-inside: avoid;
   }
 }
+
+/* Attendance grid: row / column crosshair for reviewing one staff or one day. */
+.attendance-grid-table thead th[data-attendance-day],
+.attendance-grid-table tbody th[data-attendance-row-label] {
+  cursor: pointer;
+}
+
+.attendance-grid-table thead th[data-attendance-day]:hover {
+  background-color: #fffbeb;
+}
+
+.attendance-grid-table tbody tr.att-row-hl > th {
+  background-color: #fef3c7 !important;
+  box-shadow: inset -3px 0 0 #d97706;
+}
+
+.attendance-grid-table tbody tr.att-row-hl > td {
+  background-color: #fffbeb !important;
+}
+
+.attendance-grid-table thead th.att-col-hl {
+  background-color: #fef3c7 !important;
+  box-shadow: inset 0 -3px 0 #d97706;
+}
+
+.attendance-grid-table tbody td.att-col-hl {
+  background-color: #fffbeb !important;
+}
+
+.attendance-grid-table tbody tr.att-row-hl > td.att-col-hl {
+  background-color: #fde68a !important;
+  box-shadow: inset 0 0 0 2px #d97706;
+}
+
+[dir="rtl"] .attendance-grid-table tbody tr.att-row-hl > th {
+  box-shadow: inset 3px 0 0 #d97706;
+}

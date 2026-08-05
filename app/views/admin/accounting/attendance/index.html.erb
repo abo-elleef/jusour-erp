@@ -56,13 +56,18 @@
 
   <% if @staff.any? %>
     <div class="overflow-auto border border-gray-200 rounded-2xl max-h-[72vh] relative">
-      <table class="text-sm border-collapse">
+      <table class="attendance-grid-table text-sm border-collapse" data-attendance-grid-target="table">
         <thead>
           <tr class="bg-gray-50">
             <th class="sticky start-0 top-0 z-20 bg-gray-50 text-start text-xs font-semibold text-gray-500 uppercase p-3 min-w-[10rem] border-b border-e border-gray-200"><%= t("accounting.shift_logs.employee") %></th>
             <% @days.each do |day| %>
               <% weekend = day.friday? || day.saturday? %>
-              <th class="sticky top-0 z-10 <%= weekend ? 'bg-gray-100' : 'bg-gray-50' %> text-center px-0 py-2 border-b border-e border-gray-200 min-w-[2.25rem]">
+              <th class="sticky top-0 z-10 <%= weekend ? 'bg-gray-100' : 'bg-gray-50' %> text-center px-0 py-2 border-b border-e border-gray-200 min-w-[2.25rem]"
+                  data-attendance-day
+                  data-attendance-col="<%= day.iso8601 %>"
+                  data-date="<%= day.iso8601 %>"
+                  data-action="click->attendance-grid#pinColumn"
+                  title="<%= t('accounting.attendance.highlight_day') %>">
                 <div class="text-xs font-semibold text-gray-700 tabular-nums"><%= day.day %></div>
                 <div class="text-[10px] text-gray-400"><%= l(day, format: "%a") %></div>
               </th>
@@ -80,10 +85,19 @@
           <% @staff.each do |user| %>
             <% summary = @summaries[user] %>
             <% counts = @status_counts[user] %>
-            <tr>
-              <th class="sticky start-0 z-10 bg-white text-start p-3 min-w-[10rem] border-e border-gray-200">
+            <tr data-user-id="<%= user.id %>">
+              <th class="sticky start-0 z-10 bg-white text-start p-3 min-w-[10rem] border-e border-gray-200"
+                  data-attendance-row-label
+                  data-action="click->attendance-grid#pinRow"
+                  title="<%= t('accounting.attendance.highlight_staff') %>">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="font-medium text-gray-900 whitespace-nowrap"><%= user.name %></span>
+                  <% if policy(user).show? %>
+                    <%= link_to user.name, admin_user_path(user, payroll_month: @payroll_month.strftime("%Y-%m")),
+                          data: { staff_name: true },
+                          class: "font-medium text-gray-900 whitespace-nowrap hover:text-amber-700 hover:underline underline-offset-2 transition-colors" %>
+                  <% else %>
+                    <span data-staff-name class="font-medium text-gray-900 whitespace-nowrap"><%= user.name %></span>
+                  <% end %>
                   <button type="button" data-action="attendance-grid#fillRowPresent" data-user-id="<%= user.id %>"
                           class="text-[11px] font-semibold text-amber-700 hover:text-amber-800 border border-amber-200 rounded px-1.5 py-0.5 shrink-0"
                           title="<%= t('accounting.attendance.mark_present') %>">P</button>
@@ -93,7 +107,8 @@
                 <% status = @cells[[user.id, day]] %>
                 <% adj = @day_adjustments[[user.id, day]] || {} %>
                 <% weekend = day.friday? || day.saturday? %>
-                <td class="p-0.5 text-center border-e border-gray-200 <%= 'bg-gray-50/50' if weekend %>">
+                <td class="p-0.5 text-center border-e border-gray-200 <%= 'bg-gray-50/50' if weekend %>"
+                    data-attendance-col="<%= day.iso8601 %>">
                   <div tabindex="0"
                        data-attendance-grid-target="cell"
                        data-user-id="<%= user.id %>"
@@ -120,6 +135,7 @@
       </table>
     </div>
     <p class="text-xs text-gray-400 mt-3"><%= t("accounting.attendance.keyboard_hint") %></p>
+    <p class="text-xs text-gray-400 mt-1"><%= t("accounting.attendance.crosshair_hint") %></p>
   <% else %>
     <p class="rounded-2xl border border-gray-200 bg-white px-5 py-10 text-center text-sm text-gray-500"><%= t("accounting.attendance.no_staff") %></p>
   <% end %>
