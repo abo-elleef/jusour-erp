@@ -1028,6 +1028,8 @@ en:
       edit_description: "Update invoice details and line items. Stock and AP balances are recalculated automatically."
       back_to_list: "← Vendor invoices"
       back_to_invoice: "← Back to invoice"
+      previous: "Previous"
+      next: "Next"
       print: "Print"
       export: "Export to Excel"
       print_document_title: "Vendor Invoice"

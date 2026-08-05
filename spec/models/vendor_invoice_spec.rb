@@ -7,6 +7,26 @@ RSpec.describe VendorInvoice, type: :model do
   let(:supplier) { Supplier.create!(name: "Fresh Farms", lead_time_days: 2, company: Current.company) }
   let(:location) { create(:location, company: Current.company) }
 
+  describe "#newer / #older" do
+    it "walks invoices in the same newest-first order as the index" do
+      older = described_class.create!(
+        supplier: supplier, user: user, location: location,
+        invoice_date: Date.new(2026, 6, 1), received_on: Date.new(2026, 6, 1),
+        company: Current.company
+      )
+      newer = described_class.create!(
+        supplier: supplier, user: user, location: location,
+        invoice_date: Date.new(2026, 6, 10), received_on: Date.new(2026, 6, 10),
+        company: Current.company
+      )
+
+      expect(older.newer).to eq(newer)
+      expect(older.older).to be_nil
+      expect(newer.older).to eq(older)
+      expect(newer.newer).to be_nil
+    end
+  end
+
   describe ".next_invoice_number" do
     it "returns a yearly VI sequence for the company" do
       expect(described_class.next_invoice_number(year: 2026)).to eq("VI-2026-00001")

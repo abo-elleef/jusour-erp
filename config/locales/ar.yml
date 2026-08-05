@@ -1030,6 +1030,8 @@ ar:
       edit_description: "حدّث تفاصيل الفاتورة وبنودها. يُعاد حساب المخزون وأرصدة الذمم تلقائياً."
       back_to_list: "← فواتير الموردين"
       back_to_invoice: "← العودة إلى الفاتورة"
+      previous: "السابق"
+      next: "التالي"
       print: "طباعة"
       export: "تصدير إلى Excel"
       print_document_title: "فاتورة مورد"

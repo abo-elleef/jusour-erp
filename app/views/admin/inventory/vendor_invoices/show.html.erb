@@ -30,6 +30,35 @@
       </p>
     </div>
     <div class="flex flex-wrap gap-2 shrink-0 print-hide">
+      <div class="inline-flex items-stretch rounded-xl border border-gray-200 overflow-hidden">
+        <% if @prev_invoice %>
+          <%= link_to admin_inventory_vendor_invoice_path(@prev_invoice),
+                class: "inline-flex items-center gap-1 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-3 py-2.5 transition-colors",
+                title: @prev_invoice.invoice_number do %>
+            <span aria-hidden="true">←</span>
+            <%= t("inventory.vendor_invoices.previous") %>
+          <% end %>
+        <% else %>
+          <span class="inline-flex items-center gap-1 text-sm font-semibold text-gray-300 px-3 py-2.5 cursor-not-allowed">
+            <span aria-hidden="true">←</span>
+            <%= t("inventory.vendor_invoices.previous") %>
+          </span>
+        <% end %>
+        <span class="w-px bg-gray-200" aria-hidden="true"></span>
+        <% if @next_invoice %>
+          <%= link_to admin_inventory_vendor_invoice_path(@next_invoice),
+                class: "inline-flex items-center gap-1 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-3 py-2.5 transition-colors",
+                title: @next_invoice.invoice_number do %>
+            <%= t("inventory.vendor_invoices.next") %>
+            <span aria-hidden="true">→</span>
+          <% end %>
+        <% else %>
+          <span class="inline-flex items-center gap-1 text-sm font-semibold text-gray-300 px-3 py-2.5 cursor-not-allowed">
+            <%= t("inventory.vendor_invoices.next") %>
+            <span aria-hidden="true">→</span>
+          </span>
+        <% end %>
+      </div>
       <button type="button" onclick="window.print()"
               class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4" aria-hidden="true">

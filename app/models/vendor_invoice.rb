@@ -40,6 +40,27 @@ class VendorInvoice < ApplicationRecord
   scope :outstanding, -> { where(payment_status: %w[unpaid partially_paid]) }
   scope :recent, -> { order(invoice_date: :desc, created_at: :desc) }
 
+  # Neighbors in the same order as the index list (newest invoice date first).
+  def newer
+    self.class
+      .where(
+        "(invoice_date > :date) OR (invoice_date = :date AND created_at > :created)",
+        date: invoice_date, created: created_at
+      )
+      .order(invoice_date: :asc, created_at: :asc)
+      .first
+  end
+
+  def older
+    self.class
+      .where(
+        "(invoice_date < :date) OR (invoice_date = :date AND created_at < :created)",
+        date: invoice_date, created: created_at
+      )
+      .order(invoice_date: :desc, created_at: :desc)
+      .first
+  end
+
   before_validation :assign_invoice_number, on: :create
   before_save :recalculate_total
 

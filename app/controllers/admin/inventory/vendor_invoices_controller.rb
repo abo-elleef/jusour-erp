@@ -24,16 +24,7 @@ module Admin
 
       def show
         authorize_inventory!(:show)
-        @lines = @vendor_invoice.vendor_invoice_lines.includes(:ingredient, :stock_batch)
-        @payments = @vendor_invoice.vendor_invoice_payments.includes(:user, :treasury).order(payment_date: :desc, created_at: :desc)
-        @treasuries = Treasury.active.payable.visible_to(current_user).ordered
-
-        @invoice_je = JournalEntry.for_source(@vendor_invoice).includes(:lines).first
-        payment_jes = JournalEntry.includes(:lines).where(
-          source_record_type: "VendorInvoicePayment",
-          source_record_id: @payments.map(&:id)
-        )
-        @payment_jes = payment_jes.index_by(&:source_record_id)
+        prepare_show
       end
 
       # Export the invoice details + line items as a CSV that Excel opens
@@ -174,9 +165,7 @@ module Admin
         redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice), notice: t(notice_key)
       rescue ::Accounting::RecordVendorInvoicePaymentService::Error,
              ActiveRecord::RecordInvalid => e
-        @lines = @vendor_invoice.vendor_invoice_lines.includes(:ingredient, :stock_batch)
-        @payments = @vendor_invoice.vendor_invoice_payments.includes(:user, :treasury).order(payment_date: :desc, created_at: :desc)
-        @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+        prepare_show
         flash.now[:alert] = e.message
         render :show, status: :unprocessable_entity
       end
@@ -223,6 +212,21 @@ module Admin
 
       def set_vendor_invoice
         @vendor_invoice = VendorInvoice.find(params[:id])
+      end
+
+      def prepare_show
+        @lines = @vendor_invoice.vendor_invoice_lines.includes(:ingredient, :stock_batch)
+        @payments = @vendor_invoice.vendor_invoice_payments.includes(:user, :treasury).order(payment_date: :desc, created_at: :desc)
+        @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+        @prev_invoice = @vendor_invoice.newer
+        @next_invoice = @vendor_invoice.older
+
+        @invoice_je = JournalEntry.for_source(@vendor_invoice).includes(:lines).first
+        payment_jes = JournalEntry.includes(:lines).where(
+          source_record_type: "VendorInvoicePayment",
+          source_record_id: @payments.map(&:id)
+        )
+        @payment_jes = payment_jes.index_by(&:source_record_id)
       end
 
       def prefill_supplier
