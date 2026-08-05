@@ -56,6 +56,26 @@ RSpec.describe "Restricted treasuries", type: :request do
       get admin_accounting_treasury_path(reserve)
       expect(response).to have_http_status(:ok)
     end
+
+    it "shows inflow and outflow totals for the selected range" do
+      sign_in owner
+      TreasuryTransaction.create!(
+        treasury: open_treasury, user: owner, amount_cents: 8_000, kind: "income",
+        description: "Sale in", occurred_on: Date.current, balance_after_cents: 108_00, company: company
+      )
+      TreasuryTransaction.create!(
+        treasury: open_treasury, user: owner, amount_cents: -3_000, kind: "expense",
+        description: "Paid out", occurred_on: Date.current, balance_after_cents: 78_00, company: company
+      )
+
+      get admin_accounting_treasury_path(open_treasury, start_date: Date.current, end_date: Date.current)
+      expect(response).to have_http_status(:ok)
+      money = ApplicationController.helpers.method(:format_money)
+      expect(response.body).to include(money.call(8_000))
+      expect(response.body).to include(money.call(3_000))
+      expect(response.body).to include(I18n.t("accounting.treasuries.stats_in_amount"))
+      expect(response.body).to include(I18n.t("accounting.treasuries.stats_out_amount"))
+    end
   end
 
   describe "transfer masking on a visible treasury's ledger" do

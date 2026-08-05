@@ -2826,6 +2826,7 @@ ar:
       new_button: "مصروف جديد"
       delete_confirm: "حذف هذا المصروف؟"
       recurrence: "التكرار"
+      stats_spent: "المصروف"
     incomes:
       title: "الإيرادات"
       new: "إيراد جديد"
@@ -2833,6 +2834,7 @@ ar:
       new_button: "إيراد جديد"
       delete_confirm: "حذف هذا الإيراد؟"
       recurrence: "التكرار"
+      stats_earned: "المحصّل"
     income_categories:
       title: "فئات الإيرادات"
       description: "جمّع الإيرادات حسب الفئة. فئات النظام تُدار تلقائيًا."
@@ -2909,6 +2911,8 @@ ar:
       stats_total: "المعاملات"
       stats_in: "داخل"
       stats_out: "خارج"
+      stats_in_amount: "داخل"
+      stats_out_amount: "خارج"
       supplier_ap_type_locked: "هذه خزينة ذمم موردين يديرها النظام؛ لا يمكن تغيير نوعها."
       manual_adjustment: "تعديل يدوي"
       adjustment_hint: "استخدم سنتات سالبة للصرف."

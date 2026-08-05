@@ -34,6 +34,23 @@ RSpec.describe "Admin::Accounting::Incomes", type: :request do
     post reverse_admin_accounting_income_path(income)
   end
 
+  def money(cents) = ApplicationController.helpers.format_money(cents)
+
+  describe "GET /admin/accounting/incomes" do
+    it "shows the sum of active incomes in the selected range" do
+      create_income(amount_cents: 20_000)
+      create_income(amount_cents: 12_500)
+      reversed = create_income(amount_cents: 40_000)
+      post_reverse(reversed)
+
+      get admin_accounting_incomes_path(start_date: Date.current.beginning_of_month, end_date: Date.current)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(money(32_500))
+      expect(response.body).to include(I18n.t("accounting.incomes.stats_earned"))
+      expect(response.body).not_to include(money(72_500))
+    end
+  end
+
   # ── Index pagination ─────────────────────────────────────────────────────
 
   describe "GET /admin/accounting/incomes (pagination)" do

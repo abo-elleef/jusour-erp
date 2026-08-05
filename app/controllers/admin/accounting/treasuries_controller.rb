@@ -36,6 +36,12 @@ module Admin
           active:   t("accounting.treasuries.stats_in"),
           reversed: t("accounting.treasuries.stats_out")
         }
+        in_cents = txn_scope.where("amount_cents > 0").sum(:amount_cents)
+        out_cents = txn_scope.where("amount_cents < 0").sum(:amount_cents).abs
+        @range_sums = [
+          { label: t("accounting.treasuries.stats_in_amount"), cents: in_cents, tone: :success },
+          { label: t("accounting.treasuries.stats_out_amount"), cents: out_cents, tone: :danger }
+        ]
         @transactions = @treasury.treasury_transactions
           .includes(:user, :source_record)
           .on_date_range(@start_date, @end_date)

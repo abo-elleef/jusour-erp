@@ -2808,6 +2808,7 @@ en:
       new_button: "New expense"
       delete_confirm: "Delete this expense?"
       recurrence: "Recurrence"
+      stats_spent: "Spent"
     incomes:
       title: "Income"
       new: "New income"
@@ -2815,6 +2816,7 @@ en:
       new_button: "New income"
       delete_confirm: "Delete this income entry?"
       recurrence: "Recurrence"
+      stats_earned: "Earned"
     income_categories:
       title: "Income categories"
       description: "Group income entries by category. System categories are managed automatically."
@@ -2887,6 +2889,8 @@ en:
       stats_total: "Transactions"
       stats_in: "In"
       stats_out: "Out"
+      stats_in_amount: "In"
+      stats_out_amount: "Out"
       supplier_ap_type_locked: "This is a system-managed supplier AP ledger; its type cannot be changed."
       manual_adjustment: "Manual adjustment"
       adjustment_hint: "Use negative cents for money out."

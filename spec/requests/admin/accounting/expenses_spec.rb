@@ -21,6 +21,8 @@ RSpec.describe "Admin::Accounting::Expenses", type: :request do
 
   before { sign_in owner }
 
+  def money(cents) = ApplicationController.helpers.format_money(cents)
+
   def create_expense(amount_cents: 20_000)
     Expense.create!(
       expense_category: category, amount_cents: amount_cents,
@@ -32,6 +34,21 @@ RSpec.describe "Admin::Accounting::Expenses", type: :request do
 
   def post_reverse(expense)
     post reverse_admin_accounting_expense_path(expense)
+  end
+
+  describe "GET /admin/accounting/expenses" do
+    it "shows the sum of active expenses in the selected range" do
+      create_expense(amount_cents: 20_000)
+      create_expense(amount_cents: 15_000)
+      reversed = create_expense(amount_cents: 50_000)
+      post_reverse(reversed)
+
+      get admin_accounting_expenses_path(start_date: Date.current.beginning_of_month, end_date: Date.current)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(money(35_000))
+      expect(response.body).to include(I18n.t("accounting.expenses.stats_spent"))
+      expect(response.body).not_to include(money(85_000))
+    end
   end
 
   # ── Reversal ─────────────────────────────────────────────────────────────

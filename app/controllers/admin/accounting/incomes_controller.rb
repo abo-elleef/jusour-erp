@@ -21,6 +21,13 @@ module Admin
         @total_count    = scope.count
         @reversed_count = scope.where.not(reversed_at: nil).count
         @active_count   = scope.where(reversed_at: nil).count
+        @range_sums = [
+          {
+            label: t("accounting.incomes.stats_earned"),
+            cents: scope.where(reversed_at: nil).unscope(:includes).sum(:amount_cents),
+            tone: :success
+          }
+        ]
         @pagy, @incomes = pagy(:offset, scope.order(income_date: :desc, created_at: :desc), limit: 50)
         @active_category_id = params[:category_id].presence
         @totals_by_category = Income.joins(:income_category)
