@@ -2510,7 +2510,7 @@ en:
         description_placeholder: "e.g. Depreciation — Office Equipment July 2026"
         lines_hint: "Enter debit on one side and credit on the other — each line must have exactly one."
         add_line: "Add line"
-        select_account: "Select account…"
+        select_account: "Search account…"
         line_notes_placeholder: "Note (optional)"
         save: "Save Journal Entry"
       filter:

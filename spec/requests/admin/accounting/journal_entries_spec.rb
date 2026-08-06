@@ -29,6 +29,18 @@ RSpec.describe "Admin::Accounting::JournalEntries", type: :request do
 
   before { sign_in owner }
 
+  describe "GET /admin/accounting/journal_entries/new" do
+    it "renders searchable account pickers" do
+      get new_admin_accounting_journal_entry_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('data-controller="searchable-select"')
+      expect(response.body).to include("data-searchable-select-options")
+      expect(response.body).to include(treasury_encoded(cash))
+      expect(response.body).to include(treasury_encoded(bank))
+    end
+  end
+
   def treasury_encoded(treasury)
     "treasury|#{treasury.id}|#{treasury.name}|asset"
   end

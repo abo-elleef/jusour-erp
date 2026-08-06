@@ -103,7 +103,6 @@ export default class extends Controller {
     const normalized = query.trim().toLowerCase()
     const filtered = this.options
       .filter((option) => option.label.toLowerCase().includes(normalized))
-      .slice(0, 50)
 
     if (filtered.length === 0) {
       this.menu.innerHTML = `<li class="px-3 py-2 text-sm text-gray-500">${this.noResultsText}</li>`

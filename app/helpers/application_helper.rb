@@ -450,6 +450,13 @@ module ApplicationHelper
     ingredients.map { |ingredient| { value: ingredient.id, label: ingredient.name } }.to_json
   end
 
+  # Flat searchable options from AccountListService's grouped [[label, value], ...] lists.
+  def journal_entry_account_search_options(account_groups)
+    account_groups.flat_map { |_group, options| options }.map do |label, value|
+      { value: value, label: label }
+    end.to_json
+  end
+
   def stock_location_option_label(location)
     "#{location.name} (#{t("admin.locations.type_#{location.location_type}")})"
   end

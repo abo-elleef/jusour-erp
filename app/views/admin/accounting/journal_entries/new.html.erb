@@ -12,7 +12,10 @@
   </div>
 
   <%= form_with model: [:admin, :accounting, @journal_entry],
-        data: { controller: "journal-entry-lines" },
+        data: {
+          controller: "journal-entry-lines",
+          searchable_select_options: journal_entry_account_search_options(@account_groups)
+        },
         class: "space-y-6" do |f| %>
 
     <% if @journal_entry.errors.any? %>
@@ -71,7 +74,9 @@
 
       <%# Hidden template for new lines %>
       <template data-journal-entry-lines-target="template">
-        <%= render "line_fields", lf: nil, template: true %>
+        <%= f.fields_for :lines, JournalEntryLine.new, child_index: "NEW_LINE" do |lf| %>
+          <%= render "line_fields", lf: lf %>
+        <% end %>
       </template>
 
       <%# Add line button %>

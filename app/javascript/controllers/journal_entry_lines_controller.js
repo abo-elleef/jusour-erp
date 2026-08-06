@@ -11,10 +11,10 @@ export default class extends Controller {
     event.preventDefault()
     const content = this.templateTarget.innerHTML.replace(/NEW_LINE/g, Date.now())
     this.listTarget.insertAdjacentHTML("beforeend", content)
-    // Focus the account select in the new row
+    // Focus the account search input in the new row
     const rows = this.rowTargets
     const newRow = rows[rows.length - 1]
-    newRow?.querySelector("select")?.focus()
+    newRow?.querySelector("[data-searchable-select-target='input']")?.focus()
     this.recalculate()
   }
 
