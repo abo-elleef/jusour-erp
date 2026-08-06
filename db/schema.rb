@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_01_030000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_06_081111) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -121,6 +121,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_030000) do
     t.datetime "updated_at", null: false
     t.uuid "treasury_id"
     t.uuid "location_id"
+    t.uuid "company_id", null: false
+    t.index ["company_id"], name: "index_cash_drawer_sessions_on_company_id"
     t.index ["location_id"], name: "index_cash_drawer_sessions_on_location_id"
     t.index ["treasury_id"], name: "index_cash_drawer_sessions_on_treasury_id"
     t.index ["user_id"], name: "index_cash_drawer_sessions_on_user_id"
@@ -1403,6 +1405,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_01_030000) do
   add_foreign_key "audit_log_entries", "users"
   add_foreign_key "budgets", "companies"
   add_foreign_key "budgets", "expense_categories"
+  add_foreign_key "cash_drawer_sessions", "companies"
   add_foreign_key "cash_drawer_sessions", "locations"
   add_foreign_key "cash_drawer_sessions", "treasuries"
   add_foreign_key "cash_drawer_sessions", "users"

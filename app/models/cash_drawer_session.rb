@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class CashDrawerSession < ApplicationRecord
+  include Tenantable
+
   STATUSES = %w[open counted reconciled].freeze
 
   belongs_to :user
@@ -18,5 +20,13 @@ class CashDrawerSession < ApplicationRecord
   validates :treasury, presence: true
   validates :location, presence: true
 
+  before_validation :assign_company_from_associations, on: :create
+
   scope :open, -> { where(status: "open") }
+
+  private
+
+  def assign_company_from_associations
+    self.company ||= user&.company || location&.company || treasury&.company
+  end
 end
