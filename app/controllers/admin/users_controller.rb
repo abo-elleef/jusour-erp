@@ -44,6 +44,7 @@ module Admin
     def show
       authorize @user
       load_payroll_context
+      @audits = @user.audits.includes(:user).reorder(version: :desc)
     end
 
     def edit

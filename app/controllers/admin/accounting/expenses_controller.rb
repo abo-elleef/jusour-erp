@@ -8,6 +8,7 @@ module Admin
       def show
         authorize @expense
         @je = JournalEntry.for_source(@expense).includes(:lines).first
+        @audits = @expense.audits.includes(:user).reorder(version: :desc)
       end
 
       def index

@@ -6,6 +6,12 @@ class User < ApplicationRecord
   include Tenantable
   include MoneyInputs
 
+  audited associated_with: :company,
+    except: %i[
+      encrypted_password reset_password_token reset_password_sent_at
+      remember_created_at pin_digest payroll_access_token
+    ]
+
   money_input :monthly_salary_cents
 
   ROLES = %w[owner super_manager manager sub_manager accountant cashier kitchen custom].freeze

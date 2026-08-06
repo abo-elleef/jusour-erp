@@ -8,6 +8,7 @@ class Company < ApplicationRecord
   has_many :attendance_statuses, dependent: :destroy
   has_many :staff_attendances, dependent: :destroy
   has_many :cash_drawer_sessions, dependent: :destroy
+  has_associated_audits
 
   validates :name, presence: true
   validates :slug, presence: true, uniqueness: true, format: { with: /\A[a-z0-9\-]+\z/ }

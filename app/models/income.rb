@@ -4,6 +4,8 @@ class Income < ApplicationRecord
   include Tenantable
   include MoneyInputs
 
+  audited associated_with: :company
+
   money_input :amount_cents
 
   RECURRENCES = Expense::RECURRENCES

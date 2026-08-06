@@ -121,4 +121,6 @@
           payroll_sort: @payroll_sort,
           payroll_direction: @payroll_direction %>
   <% end %>
+
+  <%= render "shared/audit_history", audits: @audits %>
 </div>

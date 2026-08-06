@@ -1,0 +1,74 @@
+<%# locals: audits, title: nil %>
+<% title ||= t("accounting.audit_history.title") %>
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-4">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+    <h2 class="text-sm font-semibold text-gray-900"><%= title %></h2>
+    <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.audit_history.hint") %></p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm min-w-[36rem]">
+      <thead class="border-b border-gray-100 bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <tr>
+          <th class="p-3 ps-5 text-start w-36"><%= t("accounting.audit_history.time") %></th>
+          <th class="p-3 text-start w-40"><%= t("accounting.audit_history.user") %></th>
+          <th class="p-3 text-start w-28"><%= t("accounting.audit_history.action") %></th>
+          <th class="p-3 pe-5 text-start"><%= t("accounting.audit_history.changes") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% if audits.blank? %>
+          <tr>
+            <td colspan="4" class="p-8 text-center text-sm text-gray-500"><%= t("accounting.audit_history.empty") %></td>
+          </tr>
+        <% else %>
+          <% audits.each do |audit| %>
+            <% rows = audit_history_rows(audit) %>
+            <tr class="align-top">
+              <td class="p-3 ps-5 whitespace-nowrap tabular-nums text-gray-700">
+                <%= audit.created_at ? l(audit.created_at, format: :short) : t("accounting.shared.em_dash") %>
+              </td>
+              <td class="p-3 text-gray-900">
+                <%= audit.user&.try(:name) || t("accounting.shared.em_dash") %>
+              </td>
+              <td class="p-3">
+                <span class="inline-flex text-xs font-semibold px-2 py-0.5 rounded-full border
+                  <%= case audit.action.to_s
+                      when "create" then "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      when "destroy" then "bg-red-50 text-red-700 border-red-200"
+                      else "bg-amber-50 text-amber-800 border-amber-200"
+                      end %>">
+                  <%= t("accounting.audit_history.actions.#{audit.action}", default: audit.action.to_s) %>
+                </span>
+              </td>
+              <td class="p-3 pe-5 text-sm text-gray-700">
+                <% if rows.empty? %>
+                  <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+                <% else %>
+                  <ul class="space-y-1.5">
+                    <% rows.each do |row| %>
+                      <li class="leading-snug">
+                        <span class="font-medium text-gray-900"><%= row[:label] %></span>
+                        <% if row[:kind] == :update %>
+                          <span class="text-gray-500">:</span>
+                          <%# bdi + ltr keeps money (ج.م.) from flipping old→new in RTL pages %>
+                          <span class="inline-flex flex-wrap items-baseline gap-x-1" dir="ltr">
+                            <bdi class="text-gray-500 line-through decoration-gray-300"><%= row[:from] %></bdi>
+                            <span class="text-gray-400" aria-hidden="true">→</span>
+                            <bdi class="text-gray-900"><%= row[:to] %></bdi>
+                          </span>
+                        <% else %>
+                          <span class="text-gray-500">:</span>
+                          <bdi class="text-gray-800" dir="ltr"><%= row[:value] %></bdi>
+                        <% end %>
+                      </li>
+                    <% end %>
+                  </ul>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</section>

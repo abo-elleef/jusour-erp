@@ -1,0 +1,26 @@
+---
+description: Prefer Audited::Audit over AuditLogEntry; migrate away from accounting audit style
+alwaysApply: true
+---
+
+# Audit logging direction
+
+Saqr is **gradually replacing** the custom `AuditLogEntry` / Accounting → Audit log style with the **`audited` gem** (`Audited::Audit`).
+
+## Prefer
+
+- New change-tracking on models → `audited` (with `associated_with: :company` when tenant-scoped)
+- Per-record history UI → show-page panels backed by `@record.audits` (see `shared/audit_history`)
+- Extending `audited` coverage to more models over time (expenses, incomes, users already done)
+
+## Avoid (unless explicitly asked)
+
+- Adding new `AuditLogEntry.record!` call sites for ordinary create/update/destroy history
+- Building new features around the Accounting Audit log as the long-term home for model change history
+- Dual-writing the same event to both systems without a migration plan
+
+## Current coexistence (intentional for now)
+
+- `AuditLogEntry` still powers Accounting → Audit log for JE/payments/shifts/reversal *events*
+- `Audited::Audit` powers field-level history on expense / income / staff show pages
+- Do **not** do a big-bang migration unless the user asks; when touching audit-related code, nudge toward `audited` and do not expand `AuditLogEntry` usage

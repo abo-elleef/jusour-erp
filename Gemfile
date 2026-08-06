@@ -18,6 +18,7 @@ gem "image_processing", "~> 1.2"
 # Auth & Authorization
 gem "devise"
 gem "pundit"
+gem "audited"
 
 # Error Tracking
 gem 'rollbar'

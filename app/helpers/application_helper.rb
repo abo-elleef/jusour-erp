@@ -263,6 +263,75 @@ module ApplicationHelper
     Money.new(cents).format(locale: I18n.locale, symbol: 'ج.م.')
   end
 
+  AUDIT_HISTORY_HIDDEN_FIELDS = %w[
+    company_id source_record_id source_record_type
+  ].freeze
+
+  AUDIT_HISTORY_ASSOCIATIONS = {
+    "expense_category_id" => [ExpenseCategory, :name],
+    "income_category_id" => [IncomeCategory, :name],
+    "treasury_id" => [Treasury, :name],
+    "user_id" => [User, :name],
+    "role_id" => [Role, :name],
+    "assigned_treasury_id" => [Treasury, :name]
+  }.freeze
+
+  def audit_history_rows(audit)
+    changes = audit.audited_changes
+    return [] if changes.blank?
+
+    changes.filter_map do |field, value|
+      field = field.to_s
+      next if AUDIT_HISTORY_HIDDEN_FIELDS.include?(field)
+
+      label = t("accounting.audit_history.fields.#{field}", default: field.humanize)
+      if audit.action.to_s == "update" && value.is_a?(Array) && value.size == 2
+        {
+          label: label,
+          kind: :update,
+          from: format_audit_history_value(field, value[0]),
+          to: format_audit_history_value(field, value[1])
+        }
+      else
+        {
+          label: label,
+          kind: :set,
+          value: format_audit_history_value(field, value.is_a?(Array) ? value.last : value)
+        }
+      end
+    end
+  end
+
+  def format_audit_history_value(field, value)
+    return t("accounting.shared.em_dash") if value.nil? || value == ""
+
+    if AUDIT_HISTORY_ASSOCIATIONS.key?(field)
+      klass, attr = AUDIT_HISTORY_ASSOCIATIONS.fetch(field)
+      record = klass.unscoped.find_by(id: value)
+      return record ? record.public_send(attr) : t("accounting.shared.em_dash")
+    end
+
+    case field
+    when /_cents\z/
+      format_money(value.to_i)
+    when /\A.*_date\z/, "reversed_at"
+      begin
+        time = value.is_a?(String) ? Time.zone.parse(value) : value
+        time ? l(time.to_date, format: :default) : t("accounting.shared.em_dash")
+      rescue ArgumentError, TypeError
+        value.to_s
+      end
+    else
+      case value
+      when true then t("accounting.audit_history.boolean.true")
+      when false then t("accounting.audit_history.boolean.false")
+      else
+        human = t("accounting.audit_history.values.#{field}.#{value}", default: nil)
+        human.presence || value.to_s
+      end
+    end
+  end
+
   # The operating day currently in progress (day boundary shifted to the
   # per-company business-day cutoff hour). Use instead of Date.current in views
   # that mean "today's business day".
