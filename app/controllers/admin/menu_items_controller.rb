@@ -47,6 +47,7 @@ module Admin
       load_recipes_for_form
       @categories = Category.active.ordered
       authorize @menu_item
+      @audits = @menu_item.audits.includes(:user).reorder(version: :desc)
     end
 
     def update
@@ -56,7 +57,9 @@ module Admin
         redirect_to admin_menu_items_path, notice: t("flash.menu_item.updated")
       else
         load_modifier_groups_for_form
+        load_recipes_for_form
         @categories = Category.active.ordered
+        @audits = @menu_item.audits.includes(:user).reorder(version: :desc)
         render :edit, status: :unprocessable_entity
       end
     end

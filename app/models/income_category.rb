@@ -3,6 +3,8 @@
 class IncomeCategory < ApplicationRecord
   include Tenantable
 
+  audited associated_with: :company
+
   CATEGORY_TYPES = %w[sales catering services delivery other].freeze
   # Revenue accounts occupy the 4xxx range; the first category is 4001.
   ACCOUNT_CODE_BASE = 4000

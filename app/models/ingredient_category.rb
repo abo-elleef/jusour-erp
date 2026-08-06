@@ -3,6 +3,8 @@
 class IngredientCategory < ApplicationRecord
   include Tenantable
 
+  audited associated_with: :company
+
   has_many :ingredients, dependent: :restrict_with_error
 
   # The code is derived from the name and kept in sync (name-driven): renaming

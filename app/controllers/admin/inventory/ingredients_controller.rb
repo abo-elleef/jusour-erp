@@ -41,6 +41,7 @@ module Admin
         @recipes = @ingredient.recipes.includes(:menu_item, :unit_ref)
         @supplier_links = @ingredient.supplier_ingredients.includes(:supplier)
         load_branch_stock
+        @audits = @ingredient.audits.includes(:user).reorder(version: :desc)
       end
 
       # Full, paginated adjustment ledger for one ingredient, filterable by

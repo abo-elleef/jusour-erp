@@ -32,17 +32,27 @@
 <% end %>
 
 <%# ── Stock & finance ──────────────────────────────────────── %>
-<% if current_user.can?("inventory:view") || accounting_any_access? %>
+<% if inventory_any_access? || accounting_any_access? %>
   <span class="<%= section %>"><%= t("nav.groups.stock_finance") %></span>
-  <% if current_user.can?("inventory:view") %>
-    <%= link_to admin_inventory_vendor_invoices_path, class: admin_nav_link_class(admin_nav_active?("admin/inventory")) do %>
-      <%= admin_nav_icon(:inventory) %><span><%= t("nav.inventory") %></span>
-    <% end %>
+  <% if inventory_any_access? %>
+    <%= render "admin/nested_module_nav",
+          module_key: "inventory",
+          label: t("nav.inventory"),
+          icon: :inventory,
+          active: admin_nav_active?("admin/inventory"),
+          groups: inventory_sidebar_groups,
+          current_group: inventory_current_group,
+          tab_active_proc: ->(tab) { inventory_tab_active?(tab) } %>
   <% end %>
   <% if accounting_any_access? %>
-    <%= link_to accounting_landing_path, class: admin_nav_link_class(admin_nav_active?("admin/accounting") && !in_settings) do %>
-      <%= admin_nav_icon(:accounting) %><span><%= t("nav.accounting") %></span>
-    <% end %>
+    <%= render "admin/nested_module_nav",
+          module_key: "accounting",
+          label: t("nav.accounting"),
+          icon: :accounting,
+          active: admin_nav_active?("admin/accounting") && !in_settings,
+          groups: accounting_sidebar_groups,
+          current_group: accounting_current_group,
+          tab_active_proc: ->(tab) { accounting_tab_active?(tab) } %>
   <% end %>
 <% end %>
 

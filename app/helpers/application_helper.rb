@@ -273,7 +273,10 @@ module ApplicationHelper
     "treasury_id" => [Treasury, :name],
     "user_id" => [User, :name],
     "role_id" => [Role, :name],
-    "assigned_treasury_id" => [Treasury, :name]
+    "assigned_treasury_id" => [Treasury, :name],
+    "category_id" => [Category, :name],
+    "ingredient_category_id" => [IngredientCategory, :name],
+    "unit_id" => [Unit, :name]
   }.freeze
 
   def audit_history_rows(audit)
@@ -936,6 +939,48 @@ module ApplicationHelper
 
   def accounting_tab_active?(tab)
     return false unless controller.controller_name == tab[:controller]
+
+    tab[:action].nil? || params[:action] == tab[:action]
+  end
+
+  def accounting_sidebar_groups
+    accounting_visible_groups.map { |group| group.merge(tabs: accounting_visible_tabs(group)) }
+  end
+
+  # ── Permission-driven inventory nav ──────────────────────────────
+  def inventory_visible_tabs(group)
+    group[:tabs].select { |tab| current_user.can?(tab[:permission]) }
+  end
+
+  def inventory_visible_groups
+    InventoryNav::GROUPS.select { |group| inventory_visible_tabs(group).any? }
+  end
+
+  def inventory_sidebar_groups
+    inventory_visible_groups.map { |group| group.merge(tabs: inventory_visible_tabs(group)) }
+  end
+
+  def inventory_any_access?
+    inventory_sidebar_groups.any?
+  end
+
+  def inventory_current_group
+    return nil unless controller.controller_path.start_with?("admin/inventory")
+
+    InventoryNav::GROUPS.find do |group|
+      inventory_visible_tabs(group).any? { |tab| inventory_tab_matches?(tab) }
+    end
+  end
+
+  def inventory_tab_active?(tab)
+    return false unless controller.controller_path.start_with?("admin/inventory")
+
+    inventory_tab_matches?(tab)
+  end
+
+  def inventory_tab_matches?(tab)
+    names = Array(tab[:controllers].presence || tab[:controller])
+    return false unless names.include?(controller.controller_name)
 
     tab[:action].nil? || params[:action] == tab[:action]
   end

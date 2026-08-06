@@ -6,6 +6,8 @@ class MenuItem < ApplicationRecord
   include MenuItemImageVariants
   include MoneyInputs
 
+  audited associated_with: :company
+
   money_input :base_price_cents
 
   belongs_to :category

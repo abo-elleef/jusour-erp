@@ -39,6 +39,7 @@ module Admin
 
       def edit
         authorize_inventory!(:update)
+        @audits = @category.audits.includes(:user).reorder(version: :desc)
       end
 
       def update
@@ -46,6 +47,7 @@ module Admin
         if @category.update(category_params)
           redirect_to admin_inventory_ingredient_categories_path, notice: t("flash.ingredient_category.updated")
         else
+          @audits = @category.audits.includes(:user).reorder(version: :desc)
           render :edit, status: :unprocessable_entity
         end
       end

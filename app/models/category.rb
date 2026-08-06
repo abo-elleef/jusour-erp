@@ -3,6 +3,8 @@
 class Category < ApplicationRecord
   include Tenantable
 
+  audited associated_with: :company
+
   has_many :menu_items, dependent: :destroy
 
   before_validation :assign_code, on: :create

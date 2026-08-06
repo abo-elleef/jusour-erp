@@ -4,6 +4,9 @@ class Ingredient < ApplicationRecord
   include Tenantable
   include UnitReferenced
 
+  # Stock qty moves via adjustments; keep master-data history free of that noise.
+  audited associated_with: :company, except: %i[quantity_on_hand]
+
   UNITS = %w[kg g lbs oz liters ml pieces packs gallons bales].freeze
 
   belongs_to :ingredient_category

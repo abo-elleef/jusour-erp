@@ -5,4 +5,5 @@
     <p class="text-gray-600 text-sm mt-1"><%= t("accounting.expense_categories.form_hint_edit") %></p>
   </div>
   <%= render "form", category: @category %>
+  <%= render "shared/audit_history", audits: @audits %>
 </div>
