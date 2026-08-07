@@ -17,11 +17,22 @@ class StockTakeItem < ApplicationRecord
     self.variance = base_counted_quantity - expected_quantity.to_d
   end
 
-  # Estimated inventory impact using the ingredient's current unit cost.
-  # Safe with eager-loaded ingredients — no extra queries.
-  def variance_value_cents
+  # Location WAC (or fallback). Pass +location_cost+ from a preloaded map to avoid N+1.
+  def unit_cost_cents(location_cost: nil)
+    return location_cost.to_i unless location_cost.nil?
+
+    Inventory::LocationUnitCost.call(ingredient: ingredient, location: stock_take.location)
+  end
+
+  def counted_value_cents(location_cost: nil)
+    return nil if counted_quantity.blank?
+
+    (base_counted_quantity * unit_cost_cents(location_cost: location_cost)).round
+  end
+
+  def variance_value_cents(location_cost: nil)
     return nil if variance.blank?
 
-    (variance.to_d * ingredient.cost_per_unit_cents.to_i).round
+    (variance.to_d * unit_cost_cents(location_cost: location_cost)).round
   end
 end

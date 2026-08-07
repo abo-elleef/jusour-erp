@@ -61,6 +61,7 @@
       </main>
     </div>
 
+    <%= turbo_stream_from "admin_#{current_user.company_id}" if current_user&.company_id %>
     <%= render "shared/toasts" %>
   </body>
 </html>

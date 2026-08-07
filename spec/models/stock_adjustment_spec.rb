@@ -22,6 +22,21 @@ RSpec.describe StockAdjustment, type: :model do
       expect(batch.cost_per_unit_cents).to eq(500)
     end
 
+    it "uses batch_cost_per_unit_cents when provided for an overage" do
+      StockAdjustment.create!(
+        ingredient: ingredient,
+        user: user,
+        location: location,
+        quantity_delta: 3,
+        adjustment_type: "cycle_count_correction",
+        maintain_batches: true,
+        batch_cost_per_unit_cents: 175
+      )
+
+      batch = ingredient.stock_batches.where(location: location).last
+      expect(batch.cost_per_unit_cents).to eq(175)
+    end
+
     it "draws down existing batches oldest-first on a manual removal" do
       adjust(10)
       adjust(-4)

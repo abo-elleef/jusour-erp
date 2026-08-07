@@ -115,7 +115,7 @@
                   <% end %>
                 </td>
                 <td class="p-3 pr-5 text-right">
-                  <%= link_to st.status == "in_progress" ? t("inventory.stock_takes.index.continue") : t("actions.view"),
+                  <%= link_to st.status.in?(%w[in_progress failed completing]) ? t("inventory.stock_takes.index.continue") : t("actions.view"),
                         admin_inventory_stock_take_path(st),
                         class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
                 </td>

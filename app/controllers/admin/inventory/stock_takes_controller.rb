@@ -8,11 +8,11 @@ module Admin
       def index
         authorize_inventory_index!(StockTake)
         @total_count = StockTake.count
-        @in_progress_count = StockTake.where(status: "in_progress").count
+        @in_progress_count = StockTake.active.count
         @completed_count = StockTake.where(status: "completed").count
         @stock_takes = StockTake.includes(:user, :location, :stock_take_items).recent.limit(30)
         @stock_locations = Location.active.central_kitchens.ordered.to_a + Location.active.branches.ordered.to_a
-        @locations_in_progress = StockTake.where(status: "in_progress").pluck(:location_id)
+        @locations_in_progress = StockTake.active.pluck(:location_id)
       end
 
       def show
@@ -21,8 +21,13 @@ module Admin
           .includes(ingredient: :ingredient_category)
           .joins(ingredient: :ingredient_category)
           .order("ingredient_categories.position ASC, ingredients.name ASC")
+        @unit_costs = ::Inventory::LocationUnitCost.map_for(
+          ingredients: @items.map(&:ingredient),
+          location: @stock_take.location
+        )
         @variance_count = @items.count { |i| i.variance.present? && !i.variance.to_d.zero? }
-        @variance_value_cents = @items.sum { |i| i.variance_value_cents.to_i }
+        @variance_value_cents = @items.sum { |i| i.variance_value_cents(location_cost: @unit_costs[i.ingredient_id]).to_i }
+        @counted_value_cents = @items.sum { |i| i.counted_value_cents(location_cost: @unit_costs[i.ingredient_id]).to_i }
       end
 
       def create
@@ -33,7 +38,7 @@ module Admin
           redirect_to admin_inventory_stock_takes_path, alert: t("inventory.stock_takes.index.location_required")
           return
         end
-        if StockTake.where(location: location, status: "in_progress").exists?
+        if StockTake.active.where(location: location).exists?
           redirect_to admin_inventory_stock_takes_path, alert: t("inventory.stock_takes.index.already_in_progress")
           return
         end
@@ -60,6 +65,11 @@ module Admin
 
       def update
         authorize_inventory!(:update)
+        unless @stock_take.status == "in_progress"
+          redirect_to admin_inventory_stock_take_path(@stock_take), alert: t("inventory.stock_takes.show.complete_not_allowed")
+          return
+        end
+
         params[:stock_take_items]&.each do |id, attrs|
           item = @stock_take.stock_take_items.find(id)
           item.counted_quantity = attrs[:counted_quantity]
@@ -72,6 +82,11 @@ module Admin
 
       def complete
         authorize_inventory!(:complete)
+        unless @stock_take.completable?
+          redirect_to admin_inventory_stock_take_path(@stock_take), alert: t("inventory.stock_takes.show.complete_not_allowed")
+          return
+        end
+
         params[:stock_take_items]&.each do |id, attrs|
           item = @stock_take.stock_take_items.find(id)
           item.counted_quantity = attrs[:counted_quantity] if attrs[:counted_quantity].present?
@@ -80,23 +95,9 @@ module Admin
           item.save!
         end
 
-        @stock_take.stock_take_items.where(adjusted: false).find_each do |item|
-          next if item.variance.to_d.zero?
-
-          StockAdjustment.create!(
-            ingredient: item.ingredient,
-            user: current_user,
-            location: @stock_take.location,
-            quantity_delta: item.variance,
-            adjustment_type: "cycle_count_correction",
-            reason_notes: "Stock take ##{@stock_take.id}",
-            maintain_batches: true
-          )
-          item.update!(adjusted: true)
-        end
-
-        @stock_take.update!(status: "completed", completed_at: Time.current)
-        redirect_to admin_inventory_stock_takes_path, notice: t("flash.stock_take.completed")
+        @stock_take.update!(status: "completing")
+        ::Inventory::CompleteStockTakeJob.perform_later(@stock_take.id, current_user.id)
+        redirect_to admin_inventory_stock_takes_path, notice: t("flash.stock_take.completing")
       end
 
       def cancel
@@ -107,7 +108,7 @@ module Admin
         end
 
         # Abandon the count: no variances are applied, so inventory is untouched.
-        # The location is freed for a fresh take (the guard only blocks in_progress).
+        # The location is freed for a fresh take (the guard only blocks active takes).
         @stock_take.update!(status: "cancelled")
         redirect_to admin_inventory_stock_takes_path, notice: t("flash.stock_take.cancelled")
       end

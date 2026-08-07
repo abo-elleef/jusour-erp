@@ -26,4 +26,24 @@ RSpec.describe StockTakeItem, type: :model do
     item.calculate_variance!
     expect(item.variance).to eq(-100)
   end
+
+  it "values counted and variance amounts with location WAC" do
+    StockBatch.create!(
+      ingredient: oil,
+      location: location,
+      quantity_received: 1000,
+      quantity_remaining: 1000,
+      cost_per_unit_cents: 5,
+      received_on: Date.current
+    )
+    # Master cost is 2; WAC is 5 — values must use WAC.
+    item = stock_take.stock_take_items.create!(ingredient: oil, expected_quantity: 1000,
+      counted_quantity: 800)
+    item.calculate_variance!
+    item.save!
+
+    expect(item.unit_cost_cents).to eq(5)
+    expect(item.counted_value_cents).to eq(4000) # 800 * 5
+    expect(item.variance_value_cents).to eq(-1000) # -200 * 5
+  end
 end

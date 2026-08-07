@@ -754,6 +754,8 @@ module ApplicationHelper
     case status
     when "completed" then "bg-green-100 text-green-800"
     when "in_progress" then "bg-amber-100 text-amber-900"
+    when "completing" then "bg-blue-100 text-blue-900"
+    when "failed" then "bg-red-100 text-red-800"
     when "cancelled" then "bg-gray-100 text-gray-700"
     else "bg-gray-100 text-gray-700"
     end
@@ -767,6 +769,8 @@ module ApplicationHelper
     case status
     when "completed" then "border-green-200"
     when "in_progress" then "border-amber-200"
+    when "completing" then "border-blue-200"
+    when "failed" then "border-red-200"
     else "border-gray-200"
     end
   end

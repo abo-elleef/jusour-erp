@@ -4,6 +4,7 @@ require "rails_helper"
 
 RSpec.describe "Admin::Inventory::StockTakes", type: :request do
   include Devise::Test::IntegrationHelpers
+  include ActiveJob::TestHelper
 
   let(:company) { create(:company) }
   let(:owner) { create(:user, :owner, company: company) }
@@ -48,18 +49,52 @@ RSpec.describe "Admin::Inventory::StockTakes", type: :request do
       }.not_to change(StockTake, :count)
       expect(flash[:alert]).to be_present
     end
+
+    it "blocks a new count while the location has a completing take" do
+      create(:ingredient_location, location: kitchen, ingredient: ingredient, quantity_on_hand: 1.0)
+      StockTake.create!(company: company, user: owner, location: kitchen, status: "completing", started_at: Time.current)
+
+      expect {
+        post admin_inventory_stock_takes_path, params: { location_id: kitchen.id }
+      }.not_to change(StockTake, :count)
+      expect(flash[:alert]).to be_present
+    end
   end
 
   describe "POST complete" do
-    it "applies the variance to the location (updates on-hand and the batch ledger)" do
+    def build_take_with_variance
       create(:ingredient_location, location: kitchen, ingredient: ingredient, quantity_on_hand: 0.0)
       take = StockTake.create!(company: company, user: owner, location: kitchen, status: "in_progress", started_at: Time.current)
       item = take.stock_take_items.create!(ingredient: ingredient, expected_quantity: 0)
       item.update!(counted_quantity: 9)
       item.calculate_variance!
       item.save!
+      take
+    end
 
-      post complete_admin_inventory_stock_take_path(take)
+    it "enqueues completion and does not apply stock until the job runs" do
+      take = build_take_with_variance
+
+      expect {
+        post complete_admin_inventory_stock_take_path(take)
+      }.to have_enqueued_job(Inventory::CompleteStockTakeJob).with(take.id, owner.id)
+
+      take.reload
+      expect(take.status).to eq("completing")
+      expect(kitchen.ingredient_stock(ingredient).quantity_on_hand.to_d).to eq(0)
+      expect(flash[:notice]).to eq(I18n.t("flash.stock_take.completing"))
+    end
+
+    it "applies the variance when the job runs" do
+      take = build_take_with_variance
+
+      perform_enqueued_jobs only: Inventory::CompleteStockTakeJob do
+        post complete_admin_inventory_stock_take_path(take)
+      end
+
+      take.reload
+      expect(take.status).to eq("completed")
+      expect(take.completed_at).to be_present
 
       adjustment = ingredient.stock_adjustments.where(adjustment_type: "cycle_count_correction").last
       expect(adjustment.location).to eq(kitchen)

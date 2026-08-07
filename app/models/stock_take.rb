@@ -3,7 +3,9 @@
 class StockTake < ApplicationRecord
   include Tenantable
 
-  STATUSES = %w[in_progress completed cancelled].freeze
+  STATUSES = %w[in_progress completing completed cancelled failed].freeze
+  # Location cannot start another take while a count is open or being applied.
+  ACTIVE_STATUSES = %w[in_progress completing].freeze
 
   belongs_to :user
   # A count is scoped to one location. Required for new takes; older takes may
@@ -17,4 +19,13 @@ class StockTake < ApplicationRecord
   validates :location, presence: true, on: :create
 
   scope :recent, -> { order(created_at: :desc) }
+  scope :active, -> { where(status: ACTIVE_STATUSES) }
+
+  def active?
+    ACTIVE_STATUSES.include?(status)
+  end
+
+  def completable?
+    status.in?(%w[in_progress failed])
+  end
 end

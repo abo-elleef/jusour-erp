@@ -23,6 +23,9 @@ class StockAdjustment < ApplicationRecord
   # Service flows (transfers, receiving, production, consumption) manage their own
   # batches and must leave this false to avoid double-counting.
   attr_accessor :maintain_batches
+  # Optional override for the cost stamped on a newly created overage batch when
+  # +maintain_batches+ is true. Defaults to the ingredient master cost.
+  attr_accessor :batch_cost_per_unit_cents
 
   validates :quantity_delta, numericality: true
   validate :quantity_delta_not_zero
@@ -56,15 +59,16 @@ class StockAdjustment < ApplicationRecord
   end
 
   # Keep the location's batch ledger in step with a manual adjustment so the
-  # stock is FIFO-costed and transferable. Adds create a batch at the ingredient's
-  # current cost; removals draw down existing batches oldest-first.
+  # stock is FIFO-costed and transferable. Adds create a batch at the override
+  # or ingredient master cost; removals draw down existing batches oldest-first.
   def sync_location_batches
     if quantity_delta.to_d.positive?
+      cost = batch_cost_per_unit_cents.nil? ? ingredient.cost_per_unit_cents : batch_cost_per_unit_cents
       ingredient.stock_batches.create!(
         location: location,
         quantity_received: quantity_delta,
         quantity_remaining: quantity_delta,
-        cost_per_unit_cents: ingredient.cost_per_unit_cents,
+        cost_per_unit_cents: cost,
         received_on: Date.current,
         batch_reference: "ADJ-#{id}"
       )
