@@ -18,7 +18,7 @@ module Admin
       def show
         authorize_inventory!(:show)
         @items = @stock_take.stock_take_items
-          .includes(ingredient: :ingredient_category)
+          .includes(ingredient: [:ingredient_category, :ingredient_units])
           .joins(ingredient: :ingredient_category)
           .order("ingredient_categories.position ASC, ingredients.name ASC")
         @unit_costs = ::Inventory::LocationUnitCost.map_for(

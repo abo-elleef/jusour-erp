@@ -61,6 +61,29 @@ RSpec.describe "Admin::Inventory::StockTakes", type: :request do
     end
   end
 
+  describe "PATCH update" do
+    it "saves a count entered in an alternate unit and converts variance to the base unit" do
+      oil = create(:ingredient, company: company, ingredient_category: category, unit: "ml",
+        quantity_on_hand: 0, cost_per_unit_cents: 2, reorder_threshold: 1)
+      oil.ingredient_units.create!(unit: "liters", base_units_per_unit: 1000, company: company)
+      create(:ingredient_location, location: kitchen, ingredient: oil, quantity_on_hand: 1000.0)
+
+      take = StockTake.create!(company: company, user: owner, location: kitchen, status: "in_progress", started_at: Time.current)
+      item = take.stock_take_items.create!(ingredient: oil, expected_quantity: 1000)
+
+      patch admin_inventory_stock_take_path(take), params: {
+        stock_take_items: {
+          item.id => { counted_quantity: "1.2", counted_unit: "liters" }
+        }
+      }
+
+      item.reload
+      expect(item.counted_quantity.to_d).to eq(1.2)
+      expect(item.counted_unit).to eq("liters")
+      expect(item.variance.to_d).to eq(200)
+    end
+  end
+
   describe "POST complete" do
     def build_take_with_variance
       create(:ingredient_location, location: kitchen, ingredient: ingredient, quantity_on_hand: 0.0)
