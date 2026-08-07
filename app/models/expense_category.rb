@@ -5,6 +5,9 @@ class ExpenseCategory < ApplicationRecord
 
   audited associated_with: :company
 
+  # Courier freight linked from vendor invoices (not customer delivery fees).
+  GOODS_DELIVERY_NAME = "Goods delivery"
+
   CATEGORY_TYPES = %w[cogs labor rent utilities marketing maintenance other].freeze
   # Dynamic expense accounts occupy the 5001-5499 range; the first category is 5001.
   ACCOUNT_CODE_BASE = 5000

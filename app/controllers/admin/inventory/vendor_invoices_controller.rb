@@ -86,9 +86,15 @@ module Admin
       def create
         @vendor_invoice = VendorInvoice.new(vendor_invoice_params.merge(user: current_user))
         authorize_inventory!(:create)
+        freight = extract_freight_options!
 
         if invoice_lines_present?
-          ::Inventory::ReceiveVendorInvoiceService.new(@vendor_invoice, current_user).call
+          ::Inventory::ReceiveVendorInvoiceService.new(
+            @vendor_invoice,
+            current_user,
+            freight_amount_cents: freight[:amount_cents],
+            freight_treasury: freight[:treasury]
+          ).call
           redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
             notice: t("flash.vendor_invoice.created")
         else
@@ -97,6 +103,11 @@ module Admin
           load_form_data
           render :new, status: :unprocessable_entity
         end
+      rescue ::Accounting::SyncVendorInvoiceFreightService::Error => e
+        @vendor_invoice.errors.add(:base, e.message)
+        build_line_items
+        load_form_data
+        render :new, status: :unprocessable_entity
       rescue ActiveRecord::RecordInvalid
         build_line_items
         load_form_data
@@ -123,10 +134,13 @@ module Admin
         end
 
         if invoice_lines_present?(vendor_invoice_params)
+          freight = extract_freight_options!
           ::Inventory::UpdateVendorInvoiceService.new(
             @vendor_invoice,
             current_user,
-            vendor_invoice_params
+            vendor_invoice_params,
+            freight_amount_cents: freight[:amount_cents],
+            freight_treasury: freight[:treasury]
           ).call
           redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
             notice: t("flash.vendor_invoice.updated")
@@ -137,6 +151,11 @@ module Admin
           render :edit, status: :unprocessable_entity
         end
       rescue Inventory::UpdateVendorInvoiceService::Error => e
+        build_line_items
+        load_form_data
+        flash.now[:alert] = e.message
+        render :edit, status: :unprocessable_entity
+      rescue ::Accounting::SyncVendorInvoiceFreightService::Error => e
         build_line_items
         load_form_data
         flash.now[:alert] = e.message
@@ -218,6 +237,7 @@ module Admin
         @lines = @vendor_invoice.vendor_invoice_lines.includes(:ingredient, :stock_batch)
         @payments = @vendor_invoice.vendor_invoice_payments.includes(:user, :treasury).order(payment_date: :desc, created_at: :desc)
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+        @freight_expense = @vendor_invoice.freight_expense
         @prev_invoice = @vendor_invoice.newer
         @next_invoice = @vendor_invoice.older
 
@@ -227,6 +247,7 @@ module Admin
           source_record_id: @payments.map(&:id)
         )
         @payment_jes = payment_jes.index_by(&:source_record_id)
+        @freight_je = @freight_expense && JournalEntry.for_source(@freight_expense).includes(:lines).first
       end
 
       def prefill_supplier
@@ -243,6 +264,8 @@ module Admin
         @suppliers = Supplier.active.order(:name)
         @locations = Location.active.ordered
         @ingredients = Ingredient.active.includes(:ingredient_units).order(:name)
+        @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+        @freight_expense = @vendor_invoice.freight_expense if @vendor_invoice.persisted?
         @ingredient_available_units = @ingredients.to_h do |i|
           [i.id, i.available_units.map { |u| [helpers.ingredient_unit_label(u), u] }]
         end
@@ -261,15 +284,33 @@ module Admin
         Location.active.central_kitchens.ordered.first
       end
 
+      # Freight is a linked Expense, not a VendorInvoice column. Strip virtual
+      # fields before mass-assignment; sync runs after receive/update.
+      def extract_freight_options!
+        raw = params.fetch(:vendor_invoice, {})
+        dollars = raw[:freight_amount_dollars]
+        amount_cents = (BigDecimal(dollars.to_s.presence || "0") * 100).round
+        treasury_id = raw[:freight_treasury_id].presence
+        treasury = if treasury_id
+                     Treasury.active.payable.visible_to(current_user).find_by(id: treasury_id)
+                   end
+        @freight_form_amount_cents = amount_cents
+        @freight_form_treasury_id = treasury_id
+        { amount_cents: amount_cents, treasury: treasury }
+      end
+
       def vendor_invoice_params
         permitted = params.require(:vendor_invoice).permit(
           :supplier_id, :location_id, :invoice_number, :invoice_date, :received_on, :notes,
           :discount_type, :discount_value, :discount_amount_dollars, :discount_notes, :invoice_image,
           :adjustment_amount_dollars,
+          :freight_amount_dollars, :freight_treasury_id,
           vendor_invoice_lines_attributes: %i[
             id ingredient_id quantity unit line_total_dollars expires_on batch_reference line_notes _destroy
           ]
         )
+        permitted.delete(:freight_amount_dollars)
+        permitted.delete(:freight_treasury_id)
         permitted[:vendor_invoice_lines_attributes]&.each_value do |attrs|
           dollars = attrs.delete(:line_total_dollars)
           attrs[:line_total_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round

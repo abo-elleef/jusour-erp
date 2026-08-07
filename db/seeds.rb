@@ -158,6 +158,7 @@ end
 [
   { name: "COGS", category_type: "cogs", system_managed: true, position: 1 },
   { name: "Vendor purchases", category_type: "other", system_managed: true, position: 0 },
+  { name: "Goods delivery", category_type: "other", system_managed: true, position: 0 },
   { name: "Labor", category_type: "labor", system_managed: true, position: 2 },
   { name: "Rent", category_type: "rent", system_managed: false, position: 3 },
   { name: "Utilities", category_type: "utilities", system_managed: false, position: 4 },

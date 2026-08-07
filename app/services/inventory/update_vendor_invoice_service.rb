@@ -4,10 +4,12 @@ module Inventory
   class UpdateVendorInvoiceService
     class Error < StandardError; end
 
-    def initialize(vendor_invoice, user, attributes)
+    def initialize(vendor_invoice, user, attributes, freight_amount_cents: 0, freight_treasury: nil)
       @invoice = vendor_invoice
       @user = user
       @attributes = attributes
+      @freight_amount_cents = freight_amount_cents
+      @freight_treasury = freight_treasury
       @stock_handler = VendorInvoiceStockHandler.new(@invoice, @user)
     end
 
@@ -26,6 +28,12 @@ module Inventory
         @invoice.vendor_invoice_lines.each { |line| @stock_handler.receive_line(line) }
         @invoice.reload
         Accounting::SupplierApLedgerService.record_invoice!(invoice: @invoice, user: @user)
+        Accounting::SyncVendorInvoiceFreightService.call(
+          invoice: @invoice,
+          user: @user,
+          amount_cents: @freight_amount_cents,
+          treasury: @freight_treasury
+        )
       end
 
       @invoice

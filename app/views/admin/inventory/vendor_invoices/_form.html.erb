@@ -128,7 +128,7 @@
           </div>
         <% end %>
         <div class="flex justify-between gap-4 border-t border-gray-200 pt-2 font-semibold text-gray-900">
-          <span><%= t("inventory.vendor_invoices.total") %></span>
+          <span><%= t("inventory.vendor_invoices.form.supplier_payable") %></span>
           <span class="tabular-nums"
                 data-vendor-invoice-lines-target="grandTotalDisplay"><%= format_money(vendor_invoice.total_cents.positive? ? vendor_invoice.total_cents : [estimated_cents - vendor_invoice.discount_cents + vendor_invoice.adjustment_cents.to_i, 0].max) %></span>
         </div>
@@ -161,6 +161,64 @@
           </span>
         </div>
       <% end %>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.form.freight") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.vendor_invoices.form.freight_hint") %></p>
+    </div>
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <% freight = @freight_expense %>
+      <% freight_amount_dollars =
+           if @freight_form_amount_cents.present?
+             @freight_form_amount_cents.positive? ? (@freight_form_amount_cents.to_d / 100) : nil
+           elsif freight&.amount_cents.to_i&.positive?
+             freight.amount_cents.to_d / 100
+           end %>
+      <% freight_treasury_id = @freight_form_treasury_id.presence || freight&.treasury_id || Treasury.default_treasury&.id %>
+      <div>
+        <%= label_tag "vendor_invoice_freight_amount_dollars",
+              t("inventory.vendor_invoices.form.freight_amount"), class: label_class %>
+        <%= number_field_tag "vendor_invoice[freight_amount_dollars]",
+              freight_amount_dollars,
+              step: 0.01,
+              min: 0,
+              class: input_class,
+              placeholder: "0",
+              data: {
+                vendor_invoice_lines_target: "freightAmount",
+                action: "input->vendor-invoice-lines#recalculate"
+              } %>
+      </div>
+      <div>
+        <%= label_tag "vendor_invoice_freight_treasury_id",
+              t("inventory.vendor_invoices.form.freight_treasury"), class: label_class %>
+        <%= select_tag "vendor_invoice[freight_treasury_id]",
+              options_from_collection_for_select(
+                @treasuries,
+                :id,
+                :name,
+                freight_treasury_id
+              ),
+              include_blank: t("inventory.vendor_invoices.form.freight_treasury_blank"),
+              class: input_class %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.vendor_invoices.form.freight_treasury_hint") %></p>
+      </div>
+      <div class="sm:col-span-2 rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3 text-sm text-gray-700 space-y-1">
+        <div class="flex justify-between gap-4 font-semibold text-gray-900">
+          <span><%= t("inventory.vendor_invoices.form.supplier_payable") %></span>
+          <span class="tabular-nums"
+                data-vendor-invoice-lines-target="grandTotalDisplay"><%= format_money(vendor_invoice.total_cents.positive? ? vendor_invoice.total_cents : [estimated_cents - vendor_invoice.discount_cents + vendor_invoice.adjustment_cents.to_i, 0].max) %></span>
+        </div>
+        <div class="flex justify-between gap-4 text-violet-800 <%= "hidden" unless freight_amount_dollars.to_d.positive? %>"
+             data-vendor-invoice-lines-target="freightPreviewWrap">
+          <span><%= t("inventory.vendor_invoices.form.courier_freight") %></span>
+          <span class="font-semibold tabular-nums"
+                data-vendor-invoice-lines-target="freightDisplay"><%= freight_amount_dollars.to_d.positive? ? format_money((freight_amount_dollars.to_d * 100).round) : format_money(0) %></span>
+        </div>
+      </div>
     </div>
   </section>
   </div>

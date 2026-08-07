@@ -24,6 +24,8 @@ module Accounting
           reverse_payment!(payment)
         end
 
+        clear_freight_expense!
+
         SupplierApLedgerService.reverse_invoice!(invoice: @invoice, user: @user)
         @invoice.update!(payment_status: "void", amount_paid_cents: 0)
       end
@@ -32,6 +34,14 @@ module Accounting
     end
 
     private
+
+    def clear_freight_expense!
+      expense = @invoice.freight_expense
+      return unless expense
+
+      JournalEntryService.destroy_for_source!(expense)
+      expense.destroy!
+    end
 
     def reverse_payment!(payment)
       # Destroying the auto-generated expense restores the payment treasury

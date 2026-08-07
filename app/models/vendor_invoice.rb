@@ -11,6 +11,8 @@ class VendorInvoice < ApplicationRecord
   belongs_to :location
   has_many :vendor_invoice_lines, dependent: :destroy
   has_many :vendor_invoice_payments, dependent: :destroy
+  # Courier freight paid at receive — separate from supplier AP / Vendor purchases payments.
+  has_one :freight_expense, as: :source_record, class_name: "Expense", dependent: :nullify
 
   has_one_attached :invoice_image
 

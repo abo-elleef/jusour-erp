@@ -1124,11 +1124,25 @@ ar:
         adjustment: "تسوية التقريب (اختياري)"
         adjustment_hint: "قيمة موجبة للتقريب للأعلى، وسالبة للتقريب للأسفل. تعدّل الإجمالي دون تغيير أسعار البنود."
         adjustment_amount: "مبلغ التسوية"
+        freight: "توصيل البضائع (اختياري)"
+        freight_hint: "يُدفع لشركة شحن منفصلة لتوصيل البضائع للمطبخ المركزي — ليس جزءاً من فاتورة المورد ولا رسوم توصيل العملاء."
+        freight_amount: "مبلغ الشحن"
+        freight_treasury: "دفع الشحن من"
+        freight_treasury_blank: "اختر خزينة…"
+        freight_treasury_hint: "مطلوب عند إدخال مبلغ شحن. يُخصم من الخزينة فوراً."
+        supplier_payable: "إجمالي فاتورة المورد"
+        courier_freight: "شحن المندوب (منفصل)"
+      freight: "شحن المندوب"
+      freight_none: "لا يوجد شحن مندوب مسجّل"
+      freight_expense_description: "توصيل بضائع — %{invoice_number} — %{supplier}"
+      view_freight_expense: "عرض المصروف"
       errors:
         lines_required: "أضف بنداً واحداً على الأقل مع مكوّن."
         not_editable: "لا يمكن تعديل هذه الفاتورة بعد تسجيل مدفوعات أو إلغائها."
         stock_consumed: "تعذّر التعديل: تم استخدام مخزون %{ingredient} من هذه الفاتورة."
         stock_consumed_blocked: "تعذّر التعديل — تم استخدام جزء من المخزون المستلم."
+        freight_treasury_required: "اختر خزينة لدفع شحن المندوب."
+        freight_treasury_invalid: "اختر خزينة نقد أو بنك صالحة لشحن المندوب."
 
     stock_takes:
       index:

@@ -4,7 +4,8 @@ export default class extends Controller {
   static targets = [
     "list", "template", "row", "unitSelect", "expiresOn",
     "lineTotalDollars", "unitPriceDisplay", "detailsModal", "detailsDot",
-    "runningTotal", "runningTotalWrap", "subtotalDisplay", "grandTotalDisplay", "discountPreviewWrap"
+    "runningTotal", "runningTotalWrap", "subtotalDisplay", "grandTotalDisplay", "discountPreviewWrap",
+    "freightAmount", "freightDisplay", "freightPreviewWrap"
   ]
   static values = { availableUnits: Object, shelfLifeDays: Object, unitPriceDollars: Object }
 
@@ -163,11 +164,23 @@ export default class extends Controller {
     const totalCents = Math.max(0, subtotalCents - discountCents + adjustmentCents)
 
     if (this.hasGrandTotalDisplayTarget) {
-      this.grandTotalDisplayTarget.textContent = this.formatMoney(totalCents)
+      const label = this.formatMoney(totalCents)
+      this.grandTotalDisplayTargets.forEach((el) => { el.textContent = label })
     }
 
     if (this.hasDiscountPreviewWrapTarget) {
       this.discountPreviewWrapTarget.classList.toggle("hidden", subtotalCents === 0)
+    }
+
+    const freightDollars = this.hasFreightAmountTarget
+      ? (parseFloat(this.freightAmountTarget.value) || 0)
+      : 0
+    const freightCents = Math.round(freightDollars * 100)
+    if (this.hasFreightDisplayTarget) {
+      this.freightDisplayTarget.textContent = this.formatMoney(freightCents)
+    }
+    if (this.hasFreightPreviewWrapTarget) {
+      this.freightPreviewWrapTarget.classList.toggle("hidden", freightCents <= 0)
     }
   }
 
