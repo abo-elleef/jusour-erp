@@ -148,20 +148,20 @@ export default class extends Controller {
       this.subtotalDisplayTarget.textContent = this.formatMoney(subtotalCents)
     }
 
-    let discountCents = 0
-    const discountType = this.element.querySelector("[data-vendor-invoice-discount-target='type']")?.value
-    if (discountType === "percentage") {
-      const pct = parseFloat(this.element.querySelector("[data-vendor-invoice-discount-target='percentageField']")?.value) || 0
-      discountCents = Math.round(subtotalCents * pct / 100)
-    } else if (discountType === "fixed_amount") {
-      const fixedDollars = parseFloat(this.element.querySelector("[data-vendor-invoice-discount-target='fixedField']")?.value) || 0
-      discountCents = Math.round(fixedDollars * 100)
-    }
+    const discountCents = (() => {
+      const discountType = this.element.querySelector("[data-vendor-invoice-discount-target='type']")?.value
+      if (discountType === "percentage") {
+        const pct = parseFloat(this.element.querySelector("[data-vendor-invoice-discount-target='percentageField']")?.value) || 0
+        return Math.round(subtotalCents * pct / 100)
+      }
+      if (discountType === "fixed_amount") {
+        const fixedDollars = parseFloat(this.element.querySelector("[data-vendor-invoice-discount-target='fixedField']")?.value) || 0
+        return Math.round(fixedDollars * 100)
+      }
+      return 0
+    })()
 
-    const adjustmentDollars = parseFloat(this.element.querySelector("input[name='vendor_invoice[adjustment_amount_dollars]']")?.value) || 0
-    const adjustmentCents = Math.round(adjustmentDollars * 100)
-
-    const totalCents = Math.max(0, subtotalCents - discountCents + adjustmentCents)
+    const totalCents = Math.max(0, subtotalCents - discountCents)
 
     if (this.hasGrandTotalDisplayTarget) {
       const label = this.formatMoney(totalCents)

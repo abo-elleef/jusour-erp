@@ -1065,7 +1065,6 @@ en:
       discount_notes: "Discount notes"
       discount_notes_placeholder: "e.g. Early payment discount, volume rebate…"
       discount_applied: "Discount applied"
-      adjustment_applied: "Rounding adjustment"
       discount_percentage_label: "%{value}% off"
       discount_fixed_label: "%{amount} off"
       discount_types:
@@ -1118,9 +1117,6 @@ en:
         submit_update: "Save changes"
         discount: "Discount (optional)"
         discount_hint: "Apply a supplier discount to reduce the invoice total."
-        adjustment: "Rounding adjustment (optional)"
-        adjustment_hint: "Positive rounds up, negative rounds down. Adjusts the total without changing line prices."
-        adjustment_amount: "Adjustment amount"
         freight: "Courier delivery (optional)"
         freight_hint: "Paid to a separate courier to deliver goods to your kitchen — not part of the supplier invoice or customer delivery fees."
         freight_amount: "Freight amount"

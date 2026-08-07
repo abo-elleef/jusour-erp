@@ -1067,7 +1067,6 @@ ar:
       discount_notes: "ملاحظات الخصم"
       discount_notes_placeholder: "مثال: خصم الدفع المبكر، خصم كمية…"
       discount_applied: "الخصم المطبّق"
-      adjustment_applied: "تسوية التقريب"
       discount_percentage_label: "خصم %{value}%"
       discount_fixed_label: "خصم %{amount}"
       discount_types:
@@ -1121,9 +1120,6 @@ ar:
         submit_update: "حفظ التغييرات"
         discount: "الخصم (اختياري)"
         discount_hint: "طبّق خصماً من المورد لتخفيض إجمالي الفاتورة."
-        adjustment: "تسوية التقريب (اختياري)"
-        adjustment_hint: "قيمة موجبة للتقريب للأعلى، وسالبة للتقريب للأسفل. تعدّل الإجمالي دون تغيير أسعار البنود."
-        adjustment_amount: "مبلغ التسوية"
         freight: "توصيل البضائع (اختياري)"
         freight_hint: "يُدفع لشركة شحن منفصلة لتوصيل البضائع للمطبخ المركزي — ليس جزءاً من فاتورة المورد ولا رسوم توصيل العملاء."
         freight_amount: "مبلغ الشحن"

@@ -22,7 +22,6 @@ class VendorInvoice < ApplicationRecord
 
   monetize :total_cents
   monetize :amount_paid_cents
-  monetize :adjustment_cents
 
   validates :invoice_number, presence: true,
     uniqueness: { scope: %i[company_id supplier_id], case_sensitive: false }
@@ -137,10 +136,6 @@ class VendorInvoice < ApplicationRecord
     discount_cents.positive?
   end
 
-  def adjusted?
-    adjustment_cents != 0
-  end
-
   def balance_due_cents
     total_cents - amount_paid_cents
   end
@@ -176,7 +171,7 @@ class VendorInvoice < ApplicationRecord
   end
 
   def recalculate_total
-    self.total_cents = [subtotal_cents - discount_cents + adjustment_cents.to_i, 0].max
+    self.total_cents = [subtotal_cents - discount_cents, 0].max
   end
 
   def discount_type_and_value_consistency

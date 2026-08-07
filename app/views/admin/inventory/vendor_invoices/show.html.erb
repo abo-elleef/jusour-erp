@@ -136,12 +136,6 @@
           · -<%= format_money(@vendor_invoice.discount_cents) %>
         </p>
       <% end %>
-      <% if @vendor_invoice.adjusted? %>
-        <p class="text-xs text-blue-700 mt-1">
-          <%= t("inventory.vendor_invoices.adjustment_applied") %>
-          · <%= @vendor_invoice.adjustment_cents.positive? ? "+" : "" %><%= format_money(@vendor_invoice.adjustment_cents) %>
-        </p>
-      <% end %>
     </div>
     <div class="rounded-2xl border border-violet-200 bg-violet-50/50 p-4">
       <p class="text-xs font-semibold text-violet-700 uppercase tracking-wide"><%= t("inventory.vendor_invoices.freight") %></p>
