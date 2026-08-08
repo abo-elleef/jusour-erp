@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_08_140000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_08_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1129,6 +1129,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_08_140000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "unit_id"
+    t.integer "position", default: 0, null: false
     t.index ["ingredient_id"], name: "index_stock_transfer_lines_on_ingredient_id"
     t.index ["stock_transfer_id", "ingredient_id"], name: "idx_on_stock_transfer_id_ingredient_id_597e5cba74", unique: true
     t.index ["stock_transfer_id"], name: "index_stock_transfer_lines_on_stock_transfer_id"
@@ -1404,6 +1405,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_08_140000) do
     t.datetime "updated_at", null: false
     t.integer "line_total_cents", default: 0, null: false
     t.uuid "unit_id"
+    t.integer "position", default: 0, null: false
     t.index ["ingredient_id"], name: "index_vendor_invoice_lines_on_ingredient_id"
     t.index ["unit_id"], name: "index_vendor_invoice_lines_on_unit_id"
     t.index ["vendor_invoice_id"], name: "index_vendor_invoice_lines_on_vendor_invoice_id"

@@ -1,0 +1,11 @@
+<%# Drag handle + position field for nested line forms.
+    locals: f %>
+<%= f.hidden_field :position, value: f.object.position || 0,
+      data: { nested_line_sortable_target: "position" } %>
+<button type="button"
+        class="inline-flex items-center justify-center w-8 h-9 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing select-none shrink-0"
+        data-nested-line-sortable-target="handle"
+        title="<%= t("inventory.shared.drag_to_reorder") %>"
+        aria-label="<%= t("inventory.shared.drag_to_reorder") %>">
+  <span aria-hidden="true">⠿</span>
+</button>

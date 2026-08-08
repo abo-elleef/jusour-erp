@@ -10,7 +10,7 @@ class StockTransfer < ApplicationRecord
   belongs_to :requested_by, class_name: "User"
   belongs_to :sent_by, class_name: "User", optional: true
   belongs_to :received_by, class_name: "User", optional: true
-  has_many :stock_transfer_lines, dependent: :destroy
+  has_many :stock_transfer_lines, -> { order(:position, :created_at) }, dependent: :destroy, inverse_of: :stock_transfer
   has_many :stock_transfer_shipments, dependent: :destroy
   has_many :ingredients, through: :stock_transfer_lines
   has_many :stock_adjustments, dependent: :nullify

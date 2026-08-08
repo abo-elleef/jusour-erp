@@ -18,6 +18,10 @@
               new_admin_inventory_stock_transfer_path(template_id: @template.id),
               class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded-xl" %>
       <% end %>
+      <%= button_to t("inventory.stock_transfer_templates.duplicate"),
+            duplicate_admin_inventory_stock_transfer_template_path(@template),
+            method: :post,
+            class: "border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50" %>
       <%= link_to t("actions.edit"), edit_admin_inventory_stock_transfer_template_path(@template),
             class: "border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50" %>
       <%= link_to t("inventory.stock_transfer_templates.back"), admin_inventory_stock_transfer_templates_path,

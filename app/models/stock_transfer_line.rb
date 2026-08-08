@@ -16,9 +16,12 @@ class StockTransferLine < ApplicationRecord
   validates :quantity_requested, numericality: { greater_than: 0 }
   validates :quantity_sent, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_received, numericality: { greater_than_or_equal_to: 0 }
+  validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :unit_valid_for_ingredient
 
   before_validation :convert_requested_input
+
+  scope :ordered, -> { order(:position, :created_at) }
 
   # Show a base-unit quantity in this line's (fixed) unit.
   def in_line_unit(base_quantity)

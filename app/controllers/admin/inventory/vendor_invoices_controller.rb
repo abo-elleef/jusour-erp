@@ -305,7 +305,7 @@ module Admin
           :discount_type, :discount_value, :discount_amount_dollars, :discount_notes, :invoice_image,
           :freight_amount_dollars, :freight_treasury_id,
           vendor_invoice_lines_attributes: %i[
-            id ingredient_id quantity unit line_total_dollars expires_on batch_reference line_notes _destroy
+            id ingredient_id quantity unit line_total_dollars expires_on batch_reference line_notes position _destroy
           ]
         )
         permitted.delete(:freight_amount_dollars)

@@ -20,7 +20,7 @@ module Admin
 
       def show
         authorize_inventory!(:show)
-        @lines = @stock_transfer.stock_transfer_lines.includes(:ingredient).order("ingredients.name")
+        @lines = @stock_transfer.stock_transfer_lines.includes(:ingredient).ordered
         @shipments = @stock_transfer.stock_transfer_shipments.ordered
           .includes(stock_transfer_shipment_lines: { stock_transfer_line: :ingredient })
         @current_shipment = @stock_transfer.current_shipment
@@ -134,7 +134,7 @@ module Admin
       def stock_transfer_params
         params.require(:stock_transfer).permit(
           :from_location_id, :to_location_id, :notes,
-          stock_transfer_lines_attributes: %i[id ingredient_id quantity_requested quantity_requested_input unit _destroy]
+          stock_transfer_lines_attributes: %i[id ingredient_id quantity_requested quantity_requested_input unit position _destroy]
         )
       end
 
@@ -177,7 +177,8 @@ module Admin
           @stock_transfer.stock_transfer_lines.build(
             ingredient: line.ingredient,
             unit: line.unit.presence || line.ingredient.unit,
-            quantity_requested_input: qty.positive? ? qty : nil
+            quantity_requested_input: qty.positive? ? qty : nil,
+            position: line.position
           )
         end
       end

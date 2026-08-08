@@ -3,7 +3,7 @@
 module Admin
   module Inventory
     class StockTransferTemplatesController < BaseController
-      before_action :set_template, only: %i[show edit update destroy]
+      before_action :set_template, only: %i[show edit update destroy duplicate]
 
       def index
         authorize_inventory_index!(StockTransferTemplate)
@@ -58,6 +58,18 @@ module Admin
         @template.destroy!
         redirect_to admin_inventory_stock_transfer_templates_path,
           notice: t("flash.stock_transfer_template.removed")
+      end
+
+      def duplicate
+        authorize_inventory!(:create)
+        copy = @template.duplicate
+        if copy.save
+          redirect_to edit_admin_inventory_stock_transfer_template_path(copy),
+            notice: t("flash.stock_transfer_template.duplicated")
+        else
+          redirect_to admin_inventory_stock_transfer_template_path(@template),
+            alert: copy.errors.full_messages.to_sentence
+        end
       end
 
       private

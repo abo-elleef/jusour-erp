@@ -888,6 +888,9 @@ en:
       valuation: "Valuation"
       variance: "Variance"
       manufacturing: "Manufacturing"
+    shared:
+      drag_to_reorder: "Drag to reorder"
+      drag_to_reorder_hint: "Drag the ⠿ handle to reorder lines. Order is saved when you submit."
     units:
       title: "Units of measure"
       description: "Define the units your company buys and stocks in. Built-in units are always available; add your own custom units."
@@ -1370,6 +1373,8 @@ en:
       default_quantity: "Default qty"
       add_line: "Add ingredient"
       use: "Use template"
+      duplicate: "Duplicate"
+      copy_name: "%{name} (copy)"
       back: "← Templates"
       empty: "No transfer templates yet. Create one with your usual ~30 ingredients."
       delete_confirm: "Delete template “%{name}”?"
@@ -3497,6 +3502,7 @@ en:
       created: "Transfer template created."
       updated: "Transfer template updated."
       removed: "Transfer template removed."
+      duplicated: "Transfer template duplicated. Review and save any changes."
     ingredient_location:
       assigned: "Ingredient assigned to location."
       updated: "Location stock settings updated."

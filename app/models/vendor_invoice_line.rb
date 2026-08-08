@@ -13,8 +13,11 @@ class VendorInvoiceLine < ApplicationRecord
 
   validates :quantity, numericality: { greater_than: 0 }
   validates :line_total_cents, numericality: { greater_than_or_equal_to: 0 }
+  validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   before_validation :derive_unit_price
+
+  scope :ordered, -> { order(:position, :created_at) }
 
   # Quantity entered in `unit` (may be an alternate purchase unit) converted to
   # the ingredient's base unit — the unit all stock/costing is stored in.

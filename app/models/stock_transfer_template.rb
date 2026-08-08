@@ -25,7 +25,39 @@ class StockTransferTemplate < ApplicationRecord
     %w[name active position]
   end
 
+  # Deep-copy this template and its lines into a new unsaved record with a unique name.
+  def duplicate
+    copy = StockTransferTemplate.new(
+      name: next_duplicate_name,
+      active: active,
+      position: position,
+      notes: notes,
+      default_from_location_id: default_from_location_id,
+      default_to_location_id: default_to_location_id
+    )
+    stock_transfer_template_lines.ordered.each do |line|
+      copy.stock_transfer_template_lines.build(
+        ingredient_id: line.ingredient_id,
+        default_quantity: line.default_quantity,
+        unit: line.unit,
+        position: line.position
+      )
+    end
+    copy
+  end
+
   private
+
+  def next_duplicate_name
+    base = I18n.t("inventory.stock_transfer_templates.copy_name", name: name)
+    candidate = base
+    n = 2
+    while self.class.where(company_id: company_id).exists?(name: candidate)
+      candidate = "#{base} #{n}"
+      n += 1
+    end
+    candidate
+  end
 
   def must_have_lines
     return if stock_transfer_template_lines.reject(&:marked_for_destruction?).any?
