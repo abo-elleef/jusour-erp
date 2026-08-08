@@ -78,9 +78,14 @@ module Pos
     def set_order
       @order = Order.find_by(id: session[:current_order_id], status: "draft")
       @order ||= materialize_pending_order!
-      return if @order.location_id.present? || current_pos_location.blank?
+      return if current_pos_location.blank?
 
-      @order.update!(location: current_pos_location)
+      attrs = {}
+      attrs[:location] = current_pos_location if @order.location_id.blank?
+      if current_pos_workstation.present? && @order.workstation_id != current_pos_workstation.id
+        attrs[:workstation] = current_pos_workstation
+      end
+      @order.update!(attrs) if attrs.any?
     end
 
     # Creates the DB record from pending session params (set by PosController when
@@ -90,6 +95,7 @@ module Pos
       order = Orders::CreateService.call(
         user:             current_user,
         location:         current_pos_location,
+        workstation:      current_pos_workstation,
         order_type:       pending["order_type"].presence || "pickup",
         table_number:     pending["table_number"],
         delivery_address: pending["delivery_address"]

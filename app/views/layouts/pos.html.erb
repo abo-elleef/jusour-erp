@@ -58,6 +58,10 @@
     <span class="sr-only" data-connectivity-target="syncStatus"></span>
     <% if current_user&.company_id && Printing::Config.client_routing? %>
       <% pos_loc_id = session[:pos_location_id] %>
+      <% pos_ws_id = session[:pos_workstation_id] %>
+      <% if pos_loc_id.present? && pos_ws_id.present? %>
+        <%= turbo_stream_from "pos_prints_#{current_user.company_id}_#{pos_loc_id}_#{pos_ws_id}" %>
+      <% end %>
       <% if pos_loc_id.present? %>
         <%= turbo_stream_from "pos_prints_#{current_user.company_id}_#{pos_loc_id}" %>
       <% else %>

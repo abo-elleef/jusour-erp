@@ -12,6 +12,7 @@ class Printer < ApplicationRecord
   has_many :print_logs, dependent: :nullify
   has_many :printer_menu_items, dependent: :destroy
   has_many :menu_items, through: :printer_menu_items
+  has_many :workstations, foreign_key: :receipt_printer_id, dependent: :nullify, inverse_of: :receipt_printer
 
   validates :name, presence: true
   validates :printer_type, presence: true, inclusion: { in: PRINTER_TYPES }

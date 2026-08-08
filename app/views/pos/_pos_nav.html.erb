@@ -14,6 +14,19 @@
   <% elsif @pos_location %>
     <span class="text-sm font-semibold text-gray-600 px-2 py-1.5"><%= @pos_location.name %></span>
   <% end %>
+  <% if @pos_workstations.present? && @pos_workstations.any? %>
+    <%= form_with url: pos_set_workstation_path, method: :patch,
+          class: "inline-flex items-center gap-2",
+          data: { turbo_frame: "_top" } do %>
+      <label for="pos_workstation_id" class="sr-only"><%= t("pos.workstation.label") %></label>
+      <%= select_tag :workstation_id,
+            options_from_collection_for_select(@pos_workstations, :id, :name, @pos_workstation&.id),
+            id: "pos_workstation_id",
+            include_blank: (@pos_workstations.one? ? false : t("pos.workstation.select")),
+            class: "border border-amber-200 rounded-xl px-3 py-1.5 text-sm font-semibold text-amber-900 bg-amber-50",
+            onchange: "this.form.requestSubmit()" %>
+    <% end %>
+  <% end %>
   <%= link_to t("nav.register"), pos_path, class: pos_nav_link_class(request.path == pos_path) %>
   <%= link_to t("nav.collect_payment"), pos_orders_path, class: pos_nav_link_class(request.path.start_with?("/pos/orders")) %>
   <%= link_to t("nav.my_shift"), pos_shift_path, class: pos_nav_link_class(request.path == pos_shift_path || request.path.start_with?("/pos/shift")) %>

@@ -178,11 +178,18 @@ export default class extends Controller {
   }
 
   async sendToAgent(payload) {
-    const body = {
-      host: payload.host,
-      port: payload.port,
-      data_base64: payload.data_base64
-    }
+    const body = payload.connection === "usb"
+      ? {
+          connection: "usb",
+          device: payload.device || payload.host,
+          data_base64: payload.data_base64
+        }
+      : {
+          connection: "network",
+          host: payload.host,
+          port: payload.port,
+          data_base64: payload.data_base64
+        }
     const response = await this.agentFetch("/print", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

@@ -10,6 +10,7 @@ class Order < ApplicationRecord
   belongs_to :customer, optional: true
   belongs_to :user
   belongs_to :location, optional: true
+  belongs_to :workstation, optional: true
   belongs_to :staff_meal_user, class_name: "User", optional: true
   has_many :order_items, dependent: :destroy
   has_many :order_discounts, dependent: :destroy

@@ -14,15 +14,17 @@ module Printing
     end
 
     def call
-      printer = @printer || Printer.default_for(default_printer_type, location: @order.location)
+      printer = @printer || resolve_printer
       return log_skipped(nil, "no_active_#{@print_type}_printer") unless printer
 
       payload = build_payload(printer)
 
-      if printer.usb?
-        print_via_agent_usb(printer, payload)
-      elsif Config.client_routing?
+      # USB and network both go through the local POS print agent in client mode,
+      # so each register talks to the printer attached to that machine.
+      if Config.client_routing?
         queue_client_print(printer, payload)
+      elsif printer.usb?
+        print_via_agent_usb(printer, payload)
       else
         print_via_server(printer, payload)
       end
@@ -32,6 +34,15 @@ module Printing
     end
 
     private
+
+    def resolve_printer
+      if @print_type == "receipt"
+        workstation_printer = @order.workstation&.receipt_printer
+        return workstation_printer if workstation_printer&.active?
+      end
+
+      Printer.default_for(default_printer_type, location: @order.location)
+    end
 
     def default_printer_type
       case @print_type
@@ -103,12 +114,20 @@ module Printing
       log
     end
 
+    # Receipts bound to a workstation go to that register only.
+    # Kitchen/bar/expo stay on the shared branch stream.
     def pos_print_stream_name
-      if @order.location_id.present?
+      if receipt_for_workstation?
+        "pos_prints_#{@order.company_id}_#{@order.location_id}_#{@order.workstation_id}"
+      elsif @order.location_id.present?
         "pos_prints_#{@order.company_id}_#{@order.location_id}"
       else
         "pos_prints_#{@order.company_id}"
       end
+    end
+
+    def receipt_for_workstation?
+      @print_type == "receipt" && @order.workstation_id.present? && @order.location_id.present?
     end
 
     def log_success(printer)

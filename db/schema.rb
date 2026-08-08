@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_07_090000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_07_200000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -790,6 +790,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_07_090000) do
     t.uuid "company_id", null: false
     t.uuid "location_id"
     t.uuid "staff_meal_user_id"
+    t.uuid "workstation_id"
     t.index ["company_id", "order_number"], name: "index_orders_on_company_id_and_order_number", unique: true
     t.index ["company_id"], name: "index_orders_on_company_id"
     t.index ["created_at"], name: "index_orders_on_created_at"
@@ -800,6 +801,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_07_090000) do
     t.index ["staff_meal_user_id"], name: "index_orders_on_staff_meal_user_id"
     t.index ["status"], name: "index_orders_on_status"
     t.index ["user_id"], name: "index_orders_on_user_id"
+    t.index ["workstation_id"], name: "index_orders_on_workstation_id"
   end
 
   create_table "overtime_rules", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1418,6 +1420,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_07_090000) do
     t.index ["user_id"], name: "index_vendor_invoices_on_user_id"
   end
 
+  create_table "workstations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "location_id", null: false
+    t.string "name", null: false
+    t.boolean "active", default: true, null: false
+    t.uuid "receipt_printer_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "active"], name: "index_workstations_on_company_id_and_active"
+    t.index ["company_id"], name: "index_workstations_on_company_id"
+    t.index ["location_id", "name"], name: "index_workstations_on_location_id_and_name", unique: true
+    t.index ["location_id"], name: "index_workstations_on_location_id"
+    t.index ["receipt_printer_id"], name: "index_workstations_on_receipt_printer_id"
+  end
+
   add_foreign_key "accounting_integrations", "companies"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
@@ -1518,6 +1535,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_07_090000) do
   add_foreign_key "orders", "locations"
   add_foreign_key "orders", "users"
   add_foreign_key "orders", "users", column: "staff_meal_user_id"
+  add_foreign_key "orders", "workstations"
   add_foreign_key "overtime_rules", "companies"
   add_foreign_key "partners", "companies"
   add_foreign_key "payment_method_treasuries", "companies"
@@ -1616,4 +1634,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_07_090000) do
   add_foreign_key "vendor_invoices", "locations"
   add_foreign_key "vendor_invoices", "suppliers"
   add_foreign_key "vendor_invoices", "users"
+  add_foreign_key "workstations", "companies"
+  add_foreign_key "workstations", "locations"
+  add_foreign_key "workstations", "printers", column: "receipt_printer_id"
 end

@@ -34,6 +34,8 @@ module Printing
         port: (@port.presence || @printer.port || Drivers::Network::DEFAULT_PORT).to_i,
         printer_name: @printer.name,
         print_type: @print_type,
+        connection: @printer.connection_type,
+        device: @printer.usb? ? @printer.host : nil,
         data_base64: Base64.strict_encode64(payload)
       }
     end

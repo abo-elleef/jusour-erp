@@ -19,6 +19,7 @@ class Location < ApplicationRecord
   has_many :vendor_invoices, dependent: :restrict_with_error
   has_many :printers, dependent: :restrict_with_error
   has_many :cash_drawer_sessions, dependent: :nullify
+  has_many :workstations, dependent: :destroy
   has_many :location_operating_days, dependent: :destroy
   has_many :outgoing_stock_transfers, class_name: "StockTransfer", foreign_key: :from_location_id, dependent: :restrict_with_error
   has_many :incoming_stock_transfers, class_name: "StockTransfer", foreign_key: :to_location_id, dependent: :restrict_with_error

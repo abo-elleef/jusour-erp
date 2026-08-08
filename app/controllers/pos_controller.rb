@@ -6,7 +6,7 @@ class PosController < ApplicationController
   layout "pos"
 
   before_action :require_cashier!
-  before_action :set_order, except: %i[new_order submit set_location]
+  before_action :set_order, except: %i[new_order submit set_location set_workstation]
   before_action :ensure_order_persisted!, only: %i[update_fulfillment update_notes attach_customer apply_coupon manager_discount split merge]
   before_action :no_cache, only: :index
 
@@ -68,10 +68,23 @@ class PosController < ApplicationController
     end
 
     session[:pos_location_id] = location.id
+    session.delete(:pos_workstation_id)
     if (order = current_draft_order) && order.location_id != location.id
       session.delete(:current_order_id)
     end
     redirect_to pos_path, notice: t("flash.pos.location_changed", name: location.name), status: :see_other
+  end
+
+  def set_workstation
+    workstation = @pos_workstations.find { |ws| ws.id == params[:workstation_id] }
+    unless workstation
+      redirect_to pos_path, alert: t("flash.pos.invalid_workstation"), status: :see_other
+      return
+    end
+
+    session[:pos_workstation_id] = workstation.id
+    sync_draft_order_workstation!(workstation)
+    redirect_to pos_path, notice: t("flash.pos.workstation_changed", name: workstation.name), status: :see_other
   end
 
   def submit
@@ -223,12 +236,14 @@ class PosController < ApplicationController
     session[:pending_order_params] = {
       "user_id"          => current_user.id,
       "location_id"      => current_pos_location&.id,
+      "workstation_id"   => current_pos_workstation&.id,
       "order_type"       => "pickup",
       "status"           => "draft"
     }
     Order.new(
       user:             current_user,
       location:         current_pos_location,
+      workstation:      current_pos_workstation,
       order_type:       "pickup",
       status:           "draft",
       subtotal_cents:   0,
@@ -241,10 +256,21 @@ class PosController < ApplicationController
 
   def sync_order_location!
     return if @pos_location.blank?
-    return if @order.location_id == @pos_location.id
     return unless @order.persisted?
 
-    @order.update!(location: @pos_location)
+    attrs = {}
+    attrs[:location] = @pos_location if @order.location_id != @pos_location.id
+    if @pos_workstation.present? && @order.workstation_id != @pos_workstation.id
+      attrs[:workstation] = @pos_workstation
+    end
+    @order.update!(attrs) if attrs.any?
+  end
+
+  def sync_draft_order_workstation!(workstation)
+    order = current_draft_order
+    return unless order&.persisted?
+
+    order.update!(workstation: workstation)
   end
 
   def load_pos_menu

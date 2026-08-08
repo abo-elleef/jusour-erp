@@ -165,6 +165,27 @@ en:
       description: "Add receipt and kitchen printers for your POS and KDS."
     confirm_delete: "Remove this printer?"
 
+  workstations:
+    title: "Registers"
+    description: "Bind each cash register machine to its receipt printer so cashiers don’t reconfigure printers when they switch PCs."
+    empty: "No registers yet. Create one per cash machine and assign its receipt printer."
+    confirm_delete: "Delete register %{name}?"
+    fields:
+      name: "Register name"
+      name_placeholder: "Register 1"
+      branch: "Branch"
+      receipt_printer: "Receipt printer"
+      receipt_printer_hint: "Leave blank to use the branch default receipt printer."
+      branch_default: "Branch default"
+      status: "Status"
+      active: "Active"
+    status:
+      active: "Active"
+      inactive: "Inactive"
+    actions:
+      new: "New register"
+      edit: "Edit register"
+
   printing:
     actions:
       print_receipt: "Print Receipt"
@@ -246,6 +267,7 @@ en:
     staff: "Staff"
     settings: "Settings"
     printers: "Printers"
+    workstations: "Registers"
     inventory: "Inventory"
     locations: "Locations"
     notifications: "Notifications"
@@ -1484,6 +1506,9 @@ en:
     location:
       label: "Branch"
       serving: "Menu for %{name}"
+    workstation:
+      label: "Register"
+      select: "Select register"
     menu:
       select_branch: "Select a branch above to load the menu."
       empty_at_branch: "No menu items are available at %{branch}."
@@ -3298,6 +3323,8 @@ en:
       sent_to_kitchen: "Sent to kitchen."
       location_changed: "Register switched to %{name}."
       invalid_location: "Select a valid branch."
+      workstation_changed: "This machine is now %{name}."
+      invalid_workstation: "Select a valid register."
       item_unavailable_at_location: "That item is not available at this branch."
       order_split: "Order split."
       orders_merged: "Orders merged."
@@ -3395,6 +3422,10 @@ en:
       created: "Printer created."
       updated: "Printer updated."
       removed: "Printer removed."
+    workstation:
+      created: "Register created."
+      updated: "Register updated."
+      removed: "Register removed."
     discount_rule:
       created: "Discount rule created."
       updated: "Discount rule updated."
@@ -3555,6 +3586,12 @@ en:
           attributes:
             location:
               must_be_branch: "must be a branch"
+        workstation:
+          attributes:
+            location:
+              must_be_branch: "must be a branch"
+            receipt_printer:
+              must_be_receipt_at_branch: "must be a receipt printer at the same branch"
         treasury_transfer:
           attributes:
             to_treasury_id:

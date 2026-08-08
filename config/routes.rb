@@ -31,6 +31,7 @@ Rails.application.routes.draw do
   patch "pos/manager_discount", to: "pos#manager_discount"
   patch "pos/redeem_points", to: "pos#redeem_points"
   patch "pos/location", to: "pos#set_location", as: :pos_set_location
+  patch "pos/workstation", to: "pos#set_workstation", as: :pos_set_workstation
   patch "pos/submit", to: "pos#submit"
   patch "pos/attach_customer", to: "pos#attach_customer"
   patch "pos/fulfillment", to: "pos#update_fulfillment", as: :pos_update_fulfillment
@@ -132,6 +133,7 @@ Rails.application.routes.draw do
     resources :printers do
       member { post :test_print }
     end
+    resources :workstations, except: [:show]
     get "print_agent/test_payload/:printer_id", to: "print_agent#test_payload", as: :print_agent_test_payload
     get "print_debug", to: "print_debug#show", as: :print_debug
     resources :orders, only: %i[index show] do

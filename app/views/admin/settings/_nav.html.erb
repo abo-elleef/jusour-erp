@@ -7,6 +7,7 @@
     <% if current_user.can_access_admin? %>
       <%= link_to t("nav.locations"), admin_locations_path, class: admin_section_tab_class(controller_name == "locations") %>
       <%= link_to t("nav.printers"), admin_printers_path, class: admin_section_tab_class(controller_name == "printers") %>
+      <%= link_to t("nav.workstations"), admin_workstations_path, class: admin_section_tab_class(controller_name == "workstations") %>
     <% end %>
     <% if current_user.owner? %>
       <%= link_to t("settings.nav.roles"), admin_roles_path, class: admin_section_tab_class(controller_name == "roles") %>

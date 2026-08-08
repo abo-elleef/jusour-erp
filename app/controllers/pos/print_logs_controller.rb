@@ -10,12 +10,23 @@ module Pos
     def pending
       authorize PrintLog, :pending?
       location_id = session[:pos_location_id]
+      workstation_id = session[:pos_workstation_id]
       logs = PrintLog.includes(:order, :printer)
                      .where(status: "pending")
                      .joins(:order)
                      .where(orders: { company_id: current_user.company_id })
       logs = logs.where(orders: { location_id: location_id }) if location_id.present?
       logs = logs.where("print_logs.created_at > ?", 2.hours.ago)
+
+      # Receipts are workstation-scoped when a register is selected; production
+      # tickets stay shared across the branch.
+      if workstation_id.present?
+        logs = logs.where(
+          "(print_logs.print_type = 'receipt' AND orders.workstation_id = ?) OR print_logs.print_type != 'receipt'",
+          workstation_id
+        )
+      end
+
       render json: logs.map { |l| { id: l.id, order_id: l.order_id } }
     end
 

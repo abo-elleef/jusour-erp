@@ -165,6 +165,27 @@ ar:
       description: "أضف طابعات الإيصالات والمطبخ لنقطة البيع وشاشة المطبخ."
     confirm_delete: "حذف هذه الطابعة؟"
 
+  workstations:
+    title: "الكاشيرات"
+    description: "اربط كل جهاز كاشير بطابعة الإيصالات الخاصة به حتى لا يعيد الكاشيرون ضبط الطابعات عند تبديل الأجهزة."
+    empty: "لا توجد كاشيرات بعد. أنشئ واحداً لكل جهاز وعيّن طابعة الإيصال."
+    confirm_delete: "حذف الكاشير %{name}؟"
+    fields:
+      name: "اسم الكاشير"
+      name_placeholder: "كاشير 1"
+      branch: "الفرع"
+      receipt_printer: "طابعة الإيصال"
+      receipt_printer_hint: "اتركه فارغاً لاستخدام طابعة الإيصال الافتراضية للفرع."
+      branch_default: "افتراضي الفرع"
+      status: "الحالة"
+      active: "نشط"
+    status:
+      active: "نشط"
+      inactive: "غير نشط"
+    actions:
+      new: "كاشير جديد"
+      edit: "تعديل الكاشير"
+
   printing:
     actions:
       print_receipt: "طباعة الإيصال"
@@ -246,6 +267,7 @@ ar:
     staff: "الموظفون"
     settings: "الإعدادات"
     printers: "الطابعات"
+    workstations: "الكاشيرات"
     inventory: "المخزون"
     locations: "المواقع"
     notifications: "الإشعارات"
@@ -1492,6 +1514,9 @@ ar:
     location:
       label: "الفرع"
       serving: "قائمة %{name}"
+    workstation:
+      label: "الكاشير"
+      select: "اختر الكاشير"
     menu:
       select_branch: "اختر فرعًا أعلاه لعرض القائمة."
       empty_at_branch: "لا توجد عناصر قائمة متاحة في %{branch}."
@@ -3324,6 +3349,8 @@ ar:
       sent_to_kitchen: "تم الإرسال للمطبخ."
       location_changed: "تم التبديل إلى %{name}."
       invalid_location: "اختر فرعًا صالحًا."
+      workstation_changed: "هذا الجهاز الآن %{name}."
+      invalid_workstation: "اختر كاشيراً صالحاً."
       item_unavailable_at_location: "هذا العنصر غير متاح في هذا الفرع."
       order_split: "تم تقسيم الطلب."
       orders_merged: "تم دمج الطلبات."
@@ -3421,6 +3448,10 @@ ar:
       created: "تم إنشاء الطابعة."
       updated: "تم تحديث الطابعة."
       removed: "تم حذف الطابعة."
+    workstation:
+      created: "تم إنشاء الكاشير."
+      updated: "تم تحديث الكاشير."
+      removed: "تم حذف الكاشير."
     discount_rule:
       created: "تم إنشاء قاعدة الخصم."
       updated: "تم تحديث قاعدة الخصم."
@@ -3577,6 +3608,12 @@ ar:
           attributes:
             location:
               must_be_branch: "يجب أن يكون فرعاً"
+        workstation:
+          attributes:
+            location:
+              must_be_branch: "يجب أن يكون فرعاً"
+            receipt_printer:
+              must_be_receipt_at_branch: "يجب أن تكون طابعة إيصالات في نفس الفرع"
         treasury_transfer:
           attributes:
             to_treasury_id:

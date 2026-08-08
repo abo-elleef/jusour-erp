@@ -1,0 +1,68 @@
+<%= render "admin/settings/nav" %>
+
+<div class="max-w-5xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("workstations.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("workstations.description") %></p>
+    </div>
+    <% if policy(Workstation).create? %>
+      <%= link_to t("workstations.actions.new"), new_admin_workstation_path,
+            class: "inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm" %>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <% if @workstations.any? %>
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= t("workstations.fields.name") %></th>
+            <th class="p-3 text-start"><%= t("workstations.fields.branch") %></th>
+            <th class="p-3 text-start"><%= t("workstations.fields.receipt_printer") %></th>
+            <th class="p-3 text-start"><%= t("workstations.fields.status") %></th>
+            <th class="p-3 pe-5 text-end"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @workstations.each do |ws| %>
+            <tr>
+              <td class="p-3 ps-5 font-medium text-gray-900"><%= ws.name %></td>
+              <td class="p-3 text-gray-700"><%= ws.location.name %></td>
+              <td class="p-3 text-gray-700">
+                <% if ws.receipt_printer %>
+                  <%= ws.receipt_printer.name %>
+                  <span class="text-xs text-gray-400 block"><%= ws.receipt_printer.connection_summary %></span>
+                <% else %>
+                  <span class="text-gray-400"><%= t("workstations.fields.branch_default") %></span>
+                <% end %>
+              </td>
+              <td class="p-3">
+                <% if ws.active? %>
+                  <span class="text-green-700"><%= t("workstations.status.active") %></span>
+                <% else %>
+                  <span class="text-gray-400"><%= t("workstations.status.inactive") %></span>
+                <% end %>
+              </td>
+              <td class="p-3 pe-5 text-end space-x-3">
+                <%= link_to t("actions.edit"), edit_admin_workstation_path(ws), class: "text-amber-700 text-xs font-semibold hover:underline" %>
+                <% if policy(ws).destroy? %>
+                  <%= button_to t("actions.delete"), admin_workstation_path(ws), method: :delete,
+                        class: "text-red-600 text-xs font-semibold hover:underline inline",
+                        data: { turbo_confirm: t("workstations.confirm_delete", name: ws.name) } %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="p-8 text-center text-sm text-gray-500">
+        <p><%= t("workstations.empty") %></p>
+        <% if policy(Workstation).create? %>
+          <%= link_to t("workstations.actions.new"), new_admin_workstation_path, class: "inline-flex mt-3 text-amber-700 font-semibold hover:underline" %>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+</div>

@@ -1,0 +1,41 @@
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+
+<%= form_with model: [:admin, workstation], class: "space-y-5" do |f| %>
+  <% if workstation.errors.any? %>
+    <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <%= workstation.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :name, t("workstations.fields.name"), class: label_class %>
+    <%= f.text_field :name, class: input_class, required: true, placeholder: t("workstations.fields.name_placeholder") %>
+  </div>
+
+  <div>
+    <%= f.label :location_id, t("workstations.fields.branch"), class: label_class %>
+    <%= f.collection_select :location_id, @locations, :id, :name,
+          {},
+          class: input_class, required: true %>
+  </div>
+
+  <div>
+    <%= f.label :receipt_printer_id, t("workstations.fields.receipt_printer"), class: label_class %>
+    <%= f.collection_select :receipt_printer_id, @receipt_printers, :id, :name,
+          { include_blank: t("workstations.fields.branch_default") },
+          class: input_class %>
+    <p class="text-xs text-gray-500 mt-1.5"><%= t("workstations.fields.receipt_printer_hint") %></p>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <%= f.check_box :active, class: "w-4 h-4 text-amber-600 border-gray-300 rounded" %>
+    <%= f.label :active, t("workstations.fields.active"), class: "text-sm font-semibold text-gray-700" %>
+  </div>
+
+  <div class="flex gap-3 pt-2">
+    <%= f.submit class: "inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl cursor-pointer" %>
+    <%= link_to t("actions.cancel"), admin_workstations_path,
+          class: "inline-flex items-center text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl" %>
+  </div>
+<% end %>
