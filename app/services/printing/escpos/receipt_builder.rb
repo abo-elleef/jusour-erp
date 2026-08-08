@@ -43,7 +43,7 @@ module Printing
         doc.text(@order.created_at.strftime("%d/%m/%Y %I:%M %p"))
         doc.bold
         doc.double_height
-        doc.text(@order.fulfillment_summary)
+        doc.text(order_type_line)
         doc.double_height(false)
         doc.bold(false)
         if @order.customer
@@ -79,6 +79,9 @@ module Printing
         doc.bold
         doc.row(I18n.t("printing.receipt.total"), format_money(@order.total_cents))
         doc.bold(false)
+
+        compose_payments(doc)
+        compose_change(doc)
         doc.rule
 
         if @order.notes.present?
@@ -112,6 +115,10 @@ module Printing
 
       def format_money(cents)
         Money.new(cents.to_i).format(symbol: false)
+      end
+
+      def order_type_line
+        "#{I18n.t('order.labels.order_type')}: #{@order.fulfillment_summary}"
       end
 
       def compose_payments(doc)

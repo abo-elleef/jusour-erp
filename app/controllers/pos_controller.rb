@@ -295,13 +295,24 @@ class PosController < ApplicationController
   end
 
   def find_or_create_customer(attrs)
-    phone = attrs[:phone].to_s.strip.presence
-    phone_secondary = attrs[:phone_secondary].to_s.strip.presence
-    email = attrs[:email].to_s.strip.presence
+    normalized = normalize_customer_attrs(attrs)
+    phone = normalized[:phone]
+    phone_secondary = normalized[:phone_secondary]
+    email = normalized[:email]
     existing = find_customer_by_contact(phone: phone, phone_secondary: phone_secondary, email: email)
     return existing if existing
 
-    Customer.create(attrs)
+    Customer.create(normalized)
+  end
+
+  def normalize_customer_attrs(attrs)
+    normalized = attrs.to_h.deep_symbolize_keys
+    %i[name email phone phone_secondary].each do |key|
+      next unless normalized.key?(key)
+
+      normalized[key] = normalized[key].to_s.strip.presence
+    end
+    normalized
   end
 
   def customer_contact_blank?(attrs)

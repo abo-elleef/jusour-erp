@@ -10,11 +10,14 @@ class Customer < ApplicationRecord
   accepts_nested_attributes_for :addresses, allow_destroy: true,
     reject_if: proc { |attrs| attrs["address"].to_s.strip.blank? }
 
+  before_validation :normalize_contact_fields
+
   validates :email, uniqueness: { scope: :company_id }, allow_blank: true
   validates :phone, uniqueness: { scope: :company_id }, allow_blank: true
   validates :phone_secondary, uniqueness: { scope: :company_id }, allow_blank: true
   validate :email_or_phone_present
   validate :phones_must_differ
+  validate :phones_unique_across_columns
 
   monetize :total_spent_cents, allow_nil: false
 
@@ -38,7 +41,27 @@ class Customer < ApplicationRecord
     [phone, phone_secondary].compact_blank
   end
 
+  # Catch DB unique-index races (and any validation misses) as model errors
+  # instead of bubbling ActiveRecord::RecordNotUnique as a 500.
+  def save(**options, &block)
+    super
+  rescue ActiveRecord::RecordNotUnique => error
+    recover_from_unique_violation(error)
+    false
+  end
+
+  def save!(**options, &block)
+    save(**options, &block) || raise(ActiveRecord::RecordInvalid, self)
+  end
+
   private
+
+  def normalize_contact_fields
+    self.name = name.to_s.strip.presence
+    self.email = email.to_s.strip.presence
+    self.phone = phone.to_s.strip.presence
+    self.phone_secondary = phone_secondary.to_s.strip.presence
+  end
 
   def email_or_phone_present
     return if email.present? || phone.present?
@@ -51,5 +74,33 @@ class Customer < ApplicationRecord
     return unless phone == phone_secondary
 
     errors.add(:phone_secondary, I18n.t("customers.errors.phones_must_differ"))
+  end
+
+  def phones_unique_across_columns
+    return if company_id.blank?
+
+    scope = self.class.unscoped_by_company.where(company_id: company_id)
+    scope = scope.where.not(id: id) if persisted?
+
+    if phone.present? && scope.where(phone_secondary: phone).exists?
+      errors.add(:phone, I18n.t("customers.errors.phone_taken"))
+    end
+
+    if phone_secondary.present? && scope.where(phone: phone_secondary).exists?
+      errors.add(:phone_secondary, I18n.t("customers.errors.phone_taken"))
+    end
+  end
+
+  def recover_from_unique_violation(error)
+    message = error.message.to_s
+    if message.match?(/phone_secondary/i)
+      errors.add(:phone_secondary, I18n.t("customers.errors.phone_taken"))
+    elsif message.match?(/phone/i)
+      errors.add(:phone, I18n.t("customers.errors.phone_taken"))
+    elsif message.match?(/email/i)
+      errors.add(:email, I18n.t("customers.errors.email_taken"))
+    else
+      errors.add(:base, I18n.t("customers.errors.contact_taken"))
+    end
   end
 end

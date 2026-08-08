@@ -2268,6 +2268,9 @@ ar:
     errors:
       email_or_phone_required: "البريد أو الهاتف مطلوب"
       phones_must_differ: "يجب أن يختلف عن الهاتف الأساسي"
+      phone_taken: "مستخدم بالفعل لعميل آخر"
+      email_taken: "مستخدم بالفعل لعميل آخر"
+      contact_taken: "يوجد عميل بنفس بيانات الاتصال"
     delete_confirm: "حذف هذا العميل؟"
     delete_confirm_permanent: "حذف هذا العميل نهائيًا؟"
     shared:
@@ -3608,6 +3611,10 @@ ar:
           attributes:
             location:
               must_be_branch: "يجب أن يكون فرعاً"
+        printer:
+          attributes:
+            host:
+              usb_device_format: "يجب أن يكون اسم منفذ USB مثل USB001 (أحرف وأرقام فقط)"
         workstation:
           attributes:
             location:
@@ -3652,6 +3659,14 @@ ar:
             paid_on:
               blank: "يجب تحديده عند وجود متبقٍ للدفع"
               must_be_in_payroll_month: "يجب أن يكون ضمن شهر الراتب"
+        customer:
+          attributes:
+            phone:
+              taken: "مستخدم بالفعل لعميل آخر"
+            phone_secondary:
+              taken: "مستخدم بالفعل لعميل آخر"
+            email:
+              taken: "مستخدم بالفعل لعميل آخر"
     models:
       accounting_integration:
         one: "تكامل محاسبي"

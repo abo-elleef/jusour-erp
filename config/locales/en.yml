@@ -2248,6 +2248,9 @@ en:
     errors:
       email_or_phone_required: "Email or phone is required"
       phones_must_differ: "must be different from primary phone"
+      phone_taken: "is already used by another customer"
+      email_taken: "is already used by another customer"
+      contact_taken: "A customer with this contact info already exists"
     delete_confirm: "Delete this customer?"
     delete_confirm_permanent: "Delete this customer permanently?"
     shared:
@@ -3586,6 +3589,10 @@ en:
           attributes:
             location:
               must_be_branch: "must be a branch"
+        printer:
+          attributes:
+            host:
+              usb_device_format: "must be a USB port name like USB001 (letters and numbers only)"
         workstation:
           attributes:
             location:
@@ -3630,6 +3637,14 @@ en:
             paid_on:
               blank: "must be set when there is remaining pay"
               must_be_in_payroll_month: "must be in the payroll month"
+        customer:
+          attributes:
+            phone:
+              taken: "is already used by another customer"
+            phone_secondary:
+              taken: "is already used by another customer"
+            email:
+              taken: "is already used by another customer"
     models:
       accounting_integration:
         one: "Accounting integration"

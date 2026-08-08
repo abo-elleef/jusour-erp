@@ -1,6 +1,6 @@
-<h1 class="text-center text-lg font-bold mb-2">Saqr Chicken & Burgers</h1>
-<p class="text-center text-gray-600 mb-1"><%= @order.order_number %> · <%= @order.created_at.strftime("%b %d, %Y %l:%M %p") %></p>
-<p class="text-center text-gray-600 mb-4"><%= @order.fulfillment_summary %></p>
+<h1 class="text-center text-lg font-bold mb-2"><%= Setting.get("restaurant_name", t("app.name")) %></h1>
+<p class="text-center text-gray-600 mb-1"><%= @order.order_number %> · <%= @order.created_at.strftime("%d/%m/%Y %I:%M %p") %></p>
+<p class="text-center text-gray-600 mb-1"><%= t("order.labels.order_type") %>: <%= @order.fulfillment_summary %></p>
 <hr class="mb-4">
 <% @order.order_items.each do |item| %>
   <div class="flex justify-between mb-1">
@@ -12,10 +12,26 @@
   <% end %>
 <% end %>
 <hr class="my-4">
-<div class="flex justify-between"><span>Subtotal</span><span><%= format_money(@order.subtotal_cents) %></span></div>
-<div class="flex justify-between"><span>Tax</span><span><%= format_money(@order.tax_cents) %></span></div>
-<div class="flex justify-between"><span>Tip</span><span><%= format_money(@order.tip_cents) %></span></div>
-<div class="flex justify-between font-bold text-lg mt-2"><span>Total</span><span><%= format_money(@order.total_cents) %></span></div>
+<div class="flex justify-between"><span><%= t("order.labels.subtotal") %></span><span><%= format_money(@order.subtotal_cents) %></span></div>
+<% if @order.discount_cents.positive? %>
+  <div class="flex justify-between"><span><%= t("order.labels.discount") %></span><span>-<%= format_money(@order.discount_cents) %></span></div>
+<% end %>
+<div class="flex justify-between"><span><%= t("order.labels.tax") %></span><span><%= format_money(@order.tax_cents) %></span></div>
+<% if @order.tip_cents.positive? %>
+  <div class="flex justify-between"><span><%= t("order.labels.tip") %></span><span><%= format_money(@order.tip_cents) %></span></div>
+<% end %>
+<div class="flex justify-between font-bold text-lg mt-2"><span><%= t("order.labels.total") %></span><span><%= format_money(@order.total_cents) %></span></div>
+<% completed_payments = @order.payments.where(status: "completed").order(:created_at) %>
+<% if completed_payments.any? %>
+  <hr class="my-4">
+  <p class="font-medium mb-1"><%= t("printing.receipt.payments") %></p>
+  <% completed_payments.each do |payment| %>
+    <div class="flex justify-between mb-1">
+      <span><%= payment_method_label(payment.payment_method) %></span>
+      <span><%= format_money(payment.amount_cents) %></span>
+    </div>
+  <% end %>
+<% end %>
 <% if @order.customer %>
-  <p class="text-center mt-4 text-gray-600">Loyalty balance: <%= @order.customer.loyalty_points %> pts</p>
+  <p class="text-center mt-4 text-gray-600"><%= t("printing.receipt.loyalty", points: @order.customer.loyalty_points) %></p>
 <% end %>
