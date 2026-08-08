@@ -10,7 +10,9 @@ module InventoryNav
       tabs: [
         { controller: "vendor_invoices", label: "inventory.tools.vendor_invoices",
           path: :admin_inventory_vendor_invoices_path, permission: "inventory:view" },
-        { controller: "stock_transfers", label: "inventory.tools.stock_transfers",
+        { controller: "stock_transfers",
+          controllers: %w[stock_transfers stock_transfer_templates],
+          label: "inventory.tools.stock_transfers",
           path: :admin_inventory_stock_transfers_path, permission: "inventory:view" },
         { controller: "stock_takes", label: "inventory.tools.stock_takes",
           path: :admin_inventory_stock_takes_path, permission: "inventory:view" },

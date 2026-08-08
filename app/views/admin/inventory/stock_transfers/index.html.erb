@@ -7,8 +7,12 @@
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.stock_transfers.title") %></h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("inventory.stock_transfers.index_description") %></p>
     </div>
-    <%= link_to t("inventory.stock_transfers.new"), new_admin_inventory_stock_transfer_path,
-          class: "inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors" %>
+    <div class="flex flex-wrap gap-2 shrink-0">
+      <%= link_to t("inventory.stock_transfer_templates.title"), admin_inventory_stock_transfer_templates_path,
+            class: "inline-flex items-center border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-gray-50 transition-colors" %>
+      <%= link_to t("inventory.stock_transfers.new"), new_admin_inventory_stock_transfer_path,
+            class: "inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors" %>
+    </div>
   </div>
 
   <div class="flex flex-wrap gap-2 mb-6">

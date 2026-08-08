@@ -1,0 +1,63 @@
+<%= render "admin/inventory/tools_nav" %>
+
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.stock_transfer_templates.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("inventory.stock_transfer_templates.description") %></p>
+    </div>
+    <%= link_to t("inventory.stock_transfer_templates.new_button"),
+          new_admin_inventory_stock_transfer_template_path,
+          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shrink-0" %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
+        <tr>
+          <th class="p-3 ps-5 text-start"><%= t("inventory.stock_transfer_templates.name") %></th>
+          <th class="p-3 text-start"><%= t("inventory.stock_transfer_templates.route") %></th>
+          <th class="p-3 text-end"><%= t("inventory.stock_transfer_templates.lines") %></th>
+          <th class="p-3 text-start"><%= t("inventory.stock_transfer_templates.status") %></th>
+          <th class="p-3 pe-5 text-end"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @templates.each do |template| %>
+          <tr class="hover:bg-gray-50">
+            <td class="p-3 ps-5 font-semibold text-gray-900">
+              <%= link_to template.name, admin_inventory_stock_transfer_template_path(template), class: "hover:text-amber-700" %>
+            </td>
+            <td class="p-3 text-gray-600">
+              <% if template.default_from_location || template.default_to_location %>
+                <%= template.default_from_location&.name || "—" %>
+                →
+                <%= template.default_to_location&.name || "—" %>
+              <% else %>
+                <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+              <% end %>
+            </td>
+            <td class="p-3 text-end tabular-nums"><%= template.stock_transfer_template_lines.size %></td>
+            <td class="p-3">
+              <span class="text-xs font-semibold <%= template.active? ? "text-emerald-700" : "text-gray-500" %>">
+                <%= template.active? ? t("inventory.stock_transfer_templates.active") : t("inventory.stock_transfer_templates.inactive") %>
+              </span>
+            </td>
+            <td class="p-3 pe-5 text-end whitespace-nowrap">
+              <% if template.active? && template.stock_transfer_template_lines.any? %>
+                <%= link_to t("inventory.stock_transfer_templates.use"),
+                      new_admin_inventory_stock_transfer_path(template_id: template.id),
+                      class: "text-xs font-semibold text-amber-700 me-3" %>
+              <% end %>
+              <%= link_to t("actions.view"), admin_inventory_stock_transfer_template_path(template),
+                    class: "text-xs font-semibold text-gray-700" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @templates.empty? %>
+      <p class="p-8 text-center text-sm text-gray-500"><%= t("inventory.stock_transfer_templates.empty") %></p>
+    <% end %>
+  </section>
+</div>

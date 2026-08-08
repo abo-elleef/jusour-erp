@@ -324,6 +324,7 @@ ar:
       due: "المستحق"
       items: "عناصر الطلب"
       payments: "المدفوعات"
+      payment_method: "الدفع"
       notes: "ملاحظات"
       table_number: "رقم الطاولة"
       delivery_address: "عنوان التوصيل"
@@ -885,6 +886,7 @@ ar:
       vendor_invoices: "فواتير الموردين"
       stock_takes: "جرد المخزون"
       stock_transfers: "تحويلات المخزون"
+      stock_transfer_templates: "قوالب التحويل"
       valuation: "تقييم المخزون"
       variance: "فروقات الاستهلاك"
       manufacturing: "التصنيع"
@@ -1319,8 +1321,14 @@ ar:
         details: "تفاصيل التحويل"
         details_hint: "اختر موقع المصدر والوجهة."
         line_items: "البنود المطلوبة"
-        line_items_hint: "أضف المكونات والكميات المطلوبة."
+        line_items_hint: "أضف المكونات والكميات المطلوبة. اترك الكمية فارغة لتخطي ذلك البند."
         add_line: "إضافة بند"
+        template: "البدء من قالب"
+        template_hint: "حمّل مكوناتك المعتادة دفعة واحدة، ثم عدّل الكميات والوحدات."
+        choose_template: "القالب"
+        no_template: "تحويل فارغ (بدون قالب)"
+        manage_templates: "إدارة القوالب"
+        template_applied: "تم تحميل «%{name}» بـ %{count} بنداً. عدّل الكميات ثم أرسل الطلب."
       errors:
         lines_required: "أضف مكوناً واحداً على الأقل بكمية مطلوبة."
         not_editable: "لا يمكن تعديل هذا التحويل بعد الآن."
@@ -1335,6 +1343,40 @@ ar:
       adjustment:
         out: "تحويل صادر %{number} شحنة %{shipment} إلى %{to} (من %{from})"
         in: "تحويل وارد %{number} شحنة %{shipment} من %{from} (إلى %{to})"
+    stock_transfer_templates:
+      title: "قوالب التحويل"
+      description: "احفظ قوائم المكونات الثابتة (مثل تموين أسبوعي من المطبخ للفرع) ليبدأ التحويل معبّأً مسبقاً."
+      new: "قالب تحويل جديد"
+      edit: "تعديل قالب التحويل"
+      new_button: "قالب جديد"
+      create: "إنشاء القالب"
+      form_intro: "أضف المكونات التي تحوّلها بانتظام. الكميات الافتراضية اختيارية — اترك 0 لملئها عند إنشاء التحويل."
+      form_details: "تفاصيل القالب"
+      form_details_hint: "سمِّ القائمة وحدّد المواقع الافتراضية اختياريًا."
+      name: "الاسم"
+      name_placeholder: "مثال: تموين المطبخ الأسبوعي"
+      route: "المسار الافتراضي"
+      lines: "البنود"
+      lines_count:
+        one: "مكون واحد"
+        other: "%{count} مكونات"
+      status: "الحالة"
+      active: "نشط"
+      inactive: "غير نشط"
+      active_hint: "تظهر القوالب النشطة فقط عند إنشاء تحويل."
+      position: "الترتيب"
+      notes: "ملاحظات"
+      notes_placeholder: "ملاحظات اختيارية تُنسخ إلى التحويلات الجديدة"
+      optional_location: "بدون افتراضي"
+      defaults: "المواقع الافتراضية"
+      line_items: "مكونات القالب"
+      line_items_hint: "تُنسخ هذه البنود إلى التحويلات الجديدة. عدّل الكمية/الوحدة الافتراضية حسب الحاجة."
+      default_quantity: "الكمية الافتراضية"
+      add_line: "إضافة مكون"
+      use: "استخدام القالب"
+      back: "← القوالب"
+      empty: "لا توجد قوالب تحويل بعد. أنشئ واحداً بمكوناتك المعتادة (~30)."
+      delete_confirm: "حذف القالب «%{name}»؟"
     reports:
       valuation:
         description: "قيمة المخزون المتوفر حسب تكلفة الوحدة لكل مكون."
@@ -3477,6 +3519,10 @@ ar:
       sent: "تم تأكيد الإرسال."
       received: "تم تأكيد الاستلام. تم تحديث المخزون في كلا الموقعين."
       cancelled: "تم إلغاء طلب التحويل."
+    stock_transfer_template:
+      created: "تم إنشاء قالب التحويل."
+      updated: "تم تحديث قالب التحويل."
+      removed: "تم حذف قالب التحويل."
     ingredient_location:
       assigned: "تم تعيين المكون للموقع."
       updated: "تم تحديث إعدادات مخزون الموقع."
@@ -3641,6 +3687,15 @@ ar:
           attributes:
             base:
               needs_input_lines: "يجب أن يحتوي على مكون مدخل واحد على الأقل عند التفعيل"
+        stock_transfer_template:
+          attributes:
+            base:
+              needs_lines: "يجب أن يحتوي على مكون واحد على الأقل عند التفعيل"
+            default_to_location_id:
+              same_as_source: "يجب أن يختلف عن موقع المصدر"
+              inactive: "يجب أن يكون نشطاً"
+            default_from_location_id:
+              inactive: "يجب أن يكون نشطاً"
         manufacturing_template_line:
           attributes:
             ingredient_id:

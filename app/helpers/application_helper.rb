@@ -35,7 +35,7 @@ module ApplicationHelper
   ACCOUNTING_TRANSACTIONS_GROUP  = %w[expenses incomes shift_logs monthly_payroll attendance cash_drawer digital_wallet_day_closes business_days].freeze
   ACCOUNTING_LEDGERS_GROUP       = %w[treasuries journal_entries chart_of_accounts fixed_assets partners loans].freeze
 
-  INVENTORY_OPERATIONS_GROUP = %w[vendor_invoices stock_transfers stock_takes manufacturing_templates manufacturing_runs manufacturing_template_lines].freeze
+  INVENTORY_OPERATIONS_GROUP = %w[vendor_invoices stock_transfers stock_transfer_templates stock_takes manufacturing_templates manufacturing_runs manufacturing_template_lines].freeze
   INVENTORY_SETUP_GROUP      = %w[suppliers ingredients ingredient_categories units].freeze
   INVENTORY_REPORTS_GROUP    = %w[reports].freeze
 
@@ -415,6 +415,16 @@ module ApplicationHelper
 
   def payment_method_label(method)
     I18n.t("payment.methods.#{method}", default: method.to_s.humanize)
+  end
+
+  def order_payment_methods_label(order)
+    methods = order.payments
+      .select { |payment| payment.status == "completed" }
+      .map(&:payment_method)
+      .uniq
+    return tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") if methods.empty?
+
+    methods.map { |method| payment_method_label(method) }.join(", ")
   end
 
   def payment_status_label(status)

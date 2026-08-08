@@ -317,6 +317,7 @@ Rails.application.routes.draw do
           post :cancel
         end
       end
+      resources :stock_transfer_templates
       resources :manufacturing_templates do
         member { post :run }
         collection { patch :reorder }

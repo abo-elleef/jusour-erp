@@ -324,6 +324,7 @@ en:
       due: "Due"
       items: "Order items"
       payments: "Payments"
+      payment_method: "Payment"
       notes: "Notes"
       table_number: "Table #"
       delivery_address: "Delivery address"
@@ -883,6 +884,7 @@ en:
       vendor_invoices: "Vendor invoices"
       stock_takes: "Stock takes"
       stock_transfers: "Transfers"
+      stock_transfer_templates: "Transfer templates"
       valuation: "Valuation"
       variance: "Variance"
       manufacturing: "Manufacturing"
@@ -1315,8 +1317,14 @@ en:
         details: "Transfer details"
         details_hint: "Choose source and destination locations."
         line_items: "Requested items"
-        line_items_hint: "Add ingredients and requested quantities."
+        line_items_hint: "Add ingredients and requested quantities. Leave a quantity blank to skip that line."
         add_line: "Add line"
+        template: "Start from a template"
+        template_hint: "Load your usual ingredients in one step, then adjust quantities and units."
+        choose_template: "Template"
+        no_template: "Blank transfer (no template)"
+        manage_templates: "Manage templates"
+        template_applied: "Loaded “%{name}” with %{count} lines. Update quantities, then submit."
       errors:
         lines_required: "Add at least one ingredient with a requested quantity."
         not_editable: "This transfer can no longer be edited."
@@ -1331,6 +1339,40 @@ en:
       adjustment:
         out: "Transfer out %{number} shipment %{shipment} to %{to} (from %{from})"
         in: "Transfer in %{number} shipment %{shipment} from %{from} (to %{to})"
+    stock_transfer_templates:
+      title: "Transfer templates"
+      description: "Save fixed ingredient lists (e.g. weekly kitchen → branch) so new transfers start pre-filled."
+      new: "New transfer template"
+      edit: "Edit transfer template"
+      new_button: "New template"
+      create: "Create template"
+      form_intro: "Add the ingredients you transfer regularly. Default quantities are optional — leave 0 to fill in when creating a transfer."
+      form_details: "Template details"
+      form_details_hint: "Name the list and optionally set default locations."
+      name: "Name"
+      name_placeholder: "e.g. Weekly kitchen restock"
+      route: "Default route"
+      lines: "Lines"
+      lines_count:
+        one: "%{count} ingredient"
+        other: "%{count} ingredients"
+      status: "Status"
+      active: "Active"
+      inactive: "Inactive"
+      active_hint: "Only active templates appear when creating a transfer."
+      position: "Position"
+      notes: "Notes"
+      notes_placeholder: "Optional notes copied onto new transfers"
+      optional_location: "No default"
+      defaults: "Default locations"
+      line_items: "Template ingredients"
+      line_items_hint: "These lines are copied onto new transfers. Adjust default qty/unit as needed."
+      default_quantity: "Default qty"
+      add_line: "Add ingredient"
+      use: "Use template"
+      back: "← Templates"
+      empty: "No transfer templates yet. Create one with your usual ~30 ingredients."
+      delete_confirm: "Delete template “%{name}”?"
     reports:
       valuation:
         description: "On-hand stock valued at ingredient cost per unit."
@@ -3451,6 +3493,10 @@ en:
       sent: "Transfer marked as sent."
       received: "Receipt confirmed. Stock has been updated at both locations."
       cancelled: "Transfer request cancelled."
+    stock_transfer_template:
+      created: "Transfer template created."
+      updated: "Transfer template updated."
+      removed: "Transfer template removed."
     ingredient_location:
       assigned: "Ingredient assigned to location."
       updated: "Location stock settings updated."
@@ -3619,6 +3665,15 @@ en:
           attributes:
             base:
               needs_input_lines: "must have at least one input ingredient when active"
+        stock_transfer_template:
+          attributes:
+            base:
+              needs_lines: "must have at least one ingredient when active"
+            default_to_location_id:
+              same_as_source: "must be different from the source location"
+              inactive: "must be active"
+            default_from_location_id:
+              inactive: "must be active"
         manufacturing_template_line:
           attributes:
             ingredient_id:

@@ -1,9 +1,14 @@
 <%= render "admin/inventory/tools_nav" %>
 
-<div class="max-w-3xl">
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.stock_transfers.new") %></h1>
-    <p class="text-gray-600 text-sm mt-1"><%= t("inventory.stock_transfers.new_description") %></p>
+<div class="max-w-4xl">
+  <div class="mb-6 flex flex-wrap justify-between items-start gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.stock_transfers.new") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("inventory.stock_transfers.new_description") %></p>
+    </div>
+    <%= link_to t("inventory.stock_transfers.form.manage_templates"),
+          admin_inventory_stock_transfer_templates_path,
+          class: "text-sm font-semibold text-amber-700 hover:text-amber-800 shrink-0" %>
   </div>
 
   <%= render "form", stock_transfer: @stock_transfer %>

@@ -33,6 +33,7 @@ module Admin
           to_location_id: params[:to_location_id]
         )
         authorize_inventory!(:create)
+        apply_template_if_present
         build_line_items
         load_form_data
       end
@@ -158,6 +159,29 @@ module Admin
         @stock_transfer.stock_transfer_lines.build if @stock_transfer.stock_transfer_lines.empty?
       end
 
+      def apply_template_if_present
+        return if params[:template_id].blank?
+
+        template = StockTransferTemplate.active.find_by(id: params[:template_id])
+        return if template.blank?
+
+        @applied_template = template
+        @stock_transfer.from_location_id ||= template.default_from_location_id
+        @stock_transfer.to_location_id ||= template.default_to_location_id
+        if @stock_transfer.notes.blank? && template.notes.present?
+          @stock_transfer.notes = template.notes
+        end
+
+        template.stock_transfer_template_lines.includes(:ingredient).ordered.each do |line|
+          qty = line.default_quantity.to_d
+          @stock_transfer.stock_transfer_lines.build(
+            ingredient: line.ingredient,
+            unit: line.unit.presence || line.ingredient.unit,
+            quantity_requested_input: qty.positive? ? qty : nil
+          )
+        end
+      end
+
       def save_transfer_with_lines
         active_lines = @stock_transfer.stock_transfer_lines.reject(&:marked_for_destruction?)
         if active_lines.empty?
@@ -174,6 +198,7 @@ module Admin
         @ingredient_available_units = @ingredients.to_h do |i|
           [i.id, i.available_units.map { |u| [helpers.ingredient_unit_label(u), u] }]
         end
+        @transfer_templates = StockTransferTemplate.active.ordered.includes(:stock_transfer_template_lines)
       end
 
       def record_for_policy

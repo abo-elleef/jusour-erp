@@ -9,6 +9,38 @@
     </div>
   <% end %>
 
+  <% if stock_transfer.new_record? && @transfer_templates&.any? %>
+    <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden">
+      <div class="px-5 py-4 border-b border-amber-100">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.form.template") %></h2>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_transfers.form.template_hint") %></p>
+      </div>
+      <div class="p-5 flex flex-wrap items-end gap-3">
+        <div class="flex-1 min-w-[14rem]">
+          <%= label_tag :template_id, t("inventory.stock_transfers.form.choose_template"), class: label_class %>
+          <%= select_tag :template_id,
+                options_from_collection_for_select(
+                  @transfer_templates,
+                  :id,
+                  :name,
+                  @applied_template&.id || params[:template_id]
+                ),
+                include_blank: t("inventory.stock_transfers.form.no_template"),
+                class: "#{input_class} appearance-none",
+                onchange: "if (this.value) { window.location = '#{new_admin_inventory_stock_transfer_path}?template_id=' + this.value } else { window.location = '#{new_admin_inventory_stock_transfer_path}' }" %>
+        </div>
+        <%= link_to t("inventory.stock_transfers.form.manage_templates"),
+              admin_inventory_stock_transfer_templates_path,
+              class: "text-sm font-semibold text-amber-800 hover:text-amber-900 px-3 py-2" %>
+      </div>
+      <% if @applied_template %>
+        <p class="px-5 pb-4 text-xs text-amber-900">
+          <%= t("inventory.stock_transfers.form.template_applied", name: @applied_template.name, count: stock_transfer.stock_transfer_lines.size) %>
+        </p>
+      <% end %>
+    </section>
+  <% end %>
+
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.form.details") %></h2>

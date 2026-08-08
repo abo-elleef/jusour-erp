@@ -17,7 +17,12 @@ class StockTransfer < ApplicationRecord
 
   accepts_nested_attributes_for :stock_transfer_lines,
     allow_destroy: true,
-    reject_if: proc { |attrs| attrs["ingredient_id"].blank? }
+    reject_if: proc { |attrs|
+      next true if attrs["ingredient_id"].blank?
+
+      qty = attrs["quantity_requested_input"].presence || attrs["quantity_requested"]
+      qty.blank? || qty.to_d <= 0
+    }
 
   validates :transfer_number, presence: true, uniqueness: { scope: :company_id }
   validates :status, inclusion: { in: STATUSES }

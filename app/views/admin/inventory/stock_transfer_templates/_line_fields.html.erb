@@ -1,0 +1,40 @@
+<%# locals: f (stock_transfer_template_line fields builder) %>
+<% input_class = pos_input_class %>
+<% line = f.object %>
+<% ingredient = line.ingredient || @ingredients.find { |i| i.id == line.ingredient_id } %>
+<% unit_opts = ingredient ? ingredient.available_units.map { |u| [ingredient_unit_label(u), u] } : [] %>
+
+<div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-[1fr_8rem_7rem_auto] gap-4 items-end"
+     data-stock-transfer-lines-target="row">
+  <%= f.hidden_field :_destroy, value: false, data: { stock_transfer_lines_target: "destroy" } %>
+  <%= f.hidden_field :id %>
+  <div>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.stock_transfers.ingredient") %></label>
+    <%= render "shared/searchable_select",
+          form: f,
+          field: :ingredient_id,
+          selected: line.ingredient_id,
+          placeholder: t("inventory.stock_transfers.search_ingredient"),
+          input_class: input_class,
+          html: { data: { action: "searchable-select:change->stock-transfer-lines#ingredientChanged" } } %>
+  </div>
+  <div>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.stock_transfer_templates.default_quantity") %></label>
+    <%= f.number_field :default_quantity, step: 0.001, min: 0, placeholder: "0", class: input_class %>
+  </div>
+  <div>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.ingredients.units.unit") %></label>
+    <%= f.select :unit,
+          options_for_select(unit_opts, line.unit.presence || ingredient&.unit),
+          { include_blank: ingredient.nil? },
+          class: "#{input_class} appearance-none",
+          data: { stock_transfer_lines_target: "unitSelect" } %>
+  </div>
+  <div class="pb-0.5">
+    <button type="button"
+            class="text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-2 rounded-xl border border-red-200 transition-colors w-full sm:w-auto"
+            data-action="stock-transfer-lines#remove">
+      <%= t("actions.remove") %>
+    </button>
+  </div>
+</div>

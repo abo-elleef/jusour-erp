@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_07_200000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_08_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1163,6 +1163,37 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_07_200000) do
     t.index ["stock_transfer_id"], name: "index_stock_transfer_shipments_on_stock_transfer_id"
   end
 
+  create_table "stock_transfer_template_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "stock_transfer_template_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.decimal "default_quantity", precision: 10, scale: 3, default: "0.0", null: false
+    t.uuid "unit_id"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_stock_transfer_template_lines_on_ingredient_id"
+    t.index ["stock_transfer_template_id", "ingredient_id"], name: "index_st_template_lines_on_template_and_ingredient", unique: true
+    t.index ["stock_transfer_template_id"], name: "index_st_template_lines_on_template_id"
+    t.index ["unit_id"], name: "index_stock_transfer_template_lines_on_unit_id"
+  end
+
+  create_table "stock_transfer_templates", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "name", null: false
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.text "notes"
+    t.uuid "default_from_location_id"
+    t.uuid "default_to_location_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "active"], name: "index_stock_transfer_templates_on_company_id_and_active"
+    t.index ["company_id", "name"], name: "index_stock_transfer_templates_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_stock_transfer_templates_on_company_id"
+    t.index ["default_from_location_id"], name: "index_stock_transfer_templates_on_default_from_location_id"
+    t.index ["default_to_location_id"], name: "index_stock_transfer_templates_on_default_to_location_id"
+  end
+
   create_table "stock_transfers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.uuid "from_location_id", null: false
@@ -1595,6 +1626,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_07_200000) do
   add_foreign_key "stock_transfer_shipments", "stock_transfers"
   add_foreign_key "stock_transfer_shipments", "users", column: "received_by_id"
   add_foreign_key "stock_transfer_shipments", "users", column: "sent_by_id"
+  add_foreign_key "stock_transfer_template_lines", "ingredients"
+  add_foreign_key "stock_transfer_template_lines", "stock_transfer_templates"
+  add_foreign_key "stock_transfer_template_lines", "units"
+  add_foreign_key "stock_transfer_templates", "companies"
+  add_foreign_key "stock_transfer_templates", "locations", column: "default_from_location_id"
+  add_foreign_key "stock_transfer_templates", "locations", column: "default_to_location_id"
   add_foreign_key "stock_transfers", "companies"
   add_foreign_key "stock_transfers", "locations", column: "from_location_id"
   add_foreign_key "stock_transfers", "locations", column: "to_location_id"
