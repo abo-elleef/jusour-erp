@@ -7,16 +7,20 @@ module Admin
     class IngredientsController < BaseController
       before_action :set_ingredient, only: %i[show edit update destroy adjust adjustments]
 
+      SORT_COLUMNS = %w[code name quantity_on_hand suppliers status cost_per_unit_cents stock_value].freeze
+
       def index
         authorize_inventory_index!
 
         @stock_filter = params[:stock].presence
         @status = %w[active inactive all].include?(params[:status]) ? params[:status] : "active"
+        @sort = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : "name"
+        @direction = params[:dir].to_s == "desc" ? "desc" : "asc"
         @q = Ingredient.ransack(params[:q])
         scope = @q.result.includes(:ingredient_category, :suppliers, :unit_ref)
         scope = scope.active if @status == "active"
         scope = scope.where(active: false) if @status == "inactive"
-        @ingredients = apply_stock_filter(scope).order(:name)
+        @ingredients = apply_sort(apply_stock_filter(scope))
 
         respond_to do |format|
           format.html do
@@ -207,6 +211,38 @@ module Admin
         when "out" then scope.out_of_stock
         when "expiring" then scope.expiring_soon.includes(:stock_batches)
         else scope
+        end
+      end
+
+      def apply_sort(scope)
+        dir_sql = @direction == "desc" ? "DESC" : "ASC"
+        case @sort
+        when "code"
+          scope.order(Arel.sql("LOWER(ingredients.code) #{dir_sql}"))
+        when "quantity_on_hand"
+          scope.order(quantity_on_hand: @direction.to_sym)
+        when "cost_per_unit_cents"
+          scope.order(cost_per_unit_cents: @direction.to_sym)
+        when "stock_value"
+          scope.order(Arel.sql("(ingredients.quantity_on_hand * ingredients.cost_per_unit_cents) #{dir_sql}"))
+        when "suppliers"
+          scope.order(Arel.sql(<<~SQL.squish))
+            (SELECT COUNT(*) FROM supplier_ingredients
+             WHERE supplier_ingredients.ingredient_id = ingredients.id) #{dir_sql},
+            LOWER(ingredients.name) ASC
+          SQL
+        when "status"
+          scope.order(Arel.sql(<<~SQL.squish))
+            CASE
+              WHEN ingredients.quantity_on_hand <= 0 THEN 0
+              WHEN ingredients.quantity_on_hand <= ingredients.reorder_threshold THEN 1
+              WHEN ingredients.quantity_on_hand <= ingredients.reorder_threshold * 1.2 THEN 2
+              ELSE 3
+            END #{dir_sql},
+            LOWER(ingredients.name) ASC
+          SQL
+        else
+          scope.order(Arel.sql("LOWER(ingredients.name) #{dir_sql}"))
         end
       end
 
