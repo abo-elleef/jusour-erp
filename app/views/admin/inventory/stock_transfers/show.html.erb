@@ -125,28 +125,31 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-amber-100/80">
-              <% @lines.each do |line| %>
-                <% next if line.quantity_pending_send.zero? %>
-                <tr>
-                  <% send_now_base = [line.quantity_pending_send, line.transferable_quantity_at_source].min %>
-                  <td class="p-3 font-medium text-gray-900">
-                    <%= line.ingredient.name %>
-                    <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
-                  </td>
-                  <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_amount(line, line.quantity_requested) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_sent) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_received) %></td>
-                  <td class="p-3 text-end tabular-nums font-semibold text-amber-800"><%= transfer_line_amount(line, line.quantity_pending_send) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.transferable_quantity_at_source) %></td>
-                  <td class="p-3 text-end">
-                    <%= number_field_tag "lines[#{line.id}]",
-                          number_with_precision(line.in_line_unit(send_now_base), precision: 3, strip_insignificant_zeros: true),
-                          step: 0.001, min: 0,
-                          max: line.in_line_unit(send_now_base),
-                          class: "#{pos_input_class} w-28 text-end ms-auto" %>
-                  </td>
-                </tr>
+              <% pending_send_lines = @lines.reject { |l| l.quantity_pending_send.zero? } %>
+              <% group_records_by_ingredient_category(pending_send_lines).each do |category_name, lines| %>
+                <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 8 %>
+                <% lines.each do |line| %>
+                  <tr>
+                    <% send_now_base = [line.quantity_pending_send, line.transferable_quantity_at_source].min %>
+                    <td class="p-3 font-medium text-gray-900">
+                      <%= line.ingredient.name %>
+                      <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                    </td>
+                    <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
+                    <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_amount(line, line.quantity_requested) %></td>
+                    <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_sent) %></td>
+                    <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_received) %></td>
+                    <td class="p-3 text-end tabular-nums font-semibold text-amber-800"><%= transfer_line_amount(line, line.quantity_pending_send) %></td>
+                    <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.transferable_quantity_at_source) %></td>
+                    <td class="p-3 text-end">
+                      <%= number_field_tag "lines[#{line.id}]",
+                            number_with_precision(line.in_line_unit(send_now_base), precision: 3, strip_insignificant_zeros: true),
+                            step: 0.001, min: 0,
+                            max: line.in_line_unit(send_now_base),
+                            class: "#{pos_input_class} w-28 text-end ms-auto" %>
+                    </td>
+                  </tr>
+                <% end %>
               <% end %>
             </tbody>
           </table>
@@ -179,23 +182,26 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-emerald-100/80">
-              <% @current_shipment.stock_transfer_shipment_lines.each do |shipment_line| %>
-                <% line = shipment_line.stock_transfer_line %>
-                <tr>
-                  <td class="p-3 font-medium text-gray-900">
-                    <%= line.ingredient.name %>
-                    <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
-                  </td>
-                  <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
-                  <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_amount(line, shipment_line.quantity_sent) %></td>
-                  <td class="p-3 text-end">
-                    <%= number_field_tag "lines[#{line.id}]",
-                          number_with_precision(line.in_line_unit(shipment_line.quantity_sent), precision: 3, strip_insignificant_zeros: true),
-                          step: 0.001, min: 0,
-                          max: line.in_line_unit(shipment_line.quantity_sent),
-                          class: "#{pos_input_class} w-28 text-end ms-auto" %>
-                  </td>
-                </tr>
+              <% group_records_by_ingredient_category(@current_shipment.stock_transfer_shipment_lines).each do |category_name, shipment_lines| %>
+                <%= render "category_header", name: category_name, count: shipment_lines.size, tag: :tr, colspan: 4 %>
+                <% shipment_lines.each do |shipment_line| %>
+                  <% line = shipment_line.stock_transfer_line %>
+                  <tr>
+                    <td class="p-3 font-medium text-gray-900">
+                      <%= line.ingredient.name %>
+                      <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                    </td>
+                    <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
+                    <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_amount(line, shipment_line.quantity_sent) %></td>
+                    <td class="p-3 text-end">
+                      <%= number_field_tag "lines[#{line.id}]",
+                            number_with_precision(line.in_line_unit(shipment_line.quantity_sent), precision: 3, strip_insignificant_zeros: true),
+                            step: 0.001, min: 0,
+                            max: line.in_line_unit(shipment_line.quantity_sent),
+                            class: "#{pos_input_class} w-28 text-end ms-auto" %>
+                    </td>
+                  </tr>
+                <% end %>
               <% end %>
             </tbody>
           </table>
@@ -236,19 +242,22 @@
                 </tr>
               </thead>
               <tbody>
-                <% shipment.stock_transfer_shipment_lines.each do |shipment_line| %>
-                  <% ship_line = shipment_line.stock_transfer_line %>
-                  <tr>
-                    <td class="py-1 text-gray-900">
-                      <%= shipment_line.ingredient.name %>
-                      <span class="block font-mono text-xs text-amber-700"><%= shipment_line.ingredient.code %></span>
-                    </td>
-                    <td class="py-1 text-gray-700"><%= transfer_line_unit_label(ship_line) %></td>
-                    <td class="py-1 text-end tabular-nums"><%= transfer_line_amount(ship_line, shipment_line.quantity_sent) %></td>
-                    <td class="py-1 text-end tabular-nums text-gray-600">
-                      <%= shipment_line.quantity_received ? transfer_line_amount(ship_line, shipment_line.quantity_received) : "—" %>
-                    </td>
-                  </tr>
+                <% group_records_by_ingredient_category(shipment.stock_transfer_shipment_lines).each do |category_name, shipment_lines| %>
+                  <%= render "category_header", name: category_name, count: shipment_lines.size, tag: :tr, colspan: 4 %>
+                  <% shipment_lines.each do |shipment_line| %>
+                    <% ship_line = shipment_line.stock_transfer_line %>
+                    <tr>
+                      <td class="py-1 text-gray-900">
+                        <%= shipment_line.ingredient.name %>
+                        <span class="block font-mono text-xs text-amber-700"><%= shipment_line.ingredient.code %></span>
+                      </td>
+                      <td class="py-1 text-gray-700"><%= transfer_line_unit_label(ship_line) %></td>
+                      <td class="py-1 text-end tabular-nums"><%= transfer_line_amount(ship_line, shipment_line.quantity_sent) %></td>
+                      <td class="py-1 text-end tabular-nums text-gray-600">
+                        <%= shipment_line.quantity_received ? transfer_line_amount(ship_line, shipment_line.quantity_received) : "—" %>
+                      </td>
+                    </tr>
+                  <% end %>
                 <% end %>
               </tbody>
             </table>
@@ -276,19 +285,22 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <% @lines.each do |line| %>
-            <tr>
-              <td class="p-3 font-medium text-gray-900">
-                    <%= line.ingredient.name %>
-                    <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
-                  </td>
-              <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
-              <td class="p-3 text-end tabular-nums"><%= transfer_line_amount(line, line.quantity_requested) %></td>
-              <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_sent) %></td>
-              <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_received) %></td>
-              <td class="p-3 text-end tabular-nums text-blue-700"><%= transfer_line_amount(line, line.quantity_in_transit) %></td>
-              <td class="p-3 text-end tabular-nums text-amber-700"><%= transfer_line_amount(line, line.quantity_pending_send) %></td>
-            </tr>
+          <% group_records_by_ingredient_category(@lines).each do |category_name, lines| %>
+            <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 7 %>
+            <% lines.each do |line| %>
+              <tr>
+                <td class="p-3 font-medium text-gray-900">
+                  <%= line.ingredient.name %>
+                  <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                </td>
+                <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
+                <td class="p-3 text-end tabular-nums"><%= transfer_line_amount(line, line.quantity_requested) %></td>
+                <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_sent) %></td>
+                <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_received) %></td>
+                <td class="p-3 text-end tabular-nums text-blue-700"><%= transfer_line_amount(line, line.quantity_in_transit) %></td>
+                <td class="p-3 text-end tabular-nums text-amber-700"><%= transfer_line_amount(line, line.quantity_pending_send) %></td>
+              </tr>
+            <% end %>
           <% end %>
         </tbody>
       </table>

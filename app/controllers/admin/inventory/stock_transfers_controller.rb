@@ -20,9 +20,9 @@ module Admin
 
       def show
         authorize_inventory!(:show)
-        @lines = @stock_transfer.stock_transfer_lines.includes(:ingredient).ordered
+        @lines = @stock_transfer.stock_transfer_lines.includes(ingredient: :ingredient_category).ordered
         @shipments = @stock_transfer.stock_transfer_shipments.ordered
-          .includes(stock_transfer_shipment_lines: { stock_transfer_line: :ingredient })
+          .includes(stock_transfer_shipment_lines: { stock_transfer_line: { ingredient: :ingredient_category } })
         @current_shipment = @stock_transfer.current_shipment
       end
 
@@ -172,15 +172,22 @@ module Admin
           @stock_transfer.notes = template.notes
         end
 
-        template.stock_transfer_template_lines.includes(:ingredient).ordered.each do |line|
-          qty = line.default_quantity.to_d
-          @stock_transfer.stock_transfer_lines.build(
-            ingredient: line.ingredient,
-            unit: line.unit.presence || line.ingredient.unit,
-            quantity_requested_input: qty.positive? ? qty : nil,
-            position: line.position
-          )
-        end
+        template.stock_transfer_template_lines
+          .includes(ingredient: :ingredient_category)
+          .ordered
+          .sort_by { |l|
+            cat = l.ingredient&.ingredient_category
+            [cat&.position.to_i, cat&.name.to_s.downcase, l.position.to_i, l.ingredient&.name.to_s.downcase]
+          }
+          .each_with_index do |line, index|
+            qty = line.default_quantity.to_d
+            @stock_transfer.stock_transfer_lines.build(
+              ingredient: line.ingredient,
+              unit: line.unit.presence || line.ingredient.unit,
+              quantity_requested_input: qty.positive? ? qty : nil,
+              position: index
+            )
+          end
       end
 
       def save_transfer_with_lines
@@ -195,11 +202,16 @@ module Admin
 
       def load_form_data
         @locations = Location.active.ordered
-        @ingredients = Ingredient.active.includes(:ingredient_units).order(:name)
+        @ingredients = Ingredient.active.includes(:ingredient_category, :ingredient_units).order(:name)
         @ingredient_available_units = @ingredients.to_h do |i|
           [i.id, i.available_units.map { |u| [helpers.ingredient_unit_label(u), u] }]
         end
         @transfer_templates = StockTransferTemplate.active.ordered.includes(:stock_transfer_template_lines)
+        # Ensure association lines used by the form have categories loaded for grouping.
+        ActiveRecord::Associations::Preloader.new(
+          records: @stock_transfer.stock_transfer_lines.select(&:ingredient_id),
+          associations: { ingredient: :ingredient_category }
+        ).call
       end
 
       def record_for_policy

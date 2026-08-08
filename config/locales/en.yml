@@ -1288,6 +1288,7 @@ en:
       send_now: "Send now"
       available_at_source: "Available at source"
       line_items: "Progress summary"
+      uncategorized: "Uncategorized"
       shipment_history: "Shipment history"
       shipment_number: "Shipment #%{number}"
       shipment_sent_by: "Sent by %{name} · %{at}"

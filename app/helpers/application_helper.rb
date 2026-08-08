@@ -211,6 +211,22 @@ module ApplicationHelper
     ingredient_unit_label(line.unit.presence || line.ingredient.unit)
   end
 
+  # Groups transfer / shipment line records by ingredient category (category
+  # position, then name). Records without a category land in "Uncategorized".
+  # Each record must respond to `ingredient`.
+  def group_records_by_ingredient_category(records)
+    Array(records).reject { |r| r.respond_to?(:marked_for_destruction?) && r.marked_for_destruction? }
+      .group_by { |r| r.ingredient&.ingredient_category }
+      .sort_by { |cat, _| [cat ? 0 : 1, cat&.position.to_i, cat&.name.to_s.downcase] }
+      .map do |cat, items|
+        sorted = items.sort_by do |r|
+          position = r.respond_to?(:position) ? r.position : r.try(:stock_transfer_line)&.position
+          [position.to_i, r.ingredient&.name.to_s.downcase]
+        end
+        [cat&.name.presence || t("inventory.stock_transfers.uncategorized"), sorted]
+      end
+  end
+
   # Render a base-unit transfer quantity in the line's (fixed) unit, with the
   # base equivalent as a helper line when the unit differs from the base.
   def transfer_line_quantity(line, base_quantity)
@@ -530,6 +546,21 @@ module ApplicationHelper
 
   def ingredient_search_options(ingredients)
     ingredients.map { |ingredient| { value: ingredient.id, label: ingredient.name } }.to_json
+  end
+
+  # ingredient_id => { id, name, position } for client-side category grouping on transfer forms.
+  def ingredient_categories_json(ingredients)
+    ingredients.to_h do |ingredient|
+      cat = ingredient.ingredient_category
+      [
+        ingredient.id,
+        {
+          id: cat&.id,
+          name: cat&.name.presence || t("inventory.stock_transfers.uncategorized"),
+          position: cat ? cat.position.to_i : 999_999
+        }
+      ]
+    end.to_json
   end
 
   # Flat searchable options from AccountListService's grouped [[label, value], ...] lists.

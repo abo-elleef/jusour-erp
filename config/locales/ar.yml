@@ -1292,6 +1292,7 @@ ar:
       send_now: "إرسال الآن"
       available_at_source: "المتاح في المصدر"
       line_items: "ملخص التقدم"
+      uncategorized: "غير مصنّف"
       shipment_history: "سجل الشحنات"
       shipment_number: "شحنة #%{number}"
       shipment_sent_by: "أرسلها %{name} · %{at}"

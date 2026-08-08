@@ -12,7 +12,7 @@ module Admin
 
       def show
         authorize_inventory!(:show)
-        @lines = @template.stock_transfer_template_lines.includes(:ingredient).ordered
+        @lines = @template.stock_transfer_template_lines.includes(ingredient: :ingredient_category).ordered
       end
 
       def new
@@ -90,10 +90,14 @@ module Admin
 
       def load_form_data
         @locations = Location.active.ordered
-        @ingredients = Ingredient.active.includes(:ingredient_units).order(:name)
+        @ingredients = Ingredient.active.includes(:ingredient_category, :ingredient_units).order(:name)
         @ingredient_available_units = @ingredients.to_h do |i|
           [i.id, i.available_units.map { |u| [helpers.ingredient_unit_label(u), u] }]
         end
+        ActiveRecord::Associations::Preloader.new(
+          records: @template.stock_transfer_template_lines.select(&:ingredient_id),
+          associations: { ingredient: :ingredient_category }
+        ).call
       end
 
       def build_line_items

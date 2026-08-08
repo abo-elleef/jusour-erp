@@ -1,0 +1,32 @@
+<%# locals: name, count, colspan (optional, for table rows), tag (:div or :tr),
+            category_id (optional), category_position (optional) %>
+<% tag_name = local_assigns.fetch(:tag, :div) %>
+<% count = local_assigns[:count] %>
+<% colspan = local_assigns[:colspan] %>
+<% category_id = local_assigns[:category_id] %>
+<% category_position = local_assigns.fetch(:category_position, 999_999) %>
+<% category_key = category_id.presence || "uncategorized" %>
+
+<% if tag_name == :tr %>
+  <tr class="bg-gray-100/90"
+      data-transfer-category-header
+      data-category-id="<%= category_key %>"
+      data-category-position="<%= category_position.to_i %>">
+    <td colspan="<%= colspan %>" class="px-3 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+      <%= name %>
+      <% if count %>
+        <span class="font-normal text-gray-400 normal-case tracking-normal ms-1" data-transfer-category-count>(<%= count %>)</span>
+      <% end %>
+    </td>
+  </tr>
+<% else %>
+  <div class="px-5 py-2.5 bg-gray-100/90 border-y border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wide sticky top-0 z-[1]"
+       data-transfer-category-header
+       data-category-id="<%= category_key %>"
+       data-category-position="<%= category_position.to_i %>">
+    <%= name %>
+    <% if count %>
+      <span class="font-normal text-gray-400 normal-case tracking-normal ms-1" data-transfer-category-count>(<%= count %>)</span>
+    <% end %>
+  </div>
+<% end %>
