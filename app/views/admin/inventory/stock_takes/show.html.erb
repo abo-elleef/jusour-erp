@@ -110,7 +110,17 @@
                   <td class="p-3 pl-5 text-gray-400 tabular-nums"><%= index + 1 %></td>
                   <td class="p-3 text-gray-600"><%= item.ingredient.ingredient_category.name %></td>
                   <td class="p-3">
-                    <span class="font-semibold text-gray-900"><%= item.ingredient.name %></span>
+                    <span class="inline-flex items-center gap-1.5 font-semibold text-gray-900">
+                      <%= item.ingredient.name %>
+                      <% unless item.ingredient.active? %>
+                        <span class="inline-flex text-gray-400" title="<%= t("inventory.stock_takes.show.inactive_ingredient") %>" aria-label="<%= t("inventory.stock_takes.show.inactive_ingredient") %>">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 shrink-0" aria-hidden="true">
+                            <path fill-rule="evenodd" d="M5.22 14.78a.75.75 0 0 0 1.06 0l8.5-8.5a.75.75 0 0 0-1.06-1.06l-8.5 8.5a.75.75 0 0 0 0 1.06Z" clip-rule="evenodd" />
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-1.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                      <% end %>
+                    </span>
                   </td>
                   <td class="p-3 text-right text-gray-600 tabular-nums whitespace-nowrap">
                     <%= item.expected_quantity %>
@@ -187,8 +197,18 @@
                 <td class="p-3 pl-5 text-gray-400 tabular-nums"><%= index + 1 %></td>
                 <td class="p-3 text-gray-600"><%= item.ingredient.ingredient_category.name %></td>
                 <td class="p-3">
-                  <%= link_to item.ingredient.name, admin_inventory_ingredient_path(item.ingredient),
-                        class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                  <span class="inline-flex items-center gap-1.5">
+                    <%= link_to item.ingredient.name, admin_inventory_ingredient_path(item.ingredient),
+                          class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                    <% unless item.ingredient.active? %>
+                      <span class="inline-flex text-gray-400" title="<%= t("inventory.stock_takes.show.inactive_ingredient") %>" aria-label="<%= t("inventory.stock_takes.show.inactive_ingredient") %>">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 shrink-0" aria-hidden="true">
+                          <path fill-rule="evenodd" d="M5.22 14.78a.75.75 0 0 0 1.06 0l8.5-8.5a.75.75 0 0 0-1.06-1.06l-8.5 8.5a.75.75 0 0 0 0 1.06Z" clip-rule="evenodd" />
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-1.5a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13Z" clip-rule="evenodd" />
+                        </svg>
+                      </span>
+                    <% end %>
+                  </span>
                 </td>
                 <td class="p-3 text-right text-gray-600 tabular-nums whitespace-nowrap">
                   <%= item.expected_quantity %>
