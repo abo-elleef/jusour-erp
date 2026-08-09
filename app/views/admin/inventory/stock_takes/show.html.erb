@@ -1,5 +1,5 @@
 <% content_for :title, "#{t('inventory.stock_takes.show.title')} — #{l((@stock_take.started_at || @stock_take.created_at).to_date, format: :long)}" %>
-<% input_class = "w-full max-w-[8rem] bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% input_class = "w-36 min-w-[9rem] bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-base text-gray-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
 <% select_class = "w-full min-w-[5.5rem] max-w-[8rem] bg-gray-50 border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
 <% sort_opts = { sort: @sort, direction: @direction } %>
 
