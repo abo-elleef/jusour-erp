@@ -1221,8 +1221,11 @@ ar:
         count_sheet_hint_in_progress: "أدخل الكميات الفعلية بأي وحدة متاحة لكل مكوّن، احفظ، ثم أكّد لتطبيق التعديلات"
         count_sheet_hint_completed: "الكميات النهائية والفروقات لهذا الجرد (المتوقع والفرق بوحدة الأساس)"
         table:
+          index: "#"
+          category: "التصنيف"
           ingredient: "المكون"
           expected: "المتوقع"
+          expected_value: "قيمة المتوقع"
           counted: "المعدود"
           variance: "الفرق"
           counted_value: "قيمة المعدود"

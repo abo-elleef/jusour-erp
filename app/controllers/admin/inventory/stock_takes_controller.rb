@@ -3,6 +3,8 @@
 module Admin
   module Inventory
     class StockTakesController < BaseController
+      SORT_COLUMNS = %w[category name counted expected expected_value counted_value].freeze
+
       before_action :set_stock_take, only: %i[show update complete cancel]
 
       def index
@@ -17,14 +19,17 @@ module Admin
 
       def show
         authorize_inventory!(:show)
+        @sort = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : "category"
+        @direction = params[:dir].to_s == "desc" ? "desc" : "asc"
         @items = @stock_take.stock_take_items
           .includes(ingredient: [:ingredient_category, :ingredient_units])
           .joins(ingredient: :ingredient_category)
-          .order("ingredient_categories.position ASC, ingredients.name ASC")
+          .to_a
         @unit_costs = ::Inventory::LocationUnitCost.map_for(
           ingredients: @items.map(&:ingredient),
           location: @stock_take.location
         )
+        @items = sort_items(@items)
         @variance_count = @items.count { |i| i.variance.present? && !i.variance.to_d.zero? }
         @variance_value_cents = @items.sum { |i| i.variance_value_cents(location_cost: @unit_costs[i.ingredient_id]).to_i }
         @counted_value_cents = @items.sum { |i| i.counted_value_cents(location_cost: @unit_costs[i.ingredient_id]).to_i }
@@ -66,7 +71,7 @@ module Admin
       def update
         authorize_inventory!(:update)
         unless @stock_take.status == "in_progress"
-          redirect_to admin_inventory_stock_take_path(@stock_take), alert: t("inventory.stock_takes.show.complete_not_allowed")
+          redirect_to stock_take_path_with_sort, alert: t("inventory.stock_takes.show.complete_not_allowed")
           return
         end
 
@@ -77,13 +82,13 @@ module Admin
           item.calculate_variance!
           item.save!
         end
-        redirect_to admin_inventory_stock_take_path(@stock_take), notice: t("flash.stock_take.saved")
+        redirect_to stock_take_path_with_sort, notice: t("flash.stock_take.saved")
       end
 
       def complete
         authorize_inventory!(:complete)
         unless @stock_take.completable?
-          redirect_to admin_inventory_stock_take_path(@stock_take), alert: t("inventory.stock_takes.show.complete_not_allowed")
+          redirect_to stock_take_path_with_sort, alert: t("inventory.stock_takes.show.complete_not_allowed")
           return
         end
 
@@ -103,7 +108,7 @@ module Admin
       def cancel
         authorize_inventory!(:complete)
         unless @stock_take.status == "in_progress"
-          redirect_to admin_inventory_stock_take_path(@stock_take), alert: t("inventory.stock_takes.show.cancel_not_allowed")
+          redirect_to stock_take_path_with_sort, alert: t("inventory.stock_takes.show.cancel_not_allowed")
           return
         end
 
@@ -117,6 +122,49 @@ module Admin
 
       def set_stock_take
         @stock_take = StockTake.find(params[:id])
+      end
+
+      def stock_take_path_with_sort
+        opts = {}
+        opts[:sort] = params[:sort] if SORT_COLUMNS.include?(params[:sort].to_s)
+        opts[:dir] = params[:dir] if %w[asc desc].include?(params[:dir].to_s)
+        admin_inventory_stock_take_path(@stock_take, opts)
+      end
+
+      def sort_items(items)
+        present, blank = partition_for_sort(items)
+        sorted_present = present.sort_by { |item| sort_key(item) }
+        sorted_present.reverse! if @direction == "desc"
+        sorted_present + blank
+      end
+
+      # Blank counted / counted_value rows stay at the bottom regardless of direction.
+      def partition_for_sort(items)
+        case @sort
+        when "counted", "counted_value"
+          items.partition { |item| item.counted_quantity.present? }
+        else
+          [items, []]
+        end
+      end
+
+      def sort_key(item)
+        cost = @unit_costs[item.ingredient_id]
+        case @sort
+        when "category"
+          cat = item.ingredient.ingredient_category
+          [cat.position.to_i, cat.name.to_s.downcase, item.ingredient.name.to_s.downcase]
+        when "counted"
+          item.base_counted_quantity.to_d
+        when "expected"
+          item.expected_quantity.to_d
+        when "expected_value"
+          item.expected_value_cents(location_cost: cost).to_i
+        when "counted_value"
+          item.counted_value_cents(location_cost: cost).to_i
+        else
+          item.ingredient.name.to_s.downcase
+        end
       end
 
       # Anchors the count to the user-entered date. A blank or future date falls

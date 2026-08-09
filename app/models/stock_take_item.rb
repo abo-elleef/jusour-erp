@@ -30,6 +30,10 @@ class StockTakeItem < ApplicationRecord
     (base_counted_quantity * unit_cost_cents(location_cost: location_cost)).round
   end
 
+  def expected_value_cents(location_cost: nil)
+    (expected_quantity.to_d * unit_cost_cents(location_cost: location_cost)).round
+  end
+
   def variance_value_cents(location_cost: nil)
     return nil if variance.blank?
 
