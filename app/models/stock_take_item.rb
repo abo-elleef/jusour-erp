@@ -11,6 +11,10 @@ class StockTakeItem < ApplicationRecord
   # be an alternate). Expected quantity is already stored in the base unit.
   def base_counted_quantity
     ingredient.to_base(counted_quantity.to_d, counted_unit)
+  rescue ArgumentError
+    # Unknown/legacy counted unit — treat the typed count as base so show pages
+    # and variance display still render.
+    counted_quantity.to_d
   end
 
   def calculate_variance!

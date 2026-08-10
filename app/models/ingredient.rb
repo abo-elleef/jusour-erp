@@ -109,10 +109,12 @@ class Ingredient < ApplicationRecord
   end
 
   # How many base units one of `for_unit` equals. The base unit is factor 1.
+  # Accepts canonical Unit#name or a translated display label (e.g. "قطعة" for "pieces").
   def base_units_per(for_unit)
-    return 1.to_d if for_unit.blank? || for_unit == unit
+    resolved = canonicalize_unit(for_unit)
+    return 1.to_d if resolved.blank? || resolved == unit
 
-    row = ingredient_units.detect { |iu| iu.unit == for_unit }
+    row = ingredient_units.detect { |iu| iu.unit == resolved }
     row&.base_units_per_unit&.to_d
   end
 
@@ -130,6 +132,20 @@ class Ingredient < ApplicationRecord
     raise ArgumentError, "Unknown unit #{to_unit.inspect} for #{name}" if factor.nil?
 
     quantity.to_d / factor
+  end
+
+  # Map a unit name or I18n label onto one of this ingredient's available units.
+  def canonicalize_unit(for_unit)
+    return unit if for_unit.blank?
+
+    str = for_unit.to_s
+    return str if available_units.include?(str)
+
+    available_units.find { |u| self.class.unit_display_label(u) == str } || str
+  end
+
+  def self.unit_display_label(name)
+    I18n.t("inventory.unit_labels.#{name}", default: name.to_s)
   end
 
   private

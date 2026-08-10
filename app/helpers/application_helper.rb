@@ -526,7 +526,7 @@ module ApplicationHelper
   end
 
   def ingredient_unit_label(unit)
-    t("inventory.ingredients.units.#{unit}", default: unit.to_s)
+    t("inventory.unit_labels.#{unit}", default: unit.to_s)
   end
 
   # Render a stock adjustment's delta in the unit it was entered (system

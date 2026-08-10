@@ -659,6 +659,23 @@ ar:
     pay_staff_meal: "تسجيل وجبة موظف"
 
   inventory:
+    # Canonical unit name → display label. Keep keys aligned with Unit#name.
+    unit_labels:
+      kg: "كيلو جرام"
+      g: "جرام"
+      liters: "لتر"
+      ml: "مل"
+      pieces: "قطعة"
+      packs: "عبوة"
+      gallons: "جالون"
+      bales: "بلتة"
+      bales_2000: "2000 بلتة"
+      bales_1000: "1000 بلتة"
+      bales_500: "500 بلتة"
+      cartons: "كارتونة"
+      checkins: "دجاجة"
+      bags: "كيس"
+      batches: "باتش"
     stock_status:
       out: "نفد المخزون"
       low: "منخفض"
@@ -680,22 +697,12 @@ ar:
       back_to_list: "العودة إلى المكونات"
       back_to_inventory: "← المخزون"
       expires_on: "ينتهي %{date}"
-      units:
-        kg: "كيلو جرام"
-        g: "جرام"
-        liters: "لتر"
-        ml: "مل"
-        pieces: "قطعة"
-        packs: "عبوة"
-        gallons: "جالون"
-        bales: "بلتة"
-        bales_2000: '2000 بلتة'
-        bales_1000: '1000 بلتة'
-        bales_500: '500 بلتة'
-        cartons: "كارتونة"
-        checkins: 'دجاجة'
-        bags: 'كيس'
-        batches: 'باتش'
+      alternate_units:
+        heading: "وحدات الشراء / البديلة"
+        hint: "أضف الوحدات التي تشتري أو تقيس بها هذا المكوّن. يبقى المخزون والوصفات والتكاليف بالوحدة الأساسية أعلاه، وتُحوَّل هذه الوحدات إليها."
+        unit: "الوحدة"
+        factor: "%{base} لكل وحدة"
+        add: "إضافة وحدة"
       index:
         description: "متابعة مستويات المخزون والموردين وتكلفة المكونات."
         new_button: "مكون جديد"
@@ -728,6 +735,7 @@ ar:
         table:
           code: "الكود"
           ingredient: "المكون"
+          unit: "الوحدة"
           stock: "المخزون"
           suppliers: "الموردون"
           status: "الحالة"
@@ -738,12 +746,6 @@ ar:
         empty_description_filtered: "جرّب مسح التصفية أو تعديل البحث."
         empty_description: "ابدأ بإضافة أول مكون."
         clear_filters: "مسح التصفية"
-      units:
-        heading: "وحدات الشراء / البديلة"
-        hint: "أضف الوحدات التي تشتري أو تقيس بها هذا المكوّن. يبقى المخزون والوصفات والتكاليف بالوحدة الأساسية أعلاه، وتُحوَّل هذه الوحدات إليها."
-        unit: "الوحدة"
-        factor: "%{base} لكل وحدة"
-        add: "إضافة وحدة"
       form:
         category: "التصنيف"
         code: "الكود"

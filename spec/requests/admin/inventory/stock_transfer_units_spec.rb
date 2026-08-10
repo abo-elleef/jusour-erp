@@ -43,7 +43,7 @@ RSpec.describe "Stock transfers in a fixed unit", type: :request do
     # Show page renders the received unit (gallons), not just the base unit.
     get admin_inventory_stock_transfer_path(transfer)
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("gallon")
+    expect(response.body).to include(I18n.t("inventory.unit_labels.gallons", default: "gallons"))
 
     # Ship 2 gallons → 7570 ml
     post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "2" } }

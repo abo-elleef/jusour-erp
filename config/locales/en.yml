@@ -659,6 +659,23 @@ en:
     pay_staff_meal: "Record Staff Meal"
 
   inventory:
+    # Canonical unit name → display label. Keep keys aligned with Unit#name.
+    unit_labels:
+      kg: "kilogram"
+      g: "gram"
+      liters: "liters"
+      ml: "ml"
+      pieces: "pieces"
+      packs: "packs"
+      gallons: "gallons"
+      bales: "bales"
+      bales_2000: "2000 bales"
+      bales_1000: "1000 bales"
+      bales_500: "500 bales"
+      cartons: "cartons"
+      checkins: "checkins"
+      bags: "bags"
+      batches: "batches"
     stock_status:
       out: "Out of stock"
       low: "Low"
@@ -680,22 +697,12 @@ en:
       back_to_list: "Back to ingredients"
       back_to_inventory: "← Inventory"
       expires_on: "Expires %{date}"
-      units:
-        kg: "kilogram"
-        g: "gram"
-        liters: "liters"
-        ml: "ml"
-        pieces: "pieces"
-        packs: "packs"
-        gallons: "gallons"
-        bales: "bales"
-        bales_2000: '2000 bales'
-        bales_1000: '1000 bales'
-        bales_500: '500 bales'
-        cartons: "cartons"
-        checkins: 'checkins'
-        bags: 'bags'
-        batches: 'batches'
+      alternate_units:
+        heading: "Purchase / alternate units"
+        hint: "Add units you buy or measure this ingredient in. Stock, recipes, and costs stay in the base unit above; these convert into it."
+        unit: "Unit"
+        factor: "%{base} per unit"
+        add: "Add unit"
       index:
         description: "Track stock levels, suppliers, and ingredient costs."
         new_button: "New ingredient"
@@ -728,6 +735,7 @@ en:
         table:
           code: "Code"
           ingredient: "Ingredient"
+          unit: "Unit"
           stock: "Stock"
           suppliers: "Suppliers"
           status: "Status"
@@ -738,12 +746,6 @@ en:
         empty_description_filtered: "Try clearing filters or adjusting your search."
         empty_description: "Get started by adding your first ingredient."
         clear_filters: "Clear filters"
-      units:
-        heading: "Purchase / alternate units"
-        hint: "Add units you buy or measure this ingredient in. Stock, recipes, and costs stay in the base unit above; these convert into it."
-        unit: "Unit"
-        factor: "%{base} per unit"
-        add: "Add unit"
       form:
         category: "Category"
         code: "Code"

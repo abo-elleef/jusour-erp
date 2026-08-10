@@ -118,6 +118,7 @@
             <th class="p-3 pl-4 w-12 text-gray-400"><%= t("shared.row_index") %></th>
             <th class="p-3"><%= sort_header_link(t("inventory.ingredients.index.table.code"), :code, **sort_opts) %></th>
             <th class="p-3"><%= sort_header_link(t("inventory.ingredients.index.table.ingredient"), :name, **sort_opts) %></th>
+            <th class="p-3"><%= t("inventory.ingredients.index.table.unit") %></th>
             <th class="p-3"><%= sort_header_link(t("inventory.ingredients.index.table.stock"), :quantity_on_hand, **sort_opts) %></th>
             <th class="p-3"><%= sort_header_link(t("inventory.ingredients.index.table.suppliers"), :suppliers, **sort_opts) %></th>
             <th class="p-3"><%= sort_header_link(t("inventory.ingredients.index.table.status"), :status, **sort_opts) %></th>
@@ -129,7 +130,7 @@
         <tbody class="divide-y divide-gray-100">
           <% if @ingredients.empty? %>
             <tr>
-              <td colspan="9" class="p-12 text-center">
+              <td colspan="10" class="p-12 text-center">
                 <p class="text-gray-600 font-medium mb-1"><%= t("inventory.ingredients.index.empty_title") %></p>
                 <p class="text-gray-500 text-sm mb-4">
                   <% if @filtered %>
@@ -158,9 +159,10 @@
                       class: "font-medium text-blue-600 hover:underline" %>
                 <p class="text-xs text-gray-500 mt-0.5"><%= ingredient.ingredient_category.name %></p>
               </td>
+              <td class="p-3 text-gray-700 whitespace-nowrap"><%= ingredient_unit_label(ingredient.unit) %></td>
               <td class="p-3 min-w-[140px]">
                 <div class="font-medium text-gray-900">
-                  <%= ingredient.quantity_on_hand %> <span class="text-gray-500 font-normal"><%= ingredient_unit_label(ingredient.unit) %></span>
+                  <%= ingredient.quantity_on_hand %>
                 </div>
                 <div class="mt-1.5 h-1.5 w-full max-w-[120px] bg-gray-200 rounded-full overflow-hidden" title="<%= t("inventory.ingredients.index.reorder_tooltip", threshold: ingredient.reorder_threshold, unit: ingredient_unit_label(ingredient.unit)) %>">
                   <div class="h-full rounded-full <%= ingredient_stock_bar_class(ingredient) %>" style="width: <%= stock_pct %>%"></div>

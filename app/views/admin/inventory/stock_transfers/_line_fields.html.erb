@@ -28,7 +28,7 @@
     <%= f.number_field :quantity_requested_input, value: requested_value, step: 0.001, min: 0, placeholder: "0", class: input_class %>
   </div>
   <div>
-    <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.ingredients.units.unit") %></label>
+    <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.ingredients.alternate_units.unit") %></label>
     <%= f.select :unit,
           options_for_select(unit_opts, line.unit.presence || ingredient&.unit),
           { include_blank: ingredient.nil? },

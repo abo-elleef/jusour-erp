@@ -40,6 +40,14 @@ RSpec.describe "Ingredient units and conversion", type: :model do
       expect(oil.from_base(7570, "gallons")).to eq(2)
     end
 
+    it "accepts translated unit labels (e.g. Arabic show/forms)" do
+      I18n.with_locale(:ar) do
+        expect(oil.to_base(2, "جالون")).to eq(7570)
+        expect(oil.from_base(7570, "جالون")).to eq(2)
+        expect(oil.to_base(100, "مل")).to eq(100)
+      end
+    end
+
     it "raises for an unknown unit" do
       expect { oil.to_base(1, "drums") }.to raise_error(ArgumentError)
     end

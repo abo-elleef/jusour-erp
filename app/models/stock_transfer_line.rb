@@ -26,6 +26,10 @@ class StockTransferLine < ApplicationRecord
   # Show a base-unit quantity in this line's (fixed) unit.
   def in_line_unit(base_quantity)
     ingredient.from_base(base_quantity.to_d, unit)
+  rescue ArgumentError
+    # Bad/legacy unit on the line — show the stored base quantity rather than
+    # crashing transfer/stock-take show pages.
+    base_quantity.to_d
   end
 
   # Convert a quantity typed in this line's unit back to the base unit.

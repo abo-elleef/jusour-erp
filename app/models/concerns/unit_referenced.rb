@@ -12,6 +12,22 @@
 module UnitReferenced
   extend ActiveSupport::Concern
 
+  # Resolve a unit by exact/case-insensitive name, or by translated display label
+  # (e.g. Arabic "قطعة" → Unit named "pieces").
+  def self.resolve_unit(rel, value)
+    str = value.to_s
+    found = rel.find_by("LOWER(name) = ?", str.downcase)
+    return found if found
+
+    labels = I18n.t("inventory.unit_labels", default: {})
+    return nil unless labels.is_a?(Hash)
+
+    canonical = labels.find { |_key, label| label.to_s == str }&.first
+    return nil if canonical.blank?
+
+    rel.find_by("LOWER(name) = ?", canonical.to_s.downcase)
+  end
+
   class_methods do
     def references_unit(name, column:, required: false)
       assoc = :"#{name}_ref"
@@ -38,7 +54,7 @@ module UnitReferenced
                   else
                     Unit.all
                   end
-            rel.find_by("LOWER(name) = ?", value.to_s.downcase)
+            UnitReferenced.resolve_unit(rel, value)
           end
         instance_variable_set(:"@#{name}_unresolved", value.present? && !value.is_a?(Unit) && resolved.nil?)
         public_send("#{assoc}=", resolved)

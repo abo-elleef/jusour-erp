@@ -23,7 +23,7 @@
           class: "#{input_class} tabular-nums" %>
   </div>
   <div class="md:col-span-3">
-    <span class="md:hidden text-xs font-semibold text-gray-600 mb-1.5 block"><%= t("inventory.ingredients.units.unit") %></span>
+    <span class="md:hidden text-xs font-semibold text-gray-600 mb-1.5 block"><%= t("inventory.ingredients.alternate_units.unit") %></span>
     <%= f.select :unit,
           options_for_select(line_units.map { |u| [ingredient_unit_label(u), u] }, line.unit.presence || line.ingredient&.unit),
           { include_blank: line.ingredient.nil? },
