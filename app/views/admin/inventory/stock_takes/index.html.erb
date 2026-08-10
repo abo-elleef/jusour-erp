@@ -52,6 +52,14 @@
             <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.stock_takes.index.location_hint") %></p>
           </div>
           <div>
+            <%= label_tag :supplier_id, t("inventory.stock_takes.index.supplier"), class: label_class %>
+            <%= select_tag :supplier_id,
+                  options_from_collection_for_select(@suppliers, :id, :name),
+                  include_blank: t("inventory.stock_takes.index.all_suppliers"),
+                  class: "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
+            <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.stock_takes.index.supplier_hint") %></p>
+          </div>
+          <div>
             <%= label_tag :count_date, t("inventory.stock_takes.index.count_date"), class: label_class %>
             <%= date_field_tag :count_date, Date.current, max: Date.current,
                   class: "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
@@ -80,6 +88,7 @@
             <tr>
               <th class="p-3 pl-5"><%= t("inventory.stock_takes.index.table.started") %></th>
               <th class="p-3"><%= t("inventory.stock_takes.index.table.location") %></th>
+              <th class="p-3"><%= t("inventory.stock_takes.index.table.supplier") %></th>
               <th class="p-3"><%= t("inventory.stock_takes.index.table.status") %></th>
               <th class="p-3"><%= t("inventory.stock_takes.index.table.counted_by") %></th>
               <th class="p-3 text-right"><%= t("inventory.stock_takes.index.table.items") %></th>
@@ -102,6 +111,7 @@
                   <% end %>
                 </td>
                 <td class="p-3 text-gray-700"><%= st.location&.name || t("inventory.stock_takes.index.all_locations") %></td>
+                <td class="p-3 text-gray-600"><%= st.supplier&.name || t("inventory.stock_takes.index.all_suppliers") %></td>
                 <td class="p-3">
                   <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= stock_take_status_class(st.status) %> <%= stock_take_status_border_class(st.status) %>">
                     <%= stock_take_status_label(st.status) %>

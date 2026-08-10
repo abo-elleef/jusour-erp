@@ -11,6 +11,8 @@ class StockTake < ApplicationRecord
   # A count is scoped to one location. Required for new takes; older takes may
   # predate this (kept optional at the association level so they still save).
   belongs_to :location, optional: true
+  # When set, only ingredients linked to this supplier are included in the count.
+  belongs_to :supplier, optional: true
   has_many :stock_take_items, dependent: :destroy
 
   accepts_nested_attributes_for :stock_take_items

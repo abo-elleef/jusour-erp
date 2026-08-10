@@ -12,9 +12,10 @@ module Admin
         @total_count = StockTake.count
         @in_progress_count = StockTake.active.count
         @completed_count = StockTake.where(status: "completed").count
-        @stock_takes = StockTake.includes(:user, :location, :stock_take_items).recent.limit(30)
+        @stock_takes = StockTake.includes(:user, :location, :supplier, :stock_take_items).recent.limit(30)
         @stock_locations = Location.active.central_kitchens.ordered.to_a + Location.active.branches.ordered.to_a
         @locations_in_progress = StockTake.active.pluck(:location_id)
+        @suppliers = Supplier.active.order(:name)
       end
 
       def show
@@ -48,24 +49,23 @@ module Admin
           return
         end
 
+        supplier = Supplier.find_by(id: params[:supplier_id]) if params[:supplier_id].present?
+
         stock_take = StockTake.create!(
           user: current_user,
           location: location,
+          supplier: supplier,
           status: "in_progress",
           started_at: count_started_at,
           notes: params[:notes]
         )
-        # Seed one item per ingredient stocked at this location, with that
-        # location's on-hand as the expected quantity (both in the base unit).
-        IngredientLocation.where(location: location).includes(:ingredient).find_each do |il|
-          next unless il.ingredient.active?
-
-          stock_take.stock_take_items.create!(
-            ingredient: il.ingredient,
-            expected_quantity: il.quantity_on_hand
-          )
+        items_count = seed_stock_take_items(stock_take, location, supplier: supplier)
+        if items_count.zero?
+          redirect_to admin_inventory_stock_take_path(stock_take),
+            alert: t("inventory.stock_takes.index.no_items_for_filter")
+        else
+          redirect_to admin_inventory_stock_take_path(stock_take), notice: t("flash.stock_take.started")
         end
-        redirect_to admin_inventory_stock_take_path(stock_take), notice: t("flash.stock_take.started")
       end
 
       def update
@@ -178,6 +178,27 @@ module Admin
         return Time.current if date.nil? || date >= Date.current
 
         date.to_time.change(hour: Time.current.hour, min: Time.current.min)
+      end
+
+      # Seeds one line per active ingredient stocked at +location+. When +supplier+
+      # is set, only ingredients linked to that supplier are included.
+      def seed_stock_take_items(stock_take, location, supplier: nil)
+        scope = IngredientLocation.where(location: location).includes(:ingredient)
+        if supplier
+          scope = scope.where(ingredient_id: supplier.ingredient_ids)
+        end
+
+        count = 0
+        scope.find_each do |il|
+          next unless il.ingredient.active?
+
+          stock_take.stock_take_items.create!(
+            ingredient: il.ingredient,
+            expected_quantity: il.quantity_on_hand
+          )
+          count += 1
+        end
+        count
       end
 
       def record_for_policy

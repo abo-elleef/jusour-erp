@@ -14,6 +14,9 @@
       <% if @stock_take.location %>
         <p class="text-amber-700 text-sm font-semibold mt-1"><%= @stock_take.location.name %></p>
       <% end %>
+      <% if @stock_take.supplier %>
+        <p class="text-gray-600 text-sm mt-0.5"><%= t("inventory.stock_takes.show.supplier_filter", name: @stock_take.supplier.name) %></p>
+      <% end %>
       <p class="text-gray-600 text-sm mt-1">
         <% started_at = @stock_take.started_at || @stock_take.created_at %>
         <%= l(started_at.to_date, format: :long) %>

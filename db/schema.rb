@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_08_210000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_10_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1115,8 +1115,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_08_210000) do
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
     t.uuid "location_id"
+    t.uuid "supplier_id"
     t.index ["company_id"], name: "index_stock_takes_on_company_id"
     t.index ["location_id"], name: "index_stock_takes_on_location_id"
+    t.index ["supplier_id"], name: "index_stock_takes_on_supplier_id"
     t.index ["user_id"], name: "index_stock_takes_on_user_id"
   end
 
@@ -1619,6 +1621,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_08_210000) do
   add_foreign_key "stock_take_items", "units", column: "counted_unit_id"
   add_foreign_key "stock_takes", "companies"
   add_foreign_key "stock_takes", "locations"
+  add_foreign_key "stock_takes", "suppliers"
   add_foreign_key "stock_takes", "users"
   add_foreign_key "stock_transfer_lines", "ingredients"
   add_foreign_key "stock_transfer_lines", "stock_transfers"

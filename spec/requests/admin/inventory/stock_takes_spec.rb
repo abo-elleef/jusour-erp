@@ -40,6 +40,24 @@ RSpec.describe "Admin::Inventory::StockTakes", type: :request do
       expect(take.stock_take_items.first.expected_quantity.to_d).to eq(12.0)
     end
 
+    it "optionally limits items to ingredients linked to the chosen vendor" do
+      supplier = Supplier.create!(company: company, name: "Metro Foods")
+      other_supplier = Supplier.create!(company: company, name: "Other Vendor")
+      linked = create(:ingredient, company: company, ingredient_category: category, name: "Linked")
+      unlinked = create(:ingredient, company: company, ingredient_category: category, name: "Unlinked")
+      create(:ingredient_location, location: kitchen, ingredient: linked, quantity_on_hand: 4.0)
+      create(:ingredient_location, location: kitchen, ingredient: unlinked, quantity_on_hand: 7.0)
+      SupplierIngredient.create!(supplier: supplier, ingredient: linked, price_cents: 100)
+      SupplierIngredient.create!(supplier: other_supplier, ingredient: unlinked, price_cents: 100)
+
+      post admin_inventory_stock_takes_path, params: { location_id: kitchen.id, supplier_id: supplier.id }
+
+      take = StockTake.last
+      expect(take.supplier).to eq(supplier)
+      expect(take.stock_take_items.map(&:ingredient)).to eq([linked])
+      expect(take.stock_take_items.first.expected_quantity.to_d).to eq(4.0)
+    end
+
     it "blocks a second in-progress count for the same location" do
       create(:ingredient_location, location: kitchen, ingredient: ingredient, quantity_on_hand: 1.0)
       StockTake.create!(company: company, user: owner, location: kitchen, status: "in_progress", started_at: Time.current)

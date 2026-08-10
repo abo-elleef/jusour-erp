@@ -1173,10 +1173,14 @@ en:
           in_progress_hint: "Finish before starting another"
           completed: "Completed"
         start_heading: "Start stock take"
-        start_hint: "Snapshots the expected quantities for the ingredients stocked at the chosen location"
+        start_hint: "Snapshots expected quantities for ingredients stocked at the chosen location. Optionally limit to one vendor."
         location: "Location"
         select_location: "Select location…"
         location_hint: "The count covers ingredients stocked at this location, using its on-hand as the expected quantity."
+        supplier: "Vendor (optional)"
+        all_suppliers: "All vendors"
+        supplier_hint: "Limit the count to ingredients linked to this vendor. Leave blank to include every ingredient at the location."
+        no_items_for_filter: "No active ingredients at this location match the selected vendor. Cancel this count or choose different filters."
         location_required: "Select a location for the stock take."
         already_in_progress: "This location already has a stock take in progress. Complete it before starting another."
         no_locations: "Add a branch or central kitchen before running a stock take."
@@ -1191,6 +1195,7 @@ en:
         table:
           started: "Started"
           location: "Location"
+          supplier: "Vendor"
           status: "Status"
           counted_by: "Counted by"
           items: "Items"
@@ -1205,6 +1210,7 @@ en:
       show:
         back_to_list: "← Stock takes"
         title: "Stock take"
+        supplier_filter: "Vendor filter: %{name}"
         stats:
           ingredients: "Ingredients"
           variances: "Variances"
