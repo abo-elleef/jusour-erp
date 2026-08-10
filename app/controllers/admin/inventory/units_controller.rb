@@ -5,9 +5,11 @@ module Admin
     class UnitsController < BaseController
       before_action :set_unit, only: %i[edit update destroy]
 
+      SORT_COLUMNS = %w[name].freeze
+
       def index
         authorize_inventory_index!(Unit)
-        @units = Unit.ordered
+        load_units
         @unit = Unit.new
       end
 
@@ -22,7 +24,7 @@ module Admin
         if @unit.save
           redirect_to admin_inventory_units_path, notice: t("flash.unit.created")
         else
-          @units = Unit.ordered
+          load_units
           render :index, status: :unprocessable_entity
         end
       end
@@ -55,6 +57,16 @@ module Admin
 
       def set_unit
         @unit = Unit.find(params[:id])
+      end
+
+      def load_units
+        @sort = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : nil
+        @direction = params[:dir].to_s == "desc" ? "desc" : "asc"
+        @units = if @sort == "name"
+          Unit.order(Arel.sql("LOWER(units.name) #{@direction == "desc" ? "DESC" : "ASC"}"))
+        else
+          Unit.ordered
+        end
       end
 
       def record_for_policy

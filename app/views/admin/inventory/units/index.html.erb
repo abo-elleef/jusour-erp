@@ -31,8 +31,9 @@
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <table class="w-full text-sm">
       <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
+        <% sort_opts = { sort: @sort, direction: @direction } %>
         <tr>
-          <th class="p-3 ps-5 text-start"><%= t("inventory.units.name") %></th>
+          <th class="p-3 ps-5 text-start"><%= sort_header_link(t("inventory.units.name"), :name, **sort_opts) %></th>
           <th class="p-3 text-start"><%= t("inventory.units.type") %></th>
           <th class="p-3 text-start"><%= t("inventory.units.status") %></th>
           <th class="p-3 pe-5 text-end"></th>
