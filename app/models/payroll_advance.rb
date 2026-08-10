@@ -25,10 +25,11 @@ class PayrollAdvance < ApplicationRecord
   scope :for_month, ->(month) { where(payroll_month: month.to_date.beginning_of_month) }
   scope :ordered, -> { order(paid_on: :asc, created_at: :asc) }
 
+  # Cap advances at the employee's configured monthly salary for the month,
+  # not attendance-based net pay. Remaining room shrinks as advances are paid.
   def self.max_amount_cents_for(user, payroll_month)
-    summary = Accounting::MonthlyPayrollService.new(user, payroll_month).build_calculated
     advances_so_far = user.payroll_advances.for_month(payroll_month).sum(:amount_cents)
-    remaining = summary.net_pay_cents - advances_so_far
+    remaining = user.monthly_salary_cents.to_i - advances_so_far
     [remaining, 0].max
   end
 

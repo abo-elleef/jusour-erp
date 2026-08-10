@@ -484,6 +484,7 @@ en:
         title: "Advances"
         heading: "Salary advances"
         hint: "Advances are paid early from salary and reduce the remaining payout."
+        policy_hint: "Advances are capped by the employee’s monthly salary for the month, not by attendance-based pay."
         amount: "Amount"
         amount_cents: "Amount (cents)"
         treasury: "Paid from"
