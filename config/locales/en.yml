@@ -752,6 +752,7 @@ en:
         unit: "Base unit"
         select_category: "Select category…"
         select_unit: "Select unit…"
+        unit_change_hint: "Changing the base unit does not convert existing stock, batches, or costs — quantities stay as-is under the new unit. Alternate units are cleared."
         stock_cost_heading: "Stock & cost"
         stock_location: "Stock location"
         stock_location_hint: "On-hand and reorder levels are assigned to this branch or central kitchen."
@@ -3638,7 +3639,6 @@ en:
         ingredient:
           attributes:
             unit:
-              locked_in_use: "can't be changed once the ingredient has stock or batch history"
               not_available: "is not a unit configured for this company"
         ingredient_unit:
           attributes:

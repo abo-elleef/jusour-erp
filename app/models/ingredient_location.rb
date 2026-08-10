@@ -33,8 +33,8 @@ class IngredientLocation < ApplicationRecord
 
   private
 
-  # update_column: skips validations/callbacks (no recursion, no ingredient
-  # validations like the base-unit lock firing on a stock roll-up).
+  # update_column: skips validations/callbacks (no recursion into ingredient
+  # validations on a stock roll-up).
   def sync_ingredient_on_hand
     ingredient.update_column(:quantity_on_hand, ingredient.ingredient_locations.sum(:quantity_on_hand))
   end

@@ -45,16 +45,22 @@ RSpec.describe "Ingredient units and conversion", type: :model do
     end
   end
 
-  describe "base unit lock" do
-    it "prevents changing the base unit once the ingredient has stock" do
+  describe "base unit change" do
+    it "allows changing the base unit even when the ingredient has stock" do
       oil.update_columns(quantity_on_hand: 100)
       oil.reload
-      expect(oil.update(unit: "liters")).to be(false)
-      expect(oil.errors[:unit]).to be_present
+      expect(oil.update(unit: "liters")).to be(true)
+      expect(oil.reload.unit).to eq("liters")
     end
 
     it "allows changing the base unit while unused" do
       expect(oil.update(unit: "liters")).to be(true)
+    end
+
+    it "clears alternate units when the base unit changes" do
+      oil.ingredient_units.create!(unit: "gallons", base_units_per_unit: 3785, company: Current.company)
+      expect(oil.update(unit: "liters")).to be(true)
+      expect(oil.reload.ingredient_units).to be_empty
     end
   end
 end

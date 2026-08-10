@@ -39,7 +39,6 @@ class Ingredient < ApplicationRecord
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_on_hand, numericality: true
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
-  validate :base_unit_locked_when_in_use, on: :update
   before_validation :discard_alternate_units_on_base_change, on: :update
 
   # Next auto code for an ingredient in `category`: "<CATEGORY_CODE>-NNN", where
@@ -142,21 +141,11 @@ class Ingredient < ApplicationRecord
     errors.add(:unit, :not_available)
   end
 
-  # Changing the base unit would silently reinterpret every quantity and cost
-  # stored against it (stock on hand, batches). Lock it only while real stock or
-  # batch history exists — a fresh ingredient can still be corrected. Alternate
-  # units don't block the change; they're cleared instead (see below), since
-  # their conversion factors were defined against the old base.
-  def base_unit_locked_when_in_use
-    return unless unit_id_changed?
-    return unless quantity_on_hand.to_d.nonzero? || stock_batches.exists?
-
-    errors.add(:unit, :locked_in_use)
-  end
-
-  # When the base unit is (allowably) changed, drop any alternate units: their
+  # When the base unit changes, drop any alternate units: their
   # "N base units per unit" factors are meaningless against the new base and
   # can't be recomputed automatically. The user re-adds them if still needed.
+  # Existing stock/batch quantities and costs are left as-is (reinterpreted
+  # against the new unit) — intentional and not blocked.
   def discard_alternate_units_on_base_change
     return unless persisted? && unit_id_changed?
 

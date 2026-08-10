@@ -34,6 +34,9 @@
               options_for_select(company_unit_options, ingredient.unit_id),
               { include_blank: t("inventory.ingredients.form.select_unit") },
               class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+        <% if ingredient.persisted? %>
+          <p class="text-xs text-amber-700 mt-1.5"><%= t("inventory.ingredients.form.unit_change_hint") %></p>
+        <% end %>
       </div>
     </div>
 
