@@ -106,7 +106,8 @@
     <table class="w-full text-sm min-w-[1100px]">
       <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
         <tr>
-          <th class="p-3 ps-5 text-start">
+          <th class="p-3 ps-5 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
+          <th class="p-3 text-start">
             <%= monthly_payroll_sort_link(t("accounting.shift_logs.employee"), "name", sort: @sort, direction: @sort_direction, payroll_month: @payroll_month) %>
           </th>
           <th class="p-3 text-end">
@@ -149,9 +150,10 @@
       <tbody class="divide-y divide-gray-100">
         <% if @rows.any? %>
           <% month_param = @payroll_month.strftime("%Y-%m") %>
-          <% @rows.each do |row| %>
+          <% @rows.each_with_index do |row, index| %>
             <tr class="hover:bg-gray-100">
-              <td class="p-3 ps-5 font-medium w-48">
+              <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= table_row_number(index) %></td>
+              <td class="p-3 font-medium w-48">
                 <%= row.user.name %>
               </td>
               <td class="p-3 text-end tabular-nums text-gray-700">

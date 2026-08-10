@@ -19,7 +19,8 @@
     <table class="w-full text-sm">
       <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
         <tr>
-          <th class="p-3 ps-5 text-start"><%= t("accounting.shift_logs.employee") %></th>
+          <th class="p-3 ps-5 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
+          <th class="p-3 text-start"><%= t("accounting.shift_logs.employee") %></th>
           <th class="p-3 text-end"><%= t("accounting.payroll.shifts") %></th>
           <th class="p-3 text-end"><%= t("accounting.shift_logs.hours") %></th>
           <th class="p-3 text-end"><%= t("accounting.payroll.reg_ot") %></th>
@@ -28,9 +29,10 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
-        <% @rows.each do |row| %>
+        <% @rows.each_with_index do |row, index| %>
           <tr>
-            <td class="p-3 ps-5 font-medium"><%= row[:user].name %></td>
+            <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= table_row_number(index) %></td>
+            <td class="p-3 font-medium"><%= row[:user].name %></td>
             <td class="p-3 text-end"><%= row[:shifts] %></td>
             <td class="p-3 text-end tabular-nums"><%= row[:total_hours] %></td>
             <td class="p-3 text-end tabular-nums text-xs"><%= row[:regular_hours] %> / <%= row[:ot_hours] %></td>

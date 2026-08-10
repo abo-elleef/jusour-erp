@@ -122,7 +122,8 @@
         <table class="w-full text-left text-sm min-w-[760px]">
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
-              <th class="p-3 pl-5"><%= staff_index_sort_link(t("staff.index.table.name"), "name", sort: @sort, direction: @sort_direction) %></th>
+              <th class="p-3 pl-5 w-12 text-gray-400"><%= t("shared.row_index") %></th>
+              <th class="p-3"><%= staff_index_sort_link(t("staff.index.table.name"), "name", sort: @sort, direction: @sort_direction) %></th>
               <th class="p-3"><%= staff_index_sort_link(t("staff.index.table.email"), "email", sort: @sort, direction: @sort_direction) %></th>
               <th class="p-3"><%= staff_index_sort_link(t("staff.index.table.role"), "role", sort: @sort, direction: @sort_direction) %></th>
               <th class="p-3 text-end">
@@ -136,9 +137,10 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <% @users.each do |staff| %>
+            <% @users.each_with_index do |staff, index| %>
               <tr class="hover:bg-gray-100 transition-colors<%= " opacity-60" unless staff.active? %>">
-                <td class="p-3 pl-5">
+                <td class="p-3 pl-5 text-gray-400 tabular-nums"><%= table_row_number(index, pagy: @pagy) %></td>
+                <td class="p-3">
                   <% if policy(staff).show? %>
                     <%= link_to staff.name, admin_user_path(staff), class: "font-semibold text-gray-900 hover:text-amber-700 transition-colors" %>
                   <% else %>

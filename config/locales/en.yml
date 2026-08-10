@@ -98,6 +98,7 @@ en:
     save_changes: "Save changes"
 
   shared:
+    row_index: "#"
     searchable_select:
       no_results: "No matches"
 

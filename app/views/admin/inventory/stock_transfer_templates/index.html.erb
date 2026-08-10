@@ -15,7 +15,8 @@
     <table class="w-full text-sm">
       <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
         <tr>
-          <th class="p-3 ps-5 text-start"><%= t("inventory.stock_transfer_templates.name") %></th>
+          <th class="p-3 ps-5 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
+          <th class="p-3 text-start"><%= t("inventory.stock_transfer_templates.name") %></th>
           <th class="p-3 text-start"><%= t("inventory.stock_transfer_templates.route") %></th>
           <th class="p-3 text-end"><%= t("inventory.stock_transfer_templates.lines") %></th>
           <th class="p-3 text-start"><%= t("inventory.stock_transfer_templates.status") %></th>
@@ -23,9 +24,10 @@
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
-        <% @templates.each do |template| %>
+        <% @templates.each_with_index do |template, index| %>
           <tr class="hover:bg-gray-50">
-            <td class="p-3 ps-5 font-semibold text-gray-900">
+            <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= table_row_number(index) %></td>
+            <td class="p-3 font-semibold text-gray-900">
               <%= link_to template.name, admin_inventory_stock_transfer_template_path(template), class: "hover:text-amber-700" %>
             </td>
             <td class="p-3 text-gray-600">

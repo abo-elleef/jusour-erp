@@ -114,6 +114,7 @@
           <table class="w-full text-sm">
             <thead class="border-b border-amber-100 bg-white/60 text-xs font-semibold text-gray-500 uppercase tracking-wide">
               <tr>
+                <th class="p-3 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
                 <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
                 <th class="p-3 text-start"><%= t("inventory.stock_transfers.unit") %></th>
                 <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
@@ -126,11 +127,14 @@
             </thead>
             <tbody class="divide-y divide-amber-100/80">
               <% pending_send_lines = @lines.reject { |l| l.quantity_pending_send.zero? } %>
+              <% send_row_number = 0 %>
               <% group_records_by_ingredient_category(pending_send_lines).each do |category_name, lines| %>
-                <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 8 %>
+                <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 9 %>
                 <% lines.each do |line| %>
+                  <% send_row_number += 1 %>
                   <tr>
                     <% send_now_base = [line.quantity_pending_send, line.transferable_quantity_at_source].min %>
+                    <td class="p-3 text-gray-400 tabular-nums"><%= send_row_number %></td>
                     <td class="p-3 font-medium text-gray-900">
                       <%= line.ingredient.name %>
                       <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
@@ -175,6 +179,7 @@
           <table class="w-full text-sm">
             <thead class="border-b border-emerald-100 bg-white/60 text-xs font-semibold text-gray-500 uppercase tracking-wide">
               <tr>
+                <th class="p-3 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
                 <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
                 <th class="p-3 text-start"><%= t("inventory.stock_transfers.unit") %></th>
                 <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent_this_shipment") %></th>
@@ -182,11 +187,14 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-emerald-100/80">
+              <% confirm_row_number = 0 %>
               <% group_records_by_ingredient_category(@current_shipment.stock_transfer_shipment_lines).each do |category_name, shipment_lines| %>
-                <%= render "category_header", name: category_name, count: shipment_lines.size, tag: :tr, colspan: 4 %>
+                <%= render "category_header", name: category_name, count: shipment_lines.size, tag: :tr, colspan: 5 %>
                 <% shipment_lines.each do |shipment_line| %>
+                  <% confirm_row_number += 1 %>
                   <% line = shipment_line.stock_transfer_line %>
                   <tr>
+                    <td class="p-3 text-gray-400 tabular-nums"><%= confirm_row_number %></td>
                     <td class="p-3 font-medium text-gray-900">
                       <%= line.ingredient.name %>
                       <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
@@ -235,6 +243,7 @@
             <table class="w-full text-sm">
               <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                 <tr>
+                  <th class="pb-2 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
                   <th class="pb-2 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
                   <th class="pb-2 text-start"><%= t("inventory.stock_transfers.unit") %></th>
                   <th class="pb-2 text-end"><%= t("inventory.stock_transfers.quantity_sent") %></th>
@@ -242,11 +251,14 @@
                 </tr>
               </thead>
               <tbody>
+                <% history_row_number = 0 %>
                 <% group_records_by_ingredient_category(shipment.stock_transfer_shipment_lines).each do |category_name, shipment_lines| %>
-                  <%= render "category_header", name: category_name, count: shipment_lines.size, tag: :tr, colspan: 4 %>
+                  <%= render "category_header", name: category_name, count: shipment_lines.size, tag: :tr, colspan: 5 %>
                   <% shipment_lines.each do |shipment_line| %>
+                    <% history_row_number += 1 %>
                     <% ship_line = shipment_line.stock_transfer_line %>
                     <tr>
+                      <td class="py-1 text-gray-400 tabular-nums"><%= history_row_number %></td>
                       <td class="py-1 text-gray-900">
                         <%= shipment_line.ingredient.name %>
                         <span class="block font-mono text-xs text-amber-700"><%= shipment_line.ingredient.code %></span>
@@ -275,6 +287,7 @@
       <table class="w-full text-sm">
         <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
           <tr>
+            <th class="p-3 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
             <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
             <th class="p-3 text-start"><%= t("inventory.stock_transfers.unit") %></th>
             <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
@@ -285,10 +298,13 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
+          <% progress_row_number = 0 %>
           <% group_records_by_ingredient_category(@lines).each do |category_name, lines| %>
-            <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 7 %>
+            <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 8 %>
             <% lines.each do |line| %>
+              <% progress_row_number += 1 %>
               <tr>
+                <td class="p-3 text-gray-400 tabular-nums"><%= progress_row_number %></td>
                 <td class="p-3 font-medium text-gray-900">
                   <%= line.ingredient.name %>
                   <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>

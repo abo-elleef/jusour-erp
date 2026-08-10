@@ -80,7 +80,8 @@
         <table class="w-full text-sm min-w-[40rem]">
           <thead class="<%= table_head %>">
             <tr>
-              <th class="p-3 ps-5 text-start"><%= t("inventory.vendor_invoices.invoice_number") %></th>
+              <th class="p-3 ps-5 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
+              <th class="p-3 text-start"><%= t("inventory.vendor_invoices.invoice_number") %></th>
               <th class="p-3 text-start"><%= t("inventory.vendor_invoices.supplier") %></th>
               <th class="p-3 text-start"><%= t("inventory.vendor_invoices.location") %></th>
               <th class="p-3 text-start"><%= t("inventory.vendor_invoices.invoice_date") %></th>
@@ -91,10 +92,11 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
-            <% @vendor_invoices.each do |invoice| %>
+            <% @vendor_invoices.each_with_index do |invoice, index| %>
               <% pay_label, pay_class = vendor_invoice_payment_badge(invoice.payment_status) %>
               <tr class="hover:bg-gray-100 transition-colors">
-                <td class="p-3 ps-5">
+                <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= table_row_number(index) %></td>
+                <td class="p-3">
                   <%= link_to invoice.invoice_number, admin_inventory_vendor_invoice_path(invoice),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>
                 </td>

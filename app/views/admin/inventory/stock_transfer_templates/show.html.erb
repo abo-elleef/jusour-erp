@@ -59,17 +59,21 @@
     <table class="w-full text-sm">
       <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
         <tr>
-          <th class="p-3 ps-5 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
+          <th class="p-3 ps-5 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
+          <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
           <th class="p-3 text-end"><%= t("inventory.stock_transfer_templates.default_quantity") %></th>
           <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.units.unit") %></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
+        <% template_row_number = 0 %>
         <% group_records_by_ingredient_category(@lines).each do |category_name, lines| %>
-          <%= render "admin/inventory/stock_transfers/category_header", name: category_name, count: lines.size, tag: :tr, colspan: 3 %>
+          <%= render "admin/inventory/stock_transfers/category_header", name: category_name, count: lines.size, tag: :tr, colspan: 4 %>
           <% lines.each do |line| %>
+            <% template_row_number += 1 %>
             <tr>
-              <td class="p-3 ps-5 font-medium text-gray-900"><%= line.ingredient.name %></td>
+              <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= template_row_number %></td>
+              <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
               <td class="p-3 text-end tabular-nums"><%= line.default_quantity %></td>
               <td class="p-3 pe-5 text-gray-600"><%= ingredient_unit_label(line.unit.presence || line.ingredient.unit) %></td>
             </tr>

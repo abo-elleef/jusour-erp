@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 module ApplicationHelper
+  # 1-based row number for table lists. Pass +pagy+ so pagination continues across pages.
+  def table_row_number(index, pagy: nil)
+    (pagy&.offset || 0) + index + 1
+  end
+
   def html_lang
     I18n.locale.to_s
   end
