@@ -11,13 +11,14 @@ module Admin
         authorize_inventory_index!(VendorInvoice)
         @q = VendorInvoice.ransack(params[:q])
         @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
-        @vendor_invoices = @q.result.includes(:supplier, :user, :location).recent.limit(200)
-        scope = VendorInvoice.all
-        @total_count = scope.count
-        @unpaid_count = scope.unpaid.count
-        @partially_paid_count = scope.partially_paid.count
-        @paid_count = scope.paid.count
-        @outstanding_total_cents = scope.outstanding.sum(Arel.sql("total_cents - amount_paid_cents"))
+        scope = @q.result.includes(:supplier, :user, :location).recent
+        @pagy, @vendor_invoices = pagy(:offset, scope, limit: 50)
+        all_scope = VendorInvoice.all
+        @total_count = all_scope.count
+        @unpaid_count = all_scope.unpaid.count
+        @partially_paid_count = all_scope.partially_paid.count
+        @paid_count = all_scope.paid.count
+        @outstanding_total_cents = all_scope.outstanding.sum(Arel.sql("total_cents - amount_paid_cents"))
         @suppliers = Supplier.active.order(:name)
         @locations = Location.active.ordered
       end

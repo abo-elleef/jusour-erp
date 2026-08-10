@@ -115,7 +115,8 @@
         <thead class="bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">
           <% sort_opts = { sort: @sort, direction: @direction } %>
           <tr>
-            <th class="p-3 pl-4"><%= sort_header_link(t("inventory.ingredients.index.table.code"), :code, **sort_opts) %></th>
+            <th class="p-3 pl-4 w-12 text-gray-400"><%= t("shared.row_index") %></th>
+            <th class="p-3"><%= sort_header_link(t("inventory.ingredients.index.table.code"), :code, **sort_opts) %></th>
             <th class="p-3"><%= sort_header_link(t("inventory.ingredients.index.table.ingredient"), :name, **sort_opts) %></th>
             <th class="p-3"><%= sort_header_link(t("inventory.ingredients.index.table.stock"), :quantity_on_hand, **sort_opts) %></th>
             <th class="p-3"><%= sort_header_link(t("inventory.ingredients.index.table.suppliers"), :suppliers, **sort_opts) %></th>
@@ -128,7 +129,7 @@
         <tbody class="divide-y divide-gray-100">
           <% if @ingredients.empty? %>
             <tr>
-              <td colspan="8" class="p-12 text-center">
+              <td colspan="9" class="p-12 text-center">
                 <p class="text-gray-600 font-medium mb-1"><%= t("inventory.ingredients.index.empty_title") %></p>
                 <p class="text-gray-500 text-sm mb-4">
                   <% if @filtered %>
@@ -146,11 +147,12 @@
               </td>
             </tr>
           <% end %>
-          <% @ingredients.each do |ingredient| %>
+          <% @ingredients.each_with_index do |ingredient, index| %>
             <% label, badge_class = ingredient_status_badge(ingredient) %>
             <% stock_pct = [ingredient_stock_level_percent(ingredient), 100].min %>
             <tr class="<%= ingredient_stock_row_class(ingredient) %> hover:bg-gray-50/80">
-              <td class="p-3 pl-4 font-mono text-xs font-semibold text-amber-700 whitespace-nowrap"><%= ingredient.code %></td>
+              <td class="p-3 pl-4 text-gray-400 tabular-nums"><%= table_row_number(index) %></td>
+              <td class="p-3 font-mono text-xs font-semibold text-amber-700 whitespace-nowrap"><%= ingredient.code %></td>
               <td class="p-3">
                 <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient),
                       class: "font-medium text-blue-600 hover:underline" %>

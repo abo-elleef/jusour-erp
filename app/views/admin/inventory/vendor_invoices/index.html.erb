@@ -95,7 +95,7 @@
             <% @vendor_invoices.each_with_index do |invoice, index| %>
               <% pay_label, pay_class = vendor_invoice_payment_badge(invoice.payment_status) %>
               <tr class="hover:bg-gray-100 transition-colors">
-                <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= table_row_number(index) %></td>
+                <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= table_row_number(index, pagy: @pagy) %></td>
                 <td class="p-3">
                   <%= link_to invoice.invoice_number, admin_inventory_vendor_invoice_path(invoice),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>
@@ -117,6 +117,7 @@
           </tbody>
         </table>
       </div>
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
     </section>
   <% else %>
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
