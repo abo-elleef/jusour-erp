@@ -47,6 +47,7 @@ module Admin
         @supplier_ingredients = @supplier.supplier_ingredients
           .includes(ingredient: :unit_ref)
           .to_a
+          .select { |link| link.ingredient.active? }
           .sort_by { |link| [STOCK_RANK.fetch(link.ingredient.stock_status, 3), link.ingredient.name.to_s.downcase] }
         @reorder_count = @supplier_ingredients.count { |link| %i[out low].include?(link.ingredient.stock_status) }
         @vendor_invoices = @supplier.vendor_invoices.order(invoice_date: :desc).limit(10)
