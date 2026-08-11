@@ -35,6 +35,8 @@ module Inventory
         )
 
         items.each do |item|
+          # Uncounted items (blank count) are left alone — don't touch stock.
+          next if item.counted_quantity.blank?
           next if item.variance.to_d.zero?
 
           attrs = {

@@ -17,8 +17,11 @@ class StockTakeItem < ApplicationRecord
     counted_quantity.to_d
   end
 
+  # A blank count means "not counted" — leave variance nil so completion skips
+  # the item and its balance stays untouched (rather than treating blank as a
+  # physical count of zero, which would wipe the ingredient's stock).
   def calculate_variance!
-    self.variance = base_counted_quantity - expected_quantity.to_d
+    self.variance = counted_quantity.blank? ? nil : (base_counted_quantity - expected_quantity.to_d)
   end
 
   # Location WAC (or fallback). Pass +location_cost+ from a preloaded map to avoid N+1.
