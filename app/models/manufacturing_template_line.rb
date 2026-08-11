@@ -15,6 +15,10 @@ class ManufacturingTemplateLine < ApplicationRecord
   # quantity_used converted to the input ingredient's base unit.
   def base_quantity_used
     ingredient.to_base(quantity_used, unit)
+  rescue ArgumentError
+    # Legacy/orphaned unit — treat the stored quantity as base so template
+    # show/cost pages still render instead of crashing.
+    quantity_used.to_d
   end
 
   private

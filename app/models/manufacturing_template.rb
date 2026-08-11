@@ -25,6 +25,10 @@ class ManufacturingTemplate < ApplicationRecord
   # yield_quantity converted to the output ingredient's base unit.
   def base_yield_quantity
     output_ingredient.to_base(yield_quantity, yield_unit)
+  rescue ArgumentError
+    # Legacy/orphaned yield unit — treat the stored quantity as base so template
+    # show/cost pages still render instead of crashing.
+    yield_quantity.to_d
   end
 
   def self.ransackable_attributes(_auth_object = nil)

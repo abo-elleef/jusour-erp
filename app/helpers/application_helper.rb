@@ -536,9 +536,16 @@ module ApplicationHelper
     base = adjustment.quantity_delta.to_d
     sign = base.positive? ? "+" : ""
     unit = adjustment.unit.presence || ingredient.unit
-    shown = ingredient.from_base(base, adjustment.unit)
+    begin
+      shown = ingredient.from_base(base, adjustment.unit)
+    rescue ArgumentError
+      # Legacy/orphaned unit — fall back to displaying the base-unit quantity
+      # instead of crashing the adjustments list.
+      unit = ingredient.unit
+      shown = base
+    end
     primary = "#{sign}#{number_with_precision(shown, precision: 3, strip_insignificant_zeros: true)} #{ingredient_unit_label(unit)}"
-    return primary unless adjustment.unit.present? && adjustment.unit != ingredient.unit
+    return primary unless adjustment.unit.present? && adjustment.unit != ingredient.unit && unit != ingredient.unit
 
     helper = "= #{sign}#{number_with_precision(base, precision: 3, strip_insignificant_zeros: true)} #{ingredient_unit_label(ingredient.unit)}"
     safe_join([primary, tag.span(helper, class: "block text-xs text-gray-500 font-normal")])

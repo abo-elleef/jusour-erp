@@ -14,6 +14,11 @@ class Recipe < ApplicationRecord
   # quantity_used expressed in the ingredient's base unit (unit may be an alternate).
   def base_quantity_used
     ingredient.to_base(quantity_used, unit)
+  rescue ArgumentError
+    # Legacy/orphaned unit (e.g. the ingredient's base unit was later changed,
+    # dropping its alternate units). Treat the stored quantity as base so
+    # menu-item / cost pages still render instead of crashing.
+    quantity_used.to_d
   end
 
   private
