@@ -25,6 +25,11 @@ class VendorInvoiceLine < ApplicationRecord
     return quantity.to_d if ingredient.blank?
 
     ingredient.to_base(quantity, unit)
+  rescue ArgumentError
+    # Legacy/orphaned unit — e.g. the ingredient's base unit was later changed,
+    # which drops its alternate units, leaving this line's stored unit unknown.
+    # Treat the recorded quantity as base so the invoice still renders.
+    quantity.to_d
   end
 
   # Cost per BASE unit — line total is the source of truth, so this never loses money.
