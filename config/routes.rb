@@ -290,6 +290,7 @@ Rails.application.routes.draw do
         collection { get :low_stock }
         resources :recipes, only: %i[create destroy]
         resources :supplier_ingredients, only: %i[create update destroy]
+        resource :consolidation, only: %i[new create], controller: "ingredient_consolidations"
       end
       resources :suppliers do
         member do

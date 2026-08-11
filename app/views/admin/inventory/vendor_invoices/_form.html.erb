@@ -9,7 +9,7 @@
       html: { multipart: true },
       data: {
         controller: "vendor-invoice-lines nested-line-sortable",
-        searchable_select_options: ingredient_search_options(@ingredients),
+        searchable_select_options: ingredient_search_options(@ingredients, vendor_aliases: true),
         vendor_invoice_lines_available_units_value: @ingredient_available_units.to_json,
         vendor_invoice_lines_shelf_life_days_value: @ingredient_shelf_life_days.to_json,
         vendor_invoice_lines_unit_price_dollars_value: @ingredient_unit_price_dollars.to_json

@@ -33,6 +33,8 @@
       </span>
       <%= link_to t("inventory.ingredients.show.edit"), edit_admin_inventory_ingredient_path(@ingredient),
             class: chip_secondary %>
+      <%= link_to t("inventory.consolidations.action"), new_admin_inventory_ingredient_consolidation_path(@ingredient),
+            class: chip_secondary %>
     </div>
   </header>
 
@@ -292,8 +294,17 @@
           <ul class="divide-y divide-gray-100">
             <% @supplier_links.each do |link| %>
               <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-2 hover:bg-gray-100 transition-colors">
-                <%= link_to link.supplier.name, admin_inventory_supplier_path(link.supplier),
-                      class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                <div class="min-w-0">
+                  <%= link_to link.supplier.name, admin_inventory_supplier_path(link.supplier),
+                        class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                  <% vendor_alias = [link.vendor_product_name, link.vendor_sku].compact_blank.join(" · ") %>
+                  <% if vendor_alias.present? %>
+                    <p class="text-xs text-gray-500 mt-0.5 truncate">
+                      <span class="text-gray-400"><%= t("inventory.ingredients.show.vendor_calls_it") %></span>
+                      <%= vendor_alias %>
+                    </p>
+                  <% end %>
+                </div>
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-semibold text-gray-900 tabular-nums"><%= format_money(link.price_cents) %></span>
                   <% if link.preferred? %>

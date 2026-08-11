@@ -264,7 +264,7 @@ module Admin
       def load_form_data
         @suppliers = Supplier.active.order(:name)
         @locations = Location.active.ordered
-        @ingredients = Ingredient.active.includes(:ingredient_units).order(:name)
+        @ingredients = Ingredient.active.includes(:ingredient_units, :supplier_ingredients).order(:name)
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
         @freight_expense = @vendor_invoice.freight_expense if @vendor_invoice.persisted?
         @ingredient_available_units = @ingredients.to_h do |i|

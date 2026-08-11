@@ -549,8 +549,20 @@ module ApplicationHelper
     Current.company.units.active.ordered.map { |u| [ingredient_unit_label(u.name), u.id] }
   end
 
-  def ingredient_search_options(ingredients)
-    ingredients.map { |ingredient| { value: ingredient.id, label: ingredient.name } }.to_json
+  def ingredient_search_options(ingredients, vendor_aliases: false)
+    ingredients.map do |ingredient|
+      option = { value: ingredient.id, label: ingredient.name }
+      if vendor_aliases
+        names = ingredient.supplier_ingredients
+                          .flat_map { |si| [si.vendor_product_name, si.vendor_sku] }
+                          .compact_blank.uniq
+        if names.any?
+          option[:keywords] = names.join(" ") # extra searchable text, not shown as the label
+          option[:aliases] = names            # shown as a muted sub-line in the dropdown
+        end
+      end
+      option
+    end.to_json
   end
 
   # ingredient_id => { id, name, position } for client-side category grouping on transfer forms.

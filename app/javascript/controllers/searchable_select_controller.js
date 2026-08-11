@@ -102,7 +102,10 @@ export default class extends Controller {
   renderOptions(query = "") {
     const normalized = query.trim().toLowerCase()
     const filtered = this.options
-      .filter((option) => option.label.toLowerCase().includes(normalized))
+      .filter((option) => {
+        const haystack = `${option.label} ${option.keywords || ""}`.toLowerCase()
+        return haystack.includes(normalized)
+      })
 
     if (filtered.length === 0) {
       this.menu.innerHTML = `<li class="px-3 py-2 text-sm text-gray-500">${this.noResultsText}</li>`
@@ -113,9 +116,12 @@ export default class extends Controller {
     const selected = this.hiddenTarget.value
     this.menu.innerHTML = filtered.map((option, index) => {
       const active = String(option.value) === String(selected)
+      const aliasLine = option.aliases && option.aliases.length
+        ? `<span class="block text-xs text-gray-400 truncate">${this.escapeHtml(option.aliases.join(" · "))}</span>`
+        : ""
       return `<li role="option" data-value="${option.value}" data-index="${index}"
         class="cursor-pointer px-3 py-2 text-sm text-gray-900 hover:bg-amber-50 ${active ? "bg-amber-50/80 font-medium" : ""}">
-        ${this.escapeHtml(option.label)}</li>`
+        <span class="block truncate">${this.escapeHtml(option.label)}</span>${aliasLine}</li>`
     }).join("")
 
     this.repositionMenu()

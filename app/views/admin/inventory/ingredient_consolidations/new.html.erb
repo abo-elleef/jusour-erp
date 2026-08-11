@@ -1,0 +1,91 @@
+<% input_class = pos_input_class %>
+<% chip_secondary = "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+
+<div class="mb-4">
+  <%= link_to t("inventory.consolidations.back", name: @ingredient.name),
+        admin_inventory_ingredient_path(@ingredient),
+        class: "text-gray-600 hover:underline text-sm" %>
+</div>
+
+<div class="max-w-2xl">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.consolidations.title") %></h1>
+  <p class="text-gray-600 text-sm mt-1"><%= t("inventory.consolidations.subtitle", name: @ingredient.name) %></p>
+
+  <%# Current stock of the source, so the user sees exactly what will move. %>
+  <section class="mt-6 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.consolidations.source_stock") %></h2>
+    </div>
+    <% if @source_locations.any? %>
+      <table class="w-full text-sm">
+        <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= t("inventory.consolidations.location") %></th>
+            <th class="p-3 pe-5 text-end"><%= t("inventory.consolidations.on_hand") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @source_locations.each do |il| %>
+            <tr>
+              <td class="p-3 ps-5 text-gray-900"><%= il.location.name %></td>
+              <td class="p-3 pe-5 text-end tabular-nums font-medium">
+                <%= il.quantity_on_hand %> <%= ingredient_unit_label(@ingredient.unit) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("inventory.consolidations.source_empty") %></p>
+    <% end %>
+  </section>
+
+  <%# Target picker — searchable, filtered to active same-base-unit ingredients. %>
+  <section class="mt-6 rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.consolidations.target_heading") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.consolidations.target_hint") %></p>
+    </div>
+    <div class="p-5">
+      <%= form_with url: new_admin_inventory_ingredient_consolidation_path(@ingredient), method: :get,
+            data: { searchable_select_options: ingredient_search_options(@targets, vendor_aliases: true) },
+            class: "flex flex-col sm:flex-row gap-3 sm:items-end" do |f| %>
+        <div class="flex-1 min-w-0">
+          <%= label_tag :target_id, t("inventory.consolidations.target_label"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+          <%= render "shared/searchable_select",
+                form: f,
+                field: :target_id,
+                selected: @target&.id,
+                placeholder: t("inventory.consolidations.target_placeholder"),
+                input_class: input_class %>
+        </div>
+        <%= f.submit t("inventory.consolidations.preview_button"), class: chip_secondary %>
+      <% end %>
+    </div>
+  </section>
+
+  <%# Confirm — only once a valid target is chosen. %>
+  <% if @target %>
+    <section class="mt-6 rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden">
+      <div class="px-5 py-4 border-b border-amber-100">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.consolidations.confirm_heading") %></h2>
+      </div>
+      <div class="p-5 space-y-4">
+        <p class="text-sm text-gray-700">
+          <%= t("inventory.consolidations.confirm_body_html",
+                source: content_tag(:strong, @ingredient.name),
+                target: content_tag(:strong, @target.name)).html_safe %>
+        </p>
+        <% if @source_locations.empty? %>
+          <p class="text-sm text-gray-500"><%= t("inventory.consolidations.nothing_to_move") %></p>
+        <% end %>
+        <%= form_with url: admin_inventory_ingredient_consolidation_path(@ingredient), method: :post do %>
+          <%= hidden_field_tag :target_id, @target.id %>
+          <%= submit_tag t("inventory.consolidations.confirm_button"),
+                data: { turbo_confirm: t("inventory.consolidations.confirm_dialog", source: @ingredient.name, target: @target.name) },
+                class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</div>

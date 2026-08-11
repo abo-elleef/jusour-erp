@@ -45,7 +45,7 @@ module Admin
 
       def supplier_ingredient_params
         permitted = params.require(:supplier_ingredient).permit(
-          :supplier_id, :price_dollars, :preferred
+          :supplier_id, :price_dollars, :preferred, :vendor_product_name, :vendor_sku
         )
         dollars = permitted.delete(:price_dollars)
         permitted[:price_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round

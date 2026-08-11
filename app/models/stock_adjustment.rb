@@ -16,6 +16,7 @@ class StockAdjustment < ApplicationRecord
     cycle_count_correction consumption
     production_consumption production_output
     transfer_out transfer_in
+    consolidation_out consolidation_in
   ].freeze
 
   # Set by manual adjust flows so a location-scoped adjustment also maintains the
