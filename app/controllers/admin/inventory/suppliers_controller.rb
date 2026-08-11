@@ -39,9 +39,16 @@ module Admin
         @suppliers = suppliers
       end
 
+      # Out first, then low, near, ok — so the reorder-worthy items float to the top.
+      STOCK_RANK = { out: 0, low: 1, near: 2, ok: 3 }.freeze
+
       def show
         authorize_inventory!(:show)
-        @supplier_ingredients = @supplier.supplier_ingredients.includes(:ingredient)
+        @supplier_ingredients = @supplier.supplier_ingredients
+          .includes(ingredient: :unit_ref)
+          .to_a
+          .sort_by { |link| [STOCK_RANK.fetch(link.ingredient.stock_status, 3), link.ingredient.name.to_s.downcase] }
+        @reorder_count = @supplier_ingredients.count { |link| %i[out low].include?(link.ingredient.stock_status) }
         @vendor_invoices = @supplier.vendor_invoices.order(invoice_date: :desc).limit(10)
         @price_histories = @supplier.supplier_price_histories
           .includes(:ingredient, :recorded_by_user)
