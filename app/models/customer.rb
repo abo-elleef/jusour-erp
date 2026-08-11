@@ -3,6 +3,10 @@
 class Customer < ApplicationRecord
   include Tenantable
 
+  INDEX_SORTABLE_COLUMNS = %w[name phone loyalty_points total_spent_cents created_at].freeze
+  INDEX_DEFAULT_SORT = "created_at"
+  INDEX_DEFAULT_SORT_DIRECTION = "desc"
+
   has_many :orders, dependent: :nullify
   has_many :loyalty_transactions, dependent: :destroy
   has_many :addresses, class_name: "CustomerAddress", dependent: :destroy, inverse_of: :customer

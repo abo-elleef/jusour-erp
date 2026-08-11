@@ -43,6 +43,8 @@
     </div>
     <div class="p-5">
       <%= search_form_for @q, url: admin_customers_path, method: :get, class: "flex flex-wrap items-end gap-4" do |f| %>
+        <%= hidden_field_tag :sort, @sort %>
+        <%= hidden_field_tag :dir, @direction %>
         <div class="flex-1 min-w-[12rem]">
           <%= f.label :name_or_email_or_phone_or_phone_secondary_cont, t("customers.search.label"), class: label_class %>
           <%= f.search_field :name_or_email_or_phone_or_phone_secondary_cont,
@@ -63,16 +65,25 @@
   </section>
 
   <% if @customers.any? %>
+    <% sort_opts = { sort: @sort, direction: @direction } %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm min-w-[720px]">
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
-              <th class="p-3 ps-5 text-start"><%= t("customers.table.customer") %></th>
-              <th class="p-3 text-start"><%= t("customers.table.contact") %></th>
-              <th class="p-3 text-end"><%= t("customers.table.loyalty") %></th>
-              <th class="p-3 text-end"><%= t("customers.table.lifetime_spend") %></th>
-              <th class="p-3 text-start"><%= t("customers.table.joined") %></th>
+              <th class="p-3 ps-5 text-start"><%= sort_header_link(t("customers.table.customer"), :name, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("customers.table.contact"), :phone, **sort_opts) %></th>
+              <th class="p-3 text-end">
+                <div class="flex justify-end">
+                  <%= sort_header_link(t("customers.table.loyalty"), :loyalty_points, **sort_opts) %>
+                </div>
+              </th>
+              <th class="p-3 text-end">
+                <div class="flex justify-end">
+                  <%= sort_header_link(t("customers.table.lifetime_spend"), :total_spent_cents, **sort_opts) %>
+                </div>
+              </th>
+              <th class="p-3 text-start"><%= sort_header_link(t("customers.table.joined"), :created_at, **sort_opts) %></th>
               <th class="p-3 pe-5 text-end"><%= t("customers.table.actions") %></th>
             </tr>
           </thead>
@@ -119,21 +130,8 @@
           </tbody>
         </table>
       </div>
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
     </section>
-
-    <% if @pagy.pages > 1 %>
-      <nav class="mt-5 flex flex-wrap gap-2 text-sm items-center" aria-label="<%= t("customers.shared.pagination", page: @pagy.page, pages: @pagy.pages) %>">
-        <% if @pagy.previous %>
-          <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: @pagy.previous)),
-                class: "px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 transition-colors" %>
-        <% end %>
-        <span class="text-gray-600 px-2 tabular-nums"><%= t("customers.shared.pagination", page: @pagy.page, pages: @pagy.pages) %></span>
-        <% if @pagy.next %>
-          <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: @pagy.next)),
-                class: "px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 transition-colors" %>
-        <% end %>
-      </nav>
-    <% end %>
   <% else %>
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
       <p class="text-gray-900 font-semibold mb-1"><%= t("customers.empty.title") %></p>
