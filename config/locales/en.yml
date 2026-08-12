@@ -1514,6 +1514,13 @@ en:
         form_inputs_hint: "Add an input line for each ingredient the recipe consumes. At least one is required before activating."
         name_placeholder: "e.g. Marinate chicken batch"
         output_hint: "The prep item produced (must be an ingredient in inventory)."
+        control_mode: "Production control"
+        control_mode_hint: "How each run's size is decided."
+        control_modes:
+          runs: "By number of runs"
+          main_ingredient: "By main ingredient amount"
+        main_ingredient: "Main ingredient"
+        main_ingredient_hint: "The input whose received amount drives the batch. Must be one of the input lines below; other materials and the output scale to it."
         notes_placeholder: "Optional notes for kitchen staff…"
         active_hint: "Only enable when at least one input ingredient is filled in."
         create: "Create template"
@@ -1537,6 +1544,8 @@ en:
         date: "Date"
         location: "Location"
         runs_count: "Runs"
+        batches_derived: "Batches (derived)"
+        main_input: "Main ingredient used"
         by: "Recorded by"
         created_at: "Created at"
         empty: "No production runs yet."
@@ -3402,12 +3411,17 @@ en:
     occurred_on_label: "Production date"
     occurred_on_hint: "Defaults to today. Set an earlier date if you're recording it late."
     runs_label: "Number of runs"
+    main_input_label: "%{ingredient} amount"
+    main_input_hint: "Other materials and the output scale to this amount."
     shelf_life_label: "Shelf life (days)"
     shelf_life_hint: "Output expires this many days after production."
     notes_label: "Notes (optional)"
     record: "Record production"
     empty: "No active manufacturing templates."
     invalid_runs: "Enter a positive number of runs."
+    invalid_main_quantity: "Enter a positive amount for the main ingredient."
+    main_not_configured: "This template has no main ingredient set."
+    no_input_lines: "This template has no input lines."
     invalid_shelf_life: "Enter shelf life of at least 1 day."
     produces: "Produces"
     success: "Production run %{number} recorded."
@@ -3731,6 +3745,9 @@ en:
           attributes:
             base:
               needs_input_lines: "must have at least one input ingredient when active"
+            main_ingredient_id:
+              blank: "select which input is the main ingredient"
+              not_an_input: "must be one of the template's input ingredients"
         stock_transfer_template:
           attributes:
             base:

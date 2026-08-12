@@ -59,6 +59,28 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
         <div>
+          <%= f.label :control_mode, t("inventory.manufacturing.templates.control_mode"), class: label_class %>
+          <%= f.select :control_mode,
+                ManufacturingTemplate::CONTROL_MODES.map { |mode| [t("inventory.manufacturing.templates.control_modes.#{mode}"), mode] },
+                {},
+                class: "#{input_class} appearance-none",
+                data: { action: "manufacturing-units#modeChanged" } %>
+          <p class="text-xs text-gray-500 mt-1"><%= t("inventory.manufacturing.templates.control_mode_hint") %></p>
+        </div>
+        <div data-manufacturing-units-target="mainField" class="<%= "hidden" unless template.main_ingredient_controlled? %>">
+          <%= f.label :main_ingredient_id, t("inventory.manufacturing.templates.main_ingredient"), class: label_class %>
+          <%= render "shared/searchable_select",
+                form: f,
+                field: :main_ingredient_id,
+                selected: template.main_ingredient_id,
+                placeholder: t("inventory.manufacturing.templates.select_ingredient"),
+                input_class: input_class %>
+          <p class="text-xs text-gray-500 mt-1"><%= t("inventory.manufacturing.templates.main_ingredient_hint") %></p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
           <%= f.label :position, t("inventory.manufacturing.templates.position"), class: label_class %>
           <%= f.number_field :position, class: input_class, min: 0 %>
         </div>

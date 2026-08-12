@@ -7,7 +7,7 @@ class ProductionController < ApplicationController
   def index
     authorize :production, :index?, policy_class: ProductionPolicy
     @templates = ManufacturingTemplate.active
-      .includes(:output_ingredient, manufacturing_template_lines: :ingredient)
+      .includes(:output_ingredient, :main_ingredient, manufacturing_template_lines: :ingredient)
       .ordered
       .select { |template| template.manufacturing_template_lines.any? }
     @production_locations = production_locations
@@ -17,18 +17,6 @@ class ProductionController < ApplicationController
   def create
     @template = ManufacturingTemplate.active.find(params[:manufacturing_template_id])
     authorize @template, :create?, policy_class: ProductionPolicy
-
-    runs_count = params[:runs_count].to_d
-    if runs_count <= 0
-      redirect_to production_path, alert: t("production.invalid_runs")
-      return
-    end
-
-    shelf_life_days = params[:shelf_life_days].to_i
-    if shelf_life_days <= 0
-      redirect_to production_path, alert: t("production.invalid_shelf_life")
-      return
-    end
 
     location = production_locations.find { |l| l.id == params[:location_id] }
     if location.blank?
@@ -40,8 +28,10 @@ class ProductionController < ApplicationController
       template: @template,
       user: current_user,
       location: location,
-      runs_count: runs_count,
-      shelf_life_days: shelf_life_days,
+      runs_count: params[:runs_count],
+      main_input_quantity: params[:main_input_quantity],
+      main_input_unit: params[:main_input_unit],
+      shelf_life_days: params[:shelf_life_days].to_i,
       occurred_on: production_date(params[:occurred_on]),
       notes: params[:notes].presence
     ).call

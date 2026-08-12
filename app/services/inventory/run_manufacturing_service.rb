@@ -4,12 +4,17 @@ module Inventory
   class RunManufacturingService
     class Error < StandardError; end
 
-    def initialize(template:, user:, location:, runs_count:, shelf_life_days:, occurred_on: Date.current, notes: nil)
+    def initialize(template:, user:, location:, shelf_life_days:, runs_count: nil,
+                   main_input_quantity: nil, main_input_unit: nil, occurred_on: Date.current, notes: nil)
       @template = template
       @user = user
       @location = location
-      @runs_count = runs_count.to_d
       @shelf_life_days = shelf_life_days.to_i
+      @main_input_quantity = main_input_quantity.presence && main_input_quantity.to_d
+      @main_input_unit = main_input_unit.presence
+      # In main-ingredient mode the run count is derived from the entered amount;
+      # otherwise it's whatever the operator typed.
+      @runs_count = @template.main_ingredient_controlled? ? derived_runs_count : runs_count.to_d
       @occurred_on = occurred_on
       @notes = notes
     end
@@ -26,6 +31,8 @@ module Inventory
           user: @user,
           location: @location,
           runs_count: @runs_count,
+          main_input_quantity: @main_input_quantity,
+          main_input_unit: @main_input_unit,
           occurred_on: @occurred_on,
           shelf_life_days: @shelf_life_days,
           notes: @notes
@@ -55,11 +62,30 @@ module Inventory
 
     private
 
+    # runs_count implied by the entered main-ingredient amount and the recipe
+    # ratio: received_main ÷ main_per_batch (both in the ingredient's base unit).
+    def derived_runs_count
+      line = @template.main_line
+      return 0.to_d if line.nil? || @main_input_quantity.nil?
+
+      per_run_base = line.base_quantity_used
+      return 0.to_d unless per_run_base&.positive?
+
+      main_base = @template.main_ingredient.to_base(@main_input_quantity, @main_input_unit)
+      main_base / per_run_base
+    rescue ArgumentError
+      0.to_d
+    end
+
     def validate!
-      raise Error, "Runs count must be positive" unless @runs_count.positive?
-      raise Error, "Shelf life must be at least 1 day" unless @shelf_life_days.positive?
-      raise Error, "Template has no input lines" if @template.manufacturing_template_lines.empty?
-      raise Error, "A production location is required" if @location.blank?
+      if @template.main_ingredient_controlled?
+        raise Error, I18n.t("production.main_not_configured") if @template.main_line.nil?
+        raise Error, I18n.t("production.invalid_main_quantity") if @main_input_quantity.nil? || @main_input_quantity <= 0
+      end
+      raise Error, I18n.t("production.invalid_runs") unless @runs_count.positive?
+      raise Error, I18n.t("production.invalid_shelf_life") unless @shelf_life_days.positive?
+      raise Error, I18n.t("production.no_input_lines") if @template.manufacturing_template_lines.empty?
+      raise Error, I18n.t("production.location_required") if @location.blank?
     end
 
     # Consume the input from this location's FIFO batches, and record the

@@ -48,10 +48,27 @@
           <%= date_field_tag :occurred_on, Date.current, max: Date.current, required: true, class: pos_input_class %>
           <p class="text-xs text-gray-500 mt-1"><%= t("production.occurred_on_hint") %></p>
         </div>
-        <div class="min-w-[10rem]">
-          <%= label_tag :runs_count, t("production.runs_label"), class: label_class %>
-          <%= number_field_tag :runs_count, 1, min: 0.001, step: 0.001, required: true, class: pos_input_class %>
-        </div>
+        <% if @template.main_ingredient_controlled? %>
+          <div class="min-w-[14rem]">
+            <%= label_tag :main_input_quantity,
+                  t("production.main_input_label", ingredient: @template.main_ingredient.name), class: label_class %>
+            <div class="flex gap-2">
+              <%= number_field_tag :main_input_quantity, nil, min: 0.0001, step: 0.0001, required: true,
+                    class: "#{pos_input_class} tabular-nums flex-1 min-w-0" %>
+              <% main_units = @template.main_ingredient.available_units %>
+              <%= select_tag :main_input_unit,
+                    options_for_select(main_units.map { |u| [ingredient_unit_label(u), u] },
+                      @template.main_line&.unit.presence || @template.main_ingredient.unit),
+                    class: "#{pos_input_class} appearance-none flex-1 min-w-0" %>
+            </div>
+            <p class="text-xs text-gray-500 mt-1"><%= t("production.main_input_hint") %></p>
+          </div>
+        <% else %>
+          <div class="min-w-[10rem]">
+            <%= label_tag :runs_count, t("production.runs_label"), class: label_class %>
+            <%= number_field_tag :runs_count, 1, min: 0.001, step: 0.001, required: true, class: pos_input_class %>
+          </div>
+        <% end %>
         <div class="min-w-[10rem]">
           <%= label_tag :shelf_life_days, t("production.shelf_life_label"), class: label_class %>
           <%= number_field_tag :shelf_life_days, nil, min: 1, step: 1, required: true, class: pos_input_class %>

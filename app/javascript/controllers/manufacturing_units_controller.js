@@ -6,8 +6,15 @@ import { Controller } from "@hotwired/stimulus"
 // native <select> (change event) and the searchable-select combobox
 // (searchable-select:change custom event carrying the value in event.detail).
 export default class extends Controller {
-  static targets = ["yieldUnit", "list", "template", "row"]
+  static targets = ["yieldUnit", "list", "template", "row", "mainField"]
   static values = { units: Object }
+
+  // Show the "main ingredient" picker only when the control mode is set to
+  // main-ingredient-driven production.
+  modeChanged(event) {
+    if (!this.hasMainFieldTarget) return
+    this.mainFieldTarget.classList.toggle("hidden", event.target.value !== "main_ingredient")
+  }
 
   // Add a blank input line by cloning the template row (fresh index each time).
   add(event) {

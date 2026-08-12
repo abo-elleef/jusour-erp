@@ -2,10 +2,12 @@
 
 class ManufacturingRun < ApplicationRecord
   include Tenantable
+  include UnitReferenced
 
   belongs_to :manufacturing_template
   belongs_to :user
   belongs_to :location, optional: true
+  references_unit :main_input_unit, column: :main_input_unit_id
 
   before_validation :assign_run_number, on: :create
 
@@ -32,6 +34,12 @@ class ManufacturingRun < ApplicationRecord
 
   def output_expires_on
     occurred_on + shelf_life_days.days
+  end
+
+  # True when this run was sized from a main-ingredient amount rather than an
+  # explicit run count.
+  def main_ingredient_driven?
+    main_input_quantity.present?
   end
 
   private

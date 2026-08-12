@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_11_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_12_171449) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -582,9 +582,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_11_120000) do
     t.integer "shelf_life_days", null: false
     t.uuid "company_id", null: false
     t.string "run_number", null: false
+    t.decimal "main_input_quantity", precision: 10, scale: 3
+    t.uuid "main_input_unit_id"
     t.index ["company_id", "run_number"], name: "index_manufacturing_runs_on_company_id_and_run_number", unique: true
     t.index ["company_id"], name: "index_manufacturing_runs_on_company_id"
     t.index ["location_id"], name: "index_manufacturing_runs_on_location_id"
+    t.index ["main_input_unit_id"], name: "index_manufacturing_runs_on_main_input_unit_id"
     t.index ["manufacturing_template_id"], name: "index_manufacturing_runs_on_manufacturing_template_id"
     t.index ["occurred_on"], name: "index_manufacturing_runs_on_occurred_on"
     t.index ["user_id"], name: "index_manufacturing_runs_on_user_id"
@@ -614,9 +617,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_11_120000) do
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
     t.uuid "yield_unit_id"
+    t.string "control_mode", default: "runs", null: false
+    t.uuid "main_ingredient_id"
     t.index ["active"], name: "index_manufacturing_templates_on_active"
     t.index ["company_id", "name"], name: "index_manufacturing_templates_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_manufacturing_templates_on_company_id"
+    t.index ["main_ingredient_id"], name: "index_manufacturing_templates_on_main_ingredient_id"
     t.index ["output_ingredient_id"], name: "index_manufacturing_templates_on_output_ingredient_id"
     t.index ["yield_unit_id"], name: "index_manufacturing_templates_on_yield_unit_id"
   end
@@ -1536,11 +1542,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_11_120000) do
   add_foreign_key "manufacturing_runs", "companies"
   add_foreign_key "manufacturing_runs", "locations"
   add_foreign_key "manufacturing_runs", "manufacturing_templates"
+  add_foreign_key "manufacturing_runs", "units", column: "main_input_unit_id"
   add_foreign_key "manufacturing_runs", "users"
   add_foreign_key "manufacturing_template_lines", "ingredients"
   add_foreign_key "manufacturing_template_lines", "manufacturing_templates"
   add_foreign_key "manufacturing_template_lines", "units"
   add_foreign_key "manufacturing_templates", "companies"
+  add_foreign_key "manufacturing_templates", "ingredients", column: "main_ingredient_id"
   add_foreign_key "manufacturing_templates", "ingredients", column: "output_ingredient_id"
   add_foreign_key "manufacturing_templates", "units", column: "yield_unit_id"
   add_foreign_key "menu_item_modifier_groups", "menu_items"
