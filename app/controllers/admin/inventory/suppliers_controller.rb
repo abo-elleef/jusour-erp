@@ -9,13 +9,17 @@ module Admin
 
       def index
         authorize_inventory_index!(Supplier)
+        @status = %w[active inactive all].include?(params[:status]) ? params[:status] : "active"
         @q = Supplier.ransack(params[:q])
         @total_count = Supplier.count
         @active_count = Supplier.where(active: true).count
         @inactive_count = @total_count - @active_count
-        @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
+        @filtered = (params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)) || @status != "active"
 
-        suppliers = @q.result.includes(:supplier_ingredients).to_a
+        scope = @q.result.includes(:supplier_ingredients)
+        scope = scope.where(active: true) if @status == "active"
+        scope = scope.where(active: false) if @status == "inactive"
+        suppliers = scope.to_a
         supplier_ids = suppliers.map(&:id)
 
         @invoice_total_cents_by_supplier = VendorInvoice
