@@ -57,7 +57,7 @@ module Inventory
         next if qty.zero?
 
         validate_pending_quantity!(line, qty)
-        validate_source_stock!(line, qty)
+        validate_source_stock!(line, qty) if Setting.restrict_stock_transfers_to_source?
         lines[line] = qty
       end
 

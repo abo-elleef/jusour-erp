@@ -70,7 +70,74 @@ RSpec.describe "Admin::Inventory::ManufacturingTemplates", type: :request do
     end
   end
 
+  describe "POST run (main-ingredient-controlled)" do
+    let(:kitchen) { create(:location, :central_kitchen, company: company) }
+
+    def main_template
+      t = ManufacturingTemplate.create!(company: company, name: "Meatballs", yield_quantity: 2,
+        active: false, output_ingredient: output, yield_unit: output.unit)
+      t.manufacturing_template_lines.create!(ingredient: input, quantity_used: 1, unit: input.unit)
+      t.update!(active: true, control_mode: "main_ingredient", main_ingredient_id: input.id)
+      t
+    end
+
+    it "derives the batch count from the main-ingredient amount and produces scaled output" do
+      template = main_template
+
+      expect {
+        post run_admin_inventory_manufacturing_template_path(template),
+          params: { location_id: kitchen.id, main_input_quantity: 3, main_input_unit: input.unit, shelf_life_days: 3 }
+      }.to change(ManufacturingRun, :count).by(1)
+
+      run = ManufacturingRun.last
+      expect(run.runs_count.to_d).to eq(3)                # 3 units of the main input ÷ 1 per batch
+      expect(run.main_input_quantity.to_d).to eq(3)
+      expect(output.stock_batches.where(location: kitchen).sum(:quantity_remaining).to_d).to eq(6) # 2 × 3
+    end
+
+    it "records nothing when the main-ingredient amount is missing or zero" do
+      template = main_template
+
+      expect {
+        post run_admin_inventory_manufacturing_template_path(template),
+          params: { location_id: kitchen.id, main_input_quantity: 0, shelf_life_days: 3 }
+      }.not_to change(ManufacturingRun, :count)
+      expect(flash[:alert]).to be_present
+    end
+  end
+
+  describe "GET edit (production control)" do
+    it "renders the control-mode selector and main-ingredient picker" do
+      template = ManufacturingTemplate.create!(company: company, name: "Meatballs", yield_quantity: 2,
+        active: false, output_ingredient: output, yield_unit: output.unit)
+      template.manufacturing_template_lines.create!(ingredient: input, quantity_used: 1, unit: input.unit)
+
+      get edit_admin_inventory_manufacturing_template_path(template)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("manufacturing_template[control_mode]")
+      expect(response.body).to include("manufacturing-units#modeChanged")
+      expect(response.body).to include(I18n.t("inventory.manufacturing.templates.main_ingredient"))
+    end
+  end
+
   describe "GET manufacturing_run show" do
+    it "surfaces the main-ingredient amount for a main-driven run" do
+      kitchen = create(:location, :central_kitchen, company: company)
+      template = ManufacturingTemplate.create!(company: company, name: "Meatballs", yield_quantity: 2,
+        active: false, output_ingredient: output, yield_unit: output.unit)
+      template.manufacturing_template_lines.create!(ingredient: input, quantity_used: 1, unit: input.unit)
+      template.update!(active: true, control_mode: "main_ingredient", main_ingredient_id: input.id)
+      run = ManufacturingRun.create!(manufacturing_template: template, user: owner, location: kitchen,
+        runs_count: 3, occurred_on: Date.current, shelf_life_days: 3,
+        main_input_quantity: 3, main_input_unit: input.unit)
+
+      get admin_inventory_manufacturing_run_path(run)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("inventory.manufacturing.runs.main_input"))
+    end
+
     it "renders the run with a print button and inputs/output" do
       kitchen = create(:location, :central_kitchen, company: company)
       template = ManufacturingTemplate.create!(company: company, name: "Sauce", yield_quantity: 2,

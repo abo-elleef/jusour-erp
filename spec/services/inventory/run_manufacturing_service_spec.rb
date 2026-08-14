@@ -123,7 +123,7 @@ RSpec.describe Inventory::RunManufacturingService do
           template: template, user: user, location: kitchen,
           runs_count: 1, shelf_life_days: 0
         ).call
-      }.to raise_error(Inventory::RunManufacturingService::Error, "Shelf life must be at least 1 day")
+      }.to raise_error(Inventory::RunManufacturingService::Error, I18n.t("production.invalid_shelf_life"))
     end
 
     it "requires a production location" do
@@ -132,7 +132,60 @@ RSpec.describe Inventory::RunManufacturingService do
           template: template, user: user, location: nil,
           runs_count: 1, shelf_life_days: 3
         ).call
-      }.to raise_error(Inventory::RunManufacturingService::Error, "A production location is required")
+      }.to raise_error(Inventory::RunManufacturingService::Error, I18n.t("production.location_required"))
+    end
+  end
+
+  describe "#call (main-ingredient-controlled)" do
+    before { template.update!(control_mode: "main_ingredient", main_ingredient_id: chicken.id) }
+
+    it "derives the batch count from the main-ingredient amount and scales everything proportionally" do
+      # Chicken is 4 per batch; feeding 12 implies 3 batches.
+      run = described_class.new(
+        template: template, user: user, location: kitchen,
+        main_input_quantity: 12, shelf_life_days: 5
+      ).call
+
+      expect(run.runs_count.to_d).to eq(3)
+      expect(chicken.reload.quantity_on_hand.to_d).to eq(-2)  # 10 - (4 * 3)
+      expect(buttermilk.reload.quantity_on_hand.to_d).to eq(2) # 8 - (2 * 3)
+      expect(marinated.reload.quantity_on_hand.to_d).to eq(15) # 5 * 3
+    end
+
+    it "records the entered main amount and unit on the run" do
+      run = described_class.new(
+        template: template, user: user, location: kitchen,
+        main_input_quantity: 8, main_input_unit: "kg", shelf_life_days: 5
+      ).call
+
+      expect(run.main_ingredient_driven?).to be(true)
+      expect(run.main_input_quantity.to_d).to eq(8)
+      expect(run.main_input_unit).to eq("kg")
+    end
+
+    it "converts an alternate main-ingredient unit before deriving the batch count" do
+      # Chicken's base unit is kg; add grams as an alternate (1 g = 0.001 kg).
+      chicken.ingredient_units.create!(unit: "g", base_units_per_unit: 0.001, company: Current.company)
+
+      # 12000 g = 12 kg base = 3 batches (chicken is 4 kg per batch).
+      run = described_class.new(
+        template: template, user: user, location: kitchen,
+        main_input_quantity: 12_000, main_input_unit: "g", shelf_life_days: 5
+      ).call
+
+      expect(run.runs_count.to_d).to eq(3)
+      expect(marinated.reload.quantity_on_hand.to_d).to eq(15)
+    end
+
+    it "rejects a zero or blank main-ingredient amount" do
+      expect {
+        described_class.new(
+          template: template, user: user, location: kitchen,
+          main_input_quantity: 0, shelf_life_days: 5
+        ).call
+      }.to raise_error(Inventory::RunManufacturingService::Error, I18n.t("production.invalid_main_quantity"))
+
+      expect(ManufacturingRun.count).to eq(0)
     end
   end
 end

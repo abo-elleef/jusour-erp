@@ -53,6 +53,12 @@ class StockTransferLine < ApplicationRecord
     [available_at_source, available_batches_at_source].min
   end
 
+  # True when source cannot cover what still needs to be sent. Used for visual
+  # warnings even when restrict-to-source is turned off.
+  def short_at_source?
+    quantity_pending_send.positive? && transferable_quantity_at_source < quantity_pending_send
+  end
+
   def quantity_pending_send
     [quantity_requested.to_d - quantity_sent.to_d, 0].max
   end

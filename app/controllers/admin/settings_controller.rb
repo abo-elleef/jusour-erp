@@ -10,6 +10,7 @@ module Admin
       @print_agent_port = Setting.get_int("print_agent_port", Printing::Config::DEFAULT_AGENT_PORT)
       @print_agent_token = Setting.get("print_agent_token", "")
       @receipt_footer_text = Printing::Config.receipt_footer_text
+      @restrict_stock_transfers_to_source = Setting.restrict_stock_transfers_to_source?
       @tax_rates = TaxRate.ordered
     end
 
@@ -24,8 +25,11 @@ module Admin
       if params[:print_agent_port].present?
         Setting.set("print_agent_port", params[:print_agent_port].to_i)
       end
-      Setting.set("print_agent_token", params[:print_agent_token].to_s)
-      Setting.set("receipt_footer_text", params[:receipt_footer_text].to_s.strip)
+      if params.key?(:restrict_stock_transfers_to_source)
+        Setting.set("restrict_stock_transfers_to_source", params[:restrict_stock_transfers_to_source])
+      end
+      Setting.set("print_agent_token", params[:print_agent_token].to_s) if params.key?(:print_agent_token)
+      Setting.set("receipt_footer_text", params[:receipt_footer_text].to_s.strip) if params.key?(:receipt_footer_text)
       redirect_to admin_settings_path, notice: t("flash.settings.updated")
     end
 

@@ -107,7 +107,9 @@
     <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mb-6 print-hide">
       <div class="px-5 py-4 border-b border-amber-100">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.send_heading") %></h2>
-        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_transfers.send_partial_hint") %></p>
+        <p class="text-xs text-gray-600 mt-0.5">
+          <%= @restrict_stock_transfers_to_source ? t("inventory.stock_transfers.send_partial_hint") : t("inventory.stock_transfers.send_unrestricted_hint") %>
+        </p>
       </div>
       <%= form_with url: send_transfer_admin_inventory_stock_transfer_path(@stock_transfer), method: :post, class: "p-0" do %>
         <div class="overflow-x-auto">
@@ -132,24 +134,32 @@
                 <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 9 %>
                 <% lines.each do |line| %>
                   <% send_row_number += 1 %>
-                  <tr>
-                    <% send_now_base = [line.quantity_pending_send, line.transferable_quantity_at_source].min %>
+                  <% short_at_source = line.short_at_source? %>
+                  <tr class="<%= 'bg-red-50' if short_at_source %>" data-short-at-source="<%= short_at_source %>">
+                    <% send_now_base = if @restrict_stock_transfers_to_source
+                                         [line.quantity_pending_send, line.transferable_quantity_at_source].min
+                                       else
+                                         line.quantity_pending_send
+                                       end %>
                     <td class="p-3 text-gray-400 tabular-nums"><%= send_row_number %></td>
                     <td class="p-3 font-medium text-gray-900">
                       <%= line.ingredient.name %>
                       <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                      <% if short_at_source %>
+                        <span class="mt-1 inline-block text-xs font-semibold text-red-700"><%= t("inventory.stock_transfers.short_at_source") %></span>
+                      <% end %>
                     </td>
                     <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
                     <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_amount(line, line.quantity_requested) %></td>
                     <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_sent) %></td>
                     <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_received) %></td>
                     <td class="p-3 text-end tabular-nums font-semibold text-amber-800"><%= transfer_line_amount(line, line.quantity_pending_send) %></td>
-                    <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.transferable_quantity_at_source) %></td>
+                    <td class="p-3 text-end tabular-nums <%= short_at_source ? 'font-semibold text-red-700' : 'text-gray-600' %>"><%= transfer_line_amount(line, line.transferable_quantity_at_source) %></td>
                     <td class="p-3 text-end">
                       <%= number_field_tag "lines[#{line.id}]",
                             number_with_precision(line.in_line_unit(send_now_base), precision: 3, strip_insignificant_zeros: true),
                             step: 0.001, min: 0,
-                            max: line.in_line_unit(send_now_base),
+                            **(@restrict_stock_transfers_to_source ? { max: line.in_line_unit(send_now_base) } : {}),
                             class: "#{pos_input_class} w-28 text-end ms-auto" %>
                     </td>
                   </tr>
@@ -303,11 +313,15 @@
             <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 8 %>
             <% lines.each do |line| %>
               <% progress_row_number += 1 %>
-              <tr>
+              <% short_at_source = line.short_at_source? %>
+              <tr class="<%= 'bg-red-50' if short_at_source %>" data-short-at-source="<%= short_at_source %>">
                 <td class="p-3 text-gray-400 tabular-nums"><%= progress_row_number %></td>
                 <td class="p-3 font-medium text-gray-900">
                   <%= line.ingredient.name %>
                   <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                  <% if short_at_source %>
+                    <span class="mt-1 inline-block text-xs font-semibold text-red-700"><%= t("inventory.stock_transfers.short_at_source") %></span>
+                  <% end %>
                 </td>
                 <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
                 <td class="p-3 text-end tabular-nums"><%= transfer_line_amount(line, line.quantity_requested) %></td>

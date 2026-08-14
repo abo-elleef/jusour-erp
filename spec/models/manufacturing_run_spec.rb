@@ -38,4 +38,14 @@ RSpec.describe ManufacturingRun, type: :model do
     expect(described_class.new.respond_to?(:company)).to be(true)
     expect(run.company).to eq(Current.company)
   end
+
+  describe "#main_ingredient_driven?" do
+    it "is true only when a main-input amount was recorded" do
+      expect(run.main_ingredient_driven?).to be(false)
+
+      driven = ManufacturingRun.create!(manufacturing_template: template, user: user, location: location,
+        runs_count: 3, occurred_on: Date.current, shelf_life_days: 3, main_input_quantity: 12)
+      expect(driven.main_ingredient_driven?).to be(true)
+    end
+  end
 end

@@ -24,6 +24,7 @@ module Admin
         @shipments = @stock_transfer.stock_transfer_shipments.ordered
           .includes(stock_transfer_shipment_lines: { stock_transfer_line: { ingredient: :ingredient_category } })
         @current_shipment = @stock_transfer.current_shipment
+        @restrict_stock_transfers_to_source = Setting.restrict_stock_transfers_to_source?
       end
 
       def new

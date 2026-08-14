@@ -75,6 +75,13 @@ module Inventory
       end
 
       if remaining.positive?
+        unless Setting.restrict_stock_transfers_to_source?
+          total_cost_cents += (remaining * ingredient.cost_per_unit_cents).round
+          remaining = 0
+        end
+      end
+
+      if remaining.positive?
         raise InsufficientStockError,
           I18n.t("inventory.stock_transfers.errors.insufficient_stock_at_send",
             ingredient: ingredient.name, quantity: quantity, available: quantity - remaining)

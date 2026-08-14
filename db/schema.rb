@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_12_171449) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_14_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -218,6 +218,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_12_171449) do
     t.datetime "updated_at", null: false
     t.integer "business_day_start_hour", default: 6, null: false
     t.string "business_day_mode", default: "automatic", null: false
+    t.boolean "restrict_stock_transfers_to_source", default: true, null: false
     t.index ["company_id"], name: "index_company_settings_on_company_id", unique: true
   end
 

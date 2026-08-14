@@ -123,9 +123,11 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
     it "rejects when source stock is insufficient" do
       transfer = create_transfer_with_line(requested: 4.0)
       line = transfer.stock_transfer_lines.first
+      IngredientLocation.find_by(location: kitchen, ingredient: ingredient).update!(quantity_on_hand: 1.0)
+      StockBatch.where(ingredient: ingredient, location: kitchen).update_all(quantity_remaining: 1.0)
 
       post send_transfer_admin_inventory_stock_transfer_path(transfer), params: {
-        lines: { line.id => "50" }
+        lines: { line.id => "4" }
       }
 
       expect(response).to redirect_to(admin_inventory_stock_transfer_path(transfer))
@@ -145,6 +147,33 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       expect(response).to redirect_to(admin_inventory_stock_transfer_path(transfer))
       expect(flash[:alert]).to be_present
       expect(transfer.reload).to be_requested
+    end
+
+    it "allows sending more than source stock when restrict mode is off" do
+      Setting.set("restrict_stock_transfers_to_source", false)
+      transfer = create_transfer_with_line(requested: 10.0)
+      line = transfer.stock_transfer_lines.first
+      IngredientLocation.find_by(location: kitchen, ingredient: ingredient).update!(quantity_on_hand: 2.0)
+      StockBatch.where(ingredient: ingredient, location: kitchen).update_all(quantity_remaining: 2.0)
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: {
+        lines: { line.id => "10" }
+      }
+
+      expect(response).to redirect_to(admin_inventory_stock_transfer_path(transfer))
+      expect(flash[:alert]).to be_blank
+      expect(transfer.reload).to be_awaiting_receipt
+      expect(line.reload.quantity_sent.to_d).to eq(10)
+
+      post confirm_receipt_admin_inventory_stock_transfer_path(transfer), params: {
+        lines: { line.id => "10" }
+      }
+
+      expect(transfer.reload).to be_completed
+      kitchen_il = IngredientLocation.find_by(location: kitchen, ingredient: ingredient)
+      branch_il = IngredientLocation.find_by(location: branch, ingredient: ingredient)
+      expect(kitchen_il.quantity_on_hand.to_d).to eq(-8)
+      expect(branch_il.quantity_on_hand.to_d).to eq(10)
     end
   end
 
