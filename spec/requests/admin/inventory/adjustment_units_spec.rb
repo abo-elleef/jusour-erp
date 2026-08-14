@@ -35,6 +35,10 @@ RSpec.describe "Stock adjustments in an alternate unit", type: :request do
     get admin_inventory_ingredient_path(oil)
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("gallon") # shown in the entered unit, not just base
+    expect(response.body).to include('data-ingredient-units')
+    expect(response.body).to include(I18n.t("inventory.ingredients.show.units.base"))
+    expect(response.body).to include(I18n.t("inventory.ingredients.show.units.alternate"))
+    expect(response.body).to include("3785")
   end
 
   it "requires a location and records no adjustment without one" do

@@ -849,6 +849,17 @@ en:
         cost_hint: "Weighted average unit cost"
         stock_value: "Stock value"
         stock_value_hint: "On hand × cost per unit"
+        units:
+          title: "Units"
+          hint: "Stock, recipes, and costs stay in the base unit. Connected units convert into it."
+          unit: "Unit"
+          type: "Type"
+          conversion: "Conversion"
+          on_hand: "On hand"
+          base: "Base"
+          alternate: "Alternate"
+          conversion_eq: "1 %{unit} = %{qty} %{base}"
+          base_kept: "Stock is kept in this unit"
         shelf_life_days:
           one: "%{count} day shelf life"
           other: "%{count} days shelf life"

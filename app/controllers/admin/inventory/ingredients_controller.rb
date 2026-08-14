@@ -44,6 +44,7 @@ module Admin
         @adjustments = @ingredient.stock_adjustments.includes(:user, :unit_ref, :location).order(created_at: :desc).limit(50)
         @recipes = @ingredient.recipes.includes(:menu_item, :unit_ref)
         @supplier_links = @ingredient.supplier_ingredients.includes(:supplier)
+        @ingredient_units = @ingredient.ingredient_units.includes(:unit_ref)
         load_branch_stock
         @audits = @ingredient.audits.includes(:user).reorder(version: :desc)
       end

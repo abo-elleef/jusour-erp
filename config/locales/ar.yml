@@ -849,6 +849,17 @@ ar:
         cost_hint: "متوسط التكلفة المرجح للوحدة"
         stock_value: "قيمة المخزون"
         stock_value_hint: "المتوفر × التكلفة للوحدة"
+        units:
+          title: "الوحدات"
+          hint: "يُحفظ المخزون والوصفات والتكاليف بالوحدة الأساسية. الوحدات المرتبطة تُحوَّل إليها."
+          unit: "الوحدة"
+          type: "النوع"
+          conversion: "التحويل"
+          on_hand: "المتوفر"
+          base: "أساسية"
+          alternate: "بديلة"
+          conversion_eq: "1 %{unit} = %{qty} %{base}"
+          base_kept: "يُحفظ المخزون بهذه الوحدة"
         shelf_life_days:
           one: "مدة صلاحية %{count} يوم"
           few: "مدة صلاحية %{count} أيام"

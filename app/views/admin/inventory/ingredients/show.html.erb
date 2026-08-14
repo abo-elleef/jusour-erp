@@ -67,6 +67,61 @@
     </div>
   </div>
 
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6" data-ingredient-units>
+    <div class="<%= section_head %>">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.units.title") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.units.hint") %></p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[480px]">
+        <thead class="<%= table_head %>">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= t("inventory.ingredients.show.units.unit") %></th>
+            <th class="p-3 text-start"><%= t("inventory.ingredients.show.units.type") %></th>
+            <th class="p-3 text-start"><%= t("inventory.ingredients.show.units.conversion") %></th>
+            <th class="p-3 pe-5 text-end"><%= t("inventory.ingredients.show.units.on_hand") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% base_label = ingredient_unit_label(@ingredient.unit) %>
+          <tr class="hover:bg-gray-100 transition-colors">
+            <td class="p-3 ps-5 font-semibold text-gray-900"><%= base_label %></td>
+            <td class="p-3">
+              <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                <%= t("inventory.ingredients.show.units.base") %>
+              </span>
+            </td>
+            <td class="p-3 text-gray-500"><%= t("inventory.ingredients.show.units.base_kept") %></td>
+            <td class="p-3 pe-5 text-end tabular-nums text-gray-900">
+              <%= number_with_precision(@ingredient.quantity_on_hand, precision: 3, strip_insignificant_zeros: true) %>
+              <span class="text-gray-500 text-xs"><%= base_label %></span>
+            </td>
+          </tr>
+          <% @ingredient_units.each do |iu| %>
+            <% alt_label = ingredient_unit_label(iu.unit) %>
+            <% factor = number_with_precision(iu.base_units_per_unit, precision: 4, strip_insignificant_zeros: true) %>
+            <% on_hand_alt = @ingredient.from_base(@ingredient.quantity_on_hand, iu.unit) %>
+            <tr class="hover:bg-gray-100 transition-colors">
+              <td class="p-3 ps-5 font-medium text-gray-900"><%= alt_label %></td>
+              <td class="p-3">
+                <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                  <%= t("inventory.ingredients.show.units.alternate") %>
+                </span>
+              </td>
+              <td class="p-3 text-gray-700 tabular-nums">
+                <%= t("inventory.ingredients.show.units.conversion_eq", unit: alt_label, qty: factor, base: base_label) %>
+              </td>
+              <td class="p-3 pe-5 text-end tabular-nums text-gray-900">
+                <%= number_with_precision(on_hand_alt, precision: 3, strip_insignificant_zeros: true) %>
+                <span class="text-gray-500 text-xs"><%= alt_label %></span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="<%= section_head %>">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.branch_stock.title") %></h2>
