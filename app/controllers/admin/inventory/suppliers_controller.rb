@@ -43,10 +43,13 @@ module Admin
 
       # Out first, then low, near, ok — so the reorder-worthy items float to the top.
       STOCK_RANK = { out: 0, low: 1, near: 2, ok: 3 }.freeze
+      SHOW_INGREDIENT_SORT_COLUMNS = %w[ingredient balance reorder_at vendor_product unit_price preferred].freeze
 
       def show
         authorize_inventory!(:show)
         load_stock_location_filter
+        @sort = SHOW_INGREDIENT_SORT_COLUMNS.include?(params[:sort]) ? params[:sort] : nil
+        @direction = params[:dir] == "desc" ? "desc" : "asc"
 
         links = @supplier.supplier_ingredients
           .includes(ingredient: :unit_ref)
@@ -54,10 +57,7 @@ module Admin
           .select { |link| link.ingredient.active? }
 
         @ingredient_balances = ingredient_balances_for(links)
-        @supplier_ingredients = links.sort_by do |link|
-          balance = @ingredient_balances[link.ingredient_id]
-          [STOCK_RANK.fetch(balance[:status], 3), link.ingredient.name.to_s.downcase]
-        end
+        @supplier_ingredients = sort_supplier_ingredients(links)
         @reorder_count = @supplier_ingredients.count do |link|
           %i[out low].include?(@ingredient_balances[link.ingredient_id][:status])
         end
@@ -181,6 +181,33 @@ module Admin
               status: ing.stock_status
             }
           end
+        end
+      end
+
+      def sort_supplier_ingredients(links)
+        sorted = links.sort_by { |link| [supplier_ingredient_sort_value(link), link.ingredient.name.to_s.downcase] }
+        (@sort.present? && @direction == "desc") ? sorted.reverse : sorted
+      end
+
+      # Default (no column clicked): urgency first, then name. Explicit column
+      # sorts use that field, with name as a stable tie-breaker.
+      def supplier_ingredient_sort_value(link)
+        balance = @ingredient_balances[link.ingredient_id]
+        case @sort
+        when "ingredient"
+          link.ingredient.name.to_s.downcase
+        when "balance"
+          balance[:quantity]
+        when "reorder_at"
+          balance[:reorder_at]
+        when "vendor_product"
+          [link.vendor_product_name, link.vendor_sku].compact_blank.join(" ").downcase
+        when "unit_price"
+          link.price_cents.to_i
+        when "preferred"
+          link.preferred? ? 0 : 1
+        else
+          STOCK_RANK.fetch(balance[:status], 3)
         end
       end
 
