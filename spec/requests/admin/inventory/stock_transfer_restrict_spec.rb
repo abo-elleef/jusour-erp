@@ -67,6 +67,9 @@ RSpec.describe "Stock transfer restrict-to-source setting", type: :request do
       branch_il = IngredientLocation.find_by(location: branch, ingredient: ingredient)
       expect(kitchen_il.quantity_on_hand.to_d).to eq(6)
       expect(branch_il.quantity_on_hand.to_d).to eq(4)
+
+      get admin_inventory_stock_transfer_path(transfer)
+      expect(response.body).not_to include("data-source-shortage-report")
     end
   end
 
@@ -117,6 +120,20 @@ RSpec.describe "Stock transfer restrict-to-source setting", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('data-short-at-source="true"')
       expect(response.body).to include(I18n.t("inventory.stock_transfers.short_at_source"))
+      expect(response.body).not_to include("data-source-shortage-report")
+    end
+
+    it "lists source shortage on a completed transfer even when restrict mode is on" do
+      transfer = request_transfer(4.0)
+      send_and_receive(transfer, 4.0)
+      set_source_stock(-3.0)
+
+      get admin_inventory_stock_transfer_path(transfer.reload)
+
+      expect(transfer).to be_completed
+      expect(response.body).to include("data-source-shortage-report")
+      expect(response.body).to include(I18n.t("inventory.stock_transfers.source_shortage_heading"))
+      expect(response.body).to include("Oil")
     end
   end
 
@@ -144,6 +161,11 @@ RSpec.describe "Stock transfer restrict-to-source setting", type: :request do
       expect(line.quantity_received.to_d).to eq(8)
       expect(IngredientLocation.find_by(location: kitchen, ingredient: ingredient).quantity_on_hand.to_d).to eq(-6)
       expect(IngredientLocation.find_by(location: branch, ingredient: ingredient).quantity_on_hand.to_d).to eq(8)
+
+      get admin_inventory_stock_transfer_path(transfer)
+      expect(response.body).to include('data-source-shortage-report')
+      expect(response.body).to include(I18n.t("inventory.stock_transfers.source_shortage_heading"))
+      expect(response.body).to include("Oil")
     end
 
     it "still highlights lines that are short at source on the show page" do

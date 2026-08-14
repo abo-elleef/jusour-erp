@@ -38,4 +38,14 @@ RSpec.describe StockTransferLine, type: :model do
     line.update!(quantity_sent: 8)
     expect(line.short_at_source?).to be(false)
   end
+
+  it "is source-on-hand short when source quantity is negative" do
+    line = build_line(requested: 8, on_hand: -6, batches: 0)
+    expect(line.source_on_hand_short?).to be(true)
+  end
+
+  it "is not source-on-hand short when source quantity is zero or positive" do
+    line = build_line(requested: 4, on_hand: 0, batches: 0)
+    expect(line.source_on_hand_short?).to be(false)
+  end
 end

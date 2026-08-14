@@ -59,6 +59,12 @@ class StockTransferLine < ApplicationRecord
     quantity_pending_send.positive? && transferable_quantity_at_source < quantity_pending_send
   end
 
+  # After receipt, unrestricted sends can drive source on-hand below zero.
+  # Used by the completed-transfer shortage report (independent of restrict mode).
+  def source_on_hand_short?
+    available_at_source.negative?
+  end
+
   def quantity_pending_send
     [quantity_requested.to_d - quantity_sent.to_d, 0].max
   end

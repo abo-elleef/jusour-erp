@@ -103,6 +103,54 @@
     </div>
   </div>
 
+  <% if @stock_transfer.completed? && @source_shortage_lines.any? %>
+    <section class="rounded-2xl border border-red-200 bg-red-50/40 overflow-hidden mb-6" data-source-shortage-report>
+      <div class="px-5 py-4 border-b border-red-100">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.source_shortage_heading") %></h2>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_transfers.source_shortage_hint", location: @stock_transfer.from_location.name) %></p>
+      </div>
+      <div class="overflow-auto max-h-[60vh] relative">
+        <table class="w-full text-sm">
+          <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="sticky top-0 z-10 bg-red-50 py-2 px-3 text-start w-12 text-gray-400 border-b border-red-100"><%= t("shared.row_index") %></th>
+              <th class="sticky top-0 z-10 bg-red-50 py-2 px-3 text-start border-b border-red-100"><%= t("inventory.stock_transfers.ingredient") %></th>
+              <th class="sticky top-0 z-10 bg-red-50 py-2 px-3 text-start border-b border-red-100"><%= t("inventory.stock_transfers.unit") %></th>
+              <th class="sticky top-0 z-10 bg-red-50 py-2 px-3 text-end border-b border-red-100"><%= t("inventory.stock_transfers.quantity_received_total") %></th>
+              <th class="sticky top-0 z-10 bg-red-50 py-2 px-3 text-end border-b border-red-100"><%= t("inventory.stock_transfers.source_on_hand") %></th>
+              <th class="sticky top-0 z-10 bg-red-50 py-2 px-3 text-end border-b border-red-100 print-hide"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-red-100/80 bg-white/60">
+            <% shortage_row_number = 0 %>
+            <% group_records_by_ingredient_category(@source_shortage_lines).each do |category_name, lines| %>
+              <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 6 %>
+              <% lines.each do |line| %>
+                <% shortage_row_number += 1 %>
+                <tr data-source-shortage="true">
+                  <td class="p-3 text-gray-400 tabular-nums"><%= shortage_row_number %></td>
+                  <td class="p-3 font-medium text-gray-900">
+                    <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient),
+                          class: "hover:text-amber-800" %>
+                    <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                  </td>
+                  <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_amount(line, line.quantity_received) %></td>
+                  <td class="p-3 text-end tabular-nums font-semibold text-red-700"><%= transfer_line_amount(line, line.available_at_source) %></td>
+                  <td class="p-3 text-end print-hide">
+                    <%= link_to t("inventory.stock_transfers.adjust_source"),
+                          admin_inventory_ingredient_path(line.ingredient, anchor: "adjust"),
+                          class: "inline-flex text-xs font-semibold text-amber-800 hover:bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 transition-colors" %>
+                  </td>
+                </tr>
+              <% end %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
+
   <% if @stock_transfer.can_send? %>
     <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mb-6 print-hide">
       <div class="px-5 py-4 border-b border-amber-100">
@@ -250,39 +298,41 @@
                 <% end %>
               </span>
             </div>
-            <table class="w-full text-sm">
-              <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                <tr>
-                  <th class="pb-2 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
-                  <th class="pb-2 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
-                  <th class="pb-2 text-start"><%= t("inventory.stock_transfers.unit") %></th>
-                  <th class="pb-2 text-end"><%= t("inventory.stock_transfers.quantity_sent") %></th>
-                  <th class="pb-2 text-end"><%= t("inventory.stock_transfers.quantity_received") %></th>
-                </tr>
-              </thead>
-              <tbody>
-                <% history_row_number = 0 %>
-                <% group_records_by_ingredient_category(shipment.stock_transfer_shipment_lines).each do |category_name, shipment_lines| %>
-                  <%= render "category_header", name: category_name, count: shipment_lines.size, tag: :tr, colspan: 5 %>
-                  <% shipment_lines.each do |shipment_line| %>
-                    <% history_row_number += 1 %>
-                    <% ship_line = shipment_line.stock_transfer_line %>
-                    <tr>
-                      <td class="py-1 text-gray-400 tabular-nums"><%= history_row_number %></td>
-                      <td class="py-1 text-gray-900">
-                        <%= shipment_line.ingredient.name %>
-                        <span class="block font-mono text-xs text-amber-700"><%= shipment_line.ingredient.code %></span>
-                      </td>
-                      <td class="py-1 text-gray-700"><%= transfer_line_unit_label(ship_line) %></td>
-                      <td class="py-1 text-end tabular-nums"><%= transfer_line_amount(ship_line, shipment_line.quantity_sent) %></td>
-                      <td class="py-1 text-end tabular-nums text-gray-600">
-                        <%= shipment_line.quantity_received ? transfer_line_amount(ship_line, shipment_line.quantity_received) : "—" %>
-                      </td>
-                    </tr>
+            <div class="overflow-auto max-h-[60vh] relative -mx-1">
+              <table class="w-full text-sm">
+                <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  <tr>
+                    <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2 px-1 text-start w-12 text-gray-400 border-b border-gray-200"><%= t("shared.row_index") %></th>
+                    <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2 px-1 text-start border-b border-gray-200"><%= t("inventory.stock_transfers.ingredient") %></th>
+                    <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2 px-1 text-start border-b border-gray-200"><%= t("inventory.stock_transfers.unit") %></th>
+                    <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2 px-1 text-end border-b border-gray-200"><%= t("inventory.stock_transfers.quantity_sent") %></th>
+                    <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm py-2 px-1 text-end border-b border-gray-200"><%= t("inventory.stock_transfers.quantity_received") %></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% history_row_number = 0 %>
+                  <% group_records_by_ingredient_category(shipment.stock_transfer_shipment_lines).each do |category_name, shipment_lines| %>
+                    <%= render "category_header", name: category_name, count: shipment_lines.size, tag: :tr, colspan: 5 %>
+                    <% shipment_lines.each do |shipment_line| %>
+                      <% history_row_number += 1 %>
+                      <% ship_line = shipment_line.stock_transfer_line %>
+                      <tr>
+                        <td class="py-1 px-1 text-gray-400 tabular-nums"><%= history_row_number %></td>
+                        <td class="py-1 px-1 text-gray-900">
+                          <%= shipment_line.ingredient.name %>
+                          <span class="block font-mono text-xs text-amber-700"><%= shipment_line.ingredient.code %></span>
+                        </td>
+                        <td class="py-1 px-1 text-gray-700"><%= transfer_line_unit_label(ship_line) %></td>
+                        <td class="py-1 px-1 text-end tabular-nums"><%= transfer_line_amount(ship_line, shipment_line.quantity_sent) %></td>
+                        <td class="py-1 px-1 text-end tabular-nums text-gray-600">
+                          <%= shipment_line.quantity_received ? transfer_line_amount(ship_line, shipment_line.quantity_received) : "—" %>
+                        </td>
+                      </tr>
+                    <% end %>
                   <% end %>
-                <% end %>
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         <% end %>
       </div>

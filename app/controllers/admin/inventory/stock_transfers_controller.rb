@@ -25,6 +25,12 @@ module Admin
           .includes(stock_transfer_shipment_lines: { stock_transfer_line: { ingredient: :ingredient_category } })
         @current_shipment = @stock_transfer.current_shipment
         @restrict_stock_transfers_to_source = Setting.restrict_stock_transfers_to_source?
+        @source_shortage_lines = if @stock_transfer.completed?
+          preload_source_ingredient_locations
+          @lines.select(&:source_on_hand_short?)
+        else
+          []
+        end
       end
 
       def new
@@ -213,6 +219,10 @@ module Admin
           records: @stock_transfer.stock_transfer_lines.select(&:ingredient_id),
           associations: { ingredient: :ingredient_category }
         ).call
+      end
+
+      def preload_source_ingredient_locations
+        @stock_transfer.from_location.ingredient_locations.load
       end
 
       def record_for_policy
