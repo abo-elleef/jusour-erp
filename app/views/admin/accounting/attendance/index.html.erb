@@ -15,7 +15,12 @@
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.attendance.title") %></h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("accounting.attendance.hint") %></p>
     </div>
-    <span data-attendance-grid-target="status" class="text-xs text-gray-400 mt-2"></span>
+    <div class="flex flex-wrap items-center gap-2">
+      <%= link_to t("accounting.nav.late_penalties"),
+            admin_accounting_late_penalties_path(payroll_month: @payroll_month.strftime("%Y-%m"), location_id: @location_filter.presence),
+            class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" %>
+      <span data-attendance-grid-target="status" class="text-xs text-gray-400"></span>
+    </div>
   </div>
 
   <%= form_with url: admin_accounting_attendance_path, method: :get, class: "flex flex-wrap gap-4 items-end mb-4" do %>

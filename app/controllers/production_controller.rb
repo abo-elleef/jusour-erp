@@ -1,17 +1,14 @@
 # frozen_string_literal: true
 
 class ProductionController < ApplicationController
+  include ManufacturingBulkRecording
+
   before_action :require_production_access!
   layout "kitchen"
 
   def index
     authorize :production, :index?, policy_class: ProductionPolicy
-    @templates = ManufacturingTemplate.active
-      .includes(:output_ingredient, :main_ingredient, manufacturing_template_lines: :ingredient)
-      .ordered
-      .select { |template| template.manufacturing_template_lines.any? }
-    @production_locations = production_locations
-    @default_production_location_id = @production_locations.find(&:central_kitchen?)&.id
+    load_manufacturing_bulk_sheet
   end
 
   def create
@@ -39,6 +36,23 @@ class ProductionController < ApplicationController
     redirect_to production_path, notice: t("production.success", number: run.run_number)
   rescue Inventory::RunManufacturingService::Error => e
     redirect_to production_path, alert: e.message
+  end
+
+  def bulk_create
+    authorize :production, :create?, policy_class: ProductionPolicy
+    runs = ::Inventory::BulkRunManufacturingService.new(
+      user: current_user,
+      location: bulk_location,
+      occurred_on: bulk_occurred_on,
+      default_shelf_life_days: bulk_param(:default_shelf_life_days),
+      rows: bulk_row_params
+    ).call
+    redirect_to production_path,
+      notice: t("production.success_bulk", count: runs.size, numbers: runs.map(&:run_number).join(", "))
+  rescue Inventory::BulkRunManufacturingService::Error, Inventory::RunManufacturingService::Error => e
+    flash.now[:alert] = e.message
+    load_manufacturing_bulk_sheet
+    render :index, status: :unprocessable_entity
   end
 
   private

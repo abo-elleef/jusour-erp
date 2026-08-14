@@ -2422,6 +2422,7 @@ en:
       shifts: "Shifts"
       payroll: "Payroll"
       attendance: "Attendance"
+      late_penalties: "Late penalties"
       tax: "Tax"
       cash_drawer: "Cash drawer"
       digital_wallets: "Digital wallets"
@@ -2966,7 +2967,22 @@ en:
       extra_hours: "Extra hours (overtime)"
       penalty_none: "None"
       penalty_full: "Full"
+      late_note: "Late"
+      overtime_note: "Overtime"
       adjustment_hint: "Right-click a day to add extra hours or a late penalty. Applied to payroll for that day."
+    late_penalties:
+      title: "Late penalties"
+      hint: "Late penalties logged from attendance, grouped by staff. Remove any you want to waive before recording payroll."
+      back_to_attendance: "Attendance grid"
+      empty: "No late penalties for this month."
+      staff_count: "Staff"
+      penalty_count: "Penalties"
+      days: "days"
+      total: "Total"
+      payroll_recorded: "Payroll is already recorded for this staff member. Undo payroll to change late penalties."
+      group_summary:
+        one: "%{count} late · %{days} day"
+        other: "%{count} lates · %{days} days"
     usage_reports:
       title: "Sales & consumption"
       description: "What you sold and what it consumed in ingredients, over a date range."
@@ -3439,7 +3455,7 @@ en:
 
   production:
     title: "Production"
-    description: "Select a template and enter how many batches you produced."
+    description: "Enter quantities for every template on one sheet. Leave a row blank to skip it."
     location_label: "Production location"
     select_location: "Select location…"
     location_required: "Select a production location."
@@ -3460,6 +3476,22 @@ en:
     invalid_shelf_life: "Enter shelf life of at least 1 day."
     produces: "Produces"
     success: "Production run %{number} recorded."
+    success_bulk: "Recorded %{count} production runs: %{numbers}."
+    bulk:
+      title: "Record production"
+      description: "Fill quantities like a spreadsheet. Empty rows are skipped. Stock moves as soon as you confirm."
+      qty: "Qty"
+      unit: "Unit"
+      runs_unit: "runs"
+      default_shelf_life: "Default shelf life (days)"
+      default_shelf_life_hint: "Used when a row's shelf life is left blank."
+      skip_hint: "Leave quantity blank to skip a template."
+      submit: "Record all filled rows"
+      warning_title: "Bulk recording — check quantities before you submit"
+      warning_body: "Every filled row creates a production run and moves stock immediately. Undoing later is one run at a time. This cannot be reversed as a single bulk action."
+      confirm_heading: "Record {{count}} production runs at {{location}} on {{date}}?"
+      confirm_warning: "This is a bulk action. Stock will move for every row listed below. Double-check the quantities. Undo later is per run, not for the whole sheet."
+      none_filled: "Enter a quantity on at least one row before recording."
     low_stock_warning: "Some inputs are below required quantity; stock may go negative."
 
   flash:
@@ -3558,6 +3590,9 @@ en:
     payroll_adjustment:
       created: "Adjustment recorded."
       removed: "Adjustment removed."
+    late_penalty:
+      not_found: "Late penalty not found."
+      payroll_recorded: "Payroll is already recorded for this staff member."
     payroll_snapshot:
       recorded: "Payroll recorded for this month."
       bulk_recorded:

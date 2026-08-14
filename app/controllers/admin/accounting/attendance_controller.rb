@@ -140,9 +140,9 @@ module Admin
         PayrollAdjustment.where(user_id: staff.map(&:id), happened_at: days).find_each do |adj|
           key = [adj.user_id, adj.happened_at]
           bucket = (map[key] ||= {})
-          if adj.kind == "bonus" && adj.unit_type == "overtime"
+          if adj.kind == "bonus" && adj.unit_type == "overtime" && attendance_overtime_notes.include?(adj.notes)
             bucket[:overtime_hours] = adj.overtime_hours
-          elsif adj.kind == "penalty" && DAY_PENALTY_UNITS.include?(adj.unit_type)
+          elsif adj.kind == "penalty" && DAY_PENALTY_UNITS.include?(adj.unit_type) && attendance_late_notes.include?(adj.notes)
             bucket[:penalty_unit] = adj.unit_type
           end
         end
@@ -151,20 +151,31 @@ module Admin
 
       def upsert_overtime_bonus(user, date, month, hours)
         hours = hours.to_d
-        adj = user.payroll_adjustments.find_or_initialize_by(kind: "bonus", unit_type: "overtime", happened_at: date)
+        adj = attendance_overtime_for(user, date)
         if hours.positive?
-          adj.assign_attributes(payroll_month: month, overtime_hours: hours, recorded_by: current_user)
+          adj ||= user.payroll_adjustments.build(kind: "bonus", unit_type: "overtime", happened_at: date)
+          adj.assign_attributes(
+            payroll_month: month,
+            overtime_hours: hours,
+            recorded_by: current_user,
+            notes: adj.notes.presence || PayrollAdjustment.attendance_overtime_note
+          )
           adj.save!
-        elsif adj.persisted?
+        elsif adj
           adj.destroy!
         end
       end
 
       def upsert_penalty(user, date, month, unit)
-        adj = user.payroll_adjustments.where(kind: "penalty", happened_at: date, unit_type: DAY_PENALTY_UNITS).first
+        adj = attendance_late_for(user, date)
         if DAY_PENALTY_UNITS.include?(unit)
           adj ||= user.payroll_adjustments.build(kind: "penalty", happened_at: date)
-          adj.assign_attributes(unit_type: unit, payroll_month: month, recorded_by: current_user)
+          adj.assign_attributes(
+            unit_type: unit,
+            payroll_month: month,
+            recorded_by: current_user,
+            notes: adj.notes.presence || PayrollAdjustment.attendance_late_note
+          )
           adj.save!
         elsif adj
           adj.destroy!
@@ -172,9 +183,25 @@ module Admin
       end
 
       def day_state(user, date)
-        ot = user.payroll_adjustments.find_by(kind: "bonus", unit_type: "overtime", happened_at: date)
-        pen = user.payroll_adjustments.where(kind: "penalty", happened_at: date, unit_type: DAY_PENALTY_UNITS).first
+        ot = attendance_overtime_for(user, date)
+        pen = attendance_late_for(user, date)
         { overtime_hours: ot&.overtime_hours&.to_f, penalty_unit: pen&.unit_type }
+      end
+
+      def attendance_late_for(user, date)
+        user.payroll_adjustments.attendance_late.where(happened_at: date, unit_type: DAY_PENALTY_UNITS).first
+      end
+
+      def attendance_overtime_for(user, date)
+        user.payroll_adjustments.attendance_overtime.find_by(happened_at: date)
+      end
+
+      def attendance_late_notes
+        PayrollAdjustment.attendance_late_notes
+      end
+
+      def attendance_overtime_notes
+        PayrollAdjustment.attendance_overtime_notes
       end
 
       def format_days(value)

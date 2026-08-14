@@ -84,6 +84,7 @@ Rails.application.routes.draw do
   patch "kitchen/:id/ready", to: "kitchen#ready", as: :kitchen_ready
 
   get "production", to: "production#index"
+  post "production/bulk", to: "production#bulk_create", as: :production_bulk
   post "production/:manufacturing_template_id", to: "production#create", as: :production_run
 
   namespace :customers do
@@ -233,6 +234,7 @@ Rails.application.routes.draw do
       get "attendance", to: "attendance#index"
       patch "attendance", to: "attendance#update"
       post "attendance/adjustment", to: "attendance#adjustment", as: :attendance_adjustment
+      resources :late_penalties, only: %i[index destroy]
 
       get "payroll", to: "payroll#index"
       get "payroll/export", to: "payroll#export", as: :payroll_export
@@ -326,7 +328,7 @@ Rails.application.routes.draw do
         collection { patch :reorder }
         resources :lines, only: %i[create destroy], controller: "manufacturing_template_lines"
       end
-      resources :manufacturing_runs, only: %i[index show] do
+      resources :manufacturing_runs, only: %i[index show new create] do
         member { post :reverse }
       end
       namespace :reports do

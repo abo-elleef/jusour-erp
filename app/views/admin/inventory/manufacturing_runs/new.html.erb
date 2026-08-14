@@ -1,0 +1,21 @@
+<% content_for :title, t("production.bulk.title") %>
+<%= render "admin/inventory/tools_nav" %>
+
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("production.bulk.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("production.bulk.description") %></p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <%= link_to t("inventory.manufacturing.runs.history"), admin_inventory_manufacturing_runs_path,
+            class: "border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50" %>
+      <%= link_to t("inventory.manufacturing.templates.back"), admin_inventory_manufacturing_templates_path,
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+    </div>
+  </div>
+
+  <%= render "shared/manufacturing_bulk_sheet",
+        form_url: admin_inventory_manufacturing_runs_path,
+        theme: :admin %>
+</div>

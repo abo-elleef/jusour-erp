@@ -87,6 +87,34 @@ RSpec.describe PayrollAdjustment, type: :model do
 
     expect(adjustment).not_to be_valid
   end
+
+  it "scopes attendance late notes in both locales" do
+    late = described_class.create!(
+      user: staff,
+      recorded_by: owner,
+      kind: "penalty",
+      unit_type: "quarter_day",
+      payroll_month: Date.current.beginning_of_month,
+      notes: I18n.t("accounting.attendance.late_note", locale: :en)
+    )
+    staff_page = described_class.create!(
+      user: staff,
+      recorded_by: owner,
+      kind: "penalty",
+      unit_type: "quarter_day",
+      payroll_month: Date.current.beginning_of_month,
+      notes: "Other"
+    )
+
+    expect(described_class.attendance_late).to contain_exactly(late)
+    expect(described_class.attendance_late).not_to include(staff_page)
+  end
+
+  it "exposes day units for quarter, half, and full penalties" do
+    expect(described_class.new(unit_type: "quarter_day").day_units).to eq(0.25)
+    expect(described_class.new(unit_type: "half_day").day_units).to eq(0.5)
+    expect(described_class.new(unit_type: "full_day").day_units).to eq(1)
+  end
 end
 
 RSpec.describe Accounting::MonthlyPayrollService do

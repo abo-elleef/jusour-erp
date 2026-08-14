@@ -77,4 +77,101 @@ RSpec.describe "Admin::Accounting::Attendance", type: :request do
       expect(StaffAttendance.unscoped.where(user_id: other.id).count).to eq(0)
     end
   end
+
+  describe "POST adjustment" do
+    let(:date) { "2026-04-03" }
+
+    it "records a late penalty with a Late note and returns the unit" do
+      post admin_accounting_attendance_adjustment_path,
+        params: { user_id: staff.id, date: date, overtime_hours: "", penalty: "quarter_day" }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["ok"]).to be(true)
+      expect(response.parsed_body["penalty_unit"]).to eq("quarter_day")
+
+      adj = staff.payroll_adjustments.find_by!(kind: "penalty", happened_at: Date.new(2026, 4, 3))
+      expect(adj.unit_type).to eq("quarter_day")
+      expect(adj.notes).to eq(I18n.t("accounting.attendance.late_note"))
+    end
+
+    it "records overtime with an Overtime note" do
+      post admin_accounting_attendance_adjustment_path,
+        params: { user_id: staff.id, date: date, overtime_hours: "2", penalty: "" }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      adj = staff.payroll_adjustments.find_by!(kind: "bonus", unit_type: "overtime", happened_at: Date.new(2026, 4, 3))
+      expect(adj.overtime_hours).to eq(2)
+      expect(adj.notes).to eq(I18n.t("accounting.attendance.overtime_note"))
+    end
+
+    it "does not show a staff-page penalty on the attendance grid" do
+      PayrollAdjustment.create!(
+        user: staff,
+        recorded_by: owner,
+        kind: "penalty",
+        unit_type: "half_day",
+        payroll_month: Date.new(2026, 4, 1),
+        happened_at: Date.new(2026, 4, 3),
+        notes: "Manager deduction"
+      )
+
+      get admin_accounting_attendance_path(payroll_month: "2026-04")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include('data-penalty-unit="half_day"')
+    end
+
+    it "shows an attendance late penalty on the grid and keeps the staff-page one" do
+      staff_page = PayrollAdjustment.create!(
+        user: staff,
+        recorded_by: owner,
+        kind: "penalty",
+        unit_type: "full_day",
+        payroll_month: Date.new(2026, 4, 1),
+        happened_at: Date.new(2026, 4, 3),
+        notes: "Uniform fine"
+      )
+
+      post admin_accounting_attendance_adjustment_path,
+        params: { user_id: staff.id, date: date, overtime_hours: "", penalty: "quarter_day" }, as: :json
+
+      expect(response.parsed_body["penalty_unit"]).to eq("quarter_day")
+      expect(staff.payroll_adjustments.reload.count).to eq(2)
+      expect(staff_page.reload.unit_type).to eq("full_day")
+      expect(staff_page.notes).to eq("Uniform fine")
+
+      get admin_accounting_attendance_path(payroll_month: "2026-04")
+      expect(response.body).to include('data-penalty-unit="quarter_day"')
+      expect(response.body).not_to include('data-penalty-unit="full_day"')
+    end
+
+    it "clears only the attendance late penalty, leaving a staff-page penalty" do
+      PayrollAdjustment.create!(
+        user: staff,
+        recorded_by: owner,
+        kind: "penalty",
+        unit_type: "full_day",
+        payroll_month: Date.new(2026, 4, 1),
+        happened_at: Date.new(2026, 4, 3),
+        notes: "Staff page"
+      )
+      PayrollAdjustment.create!(
+        user: staff,
+        recorded_by: owner,
+        kind: "penalty",
+        unit_type: "half_day",
+        payroll_month: Date.new(2026, 4, 1),
+        happened_at: Date.new(2026, 4, 3),
+        notes: I18n.t("accounting.attendance.late_note")
+      )
+
+      post admin_accounting_attendance_adjustment_path,
+        params: { user_id: staff.id, date: date, overtime_hours: "", penalty: "" }, as: :json
+
+      remaining = staff.payroll_adjustments.reload
+      expect(remaining.count).to eq(1)
+      expect(remaining.first.notes).to eq("Staff page")
+      expect(response.parsed_body["penalty_unit"]).to be_nil
+    end
+  end
 end

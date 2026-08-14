@@ -35,6 +35,31 @@ class PayrollAdjustment < ApplicationRecord
   scope :for_month, ->(month) { where(happened_at: month.beginning_of_month..month.end_of_month) }
   scope :penalties, -> { where(kind: "penalty") }
   scope :bonuses, -> { where(kind: "bonus") }
+  # Attendance-grid late penalties / overtime — identified by the auto note so
+  # adjustments created on the staff page never appear on the attendance view.
+  scope :attendance_late, -> { penalties.where(notes: attendance_late_notes) }
+  scope :attendance_overtime, -> { bonuses.where(unit_type: "overtime", notes: attendance_overtime_notes) }
+
+  def self.attendance_late_note
+    I18n.t("accounting.attendance.late_note")
+  end
+
+  def self.attendance_overtime_note
+    I18n.t("accounting.attendance.overtime_note")
+  end
+
+  def self.attendance_late_notes
+    translated_notes("accounting.attendance.late_note")
+  end
+
+  def self.attendance_overtime_notes
+    translated_notes("accounting.attendance.overtime_note")
+  end
+
+  def self.translated_notes(key)
+    I18n.available_locales.map { |locale| I18n.t(key, locale: locale) }.uniq
+  end
+  private_class_method :translated_notes
 
   SORTABLE_COLUMNS = %w[kind happened_at unit_type amount_cents notes recorded_by].freeze
   DEFAULT_SORT = "happened_at"
@@ -50,6 +75,15 @@ class PayrollAdjustment < ApplicationRecord
 
   def overtime?
     unit_type == "overtime"
+  end
+
+  def day_units
+    case unit_type
+    when "full_day" then 1.to_d
+    when "half_day" then 0.5.to_d
+    when "quarter_day" then 0.25.to_d
+    else 0.to_d
+    end
   end
 
   def signed_amount_cents

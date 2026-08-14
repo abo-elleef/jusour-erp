@@ -26,6 +26,7 @@ module AccountingNav
         { controller: "incomes",         label: "accounting.nav.incomes",     path: :admin_accounting_incomes_path,           permission: "accounting:transactions" },
         { controller: "monthly_payroll", label: "accounting.nav.payroll",     path: :admin_accounting_monthly_payroll_path,   permission: "payroll:view" },
         { controller: "attendance",      label: "accounting.nav.attendance",  path: :admin_accounting_attendance_path,        permission: "attendance:log" },
+        { controller: "late_penalties",  label: "accounting.nav.late_penalties", path: :admin_accounting_late_penalties_path, permission: "attendance:log" },
         { controller: "shift_logs",      label: "accounting.nav.shifts",      path: :admin_accounting_shift_logs_path,        permission: "attendance:view" },
         { controller: "cash_drawer",     label: "accounting.nav.cash_drawer", path: :admin_accounting_cash_drawer_index_path, permission: "accounting:transactions" },
         { controller: "digital_wallet_day_closes", label: "accounting.nav.digital_wallets", path: :admin_accounting_digital_wallet_day_close_path, permission: "accounting:transactions" },
