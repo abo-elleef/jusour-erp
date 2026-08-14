@@ -479,8 +479,9 @@ module ApplicationHelper
     { data: { turbo_stream: true } }
   end
 
-  def ingredient_stock_row_class(ingredient)
-    case ingredient.stock_status
+  def ingredient_stock_row_class(ingredient_or_status)
+    status = ingredient_or_status.respond_to?(:stock_status) ? ingredient_or_status.stock_status : ingredient_or_status
+    case status
     when :out then "bg-red-50"
     when :low then "bg-red-50"
     when :near then "bg-yellow-50"

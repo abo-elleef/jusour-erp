@@ -46,12 +46,22 @@ module Admin
 
       def show
         authorize_inventory!(:show)
-        @supplier_ingredients = @supplier.supplier_ingredients
+        load_stock_location_filter
+
+        links = @supplier.supplier_ingredients
           .includes(ingredient: :unit_ref)
           .to_a
           .select { |link| link.ingredient.active? }
-          .sort_by { |link| [STOCK_RANK.fetch(link.ingredient.stock_status, 3), link.ingredient.name.to_s.downcase] }
-        @reorder_count = @supplier_ingredients.count { |link| %i[out low].include?(link.ingredient.stock_status) }
+
+        @ingredient_balances = ingredient_balances_for(links)
+        @supplier_ingredients = links.sort_by do |link|
+          balance = @ingredient_balances[link.ingredient_id]
+          [STOCK_RANK.fetch(balance[:status], 3), link.ingredient.name.to_s.downcase]
+        end
+        @reorder_count = @supplier_ingredients.count do |link|
+          %i[out low].include?(@ingredient_balances[link.ingredient_id][:status])
+        end
+
         @vendor_invoices = @supplier.vendor_invoices.order(invoice_date: :desc).limit(10)
         @price_histories = @supplier.supplier_price_histories
           .includes(:ingredient, :recorded_by_user)
@@ -138,6 +148,40 @@ module Admin
 
       def set_supplier
         @supplier = Supplier.find(params[:id])
+      end
+
+      def load_stock_location_filter
+        @filter_locations = Location.active.ordered.where(id: current_user.accessible_location_ids)
+        @stock_location_id = params[:location_id].to_s
+        @stock_location = @filter_locations.find_by(id: @stock_location_id) if @stock_location_id.present?
+      end
+
+      # Company-wide ingredient on-hand by default; when a location is chosen,
+      # use that location's IngredientLocation qty / reorder / stock status.
+      def ingredient_balances_for(links)
+        if @stock_location
+          ils = IngredientLocation
+            .where(location_id: @stock_location.id, ingredient_id: links.map(&:ingredient_id))
+            .index_by(&:ingredient_id)
+
+          links.each_with_object({}) do |link, memo|
+            il = ils[link.ingredient_id]
+            memo[link.ingredient_id] = {
+              quantity: il&.quantity_on_hand.to_d,
+              reorder_at: (il || link.ingredient).reorder_threshold.to_d,
+              status: il&.stock_status || :out
+            }
+          end
+        else
+          links.each_with_object({}) do |link, memo|
+            ing = link.ingredient
+            memo[ing.id] = {
+              quantity: ing.quantity_on_hand.to_d,
+              reorder_at: ing.reorder_threshold.to_d,
+              status: ing.stock_status
+            }
+          end
+        end
       end
 
       def supplier_sort_value(supplier)

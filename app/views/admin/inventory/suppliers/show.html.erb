@@ -65,50 +65,73 @@
   </div>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
-    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-end gap-3">
       <div>
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.suppliers.show.ingredients_heading") %></h2>
-        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.suppliers.show.ingredients_hint") %></p>
+        <p class="text-xs text-gray-500 mt-0.5">
+          <% if @stock_location %>
+            <%= t("inventory.suppliers.show.ingredients_hint_location", location: @stock_location.name) %>
+          <% else %>
+            <%= t("inventory.suppliers.show.ingredients_hint") %>
+          <% end %>
+        </p>
       </div>
-      <% if @reorder_count.positive? %>
-        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-800 text-xs font-semibold">
-          <%= t("inventory.suppliers.show.reorder_count", count: @reorder_count) %>
-        </span>
-      <% end %>
+      <div class="flex flex-wrap items-center gap-2">
+        <% if @reorder_count.positive? %>
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-800 text-xs font-semibold">
+            <%= t("inventory.suppliers.show.reorder_count", count: @reorder_count) %>
+          </span>
+        <% end %>
+        <% if @filter_locations.any? %>
+          <%= form_with url: admin_inventory_supplier_path(@supplier), method: :get, class: "flex items-center gap-2" do %>
+            <label for="location_id" class="text-xs font-semibold text-gray-600 whitespace-nowrap"><%= t("inventory.suppliers.show.balance_location") %></label>
+            <%= select_tag :location_id,
+                  options_for_select(
+                    [[t("inventory.suppliers.show.all_locations"), ""]] + @filter_locations.map { |l| [l.name, l.id] },
+                    @stock_location&.id
+                  ),
+                  class: "#{pos_input_class} appearance-none min-w-[10rem] py-1.5 text-sm",
+                  id: "location_id",
+                  onchange: "this.form.requestSubmit()" %>
+          <% end %>
+        <% end %>
+      </div>
     </div>
     <% if @supplier_ingredients.any? %>
-      <div class="overflow-x-auto">
+      <div class="overflow-auto max-h-[60vh] relative">
         <table class="w-full text-left text-sm">
-          <thead class="border-b border-gray-100 bg-white text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
-              <th class="p-3 pl-5"><%= t("inventory.suppliers.show.ingredient") %></th>
-              <th class="p-3 text-right"><%= t("inventory.suppliers.show.balance") %></th>
-              <th class="p-3 text-right"><%= t("inventory.suppliers.show.reorder_at") %></th>
-              <th class="p-3"><%= t("inventory.suppliers.show.vendor_product") %></th>
-              <th class="p-3 text-right"><%= t("inventory.suppliers.show.unit_price") %></th>
-              <th class="p-3 pr-5"><%= t("inventory.suppliers.show.preferred") %></th>
+              <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 pl-5 border-b border-gray-200"><%= t("inventory.suppliers.show.ingredient") %></th>
+              <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 text-right border-b border-gray-200"><%= t("inventory.suppliers.show.balance") %></th>
+              <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 text-right border-b border-gray-200"><%= t("inventory.suppliers.show.reorder_at") %></th>
+              <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 border-b border-gray-200"><%= t("inventory.suppliers.show.vendor_product") %></th>
+              <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 text-right border-b border-gray-200"><%= t("inventory.suppliers.show.unit_price") %></th>
+              <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 pr-5 border-b border-gray-200"><%= t("inventory.suppliers.show.preferred") %></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <% @supplier_ingredients.each do |link| %>
               <% ing = link.ingredient %>
-              <% urgent = %i[out low].include?(ing.stock_status) %>
-              <tr class="<%= ingredient_stock_row_class(ing) %> hover:bg-gray-100 transition-colors">
+              <% balance = @ingredient_balances[ing.id] %>
+              <% status = balance[:status] %>
+              <% urgent = %i[out low].include?(status) %>
+              <tr class="<%= ingredient_stock_row_class(status) %> hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5">
                   <%= link_to ing.name, admin_inventory_ingredient_path(ing),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>
-                  <% if ing.stock_status == :out %>
+                  <% if status == :out %>
                     <span class="ms-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800"><%= t("inventory.ingredients.index.stats.out_of_stock") %></span>
-                  <% elsif ing.stock_status == :low %>
+                  <% elsif status == :low %>
                     <span class="ms-2 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800"><%= t("inventory.ingredients.index.stats.low_stock") %></span>
                   <% end %>
                 </td>
                 <td class="p-3 text-right tabular-nums whitespace-nowrap <%= urgent ? 'text-red-700 font-bold' : 'text-gray-900 font-semibold' %>">
-                  <%= number_with_precision(ing.quantity_on_hand, precision: 2, strip_insignificant_zeros: true) %>
-                  <span class="text-xs font-normal text-gray-500"><%= ing.unit %></span>
+                  <%= number_with_precision(balance[:quantity], precision: 2, strip_insignificant_zeros: true) %>
+                  <span class="text-xs font-normal text-gray-500"><%= ingredient_unit_label(ing.unit) %></span>
                 </td>
                 <td class="p-3 text-right tabular-nums text-gray-500 whitespace-nowrap">
-                  <%= number_with_precision(ing.reorder_threshold, precision: 2, strip_insignificant_zeros: true) %>
+                  <%= number_with_precision(balance[:reorder_at], precision: 2, strip_insignificant_zeros: true) %>
                 </td>
                 <td class="p-3 text-gray-700">
                   <% vendor_alias = [link.vendor_product_name, link.vendor_sku].compact_blank.join(" · ") %>
