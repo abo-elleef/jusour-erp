@@ -1498,6 +1498,8 @@ en:
     manufacturing:
       adjustment_consumption: "Production %{template} — consumed %{ingredient} (×%{runs} runs, run %{run_id})"
       adjustment_output: "Production %{template} — produced %{output} (×%{runs} runs, run %{run_id})"
+      adjustment_consumption_reversal: "Undo %{number} — returned %{ingredient} (%{template})"
+      adjustment_output_reversal: "Undo %{number} — removed unused %{output} (%{template})"
       templates:
         title: "Manufacturing templates"
         description: "Define how raw ingredients combine into prep items. Kitchen staff run these templates without manual stock entry."
@@ -1581,6 +1583,17 @@ en:
         inputs_used: "Inputs consumed"
         quantity_used: "Quantity"
         notes: "Notes"
+        undo: "Undo run"
+        undo_confirm: "Undo this production run? Unused output will be removed and the consumed inputs will be returned to stock. Record a new run with the correct amount afterwards."
+        undo_hint: "Entered the wrong amount? Undo this run while the produced stock is still unused, then record a new run."
+        reversed_badge: "Undone"
+        reversed_heading: "This production run was undone"
+        reversed_by: "Undone by %{name} · %{at}"
+        errors:
+          already_reversed: "This production run has already been undone."
+          location_missing: "This run has no location, so stock cannot be reversed."
+          output_missing: "The produced batch for this run was not found."
+          output_used: "Cannot undo — some of the produced stock has already been used or transferred. Adjust stock manually if needed."
 
   notifications:
     types:
@@ -3629,6 +3642,7 @@ en:
       removed: "Input ingredient removed."
     manufacturing_run:
       recorded: "Production recorded."
+      reversed: "Production run undone. Record a new run with the correct amount."
     supplier_ingredient:
       assigned: "Supplier assigned."
       updated: "Supplier link updated."

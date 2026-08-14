@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_14_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_14_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -585,12 +585,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_14_120000) do
     t.string "run_number", null: false
     t.decimal "main_input_quantity", precision: 10, scale: 3
     t.uuid "main_input_unit_id"
+    t.datetime "reversed_at"
+    t.uuid "reversed_by_id"
     t.index ["company_id", "run_number"], name: "index_manufacturing_runs_on_company_id_and_run_number", unique: true
     t.index ["company_id"], name: "index_manufacturing_runs_on_company_id"
     t.index ["location_id"], name: "index_manufacturing_runs_on_location_id"
     t.index ["main_input_unit_id"], name: "index_manufacturing_runs_on_main_input_unit_id"
     t.index ["manufacturing_template_id"], name: "index_manufacturing_runs_on_manufacturing_template_id"
     t.index ["occurred_on"], name: "index_manufacturing_runs_on_occurred_on"
+    t.index ["reversed_at"], name: "index_manufacturing_runs_on_reversed_at"
+    t.index ["reversed_by_id"], name: "index_manufacturing_runs_on_reversed_by_id"
     t.index ["user_id"], name: "index_manufacturing_runs_on_user_id"
   end
 
@@ -1545,6 +1549,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_14_120000) do
   add_foreign_key "manufacturing_runs", "manufacturing_templates"
   add_foreign_key "manufacturing_runs", "units", column: "main_input_unit_id"
   add_foreign_key "manufacturing_runs", "users"
+  add_foreign_key "manufacturing_runs", "users", column: "reversed_by_id"
   add_foreign_key "manufacturing_template_lines", "ingredients"
   add_foreign_key "manufacturing_template_lines", "manufacturing_templates"
   add_foreign_key "manufacturing_template_lines", "units"

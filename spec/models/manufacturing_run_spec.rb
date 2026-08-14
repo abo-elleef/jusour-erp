@@ -48,4 +48,13 @@ RSpec.describe ManufacturingRun, type: :model do
       expect(driven.main_ingredient_driven?).to be(true)
     end
   end
+
+  describe "#reversed?" do
+    it "is false until reversed_at is set" do
+      recorded = run
+      expect(recorded).not_to be_reversed
+      recorded.update!(reversed_at: Time.current, reversed_by: user)
+      expect(recorded).to be_reversed
+    end
+  end
 end

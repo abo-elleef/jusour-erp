@@ -126,6 +126,11 @@
                 <td class="p-3 ps-5">
                   <%= link_to run.run_number, admin_inventory_manufacturing_run_path(run),
                         class: "font-medium text-amber-700 hover:text-amber-800 tabular-nums" %>
+                  <% if run.reversed? %>
+                    <span class="ms-1 text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200">
+                      <%= t("inventory.manufacturing.runs.reversed_badge") %>
+                    </span>
+                  <% end %>
                 </td>
                 <td class="p-3 text-gray-700"><%= l(run.occurred_on, format: :long) %></td>
                 <td class="p-3 text-gray-700"><%= run.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>

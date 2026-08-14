@@ -7,6 +7,7 @@ class ManufacturingRun < ApplicationRecord
   belongs_to :manufacturing_template
   belongs_to :user
   belongs_to :location, optional: true
+  belongs_to :reversed_by, class_name: "User", optional: true
   references_unit :main_input_unit, column: :main_input_unit_id
 
   before_validation :assign_run_number, on: :create
@@ -40,6 +41,28 @@ class ManufacturingRun < ApplicationRecord
   # explicit run count.
   def main_ingredient_driven?
     main_input_quantity.present?
+  end
+
+  def reversed?
+    reversed_at.present?
+  end
+
+  def output_batch
+    return if location_id.blank? || run_number.blank?
+
+    manufacturing_template.output_ingredient.stock_batches
+      .where(location_id: location_id, batch_reference: run_number)
+      .order(:created_at)
+      .last
+  end
+
+  # Undo is allowed only while the produced batch is still fully unused.
+  def reversible?
+    return false if reversed?
+    return false if location_id.blank?
+
+    batch = output_batch
+    batch.present? && batch.quantity_remaining.to_d >= batch.quantity_received.to_d
   end
 
   private

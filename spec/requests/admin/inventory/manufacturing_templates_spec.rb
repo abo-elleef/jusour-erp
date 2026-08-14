@@ -154,6 +154,35 @@ RSpec.describe "Admin::Inventory::ManufacturingTemplates", type: :request do
       expect(response.body).to include(input.name)   # input used
       expect(response.body).to include(output.name)  # output produced
     end
+
+    it "undoes a recorded run and restores source stock" do
+      kitchen = create(:location, :central_kitchen, company: company)
+      input.ingredient_locations.create!(location: kitchen, quantity_on_hand: 5, reorder_threshold: 0)
+      StockBatch.create!(
+        ingredient: input, location: kitchen,
+        quantity_received: 5, quantity_remaining: 5,
+        cost_per_unit_cents: 100, received_on: Date.current
+      )
+      template = ManufacturingTemplate.create!(company: company, name: "Sauce Undo", yield_quantity: 2,
+        active: false, output_ingredient: output, yield_unit: output.unit)
+      template.manufacturing_template_lines.create!(ingredient: input, quantity_used: 1, unit: input.unit)
+      template.update!(active: true)
+
+      post run_admin_inventory_manufacturing_template_path(template),
+        params: { location_id: kitchen.id, runs_count: 1, shelf_life_days: 3 }
+      run = ManufacturingRun.last
+
+      post reverse_admin_inventory_manufacturing_run_path(run)
+
+      expect(response).to redirect_to(admin_inventory_manufacturing_run_path(run))
+      expect(run.reload).to be_reversed
+      expect(input.reload.quantity_on_hand.to_d).to eq(5)
+      expect(output.reload.quantity_on_hand.to_d).to eq(0)
+
+      get admin_inventory_manufacturing_run_path(run)
+      expect(response.body).to include(I18n.t("inventory.manufacturing.runs.reversed_badge"))
+      expect(response.body).not_to include("reverse_admin_inventory_manufacturing_run")
+    end
   end
 
   def template_for(name, position:)

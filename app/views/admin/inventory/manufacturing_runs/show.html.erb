@@ -15,20 +15,47 @@
       <div class="flex flex-wrap items-center gap-3 mt-2">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @run.manufacturing_template.name %></h1>
         <span class="font-mono text-sm font-semibold text-amber-700"><%= @run.run_number %></span>
+        <% if @run.reversed? %>
+          <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-red-100 text-red-800 border border-red-200">
+            <%= t("inventory.manufacturing.runs.reversed_badge") %>
+          </span>
+        <% end %>
       </div>
       <p class="text-gray-600 text-sm mt-1">
         <%= l(@run.occurred_on, format: :long) %> · <%= @run.user.name %>
         <% if @run.location %> · <span class="font-semibold text-amber-700"><%= @run.location.name %></span><% end %>
       </p>
     </div>
-    <button type="button" onclick="window.print()"
-            class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors print-hide shrink-0">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4" aria-hidden="true">
-        <path fill-rule="evenodd" d="M5 2.75C5 1.784 5.784 1 6.75 1h6.5c.966 0 1.75.784 1.75 1.75v3.552c.377.046.752.097 1.126.153A2.212 2.212 0 0 1 18 8.653v4.097A2.25 2.25 0 0 1 15.75 15h-.241l.305 1.984A1.75 1.75 0 0 1 14.084 19H5.916a1.75 1.75 0 0 1-1.73-2.016L4.491 15H4.25A2.25 2.25 0 0 1 2 12.75V8.653c0-1.082.775-2.034 1.874-2.198.374-.056.75-.107 1.126-.153V2.75Zm8.5 3.397a41.533 41.533 0 0 0-7 0V2.75a.25.25 0 0 1 .25-.25h6.5a.25.25 0 0 1 .25.25v3.397ZM6.608 12.5a.25.25 0 0 0-.247.212l-.693 4.5a.25.25 0 0 0 .247.288h8.168a.25.25 0 0 0 .247-.288l-.693-4.5a.25.25 0 0 0-.247-.212H6.608Z" clip-rule="evenodd" />
-      </svg>
-      <%= t("inventory.manufacturing.runs.print") %>
-    </button>
+    <div class="flex flex-wrap items-center gap-2 print-hide shrink-0">
+      <% if !@run.reversed? && current_user.can?("inventory:manage") %>
+        <%= button_to t("inventory.manufacturing.runs.undo"),
+              reverse_admin_inventory_manufacturing_run_path(@run),
+              method: :post,
+              form: { data: { turbo_confirm: t("inventory.manufacturing.runs.undo_confirm") } },
+              class: "inline-flex text-sm font-semibold text-red-700 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors" %>
+      <% end %>
+      <button type="button" onclick="window.print()"
+              class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4" aria-hidden="true">
+          <path fill-rule="evenodd" d="M5 2.75C5 1.784 5.784 1 6.75 1h6.5c.966 0 1.75.784 1.75 1.75v3.552c.377.046.752.097 1.126.153A2.212 2.212 0 0 1 18 8.653v4.097A2.25 2.25 0 0 1 15.75 15h-.241l.305 1.984A1.75 1.75 0 0 1 14.084 19H5.916a1.75 1.75 0 0 1-1.73-2.016L4.491 15H4.25A2.25 2.25 0 0 1 2 12.75V8.653c0-1.082.775-2.034 1.874-2.198.374-.056.75-.107 1.126-.153V2.75Zm8.5 3.397a41.533 41.533 0 0 0-7 0V2.75a.25.25 0 0 1 .25-.25h6.5a.25.25 0 0 1 .25.25v3.397ZM6.608 12.5a.25.25 0 0 0-.247.212l-.693 4.5a.25.25 0 0 0 .247.288h8.168a.25.25 0 0 0 .247-.288l-.693-4.5a.25.25 0 0 0-.247-.212H6.608Z" clip-rule="evenodd" />
+        </svg>
+        <%= t("inventory.manufacturing.runs.print") %>
+      </button>
+    </div>
   </div>
+
+  <% if @run.reversed? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50/50 px-5 py-4 mb-6">
+      <p class="text-sm font-semibold text-red-900"><%= t("inventory.manufacturing.runs.reversed_heading") %></p>
+      <p class="text-xs text-red-800 mt-0.5">
+        <%= t("inventory.manufacturing.runs.reversed_by",
+              name: @run.reversed_by&.name || t("accounting.shared.em_dash"),
+              at: l(@run.reversed_at, format: :short)) %>
+      </p>
+    </div>
+  <% elsif current_user.can?("inventory:manage") %>
+    <p class="text-xs text-gray-500 mb-6 print-hide"><%= t("inventory.manufacturing.runs.undo_hint") %></p>
+  <% end %>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
     <% if @run.main_ingredient_driven? %>

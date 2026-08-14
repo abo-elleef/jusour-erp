@@ -1502,6 +1502,8 @@ ar:
     manufacturing:
       adjustment_consumption: "تصنيع %{template} — استهلاك %{ingredient} (×%{runs} دفعات، تشغيل %{run_id})"
       adjustment_output: "تصنيع %{template} — إنتاج %{output} (×%{runs} دفعات، تشغيل %{run_id})"
+      adjustment_consumption_reversal: "تراجع %{number} — إعادة %{ingredient} (%{template})"
+      adjustment_output_reversal: "تراجع %{number} — إزالة الناتج غير المستخدم %{output} (%{template})"
       templates:
         title: "قوالب التصنيع"
         description: "حدّد كيف تُحوَّل المكونات الخام إلى منتجات تحضير. يشغّل طاقم المطبخ هذه القوالب دون إدخال مخزون يدوي."
@@ -1589,6 +1591,17 @@ ar:
         inputs_used: "المدخلات المستهلكة"
         quantity_used: "الكمية"
         notes: "ملاحظات"
+        undo: "التراجع عن التشغيل"
+        undo_confirm: "التراجع عن عملية الإنتاج هذه؟ سيُزال الناتج غير المستخدم وتُعاد المدخلات المستهلكة إلى المخزون. سجّل تشغيلاً جديداً بالكمية الصحيحة بعد ذلك."
+        undo_hint: "أدخلت كمية خاطئة؟ يمكنك التراجع عن هذا التشغيل ما دام الناتج غير مستخدم، ثم تسجيل تشغيل جديد."
+        reversed_badge: "ملغى"
+        reversed_heading: "تم التراجع عن عملية الإنتاج هذه"
+        reversed_by: "تراجع عنها %{name} · %{at}"
+        errors:
+          already_reversed: "تم التراجع عن عملية الإنتاج هذه مسبقاً."
+          location_missing: "هذا التشغيل بلا موقع، لذلك لا يمكن عكس المخزون."
+          output_missing: "لم يُعثر على دفعة الناتج لهذا التشغيل."
+          output_used: "لا يمكن التراجع — جزء من الناتج استُخدم أو حُوِّل. عدّل المخزون يدوياً إذا لزم الأمر."
 
   notifications:
     types:
@@ -3655,6 +3668,7 @@ ar:
       removed: "تمت إزالة مكون المدخل."
     manufacturing_run:
       recorded: "تم تسجيل الإنتاج."
+      reversed: "تم التراجع عن التشغيل. سجّل تشغيلاً جديداً بالكمية الصحيحة."
     supplier_ingredient:
       assigned: "تم ربط المورد."
       updated: "تم تحديث ربط المورد."

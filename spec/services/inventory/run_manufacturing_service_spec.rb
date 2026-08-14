@@ -189,3 +189,81 @@ RSpec.describe Inventory::RunManufacturingService do
     end
   end
 end
+
+RSpec.describe Inventory::ReverseManufacturingRunService do
+  let(:user) { create(:user) }
+  let(:category) { IngredientCategory.create!(name: "Proteins Reverse", position: 1, company: Current.company) }
+  let(:chicken) do
+    Ingredient.create!(
+      name: "Chicken Reverse", ingredient_category: category, unit: "kg",
+      reorder_threshold: 5, cost_per_unit_cents: 450, quantity_on_hand: 10
+    )
+  end
+  let(:marinated) do
+    Ingredient.create!(
+      name: "Marinated Reverse", ingredient_category: category, unit: "kg",
+      reorder_threshold: 2, cost_per_unit_cents: 0, quantity_on_hand: 0
+    )
+  end
+  let(:template) do
+    template = ManufacturingTemplate.create!(
+      name: "Marinate Reverse", output_ingredient: marinated, yield_quantity: 5, active: false
+    )
+    ManufacturingTemplateLine.create!(manufacturing_template: template, ingredient: chicken, quantity_used: 4)
+    template.update!(active: true)
+    template
+  end
+  let(:kitchen) { create(:location, :central_kitchen) }
+
+  before do
+    chicken.ingredient_locations.create!(location: kitchen, quantity_on_hand: 10, reorder_threshold: 0)
+    StockBatch.create!(
+      ingredient: chicken, location: kitchen,
+      quantity_received: 10, quantity_remaining: 10,
+      cost_per_unit_cents: 450, received_on: Date.current
+    )
+  end
+
+  def record_run
+    Inventory::RunManufacturingService.new(
+      template: template, user: user, location: kitchen,
+      runs_count: 2, shelf_life_days: 5, occurred_on: Date.current
+    ).call
+  end
+
+  it "returns consumed inputs and removes unused output" do
+    run = record_run
+    expect(chicken.reload.quantity_on_hand.to_d).to eq(2)
+    expect(marinated.reload.quantity_on_hand.to_d).to eq(10)
+
+    described_class.new(run: run, user: user).call
+
+    expect(run.reload).to be_reversed
+    expect(run.reversed_by).to eq(user)
+    expect(chicken.reload.quantity_on_hand.to_d).to eq(10)
+    expect(marinated.reload.quantity_on_hand.to_d).to eq(0)
+    expect(run.output_batch.quantity_remaining.to_d).to eq(0)
+  end
+
+  it "refuses undo when some of the produced stock has been used" do
+    run = record_run
+    run.output_batch.update!(quantity_remaining: 9)
+
+    expect {
+      described_class.new(run: run, user: user).call
+    }.to raise_error(Inventory::ReverseManufacturingRunService::Error, I18n.t("inventory.manufacturing.runs.errors.output_used"))
+
+    expect(run.reload).not_to be_reversed
+    expect(chicken.reload.quantity_on_hand.to_d).to eq(2)
+    expect(marinated.reload.quantity_on_hand.to_d).to eq(10)
+  end
+
+  it "refuses a second undo" do
+    run = record_run
+    described_class.new(run: run, user: user).call
+
+    expect {
+      described_class.new(run: run.reload, user: user).call
+    }.to raise_error(Inventory::ReverseManufacturingRunService::Error, I18n.t("inventory.manufacturing.runs.errors.already_reversed"))
+  end
+end

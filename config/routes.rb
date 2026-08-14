@@ -326,7 +326,9 @@ Rails.application.routes.draw do
         collection { patch :reorder }
         resources :lines, only: %i[create destroy], controller: "manufacturing_template_lines"
       end
-      resources :manufacturing_runs, only: %i[index show]
+      resources :manufacturing_runs, only: %i[index show] do
+        member { post :reverse }
+      end
       namespace :reports do
         get :valuation
         get :variance
