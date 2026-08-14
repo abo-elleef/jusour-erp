@@ -15,6 +15,7 @@ module Admin
 
         @low_stock_count = @location.ingredient_locations.low_stock.count
         @out_of_stock_count = @location.ingredient_locations.out_of_stock.count
+        @has_positive_stock = @location.ingredient_locations.where("quantity_on_hand > 0").exists?
 
         @stock_filter = params[:stock].presence
         @ingredient_locations = apply_stock_filter(@ingredient_locations)
@@ -83,6 +84,20 @@ module Admin
       rescue ActiveRecord::RecordInvalid => e
         redirect_to admin_location_ingredients_path(@location),
           alert: e.record.errors.full_messages.to_sentence
+      end
+
+      def clear_stock
+        authorize @location, :update?, policy_class: LocationPolicy
+
+        result = ::Inventory::ClearLocationStockService.new(
+          location: @location,
+          user: current_user
+        ).call
+
+        redirect_to admin_location_ingredients_path(@location),
+          notice: t("flash.ingredient_location.cleared", count: result.adjusted_count)
+      rescue ::Inventory::ClearLocationStockService::Error => e
+        redirect_to admin_location_ingredients_path(@location), alert: e.message
       end
 
       private

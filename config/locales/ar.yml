@@ -1229,6 +1229,10 @@ ar:
         freight_treasury_required: "اختر خزينة لدفع شحن المندوب."
         freight_treasury_invalid: "اختر خزينة نقد أو بنك صالحة لشحن المندوب."
 
+    clear_location_stock:
+      default_reason: "تصفير كل المخزون في %{location}"
+      errors:
+        location_required: "اختر موقعاً للتصفير."
     stock_takes:
       index:
         description: "جرد دوري لمطابقة المخزون الفعلي مع الكميات المسجلة."
@@ -1966,6 +1970,8 @@ ar:
       select_ingredient: "اختر مكونًا…"
       unassign: "إزالة"
       confirm_unassign: "إيقاف تتبع %{name} في هذا الموقع؟ سيتم حذف سجل المخزون المحلي."
+      clear_stock: "تصفير كل المخزون"
+      clear_stock_confirm: "تصفير كل المكونات في %{name}؟ سيتم تسجيل تعديلات جرد ولا يمكن التراجع من هذه الشاشة."
       global_quantity: "إجمالي الشركة"
       bulk_enable_all: "تفعيل الكل"
       no_stock_title: "لا يوجد مخزون مسجل"
@@ -3674,6 +3680,9 @@ ar:
       assigned: "تم تعيين المكون للموقع."
       updated: "تم تحديث إعدادات مخزون الموقع."
       removed: "تمت إزالة المكون من الموقع."
+      cleared:
+        one: "تم تصفير مخزون مكون واحد في هذا الموقع."
+        other: "تم تصفير مخزون %{count} مكونات في هذا الموقع."
     ingredient:
       created: "تم إنشاء المكون."
       updated: "تم تحديث المكون."

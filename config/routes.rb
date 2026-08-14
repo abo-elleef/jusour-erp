@@ -153,6 +153,7 @@ Rails.application.routes.draw do
       end
       resources :ingredients, only: %i[index create update destroy], module: :locations do
         member { post :adjust }
+        collection { post :clear_stock }
       end
     end
 

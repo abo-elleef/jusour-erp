@@ -1225,6 +1225,10 @@ en:
         stock_consumed_blocked: "Cannot edit — some received stock has already been used."
         freight_treasury_required: "Select a treasury to pay courier freight."
         freight_treasury_invalid: "Choose a valid cash or bank treasury for courier freight."
+    clear_location_stock:
+      default_reason: "Cleared all stock at %{location}"
+      errors:
+        location_required: "Choose a location to clear."
     stock_takes:
       index:
         description: "Cycle counts to reconcile on-hand inventory with physical stock."
@@ -1954,6 +1958,8 @@ en:
       select_ingredient: "Select ingredient…"
       unassign: "Remove"
       confirm_unassign: "Stop tracking %{name} at this location? Local stock record will be removed."
+      clear_stock: "Clear all stock"
+      clear_stock_confirm: "Set every ingredient at %{name} to zero? This writes cycle-count adjustments and cannot be undone from this screen."
       global_quantity: "Company total"
       bulk_enable_all: "Enable All"
       no_stock_title: "No stock tracked"
@@ -3648,6 +3654,9 @@ en:
       assigned: "Ingredient assigned to location."
       updated: "Location stock settings updated."
       removed: "Ingredient removed from location."
+      cleared:
+        one: "Cleared stock for %{count} ingredient at this location."
+        other: "Cleared stock for %{count} ingredients at this location."
     ingredient:
       created: "Ingredient created."
       updated: "Ingredient updated."
