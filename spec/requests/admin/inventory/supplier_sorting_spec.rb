@@ -38,6 +38,18 @@ RSpec.describe "Admin::Inventory::Suppliers index sorting", type: :request do
     expect(order_of(%w[Fast Slow])).to eq(%w[Fast Slow])
   end
 
+  it "sorts outstanding by AP treasury balance" do
+    high = Supplier.create!(company: company, name: "High AP", lead_time_days: 1)
+    low = Supplier.create!(company: company, name: "Low AP", lead_time_days: 1)
+    high.ap_treasury.update!(balance_cents: 8_000)
+    low.ap_treasury.update!(balance_cents: 1_000)
+
+    get admin_inventory_suppliers_path(sort: "outstanding", dir: "desc")
+    expect(order_of(["High AP", "Low AP"])).to eq(["High AP", "Low AP"])
+    expect(response.body).to include(ApplicationController.helpers.format_money(8_000))
+    expect(response.body).to include(ApplicationController.helpers.format_money(1_000))
+  end
+
   it "ignores an unknown sort column (falls back to name)" do
     Supplier.create!(company: company, name: "Beta")
     Supplier.create!(company: company, name: "Aaa")

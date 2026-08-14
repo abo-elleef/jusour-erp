@@ -16,7 +16,7 @@ module Admin
         @inactive_count = @total_count - @active_count
         @filtered = (params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)) || @status != "active"
 
-        scope = @q.result.includes(:supplier_ingredients)
+        scope = @q.result.includes(:supplier_ingredients, :ap_treasury)
         scope = scope.where(active: true) if @status == "active"
         scope = scope.where(active: false) if @status == "inactive"
         suppliers = scope.to_a
@@ -28,11 +28,9 @@ module Admin
           .group(:supplier_id)
           .sum(:total_cents)
 
-        @outstanding_cents_by_supplier = VendorInvoice
-          .where(supplier_id: supplier_ids)
-          .outstanding
-          .group(:supplier_id)
-          .sum(Arel.sql("total_cents - amount_paid_cents"))
+        # Same figure as the supplier show page: AP treasury balance (unpaid
+        # invoices minus invoice payments and direct AP payments).
+        @outstanding_cents_by_supplier = suppliers.to_h { |s| [s.id, s.ap_balance_cents] }
 
         @sort = SORT_COLUMNS.include?(params[:sort]) ? params[:sort] : "name"
         @direction = params[:dir] == "desc" ? "desc" : "asc"

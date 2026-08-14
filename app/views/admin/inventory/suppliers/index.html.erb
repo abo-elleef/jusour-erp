@@ -124,10 +124,10 @@
                 <td class="p-3 text-right tabular-nums">
                   <% if outstanding_cents.positive? %>
                     <%= link_to format_money(outstanding_cents),
-                          admin_inventory_vendor_invoices_path(q: { supplier_id_eq: s.id, payment_status_in: %w[unpaid partially_paid] }),
+                          admin_inventory_supplier_path(s),
                           class: "font-semibold text-amber-700 hover:text-amber-800" %>
                   <% else %>
-                    <span class="text-gray-400"><%= format_money(0) %></span>
+                    <span class="text-gray-400"><%= format_money(outstanding_cents) %></span>
                   <% end %>
                 </td>
                 <td class="p-3">
