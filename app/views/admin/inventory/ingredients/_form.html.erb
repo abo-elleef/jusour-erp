@@ -61,10 +61,14 @@
           </p>
         <% end %>
       <% end %>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
           <%= f.label :reorder_threshold, t("inventory.ingredients.form.reorder_at"), class: "block text-sm font-medium text-gray-700 mb-1" %>
           <%= f.number_field :reorder_threshold, step: 0.001, min: 0, class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+        </div>
+        <div>
+          <%= f.label :max_quantity, t("inventory.ingredients.form.max_quantity"), class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= f.number_field :max_quantity, step: 0.001, min: 0, class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
         </div>
         <div>
           <%= f.label :quantity_on_hand, t("inventory.ingredients.form.on_hand"), class: "block text-sm font-medium text-gray-700 mb-1" %>

@@ -130,6 +130,7 @@ module Inventory
     def ensure_ingredient_at_location!(ingredient, location)
       location.ingredient_locations.find_or_create_by!(ingredient: ingredient) do |il|
         il.reorder_threshold = ingredient.reorder_threshold
+        il.max_quantity = ingredient.max_quantity
         il.quantity_on_hand = 0
       end
     end

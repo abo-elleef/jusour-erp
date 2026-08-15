@@ -7,6 +7,7 @@ class IngredientLocation < ApplicationRecord
   validates :ingredient_id, uniqueness: { scope: :location_id }
   validates :quantity_on_hand, numericality: true
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
+  validates :max_quantity, numericality: { greater_than_or_equal_to: 0 }
 
   # The ingredient's global on-hand is always the sum of its locations. Roll it
   # up whenever a location's quantity changes so the two never drift.

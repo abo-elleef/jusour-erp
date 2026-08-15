@@ -1,0 +1,118 @@
+<% content_for :title, t("inventory.suppliers.purchase_request.title", name: @supplier.name) %>
+<%= render "admin/inventory/tools_nav" %>
+
+<div class="max-w-7xl print:max-w-none">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6 print:mb-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+        <%= t("inventory.suppliers.purchase_request.title", name: @supplier.name) %>
+      </h1>
+      <p class="text-gray-600 text-sm mt-1">
+        <% if @stock_location %>
+          <%= t("inventory.suppliers.purchase_request.subtitle_location", location: @stock_location.name) %>
+        <% else %>
+          <%= t("inventory.suppliers.purchase_request.subtitle") %>
+        <% end %>
+      </p>
+      <p class="text-gray-500 text-xs mt-1 print:block">
+        <%= t("inventory.suppliers.purchase_request.generated_at", at: l(Time.current, format: :long)) %>
+        · <%= t("inventory.suppliers.purchase_request.lines_count", count: @lines.size) %>
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2 shrink-0 print:hidden">
+      <%= link_to t("inventory.suppliers.purchase_request.back", name: @supplier.name),
+            admin_inventory_supplier_path(@supplier, location_id: @stock_location&.id),
+            class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200 transition-colors" %>
+      <% if @lines.any? %>
+        <button type="button" onclick="window.print()"
+              class="inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200 transition-colors cursor-pointer">
+          <%= t("inventory.suppliers.purchase_request.print") %>
+        </button>
+        <%= link_to t("inventory.suppliers.purchase_request.export"),
+              purchase_request_admin_inventory_supplier_path(@supplier, location_id: @stock_location&.id, format: :csv),
+              class: "inline-flex text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-colors" %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @lines.any? %>
+    <section class="rounded-2xl border border-gray-300 bg-white overflow-hidden print:border print:border-gray-400 print:rounded-none">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[720px] border-collapse">
+          <thead class="bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+            <tr>
+              <th class="border border-gray-300 print:border-gray-400 p-3 text-start"><%= t("inventory.suppliers.purchase_request.ingredient") %></th>
+              <th class="border border-gray-300 print:border-gray-400 p-3 text-start"><%= t("inventory.suppliers.purchase_request.vendor_product") %></th>
+              <th class="border border-gray-300 print:border-gray-400 p-3 text-start"><%= t("inventory.suppliers.purchase_request.unit") %></th>
+              <th class="border border-gray-300 print:border-gray-400 p-3 text-end"><%= t("inventory.suppliers.purchase_request.balance") %></th>
+              <th class="border border-gray-300 print:border-gray-400 p-3 text-end"><%= t("inventory.suppliers.purchase_request.max_quantity") %></th>
+              <th class="border border-gray-300 print:border-gray-400 p-3 text-end"><%= t("inventory.suppliers.purchase_request.requested_qty") %></th>
+              <th class="border border-gray-300 print:border-gray-400 p-3 text-end"><%= t("inventory.suppliers.purchase_request.unit_price") %></th>
+              <th class="border border-gray-300 print:border-gray-400 p-3 text-end"><%= t("inventory.suppliers.purchase_request.estimated") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @lines.each do |line| %>
+              <% link = line.supplier_ingredient %>
+              <tr>
+                <td class="border border-gray-300 print:border-gray-400 p-3">
+                  <p class="font-semibold text-gray-900"><%= line.ingredient.name %></p>
+                  <p class="text-xs text-gray-500 font-mono mt-0.5"><%= line.ingredient.code %></p>
+                </td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-gray-700">
+                  <% product = [link.vendor_product_name, link.vendor_sku].compact_blank %>
+                  <% if product.any? %>
+                    <%= product.join(" · ") %>
+                  <% else %>
+                    <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+                  <% end %>
+                </td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-gray-700"><%= ingredient_unit_label(line.ingredient.unit) %></td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.balance, precision: 3) %></td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.max_quantity, precision: 3) %></td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums font-semibold text-gray-900"><%= number_with_precision(line.requested_quantity, precision: 3) %></td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums text-gray-700">
+                  <% if link.price_cents.to_i.positive? %>
+                    <%= format_money(link.price_cents) %>
+                  <% else %>
+                    <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+                  <% end %>
+                </td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums text-gray-900">
+                  <% if line.estimated_cents %>
+                    <%= format_money(line.estimated_cents) %>
+                  <% else %>
+                    <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+          <% if @estimated_total_cents.positive? %>
+            <tfoot class="bg-gray-50">
+              <tr>
+                <td colspan="7" class="border border-gray-300 print:border-gray-400 p-3 text-end text-sm font-semibold text-gray-700">
+                  <%= t("inventory.suppliers.purchase_request.estimated_total") %>
+                </td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums text-sm font-bold text-gray-900">
+                  <%= format_money(@estimated_total_cents) %>
+                </td>
+              </tr>
+            </tfoot>
+          <% end %>
+        </table>
+      </div>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center print:border-0">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("inventory.suppliers.purchase_request.empty_title") %></p>
+      <p class="text-gray-500 text-sm">
+        <% if @stock_location %>
+          <%= t("inventory.suppliers.purchase_request.empty_description_location", location: @stock_location.name) %>
+        <% else %>
+          <%= t("inventory.suppliers.purchase_request.empty_description") %>
+        <% end %>
+      </p>
+    </section>
+  <% end %>
+</div>

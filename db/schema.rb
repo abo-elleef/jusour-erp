@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_14_140000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_15_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -417,6 +417,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_14_140000) do
     t.decimal "reorder_threshold", precision: 10, scale: 3, default: "0.0", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.decimal "max_quantity", precision: 10, scale: 3, default: "0.0", null: false
     t.index ["ingredient_id", "location_id"], name: "index_ingredient_locations_on_ingredient_id_and_location_id", unique: true
     t.index ["ingredient_id"], name: "index_ingredient_locations_on_ingredient_id"
     t.index ["location_id"], name: "index_ingredient_locations_on_location_id"
@@ -447,6 +448,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_14_140000) do
     t.integer "shelf_life_days"
     t.uuid "unit_id", null: false
     t.string "code", null: false
+    t.decimal "max_quantity", precision: 10, scale: 3, default: "0.0", null: false
     t.index "company_id, lower((code)::text)", name: "index_ingredients_on_company_and_lower_code", unique: true
     t.index ["active"], name: "index_ingredients_on_active"
     t.index ["company_id", "name"], name: "index_ingredients_on_company_id_and_name", unique: true

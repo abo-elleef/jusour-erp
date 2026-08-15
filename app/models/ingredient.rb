@@ -37,6 +37,7 @@ class Ingredient < ApplicationRecord
   validates :code, presence: true, uniqueness: { scope: :company_id, case_sensitive: false }
   validate :unit_belongs_to_company
   validates :reorder_threshold, numericality: { greater_than_or_equal_to: 0 }
+  validates :max_quantity, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_on_hand, numericality: true
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   before_validation :discard_alternate_units_on_base_change, on: :update
@@ -60,7 +61,7 @@ class Ingredient < ApplicationRecord
   }
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name code active quantity_on_hand reorder_threshold ingredient_category_id shelf_life_days]
+    %w[name code active quantity_on_hand reorder_threshold max_quantity ingredient_category_id shelf_life_days]
   end
 
   def self.ransackable_associations(_auth_object = nil)

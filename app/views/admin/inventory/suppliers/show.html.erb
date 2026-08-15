@@ -25,6 +25,9 @@
       <%= link_to t("actions.edit"), edit_admin_inventory_supplier_path(@supplier),
             class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200 transition-colors" %>
       <% if @supplier.active? %>
+        <%= link_to t("inventory.suppliers.show.purchase_request"),
+              purchase_request_admin_inventory_supplier_path(@supplier, location_id: @stock_location&.id),
+              class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200 transition-colors" %>
         <%= link_to t("inventory.suppliers.show.new_invoice"), new_admin_inventory_vendor_invoice_path(supplier_id: @supplier.id),
               class: "inline-flex text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-colors" %>
       <% end %>

@@ -3,7 +3,7 @@
 module Admin
   module Inventory
     class SuppliersController < BaseController
-      before_action :set_supplier, only: %i[show edit update destroy direct_ap_payment]
+      before_action :set_supplier, only: %i[show edit update destroy direct_ap_payment purchase_request]
 
       SORT_COLUMNS = %w[name contact lead_time ingredients invoice_total outstanding status].freeze
 
@@ -144,7 +144,65 @@ module Admin
         redirect_to admin_inventory_suppliers_path, notice: t("flash.supplier.deleted")
       end
 
+      def purchase_request
+        authorize_inventory!(:show)
+        load_stock_location_filter
+        @lines = ::Inventory::SupplierPurchaseRequestService.new(
+          supplier: @supplier,
+          location: @stock_location
+        ).call
+        @estimated_total_cents = @lines.filter_map(&:estimated_cents).sum
+
+        respond_to do |format|
+          format.html
+          format.csv { send_purchase_request_csv }
+        end
+      end
+
       private
+
+      def send_purchase_request_csv
+        csv = CSV.generate do |out|
+          out << [
+            t("inventory.suppliers.purchase_request.ingredient"),
+            t("inventory.suppliers.purchase_request.code"),
+            t("inventory.suppliers.purchase_request.vendor_product"),
+            t("inventory.suppliers.purchase_request.vendor_sku"),
+            t("inventory.suppliers.purchase_request.unit"),
+            t("inventory.suppliers.purchase_request.balance"),
+            t("inventory.suppliers.purchase_request.max_quantity"),
+            t("inventory.suppliers.purchase_request.requested_qty"),
+            t("inventory.suppliers.purchase_request.unit_price"),
+            t("inventory.suppliers.purchase_request.estimated")
+          ]
+          @lines.each do |line|
+            link = line.supplier_ingredient
+            out << [
+              line.ingredient.name,
+              line.ingredient.code,
+              link.vendor_product_name,
+              link.vendor_sku,
+              line.ingredient.unit,
+              line.balance,
+              line.max_quantity,
+              line.requested_quantity,
+              link.price_cents.to_i.positive? ? (link.price_cents / 100.0) : nil,
+              line.estimated_cents ? (line.estimated_cents / 100.0) : nil
+            ]
+          end
+        end
+
+        filename = [
+          "purchase-request",
+          @supplier.name.parameterize.presence || "supplier",
+          (@stock_location&.name&.parameterize),
+          Date.current.iso8601
+        ].compact.join("-")
+
+        send_data "﻿#{csv}",
+          filename: "#{filename}.csv",
+          type: "text/csv; charset=utf-8"
+      end
 
       def set_supplier
         @supplier = Supplier.find(params[:id])

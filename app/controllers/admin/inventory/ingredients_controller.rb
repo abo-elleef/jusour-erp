@@ -202,7 +202,8 @@ module Admin
         ingredient.ingredient_locations.create!(
           location: location,
           quantity_on_hand: ingredient.quantity_on_hand,
-          reorder_threshold: ingredient.reorder_threshold
+          reorder_threshold: ingredient.reorder_threshold,
+          max_quantity: ingredient.max_quantity
         )
       end
 
@@ -318,7 +319,7 @@ module Admin
 
       def ingredient_params
         permitted = params.require(:ingredient).permit(
-          :name, :code, :ingredient_category_id, :unit_id, :reorder_threshold,
+          :name, :code, :ingredient_category_id, :unit_id, :reorder_threshold, :max_quantity,
           :quantity_on_hand, :cost_per_unit_dollars, :active, :shelf_life_days,
           ingredient_units_attributes: %i[id unit_id base_units_per_unit _destroy]
         )

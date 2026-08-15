@@ -298,6 +298,7 @@ Rails.application.routes.draw do
       resources :suppliers do
         member do
           post :direct_ap_payment
+          get :purchase_request
         end
       end
       resources :vendor_invoices, only: %i[index show new create edit update] do

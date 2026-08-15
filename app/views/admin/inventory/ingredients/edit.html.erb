@@ -11,15 +11,15 @@
   <span class="text-xs uppercase px-2 py-1 rounded <%= badge_class %>"><%= label %></span>
 </div>
 
-<div class="grid grid-cols-1 xl:grid-cols-5 gap-6 max-w-6xl">
-  <div class="xl:col-span-2">
-    <div class="bg-white rounded-lg shadow p-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div>
+    <div class="bg-white rounded-lg shadow p-6 h-full">
       <h2 class="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-4"><%= t("inventory.ingredients.edit.details") %></h2>
       <%= render "form", ingredient: @ingredient, embedded: true %>
     </div>
   </div>
 
-  <div class="xl:col-span-3">
+  <div>
     <%= render "supplier_links" %>
   </div>
 </div>

@@ -179,12 +179,18 @@
                       url: admin_location_ingredient_path(@location, il.ingredient),
                       method: :patch,
                       class: "space-y-2" do |f| %>
-                  <%= f.label :reorder_threshold, t("admin.inventory.threshold"), class: label_class %>
-                  <div class="flex gap-2">
-                    <%= f.number_field :reorder_threshold, step: 0.001, min: 0, class: pos_input_class %>
-                    <%= f.submit t("actions.save"),
-                          class: "shrink-0 bg-white border border-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer" %>
+                  <div class="grid grid-cols-2 gap-2">
+                    <div>
+                      <%= f.label :reorder_threshold, t("admin.inventory.threshold"), class: label_class %>
+                      <%= f.number_field :reorder_threshold, step: 0.001, min: 0, class: pos_input_class %>
+                    </div>
+                    <div>
+                      <%= f.label :max_quantity, t("inventory.ingredients.form.max_quantity"), class: label_class %>
+                      <%= f.number_field :max_quantity, step: 0.001, min: 0, class: pos_input_class %>
+                    </div>
                   </div>
+                  <%= f.submit t("actions.save"),
+                        class: "w-full bg-white border border-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer" %>
                 <% end %>
               </div>
 

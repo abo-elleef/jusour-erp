@@ -34,7 +34,10 @@ module Admin
         authorize @location, :update?, policy_class: LocationPolicy
         ingredient = Ingredient.find(params[:ingredient_id])
         il = @location.ingredient_locations.find_or_initialize_by(ingredient: ingredient)
-        il.reorder_threshold = ingredient.reorder_threshold if il.new_record?
+        if il.new_record?
+          il.reorder_threshold = ingredient.reorder_threshold
+          il.max_quantity = ingredient.max_quantity
+        end
         il.quantity_on_hand = 0 if il.new_record?
 
         if il.save
@@ -122,12 +125,13 @@ module Admin
       end
 
       def ingredient_location_params
-        params.require(:ingredient_location).permit(:reorder_threshold)
+        params.require(:ingredient_location).permit(:reorder_threshold, :max_quantity)
       end
 
       def ensure_ingredient_assigned!(ingredient)
         @location.ingredient_locations.find_or_create_by!(ingredient: ingredient) do |il|
           il.reorder_threshold = ingredient.reorder_threshold
+          il.max_quantity = ingredient.max_quantity
           il.quantity_on_hand = 0
         end
       end
