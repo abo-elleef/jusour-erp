@@ -1963,6 +1963,16 @@ en:
       confirm_unassign: "Stop tracking %{name} at this location? Local stock record will be removed."
       clear_stock: "Clear all stock"
       clear_stock_confirm: "Set every ingredient at %{name} to zero? This writes cycle-count adjustments and cannot be undone from this screen."
+      balance_history:
+        title: "Balance history"
+        hint: "Compare up to %{max} ingredients at this location. Built from stock movements."
+        range: "Period"
+        days:
+          one: "Last %{count} day"
+          other: "Last %{count} days"
+        pick_ingredients: "Ingredients to compare"
+        apply: "Show chart"
+        empty: "Select one or more ingredients above to see how their balances changed."
       global_quantity: "Company total"
       bulk_enable_all: "Enable All"
       no_stock_title: "No stock tracked"

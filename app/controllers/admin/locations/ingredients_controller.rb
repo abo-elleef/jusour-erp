@@ -8,8 +8,9 @@ module Admin
 
       def index
         authorize @location, :show?, policy_class: LocationPolicy
-        @ingredient_locations = @location.ingredient_locations
+        @all_ingredient_locations = @location.ingredient_locations
           .joins(:ingredient)
+          .merge(Ingredient.active)
           .includes(ingredient: :ingredient_category)
           .order("ingredients.name ASC")
 
@@ -18,13 +19,15 @@ module Admin
         @has_positive_stock = @location.ingredient_locations.where("quantity_on_hand > 0").exists?
 
         @stock_filter = params[:stock].presence
-        @ingredient_locations = apply_stock_filter(@ingredient_locations)
+        @ingredient_locations = apply_stock_filter(@all_ingredient_locations)
 
         assigned_ids = @location.ingredient_locations.pluck(:ingredient_id)
         @available_ingredients = Ingredient.active
           .where.not(id: assigned_ids)
           .includes(:ingredient_category)
           .order(:name)
+
+        load_balance_history_chart
       end
 
       def create
@@ -127,6 +130,19 @@ module Admin
           il.reorder_threshold = ingredient.reorder_threshold
           il.quantity_on_hand = 0
         end
+      end
+
+      def load_balance_history_chart
+        @chart_days = ::Inventory::LocationBalanceHistoryService::ALLOWED_DAYS.include?(params[:chart_days].to_i) ?
+          params[:chart_days].to_i :
+          ::Inventory::LocationBalanceHistoryService::DEFAULT_DAYS
+        @chart_ingredient_ids = Array(params[:chart_ingredient_ids]).map(&:presence).compact.uniq
+          .first(::Inventory::LocationBalanceHistoryService::MAX_INGREDIENTS)
+        @balance_history = ::Inventory::LocationBalanceHistoryService.new(
+          location: @location,
+          ingredient_ids: @chart_ingredient_ids,
+          days: @chart_days
+        ).call
       end
     end
   end

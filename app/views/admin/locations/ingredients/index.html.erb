@@ -24,7 +24,7 @@
   <div class="grid grid-cols-3 gap-4 mb-6">
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.locations.stats_ingredients") %></p>
-      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @ingredient_locations.size %></p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @all_ingredient_locations.size %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.inventory.low_stock") %></p>
@@ -35,6 +35,60 @@
       <p class="text-2xl font-bold mt-1 text-red-700 tabular-nums"><%= @out_of_stock_count %></p>
     </div>
   </div>
+
+  <% if @all_ingredient_locations.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.locations.balance_history.title") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.locations.balance_history.hint", max: Inventory::LocationBalanceHistoryService::MAX_INGREDIENTS) %></p>
+      </div>
+      <div class="p-5">
+        <%= form_with url: admin_location_ingredients_path(@location), method: :get, class: "space-y-4" do %>
+          <%= hidden_field_tag :stock, @stock_filter if @stock_filter.present? %>
+          <div class="flex flex-wrap items-end gap-4">
+            <div>
+              <label class="<%= label_class %>"><%= t("admin.locations.balance_history.range") %></label>
+              <%= select_tag :chart_days,
+                    options_for_select(
+                      Inventory::LocationBalanceHistoryService::ALLOWED_DAYS.map { |d| [t("admin.locations.balance_history.days", count: d), d] },
+                      @chart_days
+                    ),
+                    class: "#{pos_input_class} appearance-none min-w-[8rem]" %>
+            </div>
+            <%= submit_tag t("admin.locations.balance_history.apply"),
+                  class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors cursor-pointer" %>
+            <% if @chart_ingredient_ids.any? %>
+              <%= link_to t("actions.clear"), admin_location_ingredients_path(@location, stock: @stock_filter),
+                    class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+            <% end %>
+          </div>
+
+          <div>
+            <p class="<%= label_class %>"><%= t("admin.locations.balance_history.pick_ingredients") %></p>
+            <div class="max-h-40 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50/50 p-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <% @all_ingredient_locations.each do |il| %>
+                <label class="inline-flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
+                  <%= check_box_tag "chart_ingredient_ids[]", il.ingredient_id,
+                        @chart_ingredient_ids.map(&:to_s).include?(il.ingredient_id.to_s),
+                        id: "chart_ingredient_#{il.ingredient_id}",
+                        class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500" %>
+                  <span class="truncate"><%= il.ingredient.name %></span>
+                </label>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <% if @balance_history.any? %>
+          <div class="mt-5">
+            <%= line_chart @balance_history, height: "280px", library: { scales: { x: { ticks: { maxTicksLimit: 10 } } } } %>
+          </div>
+        <% else %>
+          <p class="mt-4 text-sm text-gray-500"><%= t("admin.locations.balance_history.empty") %></p>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
 
   <% if policy(@location).update? && @available_ingredients.any? %>
     <section class="rounded-2xl border border-amber-200 bg-amber-50/30 p-5 mb-6">
