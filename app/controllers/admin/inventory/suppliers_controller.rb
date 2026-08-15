@@ -43,7 +43,7 @@ module Admin
 
       # Out first, then low, near, ok — so the reorder-worthy items float to the top.
       STOCK_RANK = { out: 0, low: 1, near: 2, ok: 3 }.freeze
-      SHOW_INGREDIENT_SORT_COLUMNS = %w[ingredient balance reorder_at vendor_product unit_price preferred].freeze
+      SHOW_INGREDIENT_SORT_COLUMNS = %w[ingredient balance reorder_at max_quantity vendor_product unit_price preferred].freeze
 
       def show
         authorize_inventory!(:show)
@@ -215,7 +215,7 @@ module Admin
       end
 
       # Company-wide ingredient on-hand by default; when a location is chosen,
-      # use that location's IngredientLocation qty / reorder / stock status.
+      # use that location's IngredientLocation qty / reorder / max / stock status.
       def ingredient_balances_for(links)
         if @stock_location
           ils = IngredientLocation
@@ -224,9 +224,11 @@ module Admin
 
           links.each_with_object({}) do |link, memo|
             il = ils[link.ingredient_id]
+            source = il || link.ingredient
             memo[link.ingredient_id] = {
               quantity: il&.quantity_on_hand.to_d,
-              reorder_at: (il || link.ingredient).reorder_threshold.to_d,
+              reorder_at: source.reorder_threshold.to_d,
+              max_quantity: source.max_quantity.to_d,
               status: il&.stock_status || :out
             }
           end
@@ -236,6 +238,7 @@ module Admin
             memo[ing.id] = {
               quantity: ing.quantity_on_hand.to_d,
               reorder_at: ing.reorder_threshold.to_d,
+              max_quantity: ing.max_quantity.to_d,
               status: ing.stock_status
             }
           end
@@ -258,6 +261,8 @@ module Admin
           balance[:quantity]
         when "reorder_at"
           balance[:reorder_at]
+        when "max_quantity"
+          balance[:max_quantity]
         when "vendor_product"
           [link.vendor_product_name, link.vendor_sku].compact_blank.join(" ").downcase
         when "unit_price"

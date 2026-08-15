@@ -116,6 +116,9 @@
               <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 text-right border-b border-gray-200">
                 <span class="inline-flex justify-end w-full"><%= sort_header_link(t("inventory.suppliers.show.reorder_at"), :reorder_at, **sort_opts) %></span>
               </th>
+              <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 text-right border-b border-gray-200">
+                <span class="inline-flex justify-end w-full"><%= sort_header_link(t("inventory.suppliers.show.max_quantity"), :max_quantity, **sort_opts) %></span>
+              </th>
               <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 border-b border-gray-200"><%= sort_header_link(t("inventory.suppliers.show.vendor_product"), :vendor_product, **sort_opts) %></th>
               <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 text-right border-b border-gray-200">
                 <span class="inline-flex justify-end w-full"><%= sort_header_link(t("inventory.suppliers.show.unit_price"), :unit_price, **sort_opts) %></span>
@@ -146,6 +149,9 @@
                 </td>
                 <td class="p-3 text-right tabular-nums text-gray-500 whitespace-nowrap">
                   <%= number_with_precision(balance[:reorder_at], precision: 2, strip_insignificant_zeros: true) %>
+                </td>
+                <td class="p-3 text-right tabular-nums text-gray-500 whitespace-nowrap">
+                  <%= number_with_precision(balance[:max_quantity], precision: 2, strip_insignificant_zeros: true) %>
                 </td>
                 <td class="p-3 text-gray-700">
                   <% vendor_alias = [link.vendor_product_name, link.vendor_sku].compact_blank.join(" · ") %>

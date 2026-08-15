@@ -1082,6 +1082,7 @@ ar:
         ingredient: "المكون"
         balance: "الرصيد"
         reorder_at: "إعادة الطلب عند"
+        max_quantity: "الحد الأقصى"
         reorder_count:
           one: "صنف واحد للطلب"
           other: "%{count} أصناف للطلب"

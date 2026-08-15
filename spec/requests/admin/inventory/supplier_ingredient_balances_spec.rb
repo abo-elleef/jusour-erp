@@ -30,18 +30,23 @@ RSpec.describe "Admin::Inventory::Suppliers show ingredient balances", type: :re
   end
 
   it "shows company-wide balance by default" do
+    ingredient.update_columns(max_quantity: 20)
     get admin_inventory_supplier_path(supplier)
     expect(response).to have_http_status(:ok)
     expect(response.body).to match(/15\s*<span class="text-xs font-normal text-gray-500"/)
     expect(response.body).to include(I18n.t("inventory.suppliers.show.all_locations"))
+    expect(response.body).to include(I18n.t("inventory.suppliers.show.max_quantity"))
+    expect(response.body).to match(/>\s*20\s*</)
   end
 
   it "filters balance to the selected location" do
+    IngredientLocation.where(ingredient: ingredient, location: location_a).update_all(max_quantity: 18)
     get admin_inventory_supplier_path(supplier, location_id: location_a.id)
     expect(response).to have_http_status(:ok)
     expect(response.body).to include(I18n.t("inventory.suppliers.show.ingredients_hint_location", location: location_a.name))
     expect(response.body).to match(/12\s*<span class="text-xs font-normal text-gray-500"/)
     expect(response.body).not_to match(/15\s*<span class="text-xs font-normal text-gray-500"/)
+    expect(response.body).to match(/>\s*18\s*</)
   end
 
   it "renders a sticky ingredients table header" do

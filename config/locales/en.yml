@@ -1080,6 +1080,7 @@ en:
         ingredient: "Ingredient"
         balance: "Balance"
         reorder_at: "Reorder at"
+        max_quantity: "Max"
         reorder_count:
           one: "%{count} to reorder"
           other: "%{count} to reorder"
