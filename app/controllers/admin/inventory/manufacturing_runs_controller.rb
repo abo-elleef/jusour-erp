@@ -9,9 +9,15 @@ module Admin
 
       def index
         authorize_inventory_index!(ManufacturingRun)
-        @runs = ManufacturingRun.includes(:manufacturing_template, :user, :location, :reversed_by, manufacturing_template: :output_ingredient)
-          .recent
-          .limit(100)
+        @view = params[:view].to_s == "daily" ? "daily" : "runs"
+
+        if @view == "daily"
+          load_daily_view
+        else
+          @runs = ManufacturingRun.includes(:manufacturing_template, :user, :location, :reversed_by, manufacturing_template: :output_ingredient)
+            .recent
+            .limit(100)
+        end
       end
 
       def new
@@ -50,6 +56,24 @@ module Admin
       end
 
       private
+
+      def load_daily_view
+        @day = parse_daily_date(params[:date])
+        day_runs = ManufacturingRun
+          .where(occurred_on: @day, reversed_at: nil)
+          .includes(:location, :user, manufacturing_template: :output_ingredient)
+          .recent
+        @daily_rows = ::Inventory::DailyProductionSummaryService.new(runs: day_runs).call
+      end
+
+      def parse_daily_date(raw)
+        day = begin
+          Date.parse(raw.to_s)
+        rescue ArgumentError, TypeError
+          Date.current
+        end
+        [day, Date.current].min
+      end
 
       def set_run
         @run = ManufacturingRun.find(params[:id])

@@ -1,0 +1,72 @@
+<% cell = "border border-gray-800 print:border-black p-2.5 text-center align-middle" %>
+<% th_item = "#{cell} bg-emerald-100 text-emerald-950 font-bold text-sm" %>
+<% th_unit = "#{cell} bg-amber-100 text-amber-950 font-bold text-sm" %>
+<% th_count = "#{cell} bg-rose-100 text-rose-950 font-bold text-sm" %>
+<% th_notes = "#{cell} bg-rose-100 text-rose-950 font-bold text-sm" %>
+<% td_item = "#{cell} bg-emerald-50/80 text-gray-900 font-semibold" %>
+<% td_unit = "#{cell} bg-amber-50/60 text-gray-800" %>
+<% td_count = "#{cell} bg-rose-50/50 text-gray-900 tabular-nums font-bold text-base" %>
+<% td_notes = "#{cell} bg-rose-50/50 text-gray-700 text-sm" %>
+
+<div class="max-w-3xl print:max-w-none">
+  <div class="flex flex-wrap items-end justify-between gap-3 mb-4 print:hidden">
+    <%= form_with url: admin_inventory_manufacturing_runs_path, method: :get, class: "flex flex-wrap items-end gap-3" do %>
+      <%= hidden_field_tag :view, "daily" %>
+      <div>
+        <%= label_tag :date, t("inventory.manufacturing.runs.pick_date"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= date_field_tag :date, @day, max: Date.current,
+              class: "min-h-11 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
+      </div>
+      <%= submit_tag t("inventory.manufacturing.runs.show_day"),
+            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors cursor-pointer" %>
+    <% end %>
+    <% if @daily_rows.any? %>
+      <button type="button" onclick="window.print()"
+            class="inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors cursor-pointer">
+        <%= t("inventory.manufacturing.runs.print") %>
+      </button>
+    <% end %>
+  </div>
+
+  <section class="overflow-hidden border border-gray-800 print:border-black bg-white">
+    <div class="border-b border-gray-800 print:border-black bg-sky-200 px-4 py-3 text-center">
+      <h2 class="text-base sm:text-lg font-bold text-sky-950 tracking-wide">
+        <%= t("inventory.manufacturing.runs.card_title") %>
+      </h2>
+      <p class="text-xs text-sky-900 mt-0.5 tabular-nums"><%= l(@day, format: :long) %></p>
+    </div>
+
+    <% if @daily_rows.any? %>
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr>
+            <th class="<%= th_item %> w-[32%]"><%= t("inventory.manufacturing.runs.card_item") %></th>
+            <th class="<%= th_unit %> w-[18%]"><%= t("inventory.manufacturing.runs.card_unit") %></th>
+            <th class="<%= th_count %> w-[18%]"><%= t("inventory.manufacturing.runs.card_count") %></th>
+            <th class="<%= th_notes %>"><%= t("inventory.manufacturing.runs.card_notes") %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @daily_rows.each do |row| %>
+            <tr>
+              <td class="<%= td_item %>"><%= row.ingredient.name %></td>
+              <td class="<%= td_unit %>"><%= ingredient_unit_label(row.unit) %></td>
+              <td class="<%= td_count %>">
+                <%= number_with_precision(row.total_quantity, precision: 3, strip_insignificant_zeros: true) %>
+              </td>
+              <td class="<%= td_notes %>">
+                <% if row.notes.any? %>
+                  <%= row.notes.join(" / ") %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="p-10 text-center text-sm text-gray-500">
+        <%= t("inventory.manufacturing.runs.daily_empty", date: l(@day, format: :long)) %>
+      </p>
+    <% end %>
+  </section>
+</div>
