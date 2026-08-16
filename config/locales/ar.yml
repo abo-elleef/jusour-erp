@@ -284,6 +284,13 @@ ar:
       sell_serve: "البيع والخدمة"
       stock_finance: "المخزون والمالية"
       launch: "التطبيقات"
+    sidebar_theme:
+      title: "ألوان القائمة"
+      background: "الخلفية"
+      text: "النص"
+      reset: "إعادة الافتراضي"
+      show: "ألوان القائمة"
+      hide: "إخفاء الألوان"
 
   order:
     types:

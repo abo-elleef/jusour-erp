@@ -10,12 +10,23 @@
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <%= javascript_include_tag "Chart.bundle", "chartkick" %>
+    <%# Apply saved sidebar colors before paint to avoid a flash of the default theme. %>
+    <script>
+      (function () {
+        try {
+          var bg = localStorage.getItem("saqr.sidebar.bg");
+          var text = localStorage.getItem("saqr.sidebar.text");
+          if (bg) document.documentElement.style.setProperty("--sidebar-bg", bg);
+          if (text) document.documentElement.style.setProperty("--sidebar-text", text);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body class="bg-gray-50 flex h-screen overflow-hidden" data-controller="sidebar">
-    <aside class="fixed inset-y-0 start-0 z-30 w-60 bg-gray-900 text-white flex flex-col transition-transform duration-200 ease-in-out shrink-0 sidebar-panel--closed lg:relative"
+    <aside class="admin-sidebar fixed inset-y-0 start-0 z-30 w-60 flex flex-col transition-transform duration-200 ease-in-out shrink-0 sidebar-panel--closed lg:relative"
            data-sidebar-target="panel">
       <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between gap-2">
-        <span class="font-bold text-lg"><%= t("app.admin_name") %></span>
+        <span class="font-bold text-lg text-white"><%= t("app.admin_name") %></span>
         <% if current_user.can_access_admin? %>
           <%= link_to admin_notifications_path,
                 class: "relative p-1.5 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800 transition-colors",
@@ -30,11 +41,12 @@
           <% end %>
         <% end %>
       </div>
-      <nav class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-0.5 text-sm">
+      <nav class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-0.5 text-sm text-white">
         <%= render "admin/nav" %>
       </nav>
       <div class="px-4 py-4 border-t border-gray-800">
         <%= render "shared/locale_switcher", theme: :dark %>
+        <%= render "shared/sidebar_theme" %>
         <%= button_to t("actions.sign_out"), destroy_user_session_path, method: :delete,
               class: "mt-3 text-sm text-gray-300 hover:text-white w-full text-start" %>
       </div>

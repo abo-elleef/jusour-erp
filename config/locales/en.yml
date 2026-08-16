@@ -284,6 +284,13 @@ en:
       sell_serve: "Sell & serve"
       stock_finance: "Stock & finance"
       launch: "Launch"
+    sidebar_theme:
+      title: "Sidebar colors"
+      background: "Background"
+      text: "Text"
+      reset: "Reset to default"
+      show: "Sidebar colors"
+      hide: "Hide colors"
 
   order:
     types:

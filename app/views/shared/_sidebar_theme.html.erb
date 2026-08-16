@@ -1,0 +1,50 @@
+<%# Browser-only sidebar colors (localStorage). Hidden until the user opens them. %>
+<div class="sidebar-theme-controls mt-3" data-controller="sidebar-theme"
+     data-sidebar-theme-show-label-value="<%= t("nav.sidebar_theme.show") %>"
+     data-sidebar-theme-hide-label-value="<%= t("nav.sidebar_theme.hide") %>">
+  <button type="button"
+          data-action="sidebar-theme#togglePanel"
+          data-sidebar-theme-target="toggle"
+          aria-expanded="false"
+          class="text-[11px] font-semibold underline underline-offset-2 opacity-70 hover:opacity-100">
+    <%= t("nav.sidebar_theme.show") %>
+  </button>
+
+  <div class="mt-2 space-y-2 hidden" data-sidebar-theme-target="panel" hidden>
+    <p class="text-[11px] font-semibold uppercase tracking-wide opacity-70 px-0.5">
+      <%= t("nav.sidebar_theme.title") %>
+    </p>
+    <div class="grid grid-cols-2 gap-2">
+      <label class="flex flex-col gap-1 text-[11px] opacity-80">
+        <span><%= t("nav.sidebar_theme.background") %></span>
+        <input type="color"
+               value="#111827"
+               data-sidebar-theme-target="bgInput"
+               data-action="input->sidebar-theme#changeBg"
+               class="h-9 w-full cursor-pointer rounded-lg border border-gray-600 bg-transparent p-0.5"
+               aria-label="<%= t("nav.sidebar_theme.background") %>">
+      </label>
+      <label class="flex flex-col gap-1 text-[11px] opacity-80">
+        <span><%= t("nav.sidebar_theme.text") %></span>
+        <input type="color"
+               value="#f3f4f6"
+               data-sidebar-theme-target="textInput"
+               data-action="input->sidebar-theme#changeText"
+               class="h-9 w-full cursor-pointer rounded-lg border border-gray-600 bg-transparent p-0.5"
+               aria-label="<%= t("nav.sidebar_theme.text") %>">
+      </label>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <button type="button"
+              data-action="sidebar-theme#reset"
+              class="text-[11px] underline underline-offset-2 opacity-70 hover:opacity-100">
+        <%= t("nav.sidebar_theme.reset") %>
+      </button>
+      <button type="button"
+              data-action="sidebar-theme#hidePanel"
+              class="text-[11px] underline underline-offset-2 opacity-70 hover:opacity-100">
+        <%= t("nav.sidebar_theme.hide") %>
+      </button>
+    </div>
+  </div>
+</div>

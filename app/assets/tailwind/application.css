@@ -1,5 +1,59 @@
 @import "tailwindcss";
 
+/* Admin sidebar theme — defaults match today's dark navy; overridable via
+   localStorage-backed CSS variables (see sidebar_theme_controller). */
+:root {
+  --sidebar-bg: #111827;
+  --sidebar-text: #f3f4f6;
+}
+
+.admin-sidebar {
+  background-color: var(--sidebar-bg) !important;
+  color: var(--sidebar-text) !important;
+}
+
+/* Remap the hard-coded gray utilities used inside the sidebar so both
+   background and text pickers affect hover/active/muted/border tones. */
+.admin-sidebar .bg-gray-900 {
+  background-color: var(--sidebar-bg) !important;
+}
+.admin-sidebar .bg-gray-800,
+.admin-sidebar .hover\:bg-gray-800:hover {
+  background-color: color-mix(in srgb, var(--sidebar-text) 14%, var(--sidebar-bg)) !important;
+}
+.admin-sidebar .bg-gray-700,
+.admin-sidebar .hover\:bg-gray-700:hover {
+  background-color: color-mix(in srgb, var(--sidebar-text) 20%, var(--sidebar-bg)) !important;
+}
+
+.admin-sidebar .text-white,
+.admin-sidebar .hover\:text-white:hover {
+  color: var(--sidebar-text) !important;
+}
+.admin-sidebar .text-gray-200,
+.admin-sidebar .hover\:text-gray-200:hover {
+  color: color-mix(in srgb, var(--sidebar-text) 88%, transparent) !important;
+}
+.admin-sidebar .text-gray-300,
+.admin-sidebar .hover\:text-gray-300:hover {
+  color: color-mix(in srgb, var(--sidebar-text) 72%, transparent) !important;
+}
+.admin-sidebar .text-gray-400 {
+  color: color-mix(in srgb, var(--sidebar-text) 55%, transparent) !important;
+}
+
+.admin-sidebar .border-gray-800 {
+  border-color: color-mix(in srgb, var(--sidebar-text) 16%, transparent) !important;
+}
+.admin-sidebar .border-gray-700 {
+  border-color: color-mix(in srgb, var(--sidebar-text) 22%, transparent) !important;
+}
+
+/* Keep language pills and color pickers readable regardless of theme. */
+.admin-sidebar .sidebar-theme-controls {
+  color: var(--sidebar-text);
+}
+
 /* RTL layout support when locale is Arabic */
 [dir="rtl"] th,
 [dir="rtl"] td {
