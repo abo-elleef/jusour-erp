@@ -21,6 +21,9 @@
     </div>
   </div>
 
+  <% filter_q = params[:q]&.to_unsafe_h %>
+  <% index_filter_params = { q: filter_q, stock: @stock_filter, status: @status, supplier_id: @supplier_id, sort: @sort, dir: @direction }.compact %>
+
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <%= link_to admin_inventory_ingredients_path(sort: @sort, dir: @direction),
           class: "bg-white rounded-lg shadow p-4 border-2 transition-colors #{@stock_filter.blank? && !@filtered ? 'border-amber-400 ring-1 ring-amber-200' : 'border-transparent hover:border-gray-200'}" do %>
@@ -28,21 +31,21 @@
       <p class="text-2xl font-bold mt-1"><%= @total_ingredients %></p>
     <% end %>
 
-    <%= link_to admin_inventory_ingredients_path(stock: "low", q: params[:q]&.to_unsafe_h, sort: @sort, dir: @direction),
+    <%= link_to admin_inventory_ingredients_path(index_filter_params.merge(stock: "low")),
           class: "bg-white rounded-lg shadow p-4 border-2 transition-colors #{@stock_filter == 'low' ? 'border-red-400 ring-1 ring-red-200' : 'border-transparent hover:border-red-200'}" do %>
       <p class="text-sm text-gray-500"><%= t("inventory.ingredients.index.stats.low_stock") %></p>
       <p class="text-2xl font-bold mt-1 text-red-600"><%= @low_stock_count %></p>
       <p class="text-xs text-amber-600 mt-1"><%= t("inventory.ingredients.index.stats.click_to_filter") %></p>
     <% end %>
 
-    <%= link_to admin_inventory_ingredients_path(stock: "out", q: params[:q]&.to_unsafe_h, sort: @sort, dir: @direction),
+    <%= link_to admin_inventory_ingredients_path(index_filter_params.merge(stock: "out")),
           class: "bg-white rounded-lg shadow p-4 border-2 transition-colors #{@stock_filter == 'out' ? 'border-red-500 ring-1 ring-red-200' : 'border-transparent hover:border-red-200'}" do %>
       <p class="text-sm text-gray-500"><%= t("inventory.ingredients.index.stats.out_of_stock") %></p>
       <p class="text-2xl font-bold mt-1 text-red-700"><%= @out_of_stock_count %></p>
       <p class="text-xs text-amber-600 mt-1"><%= t("inventory.ingredients.index.stats.click_to_filter") %></p>
     <% end %>
 
-    <%= link_to admin_inventory_ingredients_path(stock: "expiring", q: params[:q]&.to_unsafe_h, sort: @sort, dir: @direction),
+    <%= link_to admin_inventory_ingredients_path(index_filter_params.merge(stock: "expiring")),
           class: "bg-white rounded-lg shadow p-4 border-2 transition-colors #{@stock_filter == 'expiring' ? 'border-orange-400 ring-1 ring-orange-200' : 'border-transparent hover:border-orange-200'}" do %>
       <p class="text-sm text-gray-500"><%= t("inventory.ingredients.index.stats.expiring") %></p>
       <p class="text-2xl font-bold mt-1 text-orange-600"><%= @expiring_count %></p>
@@ -54,7 +57,7 @@
     <span class="text-gray-500 me-1"><%= t("inventory.ingredients.index.status_filter") %>:</span>
     <% [["active", "status_active"], ["inactive", "status_inactive"], ["all", "status_all"]].each do |val, key| %>
       <%= link_to t("inventory.ingredients.index.#{key}"),
-            admin_inventory_ingredients_path(status: val, q: params[:q]&.to_unsafe_h, stock: @stock_filter, sort: @sort, dir: @direction),
+            admin_inventory_ingredients_path(index_filter_params.merge(status: val)),
             class: "px-3 py-1.5 rounded-lg font-medium border transition-colors #{@status == val ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" %>
     <% end %>
   </div>
@@ -66,16 +69,26 @@
       <%= hidden_field_tag :sort, @sort if @sort != "name" %>
       <%= hidden_field_tag :dir, @direction if @direction != "asc" || @sort != "name" %>
       <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-        <div class="md:col-span-6">
+        <div class="md:col-span-4">
           <%= f.label :name_or_code_cont, t("inventory.ingredients.index.search_label"), class: "block text-sm font-medium text-gray-700 mb-1" %>
           <%= f.search_field :name_or_code_cont,
                 placeholder: t("inventory.ingredients.index.search_placeholder"),
                 class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
         </div>
-        <div class="md:col-span-4">
+        <div class="md:col-span-3">
           <%= f.label :ingredient_category_id_eq, t("inventory.ingredients.index.category"), class: "block text-sm font-medium text-gray-700 mb-1" %>
           <%= f.collection_select :ingredient_category_id_eq, IngredientCategory.ordered, :id, :name,
                 { include_blank: t("inventory.ingredients.index.all_categories") },
+                class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+        </div>
+        <div class="md:col-span-3">
+          <%= label_tag :supplier_id, t("inventory.ingredients.index.supplier"), class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <%= select_tag :supplier_id,
+                options_for_select(
+                  [[t("inventory.ingredients.index.no_supplier"), "none"]] + @suppliers.map { |s| [s.name, s.id] },
+                  @supplier_id
+                ),
+                include_blank: t("inventory.ingredients.index.all_suppliers"),
                 class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
         </div>
         <div class="md:col-span-2 flex gap-2">
@@ -89,17 +102,17 @@
         <% if @stock_filter == "low" %>
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-xs font-medium">
             <%= t("inventory.ingredients.index.stats.low_stock") %>
-            <%= link_to "×", admin_inventory_ingredients_path(q: params[:q]&.to_unsafe_h, sort: @sort, dir: @direction), class: "hover:text-red-900 ml-0.5", aria: { label: t("inventory.ingredients.index.remove_low_stock_filter") } %>
+            <%= link_to "×", admin_inventory_ingredients_path(index_filter_params.except(:stock)), class: "hover:text-red-900 ml-0.5", aria: { label: t("inventory.ingredients.index.remove_low_stock_filter") } %>
           </span>
         <% elsif @stock_filter == "out" %>
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-xs font-medium">
             <%= t("inventory.ingredients.index.stats.out_of_stock") %>
-            <%= link_to "×", admin_inventory_ingredients_path(q: params[:q]&.to_unsafe_h, sort: @sort, dir: @direction), class: "hover:text-red-900 ml-0.5", aria: { label: t("inventory.ingredients.index.remove_out_of_stock_filter") } %>
+            <%= link_to "×", admin_inventory_ingredients_path(index_filter_params.except(:stock)), class: "hover:text-red-900 ml-0.5", aria: { label: t("inventory.ingredients.index.remove_out_of_stock_filter") } %>
           </span>
         <% elsif @stock_filter == "expiring" %>
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 text-xs font-medium">
             <%= t("inventory.ingredients.index.expiring_within_days", days: StockBatch::EXPIRING_SOON_DAYS) %>
-            <%= link_to "×", admin_inventory_ingredients_path(q: params[:q]&.to_unsafe_h, sort: @sort, dir: @direction), class: "hover:text-orange-900 ml-0.5", aria: { label: t("inventory.ingredients.index.remove_expiring_filter") } %>
+            <%= link_to "×", admin_inventory_ingredients_path(index_filter_params.except(:stock)), class: "hover:text-orange-900 ml-0.5", aria: { label: t("inventory.ingredients.index.remove_expiring_filter") } %>
           </span>
         <% end %>
         <span class="text-gray-500">

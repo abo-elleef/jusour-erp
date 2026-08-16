@@ -14,17 +14,20 @@ module Admin
 
         @stock_filter = params[:stock].presence
         @status = %w[active inactive all].include?(params[:status]) ? params[:status] : "active"
+        @supplier_id = resolve_supplier_filter(params[:supplier_id])
         @sort = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : "name"
         @direction = params[:dir].to_s == "desc" ? "desc" : "asc"
         @q = Ingredient.ransack(params[:q])
         scope = @q.result.includes(:ingredient_category, :suppliers, :unit_ref)
         scope = scope.active if @status == "active"
         scope = scope.where(active: false) if @status == "inactive"
+        scope = apply_supplier_filter(scope)
         @ingredients = apply_sort(apply_stock_filter(scope))
 
         respond_to do |format|
           format.html do
-            @filtered = @stock_filter.present? || params[:q].present? || @status != "active"
+            @suppliers = Supplier.active.order(:name)
+            @filtered = @stock_filter.present? || params[:q].present? || @status != "active" || @supplier_id.present?
             @low_stock_count = Ingredient.active.low_stock.count
             @out_of_stock_count = Ingredient.active.out_of_stock.count
             @expiring_count = Ingredient.active.expiring_soon.count
@@ -213,6 +216,26 @@ module Admin
         when "out" then scope.out_of_stock
         when "expiring" then scope.expiring_soon.includes(:stock_batches)
         else scope
+        end
+      end
+
+      # Blank = all; "none" = no supplier_ingredients; otherwise a specific active supplier.
+      def resolve_supplier_filter(raw)
+        value = raw.to_s.presence
+        return if value.blank?
+        return "none" if value == "none"
+
+        Supplier.active.find_by(id: value)&.id
+      end
+
+      def apply_supplier_filter(scope)
+        case @supplier_id
+        when "none"
+          scope.where.missing(:supplier_ingredients)
+        when nil
+          scope
+        else
+          scope.where(id: SupplierIngredient.where(supplier_id: @supplier_id).select(:ingredient_id))
         end
       end
 
