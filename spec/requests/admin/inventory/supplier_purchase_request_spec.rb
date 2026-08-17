@@ -55,14 +55,14 @@ RSpec.describe "Admin::Inventory::Suppliers purchase request", type: :request do
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("Chicken")
     expect(response.body).to include("Whole Chicken")
-    expect(response.body).to include(number_with_precision(6, precision: 3))
+    expect(response.body).to include("6")
   end
 
   it "uses location max and balance when filtered" do
     get purchase_request_admin_inventory_supplier_path(supplier, location_id: location.id)
     expect(response).to have_http_status(:ok)
     expect(response.body).to include(location.name)
-    expect(response.body).to include(number_with_precision(6, precision: 3)) # 8 - 2
+    expect(response.body).to include("6") # 8 - 2
   end
 
   it "exports CSV rows for suggested lines" do

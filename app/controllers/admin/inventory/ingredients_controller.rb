@@ -344,7 +344,7 @@ module Admin
         permitted = params.require(:ingredient).permit(
           :name, :code, :ingredient_category_id, :unit_id, :reorder_threshold, :max_quantity,
           :quantity_on_hand, :cost_per_unit_dollars, :active, :shelf_life_days,
-          ingredient_units_attributes: %i[id unit_id base_units_per_unit _destroy]
+          ingredient_units_attributes: %i[id unit_id base_units_per_unit purchase_unit _destroy]
         )
         dollars = permitted.delete(:cost_per_unit_dollars)
         permitted[:cost_per_unit_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round

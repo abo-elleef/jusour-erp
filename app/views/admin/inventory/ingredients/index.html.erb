@@ -185,6 +185,9 @@
                 <% else %>
                   <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.index.reorder_at", threshold: ingredient.reorder_threshold) %></p>
                 <% end %>
+                <% if ingredient.max_quantity.positive? %>
+                  <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.index.max_at", quantity: ingredient.max_quantity) %></p>
+                <% end %>
               </td>
               <td class="p-3 text-gray-600 max-w-[200px]">
                 <%= ingredient_suppliers_summary(ingredient) %>

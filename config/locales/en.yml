@@ -743,6 +743,8 @@ en:
         hint: "Add units you buy or measure this ingredient in. Stock, recipes, and costs stay in the base unit above; these convert into it."
         unit: "Unit"
         factor: "%{base} per unit"
+        purchase_unit: "Purchase unit"
+        purchase_unit_hint: "Use this unit on vendor purchase requests (whole units, rounded up)."
         add: "Add unit"
       index:
         description: "Track stock levels, suppliers, and ingredient costs."
@@ -773,6 +775,7 @@ en:
         remove_expiring_filter: "Remove expiring soon filter"
         expiring_within_days: "Expiring within %{days} days"
         reorder_at: "Reorder at %{threshold}"
+        max_at: "Max %{quantity}"
         reorder_tooltip: "Reorder at %{threshold} %{unit}"
         assign_supplier: "Assign"
         adjust: "Adjust"
@@ -871,6 +874,7 @@ en:
           on_hand: "On hand"
           base: "Base"
           alternate: "Alternate"
+          purchase: "Purchase"
           conversion_eq: "1 %{unit} = %{qty} %{base}"
           base_kept: "Stock is kept in this unit"
         shelf_life_days:

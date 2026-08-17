@@ -62,4 +62,34 @@ RSpec.describe Inventory::SupplierPurchaseRequestService do
 
     expect(described_class.new(supplier: supplier, location: location).call).to eq([])
   end
+
+  it "converts quantities to the purchase unit with ceiling on requested qty" do
+    ingredient = make_ingredient(name: "Oil", on_hand: 1500, max: 10_000)
+    ingredient.ingredient_units.create!(
+      unit: "gallons",
+      base_units_per_unit: 3785,
+      purchase_unit: true,
+      company: company
+    )
+
+    lines = described_class.new(supplier: supplier).call
+    line = lines.sole
+
+    expect(line.display_unit).to eq("gallons")
+    expect(line.balance).to be_within(0.001).of(1500 / 3785.0)
+    expect(line.max_quantity).to be_within(0.001).of(10_000 / 3785.0)
+    expect(line.requested_quantity).to eq(((10_000 - 1500) / 3785.0).ceil)
+    expect(line.requested_whole_units).to be(true)
+    expect(line.estimated_cents).to eq(500 * line.requested_quantity)
+  end
+
+  it "falls back to the base unit when no purchase unit is set" do
+    make_ingredient(name: "Chicken", on_hand: 4, max: 10)
+
+    line = described_class.new(supplier: supplier).call.sole
+
+    expect(line.display_unit).to eq("kg")
+    expect(line.requested_quantity).to eq(6)
+    expect(line.requested_whole_units).to be(false)
+  end
 end

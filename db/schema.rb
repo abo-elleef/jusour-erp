@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_15_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_17_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -430,8 +430,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_15_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "unit_id", null: false
+    t.boolean "purchase_unit", default: false, null: false
     t.index ["company_id"], name: "index_ingredient_units_on_company_id"
     t.index ["ingredient_id"], name: "index_ingredient_units_on_ingredient_id"
+    t.index ["ingredient_id"], name: "index_ingredient_units_one_purchase_unit_per_ingredient", unique: true, where: "(purchase_unit = true)"
     t.index ["unit_id"], name: "index_ingredient_units_on_unit_id"
   end
 

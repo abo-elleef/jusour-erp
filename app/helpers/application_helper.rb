@@ -530,6 +530,11 @@ module ApplicationHelper
     t("inventory.unit_labels.#{unit}", default: unit.to_s)
   end
 
+  def format_purchase_request_qty(quantity, whole_units: false)
+    precision = whole_units ? 0 : 3
+    number_with_precision(quantity, precision: precision, strip_insignificant_zeros: true)
+  end
+
   # Render a stock adjustment's delta in the unit it was entered (system
   # adjustments are base-unit), with a base-unit helper line when they differ.
   def stock_adjustment_quantity(adjustment)

@@ -135,6 +135,16 @@ class Ingredient < ApplicationRecord
     quantity.to_d / factor
   end
 
+  # Alternate unit flagged for vendor purchase requests; nil when using the base unit.
+  def purchase_unit_record
+    ingredient_units.find(&:purchase_unit?)
+  end
+
+  # Unit name used on purchase requests (alternate purchase unit, or base when unset).
+  def purchase_unit
+    purchase_unit_record&.unit || unit
+  end
+
   # Map a unit name or I18n label onto one of this ingredient's available units.
   def canonicalize_unit(for_unit)
     return unit if for_unit.blank?

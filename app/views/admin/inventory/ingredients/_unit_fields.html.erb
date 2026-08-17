@@ -20,6 +20,13 @@
     </div>
     <span class="text-sm text-gray-500 pb-2"><%= base_label %></span>
   </div>
+  <div class="pb-2">
+    <label class="inline-flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer">
+      <%= f.check_box :purchase_unit, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500" %>
+      <%= t("inventory.ingredients.alternate_units.purchase_unit") %>
+    </label>
+    <p class="text-xs text-gray-500 mt-0.5 max-w-xs"><%= t("inventory.ingredients.alternate_units.purchase_unit_hint") %></p>
+  </div>
   <button type="button" data-action="ingredient-units#remove"
           class="text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg border border-red-200">
     <%= t("actions.remove") %>

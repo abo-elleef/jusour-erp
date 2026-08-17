@@ -743,6 +743,8 @@ ar:
         hint: "أضف الوحدات التي تشتري أو تقيس بها هذا المكوّن. يبقى المخزون والوصفات والتكاليف بالوحدة الأساسية أعلاه، وتُحوَّل هذه الوحدات إليها."
         unit: "الوحدة"
         factor: "%{base} لكل وحدة"
+        purchase_unit: "وحدة الشراء"
+        purchase_unit_hint: "تُستخدم في طلبات الشراء من المورد (وحدات كاملة، تقريب لأعلى)."
         add: "إضافة وحدة"
       index:
         description: "متابعة مستويات المخزون والموردين وتكلفة المكونات."
@@ -773,6 +775,7 @@ ar:
         remove_expiring_filter: "إزالة تصفية قرب انتهاء الصلاحية"
         expiring_within_days: "ينتهي خلال %{days} أيام"
         reorder_at: "إعادة الطلب عند %{threshold}"
+        max_at: "الحد الأقصى %{quantity}"
         reorder_tooltip: "إعادة الطلب عند %{threshold} %{unit}"
         assign_supplier: "ربط مورد"
         adjust: "تعديل"
@@ -871,6 +874,7 @@ ar:
           on_hand: "المتوفر"
           base: "أساسية"
           alternate: "بديلة"
+          purchase: "شراء"
           conversion_eq: "1 %{unit} = %{qty} %{base}"
           base_kept: "يُحفظ المخزون بهذه الوحدة"
         shelf_life_days:

@@ -15,7 +15,13 @@ class IngredientUnit < ApplicationRecord
   validate :unit_differs_from_base
   validate :unit_belongs_to_company
 
+  before_save :clear_other_purchase_units, if: :purchase_unit?
+
   private
+
+  def clear_other_purchase_units
+    ingredient.ingredient_units.where.not(id: id).update_all(purchase_unit: false)
+  end
 
   def unit_differs_from_base
     return if ingredient.blank? || unit_id.blank?

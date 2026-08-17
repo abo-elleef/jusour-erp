@@ -182,7 +182,7 @@ module Admin
               line.ingredient.code,
               link.vendor_product_name,
               link.vendor_sku,
-              line.ingredient.unit,
+              line.display_unit,
               line.balance,
               line.max_quantity,
               line.requested_quantity,

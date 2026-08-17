@@ -24,6 +24,15 @@ RSpec.describe "Ingredient units and conversion", type: :model do
       dup = oil.ingredient_units.build(unit: "gallons", base_units_per_unit: 3785, company: Current.company)
       expect(dup).not_to be_valid
     end
+
+    it "allows only one purchase unit per ingredient" do
+      first = oil.ingredient_units.create!(unit: "gallons", base_units_per_unit: 3785, purchase_unit: true, company: Current.company)
+      second = oil.ingredient_units.create!(unit: "liters", base_units_per_unit: 1000, purchase_unit: true, company: Current.company)
+
+      expect(first.reload.purchase_unit?).to be(false)
+      expect(second.reload.purchase_unit?).to be(true)
+      expect(oil.purchase_unit).to eq("liters")
+    end
   end
 
   describe "conversion helpers" do

@@ -92,9 +92,15 @@
           <tr class="hover:bg-gray-100 transition-colors">
             <td class="p-3 ps-5 font-semibold text-gray-900"><%= base_label %></td>
             <td class="p-3">
-              <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
-                <%= t("inventory.ingredients.show.units.base") %>
-              </span>
+              <% if @ingredient.purchase_unit_record.nil? %>
+                <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200">
+                  <%= t("inventory.ingredients.show.units.purchase") %>
+                </span>
+              <% else %>
+                <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                  <%= t("inventory.ingredients.show.units.base") %>
+                </span>
+              <% end %>
             </td>
             <td class="p-3 text-gray-500"><%= t("inventory.ingredients.show.units.base_kept") %></td>
             <td class="p-3 pe-5 text-end tabular-nums text-gray-900">
@@ -109,9 +115,15 @@
             <tr class="hover:bg-gray-100 transition-colors">
               <td class="p-3 ps-5 font-medium text-gray-900"><%= alt_label %></td>
               <td class="p-3">
-                <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-                  <%= t("inventory.ingredients.show.units.alternate") %>
-                </span>
+                <% if iu.purchase_unit? %>
+                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200">
+                    <%= t("inventory.ingredients.show.units.purchase") %>
+                  </span>
+                <% else %>
+                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                    <%= t("inventory.ingredients.show.units.alternate") %>
+                  </span>
+                <% end %>
               </td>
               <td class="p-3 text-gray-700 tabular-nums">
                 <%= t("inventory.ingredients.show.units.conversion_eq", unit: alt_label, qty: factor, base: base_label) %>

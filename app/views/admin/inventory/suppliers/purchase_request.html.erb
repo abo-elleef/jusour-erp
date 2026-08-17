@@ -56,7 +56,10 @@
               <% link = line.supplier_ingredient %>
               <tr>
                 <td class="border border-gray-300 print:border-gray-400 p-3">
-                  <p class="font-semibold text-gray-900"><%= line.ingredient.name %></p>
+                  <p class="font-semibold text-gray-900">
+                    <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient),
+                          class: "text-blue-600 hover:underline print:text-gray-900 print:no-underline" %>
+                  </p>
                   <p class="text-xs text-gray-500 font-mono mt-0.5"><%= line.ingredient.code %></p>
                 </td>
                 <td class="border border-gray-300 print:border-gray-400 p-3 text-gray-700">
@@ -67,10 +70,10 @@
                     <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
                   <% end %>
                 </td>
-                <td class="border border-gray-300 print:border-gray-400 p-3 text-gray-700"><%= ingredient_unit_label(line.ingredient.unit) %></td>
-                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.balance, precision: 3) %></td>
-                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums text-gray-700"><%= number_with_precision(line.max_quantity, precision: 3) %></td>
-                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums font-semibold text-gray-900"><%= number_with_precision(line.requested_quantity, precision: 3) %></td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-gray-700"><%= ingredient_unit_label(line.display_unit) %></td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums text-gray-700"><%= format_purchase_request_qty(line.balance, whole_units: line.requested_whole_units) %></td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums text-gray-700"><%= format_purchase_request_qty(line.max_quantity, whole_units: line.requested_whole_units) %></td>
+                <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums font-semibold text-gray-900"><%= format_purchase_request_qty(line.requested_quantity, whole_units: line.requested_whole_units) %></td>
                 <td class="border border-gray-300 print:border-gray-400 p-3 text-end tabular-nums text-gray-700">
                   <% if link.price_cents.to_i.positive? %>
                     <%= format_money(link.price_cents) %>
