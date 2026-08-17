@@ -90,3 +90,36 @@ RSpec.describe "Admin::Inventory::Ingredients index supplier filter", type: :req
     expect(response.body).to include("Other Spice")
   end
 end
+
+RSpec.describe "Admin::Inventory::Ingredients index missing stock settings", type: :request do
+  include Devise::Test::IntegrationHelpers
+
+  let(:company) { create(:company) }
+  let(:owner) { create(:user, :owner, company: company) }
+  let(:category) { create(:ingredient_category, company: company) }
+
+  before do
+    Current.company = company
+    sign_in owner
+  end
+
+  it "prompts when reorder at and max are unset" do
+    create(:ingredient, company: company, ingredient_category: category, name: "Unset Oil",
+      reorder_threshold: 0, max_quantity: 0)
+
+    get admin_inventory_ingredients_path
+    expect(response.body).to include(I18n.t("inventory.ingredients.index.reorder_missing"))
+    expect(response.body).to include(I18n.t("inventory.ingredients.index.max_missing"))
+  end
+
+  it "does not prompt when reorder at and max are set" do
+    create(:ingredient, company: company, ingredient_category: category, name: "Set Flour",
+      reorder_threshold: 3, max_quantity: 20)
+
+    get admin_inventory_ingredients_path
+    expect(response.body).not_to include(I18n.t("inventory.ingredients.index.reorder_missing"))
+    expect(response.body).not_to include(I18n.t("inventory.ingredients.index.max_missing"))
+    expect(response.body).to include(I18n.t("inventory.ingredients.index.reorder_at", threshold: 3))
+    expect(response.body).to include(I18n.t("inventory.ingredients.index.max_at", quantity: 20))
+  end
+end
