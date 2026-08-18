@@ -1,11 +1,43 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["list", "template", "row", "destroy", "unitSelect"]
+  static targets = ["list", "template", "row", "destroy", "unitSelect", "groupToggle"]
   static values = {
     availableUnits: Object,
     ingredientCategories: Object,
-    uncategorized: { type: String, default: "Uncategorized" }
+    uncategorized: { type: String, default: "Uncategorized" },
+    grouped: { type: Boolean, default: false }
+  }
+
+  groupedValueChanged() {
+    this.applyGrouping()
+    this.updateToggleButtons()
+  }
+
+  toggleGrouping(event) {
+    event.preventDefault()
+    this.groupedValue = !this.groupedValue
+  }
+
+  applyGrouping() {
+    if (!this.hasListTarget) return
+    const grouped = this.groupedValue
+    this.listTarget.querySelectorAll("[data-transfer-category-header]").forEach((h) => {
+      h.classList.toggle("hidden", !grouped)
+    })
+  }
+
+  updateToggleButtons() {
+    if (!this.hasGroupToggleTarget) return
+    const grouped = this.groupedValue
+    this.groupToggleTargets.forEach((btn) => {
+      const isGrouped = btn.dataset.groupedMode === "true"
+      btn.classList.toggle("border-amber-500", isGrouped === grouped)
+      btn.classList.toggle("bg-amber-50", isGrouped === grouped)
+      btn.classList.toggle("text-amber-800", isGrouped === grouped)
+      btn.classList.toggle("border-gray-200", isGrouped !== grouped)
+      btn.classList.toggle("text-gray-600", isGrouped !== grouped)
+    })
   }
 
   add(event) {
@@ -67,6 +99,7 @@ export default class extends Controller {
     if (!header) {
       header = this.buildCategoryHeader(categoryKey, meta.name, meta.position)
       this.insertCategoryHeader(header, meta.position, categoryKey)
+      if (!this.groupedValue) header.classList.add("hidden")
     }
 
     if (this.rowBelongsToHeader(row, header)) return

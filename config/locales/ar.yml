@@ -1428,6 +1428,8 @@ ar:
       source_on_hand: "الرصيد في المصدر"
       adjust_source: "تعديل الرصيد"
       line_items: "ملخص التقدم"
+      group_by_category: "تجميع حسب الفئة"
+      flat_list: "قائمة مسطحة"
       uncategorized: "غير مصنّف"
       shipment_history: "سجل الشحنات"
       shipment_number: "شحنة #%{number}"

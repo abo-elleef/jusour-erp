@@ -1424,6 +1424,8 @@ en:
       source_on_hand: "On hand at source"
       adjust_source: "Adjust"
       line_items: "Progress summary"
+      group_by_category: "Group by category"
+      flat_list: "Flat list"
       uncategorized: "Uncategorized"
       shipment_history: "Shipment history"
       shipment_number: "Shipment #%{number}"

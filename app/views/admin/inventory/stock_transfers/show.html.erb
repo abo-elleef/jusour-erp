@@ -299,9 +299,18 @@
     </section>
   <% end %>
 
+  <% grouped_view = params[:grouped] == "1" %>
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-center justify-between gap-2">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.line_items") %></h2>
+      <div class="flex items-center gap-1 print-hide">
+        <%= link_to t("inventory.stock_transfers.flat_list"),
+              admin_inventory_stock_transfer_path(@stock_transfer),
+              class: "text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors #{grouped_view ? 'border-gray-200 text-gray-600 hover:bg-gray-50' : 'border-amber-500 bg-amber-50 text-amber-800'}" %>
+        <%= link_to t("inventory.stock_transfers.group_by_category"),
+              admin_inventory_stock_transfer_path(@stock_transfer, grouped: 1),
+              class: "text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors #{grouped_view ? 'border-amber-500 bg-amber-50 text-amber-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}" %>
+      </div>
     </div>
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
@@ -319,8 +328,9 @@
         </thead>
         <tbody class="divide-y divide-gray-100">
           <% progress_row_number = 0 %>
-          <% group_records_by_ingredient_category(@lines).each do |category_name, lines| %>
-            <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 8 %>
+          <% display_lines = grouped_view ? group_records_by_ingredient_category(@lines) : [[nil, @lines.sort_by(&:position)]] %>
+          <% display_lines.each do |category_name, lines| %>
+            <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 8 if category_name %>
             <% lines.each do |line| %>
               <% progress_row_number += 1 %>
               <% short_at_source = line.short_at_source? %>
