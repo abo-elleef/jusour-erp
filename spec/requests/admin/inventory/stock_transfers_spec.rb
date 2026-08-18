@@ -79,6 +79,25 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       expect(response).to redirect_to(admin_inventory_stock_transfer_path(StockTransfer.last))
       expect(StockTransfer.last).to be_requested
     end
+
+    it "records a backdated transfer date on create" do
+      transfer_date = Date.current - 2
+
+      post admin_inventory_stock_transfers_path, params: {
+        stock_transfer: {
+          from_location_id: kitchen.id,
+          to_location_id: branch.id,
+          transferred_on: transfer_date,
+          stock_transfer_lines_attributes: {
+            "0" => { ingredient_id: ingredient.id, quantity_requested: 3.0 }
+          }
+        }
+      }
+
+      transfer = StockTransfer.last
+      expect(transfer.transferred_on).to eq(transfer_date)
+      expect(transfer.requested_at.to_date).to eq(transfer_date)
+    end
   end
 
   describe "PATCH /admin/inventory/stock_transfers/:id" do
@@ -198,6 +217,29 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       expect(branch_il.quantity_on_hand.to_d).to eq(2.5)
       # Global on-hand = sum of locations (7.5 + 2.5); a transfer just moves it.
       expect(ingredient.reload.quantity_on_hand.to_d).to eq(10.0)
+    end
+
+    it "stamps send, receive, batches, and adjustments on the transfer date" do
+      transfer_date = Date.current - 2
+      transfer = create_transfer_with_line(requested: 4.0)
+      transfer.update!(transferred_on: transfer_date)
+      line = transfer.stock_transfer_lines.first
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "4.0" } }
+      expect(transfer.reload.sent_at.to_date).to eq(transfer_date)
+      expect(transfer.stock_transfer_shipments.last.sent_at.to_date).to eq(transfer_date)
+
+      post confirm_receipt_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "4.0" } }
+
+      expect(transfer.reload.received_at.to_date).to eq(transfer_date)
+      expect(transfer.stock_transfer_shipments.last.received_at.to_date).to eq(transfer_date)
+
+      adjustments = StockAdjustment.where(stock_transfer: transfer)
+      expect(adjustments).to be_present
+      expect(adjustments.map { |a| a.created_at.to_date }.uniq).to eq([transfer_date])
+
+      batch = StockBatch.find_by(location: branch, ingredient: ingredient)
+      expect(batch.received_on).to eq(transfer_date)
     end
 
     it "supports partial send, confirm, then send and confirm the remainder" do

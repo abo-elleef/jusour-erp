@@ -27,16 +27,19 @@ class StockTransfer < ApplicationRecord
   validates :transfer_number, presence: true, uniqueness: { scope: :company_id }
   validates :status, inclusion: { in: STATUSES }
   validates :requested_at, presence: true
+  validates :transferred_on, presence: true
   validate :locations_must_differ
   validate :locations_must_be_active
   validate :locations_must_share_company
+  validate :transferred_on_not_in_the_future
 
-  scope :recent, -> { order(requested_at: :desc, created_at: :desc) }
+  scope :recent, -> { order(transferred_on: :desc, requested_at: :desc, created_at: :desc) }
   scope :pending_send, -> { where(status: %w[requested partially_received]) }
   scope :pending_receive, -> { where(status: "awaiting_receipt") }
 
   before_validation :assign_transfer_number, on: :create
-  before_validation :stamp_requested_at, on: :create
+  before_validation :assign_transferred_on
+  before_validation :sync_requested_at_from_transfer_date
 
   def requested?
     status == "requested"
@@ -78,6 +81,13 @@ class StockTransfer < ApplicationRecord
     stock_transfer_shipments.in_transit.order(:sequence).last
   end
 
+  # Timestamp on `transferred_on` at the current clock time, so late-entered
+  # send/receive still land on the physical transfer day.
+  def occurred_at(now: Time.current)
+    date = transferred_on || Date.current
+    now.in_time_zone.change(year: date.year, month: date.month, day: date.day)
+  end
+
   private
 
   def assign_transfer_number
@@ -101,8 +111,21 @@ class StockTransfer < ApplicationRecord
     format("%s%05d", prefix, (max_seq || 0) + 1)
   end
 
-  def stamp_requested_at
-    self.requested_at ||= Time.current
+  def assign_transferred_on
+    self.transferred_on ||= Date.current
+  end
+
+  def sync_requested_at_from_transfer_date
+    return unless new_record? || requested?
+    return if transferred_on.blank?
+
+    self.requested_at = occurred_at
+  end
+
+  def transferred_on_not_in_the_future
+    return if transferred_on.blank? || transferred_on <= Date.current
+
+    errors.add(:transferred_on, :in_the_future)
   end
 
   def locations_must_differ

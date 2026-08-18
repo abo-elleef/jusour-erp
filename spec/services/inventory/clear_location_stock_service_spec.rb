@@ -30,7 +30,7 @@ RSpec.describe Inventory::ClearLocationStockService do
     ingredient
   end
 
-  it "zeros on-hand at the location and writes cycle-count adjustments" do
+  it "zeros on-hand at the location and writes clear-all-stock adjustments" do
     flour = stock_ingredient!(name: "Flour", location_qty: 10, other_qty: 4)
     oil = stock_ingredient!(name: "Oil", location_qty: 2)
 
@@ -52,7 +52,7 @@ RSpec.describe Inventory::ClearLocationStockService do
     expect(oil.ingredient_locations.find_by!(location: location).quantity_on_hand).to eq(0)
     expect(StockBatch.where(location: location).with_stock).to be_empty
 
-    adjustments = StockAdjustment.where(location: location, adjustment_type: "cycle_count_correction")
+    adjustments = StockAdjustment.where(location: location, adjustment_type: "clear_all_stock")
     expect(adjustments.count).to eq(2)
     expect(adjustments.sum(:quantity_delta)).to eq(-12)
   end

@@ -7,6 +7,7 @@ FactoryBot.define do
     to_location { association :location, company: company }
     requested_by { association :user, :manager, company: company }
     requested_at { Time.current }
+    transferred_on { Date.current }
     status { "requested" }
 
     trait :awaiting_receipt do

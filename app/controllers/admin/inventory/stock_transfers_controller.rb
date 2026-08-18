@@ -36,6 +36,7 @@ module Admin
       def new
         @stock_transfer = StockTransfer.new(
           requested_by: current_user,
+          transferred_on: Date.current,
           from_location_id: params[:from_location_id],
           to_location_id: params[:to_location_id]
         )
@@ -140,7 +141,7 @@ module Admin
 
       def stock_transfer_params
         params.require(:stock_transfer).permit(
-          :from_location_id, :to_location_id, :notes,
+          :from_location_id, :to_location_id, :notes, :transferred_on,
           stock_transfer_lines_attributes: %i[id ingredient_id quantity_requested quantity_requested_input unit position _destroy]
         )
       end

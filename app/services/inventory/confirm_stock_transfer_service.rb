@@ -18,23 +18,24 @@ module Inventory
       end
 
       ActiveRecord::Base.transaction do
+        occurred_at = @transfer.occurred_at
         @shipment.stock_transfer_shipment_lines.each do |shipment_line|
           qty = received_quantity_for(shipment_line)
           shipment_line.update!(quantity_received: qty)
           transfer_line = shipment_line.stock_transfer_line
           transfer_line.update!(quantity_received: transfer_line.quantity_received.to_d + qty)
-          move_stock!(transfer_line.ingredient, qty) if qty.positive?
+          move_stock!(transfer_line.ingredient, qty, at: occurred_at) if qty.positive?
         end
 
         @shipment.update!(
           status: "received",
-          received_at: Time.current,
+          received_at: occurred_at,
           received_by: @user
         )
 
         @transfer.update!(
           status: @transfer.fully_fulfilled? ? "completed" : "partially_received",
-          received_at: Time.current,
+          received_at: occurred_at,
           received_by: @user
         )
       end
@@ -56,12 +57,12 @@ module Inventory
       raise ActiveRecord::RecordInvalid, shipment_line
     end
 
-    def move_stock!(ingredient, quantity)
-      cost_per_unit_cents = deduct_from_location!(ingredient, @transfer.from_location, quantity)
-      add_to_location!(ingredient, @transfer.to_location, quantity, cost_per_unit_cents)
+    def move_stock!(ingredient, quantity, at:)
+      cost_per_unit_cents = deduct_from_location!(ingredient, @transfer.from_location, quantity, at: at)
+      add_to_location!(ingredient, @transfer.to_location, quantity, cost_per_unit_cents, at: at)
     end
 
-    def deduct_from_location!(ingredient, location, quantity)
+    def deduct_from_location!(ingredient, location, quantity, at:)
       remaining = quantity.to_d
       total_cost_cents = 0
 
@@ -96,13 +97,15 @@ module Inventory
         stock_transfer: @transfer,
         quantity_delta: -quantity,
         adjustment_type: "transfer_out",
-        reason_notes: transfer_note("out", location, @shipment.sequence)
+        reason_notes: transfer_note("out", location, @shipment.sequence),
+        created_at: at,
+        updated_at: at
       )
 
       avg_cost
     end
 
-    def add_to_location!(ingredient, location, quantity, cost_per_unit_cents)
+    def add_to_location!(ingredient, location, quantity, cost_per_unit_cents, at:)
       ensure_ingredient_at_location!(ingredient, location)
 
       batch = StockBatch.create!(
@@ -111,8 +114,10 @@ module Inventory
         quantity_received: quantity,
         quantity_remaining: quantity,
         cost_per_unit_cents: cost_per_unit_cents,
-        received_on: Date.current,
-        batch_reference: "XFER-#{@transfer.transfer_number}-#{@shipment.sequence}"
+        received_on: @transfer.transferred_on,
+        batch_reference: "XFER-#{@transfer.transfer_number}-#{@shipment.sequence}",
+        created_at: at,
+        updated_at: at
       )
 
       StockAdjustment.create!(
@@ -123,7 +128,9 @@ module Inventory
         stock_transfer: @transfer,
         quantity_delta: quantity,
         adjustment_type: "transfer_in",
-        reason_notes: transfer_note("in", location, @shipment.sequence)
+        reason_notes: transfer_note("in", location, @shipment.sequence),
+        created_at: at,
+        updated_at: at
       )
     end
 

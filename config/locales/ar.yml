@@ -703,6 +703,7 @@ ar:
       waste_prep: "هدر — تحضير"
       waste_overproduction: "هدر — إنتاج زائد"
       cycle_count_correction: "تصحيح جرد"
+      clear_all_stock: "تصفير المخزون"
       consumption: "استهلاك"
       production_consumption: "إنتاج — استهلاك"
       production_output: "إنتاج — مخرجات"
@@ -1394,6 +1395,8 @@ ar:
       from_location: "من"
       to_location: "إلى"
       status: "الحالة"
+      transferred_on: "تاريخ التحويل"
+      transferred_on_hint: "اليوم الذي نُقل فيه المخزون فعلياً. الافتراضي هو اليوم — اختر أمس أو أسبق إذا كنت تسجّله متأخراً."
       requested_at: "تاريخ الطلب"
       last_sent_at: "آخر إرسال"
       last_received_at: "آخر استلام"
@@ -1457,7 +1460,7 @@ ar:
         received: "مستلم"
       form:
         details: "تفاصيل التحويل"
-        details_hint: "اختر موقع المصدر والوجهة."
+        details_hint: "اختر تاريخ التحويل الفعلي، ثم موقع المصدر والوجهة."
         line_items: "البنود المطلوبة"
         line_items_hint: "أضف المكونات والكميات المطلوبة. اترك الكمية فارغة لتخطي ذلك البند."
         add_line: "إضافة بند"
@@ -2036,7 +2039,7 @@ ar:
       unassign: "إزالة"
       confirm_unassign: "إيقاف تتبع %{name} في هذا الموقع؟ سيتم حذف سجل المخزون المحلي."
       clear_stock: "تصفير كل المخزون"
-      clear_stock_confirm: "تصفير كل المكونات في %{name}؟ سيتم تسجيل تعديلات جرد ولا يمكن التراجع من هذه الشاشة."
+      clear_stock_confirm: "تصفير كل المكونات في %{name}؟ سيتم تسجيل تعديلات تصفير المخزون ولا يمكن التراجع من هذه الشاشة."
       balance_history:
         title: "تطور الرصيد"
         hint: "قارن حتى %{max} مكونات في هذا الموقع. يُبنى من حركات المخزون."
@@ -3893,6 +3896,8 @@ ar:
           attributes:
             to_location_id:
               same_as_source: "يجب أن يختلف عن موقع المصدر"
+            transferred_on:
+              in_the_future: "لا يمكن أن يكون في المستقبل"
         location_operating_day:
           attributes:
             location:

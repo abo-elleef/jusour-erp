@@ -22,11 +22,12 @@ module Inventory
         end
 
         sequence = (@transfer.stock_transfer_shipments.maximum(:sequence) || 0) + 1
+        occurred_at = @transfer.occurred_at
         shipment = @transfer.stock_transfer_shipments.create!(
           sequence: sequence,
           status: "in_transit",
           sent_by: @user,
-          sent_at: Time.current
+          sent_at: occurred_at
         )
 
         shipment_lines.each do |line, qty|
@@ -39,7 +40,7 @@ module Inventory
 
         @transfer.update!(
           status: "awaiting_receipt",
-          sent_at: Time.current,
+          sent_at: occurred_at,
           sent_by: @user
         )
       end

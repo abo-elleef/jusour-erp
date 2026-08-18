@@ -34,4 +34,30 @@ RSpec.describe StockTransfer, type: :model do
     t = transfer(number: nil)
     expect(t.transfer_number).to match(/\AST-\d{4}-\d{5}\z/)
   end
+
+  it "defaults transferred_on to today and stamps requested_at on that day" do
+    t = described_class.create!(
+      company: Current.company,
+      from_location: kitchen,
+      to_location: branch,
+      requested_by: manager,
+      transferred_on: Date.current - 2
+    )
+
+    expect(t.transferred_on).to eq(Date.current - 2)
+    expect(t.requested_at.to_date).to eq(Date.current - 2)
+  end
+
+  it "rejects a transfer date in the future" do
+    t = described_class.new(
+      company: Current.company,
+      from_location: kitchen,
+      to_location: branch,
+      requested_by: manager,
+      transferred_on: Date.current + 1
+    )
+
+    expect(t).not_to be_valid
+    expect(t.errors[:transferred_on]).to be_present
+  end
 end

@@ -33,6 +33,7 @@ RSpec.describe "Admin::Locations::Ingredients clear stock", type: :request do
     expect(response).to redirect_to(admin_location_ingredients_path(location))
     expect(ingredient.ingredient_locations.find_by!(location: location).quantity_on_hand).to eq(0)
     expect(ingredient.reload.quantity_on_hand).to eq(0)
+    expect(StockAdjustment.last.adjustment_type).to eq("clear_all_stock")
   end
 
   it "shows the clear button when stock is present" do

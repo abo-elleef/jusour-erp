@@ -2,7 +2,7 @@
 
 module Inventory
   # Zeros every ingredient balance at one location (on-hand + FIFO batches),
-  # writing a cycle-count adjustment per item that had stock so the ledger stays auditable.
+  # writing a clear-all-stock adjustment per item that had stock so the ledger stays auditable.
   class ClearLocationStockService
     class Error < StandardError; end
 
@@ -30,7 +30,7 @@ module Inventory
             user: @user,
             location: @location,
             quantity_delta: -qty,
-            adjustment_type: "cycle_count_correction",
+            adjustment_type: "clear_all_stock",
             reason_notes: @reason_notes,
             maintain_batches: true
           )

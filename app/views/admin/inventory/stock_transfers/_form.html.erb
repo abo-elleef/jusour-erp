@@ -48,6 +48,11 @@
     </div>
     <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
       <div>
+        <%= f.label :transferred_on, t("inventory.stock_transfers.transferred_on"), class: label_class %>
+        <%= f.date_field :transferred_on, max: Date.current, required: true, class: input_class %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.stock_transfers.transferred_on_hint") %></p>
+      </div>
+      <div>
         <%= f.label :from_location_id, t("inventory.stock_transfers.from_location"), class: label_class %>
         <%= f.collection_select :from_location_id, @locations, :id, :name,
               { prompt: t("inventory.stock_transfers.select_location") },

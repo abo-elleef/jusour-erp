@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_17_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_18_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1227,6 +1227,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_17_120000) do
     t.datetime "received_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.date "transferred_on", null: false
     t.index ["company_id", "transfer_number"], name: "index_stock_transfers_on_company_id_and_transfer_number", unique: true
     t.index ["company_id"], name: "index_stock_transfers_on_company_id"
     t.index ["from_location_id"], name: "index_stock_transfers_on_from_location_id"
@@ -1235,6 +1236,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_17_120000) do
     t.index ["sent_by_id"], name: "index_stock_transfers_on_sent_by_id"
     t.index ["status"], name: "index_stock_transfers_on_status"
     t.index ["to_location_id"], name: "index_stock_transfers_on_to_location_id"
+    t.index ["transferred_on"], name: "index_stock_transfers_on_transferred_on"
   end
 
   create_table "super_admin_users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
