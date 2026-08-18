@@ -80,6 +80,29 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       expect(StockTransfer.last).to be_requested
     end
 
+    it "saves counted on-hand and order limit with the requested quantity" do
+      post admin_inventory_stock_transfers_path, params: {
+        stock_transfer: {
+          from_location_id: kitchen.id,
+          to_location_id: branch.id,
+          stock_transfer_lines_attributes: {
+            "0" => {
+              ingredient_id: ingredient.id,
+              unit: ingredient.unit,
+              order_limit: 20,
+              counted_quantity: 6,
+              quantity_requested_input: 14
+            }
+          }
+        }
+      }
+
+      line = StockTransfer.last.stock_transfer_lines.first
+      expect(line.order_limit).to eq(20)
+      expect(line.counted_quantity).to eq(6)
+      expect(line.quantity_requested).to eq(14)
+    end
+
     it "records a backdated transfer date on create" do
       transfer_date = Date.current - 2
 

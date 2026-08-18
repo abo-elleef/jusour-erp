@@ -36,5 +36,11 @@ RSpec.describe "Admin inventory stock transfer templates", type: :request do
     expect(response).to be_successful
     expect(response.body).to include("Flour")
     expect(response.body).to include("Weekly restock")
+    expect(response.body).to include(I18n.t("inventory.stock_transfers.order_limit"))
+    expect(response.body).to include(I18n.t("inventory.stock_transfers.counted_quantity"))
+    expect(response.body).to include('value="10.0"')
+    expect(response.body).to include("[order_limit]")
+    expect(response.body).not_to match(/quantity_requested_input"[^>]*value="10/)
+    expect(response.body).not_to match(/value="10[^"]*"[^>]*quantity_requested_input/)
   end
 end

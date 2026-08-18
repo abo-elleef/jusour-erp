@@ -1,7 +1,10 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["list", "template", "row", "destroy", "unitSelect", "groupToggle"]
+  static targets = [
+    "list", "template", "row", "destroy", "unitSelect", "groupToggle",
+    "orderLimit", "countedQuantity", "requestedQuantity"
+  ]
   static values = {
     availableUnits: Object,
     ingredientCategories: Object,
@@ -60,6 +63,24 @@ export default class extends Controller {
     this.listTarget.insertAdjacentHTML("beforeend", content)
     const row = this.rowTargets[this.rowTargets.length - 1]
     if (row) row.dataset.entryIndex = String(this.nextEntryIndex++)
+  }
+
+  recommendRequested(event) {
+    const row = event.target.closest("[data-stock-transfer-lines-target='row']")
+    if (!row) return
+
+    const limitEl = row.querySelector("[data-stock-transfer-lines-target='orderLimit']")
+    const countedEl = row.querySelector("[data-stock-transfer-lines-target='countedQuantity']")
+    const requestedEl = row.querySelector("[data-stock-transfer-lines-target='requestedQuantity']")
+    if (!limitEl || !countedEl || !requestedEl) return
+    if (countedEl.value.trim() === "" || limitEl.value.trim() === "") return
+
+    const limit = Number.parseFloat(limitEl.value)
+    const counted = Number.parseFloat(countedEl.value)
+    if (!Number.isFinite(limit) || !Number.isFinite(counted)) return
+
+    const recommended = Math.max(0, limit - counted)
+    requestedEl.value = String(Number(recommended.toFixed(3)))
   }
 
   // Repopulate a row's unit dropdown with the selected ingredient's units.

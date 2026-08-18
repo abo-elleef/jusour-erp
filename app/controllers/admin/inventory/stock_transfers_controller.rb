@@ -142,7 +142,10 @@ module Admin
       def stock_transfer_params
         params.require(:stock_transfer).permit(
           :from_location_id, :to_location_id, :notes, :transferred_on,
-          stock_transfer_lines_attributes: %i[id ingredient_id quantity_requested quantity_requested_input unit position _destroy]
+          stock_transfer_lines_attributes: %i[
+            id ingredient_id quantity_requested quantity_requested_input unit
+            order_limit counted_quantity position _destroy
+          ]
         )
       end
 
@@ -181,18 +184,13 @@ module Admin
         end
 
         template.stock_transfer_template_lines
-          .includes(ingredient: :ingredient_category)
+          .includes(:ingredient)
           .ordered
-          .sort_by { |l|
-            cat = l.ingredient&.ingredient_category
-            [cat&.position.to_i, cat&.name.to_s.downcase, l.position.to_i, l.ingredient&.name.to_s.downcase]
-          }
           .each_with_index do |line, index|
-            qty = line.default_quantity.to_d
             @stock_transfer.stock_transfer_lines.build(
               ingredient: line.ingredient,
               unit: line.unit.presence || line.ingredient.unit,
-              quantity_requested_input: qty.positive? ? qty : nil,
+              order_limit: line.default_quantity,
               position: index
             )
           end

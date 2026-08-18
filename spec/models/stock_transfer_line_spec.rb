@@ -48,4 +48,24 @@ RSpec.describe StockTransferLine, type: :model do
     line = build_line(requested: 4, on_hand: 0, batches: 0)
     expect(line.source_on_hand_short?).to be(false)
   end
+
+  it "recommends max(0, order_limit - counted_quantity)" do
+    transfer = create(:stock_transfer, company: company, from_location: kitchen, to_location: branch, requested_by: owner)
+    line = create(:stock_transfer_line, stock_transfer: transfer, ingredient: ingredient,
+                  quantity_requested: 5, order_limit: 20, counted_quantity: 6)
+    expect(line.recommended_quantity).to eq(14)
+  end
+
+  it "recommends zero when counted is above the limit" do
+    transfer = create(:stock_transfer, company: company, from_location: kitchen, to_location: branch, requested_by: owner)
+    line = create(:stock_transfer_line, stock_transfer: transfer, ingredient: ingredient,
+                  quantity_requested: 1, order_limit: 10, counted_quantity: 12)
+    expect(line.recommended_quantity).to eq(0)
+  end
+
+  it "has no recommendation until both limit and count are present" do
+    transfer = create(:stock_transfer, company: company, from_location: kitchen, to_location: branch, requested_by: owner)
+    line = create(:stock_transfer_line, stock_transfer: transfer, ingredient: ingredient, quantity_requested: 1, order_limit: 10)
+    expect(line.recommended_quantity).to be_nil
+  end
 end

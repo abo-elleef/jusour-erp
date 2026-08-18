@@ -16,6 +16,8 @@ class StockTransferLine < ApplicationRecord
   validates :quantity_requested, numericality: { greater_than: 0 }
   validates :quantity_sent, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_received, numericality: { greater_than_or_equal_to: 0 }
+  validates :order_limit, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :counted_quantity, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :unit_valid_for_ingredient
 
@@ -79,6 +81,13 @@ class StockTransferLine < ApplicationRecord
 
   def fulfilled?
     quantity_received.to_d >= quantity_requested.to_d
+  end
+
+  # Suggested request qty in the line unit: limit − counted (never negative).
+  def recommended_quantity
+    return if order_limit.nil? || counted_quantity.nil?
+
+    [order_limit.to_d - counted_quantity.to_d, 0.to_d].max
   end
 
   private

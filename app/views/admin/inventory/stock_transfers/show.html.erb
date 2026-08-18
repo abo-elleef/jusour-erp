@@ -63,18 +63,18 @@
        [t("inventory.stock_transfers.last_received_at"), @stock_transfer.received_at ? "#{l(@stock_transfer.received_at, format: :short)} — #{@stock_transfer.received_by&.name}" : "—"]
      ] %>
   <div class="print-only mb-6">
-    <table class="w-full text-sm border border-gray-300 border-collapse">
+    <table class="w-full text-sm border-collapse">
       <thead>
-        <tr class="border-b border-gray-300 bg-gray-50">
+        <tr>
           <% details.each do |label, _| %>
-            <th class="text-start p-2 font-semibold text-gray-600 whitespace-nowrap"><%= label %></th>
+            <th class="border border-gray-800 print:border-black p-2 font-bold text-xs bg-sky-100 text-sky-950 text-start"><%= label %></th>
           <% end %>
         </tr>
       </thead>
       <tbody>
         <tr>
           <% details.each do |_, value| %>
-            <td class="p-2 text-gray-900 align-top"><%= value %></td>
+            <td class="border border-gray-800 print:border-black p-2 text-gray-900 align-top bg-sky-50/50"><%= value %></td>
           <% end %>
         </tr>
       </tbody>
@@ -300,7 +300,8 @@
   <% end %>
 
   <% grouped_view = params[:grouped] == "1" %>
-  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <% display_lines = grouped_view ? group_records_by_ingredient_category(@lines) : [[nil, @lines.sort_by(&:position)]] %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden print-hide">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-center justify-between gap-2">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.line_items") %></h2>
       <div class="flex items-center gap-1 print-hide">
@@ -319,36 +320,43 @@
             <th class="p-3 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
             <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
             <th class="p-3 text-start"><%= t("inventory.stock_transfers.unit") %></th>
+            <th class="p-3 text-end"><%= t("inventory.stock_transfers.order_limit") %></th>
+            <th class="p-3 text-end"><%= t("inventory.stock_transfers.counted_quantity") %></th>
             <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_requested") %></th>
-            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_sent_total") %></th>
-            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_received_total") %></th>
-            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_in_transit") %></th>
-            <th class="p-3 text-end"><%= t("inventory.stock_transfers.quantity_pending_send") %></th>
+            <th class="p-3 text-end print-hide"><%= t("inventory.stock_transfers.quantity_sent_total") %></th>
+            <th class="p-3 text-end print-hide"><%= t("inventory.stock_transfers.quantity_received_total") %></th>
+            <th class="p-3 text-end print-hide"><%= t("inventory.stock_transfers.quantity_in_transit") %></th>
+            <th class="p-3 text-end print-hide"><%= t("inventory.stock_transfers.quantity_pending_send") %></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
           <% progress_row_number = 0 %>
-          <% display_lines = grouped_view ? group_records_by_ingredient_category(@lines) : [[nil, @lines.sort_by(&:position)]] %>
           <% display_lines.each do |category_name, lines| %>
-            <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 8 if category_name %>
+            <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 10 if category_name %>
             <% lines.each do |line| %>
               <% progress_row_number += 1 %>
               <% short_at_source = line.short_at_source? %>
-              <tr class="<%= 'bg-red-50' if short_at_source %>" data-short-at-source="<%= short_at_source %>">
+              <tr class="<%= 'bg-red-50 print:bg-transparent' if short_at_source %>" data-short-at-source="<%= short_at_source %>">
                 <td class="p-3 text-gray-400 tabular-nums"><%= progress_row_number %></td>
                 <td class="p-3 font-medium text-gray-900">
                   <%= line.ingredient.name %>
                   <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
                   <% if short_at_source %>
-                    <span class="mt-1 inline-block text-xs font-semibold text-red-700"><%= t("inventory.stock_transfers.short_at_source") %></span>
+                    <span class="mt-1 inline-block text-xs font-semibold text-red-700 print-hide"><%= t("inventory.stock_transfers.short_at_source") %></span>
                   <% end %>
                 </td>
                 <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
+                <td class="p-3 text-end tabular-nums text-gray-700">
+                  <%= number_with_precision(line.order_limit, precision: 3, strip_insignificant_zeros: true).presence || "—" %>
+                </td>
+                <td class="p-3 text-end tabular-nums text-gray-700">
+                  <%= number_with_precision(line.counted_quantity, precision: 3, strip_insignificant_zeros: true).presence || "—" %>
+                </td>
                 <td class="p-3 text-end tabular-nums"><%= transfer_line_amount(line, line.quantity_requested) %></td>
-                <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_sent) %></td>
-                <td class="p-3 text-end tabular-nums text-gray-600"><%= transfer_line_amount(line, line.quantity_received) %></td>
-                <td class="p-3 text-end tabular-nums text-blue-700"><%= transfer_line_amount(line, line.quantity_in_transit) %></td>
-                <td class="p-3 text-end tabular-nums text-amber-700"><%= transfer_line_amount(line, line.quantity_pending_send) %></td>
+                <td class="p-3 text-end tabular-nums text-gray-600 print-hide"><%= transfer_line_amount(line, line.quantity_sent) %></td>
+                <td class="p-3 text-end tabular-nums text-gray-600 print-hide"><%= transfer_line_amount(line, line.quantity_received) %></td>
+                <td class="p-3 text-end tabular-nums text-blue-700 print-hide"><%= transfer_line_amount(line, line.quantity_in_transit) %></td>
+                <td class="p-3 text-end tabular-nums text-amber-700 print-hide"><%= transfer_line_amount(line, line.quantity_pending_send) %></td>
               </tr>
             <% end %>
           <% end %>
@@ -357,8 +365,73 @@
     </div>
   </section>
 
+  <%# Print-only color-coded grid (same visual language as the daily manufacturing card). %>
+  <% print_cell = "border border-gray-800 print:border-black p-2.5 align-middle" %>
+  <% print_th_item = "#{print_cell} bg-emerald-100 text-emerald-950 font-bold text-sm text-start" %>
+  <% print_th_unit = "#{print_cell} bg-amber-100 text-amber-950 font-bold text-sm text-start" %>
+  <% print_th_limit = "#{print_cell} bg-sky-100 text-sky-950 font-bold text-sm text-end" %>
+  <% print_th_counted = "#{print_cell} bg-orange-100 text-orange-950 font-bold text-sm text-end" %>
+  <% print_th_qty = "#{print_cell} bg-rose-100 text-rose-950 font-bold text-sm text-end" %>
+  <section class="print-only overflow-hidden border border-gray-800 print:border-black bg-white">
+    <div class="border-b border-gray-800 print:border-black bg-sky-200 px-4 py-3 text-center">
+      <h2 class="text-base font-bold text-sky-950 tracking-wide">
+        <%= t("inventory.stock_transfers.print_document_title") %>
+        · <%= @stock_transfer.transfer_number %>
+      </h2>
+      <p class="text-xs text-sky-900 mt-0.5">
+        <%= @stock_transfer.from_location.name %> → <%= @stock_transfer.to_location.name %>
+        · <%= l(@stock_transfer.transferred_on, format: :long) %>
+      </p>
+    </div>
+    <table class="w-full border-collapse text-sm">
+      <thead>
+        <tr>
+          <th class="<%= print_cell %> bg-gray-100 text-gray-800 font-bold text-sm w-12"><%= t("shared.row_index") %></th>
+          <th class="<%= print_th_item %>"><%= t("inventory.stock_transfers.ingredient") %></th>
+          <th class="<%= print_th_unit %> w-[14%]"><%= t("inventory.stock_transfers.unit") %></th>
+          <th class="<%= print_th_limit %> w-[14%]"><%= t("inventory.stock_transfers.order_limit") %></th>
+          <th class="<%= print_th_counted %> w-[14%]"><%= t("inventory.stock_transfers.counted_quantity") %></th>
+          <th class="<%= print_th_qty %> w-[16%]"><%= t("inventory.stock_transfers.quantity_requested") %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% print_row_number = 0 %>
+        <% display_lines.each do |category_name, lines| %>
+          <% if category_name %>
+            <tr>
+              <td colspan="6" class="<%= print_cell %> bg-gray-200 text-gray-800 text-xs font-bold uppercase tracking-wide text-start">
+                <%= category_name %>
+                <span class="font-normal normal-case tracking-normal">(<%= lines.size %>)</span>
+              </td>
+            </tr>
+          <% end %>
+          <% lines.each do |line| %>
+            <% print_row_number += 1 %>
+            <tr>
+              <td class="<%= print_cell %> bg-gray-50 text-gray-600 tabular-nums text-center"><%= print_row_number %></td>
+              <td class="<%= print_cell %> bg-emerald-50/80 text-gray-900 font-semibold">
+                <%= line.ingredient.name %>
+                <span class="block font-mono text-xs font-normal text-emerald-800"><%= line.ingredient.code %></span>
+              </td>
+              <td class="<%= print_cell %> bg-amber-50/60 text-gray-800"><%= transfer_line_unit_label(line) %></td>
+              <td class="<%= print_cell %> bg-sky-50/70 text-sky-950 tabular-nums text-end font-semibold">
+                <%= number_with_precision(line.order_limit, precision: 3, strip_insignificant_zeros: true).presence || "—" %>
+              </td>
+              <td class="<%= print_cell %> bg-orange-50/70 text-orange-950 tabular-nums text-end font-semibold">
+                <%= number_with_precision(line.counted_quantity, precision: 3, strip_insignificant_zeros: true).presence || "—" %>
+              </td>
+              <td class="<%= print_cell %> bg-rose-50/50 text-gray-900 tabular-nums text-end font-bold text-base">
+                <%= transfer_line_amount(line, line.quantity_requested) %>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+
   <% if @stock_transfer.completed? && @source_shortage_lines.any? %>
-    <section class="rounded-2xl border border-red-200 bg-red-50/40 overflow-hidden mt-6" data-source-shortage-report>
+    <section class="rounded-2xl border border-red-200 bg-red-50/40 overflow-hidden mt-6 print-hide" data-source-shortage-report>
       <div class="px-5 py-4 border-b border-red-100">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.source_shortage_heading") %></h2>
         <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.stock_transfers.source_shortage_hint", location: @stock_transfer.from_location.name) %></p>

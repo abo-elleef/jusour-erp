@@ -99,6 +99,8 @@
     height: auto !important;
     overflow: visible !important;
     background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   body > div,
