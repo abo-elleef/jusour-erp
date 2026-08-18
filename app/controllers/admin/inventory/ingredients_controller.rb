@@ -49,6 +49,7 @@ module Admin
         @supplier_links = @ingredient.supplier_ingredients.includes(:supplier)
         @ingredient_units = @ingredient.ingredient_units.includes(:unit_ref)
         load_branch_stock
+        load_balance_history_chart
         @audits = @ingredient.audits.includes(:user).reorder(version: :desc)
       end
 
@@ -338,6 +339,16 @@ module Admin
         @ingredient_locations_by_location_id = @ingredient.ingredient_locations
           .where(location_id: @stock_locations.map(&:id))
           .index_by(&:location_id)
+      end
+
+      def load_balance_history_chart
+        @chart_days = ::Inventory::IngredientBalanceHistoryService::ALLOWED_DAYS.include?(params[:chart_days].to_i) ?
+          params[:chart_days].to_i :
+          ::Inventory::IngredientBalanceHistoryService::DEFAULT_DAYS
+        @balance_history = ::Inventory::IngredientBalanceHistoryService.new(
+          ingredient: @ingredient,
+          days: @chart_days
+        ).call
       end
 
       def ingredient_params

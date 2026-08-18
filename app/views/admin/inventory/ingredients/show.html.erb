@@ -225,6 +225,42 @@
     <% end %>
   </section>
 
+  <details class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6 group" <%= "open" if params[:chart_days].present? %>>
+    <summary class="<%= section_head %> flex cursor-pointer list-none flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.balance_history.title") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.balance_history.hint") %></p>
+      </div>
+      <span class="text-xs font-semibold text-amber-700 group-open:hidden"><%= t("inventory.ingredients.show.balance_history.show") %></span>
+      <span class="text-xs font-semibold text-gray-500 hidden group-open:inline"><%= t("inventory.ingredients.show.balance_history.hide") %></span>
+    </summary>
+    <div class="p-5">
+      <%= form_with url: admin_inventory_ingredient_path(@ingredient), method: :get, class: "flex flex-wrap items-end gap-4" do %>
+        <div>
+          <label class="<%= label_class %>"><%= t("inventory.ingredients.show.balance_history.range") %></label>
+          <%= select_tag :chart_days,
+                options_for_select(
+                  Inventory::IngredientBalanceHistoryService::ALLOWED_DAYS.map do |days|
+                    [t("inventory.ingredients.show.balance_history.ranges.#{days}"), days]
+                  end,
+                  @chart_days
+                ),
+                class: "#{pos_input_class} appearance-none min-w-[14rem]" %>
+        </div>
+        <%= submit_tag t("inventory.ingredients.show.balance_history.apply"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors cursor-pointer" %>
+      <% end %>
+
+      <% if @balance_history.any? %>
+        <div class="mt-5">
+          <%= line_chart @balance_history, height: "280px", library: { scales: { x: { ticks: { maxTicksLimit: 10 } } } } %>
+        </div>
+      <% else %>
+        <p class="mt-4 text-sm text-gray-500"><%= t("inventory.ingredients.show.balance_history.empty") %></p>
+      <% end %>
+    </div>
+  </details>
+
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <div class="space-y-6">
       <section class="rounded-2xl border border-amber-200 bg-amber-50/30 overflow-hidden" id="adjust">

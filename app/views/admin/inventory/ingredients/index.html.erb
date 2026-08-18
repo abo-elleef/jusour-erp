@@ -23,6 +23,12 @@
 
   <% filter_q = params[:q]&.to_unsafe_h %>
   <% index_filter_params = { q: filter_q, stock: @stock_filter, status: @status, supplier_id: @supplier_id, sort: @sort, dir: @direction }.compact %>
+  <% category_options_json = [{ value: "", label: t("inventory.ingredients.index.all_categories") }] +
+    IngredientCategory.ordered.map { |category| { value: category.id, label: category.name } } %>
+  <% supplier_options_json = [
+    { value: "", label: t("inventory.ingredients.index.all_suppliers") },
+    { value: "none", label: t("inventory.ingredients.index.no_supplier") }
+  ] + @suppliers.map { |supplier| { value: supplier.id, label: supplier.name } } %>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <%= link_to admin_inventory_ingredients_path(sort: @sort, dir: @direction),
@@ -75,21 +81,51 @@
                 placeholder: t("inventory.ingredients.index.search_placeholder"),
                 class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
         </div>
-        <div class="md:col-span-3">
+        <div class="md:col-span-3" data-searchable-select-options="<%= category_options_json.to_json %>">
           <%= f.label :ingredient_category_id_eq, t("inventory.ingredients.index.category"), class: "block text-sm font-medium text-gray-700 mb-1" %>
-          <%= f.collection_select :ingredient_category_id_eq, IngredientCategory.ordered, :id, :name,
-                { include_blank: t("inventory.ingredients.index.all_categories") },
-                class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+          <div class="relative"
+               data-controller="searchable-select"
+               data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
+            <%= hidden_field_tag "q[ingredient_category_id_eq]",
+                  @q.ingredient_category_id_eq,
+                  data: { searchable_select_target: "hidden" } %>
+            <input type="text"
+                   autocomplete="off"
+                   spellcheck="false"
+                   role="combobox"
+                   aria-expanded="false"
+                   aria-autocomplete="list"
+                   placeholder="<%= t("inventory.ingredients.index.all_categories") %>"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                   data-searchable-select-target="input"
+                   data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+            <ul data-searchable-select-target="menu"
+                role="listbox"
+                class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
+          </div>
         </div>
-        <div class="md:col-span-3">
+        <div class="md:col-span-3" data-searchable-select-options="<%= supplier_options_json.to_json %>">
           <%= label_tag :supplier_id, t("inventory.ingredients.index.supplier"), class: "block text-sm font-medium text-gray-700 mb-1" %>
-          <%= select_tag :supplier_id,
-                options_for_select(
-                  [[t("inventory.ingredients.index.no_supplier"), "none"]] + @suppliers.map { |s| [s.name, s.id] },
-                  @supplier_id
-                ),
-                include_blank: t("inventory.ingredients.index.all_suppliers"),
-                class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+          <div class="relative"
+               data-controller="searchable-select"
+               data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
+            <%= hidden_field_tag :supplier_id,
+                  @supplier_id,
+                  data: { searchable_select_target: "hidden" } %>
+            <input type="text"
+                   autocomplete="off"
+                   spellcheck="false"
+                   role="combobox"
+                   aria-expanded="false"
+                   aria-autocomplete="list"
+                   placeholder="<%= t("inventory.ingredients.index.all_suppliers") %>"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                   data-searchable-select-target="input"
+                   data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+            <ul data-searchable-select-target="menu"
+                role="listbox"
+                class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
+          </div>
         </div>
         <div class="md:col-span-2 flex gap-2">
           <%= f.submit t("actions.apply_filters"), class: "flex-1 bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium" %>

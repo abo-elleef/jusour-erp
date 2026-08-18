@@ -930,6 +930,20 @@ en:
           manage: "Manage stock"
           assign: "Assign"
           empty: "No active branches or central kitchens configured. Add locations to track stock per site."
+        balance_history:
+          title: "Balance history"
+          hint: "Track how this ingredient's total on-hand changed over time."
+          show: "Show chart"
+          hide: "Hide chart"
+          range: "Period"
+          apply: "Show chart"
+          empty: "No balance history is available for the selected period."
+          ranges:
+            "1": "Today"
+            "3": "Last 3 days (including today)"
+            "7": "1 week (including today)"
+            "30": "Last 30 days (including today)"
+            "90": "Last 90 days (including today)"
       adjustments:
         title: "Adjustment history"
         view_all: "View all"
