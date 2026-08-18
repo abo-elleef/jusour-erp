@@ -58,5 +58,18 @@ RSpec.describe Inventory::DailyProductionSummaryService do
     expect(sauce_row.locations).to contain_exactly("CK", "Branch")
     expect(sauce_row.notes).to contain_exactly("First", "Second")
     expect(sauce_row.expires_on_dates).to eq([day + 3, day + 5])
+    expect(sauce_row.unit).to eq(sauce.unit)
+  end
+
+  it "displays and sums in the template yield unit, not the output base unit" do
+    sauce.ingredient_units.create!(unit: "packs", base_units_per_unit: 20, company: company)
+    template = template_for(sauce, name: "Sauce bags", yield_qty: 3)
+    template.update!(yield_unit: "packs", yield_quantity: 3)
+    day = Date.current
+    runs = [run!(template: template, location: kitchen, runs_count: 2, occurred_on: day)]
+
+    row = described_class.new(runs: runs).call.first
+    expect(row.unit).to eq("packs")
+    expect(row.total_quantity).to eq(6) # 3 packs × 2 runs, not 120 kg
   end
 end

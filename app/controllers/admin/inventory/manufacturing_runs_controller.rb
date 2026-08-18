@@ -61,7 +61,7 @@ module Admin
         @day = parse_daily_date(params[:date])
         day_runs = ManufacturingRun
           .where(occurred_on: @day, reversed_at: nil)
-          .includes(:location, :user, manufacturing_template: :output_ingredient)
+          .includes(:location, :user, manufacturing_template: [:yield_unit_ref, { output_ingredient: :ingredient_units }])
           .recent
         @daily_rows = ::Inventory::DailyProductionSummaryService.new(runs: day_runs).call
       end

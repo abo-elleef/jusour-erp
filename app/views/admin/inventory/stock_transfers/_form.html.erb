@@ -119,17 +119,9 @@
       <div></div>
     </div>
     <div class="divide-y divide-gray-100" data-stock-transfer-lines-target="list">
-      <% group_records_by_ingredient_category(stock_transfer.stock_transfer_lines).each do |category_name, lines| %>
-        <% cat = lines.first&.ingredient&.ingredient_category %>
-        <%= render "category_header",
-              name: category_name,
-              count: lines.size,
-              category_id: cat&.id,
-              category_position: cat&.position %>
-        <% lines.each do |line| %>
-          <%= f.fields_for :stock_transfer_lines, line do |line_form| %>
-            <%= render "line_fields", f: line_form %>
-          <% end %>
+      <% stock_transfer.stock_transfer_lines.reject(&:marked_for_destruction?).each do |line| %>
+        <%= f.fields_for :stock_transfer_lines, line do |line_form| %>
+          <%= render "line_fields", f: line_form %>
         <% end %>
       <% end %>
     </div>

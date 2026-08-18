@@ -83,6 +83,18 @@ RSpec.describe "Admin::Inventory::ManufacturingRuns index", type: :request do
     expect(response.body).to match(/>\s*10\s*</) # 2 * 5 only
   end
 
+  it "shows the template yield unit on the daily card, not the output base unit" do
+    output.ingredient_units.create!(unit: "packs", base_units_per_unit: 20, company: company)
+    template = active_template(yield_qty: 3)
+    template.update!(yield_unit: "packs", yield_quantity: 3)
+    create_run!(template: template, runs_count: 2)
+
+    get admin_inventory_manufacturing_runs_path(view: "daily", date: day.iso8601)
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include(I18n.t("inventory.unit_labels.packs", default: "packs"))
+    expect(response.body).to match(/>\s*6\s*</)
+  end
+
   it "shows empty state when the day has no production" do
     get admin_inventory_manufacturing_runs_path(view: "daily", date: day.iso8601)
     expect(response).to have_http_status(:ok)

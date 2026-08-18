@@ -9,6 +9,11 @@ export default class extends Controller {
     grouped: { type: Boolean, default: false }
   }
 
+  connect() {
+    this.nextEntryIndex = 0
+    this.captureEntryOrder()
+  }
+
   groupedValueChanged() {
     this.applyGrouping()
     this.updateToggleButtons()
@@ -16,15 +21,24 @@ export default class extends Controller {
 
   toggleGrouping(event) {
     event.preventDefault()
+    if (!this.groupedValue) this.captureEntryOrder()
     this.groupedValue = !this.groupedValue
   }
 
   applyGrouping() {
     if (!this.hasListTarget) return
-    const grouped = this.groupedValue
-    this.listTarget.querySelectorAll("[data-transfer-category-header]").forEach((h) => {
-      h.classList.toggle("hidden", !grouped)
+
+    if (this.groupedValue) {
+      this.groupRowsByCategory()
+    } else {
+      this.restoreEntryOrder()
+    }
+
+    this.listTarget.querySelectorAll("[data-transfer-category-header]").forEach((header) => {
+      header.classList.toggle("hidden", !this.groupedValue)
     })
+    this.refreshCategoryCounts()
+    queueMicrotask(() => this.preserveListPositions())
   }
 
   updateToggleButtons() {
@@ -44,10 +58,12 @@ export default class extends Controller {
     event.preventDefault()
     const content = this.templateTarget.innerHTML.replace(/NEW_RECORD/g, Date.now())
     this.listTarget.insertAdjacentHTML("beforeend", content)
+    const row = this.rowTargets[this.rowTargets.length - 1]
+    if (row) row.dataset.entryIndex = String(this.nextEntryIndex++)
   }
 
-  // Repopulate a row's unit dropdown with the selected ingredient's units,
-  // then move the row under the matching category header.
+  // Repopulate a row's unit dropdown with the selected ingredient's units.
+  // Rows stay in the order the user entered them; grouping is only a view toggle.
   ingredientChanged(event) {
     const row = event.target.closest("[data-stock-transfer-lines-target='row']")
     if (!row) return
@@ -64,9 +80,6 @@ export default class extends Controller {
         select.appendChild(opt)
       })
     }
-
-    this.placeRowInCategory(row)
-    this.refreshCategoryCounts()
   }
 
   remove(event) {
@@ -82,31 +95,71 @@ export default class extends Controller {
       row.remove()
     }
 
-    this.removeEmptyCategoryHeaders()
-    this.refreshCategoryCounts()
+    if (this.groupedValue) this.refreshCategoryCounts()
   }
 
-  placeRowInCategory(row) {
-    if (!this.hasListTarget) return
+  captureEntryOrder() {
+    this.visibleRows().forEach((row, index) => {
+      row.dataset.entryIndex = String(index)
+    })
+    this.nextEntryIndex = this.visibleRows().length
+  }
 
-    const ingredientId = row.querySelector("input[name*='[ingredient_id]']")?.value
-    const meta = this.categoryMetaFor(ingredientId)
-    const categoryKey = meta.id != null ? String(meta.id) : "uncategorized"
+  restoreEntryOrder() {
+    this.visibleRows()
+      .sort((a, b) => Number(a.dataset.entryIndex || 0) - Number(b.dataset.entryIndex || 0))
+      .forEach((row) => this.listTarget.append(row))
 
-    let header = this.listTarget.querySelector(
-      `[data-transfer-category-header][data-category-id="${CSS.escape(categoryKey)}"]`
+    this.hiddenRows().forEach((row) => this.listTarget.append(row))
+    this.listTarget.querySelectorAll("[data-transfer-category-header]").forEach((header) => header.remove())
+  }
+
+  groupRowsByCategory() {
+    const groups = new Map()
+
+    this.visibleRows().forEach((row) => {
+      const ingredientId = row.querySelector("input[name*='[ingredient_id]']")?.value
+      const meta = this.categoryMetaFor(ingredientId)
+      const key = meta.id != null ? String(meta.id) : "uncategorized"
+      if (!groups.has(key)) groups.set(key, { meta, key, rows: [] })
+      groups.get(key).rows.push(row)
+    })
+
+    const ordered = [...groups.values()].sort((a, b) => {
+      if (a.meta.position !== b.meta.position) return a.meta.position - b.meta.position
+      return a.meta.name.localeCompare(b.meta.name)
+    })
+
+    this.listTarget.querySelectorAll("[data-transfer-category-header]").forEach((header) => header.remove())
+
+    ordered.forEach((group) => {
+      const header = this.buildCategoryHeader(group.key, group.meta.name, group.meta.position)
+      this.listTarget.append(header)
+      group.rows
+        .sort((a, b) => Number(a.dataset.entryIndex || 0) - Number(b.dataset.entryIndex || 0))
+        .forEach((row) => this.listTarget.append(row))
+    })
+
+    this.hiddenRows().forEach((row) => this.listTarget.append(row))
+  }
+
+  visibleRows() {
+    return this.rowTargets.filter((row) => !row.classList.contains("hidden"))
+  }
+
+  hiddenRows() {
+    return this.rowTargets.filter((row) => row.classList.contains("hidden"))
+  }
+
+  // Keep saved line positions as the user's entry/list order, even while grouped.
+  preserveListPositions() {
+    const ordered = [...this.visibleRows()].sort(
+      (a, b) => Number(a.dataset.entryIndex || 0) - Number(b.dataset.entryIndex || 0)
     )
-    if (!header) {
-      header = this.buildCategoryHeader(categoryKey, meta.name, meta.position)
-      this.insertCategoryHeader(header, meta.position, categoryKey)
-      if (!this.groupedValue) header.classList.add("hidden")
-    }
-
-    if (this.rowBelongsToHeader(row, header)) return
-
-    const anchor = this.lastVisibleRowInCategory(header) || header
-    anchor.after(row)
-    this.removeEmptyCategoryHeaders()
+    ordered.forEach((row, index) => {
+      const input = row.querySelector("input[name*='[position]']")
+      if (input) input.value = index
+    })
   }
 
   categoryMetaFor(ingredientId) {
@@ -138,51 +191,6 @@ export default class extends Controller {
     header.append(count)
 
     return header
-  }
-
-  insertCategoryHeader(header, position, categoryKey) {
-    const headers = [...this.listTarget.querySelectorAll("[data-transfer-category-header]")]
-    const next = headers.find((existing) => {
-      const existingPos = Number(existing.dataset.categoryPosition)
-      if (existingPos > position) return true
-      if (existingPos === position && existing.dataset.categoryId.localeCompare(categoryKey) > 0) {
-        return true
-      }
-      return false
-    })
-
-    if (next) {
-      next.before(header)
-    } else {
-      this.listTarget.append(header)
-    }
-  }
-
-  lastVisibleRowInCategory(header) {
-    let el = header.nextElementSibling
-    let last = null
-    while (el && !el.hasAttribute("data-transfer-category-header")) {
-      if (el.matches("[data-stock-transfer-lines-target='row']") && !el.classList.contains("hidden")) {
-        last = el
-      }
-      el = el.nextElementSibling
-    }
-    return last
-  }
-
-  rowBelongsToHeader(row, header) {
-    let el = header.nextElementSibling
-    while (el && !el.hasAttribute("data-transfer-category-header")) {
-      if (el === row) return true
-      el = el.nextElementSibling
-    }
-    return false
-  }
-
-  removeEmptyCategoryHeaders() {
-    this.listTarget.querySelectorAll("[data-transfer-category-header]").forEach((header) => {
-      if (!this.lastVisibleRowInCategory(header)) header.remove()
-    })
   }
 
   refreshCategoryCounts() {
