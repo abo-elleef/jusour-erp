@@ -29,6 +29,12 @@
     { value: "", label: t("inventory.ingredients.index.all_suppliers") },
     { value: "none", label: t("inventory.ingredients.index.no_supplier") }
   ] + @suppliers.map { |supplier| { value: supplier.id, label: supplier.name } } %>
+  <% selected_category_value = @q.ingredient_category_id_eq.to_s %>
+  <% selected_category_label = category_options_json.find { |opt| opt[:value].to_s == selected_category_value }&.dig(:label) ||
+    t("inventory.ingredients.index.all_categories") %>
+  <% selected_supplier_value = @supplier_id.to_s %>
+  <% selected_supplier_label = supplier_options_json.find { |opt| opt[:value].to_s == selected_supplier_value }&.dig(:label) ||
+    t("inventory.ingredients.index.all_suppliers") %>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <%= link_to admin_inventory_ingredients_path(sort: @sort, dir: @direction),
@@ -85,9 +91,10 @@
           <%= f.label :ingredient_category_id_eq, t("inventory.ingredients.index.category"), class: "block text-sm font-medium text-gray-700 mb-1" %>
           <div class="relative"
                data-controller="searchable-select"
+               data-searchable-select-clear-on-empty-value="true"
                data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
             <%= hidden_field_tag "q[ingredient_category_id_eq]",
-                  @q.ingredient_category_id_eq,
+                  selected_category_value,
                   data: { searchable_select_target: "hidden" } %>
             <input type="text"
                    autocomplete="off"
@@ -95,6 +102,7 @@
                    role="combobox"
                    aria-expanded="false"
                    aria-autocomplete="list"
+                   value="<%= selected_category_label %>"
                    placeholder="<%= t("inventory.ingredients.index.all_categories") %>"
                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
                    data-searchable-select-target="input"
@@ -108,9 +116,10 @@
           <%= label_tag :supplier_id, t("inventory.ingredients.index.supplier"), class: "block text-sm font-medium text-gray-700 mb-1" %>
           <div class="relative"
                data-controller="searchable-select"
+               data-searchable-select-clear-on-empty-value="true"
                data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
             <%= hidden_field_tag :supplier_id,
-                  @supplier_id,
+                  selected_supplier_value,
                   data: { searchable_select_target: "hidden" } %>
             <input type="text"
                    autocomplete="off"
@@ -118,6 +127,7 @@
                    role="combobox"
                    aria-expanded="false"
                    aria-autocomplete="list"
+                   value="<%= selected_supplier_label %>"
                    placeholder="<%= t("inventory.ingredients.index.all_suppliers") %>"
                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
                    data-searchable-select-target="input"

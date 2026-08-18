@@ -4,7 +4,7 @@ module Inventory
   # Rebuilds a single ingredient's daily closing on-hand by walking
   # stock-adjustment deltas forward from the balance at the start of the range.
   class IngredientBalanceHistoryService
-    DEFAULT_DAYS = 30
+    DEFAULT_DAYS = 7
     ALLOWED_DAYS = [1, 3, 7, 30, 90].freeze
 
     def initialize(ingredient:, days: DEFAULT_DAYS, as_of: Date.current)

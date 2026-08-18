@@ -2,7 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["input", "hidden"]
-  static values = { placeholder: String }
+  static values = { placeholder: String, clearOnEmpty: { type: Boolean, default: false } }
 
   connect() {
     this.highlightIndex = -1
@@ -49,6 +49,10 @@ export default class extends Controller {
   }
 
   filter() {
+    if (this.clearOnEmptyValue && this.inputTarget.value.trim() === "") {
+      this.hiddenTarget.value = ""
+      this.hiddenTarget.dispatchEvent(new Event("change", { bubbles: true }))
+    }
     this.open()
     this.renderOptions(this.inputTarget.value)
   }
