@@ -1,5 +1,9 @@
 <%= render "admin/inventory/tools_nav" %>
 
+<% sort_opts = { sort: @sort, direction: @direction } %>
+<% display_lines = @grouped_view ? group_preserving_line_order_by_ingredient_category(@lines) : [[nil, @lines]] %>
+<% duplicate_ids = @duplicate_ingredient_ids.to_set %>
+
 <div class="max-w-4xl">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
@@ -10,6 +14,12 @@
         <span class="<%= @template.active? ? "text-emerald-700" : "text-gray-500" %> font-medium">
           <%= @template.active? ? t("inventory.stock_transfer_templates.active") : t("inventory.stock_transfer_templates.inactive") %>
         </span>
+        <% if duplicate_ids.any? %>
+          ·
+          <span class="text-amber-800 font-medium">
+            <%= t("inventory.stock_transfer_templates.repeated_ingredients_count", count: duplicate_ids.size) %>
+          </span>
+        <% end %>
       </p>
     </div>
     <div class="flex flex-wrap gap-2">
@@ -53,34 +63,56 @@
   </section>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
-    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-center justify-between gap-2">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfer_templates.line_items") %></h2>
+      <div class="flex items-center gap-1">
+        <%= link_to t("inventory.stock_transfers.flat_list"),
+              admin_inventory_stock_transfer_template_path(@template, request.query_parameters.except("grouped")),
+              class: "text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors #{@grouped_view ? 'border-gray-200 text-gray-600 hover:bg-gray-50' : 'border-amber-500 bg-amber-50 text-amber-800'}" %>
+        <%= link_to t("inventory.stock_transfers.group_by_category"),
+              admin_inventory_stock_transfer_template_path(@template, request.query_parameters.merge("grouped" => "1")),
+              class: "text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors #{@grouped_view ? 'border-amber-500 bg-amber-50 text-amber-800' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}" %>
+      </div>
     </div>
-    <table class="w-full text-sm">
-      <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
-        <tr>
-          <th class="p-3 ps-5 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
-          <th class="p-3 text-start"><%= t("inventory.stock_transfers.ingredient") %></th>
-          <th class="p-3 text-end"><%= t("inventory.stock_transfer_templates.order_limit") %></th>
-          <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.alternate_units.unit") %></th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        <% template_row_number = 0 %>
-        <% group_records_by_ingredient_category(@lines).each do |category_name, lines| %>
-          <%= render "admin/inventory/stock_transfers/category_header", name: category_name, count: lines.size, tag: :tr, colspan: 4 %>
-          <% lines.each do |line| %>
-            <% template_row_number += 1 %>
-            <tr>
-              <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= template_row_number %></td>
-              <td class="p-3 font-medium text-gray-900"><%= line.ingredient.name %></td>
-              <td class="p-3 text-end tabular-nums"><%= line.default_quantity %></td>
-              <td class="p-3 pe-5 text-gray-600"><%= ingredient_unit_label(line.unit.presence || line.ingredient.unit) %></td>
-            </tr>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
+          <tr>
+            <th class="p-3 ps-5 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
+            <th class="p-3 text-start"><%= sort_header_link(t("inventory.stock_transfers.ingredient"), :ingredient, **sort_opts) %></th>
+            <th class="p-3 text-end"><%= sort_header_link(t("inventory.stock_transfer_templates.order_limit"), :order_limit, **sort_opts) %></th>
+            <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.alternate_units.unit") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% template_row_number = 0 %>
+          <% display_lines.each do |category_name, lines| %>
+            <%= render "admin/inventory/stock_transfers/category_header", name: category_name, count: lines.size, tag: :tr, colspan: 4 if category_name %>
+            <% lines.each do |line| %>
+              <% template_row_number += 1 %>
+              <% repeated = duplicate_ids.include?(line.ingredient_id) %>
+              <tr class="<%= 'bg-amber-50/80' if repeated %>">
+                <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= template_row_number %></td>
+                <td class="p-3 font-medium text-gray-900">
+                  <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient),
+                        class: "text-amber-700 hover:text-amber-800 font-semibold" %>
+                  <% if repeated %>
+                    <span class="inline-flex ms-1 align-middle text-[10px] font-semibold uppercase tracking-wide text-amber-900 bg-amber-100 border border-amber-300 rounded px-1.5 py-0.5">
+                      <%= t("inventory.stock_transfer_templates.repeated") %>
+                    </span>
+                  <% end %>
+                  <% unless category_name %>
+                    <span class="block text-xs font-normal text-gray-500 mt-0.5"><%= line.ingredient.ingredient_category.name %></span>
+                  <% end %>
+                </td>
+                <td class="p-3 text-end tabular-nums"><%= line.default_quantity %></td>
+                <td class="p-3 pe-5 text-gray-600"><%= ingredient_unit_label(line.unit.presence || line.ingredient.unit) %></td>
+              </tr>
+            <% end %>
           <% end %>
-        <% end %>
-      </tbody>
-    </table>
+        </tbody>
+      </table>
+    </div>
   </section>
 
   <%= button_to t("actions.delete"), admin_inventory_stock_transfer_template_path(@template),

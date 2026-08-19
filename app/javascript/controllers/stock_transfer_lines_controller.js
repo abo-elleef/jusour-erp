@@ -9,12 +9,14 @@ export default class extends Controller {
     availableUnits: Object,
     ingredientCategories: Object,
     uncategorized: { type: String, default: "Uncategorized" },
-    grouped: { type: Boolean, default: false }
+    grouped: { type: Boolean, default: false },
+    duplicateLabel: { type: String, default: "Repeated" }
   }
 
   connect() {
     this.nextEntryIndex = 0
     this.captureEntryOrder()
+    this.refreshDuplicateHighlights()
   }
 
   groupedValueChanged() {
@@ -41,6 +43,7 @@ export default class extends Controller {
       header.classList.toggle("hidden", !this.groupedValue)
     })
     this.refreshCategoryCounts()
+    this.refreshDuplicateHighlights()
     queueMicrotask(() => this.preserveListPositions())
   }
 
@@ -63,6 +66,7 @@ export default class extends Controller {
     this.listTarget.insertAdjacentHTML("beforeend", content)
     const row = this.rowTargets[this.rowTargets.length - 1]
     if (row) row.dataset.entryIndex = String(this.nextEntryIndex++)
+    this.refreshDuplicateHighlights()
   }
 
   recommendRequested(event) {
@@ -101,6 +105,8 @@ export default class extends Controller {
         select.appendChild(opt)
       })
     }
+
+    this.refreshDuplicateHighlights()
   }
 
   remove(event) {
@@ -117,6 +123,7 @@ export default class extends Controller {
     }
 
     if (this.groupedValue) this.refreshCategoryCounts()
+    this.refreshDuplicateHighlights()
   }
 
   captureEntryOrder() {
@@ -227,6 +234,44 @@ export default class extends Controller {
 
       const span = header.querySelector("[data-transfer-category-count]")
       if (span) span.textContent = count > 0 ? `(${count})` : ""
+    })
+  }
+
+  refreshDuplicateHighlights() {
+    const counts = new Map()
+
+    this.visibleRows().forEach((row) => {
+      const ingredientId = row.querySelector("input[name*='[ingredient_id]']")?.value
+      if (!ingredientId) return
+
+      counts.set(ingredientId, (counts.get(ingredientId) || 0) + 1)
+    })
+
+    this.visibleRows().forEach((row) => {
+      const ingredientId = row.querySelector("input[name*='[ingredient_id]']")?.value
+      const repeated = ingredientId && (counts.get(ingredientId) || 0) > 1
+
+      row.classList.toggle("bg-amber-50", repeated)
+      row.classList.toggle("ring-1", repeated)
+      row.classList.toggle("ring-amber-200", repeated)
+      row.classList.toggle("ring-inset", repeated)
+
+      const ingredientCell = row.querySelector("input[name*='[ingredient_id]']")?.closest("div")
+      if (!ingredientCell) return
+
+      let badge = ingredientCell.querySelector("[data-duplicate-ingredient-badge]")
+      if (repeated) {
+        if (!badge) {
+          badge = document.createElement("span")
+          badge.dataset.duplicateIngredientBadge = ""
+          badge.className =
+            "inline-flex mt-1.5 text-[10px] font-semibold uppercase tracking-wide text-amber-900 bg-amber-100 border border-amber-300 rounded px-1.5 py-0.5"
+          badge.textContent = this.duplicateLabelValue
+          ingredientCell.appendChild(badge)
+        }
+      } else {
+        badge?.remove()
+      }
     })
   }
 }

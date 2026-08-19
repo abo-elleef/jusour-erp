@@ -1540,6 +1540,10 @@ ar:
       back: "← القوالب"
       empty: "لا توجد قوالب تحويل بعد. أنشئ واحداً بمكوناتك المعتادة (~30)."
       delete_confirm: "حذف القالب «%{name}»؟"
+      repeated: "مكرر"
+      repeated_ingredients_count:
+        one: "مكون مكرر واحد"
+        other: "%{count} مكونات مكررة"
     reports:
       valuation:
         description: "قيمة المخزون المتوفر حسب تكلفة الوحدة لكل مكون."

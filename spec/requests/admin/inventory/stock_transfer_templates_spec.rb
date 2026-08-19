@@ -62,4 +62,30 @@ RSpec.describe "Admin inventory stock transfer templates", type: :request do
     template = StockTransferTemplate.last
     expect(template.stock_transfer_template_lines.map(&:ingredient_id)).to eq([ingredient.id, ingredient.id])
   end
+
+  it "show page supports sorting and highlights repeated ingredients" do
+    template = StockTransferTemplate.create!(
+      company: company, name: "Dupes", active: true,
+      default_from_location: kitchen, default_to_location: branch
+    )
+    other = create(:ingredient, company: company, name: "Zucchini")
+    StockTransferTemplateLine.create!(
+      stock_transfer_template: template, ingredient: ingredient, default_quantity: 5, position: 0
+    )
+    StockTransferTemplateLine.create!(
+      stock_transfer_template: template, ingredient: ingredient, default_quantity: 10, position: 1
+    )
+    StockTransferTemplateLine.create!(
+      stock_transfer_template: template, ingredient: other, default_quantity: 3, position: 2
+    )
+
+    get admin_inventory_stock_transfer_template_path(template, sort: "ingredient")
+    expect(response).to be_successful
+    expect(response.body).to include(I18n.t("inventory.stock_transfer_templates.repeated"))
+    expect(response.body).to include(admin_inventory_ingredient_path(ingredient))
+
+    get admin_inventory_stock_transfer_template_path(template, grouped: 1, sort: "order_limit", dir: "desc")
+    expect(response).to be_successful
+    expect(response.body).to include(I18n.t("inventory.stock_transfers.group_by_category"))
+  end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_19_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_19_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1192,7 +1192,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["ingredient_id"], name: "index_stock_transfer_template_lines_on_ingredient_id"
-    t.index ["stock_transfer_template_id", "ingredient_id"], name: "index_st_template_lines_on_template_and_ingredient", unique: true
+    t.index ["stock_transfer_template_id", "ingredient_id"], name: "index_st_template_lines_on_template_and_ingredient"
     t.index ["stock_transfer_template_id"], name: "index_st_template_lines_on_template_id"
     t.index ["unit_id"], name: "index_stock_transfer_template_lines_on_unit_id"
   end

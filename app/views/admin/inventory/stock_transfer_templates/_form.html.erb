@@ -65,7 +65,8 @@
            data-searchable-select-options="<%= ingredient_search_options(@ingredients) %>"
            data-stock-transfer-lines-available-units-value="<%= @ingredient_available_units.to_json %>"
            data-stock-transfer-lines-ingredient-categories-value="<%= ingredient_categories_json(@ingredients) %>"
-           data-stock-transfer-lines-uncategorized-value="<%= t('inventory.stock_transfers.uncategorized') %>">
+           data-stock-transfer-lines-uncategorized-value="<%= t('inventory.stock_transfers.uncategorized') %>"
+           data-stock-transfer-lines-duplicate-label-value="<%= t('inventory.stock_transfer_templates.repeated') %>">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
       <div>
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfer_templates.line_items") %></h2>

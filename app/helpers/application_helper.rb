@@ -232,6 +232,32 @@ module ApplicationHelper
       end
   end
 
+  # Like `group_records_by_ingredient_category`, but keeps each category's line
+  # order as given (e.g. after a user-chosen sort on the template show page).
+  def group_preserving_line_order_by_ingredient_category(records)
+    Array(records).reject { |r| r.respond_to?(:marked_for_destruction?) && r.marked_for_destruction? }
+      .group_by { |r| r.ingredient&.ingredient_category }
+      .sort_by { |cat, _| [cat ? 0 : 1, cat&.position.to_i, cat&.name.to_s.downcase] }
+      .map do |cat, items|
+        [cat&.name.presence || t("inventory.stock_transfers.uncategorized"), items]
+      end
+  end
+
+  def duplicate_ingredient_ids(lines)
+    Array(lines).group_by(&:ingredient_id).filter_map { |id, group| id if id.present? && group.size > 1 }
+  end
+
+  def template_line_sort_key(line, sort)
+    case sort.to_s
+    when "order_limit"
+      line.default_quantity.to_d
+    when "ingredient"
+      line.ingredient.name.to_s.downcase
+    else
+      [line.position.to_i, line.created_at.to_i]
+    end
+  end
+
   # Render a base-unit transfer quantity in the line's (fixed) unit, with the
   # base equivalent as a helper line when the unit differs from the base.
   def transfer_line_quantity(line, base_quantity)

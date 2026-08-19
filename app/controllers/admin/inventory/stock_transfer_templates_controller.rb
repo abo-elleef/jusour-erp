@@ -3,6 +3,8 @@
 module Admin
   module Inventory
     class StockTransferTemplatesController < BaseController
+      TEMPLATE_LINE_SORTS = %w[position ingredient order_limit].freeze
+
       before_action :set_template, only: %i[show edit update destroy duplicate]
 
       def index
@@ -12,7 +14,12 @@ module Admin
 
       def show
         authorize_inventory!(:show)
-        @lines = @template.stock_transfer_template_lines.includes(ingredient: :ingredient_category).ordered
+        @grouped_view = params[:grouped] == "1"
+        @sort = TEMPLATE_LINE_SORTS.include?(params[:sort].to_s) ? params[:sort].to_s : "position"
+        @direction = params[:dir].to_s == "desc" ? "desc" : "asc"
+        lines = @template.stock_transfer_template_lines.includes(ingredient: :ingredient_category).to_a
+        @duplicate_ingredient_ids = helpers.duplicate_ingredient_ids(lines)
+        @lines = sort_template_lines(lines)
       end
 
       def new
@@ -108,6 +115,12 @@ module Admin
 
       def record_for_policy
         @template || super
+      end
+
+      def sort_template_lines(lines)
+        sorted = lines.sort_by { |line| helpers.template_line_sort_key(line, @sort) }
+        sorted.reverse! if @direction == "desc"
+        sorted
       end
     end
   end

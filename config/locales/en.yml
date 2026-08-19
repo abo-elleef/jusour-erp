@@ -1536,6 +1536,10 @@ en:
       back: "← Templates"
       empty: "No transfer templates yet. Create one with your usual ~30 ingredients."
       delete_confirm: "Delete template “%{name}”?"
+      repeated: "Repeated"
+      repeated_ingredients_count:
+        one: "%{count} repeated ingredient"
+        other: "%{count} repeated ingredients"
     reports:
       valuation:
         description: "On-hand stock valued at ingredient cost per unit."
