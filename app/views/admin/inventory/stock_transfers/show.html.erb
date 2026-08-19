@@ -117,8 +117,7 @@
                                        end %>
                     <td class="p-3 text-gray-400 tabular-nums"><%= send_row_number %></td>
                     <td class="p-3 font-medium text-gray-900">
-                      <%= line.ingredient.name %>
-                      <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                      <%= render "ingredient_name", ingredient: line.ingredient, category_name: category_name %>
                       <% if short_at_source %>
                         <span class="mt-1 inline-block text-xs font-semibold text-red-700"><%= t("inventory.stock_transfers.short_at_source") %></span>
                       <% end %>
@@ -180,8 +179,7 @@
                   <tr>
                     <td class="p-3 text-gray-400 tabular-nums"><%= confirm_row_number %></td>
                     <td class="p-3 font-medium text-gray-900">
-                      <%= line.ingredient.name %>
-                      <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                      <%= render "ingredient_name", ingredient: line.ingredient, category_name: category_name %>
                     </td>
                     <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
                     <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_amount(line, shipment_line.quantity_sent) %></td>
@@ -245,8 +243,7 @@
                       <tr>
                         <td class="py-1 px-1 text-gray-400 tabular-nums"><%= history_row_number %></td>
                         <td class="py-1 px-1 text-gray-900">
-                          <%= shipment_line.ingredient.name %>
-                          <span class="block font-mono text-xs text-amber-700"><%= shipment_line.ingredient.code %></span>
+                          <%= render "ingredient_name", ingredient: shipment_line.ingredient, category_name: category_name %>
                         </td>
                         <td class="py-1 px-1 text-gray-700"><%= transfer_line_unit_label(ship_line) %></td>
                         <td class="py-1 px-1 text-end tabular-nums"><%= transfer_line_amount(ship_line, shipment_line.quantity_sent) %></td>
@@ -305,8 +302,7 @@
               <tr class="<%= 'bg-red-50 print:bg-transparent' if short_at_source %>" data-short-at-source="<%= short_at_source %>">
                 <td class="p-3 text-gray-400 tabular-nums"><%= progress_row_number %></td>
                 <td class="p-3 font-medium text-gray-900">
-                  <%= line.ingredient.name %>
-                  <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                  <%= render "ingredient_name", ingredient: line.ingredient, category_name: category_name %>
                   <% if short_at_source %>
                     <span class="mt-1 inline-block text-xs font-semibold text-red-700 print-hide"><%= t("inventory.stock_transfers.short_at_source") %></span>
                   <% end %>
@@ -381,8 +377,7 @@
             <tr>
               <td class="<%= print_cell %> bg-gray-50 text-gray-600 tabular-nums text-center"><%= print_row_number %></td>
               <td class="<%= print_cell %> bg-emerald-50/80 text-gray-900 font-semibold">
-                <%= line.ingredient.name %>
-                <span class="block font-mono text-xs font-normal text-emerald-800"><%= line.ingredient.code %></span>
+                <%= render "ingredient_name", ingredient: line.ingredient, category_name: category_name, subtitle_class: "text-emerald-800" %>
               </td>
               <td class="<%= print_cell %> bg-amber-50/60 text-gray-800"><%= transfer_line_unit_label(line) %></td>
               <td class="<%= print_cell %> bg-sky-50/70 text-sky-950 tabular-nums text-end font-semibold">
@@ -428,9 +423,7 @@
                 <tr data-source-shortage="true">
                   <td class="p-3 text-gray-400 tabular-nums"><%= shortage_row_number %></td>
                   <td class="p-3 font-medium text-gray-900">
-                    <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient),
-                          class: "hover:text-amber-800" %>
-                    <span class="block font-mono text-xs font-normal text-amber-700"><%= line.ingredient.code %></span>
+                    <%= render "ingredient_name", ingredient: line.ingredient, category_name: category_name, link: true %>
                   </td>
                   <td class="p-3 text-gray-700"><%= transfer_line_unit_label(line) %></td>
                   <td class="p-3 text-end tabular-nums text-gray-700"><%= transfer_line_amount(line, line.quantity_received) %></td>

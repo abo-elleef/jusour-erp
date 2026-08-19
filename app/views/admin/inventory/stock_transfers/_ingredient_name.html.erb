@@ -1,0 +1,10 @@
+<%# locals: ingredient, category_name: nil %>
+<% if local_assigns.fetch(:link, false) %>
+  <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient),
+        class: local_assigns.fetch(:link_class, "hover:text-amber-800") %>
+<% else %>
+  <%= ingredient.name %>
+<% end %>
+<% unless category_name %>
+  <span class="block text-xs font-normal <%= local_assigns.fetch(:subtitle_class, "text-amber-700") %>"><%= ingredient.ingredient_category.name %></span>
+<% end %>
