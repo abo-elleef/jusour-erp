@@ -114,10 +114,17 @@
     display: block;
   }
 
-  /* Keep rows and cards intact across page breaks. */
-  tr,
-  section {
+  /* Keep table rows intact across page breaks; let long print sections flow. */
+  tr {
     break-inside: avoid;
+  }
+
+  section:not(.stock-transfer-print) {
+    break-inside: avoid;
+  }
+
+  .stock-transfer-print {
+    break-inside: auto;
   }
 }
 

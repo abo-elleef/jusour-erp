@@ -4,13 +4,7 @@
 <% status_label, status_class = stock_transfer_status_badge(@stock_transfer.status) %>
 
 <div class="max-w-5xl">
-  <div class="print-only mb-6 pb-4 border-b border-gray-300">
-    <p class="text-lg font-bold text-gray-900"><%= Current.company.name %></p>
-    <p class="text-sm text-gray-600"><%= t("inventory.stock_transfers.print_document_title") %></p>
-    <p class="text-xs text-gray-500 mt-1"><%= t("inventory.stock_transfers.printed_at", at: l(Time.current, format: :short)) %></p>
-  </div>
-
-  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6 print-hide">
     <div>
       <div class="flex flex-wrap items-center gap-3">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @stock_transfer.transfer_number %></h1>
@@ -48,38 +42,10 @@
   </div>
 
   <% if @stock_transfer.notes.present? %>
-    <div class="rounded-2xl border border-gray-200 bg-white px-5 py-4 mb-6 text-sm text-gray-700">
+    <div class="rounded-2xl border border-gray-200 bg-white px-5 py-4 mb-6 text-sm text-gray-700 print-hide">
       <%= simple_format(@stock_transfer.notes) %>
     </div>
   <% end %>
-
-  <%# Print-only details table (cards don't print well) — laid out horizontally. %>
-  <% details = [
-       [t("inventory.stock_transfers.from_location"), @stock_transfer.from_location.name],
-       [t("inventory.stock_transfers.to_location"), @stock_transfer.to_location.name],
-       [t("inventory.stock_transfers.transferred_on"), l(@stock_transfer.transferred_on, format: :long)],
-       [t("inventory.stock_transfers.requested_at"), "#{l(@stock_transfer.requested_at, format: :short)} — #{@stock_transfer.requested_by.name}"],
-       [t("inventory.stock_transfers.last_sent_at"), @stock_transfer.sent_at ? "#{l(@stock_transfer.sent_at, format: :short)} — #{@stock_transfer.sent_by&.name}" : "—"],
-       [t("inventory.stock_transfers.last_received_at"), @stock_transfer.received_at ? "#{l(@stock_transfer.received_at, format: :short)} — #{@stock_transfer.received_by&.name}" : "—"]
-     ] %>
-  <div class="print-only mb-6">
-    <table class="w-full text-sm border-collapse">
-      <thead>
-        <tr>
-          <% details.each do |label, _| %>
-            <th class="border border-gray-800 print:border-black p-2 font-bold text-xs bg-sky-100 text-sky-950 text-start"><%= label %></th>
-          <% end %>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <% details.each do |_, value| %>
-            <td class="border border-gray-800 print:border-black p-2 text-gray-900 align-top bg-sky-50/50"><%= value %></td>
-          <% end %>
-        </tr>
-      </tbody>
-    </table>
-  </div>
 
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 print-hide">
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
@@ -372,9 +338,10 @@
   <% print_th_limit = "#{print_cell} bg-sky-100 text-sky-950 font-bold text-sm text-end" %>
   <% print_th_counted = "#{print_cell} bg-orange-100 text-orange-950 font-bold text-sm text-end" %>
   <% print_th_qty = "#{print_cell} bg-rose-100 text-rose-950 font-bold text-sm text-end" %>
-  <section class="print-only overflow-hidden border border-gray-800 print:border-black bg-white">
+  <section class="print-only stock-transfer-print overflow-hidden border border-gray-800 print:border-black bg-white">
     <div class="border-b border-gray-800 print:border-black bg-sky-200 px-4 py-3 text-center">
-      <h2 class="text-base font-bold text-sky-950 tracking-wide">
+      <p class="text-lg font-bold text-sky-950"><%= Current.company.name %></p>
+      <h2 class="text-base font-bold text-sky-950 tracking-wide mt-0.5">
         <%= t("inventory.stock_transfers.print_document_title") %>
         · <%= @stock_transfer.transfer_number %>
       </h2>
@@ -382,6 +349,10 @@
         <%= @stock_transfer.from_location.name %> → <%= @stock_transfer.to_location.name %>
         · <%= l(@stock_transfer.transferred_on, format: :long) %>
       </p>
+      <% if @stock_transfer.notes.present? %>
+        <p class="text-xs text-sky-900 mt-1"><%= @stock_transfer.notes %></p>
+      <% end %>
+      <p class="text-xs text-sky-800/80 mt-1"><%= t("inventory.stock_transfers.printed_at", at: l(Time.current, format: :short)) %></p>
     </div>
     <table class="w-full border-collapse text-sm">
       <thead>
