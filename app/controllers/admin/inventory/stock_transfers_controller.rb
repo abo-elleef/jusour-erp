@@ -3,17 +3,24 @@
 module Admin
   module Inventory
     class StockTransfersController < BaseController
+      SORT_COLUMNS = %w[transfer_number transferred_on status from_location to_location requested_by].freeze
+
       before_action :set_stock_transfer, only: %i[show edit update send_transfer confirm_receipt cancel]
 
       def index
         authorize_inventory_index!(StockTransfer)
+        @sort      = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : nil
+        @direction = params[:dir].to_s == "asc" ? "asc" : "desc"
+
         scope = StockTransfer.includes(:from_location, :to_location, :requested_by, :sent_by, :received_by)
         scope = scope.where(status: params[:status]) if params[:status].present?
         if params[:location_id].present?
           loc_id = params[:location_id]
           scope = scope.where("stock_transfers.from_location_id = ? OR stock_transfers.to_location_id = ?", loc_id, loc_id)
         end
-        @stock_transfers = scope.recent.limit(200)
+
+        scope = apply_sort(scope)
+        @pagy, @stock_transfers = pagy(:offset, scope, limit: 50)
         @locations = Location.active.ordered
         @status_counts = StockTransfer.group(:status).count
       end
@@ -222,6 +229,28 @@ module Admin
 
       def preload_source_ingredient_locations
         @stock_transfer.from_location.ingredient_locations.load
+      end
+
+      def apply_sort(scope)
+        dir = @direction == "asc" ? :asc : :desc
+
+        case @sort
+        when "transfer_number"
+          scope.order(transfer_number: dir)
+        when "transferred_on"
+          scope.order(transferred_on: dir, created_at: :desc)
+        when "status"
+          scope.order(status: dir, transferred_on: :desc)
+        when "from_location"
+          scope.joins(:from_location).order("locations.name #{dir}")
+        when "to_location"
+          scope.joins(:to_location).order(Arel.sql("(SELECT name FROM locations WHERE id = stock_transfers.to_location_id) #{dir}"))
+        when "requested_by"
+          scope.joins(:requested_by).order(Arel.sql("(SELECT name FROM users WHERE id = stock_transfers.requested_by_id) #{dir}"))
+        else
+          # default: newest created_at first (id desc equivalent for UUIDs with timestamps)
+          scope.order(created_at: :desc)
+        end
       end
 
       def record_for_policy
