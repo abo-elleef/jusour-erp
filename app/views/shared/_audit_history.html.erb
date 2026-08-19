@@ -33,8 +33,8 @@
               <td class="p-3">
                 <span class="inline-flex text-xs font-semibold px-2 py-0.5 rounded-full border
                   <%= case audit.action.to_s
-                      when "create" then "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      when "destroy" then "bg-red-50 text-red-700 border-red-200"
+                      when "create", "supplier_linked" then "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      when "destroy", "supplier_unlinked" then "bg-red-50 text-red-700 border-red-200"
                       else "bg-amber-50 text-amber-800 border-amber-200"
                       end %>">
                   <%= t("accounting.audit_history.actions.#{audit.action}", default: audit.action.to_s) %>

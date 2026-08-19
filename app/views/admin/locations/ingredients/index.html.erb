@@ -12,7 +12,7 @@
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("admin.locations.ingredients_title") %></h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("admin.locations.ingredients_description") %></p>
     </div>
-    <% if policy(@location).update? && @has_positive_stock %>
+    <% if policy(@location).update? && @has_positive_stock && !@location.central_kitchen? %>
       <%= button_to t("admin.locations.clear_stock"),
             clear_stock_admin_location_ingredients_path(@location),
             method: :post,

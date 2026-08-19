@@ -36,10 +36,28 @@ RSpec.describe "Admin::Locations::Ingredients clear stock", type: :request do
     expect(StockAdjustment.last.adjustment_type).to eq("clear_all_stock")
   end
 
-  it "shows the clear button when stock is present" do
+  it "shows the clear button when stock is present on a branch" do
     get admin_location_ingredients_path(location)
     expect(response).to have_http_status(:ok)
     expect(response.body).to include(I18n.t("admin.locations.clear_stock"))
+  end
+
+  context "when the location is a central kitchen" do
+    let(:location) { create(:location, :central_kitchen, company: company) }
+
+    it "does not show the clear button" do
+      get admin_location_ingredients_path(location)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(I18n.t("admin.locations.clear_stock"))
+    end
+
+    it "returns 422 and an error message if the request is sent anyway" do
+      post clear_stock_admin_location_ingredients_path(location)
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include(
+        I18n.t("inventory.clear_location_stock.errors.central_kitchen_not_allowed")
+      )
+    end
   end
 
   it "renders a balance history chart for selected ingredients" do

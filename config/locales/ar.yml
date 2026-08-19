@@ -1300,6 +1300,7 @@ ar:
       default_reason: "تصفير كل المخزون في %{location}"
       errors:
         location_required: "اختر موقعاً للتصفير."
+        central_kitchen_not_allowed: "لا يمكن تصفير المخزون في موقع المطبخ المركزي."
     stock_takes:
       index:
         description: "جرد دوري لمطابقة المخزون الفعلي مع الكميات المسجلة."
@@ -3507,6 +3508,8 @@ ar:
         create: "إنشاء"
         update: "تحديث"
         destroy: "حذف"
+        supplier_linked: "ربط مورّد"
+        supplier_unlinked: "إلغاء ربط مورّد"
       boolean:
         "true": "نعم"
         "false": "لا"
@@ -3534,6 +3537,7 @@ ar:
         all_locations: "كل المواقع"
         category_id: "تصنيف القائمة"
         ingredient_category_id: "تصنيف المكوّن"
+        supplier: "المورّد"
         unit_id: "الوحدة"
         code: "الكود"
         account_code: "رمز الحساب"

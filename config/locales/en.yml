@@ -1296,6 +1296,7 @@ en:
       default_reason: "Cleared all stock at %{location}"
       errors:
         location_required: "Choose a location to clear."
+        central_kitchen_not_allowed: "Stock cannot be cleared on a central kitchen location."
     stock_takes:
       index:
         description: "Cycle counts to reconcile on-hand inventory with physical stock."
@@ -3481,6 +3482,8 @@ en:
         create: "Created"
         update: "Updated"
         destroy: "Deleted"
+        supplier_linked: "Supplier linked"
+        supplier_unlinked: "Supplier unlinked"
       boolean:
         "true": "Yes"
         "false": "No"
@@ -3508,6 +3511,7 @@ en:
         all_locations: "All locations"
         category_id: "Menu category"
         ingredient_category_id: "Ingredient category"
+        supplier: "Supplier"
         unit_id: "Unit"
         code: "Code"
         account_code: "Account code"

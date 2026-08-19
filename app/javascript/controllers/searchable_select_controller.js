@@ -6,12 +6,29 @@ export default class extends Controller {
 
   connect() {
     this.highlightIndex = -1
-    this.menu = this.element.querySelector("[data-searchable-select-target='menu']")
+
+    // The <ul> menu lives inside the element in HTML but gets moved to <body> so it
+    // isn't clipped by overflow:hidden ancestors. Moving it triggers the
+    // MutationObserver on any parent Stimulus controller (e.g. nested-line-sortable),
+    // which can cause Stimulus to fire connect() a second time before disconnect()
+    // is called. Guard against that by checking whether we already own a body-level menu.
+    const menuInElement = this.element.querySelector("[data-searchable-select-target='menu']")
+    if (menuInElement) {
+      this.menu = menuInElement
+      document.body.appendChild(this.menu)
+    }
+
+    // Already initialised (double-connect): just re-sync the display value and bail.
+    if (!this.menu || this._connected) {
+      this.syncInputFromSelected()
+      return
+    }
+
+    this._connected = true
     this.boundCloseOnOutside = this.closeOnOutsideClick.bind(this)
     this.boundRepositionMenu = this.repositionMenu.bind(this)
     this.boundHandleMenuMouseDown = this.handleMenuMouseDown.bind(this)
 
-    document.body.appendChild(this.menu)
     this.menu.addEventListener("mousedown", this.boundHandleMenuMouseDown)
     document.addEventListener("click", this.boundCloseOnOutside)
     window.addEventListener("resize", this.boundRepositionMenu)
@@ -29,6 +46,7 @@ export default class extends Controller {
     window.removeEventListener("scroll", this.boundRepositionMenu, true)
     this.menu.remove()
     this.menu = null
+    this._connected = false
   }
 
   get options() {

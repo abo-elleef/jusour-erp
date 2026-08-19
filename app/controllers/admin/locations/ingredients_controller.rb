@@ -95,6 +95,11 @@ module Admin
       def clear_stock
         authorize @location, :update?, policy_class: LocationPolicy
 
+        if @location.central_kitchen?
+          return render plain: t("inventory.clear_location_stock.errors.central_kitchen_not_allowed"),
+                        status: :unprocessable_entity
+        end
+
         result = ::Inventory::ClearLocationStockService.new(
           location: @location,
           user: current_user

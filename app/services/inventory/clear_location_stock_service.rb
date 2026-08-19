@@ -16,6 +16,7 @@ module Inventory
 
     def call
       raise Error, I18n.t("inventory.clear_location_stock.errors.location_required") if @location.blank?
+      raise Error, I18n.t("inventory.clear_location_stock.errors.central_kitchen_not_allowed") if @location.central_kitchen?
 
       adjusted = 0
       batches_cleared = 0
