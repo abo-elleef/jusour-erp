@@ -32,7 +32,6 @@ class Ingredient < ApplicationRecord
   monetize :cost_per_unit_cents
 
   before_validation :assign_code, on: :create
-  before_validation :recode_on_category_change, on: :update
 
   validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :code, presence: true, uniqueness: { scope: :company_id, case_sensitive: false }
@@ -182,24 +181,6 @@ class Ingredient < ApplicationRecord
 
   def assign_code
     self.code = self.class.next_code(ingredient_category) if code.blank? && ingredient_category
-  end
-
-  def recode_on_category_change
-    return unless ingredient_category_id_changed?
-    return if ingredient_category.blank?
-
-    old_category = IngredientCategory.find_by(id: ingredient_category_id_in_database)
-    return unless old_category
-    return unless self.class.auto_generated_code?(old_category, code)
-
-    self.code = self.class.next_code(ingredient_category)
-  end
-
-  def self.auto_generated_code?(category, code_value)
-    prefix = category.code.to_s
-    return false if prefix.blank?
-
-    code_value.to_s.match?(/\A#{Regexp.escape(prefix)}-[0-9]+\z/)
   end
 
   def assign_company

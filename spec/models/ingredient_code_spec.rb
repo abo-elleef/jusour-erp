@@ -36,23 +36,4 @@ RSpec.describe Ingredient, "reference code", type: :model do
     expect(dup).not_to be_valid
     expect(dup.errors[:code]).to be_present
   end
-
-  it "reassigns an auto-generated code when the ingredient moves to another category" do
-    other = IngredientCategory.create!(name: "Dairy", position: 2, active: true)
-    create(:ingredient, ingredient_category: other, code: "DAIRY-001")
-    ing = ingredient
-
-    ing.update!(ingredient_category: other)
-
-    expect(ing.code).to eq("DAIRY-002")
-  end
-
-  it "keeps a custom code when the ingredient moves to another category" do
-    other = IngredientCategory.create!(name: "Dairy", position: 2, active: true)
-    custom = ingredient(code: "SPECIAL-9")
-
-    custom.update!(ingredient_category: other)
-
-    expect(custom.code).to eq("SPECIAL-9")
-  end
 end
