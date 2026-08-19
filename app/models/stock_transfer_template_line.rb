@@ -7,7 +7,6 @@ class StockTransferTemplateLine < ApplicationRecord
   belongs_to :ingredient
   references_unit :unit, column: :unit_id
 
-  validates :ingredient_id, uniqueness: { scope: :stock_transfer_template_id }
   validates :default_quantity, numericality: { greater_than_or_equal_to: 0 }
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :unit_valid_for_ingredient

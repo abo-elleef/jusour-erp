@@ -43,4 +43,23 @@ RSpec.describe "Admin inventory stock transfer templates", type: :request do
     expect(response.body).not_to match(/quantity_requested_input"[^>]*value="10/)
     expect(response.body).not_to match(/value="10[^"]*"[^>]*quantity_requested_input/)
   end
+
+  it "allows the same ingredient on multiple template lines" do
+    post admin_inventory_stock_transfer_templates_path, params: {
+      stock_transfer_template: {
+        name: "Duplicate lines ok",
+        active: true,
+        default_from_location_id: kitchen.id,
+        default_to_location_id: branch.id,
+        stock_transfer_template_lines_attributes: {
+          "0" => { ingredient_id: ingredient.id, default_quantity: 5, unit: ingredient.unit, position: 0 },
+          "1" => { ingredient_id: ingredient.id, default_quantity: 10, unit: ingredient.unit, position: 1 }
+        }
+      }
+    }
+
+    expect(response).to redirect_to(admin_inventory_stock_transfer_template_path(StockTransferTemplate.last))
+    template = StockTransferTemplate.last
+    expect(template.stock_transfer_template_lines.map(&:ingredient_id)).to eq([ingredient.id, ingredient.id])
+  end
 end
