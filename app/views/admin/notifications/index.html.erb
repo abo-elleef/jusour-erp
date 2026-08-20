@@ -1,4 +1,6 @@
 <% action_btn_class = "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
 <div class="max-w-5xl">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
@@ -14,62 +16,82 @@
     <% end %>
   </div>
 
-  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-    <%= link_to admin_notifications_path(filter: "all"),
-          class: orders_stat_card_class(@filter == "all") do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("notifications.index.stats.total") %></p>
-      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
-    <% end %>
+  <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
+    <%= form_with url: admin_notifications_path, method: :get, class: "flex flex-wrap items-end gap-3" do %>
+      <%= hidden_field_tag :sort, @sort unless @sort == "time" %>
+      <%= hidden_field_tag :dir, @dir unless @dir == "desc" %>
 
-    <%= link_to admin_notifications_path(filter: "unread"),
-          class: orders_stat_card_class(@filter == "unread") do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("notifications.index.stats.unread") %></p>
-      <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= @unread_count %></p>
-      <% if @unread_count.positive? %>
-        <p class="text-xs text-gray-500 mt-1.5"><%= t("notifications.index.stats.unread_hint") %></p>
+      <div class="min-w-[11rem] flex-1">
+        <%= label_tag :alert, t("notifications.index.filters.alert_label"), class: label_class %>
+        <%= select_tag :alert,
+              options_for_select(
+                [[t("notifications.index.filters.all_alerts"), ""]] +
+                  @alert_keys.map { |k| [t("notifications.keys.#{k}", default: k.humanize), k] },
+                @alert
+              ),
+              class: "#{input_class} appearance-none" %>
+      </div>
+
+      <div class="min-w-[10rem]">
+        <%= label_tag :type, t("notifications.index.filters.type_label"), class: label_class %>
+        <%= select_tag :type,
+              options_for_select(
+                [[t("notifications.index.filters.all_types"), ""],
+                 [t("notifications.index.filters.inventory"), "inventory"],
+                 [t("notifications.index.filters.accounting"), "accounting"]],
+                @type
+              ),
+              class: "#{input_class} appearance-none" %>
+      </div>
+
+      <div class="min-w-[9rem]">
+        <%= label_tag :status, t("notifications.index.filters.status_label"), class: label_class %>
+        <%= select_tag :status,
+              options_for_select(
+                [[t("notifications.index.filters.all"), ""],
+                 [t("notifications.index.filters.unread"), "unread"],
+                 [t("notifications.index.filters.read"), "read"]],
+                @status
+              ),
+              class: "#{input_class} appearance-none" %>
+      </div>
+
+      <div class="min-w-[9rem]">
+        <%= label_tag :from, t("notifications.index.filters.from"), class: label_class %>
+        <%= date_field_tag :from, params[:from], max: Date.current, class: input_class %>
+      </div>
+
+      <div class="min-w-[9rem]">
+        <%= label_tag :to, t("notifications.index.filters.to"), class: label_class %>
+        <%= date_field_tag :to, params[:to], max: Date.current, class: input_class %>
+      </div>
+
+      <%= submit_tag t("actions.apply_filters"),
+            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2 rounded-xl transition-colors" %>
+      <% if @filtered %>
+        <%= link_to t("actions.clear"), admin_notifications_path,
+              class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl transition-colors" %>
       <% end %>
     <% end %>
-
-    <%= link_to admin_notifications_path(filter: "inventory"),
-          class: orders_stat_card_class(@filter == "inventory") do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("notifications.index.stats.inventory") %></p>
-      <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= @inventory_count %></p>
-    <% end %>
-
-    <%= link_to admin_notifications_path(filter: "accounting"),
-          class: orders_stat_card_class(@filter == "accounting") do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("notifications.index.stats.accounting") %></p>
-      <p class="text-2xl font-bold mt-1 text-blue-700 tabular-nums"><%= @accounting_count %></p>
-    <% end %>
-  </div>
+  </section>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
-      <div>
-        <h2 class="text-sm font-semibold text-gray-900"><%= t("notifications.index.list_title") %></h2>
-        <p class="text-xs text-gray-500 mt-0.5">
-          <%= t("notifications.index.list_hint", count: @notifications.size) %>
-          <% if @filter != "all" %>
-            · <%= t("notifications.index.filtered_by", filter: t("notifications.index.filters.#{@filter}")) %>
-          <% end %>
-        </p>
-      </div>
-      <% if @filter != "all" %>
-        <%= link_to t("actions.clear"), admin_notifications_path,
-              class: "text-sm font-medium text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-colors" %>
-      <% end %>
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("notifications.index.list_title") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("notifications.index.list_hint", count: @pagy.count) %></p>
     </div>
 
     <% if @notifications.any? %>
       <div class="overflow-x-auto">
         <table class="w-full text-sm min-w-[720px]">
+          <% sort_opts = { sort: @sort, direction: @dir } %>
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
               <th class="p-3 ps-5 text-start w-8"><span class="sr-only"><%= t("notifications.index.columns.status") %></span></th>
-              <th class="p-3 text-start"><%= t("notifications.index.columns.type") %></th>
-              <th class="p-3 text-start"><%= t("notifications.index.columns.alert") %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("notifications.index.columns.type"), :type, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("notifications.index.columns.alert"), :alert, **sort_opts) %></th>
               <th class="p-3 text-start"><%= t("notifications.index.columns.message") %></th>
-              <th class="p-3 text-start whitespace-nowrap"><%= t("notifications.index.columns.time") %></th>
+              <th class="p-3 text-start whitespace-nowrap"><%= sort_header_link(t("notifications.index.columns.time"), :time, **sort_opts) %></th>
               <th class="p-3 pe-5 text-end"><%= t("notifications.index.columns.actions") %></th>
             </tr>
           </thead>
@@ -120,11 +142,13 @@
           </tbody>
         </table>
       </div>
+
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
     <% else %>
       <div class="p-12 text-center">
         <p class="text-gray-900 font-semibold mb-1"><%= t("notifications.index.empty_title") %></p>
         <p class="text-gray-500 text-sm"><%= t("notifications.index.empty_description") %></p>
-        <% if @filter != "all" %>
+        <% if @filtered %>
           <%= link_to t("notifications.index.show_all"), admin_notifications_path,
                 class: "inline-flex mt-4 text-sm font-semibold text-amber-700 hover:text-amber-800 px-4 py-2 rounded-xl hover:bg-amber-50 transition-colors" %>
         <% end %>
