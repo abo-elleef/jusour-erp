@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe Inventory::ReceiveVendorInvoiceService do
+  include ActiveJob::TestHelper
+
   let(:user) { create(:user) }
   let(:category) { IngredientCategory.create!(name: "Produce", position: 1, company: Current.company) }
   let(:supplier) { Supplier.create!(name: "Fresh Farms", lead_time_days: 2, company: Current.company) }
@@ -98,6 +100,49 @@ RSpec.describe Inventory::ReceiveVendorInvoiceService do
     invoice = build_invoice(lines: [{ quantity: 2, unit_price_cents: 250 }])
     expect { described_class.new(invoice, user).call }
       .not_to change(SupplierPriceHistory, :count)
+  end
+
+  describe "price-change alerts" do
+    def seed_baseline(price_cents, supplier: self.supplier)
+      SupplierPriceHistory.create!(
+        supplier: supplier, ingredient: ingredient, price_cents: price_cents,
+        effective_date: 1.week.ago.to_date, recorded_by_user: user
+      )
+    end
+
+    it "enqueues a price-change alert when the received price moves more than 5%" do
+      seed_baseline(200)
+      invoice = build_invoice(lines: [{ quantity: 2, unit_price_cents: 250 }]) # +25%
+
+      expect { described_class.new(invoice, user).call }
+        .to have_enqueued_job(Inventory::NotifyPriceChangeJob)
+        .with(ingredient.id, supplier.id, 200, 250, kind_of(String))
+    end
+
+    it "uses the ingredient's last price across any vendor as the baseline" do
+      other_supplier = Supplier.create!(name: "Other Farms", lead_time_days: 1, company: Current.company)
+      seed_baseline(200, supplier: other_supplier)
+      invoice = build_invoice(lines: [{ quantity: 2, unit_price_cents: 260 }]) # +30% vs the other vendor
+
+      expect { described_class.new(invoice, user).call }
+        .to have_enqueued_job(Inventory::NotifyPriceChangeJob)
+        .with(ingredient.id, supplier.id, 200, 260, kind_of(String))
+    end
+
+    it "does not alert when the price moves 5% or less" do
+      seed_baseline(250)
+      invoice = build_invoice(lines: [{ quantity: 2, unit_price_cents: 260 }]) # +4%
+
+      expect { described_class.new(invoice, user).call }
+        .not_to have_enqueued_job(Inventory::NotifyPriceChangeJob)
+    end
+
+    it "does not alert on a first-ever purchase (no prior price)" do
+      invoice = build_invoice(lines: [{ quantity: 2, unit_price_cents: 250 }])
+
+      expect { described_class.new(invoice, user).call }
+        .not_to have_enqueued_job(Inventory::NotifyPriceChangeJob)
+    end
   end
 
   it "applies a percentage discount to the invoice total" do

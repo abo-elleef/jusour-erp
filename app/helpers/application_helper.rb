@@ -1220,6 +1220,15 @@ module ApplicationHelper
     if raw[:unit].present?
       raw[:unit] = ingredient_unit_label(raw[:unit])
     end
+    if raw[:old_price_cents].present?
+      raw[:old_price] = format_money(raw[:old_price_cents].to_i)
+    end
+    if raw[:new_price_cents].present?
+      raw[:new_price] = format_money(raw[:new_price_cents].to_i)
+    end
+    if raw[:direction].present?
+      raw[:arrow] = raw[:direction] == "up" ? "▲" : "▼"
+    end
 
     t("notifications.messages.#{key}", **raw.symbolize_keys, default: legacy)
   end

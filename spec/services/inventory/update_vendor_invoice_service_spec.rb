@@ -81,11 +81,13 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
     # First edit: change quantity from 4 → 6
     described_class.new(
       invoice, user,
-      supplier_id: supplier.id, location_id: location.id,
-      invoice_number: invoice.invoice_number,
-      invoice_date: invoice.invoice_date, received_on: invoice.received_on,
-      vendor_invoice_lines_attributes: {
-        "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "6", line_total_cents: 1_500 }
+      {
+        supplier_id: supplier.id, location_id: location.id,
+        invoice_number: invoice.invoice_number,
+        invoice_date: invoice.invoice_date, received_on: invoice.received_on,
+        vendor_invoice_lines_attributes: {
+          "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "6", line_total_cents: 1_500 }
+        }
       }
     ).call
 
@@ -101,11 +103,13 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
     expect do
       described_class.new(
         invoice, user,
-        supplier_id: supplier.id, location_id: location.id,
-        invoice_number: invoice.invoice_number,
-        invoice_date: invoice.invoice_date, received_on: invoice.received_on,
-        vendor_invoice_lines_attributes: {
-          "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "5", line_total_cents: 1_250 }
+        {
+          supplier_id: supplier.id, location_id: location.id,
+          invoice_number: invoice.invoice_number,
+          invoice_date: invoice.invoice_date, received_on: invoice.received_on,
+          vendor_invoice_lines_attributes: {
+            "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "5", line_total_cents: 1_250 }
+          }
         }
       ).call
     end.not_to raise_error

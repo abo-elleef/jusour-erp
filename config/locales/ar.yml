@@ -1716,6 +1716,7 @@ ar:
     keys:
       low_stock: "مخزون منخفض"
       batch_expiring: "دفعة تنتهي"
+      price_change: "تغيّر السعر"
       overtime_weekly: "ساعات إضافية أسبوعية"
       overtime_shift: "ساعات إضافية بالوردية"
       cash_variance: "فرق نقدي"
@@ -1758,6 +1759,7 @@ ar:
       no_batch_ref: "بدون مرجع"
       low_stock: "%{name} منخفض: %{on_hand} %{unit} متبقية (الحد: %{threshold})"
       batch_expiring: "دفعة %{name} (%{ref}) تنتهي في %{date}. %{remaining} %{unit} متبقية."
+      price_change: "%{name}: السعر %{arrow} %{percent}% — %{old_price} ← %{new_price} (%{supplier}، %{invoice_number})"
       overtime_weekly: "تجاوز %{name} %{hours} ساعة هذا الأسبوع (حد الساعات الإضافية: %{threshold} س)."
       overtime_shift: "دخل %{name} في وقت إضافي هذا الأسبوع."
       cash_variance: "فرق درج نقدي بقيمة %{variance} لـ %{name} بتاريخ %{date}."

@@ -1708,6 +1708,7 @@ en:
     keys:
       low_stock: "Low stock"
       batch_expiring: "Batch expiring"
+      price_change: "Price change"
       overtime_weekly: "Weekly overtime"
       overtime_shift: "Shift overtime"
       cash_variance: "Cash variance"
@@ -1750,6 +1751,7 @@ en:
       no_batch_ref: "no ref"
       low_stock: "%{name} is low: %{on_hand} %{unit} remaining (threshold: %{threshold})"
       batch_expiring: "%{name} batch (%{ref}) expires on %{date}. %{remaining} %{unit} remaining."
+      price_change: "%{name}: price %{arrow} %{percent}% — %{old_price} → %{new_price} (%{supplier}, %{invoice_number})"
       overtime_weekly: "%{name} has exceeded %{hours} hours this week (OT threshold: %{threshold}h)."
       overtime_shift: "%{name} has gone into overtime this week."
       cash_variance: "Cash drawer variance of %{variance} detected for %{name} on %{date}."

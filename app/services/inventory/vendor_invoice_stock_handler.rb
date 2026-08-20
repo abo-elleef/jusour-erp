@@ -4,6 +4,10 @@ module Inventory
   class VendorInvoiceStockHandler
     class StockConsumedError < StandardError; end
 
+    # Fire a price-change alert when a received price moves more than ±5% from
+    # the ingredient's most recent recorded price (across any vendor).
+    PRICE_CHANGE_THRESHOLD = 0.05
+
     def initialize(invoice, user)
       @invoice = invoice
       @user = user
@@ -83,19 +87,41 @@ module Inventory
     def record_price_history(line)
       # Track the per-base-unit price so it stays consistent with stock costing.
       price = line.base_unit_price_cents
+
+      # Baseline for the price-change alert: the ingredient's most recent price
+      # across ALL vendors, captured before we insert this invoice's row.
+      ingredient_last_price = SupplierPriceHistory
+        .where(ingredient: line.ingredient)
+        .order(effective_date: :desc, created_at: :desc)
+        .first&.price_cents
+
       last_price = SupplierPriceHistory
         .where(supplier: @invoice.supplier, ingredient: line.ingredient)
         .order(effective_date: :desc)
         .first&.price_cents
 
-      return if last_price == price
+      # Per-vendor dedup: only store a new row when this supplier's price changed.
+      if last_price != price
+        SupplierPriceHistory.create!(
+          supplier: @invoice.supplier,
+          ingredient: line.ingredient,
+          price_cents: price,
+          effective_date: @invoice.invoice_date,
+          recorded_by_user: @user
+        )
+      end
 
-      SupplierPriceHistory.create!(
-        supplier: @invoice.supplier,
-        ingredient: line.ingredient,
-        price_cents: price,
-        effective_date: @invoice.invoice_date,
-        recorded_by_user: @user
+      notify_significant_price_change(line, ingredient_last_price, price)
+    end
+
+    def notify_significant_price_change(line, baseline_cents, new_cents)
+      return if baseline_cents.nil? || baseline_cents.zero?
+
+      change_ratio = (new_cents - baseline_cents).abs / baseline_cents.to_d
+      return if change_ratio <= PRICE_CHANGE_THRESHOLD
+
+      Inventory::NotifyPriceChangeJob.perform_later(
+        line.ingredient_id, @invoice.supplier_id, baseline_cents, new_cents, @invoice.id
       )
     end
   end

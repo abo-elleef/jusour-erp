@@ -65,7 +65,7 @@ RSpec.describe "Admin inventory stock transfer templates", type: :request do
 
   it "show page supports sorting and highlights repeated ingredients" do
     template = StockTransferTemplate.create!(
-      company: company, name: "Dupes", active: true,
+      company: company, name: "Dupes", active: false,
       default_from_location: kitchen, default_to_location: branch
     )
     other = create(:ingredient, company: company, name: "Zucchini")
@@ -78,6 +78,7 @@ RSpec.describe "Admin inventory stock transfer templates", type: :request do
     StockTransferTemplateLine.create!(
       stock_transfer_template: template, ingredient: other, default_quantity: 3, position: 2
     )
+    template.update!(active: true)
 
     get admin_inventory_stock_transfer_template_path(template, sort: "ingredient")
     expect(response).to be_successful

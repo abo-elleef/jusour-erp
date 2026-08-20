@@ -52,20 +52,20 @@ RSpec.describe Ingredient, type: :model do
       expect(ingredient.reload.unit).to eq("g")
     end
 
-    it "is blocked once there is stock on hand" do
+    it "is allowed even when there is stock on hand (quantities reinterpret against the new unit)" do
       ingredient = fresh_ingredient(quantity_on_hand: 5)
       ingredient.unit = "g"
-      expect(ingredient).not_to be_valid
-      expect(ingredient.errors[:unit]).to be_present
+      expect(ingredient.save).to be(true)
+      expect(ingredient.reload.unit).to eq("g")
     end
 
-    it "is blocked once a stock batch exists (even at zero on-hand)" do
+    it "is allowed even when a stock batch exists" do
       ingredient = fresh_ingredient(quantity_on_hand: 0)
       StockBatch.create!(ingredient: ingredient, quantity_received: 3, quantity_remaining: 0,
         cost_per_unit_cents: 100, received_on: Date.current)
       ingredient.reload.unit = "g"
-      expect(ingredient).not_to be_valid
-      expect(ingredient.errors[:unit]).to be_present
+      expect(ingredient.save).to be(true)
+      expect(ingredient.reload.unit).to eq("g")
     end
 
     it "clears alternate units when the base unit changes (their factors no longer apply)" do
