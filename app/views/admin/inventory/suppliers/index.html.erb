@@ -92,7 +92,7 @@
               <th class="p-3 pr-5 text-right"><%= t("inventory.suppliers.index.table.actions") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @suppliers.each_with_index do |s, index| %>
               <% invoice_total_cents = @invoice_total_cents_by_supplier[s.id] || 0 %>
               <% outstanding_cents = @outstanding_cents_by_supplier[s.id] || 0 %>

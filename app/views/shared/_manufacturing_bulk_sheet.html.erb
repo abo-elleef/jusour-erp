@@ -74,7 +74,7 @@
                               t("production.bulk.runs_unit")
                             end %>
             <% default_shelf = template.output_ingredient.shelf_life_days %>
-            <tr class="<%= admin ? 'odd:bg-white even:bg-gray-50/70' : 'odd:bg-gray-800/40' %>"
+            <tr class="<%= admin ? 'odd:bg-white even:table-zebra-alt' : 'odd:bg-gray-800/40' %>"
                 data-bulk-manufacturing-target="row"
                 data-name="<%= template.name %>"
                 data-unit-label="<%= unit_label %>">

@@ -84,7 +84,7 @@
             <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.alternate_units.unit") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% template_row_number = 0 %>
           <% display_lines.each do |category_name, lines| %>
             <%= render "admin/inventory/stock_transfers/category_header", name: category_name, count: lines.size, tag: :tr, colspan: 4 if category_name %>

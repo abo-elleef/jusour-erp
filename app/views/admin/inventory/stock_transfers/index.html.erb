@@ -41,7 +41,7 @@
               <th class="p-3 text-start"><%= sort_header_link(t("inventory.stock_transfers.requested_by"), :requested_by, **sort_opts) %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @stock_transfers.each_with_index do |transfer, index| %>
               <% status_label, status_class = stock_transfer_status_badge(transfer.status) %>
               <tr class="hover:bg-gray-100">

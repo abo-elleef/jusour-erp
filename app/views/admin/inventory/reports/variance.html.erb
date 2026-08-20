@@ -75,7 +75,7 @@
             <th class="p-3 pr-5 text-right"><%= t("inventory.reports.variance.table.percent") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% @variance_rows.each do |row| %>
             <% high_variance = row[:variance_pct].abs > 10 %>
             <tr class="hover:bg-gray-100 transition-colors <%= 'bg-red-50/50' if high_variance %>">

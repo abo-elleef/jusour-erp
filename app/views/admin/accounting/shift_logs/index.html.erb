@@ -35,7 +35,7 @@
           <th class="p-3 pe-5 text-end"></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
+      <tbody class="divide-y divide-gray-100 table-zebra">
         <% @shifts.each do |shift| %>
           <% stats = @order_stats[shift.id] %>
           <tr class="cursor-pointer hover:bg-amber-50/40 transition-colors"

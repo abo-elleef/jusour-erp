@@ -41,7 +41,7 @@
           <th class="p-3 pe-5 text-end"></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
+      <tbody class="divide-y divide-gray-100 table-zebra">
         <% @expenses.each_with_index do |expense, index| %>
           <tr class="cursor-pointer hover:bg-amber-50/40 transition-colors"
               data-href="<%= admin_accounting_expense_path(expense) %>"

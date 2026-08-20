@@ -147,7 +147,7 @@
           <th class="p-3 pe-5 text-end"><%= t("staff.index.table.actions") %></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
+      <tbody class="divide-y divide-gray-100 table-zebra">
         <% if @rows.any? %>
           <% month_param = @payroll_month.strftime("%Y-%m") %>
           <% @rows.each_with_index do |row, index| %>

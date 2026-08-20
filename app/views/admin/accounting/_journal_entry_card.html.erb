@@ -22,7 +22,7 @@
     </thead>
     <tbody class="divide-y divide-gray-50">
       <% je.lines.each do |line| %>
-        <tr class="<%= line.debit_cents.positive? ? 'bg-white' : 'bg-gray-50/40' %>">
+        <tr class="<%= line.debit_cents.positive? ? 'bg-white' : 'table-zebra-alt' %>">
           <td class="px-4 py-2 ps-5 font-mono text-gray-300"><%= line.account_code %></td>
           <td class="px-4 py-2 font-medium text-gray-800 <%= line.credit_cents.positive? ? 'ps-8' : '' %>">
             <%= line.account_name %>

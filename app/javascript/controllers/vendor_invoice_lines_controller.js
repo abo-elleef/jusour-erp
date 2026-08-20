@@ -5,20 +5,63 @@ export default class extends Controller {
     "list", "template", "row", "unitSelect", "expiresOn",
     "lineTotalDollars", "unitPriceDisplay", "detailsModal", "detailsDot",
     "runningTotal", "runningTotalWrap", "subtotalDisplay", "grandTotalDisplay", "discountPreviewWrap",
-    "freightAmount", "freightDisplay", "freightPreviewWrap"
+    "freightAmount", "freightDisplay", "freightPreviewWrap", "lineCount"
   ]
-  static values = { availableUnits: Object, shelfLifeDays: Object, unitPriceDollars: Object }
+  static values = {
+    availableUnits: Object,
+    shelfLifeDays: Object,
+    unitPriceDollars: Object,
+    lineCountOne: { type: String, default: "%{count} line" },
+    lineCountOther: { type: String, default: "%{count} lines" }
+  }
 
   connect() {
+    this.boundOnReordered = this.onLinesReordered.bind(this)
+    this.element.addEventListener("nested-line-sortable:reordered", this.boundOnReordered)
     // Existing rows keep their server-rendered unit selection; only sync expiry.
     this.rowTargets.forEach((row) => this.syncRowExpiry(row))
+    this.refreshRowIndices()
+    this.refreshLineCount()
     this.recalculate()
+  }
+
+  disconnect() {
+    this.element.removeEventListener("nested-line-sortable:reordered", this.boundOnReordered)
+  }
+
+  onLinesReordered() {
+    this.refreshRowIndices()
+    this.refreshLineCount()
+  }
+
+  visibleRows() {
+    return this.rowTargets.filter((row) => !row.classList.contains("hidden"))
+  }
+
+  refreshRowIndices() {
+    this.visibleRows().forEach((row, index) => {
+      const indexEl = row.querySelector("[data-vendor-invoice-lines-row-index]")
+      if (indexEl) indexEl.textContent = String(index + 1)
+
+      row.classList.toggle("table-zebra-alt", index % 2 === 1)
+    })
+  }
+
+  refreshLineCount() {
+    if (!this.hasLineCountTarget) return
+
+    const count = this.visibleRows().length
+    const template = count === 1 ? this.lineCountOneValue : this.lineCountOtherValue
+    this.lineCountTarget.textContent = template.replace("%{count}", String(count))
+    this.lineCountTarget.classList.toggle("hidden", count === 0)
   }
 
   add(event) {
     event.preventDefault()
     const content = this.templateTarget.innerHTML.replace(/NEW_RECORD/g, Date.now())
     this.listTarget.insertAdjacentHTML("beforeend", content)
+    this.refreshRowIndices()
+    this.refreshLineCount()
     this.recalculate()
   }
 
@@ -34,6 +77,8 @@ export default class extends Controller {
     } else {
       row.remove()
     }
+    this.refreshRowIndices()
+    this.refreshLineCount()
     this.recalculate()
   }
 

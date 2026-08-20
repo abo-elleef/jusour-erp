@@ -139,7 +139,7 @@
             <th class="p-3 pe-5 text-end"><%= t("accounting.shift_logs.show.col_paid") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% @orders.each do |order| %>
             <tr class="cursor-pointer hover:bg-amber-50/40 transition-colors"
                 data-href="<%= admin_order_path(order) %>"

@@ -24,7 +24,7 @@
             <th class="p-3 pe-5 text-end"><%= t("inventory.consolidations.on_hand") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% @source_locations.each do |il| %>
             <tr>
               <td class="p-3 ps-5 text-gray-900"><%= il.location.name %></td>

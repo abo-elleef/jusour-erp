@@ -73,16 +73,15 @@ export default class extends Controller {
     } else {
       target.before(this.dragged)
     }
-    this.reindex()
+    this.reindex({ notify: true })
   }
 
   onDragEnd = () => {
     this.dragged?.classList.remove("opacity-50")
     this.dragged = null
-    this.reindex()
   }
 
-  reindex() {
+  reindex({ notify = false } = {}) {
     let index = 0
     this.rowTargets.forEach((row) => {
       if (row.classList.contains("hidden")) return
@@ -93,5 +92,9 @@ export default class extends Controller {
       if (input) input.value = index
       index += 1
     })
+
+    if (notify) {
+      this.element.dispatchEvent(new CustomEvent("nested-line-sortable:reordered", { bubbles: true }))
+    }
   }
 }

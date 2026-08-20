@@ -87,7 +87,7 @@
             <th class="p-3 pe-5 text-end"><%= t("inventory.ingredients.show.units.on_hand") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% base_label = ingredient_unit_label(@ingredient.unit) %>
           <tr class="hover:bg-gray-100 transition-colors">
             <td class="p-3 ps-5 font-semibold text-gray-900"><%= base_label %></td>
@@ -157,7 +157,7 @@
               <th class="p-3 pe-5 text-end"><%= t("inventory.ingredients.index.table.actions") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @stock_locations.each do |location| %>
               <% il = @ingredient_locations_by_location_id[location.id] %>
               <tr class="hover:bg-gray-100 transition-colors">
@@ -372,7 +372,7 @@
                   <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.show.expires") %></th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100">
+              <tbody class="divide-y divide-gray-100 table-zebra">
                 <% @stock_batches.each do |batch| %>
                   <tr class="hover:bg-gray-100 transition-colors">
                     <td class="p-3 ps-5 tabular-nums text-gray-900"><%= l(batch.received_on) %></td>
@@ -458,7 +458,7 @@
                   <th class="p-3 pe-5 text-end"><%= t("inventory.ingredients.show.quantity_short") %></th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100">
+              <tbody class="divide-y divide-gray-100 table-zebra">
                 <% @adjustments.each do |adj| %>
                   <tr class="hover:bg-gray-100 transition-colors">
                     <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums text-xs">

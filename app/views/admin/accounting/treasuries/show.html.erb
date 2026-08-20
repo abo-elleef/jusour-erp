@@ -71,7 +71,7 @@
           <th class="p-3 pe-5 text-start"><%= t("accounting.treasuries.recorded_by") %></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
+      <tbody class="divide-y divide-gray-100 table-zebra">
         <% @transactions.each do |tx| %>
           <tr>
             <td class="p-3 ps-5 whitespace-nowrap"><%= l(tx.occurred_on, format: :long) %></td>

@@ -6,6 +6,11 @@ module ApplicationHelper
     (pagy&.offset || 0) + index + 1
   end
 
+  # Alternating row backgrounds — pairs with .table-zebra / .table-zebra-alt in application.css.
+  def table_zebra_class
+    "table-zebra"
+  end
+
   def html_lang
     I18n.locale.to_s
   end

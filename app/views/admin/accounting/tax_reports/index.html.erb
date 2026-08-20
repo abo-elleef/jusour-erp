@@ -18,7 +18,7 @@
           <th class="p-3 pe-5 text-end"><%= t("accounting.tax_reports.tax_collected") %></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
+      <tbody class="divide-y divide-gray-100 table-zebra">
         <% @tax_rows.each do |row| %>
           <tr>
             <td class="p-3 ps-5"><%= row[:rate].name %> (<%= (row[:rate].rate * 100).round(2) %>%)</td>

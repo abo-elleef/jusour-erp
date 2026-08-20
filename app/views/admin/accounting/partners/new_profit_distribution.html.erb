@@ -54,7 +54,7 @@
         <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.partners.profit.breakdown") %></h2>
       </div>
       <table class="w-full text-sm">
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% @partners.each do |partner| %>
             <tr>
               <td class="p-3 ps-5 font-medium text-gray-900"><%= partner.name %></td>

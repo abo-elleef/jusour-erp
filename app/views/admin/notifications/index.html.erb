@@ -73,7 +73,7 @@
               <th class="p-3 pe-5 text-end"><%= t("notifications.index.columns.actions") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @notifications.each do |notification| %>
               <tr class="<%= notification.unread? ? 'bg-amber-50/40' : '' %> hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5 align-top">

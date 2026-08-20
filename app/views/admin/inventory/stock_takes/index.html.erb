@@ -95,7 +95,7 @@
               <th class="p-3 pr-5 text-right"><%= t("inventory.stock_takes.index.table.actions") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @stock_takes.each do |st| %>
               <% variances = st.stock_take_items.count { |i| i.variance.present? && !i.variance.to_d.zero? } %>
               <% started_at = st.started_at || st.created_at %>

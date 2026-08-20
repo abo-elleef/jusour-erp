@@ -98,7 +98,7 @@
                 <th class="p-3 pr-5 text-right"><%= t("inventory.stock_takes.show.table.variance_value") %></th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="divide-y divide-gray-100 table-zebra">
               <% @items.each_with_index do |item, index| %>
                 <% has_variance = item.variance.present? && !item.variance.to_d.zero? %>
                 <% base_unit = item.ingredient.unit %>
@@ -187,7 +187,7 @@
               <th class="p-3 pr-5 text-right"><%= t("inventory.stock_takes.show.table.variance_value") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @items.each_with_index do |item, index| %>
               <% has_variance = item.variance.present? && !item.variance.to_d.zero? %>
               <% base_unit = item.ingredient.unit %>

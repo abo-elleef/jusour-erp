@@ -76,7 +76,7 @@
       </thead>
 
       <%# ── ASSETS ────────────────────────────────────────────────────── %>
-      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100">
+      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100 table-zebra">
         <tr class="bg-blue-50/40 cursor-pointer select-none hover:bg-blue-100/40 transition-colors"
             data-action="click->collapsible-section#toggle">
           <td colspan="4" class="px-5 py-2.5">
@@ -149,7 +149,7 @@
       </tbody>
 
       <%# ── LIABILITIES ────────────────────────────────────────────────── %>
-      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100">
+      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100 table-zebra">
         <tr class="bg-red-50/40 cursor-pointer select-none hover:bg-red-100/40 transition-colors"
             data-action="click->collapsible-section#toggle">
           <td colspan="4" class="px-5 py-2.5">
@@ -221,7 +221,7 @@
 
       <%# ── EQUITY ────────────────────────────────────────────────────── %>
       <% retained = @coa.equity_lines.first %>
-      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100">
+      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100 table-zebra">
         <tr class="bg-emerald-50/40 cursor-pointer select-none hover:bg-emerald-100/40 transition-colors"
             data-action="click->collapsible-section#toggle">
           <td colspan="4" class="px-5 py-2.5">
@@ -281,7 +281,7 @@
       </tbody>
 
       <%# ── REVENUE ────────────────────────────────────────────────────── %>
-      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100">
+      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100 table-zebra">
         <tr class="bg-gray-100/60 cursor-pointer select-none hover:bg-gray-200/40 transition-colors"
             data-action="click->collapsible-section#toggle">
           <td colspan="4" class="px-5 py-2.5">
@@ -315,7 +315,7 @@
       </tbody>
 
       <%# ── EXPENSES ────────────────────────────────────────────────────── %>
-      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100">
+      <tbody data-controller="collapsible-section" class="divide-y divide-gray-100 table-zebra">
         <tr class="bg-gray-100/60 cursor-pointer select-none hover:bg-gray-200/40 transition-colors"
             data-action="click->collapsible-section#toggle">
           <td colspan="4" class="px-5 py-2.5">

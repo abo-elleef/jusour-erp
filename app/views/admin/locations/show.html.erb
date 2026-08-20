@@ -79,7 +79,7 @@
               class: "text-xs font-medium text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-colors" %>
       </div>
       <table class="w-full text-sm">
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% @ingredient_locations.first(5).each do |il| %>
             <tr class="px-5 py-3 hover:bg-gray-100">
               <td class="px-5 py-3 font-medium text-gray-900"><%= il.ingredient.name %></td>

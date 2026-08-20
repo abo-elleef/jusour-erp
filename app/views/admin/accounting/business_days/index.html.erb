@@ -54,7 +54,7 @@
             <th class="p-3 pe-5 text-end"><%= t("accounting.business_days.actions") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% @rows.each do |row| %>
             <% location = row[:location] %>
             <tr>

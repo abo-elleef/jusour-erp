@@ -12,7 +12,9 @@
         searchable_select_options: ingredient_search_options(@ingredients, vendor_aliases: true),
         vendor_invoice_lines_available_units_value: @ingredient_available_units.to_json,
         vendor_invoice_lines_shelf_life_days_value: @ingredient_shelf_life_days.to_json,
-        vendor_invoice_lines_unit_price_dollars_value: @ingredient_unit_price_dollars.to_json
+        vendor_invoice_lines_unit_price_dollars_value: @ingredient_unit_price_dollars.to_json,
+        vendor_invoice_lines_line_count_one_value: t("inventory.shared.visible_line_count.one", count: "__COUNT__").gsub("__COUNT__", "%{count}"),
+        vendor_invoice_lines_line_count_other_value: t("inventory.shared.visible_line_count.other", count: "__COUNT__").gsub("__COUNT__", "%{count}")
       } do |f| %>
   <% if vendor_invoice.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
@@ -190,7 +192,11 @@
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
       <div>
-        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.form.line_items") %></h2>
+        <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.form.line_items") %></h2>
+          <span class="text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 tabular-nums"
+                data-vendor-invoice-lines-target="lineCount"></span>
+        </div>
         <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.vendor_invoices.form.line_items_hint") %></p>
         <p class="text-xs text-gray-400 mt-0.5"><%= t("inventory.shared.drag_to_reorder_hint") %></p>
       </div>
@@ -208,8 +214,9 @@
         </button>
       </div>
     </div>
-    <div class="divide-y divide-gray-100">
-      <div class="hidden lg:flex lg:items-center gap-3 px-5 py-3 bg-white text-xs font-semibold text-gray-500 uppercase tracking-wide">
+    <div class="overflow-y-auto max-h-[min(70vh,52rem)] overscroll-y-contain">
+      <div class="hidden lg:flex lg:items-center gap-3 px-5 py-3 bg-white/95 backdrop-blur-sm text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 sticky top-0 z-20">
+        <div class="w-8 shrink-0 text-center"><%= t("shared.row_index") %></div>
         <div class="w-8 shrink-0" aria-hidden="true"></div>
         <div class="flex-1 min-w-0 lg:grid lg:grid-cols-12 lg:gap-3">
           <div class="lg:col-span-4"><%= t("inventory.vendor_invoices.form.ingredient") %></div>
@@ -220,7 +227,7 @@
           <div class="lg:col-span-1"></div>
         </div>
       </div>
-      <div data-vendor-invoice-lines-target="list">
+      <div class="divide-y divide-gray-100" data-vendor-invoice-lines-target="list">
         <%= f.fields_for :vendor_invoice_lines do |line_f| %>
           <%= render "line_fields", f: line_f %>
         <% end %>

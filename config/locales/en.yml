@@ -982,6 +982,9 @@ en:
     shared:
       drag_to_reorder: "Drag to reorder"
       drag_to_reorder_hint: "Drag the ⠿ handle to reorder lines. Order is saved when you submit."
+      visible_line_count:
+        one: "%{count} line"
+        other: "%{count} lines"
     units:
       title: "Units of measure"
       description: "Define the units your company buys and stocks in. Built-in units are always available; add your own custom units."

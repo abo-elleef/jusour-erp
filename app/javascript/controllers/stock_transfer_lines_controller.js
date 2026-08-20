@@ -3,20 +3,36 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "list", "template", "row", "destroy", "unitSelect", "groupToggle",
-    "orderLimit", "countedQuantity", "requestedQuantity"
+    "orderLimit", "countedQuantity", "requestedQuantity", "lineCount"
   ]
   static values = {
     availableUnits: Object,
     ingredientCategories: Object,
     uncategorized: { type: String, default: "Uncategorized" },
     grouped: { type: Boolean, default: false },
-    duplicateLabel: { type: String, default: "Repeated" }
+    duplicateLabel: { type: String, default: "Repeated" },
+    lineCountOne: { type: String, default: "%{count} line" },
+    lineCountOther: { type: String, default: "%{count} lines" }
   }
 
   connect() {
     this.nextEntryIndex = 0
     this.captureEntryOrder()
+    this.boundOnReordered = this.onLinesReordered.bind(this)
+    this.element.addEventListener("nested-line-sortable:reordered", this.boundOnReordered)
+    this.refreshRowIndices()
+    this.refreshLineCount()
     this.refreshDuplicateHighlights()
+  }
+
+  disconnect() {
+    this.element.removeEventListener("nested-line-sortable:reordered", this.boundOnReordered)
+  }
+
+  onLinesReordered() {
+    this.captureEntryOrder()
+    this.refreshRowIndices()
+    this.refreshLineCount()
   }
 
   groupedValueChanged() {
@@ -43,6 +59,8 @@ export default class extends Controller {
       header.classList.toggle("hidden", !this.groupedValue)
     })
     this.refreshCategoryCounts()
+    this.refreshRowIndices()
+    this.refreshLineCount()
     this.refreshDuplicateHighlights()
     queueMicrotask(() => this.preserveListPositions())
   }
@@ -66,6 +84,8 @@ export default class extends Controller {
     this.listTarget.insertAdjacentHTML("beforeend", content)
     const row = this.rowTargets[this.rowTargets.length - 1]
     if (row) row.dataset.entryIndex = String(this.nextEntryIndex++)
+    this.refreshRowIndices()
+    this.refreshLineCount()
     this.refreshDuplicateHighlights()
   }
 
@@ -123,7 +143,37 @@ export default class extends Controller {
     }
 
     if (this.groupedValue) this.refreshCategoryCounts()
+    this.refreshRowIndices()
+    this.refreshLineCount()
     this.refreshDuplicateHighlights()
+  }
+
+  refreshRowIndices() {
+    const duplicateCounts = new Map()
+    this.visibleRows().forEach((row) => {
+      const ingredientId = row.querySelector("input[name*='[ingredient_id]']")?.value
+      if (ingredientId) {
+        duplicateCounts.set(ingredientId, (duplicateCounts.get(ingredientId) || 0) + 1)
+      }
+    })
+
+    this.visibleRows().forEach((row, index) => {
+      const indexEl = row.querySelector("[data-stock-transfer-lines-row-index]")
+      if (indexEl) indexEl.textContent = String(index + 1)
+
+      const ingredientId = row.querySelector("input[name*='[ingredient_id]']")?.value
+      const repeated = ingredientId && (duplicateCounts.get(ingredientId) || 0) > 1
+      row.classList.toggle("table-zebra-alt", !repeated && index % 2 === 1)
+    })
+  }
+
+  refreshLineCount() {
+    if (!this.hasLineCountTarget) return
+
+    const count = this.visibleRows().length
+    const template = count === 1 ? this.lineCountOneValue : this.lineCountOtherValue
+    this.lineCountTarget.textContent = template.replace("%{count}", String(count))
+    this.lineCountTarget.classList.toggle("hidden", count === 0)
   }
 
   captureEntryOrder() {
@@ -206,7 +256,7 @@ export default class extends Controller {
   buildCategoryHeader(id, name, position) {
     const header = document.createElement("div")
     header.className =
-      "px-5 py-2.5 bg-gray-100/90 border-y border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wide sticky top-0 z-[1]"
+      "px-5 py-2.5 bg-gray-100/95 backdrop-blur-sm border-y border-gray-200 text-xs font-semibold text-gray-600 uppercase tracking-wide sticky top-[2.75rem] z-10"
     header.dataset.transferCategoryHeader = ""
     header.dataset.categoryId = id
     header.dataset.categoryPosition = String(position)

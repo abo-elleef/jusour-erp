@@ -101,9 +101,9 @@
           <th class="p-3 pe-5 text-end w-36"><%= t("accounting.journal_entries.col.credit") %></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
+      <tbody class="divide-y divide-gray-100 table-zebra">
         <% @journal_entry.lines.each do |line| %>
-          <tr class="<%= line.debit_cents.positive? ? 'bg-white' : 'bg-gray-50/40' %>">
+          <tr class="<%= line.debit_cents.positive? ? 'bg-white' : 'table-zebra-alt' %>">
             <td class="p-3 ps-5 font-mono text-xs text-gray-400"><%= line.account_code %></td>
             <td class="p-3 font-medium text-gray-900 <%= line.credit_cents.positive? ? 'ps-10' : '' %>">
               <%= line.account_name %>

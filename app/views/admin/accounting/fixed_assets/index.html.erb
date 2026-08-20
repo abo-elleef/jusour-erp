@@ -49,7 +49,7 @@
             <th class="p-3 pe-5 text-start"><%= t("accounting.fixed_assets.col.purchase_date") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% @fixed_assets.each do |asset| %>
             <tr class="hover:bg-gray-100 transition-colors <%= asset.disposed? ? 'opacity-50' : '' %>">
               <td class="p-3 ps-5">

@@ -28,7 +28,7 @@
             <th class="p-3 pe-5 text-start w-20"><%= t("accounting.loans.col.status") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% @loans.each do |loan| %>
             <% outstanding = loan.outstanding_balance_cents %>
             <% overdue = loan.due_date.present? && loan.due_date < Date.current && outstanding > 0 %>

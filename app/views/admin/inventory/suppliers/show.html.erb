@@ -126,7 +126,7 @@
               <th class="sticky top-0 z-10 bg-white/95 backdrop-blur-sm p-3 pr-5 border-b border-gray-200"><%= sort_header_link(t("inventory.suppliers.show.preferred"), :preferred, **sort_opts) %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @supplier_ingredients.each_with_index do |link, index| %>
               <% ing = link.ingredient %>
               <% balance = @ingredient_balances[ing.id] %>
@@ -271,7 +271,7 @@
               <th class="p-3 pr-5 text-right"><%= t("inventory.suppliers.show.ap_running_balance") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @ap_transactions.each do |txn| %>
               <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5 text-gray-600 tabular-nums whitespace-nowrap"><%= l(txn.occurred_on) %></td>
@@ -316,7 +316,7 @@
               <th class="p-3 pr-5"><%= t("inventory.suppliers.show.effective") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @price_histories.each do |h| %>
               <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5 text-gray-900"><%= h.ingredient.name %></td>

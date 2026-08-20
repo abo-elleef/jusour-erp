@@ -147,7 +147,7 @@
               <th class="p-3"><%= t("printing.logs.status") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @recent_print_logs.each do |log| %>
               <tr>
                 <td class="p-3 ps-5 text-gray-600 whitespace-nowrap"><%= l(log.created_at, format: :short) %></td>

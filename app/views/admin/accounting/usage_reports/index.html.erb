@@ -51,7 +51,7 @@
               <th class="p-3 pe-5 text-end"><%= t("accounting.food_costs.food_cost_pct") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @food_cost[:items].each do |row| %>
               <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5 font-medium text-gray-900"><%= row[:item].name %></td>
@@ -87,7 +87,7 @@
               <th class="p-3 pe-5 text-end"><%= t("accounting.usage_reports.variance") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% @consumption_rows.each do |row| %>
               <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5 font-medium text-gray-900"><%= row[:ingredient].name %></td>

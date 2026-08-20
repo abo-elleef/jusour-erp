@@ -23,7 +23,7 @@
             <th class="p-3 pe-5 text-end"><%= t("customers.table.actions") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% @roles.each do |role| %>
             <% user_count = @user_counts[role.id].to_i %>
             <tr class="hover:bg-gray-100 transition-colors">

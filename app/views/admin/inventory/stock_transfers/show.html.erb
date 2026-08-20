@@ -292,7 +292,7 @@
             <th class="p-3 text-end print-hide"><%= t("inventory.stock_transfers.quantity_pending_send") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% progress_row_number = 0 %>
           <% display_lines.each do |category_name, lines| %>
             <%= render "category_header", name: category_name, count: lines.size, tag: :tr, colspan: 10 if category_name %>

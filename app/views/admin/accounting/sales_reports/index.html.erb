@@ -104,7 +104,7 @@
               <th class="p-3 pe-5 text-end"><%= t("accounting.sales_reports.revenue") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% if @report[:by_category].any? %>
               <% @report[:by_category].each do |row| %>
                 <tr class="hover:bg-gray-100 transition-colors">
@@ -134,7 +134,7 @@
               <th class="p-3 pe-5 text-end"><%= t("accounting.sales_reports.total") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100">
+          <tbody class="divide-y divide-gray-100 table-zebra">
             <% if @report[:by_payment_method].any? %>
               <% @report[:by_payment_method].each do |method, cents| %>
                 <tr class="hover:bg-gray-100 transition-colors">

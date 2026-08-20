@@ -164,3 +164,20 @@
 [dir="rtl"] .attendance-grid-table tbody tr.att-row-hl > th {
   box-shadow: inset 3px 0 0 #d97706;
 }
+
+/* Alternating row backgrounds — one token for line forms (JS) and static tables. */
+:root {
+  --table-zebra-bg: #f3f4f6; /* gray-100 — darker than gray-50/50 for clearer striping */
+}
+
+.table-zebra-alt {
+  background-color: var(--table-zebra-bg);
+}
+
+.table-zebra tbody > tr:nth-child(even) {
+  background-color: var(--table-zebra-bg);
+}
+
+.table-zebra tbody > tr:nth-child(odd) {
+  background-color: #fff;
+}

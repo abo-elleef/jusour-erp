@@ -214,7 +214,7 @@
             <th class="p-3 pe-5 text-start"><%= t("inventory.vendor_invoices.form.batch_reference") %></th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100">
+        <tbody class="divide-y divide-gray-100 table-zebra">
           <% @lines.each do |line| %>
             <tr class="hover:bg-gray-50 transition-colors">
               <td class="p-3 ps-5">
@@ -265,7 +265,7 @@
                 <th class="p-3 pe-5 text-start"><%= t("inventory.vendor_invoices.recorded_by") %></th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="divide-y divide-gray-100 table-zebra">
               <% @payments.each do |payment| %>
                 <tr class="hover:bg-gray-50 transition-colors">
                   <td class="p-3 ps-5 tabular-nums"><%= l(payment.payment_date) %></td>
@@ -293,7 +293,7 @@
                 <th class="p-3 pe-5 text-end"><%= t("accounting.shared.amount") %></th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100">
+            <tbody class="divide-y divide-gray-100 table-zebra">
               <% if @invoice_je %>
                 <tr class="hover:bg-gray-50 transition-colors">
                   <td class="p-3 ps-5 text-xs text-gray-600"><%= t("accounting.shared.invoice_je_label") %></td>
