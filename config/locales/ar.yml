@@ -3635,6 +3635,8 @@ ar:
   production:
     title: "التصنيع"
     description: "أدخل الكميات لكل القوالب في ورقة واحدة. اترك الصف فارغاً لتخطيه."
+    theme:
+      toggle: "التبديل بين الوضع الفاتح والداكن"
     location_label: "موقع الإنتاج"
     select_location: "اختر الموقع…"
     location_required: "اختر موقع الإنتاج."

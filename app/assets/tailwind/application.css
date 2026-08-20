@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Class-based dark mode. Tailwind v4 points `dark:` at prefers-color-scheme by
+   default; scope it to an explicit `.dark` ancestor instead so the production
+   screen's toggle drives it and the rest of the app is unaffected. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Admin sidebar theme — defaults match today's dark navy; overridable via
    localStorage-backed CSS variables (see sidebar_theme_controller). */
 :root {

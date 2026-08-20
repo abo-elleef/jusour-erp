@@ -1,30 +1,70 @@
+<%# `production` gets a light/dark toggle; the KDS stays pinned dark since it is a
+    wall-mounted display. Render `.dark` server-side so a JS-less or slow load
+    still looks like it does today, and let the head script strip it before first
+    paint when a light preference is stored. %>
+<% themeable = controller_name == "production" %>
+<% theme_storage_key = "kitchenTheme" %>
 <!DOCTYPE html>
-<html lang="<%= html_lang %>" dir="<%= html_dir %>" class="h-full">
+<html lang="<%= html_lang %>" dir="<%= html_dir %>" class="h-full dark">
   <head>
     <title><%= controller_name == "production" ? t("production.title") : t("kitchen.title") %> — <%= t("app.name") %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <%= csrf_meta_tags %>
+    <% if themeable %>
+      <%# Runs before first paint so switching to light doesn't flash dark. %>
+      <script>
+        (function () {
+          try {
+            if (localStorage.getItem("<%= theme_storage_key %>") === "light") {
+              document.documentElement.classList.remove("dark")
+            }
+          } catch (e) {}
+        })()
+      </script>
+    <% end %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
     <%= action_cable_meta_tag %>
   </head>
-  <body class="bg-gray-900 text-white min-h-screen p-3 lg:p-4 touch-manipulation" data-controller="kitchen-display">
+  <body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white min-h-screen p-3 lg:p-4 touch-manipulation"
+        data-controller="kitchen-display kitchen-theme"
+        data-kitchen-theme-themeable-value="<%= themeable %>"
+        data-kitchen-theme-storage-key-value="<%= theme_storage_key %>">
     <header class="flex flex-wrap justify-between items-center mb-4 gap-3">
       <div class="flex flex-wrap items-center gap-4">
         <h1 class="text-2xl lg:text-3xl font-bold">
           <%= controller_name == "production" ? t("production.title") : t("kitchen.title") %>
         </h1>
         <nav class="flex gap-2" aria-label="<%= t("kitchen.nav_label", default: "Kitchen navigation") %>">
+          <% active_pill = "bg-gray-900 text-white dark:bg-white dark:text-gray-900" %>
+          <% idle_pill = "text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800" %>
           <%= link_to t("kitchen.nav.kds"), kitchen_path,
-                class: "px-3 py-1.5 rounded-lg text-sm font-semibold #{controller_name == 'kitchen' ? 'bg-white text-gray-900' : 'text-gray-300 hover:bg-gray-800'}" %>
+                class: "px-3 py-1.5 rounded-lg text-sm font-semibold #{controller_name == 'kitchen' ? active_pill : idle_pill}" %>
           <%= link_to t("kitchen.nav.production"), production_path,
-                class: "px-3 py-1.5 rounded-lg text-sm font-semibold #{controller_name == 'production' ? 'bg-white text-gray-900' : 'text-gray-300 hover:bg-gray-800'}" %>
+                class: "px-3 py-1.5 rounded-lg text-sm font-semibold #{controller_name == 'production' ? active_pill : idle_pill}" %>
         </nav>
       </div>
-      <%= render "shared/locale_switcher", theme: :dark %>
+      <div class="flex items-center gap-3">
+        <% if themeable %>
+          <button type="button"
+                  data-action="kitchen-theme#toggle"
+                  aria-label="<%= t("production.theme.toggle") %>"
+                  title="<%= t("production.theme.toggle") %>"
+                  class="inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800 transition-colors">
+            <%# Moon shows in light mode (tap to go dark); sun shows in dark mode. %>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 dark:hidden" aria-hidden="true">
+              <path fill-rule="evenodd" d="M7.455 2.004a.75.75 0 0 1 .26.77 7 7 0 0 0 9.958 7.967.75.75 0 0 1 1.067.853A8.5 8.5 0 1 1 6.647 1.921a.75.75 0 0 1 .808.083Z" clip-rule="evenodd" />
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 hidden dark:block" aria-hidden="true">
+              <path d="M10 2a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 2ZM10 15a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-1.5 0v-1.5A.75.75 0 0 1 10 15ZM10 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6ZM15.657 5.404a.75.75 0 1 0-1.06-1.06l-1.061 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM6.464 14.596a.75.75 0 1 0-1.06-1.06l-1.06 1.06a.75.75 0 0 0 1.06 1.06l1.06-1.06ZM18 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 18 10ZM5 10a.75.75 0 0 1-.75.75h-1.5a.75.75 0 0 1 0-1.5h1.5A.75.75 0 0 1 5 10ZM14.596 15.657a.75.75 0 0 0 1.06-1.06l-1.06-1.061a.75.75 0 1 0-1.06 1.06l1.06 1.06ZM5.404 6.464a.75.75 0 0 0 1.06-1.06l-1.06-1.06a.75.75 0 1 0-1.061 1.06l1.06 1.06Z" />
+            </svg>
+          </button>
+        <% end %>
+        <%= render "shared/locale_switcher", theme: themeable ? :auto : :dark %>
+      </div>
     </header>
     <% if controller_name == "production" %>
-      <p class="text-gray-400 text-sm mb-4"><%= t("production.description") %></p>
+      <p class="text-gray-600 dark:text-gray-400 text-sm mb-4"><%= t("production.description") %></p>
     <% end %>
     <%= turbo_stream_from "kitchen_#{current_user.company_id}" unless controller_name == "production" %>
     <%= render "shared/toasts" %>

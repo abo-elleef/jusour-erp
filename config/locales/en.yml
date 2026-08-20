@@ -3609,6 +3609,8 @@ en:
   production:
     title: "Production"
     description: "Enter quantities for every template on one sheet. Leave a row blank to skip it."
+    theme:
+      toggle: "Switch between light and dark"
     location_label: "Production location"
     select_location: "Select location…"
     location_required: "Select a production location."

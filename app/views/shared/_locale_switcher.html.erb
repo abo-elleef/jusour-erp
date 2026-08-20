@@ -1,11 +1,23 @@
-<% dark = local_assigns[:theme] == :dark %>
+<%# theme: :dark for permanently dark chrome, :auto for a screen that toggles
+    light/dark at runtime (light base + dark: variants), omitted for light. %>
+<% theme = local_assigns[:theme] %>
+<% name_class = case theme
+                when :dark then "text-white"
+                when :auto then "text-gray-900 dark:text-white"
+                else "text-gray-900"
+                end %>
+<% email_class = case theme
+                 when :dark then "text-gray-300"
+                 when :auto then "text-gray-500 dark:text-gray-300"
+                 else "text-gray-500"
+                 end %>
 <div class="flex items-center gap-3 shrink-0">
   <% if user_signed_in? %>
     <div class="text-end leading-tight min-w-0 max-w-[12rem] sm:max-w-[14rem]" title="<%= current_user.email %>">
-      <p class="text-sm font-semibold truncate <%= dark ? "text-white" : "text-gray-900" %>">
+      <p class="text-sm font-semibold truncate <%= name_class %>">
         <%= current_user.name %>
       </p>
-      <p class="text-xs truncate <%= dark ? "text-gray-300" : "text-gray-500" %> hidden sm:block">
+      <p class="text-xs truncate <%= email_class %> hidden sm:block">
         <%= current_user.email %>
       </p>
     </div>

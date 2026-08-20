@@ -1,17 +1,30 @@
-<%# locals: form_url, theme (:admin or :kitchen) %>
+<%# locals: form_url, theme (:admin or :kitchen)
+
+    `theme` controls DENSITY only: the kitchen sheet uses larger touch targets for
+    tablet entry. Colour is handled by Tailwind `dark:` variants keyed off the
+    `.dark` class on <html>, so the production screen can switch light/dark
+    without re-rendering (see kitchen_theme_controller). The admin layout never
+    carries `.dark`, so it always renders light. %>
 <% admin = local_assigns.fetch(:theme, :admin).to_sym == :admin %>
-<% input = admin ?
-     "w-full min-w-[5.5rem] bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-900 tabular-nums focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" :
-     "w-full min-w-[5.5rem] bg-gray-900 border border-gray-600 rounded-lg px-2 py-1.5 text-sm text-white tabular-nums" %>
+<%# Emit the dark: variants only for the kitchen sheet. The admin page must be
+    light unconditionally, and Turbo does not reset <html> attributes between
+    visits, so a `.dark` left over from the production screen could otherwise
+    follow the user here. Gating the classes makes that impossible. %>
+<% dk = ->(classes) { admin ? "" : " #{classes}" } %>
+<% input = "w-full min-w-[5.5rem] rounded-lg px-2 py-1.5 text-sm tabular-nums " \
+           "bg-white border border-gray-200 text-gray-900 " \
+           "focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" +
+           dk.call("dark:bg-gray-900 dark:border-gray-600 dark:text-white") %>
 <% select = "#{input} appearance-none" %>
-<% th = admin ?
-     "sticky top-0 z-10 bg-gray-50 py-2 px-2 text-start text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-200" :
-     "sticky top-0 z-10 bg-gray-800 py-2 px-2 text-start text-xs font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-700" %>
-<% td = admin ? "p-2 align-middle" : "p-2 align-middle border-b border-gray-800" %>
-<% label = admin ? "block text-xs font-semibold text-gray-600 mb-1.5" : "block text-xs font-semibold text-gray-400 mb-1.5" %>
-<% warn_box = admin ? "rounded-2xl border border-amber-200 bg-amber-50/70 px-5 py-4 mb-4" : "rounded-2xl border border-amber-700/60 bg-amber-950/40 px-5 py-4 mb-4" %>
-<% warn_title = admin ? "text-sm font-semibold text-amber-950" : "text-sm font-semibold text-amber-200" %>
-<% warn_body = admin ? "text-xs text-amber-900 mt-1" : "text-xs text-amber-100/80 mt-1" %>
+<% th = "sticky top-0 z-10 py-2 px-2 text-start text-xs font-semibold uppercase tracking-wide " \
+        "bg-gray-50 text-gray-500 border-b border-gray-200" +
+        dk.call("dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700") %>
+<% td = "p-2 align-middle" + dk.call("dark:border-b dark:border-gray-800") %>
+<% label = "block text-xs font-semibold mb-1.5 text-gray-600" + dk.call("dark:text-gray-400") %>
+<% warn_box = "rounded-2xl px-5 py-4 mb-4 border border-amber-200 bg-amber-50/70" +
+              dk.call("dark:border-amber-700/60 dark:bg-amber-950/40") %>
+<% warn_title = "text-sm font-semibold text-amber-950" + dk.call("dark:text-amber-200") %>
+<% warn_body = "text-xs mt-1 text-amber-900" + dk.call("dark:text-amber-100/80") %>
 <% filled = params.dig(:bulk, :location_id).presence || @default_production_location_id %>
 <% filled_date = params.dig(:bulk, :occurred_on).presence || Date.current %>
 <% filled_shelf = params.dig(:bulk, :default_shelf_life_days) %>
@@ -47,12 +60,12 @@
     <div>
       <%= label_tag "bulk[default_shelf_life_days]", t("production.bulk.default_shelf_life"), class: label %>
       <%= number_field_tag "bulk[default_shelf_life_days]", filled_shelf, min: 1, step: 1, class: input %>
-      <p class="text-xs <%= admin ? 'text-gray-500' : 'text-gray-500' %> mt-1"><%= t("production.bulk.default_shelf_life_hint") %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("production.bulk.default_shelf_life_hint") %></p>
     </div>
   </div>
 
   <% if @templates.any? %>
-    <div class="overflow-auto max-h-[70vh] relative <%= admin ? 'border border-gray-200 rounded-2xl' : 'border border-gray-700 rounded-2xl' %>">
+    <div class="overflow-auto max-h-[70vh] relative border rounded-2xl border-gray-200<%= dk.call("dark:border-gray-700") %>">
       <table class="w-full text-sm border-separate border-spacing-0">
         <thead>
           <tr>
@@ -74,23 +87,23 @@
                               t("production.bulk.runs_unit")
                             end %>
             <% default_shelf = template.output_ingredient.shelf_life_days %>
-            <tr class="<%= admin ? 'odd:bg-white even:table-zebra-alt' : 'odd:bg-gray-800/40' %>"
+            <tr class="odd:bg-white even:bg-gray-100<%= dk.call("dark:odd:bg-gray-800/40 dark:even:bg-transparent") %>"
                 data-bulk-manufacturing-target="row"
                 data-name="<%= template.name %>"
                 data-unit-label="<%= unit_label %>">
               <td class="<%= td %> ps-3 text-gray-400 tabular-nums"><%= index + 1 %></td>
               <td class="<%= td %>">
                 <%= hidden_field_tag "bulk[rows][#{template.id}][template_id]", template.id %>
-                <p class="<%= admin ? 'font-semibold text-gray-900' : 'font-semibold text-white' %>"><%= template.name %></p>
+                <p class="font-semibold text-gray-900<%= dk.call("dark:text-white") %>"><%= template.name %></p>
                 <% if main && template.main_ingredient %>
-                  <p class="text-xs <%= admin ? 'text-amber-800' : 'text-amber-300' %> mt-0.5">
+                  <p class="text-xs text-amber-800<%= dk.call("dark:text-amber-300") %> mt-0.5">
                     <%= t("production.main_input_label", ingredient: template.main_ingredient.name) %>
                   </p>
                 <% end %>
               </td>
-              <td class="<%= td %> <%= admin ? 'text-gray-700' : 'text-gray-300' %>">
+              <td class="<%= td %> text-gray-700<%= dk.call("dark:text-gray-300") %>">
                 <%= template.output_ingredient.name %>
-                <span class="block text-xs <%= admin ? 'text-gray-500' : 'text-gray-500' %> tabular-nums">
+                <span class="block text-xs text-gray-500 tabular-nums">
                   <%= template.yield_quantity %> <%= ingredient_unit_label(template.yield_unit.presence || template.output_ingredient.unit) %>
                   <%= t("inventory.manufacturing.templates.per_run") %>
                 </span>
@@ -120,7 +133,7 @@
                         data: { bulk_unit: true },
                         class: select %>
                 <% else %>
-                  <span class="text-xs <%= admin ? 'text-gray-500' : 'text-gray-400' %>"><%= t("production.bulk.runs_unit") %></span>
+                  <span class="text-xs text-gray-500<%= dk.call("dark:text-gray-400") %>"><%= t("production.bulk.runs_unit") %></span>
                 <% end %>
               </td>
               <td class="<%= td %>">
@@ -143,10 +156,11 @@
             class: admin ?
               "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" :
               "bg-amber-500 hover:bg-amber-400 text-gray-950 font-bold px-5 py-3 rounded-xl text-sm" %>
-      <p class="text-xs <%= admin ? 'text-gray-500' : 'text-gray-400' %>"><%= t("production.bulk.skip_hint") %></p>
+      <p class="text-xs text-gray-500<%= dk.call("dark:text-gray-400") %>"><%= t("production.bulk.skip_hint") %></p>
     </div>
   <% else %>
-    <p class="<%= admin ? 'text-sm text-gray-500 py-8 text-center' : 'text-center text-gray-400 py-16 text-lg' %>">
+    <%# Density still differs: the kitchen empty state is bigger for tablets. %>
+    <p class="<%= admin ? "text-sm py-8 text-center text-gray-500" : "text-center py-16 text-lg text-gray-500 dark:text-gray-400" %>">
       <%= t("production.empty") %>
     </p>
   <% end %>
