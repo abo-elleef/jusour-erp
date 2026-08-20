@@ -32,10 +32,13 @@
   <div>
     <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.stock_transfers.order_limit") %></label>
     <%= f.number_field :order_limit,
-          step: 0.001, min: 0, readonly: true,
-          placeholder: has_limit ? nil : "—",
-          class: "#{input_class} bg-gray-50 text-gray-700 tabular-nums",
-          data: { stock_transfer_lines_target: "orderLimit" } %>
+          step: 0.001, min: 0,
+          placeholder: has_limit ? nil : "0",
+          class: "#{input_class} tabular-nums",
+          data: {
+            stock_transfer_lines_target: "orderLimit",
+            action: "input->stock-transfer-lines#recommendRequested"
+          } %>
   </div>
   <div>
     <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.stock_transfers.counted_quantity") %></label>

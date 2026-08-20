@@ -320,6 +320,7 @@ Rails.application.routes.draw do
           post :send_transfer
           post :confirm_receipt
           post :cancel
+          post :void_shipment
         end
       end
       resources :stock_transfer_templates do

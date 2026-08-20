@@ -5,7 +5,7 @@ module Admin
     class StockTransfersController < BaseController
       SORT_COLUMNS = %w[transfer_number transferred_on status from_location to_location requested_by].freeze
 
-      before_action :set_stock_transfer, only: %i[show edit update send_transfer confirm_receipt cancel]
+      before_action :set_stock_transfer, only: %i[show edit update send_transfer confirm_receipt cancel void_shipment]
 
       def index
         authorize_inventory_index!(StockTransfer)
@@ -29,7 +29,8 @@ module Admin
         authorize_inventory!(:show)
         @lines = @stock_transfer.stock_transfer_lines.includes(ingredient: :ingredient_category).ordered
         @shipments = @stock_transfer.stock_transfer_shipments.ordered
-          .includes(stock_transfer_shipment_lines: { stock_transfer_line: { ingredient: :ingredient_category } })
+          .includes(:sent_by, :received_by, :voided_by,
+            stock_transfer_shipment_lines: { stock_transfer_line: { ingredient: :ingredient_category } })
         @current_shipment = @stock_transfer.current_shipment
         @restrict_stock_transfers_to_source = Setting.restrict_stock_transfers_to_source?
         @source_shortage_lines = if @stock_transfer.completed?
@@ -138,6 +139,16 @@ module Admin
 
         @stock_transfer.update!(status: "cancelled")
         redirect_to admin_inventory_stock_transfers_path, notice: t("flash.stock_transfer.cancelled")
+      end
+
+      def void_shipment
+        authorize_inventory!(:update)
+        ::Inventory::VoidInTransitStockTransferShipmentService.new(@stock_transfer, current_user).call
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          notice: t("flash.stock_transfer.shipment_voided")
+      rescue ActiveRecord::RecordInvalid => e
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          alert: e.record.errors.full_messages.to_sentence
       end
 
       private

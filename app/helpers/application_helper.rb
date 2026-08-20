@@ -898,6 +898,7 @@ module ApplicationHelper
     badge_class = case status.to_s
                   when "in_transit" then "bg-blue-100 text-blue-900 border-blue-200"
                   when "received" then "bg-green-100 text-green-800 border-green-200"
+                  when "voided" then "bg-red-50 text-red-800 border-red-200"
                   else "bg-gray-100 text-gray-700 border-gray-200"
                   end
     [label, badge_class]

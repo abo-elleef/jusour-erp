@@ -303,4 +303,55 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       expect(transfer.reload).to be_awaiting_receipt
     end
   end
+
+  describe "POST void_shipment" do
+    it "voids an in-transit shipment and returns the transfer to requested without moving stock" do
+      transfer = create_transfer_with_line(requested: 4.0)
+      line = transfer.stock_transfer_lines.first
+      kitchen_before = IngredientLocation.find_by(location: kitchen, ingredient: ingredient).quantity_on_hand.to_d
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "3.5" } }
+      expect(transfer.reload).to be_awaiting_receipt
+
+      post void_shipment_admin_inventory_stock_transfer_path(transfer)
+
+      expect(response).to redirect_to(admin_inventory_stock_transfer_path(transfer))
+      expect(flash[:notice]).to eq(I18n.t("flash.stock_transfer.shipment_voided"))
+      expect(transfer.reload).to be_requested
+      expect(line.reload.quantity_sent.to_d).to eq(0)
+      expect(transfer.stock_transfer_shipments.last).to be_voided
+      expect(StockAdjustment.where(stock_transfer: transfer)).to be_empty
+      expect(IngredientLocation.find_by(location: kitchen, ingredient: ingredient).quantity_on_hand.to_d).to eq(kitchen_before)
+    end
+
+    it "voids a later in-transit shipment and returns the transfer to partially received" do
+      transfer = create_transfer_with_line(requested: 10.0)
+      line = transfer.stock_transfer_lines.first
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "6" } }
+      post confirm_receipt_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "6" } }
+      expect(transfer.reload).to be_partially_received
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "4" } }
+      expect(transfer.reload).to be_awaiting_receipt
+
+      post void_shipment_admin_inventory_stock_transfer_path(transfer)
+
+      expect(transfer.reload).to be_partially_received
+      expect(line.reload.quantity_sent.to_d).to eq(6.0)
+      expect(line.quantity_received.to_d).to eq(6.0)
+      expect(transfer.stock_transfer_shipments.in_transit).to be_empty
+      expect(transfer.stock_transfer_shipments.last).to be_voided
+    end
+
+    it "rejects void when no shipment is in transit" do
+      transfer = create_transfer_with_line
+
+      post void_shipment_admin_inventory_stock_transfer_path(transfer)
+
+      expect(response).to redirect_to(admin_inventory_stock_transfer_path(transfer))
+      expect(flash[:alert]).to eq(I18n.t("inventory.stock_transfers.errors.cannot_void_shipment"))
+      expect(transfer.reload).to be_requested
+    end
+  end
 end

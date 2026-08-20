@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_19_130000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_20_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1177,10 +1177,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_130000) do
     t.datetime "received_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "voided_by_id"
+    t.datetime "voided_at"
     t.index ["received_by_id"], name: "index_stock_transfer_shipments_on_received_by_id"
     t.index ["sent_by_id"], name: "index_stock_transfer_shipments_on_sent_by_id"
     t.index ["stock_transfer_id", "sequence"], name: "idx_on_stock_transfer_id_sequence_1bc36b196f", unique: true
     t.index ["stock_transfer_id"], name: "index_stock_transfer_shipments_on_stock_transfer_id"
+    t.index ["voided_by_id"], name: "index_stock_transfer_shipments_on_voided_by_id"
   end
 
   create_table "stock_transfer_template_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1655,6 +1658,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_19_130000) do
   add_foreign_key "stock_transfer_shipments", "stock_transfers"
   add_foreign_key "stock_transfer_shipments", "users", column: "received_by_id"
   add_foreign_key "stock_transfer_shipments", "users", column: "sent_by_id"
+  add_foreign_key "stock_transfer_shipments", "users", column: "voided_by_id"
   add_foreign_key "stock_transfer_template_lines", "ingredients"
   add_foreign_key "stock_transfer_template_lines", "stock_transfer_templates"
   add_foreign_key "stock_transfer_template_lines", "units"

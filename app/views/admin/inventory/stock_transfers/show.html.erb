@@ -196,8 +196,13 @@
             </tbody>
           </table>
         </div>
-        <div class="px-5 py-4 border-t border-emerald-100">
+        <div class="px-5 py-4 border-t border-emerald-100 flex flex-wrap items-center gap-3">
           <%= submit_tag t("inventory.stock_transfers.confirm_receipt"), class: "bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold" %>
+          <%= button_to t("inventory.stock_transfers.void_shipment"),
+                void_shipment_admin_inventory_stock_transfer_path(@stock_transfer),
+                method: :post,
+                form: { data: { turbo_confirm: t("inventory.stock_transfers.void_shipment_confirm", number: @current_shipment.sequence) }, class: "inline" },
+                class: "inline-flex text-sm font-semibold text-red-700 hover:bg-red-50 px-5 py-2.5 rounded-xl border border-red-200 transition-colors" %>
         </div>
       <% end %>
     </section>
@@ -219,6 +224,8 @@
                 <%= t("inventory.stock_transfers.shipment_sent_by", name: shipment.sent_by.name, at: l(shipment.sent_at, format: :short)) %>
                 <% if shipment.received_at %>
                   · <%= t("inventory.stock_transfers.shipment_received_by", name: shipment.received_by.name, at: l(shipment.received_at, format: :short)) %>
+                <% elsif shipment.voided_at %>
+                  · <%= t("inventory.stock_transfers.shipment_voided_by", name: shipment.voided_by.name, at: l(shipment.voided_at, format: :short)) %>
                 <% end %>
               </span>
             </div>

@@ -73,6 +73,10 @@ class StockTransfer < ApplicationRecord
     awaiting_receipt? && current_shipment.present?
   end
 
+  def can_void_in_transit_shipment?
+    awaiting_receipt? && current_shipment&.in_transit?
+  end
+
   def fully_fulfilled?
     stock_transfer_lines.all?(&:fulfilled?)
   end

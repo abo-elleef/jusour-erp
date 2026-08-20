@@ -4,7 +4,7 @@
 <% display_lines = @grouped_view ? group_preserving_line_order_by_ingredient_category(@lines) : [[nil, @lines]] %>
 <% duplicate_ids = @duplicate_ingredient_ids.to_set %>
 
-<div class="max-w-4xl">
+<div class="max-w-7xl">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @template.name %></h1>
