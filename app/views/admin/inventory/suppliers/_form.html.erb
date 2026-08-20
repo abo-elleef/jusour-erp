@@ -67,6 +67,16 @@
           </span>
         </label>
       </div>
+
+      <div class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+        <label class="inline-flex items-center gap-3 cursor-pointer">
+          <%= f.check_box :skip_stock_alerts, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+          <span>
+            <span class="block text-sm font-semibold text-gray-900"><%= t("inventory.suppliers.form.skip_stock_alerts_label") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("inventory.suppliers.form.skip_stock_alerts_hint") %></span>
+          </span>
+        </label>
+      </div>
     </div>
   </section>
 

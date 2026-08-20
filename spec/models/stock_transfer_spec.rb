@@ -60,4 +60,70 @@ RSpec.describe StockTransfer, type: :model do
     expect(t).not_to be_valid
     expect(t.errors[:transferred_on]).to be_present
   end
+
+  describe "draft status" do
+    def build_transfer(status)
+      described_class.create!(
+        company: Current.company,
+        from_location: kitchen,
+        to_location: branch,
+        requested_by: manager,
+        status: status
+      )
+    end
+
+    it "is editable but neither sendable nor part of the open queue" do
+      draft = build_transfer("draft")
+
+      expect(draft).to be_draft
+      expect(draft).to be_editable
+      expect(draft).to be_can_submit
+      expect(draft).to be_discardable
+      expect(draft.can_send?).to be(false)
+      expect(described_class.in_progress).not_to include(draft)
+    end
+
+    it "keeps a submitted transfer out of the discardable set" do
+      requested = build_transfer("requested")
+
+      expect(requested).to be_editable
+      expect(requested.discardable?).to be(false)
+      expect(requested.can_submit?).to be(false)
+      expect(described_class.in_progress).to include(requested)
+    end
+
+    it "keeps re-syncing requested_at while it is still a draft" do
+      draft = build_transfer("draft")
+
+      draft.update!(transferred_on: Date.current - 3)
+
+      expect(draft.reload.requested_at.to_date).to eq(Date.current - 3)
+    end
+  end
+
+  describe "#stale_awaiting_receipt?" do
+    def awaiting(on:)
+      described_class.create!(
+        company: Current.company, from_location: kitchen, to_location: branch,
+        requested_by: manager, status: "awaiting_receipt", transferred_on: on
+      )
+    end
+
+    it "flags a shipment left unreceived past the aging window" do
+      expect(awaiting(on: Date.current - (described_class::AGING_RECEIPT_DAYS + 1))).to be_stale_awaiting_receipt
+    end
+
+    it "does not flag one still inside the window" do
+      expect(awaiting(on: Date.current - (described_class::AGING_RECEIPT_DAYS - 1))).not_to be_stale_awaiting_receipt
+    end
+
+    it "only applies to awaiting_receipt" do
+      old_draft = described_class.create!(
+        company: Current.company, from_location: kitchen, to_location: branch,
+        requested_by: manager, status: "draft", transferred_on: Date.current - 30
+      )
+
+      expect(old_draft).not_to be_stale_awaiting_receipt
+    end
+  end
 end

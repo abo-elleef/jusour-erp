@@ -8,6 +8,7 @@ module Inventory
       ingredient = Ingredient.unscoped.find(ingredient_id)
       with_company(ingredient.company) do
         return unless ingredient.low_stock?
+        return if ingredient.stock_alerts_suppressed?
 
         Inventory::NotifyService.deliver_to_managers(
           ingredient: ingredient,

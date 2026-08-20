@@ -661,6 +661,13 @@ module ApplicationHelper
     end
   end
 
+  # Count pill rendered inside an admin section tab, so the queue size is
+  # visible without clicking through.
+  def admin_tab_count(count, active: false)
+    tone = active ? "bg-amber-100 text-amber-900" : "bg-gray-100 text-gray-600"
+    tag.span(count.to_i, class: "ms-2 text-xs font-semibold tabular-nums px-1.5 py-0.5 rounded-md #{tone}")
+  end
+
   def pos_nav_link_class(active)
     base = "px-3 py-1.5 rounded-xl text-sm font-semibold border transition-colors"
     active ? "#{base} bg-gray-900 text-white border-gray-900" : "#{base} bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
@@ -880,6 +887,8 @@ module ApplicationHelper
   def stock_transfer_status_badge(status)
     label = t("inventory.stock_transfers.statuses.#{status}", default: status.to_s.humanize)
     badge_class = case status.to_s
+                  # Dashed border reads as "not final yet".
+                  when "draft" then "bg-white text-gray-500 border-gray-300 border-dashed"
                   when "requested" then "bg-amber-100 text-amber-900 border-amber-200"
                   when "awaiting_receipt" then "bg-blue-100 text-blue-900 border-blue-200"
                   when "partially_received" then "bg-violet-100 text-violet-900 border-violet-200"

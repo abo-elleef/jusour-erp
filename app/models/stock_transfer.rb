@@ -3,7 +3,16 @@
 class StockTransfer < ApplicationRecord
   include Tenantable
 
-  STATUSES = %w[requested awaiting_receipt partially_received completed cancelled].freeze
+  STATUSES = %w[draft requested awaiting_receipt partially_received completed cancelled].freeze
+
+  # Statuses that still need someone to act on them — the shared work queue the
+  # index lands on. Drafts are deliberately excluded: an unfinished request is
+  # authoring in progress, not work anyone else can pick up.
+  IN_PROGRESS_STATUSES = %w[requested awaiting_receipt partially_received].freeze
+
+  # An awaiting_receipt transfer older than this has stock sitting in limbo
+  # between the two locations, so the index flags it.
+  AGING_RECEIPT_DAYS = 7
 
   belongs_to :from_location, class_name: "Location"
   belongs_to :to_location, class_name: "Location"
@@ -15,14 +24,12 @@ class StockTransfer < ApplicationRecord
   has_many :ingredients, through: :stock_transfer_lines
   has_many :stock_adjustments, dependent: :nullify
 
+  # A Symbol, not a proc, so the check runs in instance context and can see
+  # `draft?`. Drafts keep ingredient-only rows, otherwise "save and finish
+  # later" would silently drop every line whose quantity isn't typed in yet.
   accepts_nested_attributes_for :stock_transfer_lines,
     allow_destroy: true,
-    reject_if: proc { |attrs|
-      next true if attrs["ingredient_id"].blank?
-
-      qty = attrs["quantity_requested_input"].presence || attrs["quantity_requested"]
-      qty.blank? || qty.to_d <= 0
-    }
+    reject_if: :reject_transfer_line?
 
   validates :transfer_number, presence: true, uniqueness: { scope: :company_id }
   validates :status, inclusion: { in: STATUSES }
@@ -36,10 +43,17 @@ class StockTransfer < ApplicationRecord
   scope :recent, -> { order(transferred_on: :desc, requested_at: :desc, created_at: :desc) }
   scope :pending_send, -> { where(status: %w[requested partially_received]) }
   scope :pending_receive, -> { where(status: "awaiting_receipt") }
+  scope :in_progress, -> { where(status: IN_PROGRESS_STATUSES) }
+  scope :drafts, -> { where(status: "draft") }
+  scope :on_date, ->(date) { where(transferred_on: date) }
 
   before_validation :assign_transfer_number, on: :create
   before_validation :assign_transferred_on
   before_validation :sync_requested_at_from_transfer_date
+
+  def draft?
+    status == "draft"
+  end
 
   def requested?
     status == "requested"
@@ -62,7 +76,25 @@ class StockTransfer < ApplicationRecord
   end
 
   def editable?
-    requested?
+    draft? || requested?
+  end
+
+  def can_submit?
+    draft?
+  end
+
+  # Only drafts are destroyable. Once submitted, a transfer is an audit record
+  # and gets cancelled instead.
+  def discardable?
+    draft?
+  end
+
+  # Sent but still not received after AGING_RECEIPT_DAYS — stock is in limbo.
+  def stale_awaiting_receipt?(as_of: Date.current)
+    return false unless awaiting_receipt?
+    return false if transferred_on.blank?
+
+    transferred_on < as_of - AGING_RECEIPT_DAYS
   end
 
   def can_send?
@@ -115,12 +147,23 @@ class StockTransfer < ApplicationRecord
     format("%s%05d", prefix, (max_seq || 0) + 1)
   end
 
+  # `send`-invoked by accepts_nested_attributes_for, so private is fine.
+  def reject_transfer_line?(attrs)
+    return true if attrs["ingredient_id"].blank?
+    # Drafts keep a row as soon as an ingredient is picked; the quantity can
+    # come later. Submitting re-validates and demands a positive quantity.
+    return false if draft?
+
+    qty = attrs["quantity_requested_input"].presence || attrs["quantity_requested"]
+    qty.blank? || qty.to_d <= 0
+  end
+
   def assign_transferred_on
     self.transferred_on ||= Date.current
   end
 
   def sync_requested_at_from_transfer_date
-    return unless new_record? || requested?
+    return unless new_record? || requested? || draft?
     return if transferred_on.blank?
 
     self.requested_at = occurred_at

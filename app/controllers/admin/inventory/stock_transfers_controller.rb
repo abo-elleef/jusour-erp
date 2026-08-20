@@ -4,25 +4,26 @@ module Admin
   module Inventory
     class StockTransfersController < BaseController
       SORT_COLUMNS = %w[transfer_number transferred_on status from_location to_location requested_by].freeze
+      SCOPES = %w[open today all].freeze
 
-      before_action :set_stock_transfer, only: %i[show edit update send_transfer confirm_receipt cancel void_shipment]
+      before_action :set_stock_transfer,
+        only: %i[show edit update submit destroy send_transfer confirm_receipt cancel void_shipment]
 
+      # Lands on the open work queue rather than the full history: this page is
+      # used to act on transfers, and an all-time list grows past scanning.
       def index
         authorize_inventory_index!(StockTransfer)
         @sort      = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : nil
         @direction = params[:dir].to_s == "asc" ? "asc" : "desc"
+        @status    = params[:status].presence_in(StockTransfer::STATUSES)
+        # An explicit status tab wins; otherwise fall back to a scope tab.
+        @scope_name = @status ? nil : (params[:scope].presence_in(SCOPES) || "open")
 
-        scope = StockTransfer.includes(:from_location, :to_location, :requested_by, :sent_by, :received_by)
-        scope = scope.where(status: params[:status]) if params[:status].present?
-        if params[:location_id].present?
-          loc_id = params[:location_id]
-          scope = scope.where("stock_transfers.from_location_id = ? OR stock_transfers.to_location_id = ?", loc_id, loc_id)
-        end
-
-        scope = apply_sort(scope)
+        load_tab_counts
+        scope = apply_sort(apply_scope(with_index_associations))
         @pagy, @stock_transfers = pagy(:offset, scope, limit: 50)
         @locations = Location.active.ordered
-        @status_counts = StockTransfer.group(:status).count
+        load_completed_today if @scope_name == "open"
       end
 
       def show
@@ -55,13 +56,18 @@ module Admin
       end
 
       def create
-        @stock_transfer = StockTransfer.new(stock_transfer_params)
+        # Status must be set BEFORE nested attributes are assigned: reject_transfer_line?
+        # consults `draft?` as each line comes in, so assigning params first would
+        # drop the blank-quantity rows a draft is supposed to keep.
+        @stock_transfer = StockTransfer.new
+        @stock_transfer.status = "draft" if save_as_draft?
+        @stock_transfer.assign_attributes(stock_transfer_params)
         @stock_transfer.requested_by = current_user
         authorize_inventory!(:create)
 
         if save_transfer_with_lines
           redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
-            notice: t("flash.stock_transfer.requested")
+            notice: t(save_as_draft? ? "flash.stock_transfer.draft_saved" : "flash.stock_transfer.requested")
         else
           build_line_items
           load_form_data
@@ -88,15 +94,52 @@ module Admin
           return
         end
 
+        was_draft = @stock_transfer.draft?
+        promoting = was_draft && !save_as_draft?
         @stock_transfer.assign_attributes(stock_transfer_params)
-        if save_transfer_with_lines
-          redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
-            notice: t("flash.stock_transfer.updated")
-        else
-          build_line_items
-          load_form_data
-          render :edit, status: :unprocessable_entity
+
+        # Persist the edits while the record is still a draft, so placeholder
+        # lines survive, then promote through the same service the show-page
+        # button uses. Autosave only validates *changed* children, so flipping
+        # the status inline would let an untouched placeholder line slip into a
+        # submitted transfer.
+        return render_edit_with_errors unless save_transfer_with_lines
+
+        if promoting
+          begin
+            ::Inventory::SubmitStockTransferService.new(@stock_transfer, current_user).call
+          rescue ActiveRecord::RecordInvalid
+            return render_edit_with_errors
+          end
         end
+
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          notice: t(update_notice_key(was_draft: was_draft, promoting: promoting))
+      end
+
+      def submit
+        authorize_inventory!(:update)
+        ::Inventory::SubmitStockTransferService.new(@stock_transfer, current_user).call
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          notice: t("flash.stock_transfer.requested")
+      rescue ActiveRecord::RecordInvalid => e
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          alert: e.record.errors.full_messages.to_sentence
+      end
+
+      # Only drafts are destroyable — a submitted transfer is an audit record
+      # and gets cancelled instead.
+      def destroy
+        authorize_inventory!(:update)
+        unless @stock_transfer.discardable?
+          redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+            alert: t("inventory.stock_transfers.errors.cannot_discard")
+          return
+        end
+
+        @stock_transfer.destroy!
+        redirect_to admin_inventory_stock_transfers_path(status: "draft"),
+          notice: t("flash.stock_transfer.draft_discarded")
       end
 
       def send_transfer
@@ -184,6 +227,23 @@ module Admin
         end
       end
 
+      def save_as_draft?
+        params.key?(:save_draft)
+      end
+
+      def update_notice_key(was_draft:, promoting:)
+        return "flash.stock_transfer.requested" if promoting
+        return "flash.stock_transfer.draft_saved" if was_draft
+
+        "flash.stock_transfer.updated"
+      end
+
+      def render_edit_with_errors
+        build_line_items
+        load_form_data
+        render :edit, status: :unprocessable_entity
+      end
+
       def build_line_items
         @stock_transfer.stock_transfer_lines.build if @stock_transfer.stock_transfer_lines.empty?
       end
@@ -216,7 +276,8 @@ module Admin
 
       def save_transfer_with_lines
         active_lines = @stock_transfer.stock_transfer_lines.reject(&:marked_for_destruction?)
-        if active_lines.empty?
+        # A draft is allowed to be empty — that is the point of saving one.
+        if active_lines.empty? && !@stock_transfer.draft?
           @stock_transfer.errors.add(:base, t("inventory.stock_transfers.errors.lines_required"))
           return false
         end
@@ -242,6 +303,47 @@ module Admin
         @stock_transfer.from_location.ingredient_locations.load
       end
 
+      def with_index_associations
+        StockTransfer.includes(:from_location, :to_location, :requested_by, :sent_by, :received_by)
+      end
+
+      def apply_location_filter(scope)
+        return scope if params[:location_id].blank?
+
+        loc_id = params[:location_id]
+        scope.where("stock_transfers.from_location_id = ? OR stock_transfers.to_location_id = ?", loc_id, loc_id)
+      end
+
+      def apply_scope(scope)
+        scope = apply_location_filter(scope)
+        return scope.where(status: @status) if @status
+
+        case @scope_name
+        when "today" then scope.on_date(Date.current)
+        when "all"   then scope
+        else              scope.in_progress
+        end
+      end
+
+      # One grouped query plus one for today; the rest is derived so the tab
+      # badges always match what clicking the tab actually returns.
+      def load_tab_counts
+        counting_base = apply_location_filter(StockTransfer.all)
+        @status_counts = counting_base.group(:status).count
+        @all_count     = @status_counts.values.sum
+        @open_count    = StockTransfer::IN_PROGRESS_STATUSES.sum { |st| @status_counts[st].to_i }
+        @today_count   = counting_base.on_date(Date.current).count
+      end
+
+      # Shown under the open queue so "shipped and received, done" is visible
+      # without switching tabs.
+      def load_completed_today
+        @completed_today = apply_location_filter(with_index_associations)
+          .where(status: "completed")
+          .on_date(Date.current)
+          .order(created_at: :desc)
+      end
+
       def apply_sort(scope)
         dir = @direction == "asc" ? :asc : :desc
 
@@ -259,8 +361,13 @@ module Admin
         when "requested_by"
           scope.joins(:requested_by).order(Arel.sql("(SELECT name FROM users WHERE id = stock_transfers.requested_by_id) #{dir}"))
         else
-          # default: newest created_at first (id desc equivalent for UUIDs with timestamps)
-          scope.order(created_at: :desc)
+          if @scope_name == "open"
+            # Aging queue: the longest-outstanding transfer needs attention first.
+            scope.order(transferred_on: :asc, created_at: :asc)
+          else
+            # newest created_at first (id desc equivalent for UUIDs with timestamps)
+            scope.order(created_at: :desc)
+          end
         end
       end
 

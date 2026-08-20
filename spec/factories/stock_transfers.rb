@@ -10,6 +10,10 @@ FactoryBot.define do
     transferred_on { Date.current }
     status { "requested" }
 
+    trait :draft do
+      status { "draft" }
+    end
+
     trait :awaiting_receipt do
       status { "awaiting_receipt" }
       sent_at { Time.current }

@@ -3,7 +3,16 @@
 <% line = f.object %>
 <% ingredient = line.ingredient || @ingredients.find { |i| i.id == line.ingredient_id } %>
 <% unit_opts = ingredient ? ingredient.available_units.map { |u| [ingredient_unit_label(u), u] } : [] %>
-<% requested_value = line.persisted? && ingredient ? line.in_line_unit(line.quantity_requested) : line.quantity_requested_input %>
+<%# A saved draft placeholder has quantity 0; leave the field blank so it reads
+    as "still to fill in" rather than an intentional zero. %>
+<% draft_placeholder = line.persisted? && line.draft_parent? && line.awaiting_quantity? %>
+<% requested_value = if draft_placeholder
+                       nil
+                     elsif line.persisted? && ingredient
+                       line.in_line_unit(line.quantity_requested)
+                     else
+                       line.quantity_requested_input
+                     end %>
 <% has_limit = line.order_limit.present? %>
 
 <div class="px-5 py-4 grid grid-cols-1 sm:grid-cols-[2.5rem_auto_1fr_6.5rem_6.5rem_7rem_7rem_auto] gap-4 items-end"

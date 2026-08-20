@@ -68,4 +68,39 @@ RSpec.describe StockTransferLine, type: :model do
     line = create(:stock_transfer_line, stock_transfer: transfer, ingredient: ingredient, quantity_requested: 1, order_limit: 10)
     expect(line.recommended_quantity).to be_nil
   end
+
+  describe "quantity_requested_input dirty tracking" do
+    # quantity_requested_input is virtual, so without marking quantity_requested
+    # dirty the record looks unchanged, has_many autosave skips the child, and
+    # before_validation never converts the typed value. Editing only a quantity
+    # would then silently no-op.
+    it "persists an edit that changes nothing but the quantity" do
+      transfer = create(:stock_transfer, company: company, from_location: kitchen,
+        to_location: branch, requested_by: owner)
+      line = create(:stock_transfer_line, stock_transfer: transfer, ingredient: ingredient,
+        quantity_requested: 2, unit: ingredient.unit, position: 0)
+
+      reloaded = StockTransfer.find(transfer.id)
+      reloaded.assign_attributes(stock_transfer_lines_attributes: {
+        "0" => { "id" => line.id, "position" => "0", "ingredient_id" => line.ingredient_id,
+                 "order_limit" => "", "counted_quantity" => "",
+                 "quantity_requested_input" => "9", "unit" => line.unit }
+      })
+
+      expect(reloaded.save).to be(true)
+      expect(line.reload.quantity_requested).to eq(9)
+    end
+
+    it "leaves the quantity alone when the input is blank" do
+      transfer = create(:stock_transfer, company: company, from_location: kitchen,
+        to_location: branch, requested_by: owner)
+      line = create(:stock_transfer_line, stock_transfer: transfer, ingredient: ingredient,
+        quantity_requested: 4, unit: ingredient.unit, position: 0)
+
+      line.quantity_requested_input = ""
+
+      expect(line.changed).to be_empty
+      expect(line.quantity_requested).to eq(4)
+    end
+  end
 end

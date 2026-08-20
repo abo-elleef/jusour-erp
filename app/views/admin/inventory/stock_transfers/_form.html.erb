@@ -144,10 +144,22 @@
     </template>
   </section>
 
+  <% draftable = stock_transfer.new_record? || stock_transfer.draft? %>
   <div class="flex flex-wrap gap-3">
-    <%= f.submit stock_transfer.persisted? ? t("actions.save") : t("inventory.stock_transfers.submit_request"),
+    <%# Primary action always submits the request; "save as draft" is the escape
+        hatch that keeps blank quantities. Named submits so the controller can
+        tell the two apart. %>
+    <%= f.submit draftable ? t("inventory.stock_transfers.submit_request") : t("actions.save"),
           class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold" %>
+    <% if draftable %>
+      <%= f.submit t("inventory.stock_transfers.save_draft"), name: "save_draft",
+            formnovalidate: true,
+            class: "bg-white hover:bg-gray-50 text-gray-700 px-5 py-2.5 rounded-xl text-sm font-semibold border border-gray-300" %>
+    <% end %>
     <%= link_to t("actions.cancel"), stock_transfer.persisted? ? admin_inventory_stock_transfer_path(stock_transfer) : admin_inventory_stock_transfers_path,
           class: "inline-flex items-center text-sm font-semibold text-gray-700 hover:bg-gray-100 px-5 py-2.5 rounded-xl border border-gray-200" %>
   </div>
+  <% if draftable %>
+    <p class="text-xs text-gray-500"><%= t("inventory.stock_transfers.draft_hint") %></p>
+  <% end %>
 <% end %>

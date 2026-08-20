@@ -72,6 +72,13 @@ class Ingredient < ApplicationRecord
     quantity_on_hand <= reorder_threshold
   end
 
+  # True when any supplier of this ingredient is flagged "daily fresh — no stock
+  # alerts", so stock notifications are silenced for it (its stock status and
+  # low-stock reports are unaffected — this only gates the alert).
+  def stock_alerts_suppressed?
+    suppliers.where(skip_stock_alerts: true).exists?
+  end
+
   def out_of_stock?
     quantity_on_hand <= 0
   end

@@ -10,10 +10,25 @@ class StockTransferLine < ApplicationRecord
 
   # Requested quantity as typed in `unit`; converted to base on the way in so the
   # transfer engine only ever sees base-unit quantities.
-  attr_accessor :quantity_requested_input
+  attr_reader :quantity_requested_input
+
+  # This is a virtual attribute, so assigning it leaves the record "unchanged"
+  # and `has_many` autosave skips the child outright — before_validation never
+  # runs and the typed quantity is silently dropped. Flagging quantity_requested
+  # dirty keeps the record in the autosave set. The conversion itself stays in
+  # before_validation, which runs after `unit` has been assigned too, so a line
+  # that changes unit and quantity together still converts against the new unit.
+  def quantity_requested_input=(value)
+    @quantity_requested_input = value
+    quantity_requested_will_change! if value.present?
+  end
 
   validates :ingredient_id, uniqueness: { scope: :stock_transfer_id }
-  validates :quantity_requested, numericality: { greater_than: 0 }
+  # A draft may hold an ingredient-only row whose quantity isn't typed in yet.
+  # Submitting flips the parent out of draft, so this reverts to a strict
+  # positive check and the placeholder rows surface as errors.
+  validates :quantity_requested, numericality: { greater_than: 0 }, unless: :draft_parent?
+  validates :quantity_requested, numericality: { greater_than_or_equal_to: 0 }, if: :draft_parent?
   validates :quantity_sent, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_received, numericality: { greater_than_or_equal_to: 0 }
   validates :order_limit, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
@@ -81,6 +96,15 @@ class StockTransferLine < ApplicationRecord
 
   def fulfilled?
     quantity_received.to_d >= quantity_requested.to_d
+  end
+
+  def draft_parent?
+    stock_transfer&.draft?
+  end
+
+  # A draft placeholder: ingredient chosen, quantity still blank.
+  def awaiting_quantity?
+    quantity_requested.to_d <= 0
   end
 
   # Suggested request qty in the line unit: limit − counted (never negative).

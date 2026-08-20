@@ -315,8 +315,9 @@ Rails.application.routes.draw do
           post :cancel
         end
       end
-      resources :stock_transfers, only: %i[index show new create edit update] do
+      resources :stock_transfers, only: %i[index show new create edit update destroy] do
         member do
+          post :submit
           post :send_transfer
           post :confirm_receipt
           post :cancel

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_20_140000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_20_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1294,6 +1294,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_20_140000) do
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
     t.uuid "treasury_id"
+    t.boolean "skip_stock_alerts", default: false, null: false
     t.index ["company_id"], name: "index_suppliers_on_company_id"
     t.index ["name"], name: "index_suppliers_on_name"
     t.index ["treasury_id"], name: "index_suppliers_on_treasury_id"

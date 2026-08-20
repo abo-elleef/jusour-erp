@@ -288,7 +288,7 @@ module Admin
 
       def supplier_params
         params.require(:supplier).permit(
-          :name, :contact_name, :email, :phone, :address, :lead_time_days, :active
+          :name, :contact_name, :email, :phone, :address, :lead_time_days, :active, :skip_stock_alerts
         )
       end
     end

@@ -39,6 +39,29 @@ RSpec.describe Ingredient, type: :model do
     expect(ingredient.errors[:shelf_life_days]).to be_present
   end
 
+  describe "#stock_alerts_suppressed?" do
+    let(:ingredient) do
+      described_class.create!(name: "Lettuce", ingredient_category: category, unit: "kg",
+        reorder_threshold: 5, quantity_on_hand: 1, cost_per_unit_cents: 100)
+    end
+
+    it "is false with no suppliers" do
+      expect(ingredient.stock_alerts_suppressed?).to be(false)
+    end
+
+    it "is false when its supplier is not flagged" do
+      supplier = Supplier.create!(name: "Regular", lead_time_days: 1, company: Current.company)
+      SupplierIngredient.create!(supplier: supplier, ingredient: ingredient, price_cents: 100)
+      expect(ingredient.stock_alerts_suppressed?).to be(false)
+    end
+
+    it "is true when any supplier is flagged daily-fresh" do
+      supplier = Supplier.create!(name: "Fresh", lead_time_days: 1, company: Current.company, skip_stock_alerts: true)
+      SupplierIngredient.create!(supplier: supplier, ingredient: ingredient, price_cents: 100)
+      expect(ingredient.stock_alerts_suppressed?).to be(true)
+    end
+  end
+
   describe "changing the base unit (on update)" do
     def fresh_ingredient(quantity_on_hand: 0)
       described_class.create!(name: "Base #{SecureRandom.hex(3)}", ingredient_category: category,
