@@ -1595,6 +1595,8 @@ en:
         group_by:
           category: "By category"
           vendor: "By vendor"
+        expand_all: "Expand all"
+        collapse_all: "Collapse all"
         no_vendor: "No vendor"
         multiple_vendors: "Multiple vendors"
         multiple_vendors_hint: "Linked to more than one vendor with no preferred one set."

@@ -1599,6 +1599,8 @@ ar:
         group_by:
           category: "حسب التصنيف"
           vendor: "حسب المورد"
+        expand_all: "توسيع الكل"
+        collapse_all: "طي الكل"
         no_vendor: "بدون مورد"
         multiple_vendors: "عدة موردين"
         multiple_vendors_hint: "مرتبط بأكثر من مورد ولم يُحدَّد مورد مفضل."

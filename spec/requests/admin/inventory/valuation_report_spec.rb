@@ -118,6 +118,47 @@ RSpec.describe "Inventory valuation report", type: :request do
     end
   end
 
+  describe "expand / collapse" do
+    before do
+      link(ingredient("Tomatoes", qty: 5, cost: 100), acme)
+      ingredient("Milk", qty: 4, cost: 250, category: dairy)
+    end
+
+    %w[category vendor].each do |grouping|
+      it "renders collapsible groups in the #{grouping} view" do
+        get admin_inventory_reports_valuation_path(group_by: grouping)
+
+        # Native <details>, so a group still toggles with no JS at all.
+        expect(response.body.scan("<details").size).to eq(2)
+        expect(response.body).to include('data-details-group-target="section"')
+      end
+
+      it "starts expanded in the #{grouping} view so nothing is hidden on arrival" do
+        get admin_inventory_reports_valuation_path(group_by: grouping)
+
+        expect(response.body).to include("<details open")
+      end
+
+      it "offers bulk controls in the #{grouping} view" do
+        get admin_inventory_reports_valuation_path(group_by: grouping)
+
+        expect(response.body).to include('data-action="details-group#expandAll"')
+        expect(response.body).to include('data-action="details-group#collapseAll"')
+        expect(response.body).to include(I18n.t("inventory.reports.valuation.expand_all"))
+        expect(response.body).to include(I18n.t("inventory.reports.valuation.collapse_all"))
+      end
+    end
+
+    it "keeps each subtotal in the header so a collapsed group still reads" do
+      get admin_inventory_reports_valuation_path
+
+      # Header subtotal renders inside <summary>, above the table.
+      summaries = response.body.scan(/<summary.*?<\/summary>/m)
+      expect(summaries.size).to eq(2)
+      expect(summaries.join).to include(Money.new(500).format(locale: I18n.locale, symbol: ApplicationHelper::MONEY_SYMBOL))
+    end
+  end
+
   describe "CSV" do
     it "carries a vendor column" do
       link(ingredient("Tomatoes", qty: 5, cost: 100), acme)

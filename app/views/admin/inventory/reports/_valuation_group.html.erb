@@ -1,15 +1,29 @@
-<%# locals: title, count, subtotal, items, note: nil %>
-<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
-    <div>
-      <h2 class="text-sm font-semibold text-gray-900"><%= title %></h2>
-      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.valuation.ingredients_count", count: count) %></p>
-      <% if local_assigns[:note].present? %>
-        <p class="text-xs text-amber-700 mt-1"><%= note %></p>
-      <% end %>
+<%# locals: title, count, subtotal, items, note: nil
+
+    Native <details>, matching the balance-history section on the ingredient show
+    page: individual expand/collapse needs no JS at all. Open by default so the
+    report still shows everything on arrival; the bulk controls above collapse it.
+    The header carries the subtotal, so a collapsed group is still the number you
+    came to read. %>
+<details open class="group rounded-2xl border border-gray-200 bg-white overflow-hidden"
+         data-details-group-target="section">
+  <summary class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex cursor-pointer list-none flex-wrap justify-between items-center gap-2 hover:bg-gray-100 transition-colors [&::-webkit-details-marker]:hidden">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <%# Rotating a down-chevron by 180° stays correct in RTL, unlike -rotate-90. %>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+           class="w-4 h-4 shrink-0 text-gray-400 transition-transform group-open:rotate-180">
+        <path fill-rule="evenodd" d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+      </svg>
+      <div class="min-w-0">
+        <h2 class="text-sm font-semibold text-gray-900"><%= title %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.valuation.ingredients_count", count: count) %></p>
+        <% if local_assigns[:note].present? %>
+          <p class="text-xs text-amber-700 mt-1"><%= note %></p>
+        <% end %>
+      </div>
     </div>
     <p class="text-sm font-semibold text-gray-900 tabular-nums"><%= format_money(subtotal) %></p>
-  </div>
+  </summary>
   <div class="overflow-x-auto">
     <table class="w-full text-left text-sm min-w-[480px]">
       <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -52,4 +66,4 @@
       </tfoot>
     </table>
   </div>
-</section>
+</details>
