@@ -115,6 +115,28 @@ RSpec.describe "Supplier price history", type: :request do
   end
 
   describe "the supplier page" do
+    # Without the frame, filtering is a full navigation that resets the admin
+    # shell's scroll container and dumps the user at the top of a long page.
+    it "renders the section in a Turbo frame so filtering keeps the scroll position" do
+      post_invoice
+
+      get admin_inventory_supplier_path(supplier)
+
+      expect(response.body).to include('id="supplier_price_history"')
+      expect(response.body).to include("turbo-frame")
+    end
+
+    it "does not disable Turbo on the filter form — the frame needs it" do
+      post_invoice
+
+      get admin_inventory_supplier_path(supplier)
+
+      form = response.body[/<form[^>]*ph_ingredient_id.*?<\/form>/m] ||
+             response.body[/<form(?:(?!<\/form>).)*?searchable-select.*?<\/form>/m]
+      expect(response.body).to include("supplier_price_history")
+      expect(form.to_s).not_to include('data-turbo="false"')
+    end
+
     it "shows who received the price and links the invoice (notice 2)" do
       invoice = post_invoice
 

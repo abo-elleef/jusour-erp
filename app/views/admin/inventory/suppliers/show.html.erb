@@ -301,6 +301,15 @@
     </section>
   <% end %>
 
+  <%# Filtering and paging happen inside a Turbo frame so only this section
+      re-renders. A full navigation would reset the scroll position and dump the
+      user at the top of a long page, away from the control they just used.
+
+      Note the absence of `data: { turbo: false }` here. That flag exists for the
+      session-backed date filters (see de1312e): their state lives in the session,
+      so Turbo's page cache would paint stale defaults. This filter's state is a
+      URL param, so the flag never applied — and a frame needs Turbo enabled. %>
+  <%= turbo_frame_tag "supplier_price_history", data: { turbo_action: "advance" } do %>
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-end justify-between gap-4">
       <div>
@@ -314,7 +323,6 @@
             with the ingredient table's own sort/dir params on this page. %>
         <%= form_with url: admin_inventory_supplier_path(@supplier), method: :get,
               class: "flex flex-wrap items-end gap-2", data: {
-                turbo: false,
                 searchable_select_options: ingredient_search_options(@price_history_ingredients)
               } do %>
           <% request.query_parameters.except("ph_ingredient_id", "page").each do |key, value| %>
@@ -390,4 +398,5 @@
       </p>
     <% end %>
   </section>
+  <% end %>
 </div>
