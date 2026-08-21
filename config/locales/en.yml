@@ -1591,6 +1591,14 @@ en:
           ingredients: "Ingredients"
           active_items: "Active items"
           categories: "Categories"
+          vendors: "Vendors"
+        group_by:
+          category: "By category"
+          vendor: "By vendor"
+        no_vendor: "No vendor"
+        multiple_vendors: "Multiple vendors"
+        multiple_vendors_hint: "Linked to more than one vendor with no preferred one set."
+        negative_on_hand: "Negative on hand — valued at zero"
         ingredients_count:
           one: "1 ingredient"
           other: "%{count} ingredients"

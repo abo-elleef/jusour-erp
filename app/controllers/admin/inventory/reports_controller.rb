@@ -3,13 +3,23 @@
 module Admin
   module Inventory
     class ReportsController < BaseController
+      # Buckets used by the vendor grouping for ingredients that don't resolve to a
+      # single supplier. Symbols so they can't collide with a Supplier record.
+      VENDOR_GROUP_NONE = :no_vendor
+      VENDOR_GROUP_MULTIPLE = :multiple_vendors
+
       def valuation
         authorize_inventory_index!
-        @ingredients = Ingredient.active.includes(:ingredient_category).order("ingredient_categories.name", :name)
+        @group_by = params[:group_by].to_s == "vendor" ? "vendor" : "category"
+        @ingredients = Ingredient.active
+          .includes(:ingredient_category, supplier_ingredients: :supplier)
+          .order("ingredient_categories.name", :name)
         @by_category = @ingredients.group_by(&:ingredient_category)
+        @by_vendor = group_by_vendor(@ingredients)
         @total_cost_value = @ingredients.sum(&:stock_value_cents)
         @ingredient_count = @ingredients.size
         @category_count = @by_category.size
+        @vendor_count = @by_vendor.keys.count { |key| key.is_a?(Supplier) }
 
         respond_to do |format|
           format.html
@@ -35,15 +45,49 @@ module Admin
 
       private
 
+      # Every ingredient lands in exactly one bucket, so vendor subtotals still add
+      # up to the same grand total as the category view. An ingredient can be
+      # linked to several vendors, so the tie-break is: the preferred link, else the
+      # only link, else a "multiple vendors" bucket — which doubles as a nudge to go
+      # set a preferred vendor rather than silently picking one.
+      def group_by_vendor(ingredients)
+        groups = ingredients.group_by { |ingredient| vendor_group_for(ingredient) }
+        named, unnamed = groups.partition { |key, _| key.is_a?(Supplier) }
+        named.sort_by { |supplier, _| supplier.name.to_s.downcase }.to_h.merge(
+          # Ambiguous first, then unsourced — both are things to act on, so they
+          # sit at the end rather than being buried between vendors.
+          unnamed.sort_by { |key, _| key == VENDOR_GROUP_MULTIPLE ? 0 : 1 }.to_h
+        )
+      end
+
+      def vendor_group_for(ingredient)
+        links = ingredient.supplier_ingredients
+        return VENDOR_GROUP_NONE if links.empty?
+        return links.first.supplier if links.size == 1
+
+        preferred = links.select(&:preferred)
+        preferred.size == 1 ? preferred.first.supplier : VENDOR_GROUP_MULTIPLE
+      end
+
+      def vendor_group_label(key)
+        case key
+        when VENDOR_GROUP_NONE then t("inventory.reports.valuation.no_vendor")
+        when VENDOR_GROUP_MULTIPLE then t("inventory.reports.valuation.multiple_vendors")
+        else key.name
+        end
+      end
+      helper_method :vendor_group_label
+
       def valuation_csv
         build_csv(
           [
-            %w[Category Ingredient Unit OnHand CostPerUnitCents StockValueCents],
+            %w[Category Vendor Ingredient Unit OnHand CostPerUnitCents StockValueCents],
             *@ingredients.map do |i|
-              [i.ingredient_category.name, i.name, i.unit, i.quantity_on_hand, i.cost_per_unit_cents, i.stock_value_cents]
+              [i.ingredient_category.name, vendor_group_label(vendor_group_for(i)),
+               i.name, i.unit, i.quantity_on_hand, i.cost_per_unit_cents, i.stock_value_cents]
             end,
             [],
-            ["Total", "", "", "", "", @total_cost_value]
+            ["Total", "", "", "", "", "", @total_cost_value]
           ]
         )
       end

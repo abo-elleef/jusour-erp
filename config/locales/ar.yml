@@ -1595,6 +1595,14 @@ ar:
           ingredients: "المكونات"
           active_items: "بنود نشطة"
           categories: "التصنيفات"
+          vendors: "الموردون"
+        group_by:
+          category: "حسب التصنيف"
+          vendor: "حسب المورد"
+        no_vendor: "بدون مورد"
+        multiple_vendors: "عدة موردين"
+        multiple_vendors_hint: "مرتبط بأكثر من مورد ولم يُحدَّد مورد مفضل."
+        negative_on_hand: "رصيد سالب — القيمة صفر"
         ingredients_count:
           one: "مكون واحد"
           other: "%{count} مكونات"

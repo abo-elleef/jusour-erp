@@ -1,0 +1,55 @@
+<%# locals: title, count, subtotal, items, note: nil %>
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
+    <div>
+      <h2 class="text-sm font-semibold text-gray-900"><%= title %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.valuation.ingredients_count", count: count) %></p>
+      <% if local_assigns[:note].present? %>
+        <p class="text-xs text-amber-700 mt-1"><%= note %></p>
+      <% end %>
+    </div>
+    <p class="text-sm font-semibold text-gray-900 tabular-nums"><%= format_money(subtotal) %></p>
+  </div>
+  <div class="overflow-x-auto">
+    <table class="w-full text-left text-sm min-w-[480px]">
+      <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <tr>
+          <th class="p-3 pl-5 text-left"><%= t("inventory.reports.valuation.table.ingredient") %></th>
+          <th class="p-3 text-right"><%= t("inventory.reports.valuation.table.on_hand") %></th>
+          <th class="p-3 text-right"><%= t("inventory.reports.valuation.table.unit_cost") %></th>
+          <th class="p-3 pr-5 text-right"><%= t("inventory.reports.valuation.table.stock_value") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 table-zebra">
+        <% items.each do |ingredient| %>
+          <% negative = ingredient.quantity_on_hand.to_d.negative? %>
+          <tr class="hover:bg-gray-100 transition-colors">
+            <td class="p-3 pl-5">
+              <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient),
+                    class: "font-semibold text-amber-700 hover:text-amber-800" %>
+            </td>
+            <td class="p-3 text-right tabular-nums whitespace-nowrap <%= negative ? "text-red-700 font-semibold" : "text-gray-600" %>">
+              <%= ingredient.quantity_on_hand %> <%= ingredient_unit_label(ingredient.unit) %>
+            </td>
+            <td class="p-3 text-right text-gray-600 tabular-nums whitespace-nowrap">
+              <%= format_money(ingredient.cost_per_unit_cents) %>
+            </td>
+            <td class="p-3 pr-5 text-right font-semibold text-gray-900 tabular-nums whitespace-nowrap">
+              <%= format_money(ingredient.stock_value_cents) %>
+              <% if negative %>
+                <%# Value is floored at zero; the red quantity is the thing to fix. %>
+                <span class="block text-xs font-normal text-red-700"><%= t("inventory.reports.valuation.negative_on_hand") %></span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+      <tfoot class="border-t border-gray-100 bg-gray-50/50">
+        <tr>
+          <td class="p-3 pl-5 font-semibold text-gray-700" colspan="3"><%= t("inventory.reports.valuation.category_subtotal") %></td>
+          <td class="p-3 pr-5 text-right font-bold text-gray-900 tabular-nums"><%= format_money(subtotal) %></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>

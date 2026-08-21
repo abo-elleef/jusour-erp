@@ -97,8 +97,16 @@ class Ingredient < ApplicationRecord
     :ok
   end
 
+  # On-hand can go negative — an unrestricted transfer or consumption can push it
+  # below zero (see StockTransferLine#source_on_hand_short?). That is a data
+  # problem, not negative money: valuing it as a credit would quietly shrink the
+  # whole store's reported value. Floor the value at zero and let the quantity
+  # column show the negative so it still gets noticed and corrected.
   def stock_value_cents
-    (quantity_on_hand.to_d * cost_per_unit_cents).round
+    quantity = quantity_on_hand.to_d
+    return 0 if quantity.negative?
+
+    (quantity * cost_per_unit_cents).round
   end
 
   # All units this ingredient can be measured in: its base unit plus any
