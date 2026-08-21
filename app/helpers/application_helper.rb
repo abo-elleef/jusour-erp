@@ -309,10 +309,16 @@ module ApplicationHelper
     active ? "#{base} bg-gray-900 text-white" : "#{base} text-gray-600 hover:bg-gray-100"
   end
 
-  def format_money(cents)
-    return Money.new(0).format(locale: I18n.locale) if cents.nil?
+  # Money.default_currency is :usd, so every render has to override the symbol.
+  # Kept in one place so formatted amounts and chart axis labels can't disagree.
+  MONEY_SYMBOL = "ج.م."
 
-    Money.new(cents).format(locale: I18n.locale, symbol: 'ج.م.')
+  def money_symbol
+    MONEY_SYMBOL
+  end
+
+  def format_money(cents)
+    Money.new(cents || 0).format(locale: I18n.locale, symbol: MONEY_SYMBOL)
   end
 
   AUDIT_HISTORY_HIDDEN_FIELDS = %w[

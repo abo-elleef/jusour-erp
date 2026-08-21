@@ -81,7 +81,9 @@
 
         <% if @balance_history.any? %>
           <div class="mt-5">
-            <%= line_chart @balance_history, height: "280px", library: { scales: { x: { ticks: { maxTicksLimit: 10 } } } } %>
+            <%# Straight segments: smoothing invents balances between the daily closings. %>
+            <%= line_chart @balance_history, height: "280px", curve: false,
+                  library: { scales: { x: { ticks: { maxTicksLimit: 10 } } } } %>
           </div>
         <% else %>
           <p class="mt-4 text-sm text-gray-500"><%= t("admin.locations.balance_history.empty") %></p>

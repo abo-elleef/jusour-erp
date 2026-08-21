@@ -349,6 +349,11 @@ module Admin
           ingredient: @ingredient,
           days: @chart_days
         ).call
+        # Second series on the same chart: what this stock cost over the window.
+        @price_history = ::Inventory::IngredientPriceHistoryService.new(
+          ingredient: @ingredient,
+          days: @chart_days
+        ).call
       end
 
       def ingredient_params

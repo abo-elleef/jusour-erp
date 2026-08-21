@@ -252,9 +252,50 @@
       <% end %>
 
       <% if @balance_history.any? %>
+        <%# Straight segments, not splines: a spline invents in-between values that
+            never existed. The price line is stepped for the same reason — a price
+            holds flat until a receipt changes it, it doesn't drift.
+            Balance (units) and price (money) share an x-axis but need separate
+            y-axes, so each series is pinned to its own via `dataset`. %>
+        <% series = [{
+             name: t("inventory.ingredients.show.balance_history.series_balance",
+                     unit: ingredient_unit_label(@ingredient.unit)),
+             data: @balance_history,
+             dataset: { yAxisID: "y", borderColor: "#d97706", backgroundColor: "#d97706" }
+           }] %>
+        <% if @price_history.any? %>
+          <% series << {
+               name: t("inventory.ingredients.show.balance_history.series_price"),
+               data: @price_history,
+               dataset: { yAxisID: "y1", stepped: true, borderDash: [4, 3],
+                          borderColor: "#0f766e", backgroundColor: "#0f766e" }
+             } %>
+        <% end %>
         <div class="mt-5">
-          <%= line_chart @balance_history, height: "280px", library: { scales: { x: { ticks: { maxTicksLimit: 10 } } } } %>
+          <%= line_chart series, height: "280px", curve: false, library: {
+                interaction: { mode: "index", intersect: false },
+                scales: {
+                  x: { ticks: { maxTicksLimit: 10 } },
+                  y: {
+                    position: "left",
+                    title: { display: true,
+                             text: t("inventory.ingredients.show.balance_history.axis_balance",
+                                     unit: ingredient_unit_label(@ingredient.unit)) }
+                  },
+                  y1: {
+                    position: "right",
+                    display: @price_history.any?,
+                    grid: { drawOnChartArea: false },
+                    title: { display: true,
+                             text: t("inventory.ingredients.show.balance_history.axis_price",
+                                     currency: money_symbol) }
+                  }
+                }
+              } %>
         </div>
+        <% if @price_history.empty? %>
+          <p class="mt-2 text-xs text-gray-500"><%= t("inventory.ingredients.show.balance_history.no_price_data") %></p>
+        <% end %>
       <% else %>
         <p class="mt-4 text-sm text-gray-500"><%= t("inventory.ingredients.show.balance_history.empty") %></p>
       <% end %>

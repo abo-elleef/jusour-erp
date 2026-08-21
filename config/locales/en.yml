@@ -938,6 +938,11 @@ en:
           range: "Period"
           apply: "Show chart"
           empty: "No balance history is available for the selected period."
+          series_balance: "On hand (%{unit})"
+          series_price: "Purchase price"
+          axis_balance: "On hand (%{unit})"
+          axis_price: "Price / unit (%{currency})"
+          no_price_data: "No purchase price recorded for this ingredient in this period."
           ranges:
             "1": "Today"
             "3": "Last 3 days (including today)"
