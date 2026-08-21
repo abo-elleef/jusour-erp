@@ -1157,6 +1157,13 @@ ar:
         price: "السعر"
         effective: "تاريخ السريان"
         price_history_empty: "لا يوجد سجل أسعار بعد."
+        price_history_filtered_empty: "لا توجد تغييرات سعر مسجلة لهذا المكون."
+        price_history_recorded_by: "استلم بواسطة"
+        price_history_invoice: "الفاتورة"
+        price_history_filter_ingredient: "المكون"
+        price_history_all_ingredients: "كل المكونات"
+        price_history_search_ingredient: "ابحث عن مكون…"
+        price_history_clear_filter: "إزالة"
       purchase_request:
         title: "طلب شراء — %{name}"
         subtitle: "كميات مقترحة للوصول إلى الحد الأقصى للمخزون"

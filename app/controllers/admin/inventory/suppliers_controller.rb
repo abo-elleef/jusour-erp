@@ -63,10 +63,7 @@ module Admin
         end
 
         @vendor_invoices = @supplier.vendor_invoices.order(invoice_date: :desc).limit(10)
-        @price_histories = @supplier.supplier_price_histories
-          .includes(:ingredient, :recorded_by_user)
-          .order(effective_date: :desc)
-          .limit(30)
+        load_price_history
         @ap_transactions = if @supplier.ap_treasury
                              @supplier.ap_treasury.treasury_transactions
                                .where(kind: %w[ap_invoice ap_payment])
@@ -75,6 +72,26 @@ module Admin
                            else
                              TreasuryTransaction.none
                            end
+      end
+
+      # Price trend for this supplier: paginated and filterable by ingredient, since
+      # one supplier can accumulate far more recorded changes than a page can show.
+      def load_price_history
+        histories = @supplier.supplier_price_histories
+
+        # Options come from what this supplier actually has history for, so the
+        # filter never offers an ingredient that would return nothing.
+        @price_history_ingredients = Ingredient
+          .where(id: histories.select(:ingredient_id))
+          .order(:name)
+
+        @price_history_ingredient_id = params[:ph_ingredient_id].presence
+        scope = histories
+          .includes(:ingredient, :recorded_by_user, vendor_invoice_line: :vendor_invoice)
+          .most_recent_first
+        scope = scope.where(ingredient_id: @price_history_ingredient_id) if @price_history_ingredient_id
+
+        @price_history_pagy, @price_histories = pagy(:offset, scope, limit: 25)
       end
 
       def new

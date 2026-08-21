@@ -48,6 +48,13 @@ module Inventory
     end
 
     def reverse_line(line)
+      # An invoice edit reverses every line then re-receives it, so the row this
+      # line recorded has to go — otherwise the stale price stays next to the
+      # corrected one and the trend page shows a swing that never happened.
+      # Voiding an invoice deliberately leaves stock in place, so it leaves the
+      # price history alone too: price history mirrors stock.
+      SupplierPriceHistory.where(vendor_invoice_line_id: line.id).delete_all
+
       batch = line.stock_batch
       return unless batch
 
@@ -92,12 +99,14 @@ module Inventory
       # across ALL vendors, captured before we insert this invoice's row.
       ingredient_last_price = SupplierPriceHistory
         .where(ingredient: line.ingredient)
-        .order(effective_date: :desc, created_at: :desc)
+        .most_recent_first
         .first&.price_cents
 
+      # Same ordering as the baseline above: two receipts can land on one
+      # effective_date, and the price that stands is the one recorded last.
       last_price = SupplierPriceHistory
         .where(supplier: @invoice.supplier, ingredient: line.ingredient)
-        .order(effective_date: :desc)
+        .most_recent_first
         .first&.price_cents
 
       # Per-vendor dedup: only store a new row when this supplier's price changed.
@@ -107,7 +116,8 @@ module Inventory
           ingredient: line.ingredient,
           price_cents: price,
           effective_date: @invoice.invoice_date,
-          recorded_by_user: @user
+          recorded_by_user: @user,
+          vendor_invoice_line: line
         )
       end
 

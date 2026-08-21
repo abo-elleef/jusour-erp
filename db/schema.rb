@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_20_150000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_20_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1276,10 +1276,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_20_150000) do
     t.uuid "recorded_by_user_id"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "vendor_invoice_line_id"
     t.index ["ingredient_id"], name: "index_supplier_price_histories_on_ingredient_id"
     t.index ["recorded_by_user_id"], name: "index_supplier_price_histories_on_recorded_by_user_id"
     t.index ["supplier_id", "ingredient_id", "effective_date"], name: "index_supplier_price_histories_on_supplier_ingredient_date"
     t.index ["supplier_id"], name: "index_supplier_price_histories_on_supplier_id"
+    t.index ["vendor_invoice_line_id"], name: "index_supplier_price_histories_on_vendor_invoice_line_id"
   end
 
   create_table "suppliers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1677,6 +1679,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_20_150000) do
   add_foreign_key "supplier_price_histories", "ingredients"
   add_foreign_key "supplier_price_histories", "suppliers"
   add_foreign_key "supplier_price_histories", "users", column: "recorded_by_user_id"
+  add_foreign_key "supplier_price_histories", "vendor_invoice_lines", on_delete: :nullify
   add_foreign_key "suppliers", "companies"
   add_foreign_key "suppliers", "treasuries"
   add_foreign_key "tax_rates", "companies"

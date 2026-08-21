@@ -1155,6 +1155,13 @@ en:
         price: "Price"
         effective: "Effective"
         price_history_empty: "No price history yet."
+        price_history_filtered_empty: "No recorded price changes for this ingredient."
+        price_history_recorded_by: "Received by"
+        price_history_invoice: "Invoice"
+        price_history_filter_ingredient: "Ingredient"
+        price_history_all_ingredients: "All ingredients"
+        price_history_search_ingredient: "Search ingredient…"
+        price_history_clear_filter: "Clear"
       purchase_request:
         title: "Purchase request — %{name}"
         subtitle: "Suggested order quantities to top up to max stock"

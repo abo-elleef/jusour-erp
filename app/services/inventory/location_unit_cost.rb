@@ -68,7 +68,7 @@ module Inventory
     def self.latest_supplier_prices(ingredient_ids)
       rows = SupplierPriceHistory
         .where(ingredient_id: ingredient_ids)
-        .order(effective_date: :desc, created_at: :desc)
+        .most_recent_first
         .select(:ingredient_id, :price_cents)
 
       rows.each_with_object({}) do |row, memo|
