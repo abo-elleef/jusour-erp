@@ -137,6 +137,18 @@ RSpec.describe "Ingredient category count sheet", type: :request do
     )
   end
 
+  # Without print-flow the global `section:not(...)` rule wins on specificity,
+  # break-inside:avoid applies, and a long table jumps to the next page leaving
+  # the first one mostly blank.
+  it "lets the table break across pages" do
+    stock_at(ingredient("Tomatoes"), kitchen)
+
+    get count_sheet_admin_inventory_ingredient_category_path(produce, location_id: kitchen.id)
+
+    expect(response.body).to match(/<section class="print-flow/)
+    expect(response.body).not_to include("print:break-inside-auto")
+  end
+
   it "creates no stock take" do
     stock_at(ingredient("Tomatoes"), kitchen)
 

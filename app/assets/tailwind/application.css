@@ -124,11 +124,17 @@
     break-inside: avoid;
   }
 
-  section:not(.stock-transfer-print) {
+  /* Sections stay whole by default, but a section holding a long table must be
+     allowed to break — otherwise it jumps to the next page and leaves the first
+     one mostly blank. Opt out with `print-flow`. Note the utility
+     `print:break-inside-auto` cannot do this job: this selector scores 0,1,1 and
+     beats a single utility class at 0,1,0. */
+  section:not(.stock-transfer-print):not(.print-flow) {
     break-inside: avoid;
   }
 
-  .stock-transfer-print {
+  .stock-transfer-print,
+  .print-flow {
     break-inside: auto;
   }
 }

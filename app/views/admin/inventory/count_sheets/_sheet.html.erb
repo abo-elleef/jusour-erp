@@ -76,7 +76,9 @@
 
   <div class="space-y-6 print:space-y-3">
     <% groups.each do |group_label, rows| %>
-      <section class="rounded-2xl border border-gray-300 bg-white overflow-hidden print:rounded-none print:break-inside-auto">
+      <%# print-flow, not print:break-inside-auto — the global print rule outscores
+          a lone utility class, which is what stranded the table on page 2. %>
+      <section class="print-flow rounded-2xl border border-gray-300 bg-white overflow-hidden print:rounded-none">
         <div class="px-5 py-3 border-b border-gray-200 bg-gray-100 print:bg-gray-200">
           <h2 class="text-sm font-semibold text-gray-900">
             <%= group_label %>
