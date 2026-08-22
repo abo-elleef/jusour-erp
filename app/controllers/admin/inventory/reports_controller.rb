@@ -20,6 +20,9 @@ module Admin
         @ingredient_count = @ingredients.size
         @category_count = @by_category.size
         @vendor_count = @by_vendor.keys.count { |key| key.is_a?(Supplier) }
+        # Items whose unit cost can't produce a real value — they sit in the report
+        # at 0.00 and are easy to miss without a count up front.
+        @cost_issue_ingredients = @ingredients.select { |i| i.cost_per_unit_cents.to_i <= 0 }
 
         respond_to do |format|
           format.html

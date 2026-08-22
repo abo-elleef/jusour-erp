@@ -64,6 +64,40 @@
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.ingredients.show.cost_per_unit") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@ingredient.cost_per_unit_cents) %></p>
       <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.ingredients.show.cost_hint") %></p>
+
+      <%# Nothing updates this cost when goods arrive, so offer to adopt the last
+          invoiced price. Confirmed first, with the before/after and the source
+          invoice named, because this figure drives the valuation report, recipe
+          costing, and the price stamped on manually added batches. %>
+      <% if @last_invoice_cost %>
+        <% invoiced = @last_invoice_cost.unit_cost_cents %>
+        <% source_invoice = @last_invoice_cost.invoice %>
+        <%# `_html` keys so the invoice link sits inside the sentence rather than
+            being tacked on — Arabic word order differs from English, and Rails
+            escapes interpolations for these keys while keeping link_to markup. %>
+        <% invoice_link = link_to source_invoice.invoice_number,
+             admin_inventory_vendor_invoice_path(source_invoice),
+             class: "font-semibold underline underline-offset-2 hover:no-underline" %>
+        <% if invoiced.to_i == @ingredient.cost_per_unit_cents.to_i %>
+          <p class="text-xs text-emerald-700 mt-2 font-medium">
+            <%= t("inventory.ingredients.cost_sync.in_sync_html", invoice: invoice_link) %>
+          </p>
+        <% else %>
+          <p class="text-xs text-amber-800 mt-2 font-medium">
+            <%= t("inventory.ingredients.cost_sync.differs_html",
+                  invoiced: format_money(invoiced), invoice: invoice_link) %>
+          </p>
+          <%= button_to t("inventory.ingredients.cost_sync.action"),
+                sync_cost_from_last_invoice_admin_inventory_ingredient_path(@ingredient),
+                method: :post,
+                form: { data: { turbo_confirm: t("inventory.ingredients.cost_sync.confirm",
+                                                 from: format_money(@ingredient.cost_per_unit_cents),
+                                                 to: format_money(invoiced),
+                                                 invoice: @last_invoice_cost.invoice.invoice_number,
+                                                 count: @last_invoice_cost.invoice_count) } },
+                class: "mt-2 inline-flex text-xs font-semibold text-amber-800 hover:bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-300 transition-colors" %>
+        <% end %>
+      <% end %>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.ingredients.show.stock_value") %></p>

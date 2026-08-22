@@ -3,7 +3,7 @@
 module Admin
   module Inventory
     class IngredientCategoriesController < BaseController
-      before_action :set_category, only: %i[edit update destroy]
+      before_action :set_category, only: %i[edit update destroy count_sheet]
 
       def index
         authorize_inventory_index!(IngredientCategory)
@@ -61,6 +61,23 @@ module Admin
           @category.destroy!
           redirect_to admin_inventory_ingredient_categories_path, notice: t("flash.ingredient_category.removed")
         end
+      end
+
+      # Printable blind count sheet for this category across every vendor. Same
+      # rationale as the vendor sheet: only one stock take can be active per
+      # location, so printing has to be possible without starting one.
+      def count_sheet
+        authorize_inventory!(:show)
+        @filter_locations = Location.active.ordered.where(id: current_user.accessible_location_ids)
+        @stock_location = @filter_locations.find_by(id: params[:location_id]) if params[:location_id].present?
+        # Blind by default: showing the expected balance invites confirming the
+        # number instead of counting it.
+        @show_balance = params[:show_balance] == "1"
+        @count_sheet_groups = ::Inventory::CountSheet.new(
+          location: @stock_location,
+          category: @category
+        ).call
+        @count_sheet_row_count = @count_sheet_groups.sum { |_, rows| rows.size }
       end
 
       private

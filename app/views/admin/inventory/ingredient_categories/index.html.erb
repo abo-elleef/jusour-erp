@@ -102,6 +102,10 @@
               </span>
             <% end %>
             <div class="flex gap-2 shrink-0">
+              <%= link_to t("inventory.ingredient_categories.count_sheet.action"),
+                    count_sheet_admin_inventory_ingredient_category_path(cat),
+                    title: t("inventory.ingredient_categories.count_sheet.action_hint"),
+                    class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
               <%= link_to t("actions.edit"), edit_admin_inventory_ingredient_category_path(cat),
                     class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
               <% if policy(cat).destroy? && cat.ingredients.none? %>

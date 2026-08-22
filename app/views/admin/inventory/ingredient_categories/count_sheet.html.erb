@@ -1,0 +1,26 @@
+<% content_for :title, t("inventory.ingredient_categories.count_sheet.title", name: @category.name) %>
+<%= render "admin/inventory/tools_nav" %>
+
+<div class="max-w-7xl print:max-w-none">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-1">
+    <%= t("inventory.ingredient_categories.count_sheet.title", name: @category.name) %>
+  </h1>
+
+  <%# Spans vendors, so the vendor column names the supplier rather than the
+      vendor's product name (an ingredient can have several vendors). %>
+  <%= render "admin/inventory/count_sheets/sheet",
+        groups: @count_sheet_groups,
+        row_count: @count_sheet_row_count,
+        location: @stock_location,
+        filter_locations: @filter_locations,
+        show_balance: @show_balance,
+        sheet_url: { controller: "admin/inventory/ingredient_categories", action: "count_sheet",
+                     id: @category.id, location_id: @stock_location&.id },
+        back_url: admin_inventory_ingredient_categories_path,
+        back_label: t("inventory.ingredient_categories.count_sheet.back"),
+        subtitle: t("inventory.ingredient_categories.count_sheet.subtitle_location", location: @stock_location&.name),
+        print_heading: t("inventory.ingredient_categories.count_sheet.print_heading",
+                         name: @category.name, location: @stock_location&.name),
+        empty_message: t("inventory.ingredient_categories.count_sheet.empty", location: @stock_location&.name),
+        vendor_column: :vendor %>
+</div>

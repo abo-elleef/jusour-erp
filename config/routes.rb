@@ -283,12 +283,14 @@ Rails.application.routes.draw do
     namespace :inventory do
       resources :units, except: %i[show]
       resources :ingredient_categories do
+        member { get :count_sheet }
         collection { patch :reorder }
       end
       resources :ingredients do
         member do
           post :adjust
           get :adjustments
+          post :sync_cost_from_last_invoice
         end
         collection { get :low_stock }
         resources :recipes, only: %i[create destroy]
@@ -299,6 +301,7 @@ Rails.application.routes.draw do
         member do
           post :direct_ap_payment
           get :purchase_request
+          get :count_sheet
         end
       end
       resources :vendor_invoices, only: %i[index show new create edit update] do

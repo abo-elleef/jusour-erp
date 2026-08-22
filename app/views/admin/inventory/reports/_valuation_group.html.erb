@@ -37,7 +37,12 @@
       <tbody class="divide-y divide-gray-100 table-zebra">
         <% items.each do |ingredient| %>
           <% negative = ingredient.quantity_on_hand.to_d.negative? %>
-          <tr class="hover:bg-gray-100 transition-colors">
+          <%# A zero or negative unit cost silently contributes nothing (or would
+              contribute a credit) to the total, so flag the cost cell rather than
+              letting the row read as a legitimate 0.00. %>
+          <% cost_cents = ingredient.cost_per_unit_cents.to_i %>
+          <% cost_issue = cost_cents <= 0 %>
+          <tr class="hover:bg-gray-100 transition-colors <%= "bg-amber-50/60" if cost_issue %>">
             <td class="p-3 pl-5">
               <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient),
                     class: "font-semibold text-amber-700 hover:text-amber-800" %>
@@ -45,8 +50,21 @@
             <td class="p-3 text-right tabular-nums whitespace-nowrap <%= negative ? "text-red-700 font-semibold" : "text-gray-600" %>">
               <%= ingredient.quantity_on_hand %> <%= ingredient_unit_label(ingredient.unit) %>
             </td>
-            <td class="p-3 text-right text-gray-600 tabular-nums whitespace-nowrap">
-              <%= format_money(ingredient.cost_per_unit_cents) %>
+            <td class="p-3 text-right tabular-nums whitespace-nowrap <%= cost_issue ? "text-amber-900 font-semibold" : "text-gray-600" %>">
+              <span class="inline-flex items-center gap-1.5 justify-end">
+                <% if cost_issue %>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+                       class="w-4 h-4 shrink-0 text-amber-600">
+                    <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
+                  </svg>
+                <% end %>
+                <%= format_money(cost_cents) %>
+              </span>
+              <% if cost_issue %>
+                <span class="block text-xs font-normal text-amber-800">
+                  <%= t(cost_cents.negative? ? "inventory.reports.valuation.negative_cost" : "inventory.reports.valuation.zero_cost") %>
+                </span>
+              <% end %>
             </td>
             <td class="p-3 pr-5 text-right font-semibold text-gray-900 tabular-nums whitespace-nowrap">
               <%= format_money(ingredient.stock_value_cents) %>

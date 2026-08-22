@@ -5,7 +5,8 @@ require "csv"
 module Admin
   module Inventory
     class IngredientsController < BaseController
-      before_action :set_ingredient, only: %i[show edit update destroy adjust adjustments]
+      before_action :set_ingredient,
+        only: %i[show edit update destroy adjust adjustments sync_cost_from_last_invoice]
 
       SORT_COLUMNS = %w[code name quantity_on_hand suppliers status cost_per_unit_cents stock_value].freeze
 
@@ -50,6 +51,7 @@ module Admin
         @ingredient_units = @ingredient.ingredient_units.includes(:unit_ref)
         load_branch_stock
         load_balance_history_chart
+        @last_invoice_cost = ::Inventory::IngredientLastInvoiceCost.new(@ingredient).call
         @audits = @ingredient.audits.includes(:user).reorder(version: :desc)
       end
 
@@ -171,6 +173,34 @@ module Admin
         authorize_inventory_index!
         @ingredients = Ingredient.active.low_stock.includes(:ingredient_category).order(:name)
         render :low_stock
+      end
+
+      # Adopts the most recent invoiced unit cost as the master cost. Nothing
+      # updates that column automatically, so this is the manual catch-up — always
+      # confirmed first, with the before/after spelled out in the view.
+      def sync_cost_from_last_invoice
+        authorize_inventory!(:update)
+        result = ::Inventory::IngredientLastInvoiceCost.new(@ingredient).call
+
+        if result.nil?
+          redirect_to admin_inventory_ingredient_path(@ingredient),
+            alert: t("inventory.ingredients.cost_sync.unavailable")
+          return
+        end
+
+        previous_cents = @ingredient.cost_per_unit_cents.to_i
+        if previous_cents == result.unit_cost_cents.to_i
+          redirect_to admin_inventory_ingredient_path(@ingredient),
+            notice: t("inventory.ingredients.cost_sync.unchanged")
+          return
+        end
+
+        @ingredient.update!(cost_per_unit_cents: result.unit_cost_cents)
+        redirect_to admin_inventory_ingredient_path(@ingredient),
+          notice: t("inventory.ingredients.cost_sync.applied",
+            from: helpers.format_money(previous_cents),
+            to: helpers.format_money(result.unit_cost_cents),
+            invoice: result.invoice.invoice_number)
       end
 
       private
@@ -362,8 +392,16 @@ module Admin
           :quantity_on_hand, :cost_per_unit_dollars, :active, :shelf_life_days,
           ingredient_units_attributes: %i[id unit_id base_units_per_unit purchase_unit _destroy]
         )
-        dollars = permitted.delete(:cost_per_unit_dollars)
-        permitted[:cost_per_unit_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
+        # Only touch the cost when the request actually carried the field. Coercing
+        # an absent key to 0 would silently wipe a maintained cost — and that value
+        # drives the valuation report, menu recipe costing, and the price stamped on
+        # manually added stock batches. A field that is present but blank still
+        # means zero, so clearing it in the form keeps working.
+        if permitted.key?(:cost_per_unit_dollars)
+          dollars = permitted.delete(:cost_per_unit_dollars)
+          permitted[:cost_per_unit_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
+        end
+
         permitted[:shelf_life_days] = nil if permitted[:shelf_life_days].blank?
         permitted
       end

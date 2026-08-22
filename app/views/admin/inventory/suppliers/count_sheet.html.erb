@@ -1,0 +1,24 @@
+<% content_for :title, t("inventory.suppliers.count_sheet.title", name: @supplier.name) %>
+<%= render "admin/inventory/tools_nav" %>
+
+<div class="max-w-7xl print:max-w-none">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-1">
+    <%= t("inventory.suppliers.count_sheet.title", name: @supplier.name) %>
+  </h1>
+
+  <%= render "admin/inventory/count_sheets/sheet",
+        groups: @count_sheet_groups,
+        row_count: @count_sheet_row_count,
+        location: @stock_location,
+        filter_locations: @filter_locations,
+        show_balance: @show_balance,
+        sheet_url: { controller: "admin/inventory/suppliers", action: "count_sheet",
+                     id: @supplier.id, location_id: @stock_location&.id },
+        back_url: admin_inventory_supplier_path(@supplier, location_id: @stock_location&.id),
+        back_label: t("inventory.suppliers.count_sheet.back", name: @supplier.name),
+        subtitle: t("inventory.suppliers.count_sheet.subtitle_location", location: @stock_location&.name),
+        print_heading: t("inventory.suppliers.count_sheet.print_heading",
+                         name: @supplier.name, location: @stock_location&.name),
+        empty_message: t("inventory.suppliers.count_sheet.empty", location: @stock_location&.name),
+        vendor_column: :vendor_product %>
+</div>

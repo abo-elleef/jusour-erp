@@ -672,6 +672,28 @@ en:
     pay_staff_meal: "Record Staff Meal"
 
   inventory:
+    count_sheet:
+      location: "Location"
+      select_location: "Select location…"
+      build: "Build sheet"
+      print: "Print"
+      pick_location: "Choose a location to build the sheet"
+      pick_location_hint: "Counts are recorded per location, so the sheet needs one."
+      show_balance: "Include system balance"
+      hide_balance: "Hide system balance"
+      system_balance: "System"
+      actual_count: "Actual count"
+      ingredient: "Ingredient"
+      unit: "Unit"
+      vendor_product: "Vendor product"
+      vendor: "Vendor"
+      counted_by: "Counted by"
+      count_date: "Date"
+      generated_at: "Generated %{at}"
+      lines_count:
+        one: "1 item"
+        other: "%{count} items"
+      footer_hint: "Nothing is saved by printing. Enter the counts in a stock take for this location when you are ready."
     # Canonical unit name → display label. Keep keys aligned with Unit#name.
     unit_labels:
       kg: "kilogram"
@@ -816,7 +838,7 @@ en:
         max_quantity: "Max quantity"
         on_hand: "On hand"
         cost_per_unit: "Cost / unit"
-        stock_cost_hint: "Low-stock alerts use reorder level. Purchase requests use max − on hand. Cost is in dollars per %{unit}."
+        stock_cost_hint: "Low-stock alerts use reorder level. Purchase requests use max − on hand. Cost is in %{currency} per %{unit}."
         unit_fallback: "unit"
         active_label: "Active ingredient"
         active_hint: "Inactive items are hidden from lists and PO suggestions."
@@ -859,6 +881,14 @@ en:
         vendor_product_name_placeholder: "What this supplier calls it"
         vendor_sku: "Vendor code / SKU"
         vendor_sku_placeholder: "Supplier's item code"
+      cost_sync:
+        action: "Use last invoice price"
+        differs_html: "Last invoice %{invoice}: %{invoiced}"
+        in_sync_html: "Matches the last invoice (%{invoice})."
+        confirm: "Change the cost per unit from %{from} to %{to}, based on invoice %{invoice}? This ingredient appears on %{count} invoice(s). The new cost will be used for stock valuation, recipe costing and manually added stock."
+        applied: "Cost per unit changed from %{from} to %{to}, based on invoice %{invoice}."
+        unchanged: "Cost per unit already matches the last invoice."
+        unavailable: "No invoiced price found for this ingredient yet."
       show:
         on_hand: "On hand"
         on_hand_hint: "Current quantity in stock"
@@ -867,7 +897,7 @@ en:
         max_quantity: "Max quantity"
         max_quantity_hint: "Target stock for purchase requests"
         cost_per_unit: "Cost per unit"
-        cost_hint: "Weighted average unit cost"
+        cost_hint: "Set manually. Drives stock valuation, recipe costing and manual stock adds."
         stock_value: "Stock value"
         stock_value_hint: "On hand × cost per unit"
         units:
@@ -1010,6 +1040,14 @@ en:
       active_label: "Active (available to select)"
       delete_confirm: "Delete the unit \"%{name}\"?"
     ingredient_categories:
+      count_sheet:
+        title: "Count sheet — %{name}"
+        subtitle_location: "Blank count sheet for %{location}, across every vendor. Print it, count the shelf, then enter the numbers in a stock take."
+        print_heading: "Physical count — %{name} · %{location}"
+        back: "← Back to categories"
+        empty: "No ingredients in this category are stocked at %{location}."
+        action: "Count sheet"
+        action_hint: "Blank sheet for a physical count — saves nothing"
       description: "Group ingredients for filters, reports, and stock takes."
       new_button: "New category"
       create_button: "Create category"
@@ -1192,6 +1230,14 @@ en:
         empty_title: "Nothing to order"
         empty_description: "No linked ingredients need stock (max is zero or already at/above max)."
         empty_description_location: "No linked ingredients need stock at %{location} (max is zero or already at/above max)."
+      count_sheet:
+        title: "Count sheet — %{name}"
+        subtitle_location: "Blank count sheet for %{location}. Print it, count the shelf, then enter the numbers in a stock take."
+        print_heading: "Physical count — %{name} · %{location}"
+        back: "← Back to %{name}"
+        empty: "This vendor has no stocked ingredients at %{location}."
+        action: "Print count sheet"
+        action_hint: "Blank sheet for a physical count — saves nothing"
     vendor_invoices:
       index_description: "Record supplier invoices, receive stock, and track AP payments."
       new_button: "New vendor invoice"
@@ -1601,6 +1647,12 @@ en:
         multiple_vendors: "Multiple vendors"
         multiple_vendors_hint: "Linked to more than one vendor with no preferred one set."
         negative_on_hand: "Negative on hand — valued at zero"
+        zero_cost: "No unit cost set"
+        negative_cost: "Negative unit cost"
+        cost_issue_hint: "These contribute nothing to the total until a unit cost is set."
+        cost_issue_count:
+          one: "1 item has no usable unit cost"
+          other: "%{count} items have no usable unit cost"
         ingredients_count:
           one: "1 ingredient"
           other: "%{count} ingredients"

@@ -672,6 +672,28 @@ ar:
     pay_staff_meal: "تسجيل وجبة موظف"
 
   inventory:
+    count_sheet:
+      location: "الموقع"
+      select_location: "اختر الموقع…"
+      build: "إنشاء الورقة"
+      print: "طباعة"
+      pick_location: "اختر موقعاً لإنشاء الورقة"
+      pick_location_hint: "يُسجَّل الجرد لكل موقع، لذا يجب اختيار موقع."
+      show_balance: "إظهار رصيد النظام"
+      hide_balance: "إخفاء رصيد النظام"
+      system_balance: "النظام"
+      actual_count: "العدد الفعلي"
+      ingredient: "المكون"
+      unit: "الوحدة"
+      vendor_product: "منتج المورد"
+      vendor: "المورد"
+      counted_by: "تم الجرد بواسطة"
+      count_date: "التاريخ"
+      generated_at: "أُنشئت في %{at}"
+      lines_count:
+        one: "بند واحد"
+        other: "%{count} بنود"
+      footer_hint: "الطباعة لا تحفظ أي شيء. أدخل الأعداد في عملية جرد لهذا الموقع عندما تكون جاهزاً."
     # Canonical unit name → display label. Keep keys aligned with Unit#name.
     unit_labels:
       kg: "كيلو جرام"
@@ -816,7 +838,7 @@ ar:
         max_quantity: "الحد الأقصى"
         on_hand: "المتوفر"
         cost_per_unit: "التكلفة / الوحدة"
-        stock_cost_hint: "تنبيهات المخزون المنخفض تعتمد على حد إعادة الطلب. طلبات الشراء تستخدم الحد الأقصى − المتوفر. التكلفة بالدولار لكل %{unit}."
+        stock_cost_hint: "تنبيهات المخزون المنخفض تعتمد على حد إعادة الطلب. طلبات الشراء تستخدم الحد الأقصى − المتوفر. التكلفة بـ %{currency} لكل %{unit}."
         unit_fallback: "وحدة"
         active_label: "مكون نشط"
         active_hint: "المكونات غير النشطة لا تظهر في القوائم واقتراحات الشراء."
@@ -859,6 +881,14 @@ ar:
         vendor_product_name_placeholder: "الاسم الذي يستخدمه هذا المورد"
         vendor_sku: "كود المورد"
         vendor_sku_placeholder: "كود الصنف لدى المورد"
+      cost_sync:
+        action: "استخدام سعر آخر فاتورة"
+        differs_html: "آخر فاتورة %{invoice}: %{invoiced}"
+        in_sync_html: "مطابق لآخر فاتورة (%{invoice})."
+        confirm: "هل تريد تغيير تكلفة الوحدة من %{from} إلى %{to} حسب الفاتورة %{invoice}؟ يظهر هذا المكون في %{count} فاتورة. ستُستخدم التكلفة الجديدة في تقييم المخزون وتكلفة الوصفات والمخزون المضاف يدوياً."
+        applied: "تم تغيير تكلفة الوحدة من %{from} إلى %{to} حسب الفاتورة %{invoice}."
+        unchanged: "تكلفة الوحدة مطابقة لآخر فاتورة بالفعل."
+        unavailable: "لا يوجد سعر فاتورة لهذا المكون بعد."
       show:
         on_hand: "المتوفر"
         on_hand_hint: "الكمية الحالية في المخزون"
@@ -867,7 +897,7 @@ ar:
         max_quantity: "الحد الأقصى"
         max_quantity_hint: "هدف المخزون لطلبات الشراء"
         cost_per_unit: "التكلفة للوحدة"
-        cost_hint: "متوسط التكلفة المرجح للوحدة"
+        cost_hint: "تُحدَّد يدوياً. تُستخدم في تقييم المخزون وتكلفة الوصفات والمخزون المضاف يدوياً."
         stock_value: "قيمة المخزون"
         stock_value_hint: "المتوفر × التكلفة للوحدة"
         units:
@@ -1012,6 +1042,14 @@ ar:
       active_label: "مفعّلة (متاحة للاختيار)"
       delete_confirm: "حذف الوحدة \"%{name}\"؟"
     ingredient_categories:
+      count_sheet:
+        title: "ورقة جرد — %{name}"
+        subtitle_location: "ورقة جرد فارغة لـ %{location}، تشمل كل الموردين. اطبعها، عُدّ الرصيد الفعلي، ثم أدخل الأرقام في عملية جرد."
+        print_heading: "جرد فعلي — %{name} · %{location}"
+        back: "← العودة إلى التصنيفات"
+        empty: "لا توجد مكونات من هذا التصنيف مخزّنة في %{location}."
+        action: "ورقة جرد"
+        action_hint: "ورقة فارغة للجرد الفعلي — لا تحفظ شيئاً"
       description: "تصنيف المكونات للتصفية والتقارير وجرد المخزون."
       new_button: "تصنيف جديد"
       create_button: "إنشاء التصنيف"
@@ -1194,6 +1232,14 @@ ar:
         empty_title: "لا يوجد ما يُطلب"
         empty_description: "لا تحتاج المكونات المرتبطة إلى مخزون (الحد الأقصى صفر أو الرصيد عند/فوق الحد)."
         empty_description_location: "لا تحتاج المكونات المرتبطة إلى مخزون في %{location} (الحد الأقصى صفر أو الرصيد عند/فوق الحد)."
+      count_sheet:
+        title: "ورقة جرد — %{name}"
+        subtitle_location: "ورقة جرد فارغة لـ %{location}. اطبعها، عُدّ الرصيد الفعلي، ثم أدخل الأرقام في عملية جرد."
+        print_heading: "جرد فعلي — %{name} · %{location}"
+        back: "← العودة إلى %{name}"
+        empty: "لا توجد مكونات مخزّنة لهذا المورد في %{location}."
+        action: "طباعة ورقة الجرد"
+        action_hint: "ورقة فارغة للجرد الفعلي — لا تحفظ شيئاً"
     vendor_invoices:
       index_description: "تسجيل فواتير الموردين واستلام المخزون وتتبع المدفوعات."
       new_button: "فاتورة مورد جديدة"
@@ -1605,6 +1651,12 @@ ar:
         multiple_vendors: "عدة موردين"
         multiple_vendors_hint: "مرتبط بأكثر من مورد ولم يُحدَّد مورد مفضل."
         negative_on_hand: "رصيد سالب — القيمة صفر"
+        zero_cost: "لم تُحدَّد تكلفة الوحدة"
+        negative_cost: "تكلفة وحدة سالبة"
+        cost_issue_hint: "لا تُضيف هذه البنود شيئاً للإجمالي حتى تُحدَّد تكلفة الوحدة."
+        cost_issue_count:
+          one: "بند واحد بدون تكلفة وحدة صالحة"
+          other: "%{count} بنود بدون تكلفة وحدة صالحة"
         ingredients_count:
           one: "مكون واحد"
           other: "%{count} مكونات"

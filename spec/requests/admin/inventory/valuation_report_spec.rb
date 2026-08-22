@@ -118,6 +118,55 @@ RSpec.describe "Inventory valuation report", type: :request do
     end
   end
 
+  describe "unusable unit costs" do
+    it "flags an item with no unit cost, in the row and in a banner" do
+      ingredient("Unpriced Herb", qty: 12, cost: 0)
+
+      get admin_inventory_reports_valuation_path
+
+      expect(response.body).to include(I18n.t("inventory.reports.valuation.zero_cost"))
+      expect(response.body).to include(I18n.t("inventory.reports.valuation.cost_issue_count", count: 1))
+      expect(response.body).to include(I18n.t("inventory.reports.valuation.cost_issue_hint"))
+    end
+
+    it "flags a negative unit cost distinctly from a missing one" do
+      ingredient("Bad Data", qty: 5, cost: -100)
+
+      get admin_inventory_reports_valuation_path
+
+      expect(response.body).to include(I18n.t("inventory.reports.valuation.negative_cost"))
+      expect(response.body).not_to include(I18n.t("inventory.reports.valuation.zero_cost"))
+    end
+
+    it "counts every affected item and links each one" do
+      ingredient("Unpriced A", qty: 1, cost: 0)
+      ingredient("Unpriced B", qty: 2, cost: 0, category: dairy)
+      ingredient("Priced", qty: 3, cost: 500)
+
+      get admin_inventory_reports_valuation_path
+
+      expect(response.body).to include(I18n.t("inventory.reports.valuation.cost_issue_count", count: 2))
+      expect(response.body).to include("Unpriced A", "Unpriced B")
+    end
+
+    it "shows no banner when every item has a usable cost" do
+      ingredient("Priced", qty: 3, cost: 500)
+
+      get admin_inventory_reports_valuation_path
+
+      expect(response.body).not_to include(I18n.t("inventory.reports.valuation.cost_issue_hint"))
+      expect(response.body).not_to include(I18n.t("inventory.reports.valuation.zero_cost"))
+    end
+
+    it "flags the rows in the vendor view too" do
+      link(ingredient("Unpriced Herb", qty: 12, cost: 0), acme)
+
+      get admin_inventory_reports_valuation_path(group_by: "vendor")
+
+      expect(response.body).to include(I18n.t("inventory.reports.valuation.zero_cost"))
+    end
+  end
+
   describe "expand / collapse" do
     before do
       link(ingredient("Tomatoes", qty: 5, cost: 100), acme)

@@ -3,7 +3,8 @@
 module Admin
   module Inventory
     class SuppliersController < BaseController
-      before_action :set_supplier, only: %i[show edit update destroy direct_ap_payment purchase_request]
+      before_action :set_supplier,
+        only: %i[show edit update destroy direct_ap_payment purchase_request count_sheet]
 
       SORT_COLUMNS = %w[name contact lead_time ingredients invoice_total outstanding status].freeze
 
@@ -174,6 +175,23 @@ module Admin
           format.html
           format.csv { send_purchase_request_csv }
         end
+      end
+
+      # Printable blind count sheet for a physical stocktake. Deliberately separate
+      # from StockTake: only one take can be active per location, so a manager who
+      # wants several vendors' sheets in hand can't open a take for each. Printing
+      # here commits nothing — the counts get typed into a take afterwards.
+      def count_sheet
+        authorize_inventory!(:show)
+        load_stock_location_filter
+        # Blind by default: showing the expected balance invites confirming the
+        # number instead of counting it.
+        @show_balance = params[:show_balance] == "1"
+        @count_sheet_groups = ::Inventory::CountSheet.new(
+          location: @stock_location,
+          supplier: @supplier
+        ).call
+        @count_sheet_row_count = @count_sheet_groups.sum { |_, rows| rows.size }
       end
 
       private

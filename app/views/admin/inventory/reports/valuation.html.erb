@@ -30,6 +30,27 @@
     </div>
   </div>
 
+  <% if @cost_issue_ingredients.any? %>
+    <div class="rounded-2xl border border-amber-300 bg-amber-50/70 px-5 py-4 mb-6 flex items-start gap-3" role="status">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+           class="w-5 h-5 shrink-0 text-amber-600 mt-0.5">
+        <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd" />
+      </svg>
+      <div class="min-w-0">
+        <p class="text-sm font-semibold text-amber-950">
+          <%= t("inventory.reports.valuation.cost_issue_count", count: @cost_issue_ingredients.size) %>
+        </p>
+        <p class="text-xs text-amber-900 mt-0.5"><%= t("inventory.reports.valuation.cost_issue_hint") %></p>
+        <div class="flex flex-wrap gap-x-3 gap-y-1 mt-2">
+          <% @cost_issue_ingredients.each do |ingredient| %>
+            <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient),
+                  class: "text-xs font-semibold text-amber-900 underline underline-offset-2 hover:text-amber-950" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
   <div data-controller="details-group">
     <div class="flex flex-wrap items-end justify-between gap-3 mb-6 border-b border-gray-200">
       <div class="flex flex-wrap gap-1">

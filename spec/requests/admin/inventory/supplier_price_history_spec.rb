@@ -109,8 +109,10 @@ RSpec.describe "Supplier price history", type: :request do
     it "leaves history alone when the invoice is voided, because the stock stays" do
       invoice = post_invoice(total: "10.00")
 
-      expect { post void_admin_inventory_vendor_invoice_path(invoice) }
+      # void is a PATCH; with the wrong verb this 404s and the test passes vacuously.
+      expect { patch void_admin_inventory_vendor_invoice_path(invoice) }
         .not_to change(SupplierPriceHistory, :count)
+      expect(invoice.reload.payment_status).to eq("void")
     end
   end
 

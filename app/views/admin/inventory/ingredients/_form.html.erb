@@ -83,7 +83,9 @@
                 class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
         </div>
       </div>
-      <p class="text-xs text-gray-500"><%= t("inventory.ingredients.form.stock_cost_hint", unit: ingredient.unit.present? ? ingredient_unit_label(ingredient.unit) : t("inventory.ingredients.form.unit_fallback")) %></p>
+      <p class="text-xs text-gray-500"><%= t("inventory.ingredients.form.stock_cost_hint",
+            currency: money_symbol,
+            unit: ingredient.unit.present? ? ingredient_unit_label(ingredient.unit) : t("inventory.ingredients.form.unit_fallback")) %></p>
     </div>
 
     <div>
