@@ -200,9 +200,28 @@ module Admin
         @stock_transfer = StockTransfer.find(params[:id])
       end
 
+      # Units on a template-built transfer are fixed. Enforced here as well as in the
+      # form: a disabled input is a hint, not a guarantee, and `unit` feeds the
+      # base-unit conversion, so accepting a switched unit would silently corrupt
+      # quantities. Only saved lines are pinned — a line the requester added by hand
+      # is not part of the template and keeps its unit choice.
+      def strip_locked_units!(attrs)
+        lines = attrs[:stock_transfer_lines_attributes]
+        return attrs if lines.blank?
+
+        lines.each_value { |line| line.delete(:unit) if line[:id].present? }
+        attrs
+      end
+
       def stock_transfer_params
+        raw = permitted_stock_transfer_params
+        @stock_transfer&.units_locked? ? strip_locked_units!(raw) : raw
+      end
+
+      def permitted_stock_transfer_params
         params.require(:stock_transfer).permit(
           :from_location_id, :to_location_id, :notes, :transferred_on,
+          :stock_transfer_template_id,
           stock_transfer_lines_attributes: %i[
             id ingredient_id quantity_requested quantity_requested_input unit
             order_limit counted_quantity position _destroy
@@ -255,6 +274,7 @@ module Admin
         return if template.blank?
 
         @applied_template = template
+        @stock_transfer.stock_transfer_template = template
         @stock_transfer.from_location_id ||= template.default_from_location_id
         @stock_transfer.to_location_id ||= template.default_to_location_id
         if @stock_transfer.notes.blank? && template.notes.present?

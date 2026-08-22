@@ -17,6 +17,9 @@ class StockTransfer < ApplicationRecord
   belongs_to :from_location, class_name: "Location"
   belongs_to :to_location, class_name: "Location"
   belongs_to :requested_by, class_name: "User"
+  # The template this transfer was built from, when it wasn't assembled by hand.
+  # Nullable, and nulls out if the template is later deleted.
+  belongs_to :stock_transfer_template, optional: true
   belongs_to :sent_by, class_name: "User", optional: true
   belongs_to :received_by, class_name: "User", optional: true
   has_many :stock_transfer_lines, -> { order(:position, :created_at) }, dependent: :destroy, inverse_of: :stock_transfer
@@ -73,6 +76,17 @@ class StockTransfer < ApplicationRecord
 
   def cancelled?
     status == "cancelled"
+  end
+
+  def from_template?
+    stock_transfer_template_id.present?
+  end
+
+  # A template fixes the unit each ingredient is ordered in, so the requester
+  # can't quietly switch it — changing it is a template decision, not a per-transfer
+  # one. Hand-built transfers stay free to pick units.
+  def units_locked?
+    from_template?
   end
 
   def editable?

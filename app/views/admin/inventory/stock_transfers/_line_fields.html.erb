@@ -68,11 +68,27 @@
   </div>
   <div>
     <label class="block text-xs font-semibold text-gray-600 mb-1.5 sm:hidden"><%= t("inventory.ingredients.alternate_units.unit") %></label>
-    <%= f.select :unit,
-          options_for_select(unit_opts, line.unit.presence || ingredient&.unit),
-          { include_blank: ingredient.nil? },
-          class: "#{input_class} appearance-none",
-          data: { stock_transfer_lines_target: "unitSelect" } %>
+    <% if local_assigns.fetch(:units_locked, false) %>
+      <%# Fixed by the template. Rendered as text plus a hidden field so the value
+          still posts; the server also strips `unit` for saved lines, because a
+          disabled input is a hint and `unit` drives the base-unit conversion. %>
+      <% locked_unit = line.unit.presence || ingredient&.unit %>
+      <%= f.hidden_field :unit, value: locked_unit %>
+      <div class="<%= input_class %> flex items-center gap-1.5 bg-gray-100 text-gray-600 cursor-not-allowed"
+           title="<%= t("inventory.stock_transfers.unit_locked_hint") %>">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+             class="w-3.5 h-3.5 shrink-0 text-gray-400">
+          <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" />
+        </svg>
+        <span class="truncate"><%= locked_unit.present? ? ingredient_unit_label(locked_unit) : "—" %></span>
+      </div>
+    <% else %>
+      <%= f.select :unit,
+            options_for_select(unit_opts, line.unit.presence || ingredient&.unit),
+            { include_blank: ingredient.nil? },
+            class: "#{input_class} appearance-none",
+            data: { stock_transfer_lines_target: "unitSelect" } %>
+    <% end %>
   </div>
   <div class="pb-0.5">
     <button type="button"

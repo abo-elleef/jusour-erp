@@ -1499,6 +1499,7 @@ en:
       from_location_hint: "Location that will send the stock."
       to_location_hint: "Location requesting and receiving the stock."
       unit: "Unit"
+      unit_locked_hint: "Fixed by the transfer template. Ask your manager to change the unit on the template."
       order_limit: "Limit"
       counted_quantity: "On hand"
       quantity_requested: "Requested"
