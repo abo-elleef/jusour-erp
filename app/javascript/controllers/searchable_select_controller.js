@@ -5,26 +5,27 @@ export default class extends Controller {
   static values = { placeholder: String, clearOnEmpty: { type: Boolean, default: false } }
 
   connect() {
-    this.highlightIndex = -1
-
-    // The <ul> menu lives inside the element in HTML but gets moved to <body> so it
-    // isn't clipped by overflow:hidden ancestors. Moving it triggers the
-    // MutationObserver on any parent Stimulus controller (e.g. nested-line-sortable),
-    // which can cause Stimulus to fire connect() a second time before disconnect()
-    // is called. Guard against that by checking whether we already own a body-level menu.
-    const menuInElement = this.element.querySelector("[data-searchable-select-target='menu']")
-    if (menuInElement) {
-      this.menu = menuInElement
-      document.body.appendChild(this.menu)
-    }
-
-    // Already initialised (double-connect): just re-sync the display value and bail.
-    if (!this.menu || this._connected) {
+    // The <ul> menu ships inside the element but is moved to <body> so it isn't
+    // clipped by overflow:hidden ancestors. That move mutates the DOM, which can
+    // make a parent controller's MutationObserver (stock-transfer-lines,
+    // nested-line-sortable) trigger a disconnect/connect cycle on this element —
+    // and disconnect() destroys the menu.
+    //
+    // So connect() has to cope with the menu being absent and build a fresh one.
+    // Previously it bailed out in that case, leaving a control with no menu and no
+    // listeners: permanently unsearchable. It bit whichever row connected while the
+    // parent was still initialising, i.e. the first line, which is why adding a row
+    // and deleting the first one "fixed" it.
+    if (this._connected && this.menu && document.body.contains(this.menu)) {
+      // Genuine double-connect on a healthy instance — nothing to rebuild.
       this.syncInputFromSelected()
       return
     }
 
-    this._connected = true
+    this.highlightIndex = -1
+    this.teardownListeners()
+    this.menu = this.adoptMenu() || this.buildMenu()
+
     this.boundCloseOnOutside = this.closeOnOutsideClick.bind(this)
     this.boundRepositionMenu = this.repositionMenu.bind(this)
     this.boundHandleMenuMouseDown = this.handleMenuMouseDown.bind(this)
@@ -34,17 +35,44 @@ export default class extends Controller {
     window.addEventListener("resize", this.boundRepositionMenu)
     window.addEventListener("scroll", this.boundRepositionMenu, true)
 
+    this._connected = true
     this.syncInputFromSelected()
   }
 
-  disconnect() {
-    if (!this.menu) return
+  // Take the server-rendered <ul> out to <body>, if it is still there.
+  adoptMenu() {
+    const inElement = this.element.querySelector("[data-searchable-select-target='menu']")
+    if (!inElement) return null
 
-    this.menu.removeEventListener("mousedown", this.boundHandleMenuMouseDown)
-    document.removeEventListener("click", this.boundCloseOnOutside)
-    window.removeEventListener("resize", this.boundRepositionMenu)
-    window.removeEventListener("scroll", this.boundRepositionMenu, true)
-    this.menu.remove()
+    document.body.appendChild(inElement)
+    return inElement
+  }
+
+  // Recreate it when a previous disconnect already destroyed it. Mirrors the markup
+  // in shared/_searchable_select.html.erb.
+  buildMenu() {
+    const menu = document.createElement("ul")
+    menu.setAttribute("data-searchable-select-target", "menu")
+    menu.setAttribute("role", "listbox")
+    menu.className = "hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"
+    document.body.appendChild(menu)
+    return menu
+  }
+
+  teardownListeners() {
+    if (this.boundHandleMenuMouseDown && this.menu) {
+      this.menu.removeEventListener("mousedown", this.boundHandleMenuMouseDown)
+    }
+    if (this.boundCloseOnOutside) document.removeEventListener("click", this.boundCloseOnOutside)
+    if (this.boundRepositionMenu) {
+      window.removeEventListener("resize", this.boundRepositionMenu)
+      window.removeEventListener("scroll", this.boundRepositionMenu, true)
+    }
+  }
+
+  disconnect() {
+    this.teardownListeners()
+    if (this.menu) this.menu.remove()
     this.menu = null
     this._connected = false
   }
