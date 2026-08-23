@@ -186,7 +186,10 @@
           </span>
         </label>
       </div>
-      <div>
+      <%# Hidden server-side too when already on account, so it is correct before
+          the JS runs and without it. %>
+      <div class="<%= "hidden" if freight_on_account %>"
+           data-vendor-invoice-lines-target="freightTreasuryWrap">
         <%= label_tag "vendor_invoice_freight_treasury_id",
               t("inventory.vendor_invoices.form.freight_treasury"), class: label_class %>
         <%= select_tag "vendor_invoice[freight_treasury_id]",

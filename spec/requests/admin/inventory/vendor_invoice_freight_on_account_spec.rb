@@ -193,6 +193,26 @@ RSpec.describe "Vendor invoice delivery billed on the invoice", type: :request d
     end
   end
 
+  describe "the treasury field" do
+    it "is hidden on the form when the delivery is already on account" do
+      invoice = post_invoice(on_account: true)
+
+      get edit_admin_inventory_vendor_invoice_path(invoice)
+
+      # Server-side too, so it is right before the JS runs and without it.
+      expect(response.body).to match(/<div class="hidden"[^>]*freightTreasuryWrap/)
+    end
+
+    it "is visible when the delivery is paid in cash" do
+      invoice = post_invoice(on_account: false)
+
+      get edit_admin_inventory_vendor_invoice_path(invoice)
+
+      expect(response.body).to include('data-vendor-invoice-lines-target="freightTreasuryWrap"')
+      expect(response.body).not_to match(/<div class="hidden"[^>]*freightTreasuryWrap/)
+    end
+  end
+
   describe "switching an invoice from cash to on account" do
     it "clears the cash expense so no stale outflow is left behind" do
       invoice = post_invoice(on_account: false)
