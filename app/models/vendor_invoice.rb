@@ -28,6 +28,7 @@ class VendorInvoice < ApplicationRecord
   validates :invoice_date, :received_on, presence: true
   validates :location, presence: true
   validates :payment_status, inclusion: { in: PAYMENT_STATUSES }
+  validates :freight_amount_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :amount_paid_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :discount_type, inclusion: { in: DISCOUNT_TYPES }, allow_nil: true
   validates :discount_value, numericality: { greater_than: 0 }, allow_nil: true
@@ -132,6 +133,23 @@ class VendorInvoice < ApplicationRecord
     end
   end
 
+  # Goods after any discount — the discount applies to goods only, never delivery.
+  def goods_total_cents
+    [subtotal_cents - discount_cents, 0].max
+  end
+
+  # Delivery billed by the vendor on this invoice and settled with it. Only this
+  # form of delivery belongs in total_cents, because total_cents is what drives
+  # supplier AP and balance due. Delivery paid in cash at receive leaves through a
+  # linked Expense instead and must stay out of the total.
+  def freight_on_account_cents
+    freight_on_account? ? freight_amount_cents.to_i : 0
+  end
+
+  def freight_paid_now?
+    !freight_on_account? && freight_amount_cents.to_i.positive?
+  end
+
   def discounted?
     discount_cents.positive?
   end
@@ -171,7 +189,7 @@ class VendorInvoice < ApplicationRecord
   end
 
   def recalculate_total
-    self.total_cents = [subtotal_cents - discount_cents, 0].max
+    self.total_cents = goods_total_cents + freight_on_account_cents
   end
 
   def discount_type_and_value_consistency

@@ -18,6 +18,17 @@ class IngredientCategory < ApplicationRecord
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }
 
+  # The one ordering for categories anywhere they are grouped or listed: the
+  # position set by drag-and-drop on the categories page, with name only breaking
+  # ties. That order is meaningful (it mirrors how the store is walked), so no
+  # grouped view should fall back to alphabetical.
+  #
+  # The Ruby counterpart of the `ordered` scope, for collections already loaded and
+  # grouped in memory. Records with no category sort last.
+  def self.grouping_sort_key(category)
+    [category ? 0 : 1, category&.position.to_i, category&.name.to_s.downcase]
+  end
+
   # A code derived from the name: Unicode letters/digits only (so Arabic names
   # stay meaningful), deduped within the company. Excludes `except_id` (self).
   def self.generate_code(name, company_id, except_id: nil)

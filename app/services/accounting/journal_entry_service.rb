@@ -201,9 +201,21 @@ module Accounting
                                     supplier: invoice.supplier.name,
                                     ref: invoice.invoice_number.presence || invoice.id,
                                     default: "Purchase Invoice — #{invoice.supplier.name}") do |lines|
-          lines << debit({ code: 5100,
-                           name: I18n.t("accounting.journal_entries.accounts.purchases", default: "Purchases / Inventory") },
-                         invoice.total_cents, "expense")
+          # Delivery billed on the invoice is a liability to the vendor, but it is
+          # not inventory — so the debit splits, and only the goods side reaches
+          # Purchases. Derived from total_cents (rather than recomputed from lines)
+          # so the entry always balances against the stored total.
+          freight_cents = invoice.freight_on_account_cents
+          goods_cents = invoice.total_cents - freight_cents
+
+          if goods_cents.positive?
+            lines << debit({ code: 5100,
+                             name: I18n.t("accounting.journal_entries.accounts.purchases", default: "Purchases / Inventory") },
+                           goods_cents, "expense")
+          end
+          if freight_cents.positive?
+            lines << debit(goods_delivery_account(invoice), freight_cents, "expense")
+          end
           lines << credit(account_for_treasury(ap_treasury), invoice.total_cents, "liability")
         end
       end
@@ -383,6 +395,17 @@ module Accounting
 
       def account_for_expense_category(category)
         { code: category.account_code, name: category.name }
+      end
+
+      # Same account the cash delivery Expense posts to, so delivery lands in one
+      # place whether it was paid at receive or billed on the invoice.
+      def goods_delivery_account(invoice)
+        category = ExpenseCategory.find_by(
+          name: ExpenseCategory::GOODS_DELIVERY_NAME, company_id: invoice.company_id
+        )
+        return account_for_expense_category(category) if category
+
+        { code: 5009, name: ExpenseCategory::GOODS_DELIVERY_NAME }
       end
 
       def account_for_income_category(category)

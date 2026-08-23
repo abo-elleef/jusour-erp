@@ -13,8 +13,15 @@ module Admin
         @group_by = params[:group_by].to_s == "vendor" ? "vendor" : "category"
         @ingredients = Ingredient.active
           .includes(:ingredient_category, supplier_ingredients: :supplier)
-          .order("ingredient_categories.name", :name)
-        @by_category = @ingredients.group_by(&:ingredient_category)
+          .order(:name)
+        # Categories follow their configured position, not the alphabet — this was
+        # ordering by ingredient_categories.name, the only grouped view that did.
+        # Ordering ingredients by name alone also drops the string order that
+        # referenced the joined table.
+        @by_category = @ingredients
+          .group_by(&:ingredient_category)
+          .sort_by { |category, _| IngredientCategory.grouping_sort_key(category) }
+          .to_h
         @by_vendor = group_by_vendor(@ingredients)
         @total_cost_value = @ingredients.sum(&:stock_value_cents)
         @ingredient_count = @ingredients.size

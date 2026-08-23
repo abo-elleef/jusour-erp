@@ -227,7 +227,7 @@ module ApplicationHelper
   def group_records_by_ingredient_category(records)
     Array(records).reject { |r| r.respond_to?(:marked_for_destruction?) && r.marked_for_destruction? }
       .group_by { |r| r.ingredient&.ingredient_category }
-      .sort_by { |cat, _| [cat ? 0 : 1, cat&.position.to_i, cat&.name.to_s.downcase] }
+      .sort_by { |cat, _| IngredientCategory.grouping_sort_key(cat) }
       .map do |cat, items|
         sorted = items.sort_by do |r|
           position = r.respond_to?(:position) ? r.position : r.try(:stock_transfer_line)&.position
@@ -242,7 +242,7 @@ module ApplicationHelper
   def group_preserving_line_order_by_ingredient_category(records)
     Array(records).reject { |r| r.respond_to?(:marked_for_destruction?) && r.marked_for_destruction? }
       .group_by { |r| r.ingredient&.ingredient_category }
-      .sort_by { |cat, _| [cat ? 0 : 1, cat&.position.to_i, cat&.name.to_s.downcase] }
+      .sort_by { |cat, _| IngredientCategory.grouping_sort_key(cat) }
       .map do |cat, items|
         [cat&.name.presence || t("inventory.stock_transfers.uncategorized"), items]
       end

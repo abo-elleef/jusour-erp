@@ -153,7 +153,7 @@ module Admin
         case @sort
         when "category"
           cat = item.ingredient.ingredient_category
-          [cat.position.to_i, cat.name.to_s.downcase, item.ingredient.name.to_s.downcase]
+          IngredientCategory.grouping_sort_key(cat) + [item.ingredient.name.to_s.downcase]
         when "counted"
           item.base_counted_quantity.to_d
         when "expected"

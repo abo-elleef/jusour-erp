@@ -84,7 +84,7 @@ module Inventory
     def group_by_category(rows)
       rows
         .group_by { |row| row.ingredient.ingredient_category }
-        .sort_by { |category, _| [category&.position.to_i, category&.name.to_s.downcase] }
+        .sort_by { |category, _| IngredientCategory.grouping_sort_key(category) }
         .map { |category, group| [category&.name.presence || I18n.t("inventory.stock_transfers.uncategorized"), by_name(group)] }
     end
 

@@ -137,13 +137,21 @@
     </div>
     <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
       <% freight = @freight_expense %>
+      <%# From the column, not the Expense: delivery billed on the invoice has no
+          Expense, so reading the Expense left the field blank on reopen and a
+          re-save would have zeroed a stored fee. %>
       <% freight_amount_dollars =
            if @freight_form_amount_cents.present?
              @freight_form_amount_cents.positive? ? (@freight_form_amount_cents.to_d / 100) : nil
-           elsif freight&.amount_cents.to_i&.positive?
-             freight.amount_cents.to_d / 100
+           elsif vendor_invoice.freight_amount_cents.to_i.positive?
+             vendor_invoice.freight_amount_cents.to_d / 100
            end %>
       <% freight_treasury_id = @freight_form_treasury_id.presence || freight&.treasury_id || Treasury.default_treasury&.id %>
+      <% freight_on_account = if defined?(@freight_form_on_account) && !@freight_form_on_account.nil?
+                               @freight_form_on_account
+                             else
+                               vendor_invoice.freight_on_account?
+                             end %>
       <div>
         <%= label_tag "vendor_invoice_freight_amount_dollars",
               t("inventory.vendor_invoices.form.freight_amount"), class: label_class %>
@@ -157,6 +165,26 @@
                 vendor_invoice_lines_target: "freightAmount",
                 action: "input->vendor-invoice-lines#recalculate"
               } %>
+      </div>
+      <%# Two ways to settle delivery: cash now (an expense out of a treasury) or
+          billed by the vendor on this invoice, in which case it joins the invoice
+          total and is paid when the invoice is paid. %>
+      <div class="sm:col-span-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
+        <label class="flex items-start gap-2.5 cursor-pointer">
+          <%= hidden_field_tag "vendor_invoice[freight_on_account]", "0" %>
+          <%= check_box_tag "vendor_invoice[freight_on_account]", "1", freight_on_account,
+                class: "mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600",
+                data: { vendor_invoice_lines_target: "freightOnAccount",
+                        action: "change->vendor-invoice-lines#recalculate" } %>
+          <span>
+            <span class="block text-sm font-medium text-gray-900">
+              <%= t("inventory.vendor_invoices.form.freight_on_account") %>
+            </span>
+            <span class="block text-xs text-gray-500 mt-0.5">
+              <%= t("inventory.vendor_invoices.form.freight_on_account_hint") %>
+            </span>
+          </span>
+        </label>
       </div>
       <div>
         <%= label_tag "vendor_invoice_freight_treasury_id",

@@ -1,8 +1,16 @@
 # frozen_string_literal: true
 
 module Accounting
-  # Creates/updates/clears the courier freight Expense linked to a vendor invoice.
-  # Freight never changes VI total, AP, or stock cost — cash leaves via treasury only.
+  # Creates/updates/clears the cash delivery Expense linked to a vendor invoice.
+  #
+  # Only for delivery paid at receive. When the vendor bills delivery on the invoice
+  # (freight_on_account), there is no cash movement and no Expense: the amount is
+  # already in total_cents, so supplier AP carries it and the invoice journal entry
+  # debits the delivery account directly. Any previously created cash Expense is
+  # cleared, so switching an invoice from paid-now to on-account does not leave a
+  # stale cash outflow behind.
+  #
+  # Cash delivery still never changes VI total, AP, or stock cost.
   #
   # Updates the same Expense row in place so `audited` keeps a change history.
   # Inventory receive/update callers may create this auto expense; same permission
@@ -14,15 +22,16 @@ module Accounting
       new(**kwargs).call
     end
 
-    def initialize(invoice:, user:, amount_cents:, treasury: nil)
+    def initialize(invoice:, user:, amount_cents:, treasury: nil, on_account: false)
       @invoice = invoice
       @user = user
       @amount_cents = amount_cents.to_i
       @treasury = treasury
+      @on_account = on_account
     end
 
     def call
-      if @amount_cents <= 0
+      if @amount_cents <= 0 || @on_account
         clear!
         return nil
       end

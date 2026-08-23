@@ -94,7 +94,8 @@ module Admin
             @vendor_invoice,
             current_user,
             freight_amount_cents: freight[:amount_cents],
-            freight_treasury: freight[:treasury]
+            freight_treasury: freight[:treasury],
+            freight_on_account: freight[:on_account]
           ).call
           redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
             notice: t("flash.vendor_invoice.created")
@@ -141,7 +142,8 @@ module Admin
             current_user,
             vendor_invoice_params,
             freight_amount_cents: freight[:amount_cents],
-            freight_treasury: freight[:treasury]
+            freight_treasury: freight[:treasury],
+            freight_on_account: freight[:on_account]
           ).call
           redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
             notice: t("flash.vendor_invoice.updated")
@@ -291,26 +293,35 @@ module Admin
         raw = params.fetch(:vendor_invoice, {})
         dollars = raw[:freight_amount_dollars]
         amount_cents = (BigDecimal(dollars.to_s.presence || "0") * 100).round
-        treasury_id = raw[:freight_treasury_id].presence
+        on_account = ActiveModel::Type::Boolean.new.cast(raw[:freight_on_account]).present?
+        # A treasury is only meaningful when the delivery is paid at receive.
+        treasury_id = on_account ? nil : raw[:freight_treasury_id].presence
         treasury = if treasury_id
                      Treasury.active.payable.visible_to(current_user).find_by(id: treasury_id)
                    end
         @freight_form_amount_cents = amount_cents
         @freight_form_treasury_id = treasury_id
-        { amount_cents: amount_cents, treasury: treasury }
+        @freight_form_on_account = on_account
+        { amount_cents: amount_cents, treasury: treasury, on_account: on_account }
       end
 
       def vendor_invoice_params
         permitted = params.require(:vendor_invoice).permit(
           :supplier_id, :location_id, :invoice_number, :invoice_date, :received_on, :notes,
           :discount_type, :discount_value, :discount_amount_dollars, :discount_notes, :invoice_image,
-          :freight_amount_dollars, :freight_treasury_id,
+          :freight_amount_dollars, :freight_treasury_id, :freight_on_account,
           vendor_invoice_lines_attributes: %i[
             id ingredient_id quantity unit line_total_dollars expires_on batch_reference line_notes position _destroy
           ]
         )
-        permitted.delete(:freight_amount_dollars)
+        # The amount is a real column now (one source of truth for both settlement
+        # paths); the treasury stays virtual. Only assign when the field was actually
+        # submitted — coercing an absent key to 0 would wipe a stored amount.
+        dollars = permitted.delete(:freight_amount_dollars)
         permitted.delete(:freight_treasury_id)
+        if params[:vendor_invoice].key?(:freight_amount_dollars)
+          permitted[:freight_amount_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
+        end
         permitted[:vendor_invoice_lines_attributes]&.each_value do |attrs|
           dollars = attrs.delete(:line_total_dollars)
           attrs[:line_total_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
