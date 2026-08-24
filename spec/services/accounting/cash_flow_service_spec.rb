@@ -113,34 +113,48 @@ RSpec.describe Accounting::CashFlowService do
 
   # ── Investing ─────────────────────────────────────────────────────────
 
+  # Investing now reads the treasury ledger rather than the FixedAsset register.
+  # The register booked the full price on the purchase date even when the machine was
+  # bought on credit and no cash had moved — and once a purchase also needed an
+  # Expense to reconcile the safe, the same machine appeared in investing AND
+  # operating. These specs previously asserted that register behaviour.
   describe "#investing" do
-    it "includes fixed asset purchases within the date range as outflows" do
-      FixedAsset.create!(
-        name: "Oven", asset_type: "equipment",
-        purchase_date: Date.current, purchase_price_cents: 50_000,
-        current_value_cents: 50_000, recorded_by: owner, company: company
-      )
+    it "includes asset purchases paid in cash within the range" do
+      txn(treasury: cash, kind: "fixed_asset_purchase", amount_cents: -50_000)
+
       expect(service.investing.total_cents).to eq(-50_000)
     end
 
-    it "excludes fixed assets purchased outside the date range" do
-      FixedAsset.create!(
-        name: "Old Oven", asset_type: "equipment",
-        purchase_date: 2.years.ago.to_date, purchase_price_cents: 30_000,
-        current_value_cents: 20_000, recorded_by: owner, company: company
-      )
+    it "excludes cash movements outside the date range" do
+      txn(treasury: cash, kind: "fixed_asset_purchase", amount_cents: -30_000,
+          occurred_on: 2.years.ago.to_date)
+
       expect(service.investing.lines).to be_empty
     end
 
-    it "shows each asset as a separate line" do
-      2.times do |i|
-        FixedAsset.create!(
-          name: "Asset #{i}", asset_type: "equipment",
-          purchase_date: Date.current, purchase_price_cents: 10_000,
-          current_value_cents: 10_000, recorded_by: owner, company: company
-        )
-      end
-      expect(service.investing.lines.size).to eq(2)
+    it "counts installments on a credit purchase, since that is when cash moves" do
+      txn(treasury: cash, kind: "fixed_asset_payment", amount_cents: -12_000)
+
+      expect(service.investing.total_cents).to eq(-12_000)
+    end
+
+    it "groups by kind: purchases and installments as separate lines" do
+      txn(treasury: cash, kind: "fixed_asset_purchase", amount_cents: -10_000)
+      txn(treasury: cash, kind: "fixed_asset_payment", amount_cents: -4_000)
+
+      expect(service.investing.lines.map(&:kind))
+        .to contain_exactly("fixed_asset_purchase", "fixed_asset_payment")
+      expect(service.investing.total_cents).to eq(-14_000)
+    end
+
+    it "ignores an asset recorded on credit until it is paid" do
+      FixedAsset.create!(
+        name: "Unpaid Oven", asset_type: "equipment", on_credit: true,
+        purchase_date: Date.current, purchase_price_cents: 50_000,
+        current_value_cents: 50_000, recorded_by: owner, company: company
+      )
+
+      expect(service.investing.lines).to be_empty
     end
 
     it "returns an empty section when no assets were purchased in range" do
@@ -210,11 +224,8 @@ RSpec.describe Accounting::CashFlowService do
     it "sums operating + investing + financing" do
       txn(treasury: cash, kind: "income",  amount_cents: 10_000)
       txn(treasury: cash, kind: "expense", amount_cents: -3_000)
-      FixedAsset.create!(
-        name: "Mixer", asset_type: "equipment",
-        purchase_date: Date.current, purchase_price_cents: 2_000,
-        current_value_cents: 2_000, recorded_by: owner, company: company
-      )
+      txn(treasury: cash, kind: "fixed_asset_purchase", amount_cents: -2_000)
+
       expect(service.net_change_cents).to eq(10_000 - 3_000 - 2_000)
     end
   end

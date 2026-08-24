@@ -38,6 +38,32 @@
     </div>
   </div>
 
+  <%# How the machine was paid for. This is what makes the purchase an accounting
+      event — previously nothing moved and the safe had to be reconciled with a
+      separate Expense, which booked a capital purchase as an operating cost. %>
+  <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 space-y-3"
+       data-controller="fixed-asset-payment">
+    <label class="flex items-start gap-2.5 cursor-pointer">
+      <%= f.hidden_field :on_credit, value: "0" %>
+      <%= f.check_box :on_credit, { class: "mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600",
+            data: { fixed_asset_payment_target: "onCredit", action: "change->fixed-asset-payment#toggle" } }, "1", "0" %>
+      <span>
+        <span class="block text-sm font-medium text-gray-900"><%= t("accounting.fixed_assets.on_credit") %></span>
+        <span class="block text-xs text-gray-600 mt-0.5"><%= t("accounting.fixed_assets.on_credit_hint") %></span>
+      </span>
+    </label>
+
+    <%# Hidden server-side too, so it is right before the JS runs and without it. %>
+    <div class="<%= "hidden" if fixed_asset.on_credit? %>"
+         data-fixed-asset-payment-target="treasuryWrap">
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.paid_from_treasury") %></label>
+      <%= f.select :paid_from_treasury_id,
+            options_from_collection_for_select(@treasuries, :id, :name, fixed_asset.paid_from_treasury_id),
+            { include_blank: t("accounting.fixed_assets.select_treasury") },
+            class: "#{pos_input_class} appearance-none" %>
+    </div>
+  </div>
+
   <div class="grid sm:grid-cols-3 gap-4">
     <div>
       <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.fixed_assets.form.useful_life") %></label>

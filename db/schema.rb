@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_22_130000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -324,6 +324,23 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_22_130000) do
     t.index ["user_id"], name: "index_expenses_on_user_id"
   end
 
+  create_table "fixed_asset_payments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "fixed_asset_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "treasury_id", null: false
+    t.integer "amount_cents", null: false
+    t.date "payment_date", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_fixed_asset_payments_on_company_id"
+    t.index ["fixed_asset_id"], name: "index_fixed_asset_payments_on_fixed_asset_id"
+    t.index ["payment_date"], name: "index_fixed_asset_payments_on_payment_date"
+    t.index ["treasury_id"], name: "index_fixed_asset_payments_on_treasury_id"
+    t.index ["user_id"], name: "index_fixed_asset_payments_on_user_id"
+  end
+
   create_table "fixed_assets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.uuid "location_id"
@@ -339,10 +356,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_22_130000) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "paid_from_treasury_id"
+    t.boolean "on_credit", default: false, null: false
+    t.string "supplier_name"
     t.index ["company_id", "active"], name: "index_fixed_assets_on_company_id_and_active"
     t.index ["company_id", "asset_type"], name: "index_fixed_assets_on_company_id_and_asset_type"
     t.index ["company_id"], name: "index_fixed_assets_on_company_id"
     t.index ["location_id"], name: "index_fixed_assets_on_location_id"
+    t.index ["paid_from_treasury_id"], name: "index_fixed_assets_on_paid_from_treasury_id"
     t.index ["recorded_by_id"], name: "index_fixed_assets_on_recorded_by_id"
   end
 
@@ -1529,8 +1550,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_22_130000) do
   add_foreign_key "expenses", "expense_categories"
   add_foreign_key "expenses", "treasuries"
   add_foreign_key "expenses", "users"
+  add_foreign_key "fixed_asset_payments", "companies"
+  add_foreign_key "fixed_asset_payments", "fixed_assets"
+  add_foreign_key "fixed_asset_payments", "treasuries"
+  add_foreign_key "fixed_asset_payments", "users"
   add_foreign_key "fixed_assets", "companies"
   add_foreign_key "fixed_assets", "locations"
+  add_foreign_key "fixed_assets", "treasuries", column: "paid_from_treasury_id", on_delete: :restrict
   add_foreign_key "fixed_assets", "users", column: "recorded_by_id"
   add_foreign_key "gift_cards", "companies"
   add_foreign_key "income_categories", "companies"

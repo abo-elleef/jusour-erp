@@ -17,6 +17,9 @@ module Accounting
   class JournalEntryService
     EQUITY_CODE      = 3001
     ADVANCE_CODE     = 5500
+    # Amounts still owed on machines bought on credit. A liability, deliberately
+    # separate from trade payables (supplier AP) — equipment debt is not a goods debt.
+    EQUIPMENT_PAYABLE_CODE = 2200
     SALARY_CODE      = 5501
     STAFF_MEAL_CODE  = 5502
     COGS_CODE        = 5503
@@ -220,6 +223,40 @@ module Accounting
         end
       end
 
+      # ── Fixed asset acquisition ───────────────────────────────────────
+      #
+      # A capital purchase, not an expense: the asset account is debited and either
+      # cash or an equipment payable is credited. Nothing reaches the P&L here —
+      # the cost arrives later as depreciation.
+      def record_fixed_asset_purchase!(asset)
+        destroy_for_source!(asset)
+
+        create! source: asset, date: asset.purchase_date, user: asset.recorded_by,
+                description: I18n.t("accounting.journal_entries.auto.fixed_asset_purchase",
+                                    name: asset.name,
+                                    default: "Fixed asset — #{asset.name}") do |lines|
+          lines << debit(account_for_fixed_asset(asset), asset.purchase_price_cents, "asset")
+          lines << if asset.on_credit?
+                     credit(equipment_payable_account, asset.purchase_price_cents, "liability")
+                   else
+                     credit(account_for_treasury(asset.paid_from_treasury), asset.purchase_price_cents, "asset")
+                   end
+        end
+      end
+
+      # ── Fixed asset installment ───────────────────────────────────────
+      def record_fixed_asset_payment!(payment)
+        destroy_for_source!(payment)
+
+        create! source: payment, date: payment.payment_date, user: payment.user,
+                description: I18n.t("accounting.journal_entries.auto.fixed_asset_payment",
+                                    name: payment.fixed_asset.name,
+                                    default: "Fixed asset payment — #{payment.fixed_asset.name}") do |lines|
+          lines << debit(equipment_payable_account, payment.amount_cents, "liability")
+          lines << credit(account_for_treasury(payment.treasury), payment.amount_cents, "asset")
+        end
+      end
+
       # ── Vendor Invoice Payment (AP settled) ───────────────────────────
       def record_vendor_invoice_payment!(payment)
         destroy_for_source!(payment)
@@ -391,6 +428,20 @@ module Accounting
         end
         idx = siblings.pluck(:id).index(treasury.id).to_i
         { code: base + idx + 1, name: treasury.name, treasury_id: treasury.id }
+      end
+
+      # Mirrors ChartOfAccountsService's asset-account numbering so the entry lands in
+      # the same account the balance sheet shows for this asset class.
+      def account_for_fixed_asset(asset)
+        base = ChartOfAccountsService::FIXED_ASSET_BASE_CODES.fetch(asset.asset_type, 1980)
+        { code: base, name: I18n.t("accounting.fixed_assets.asset_types.#{asset.asset_type}",
+                                   default: asset.asset_type.to_s.humanize) }
+      end
+
+      def equipment_payable_account
+        { code: EQUIPMENT_PAYABLE_CODE,
+          name: I18n.t("accounting.journal_entries.accounts.equipment_payable",
+                       default: "Equipment payable") }
       end
 
       def account_for_expense_category(category)

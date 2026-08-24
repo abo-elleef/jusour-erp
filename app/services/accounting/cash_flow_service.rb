@@ -9,6 +9,10 @@ module Accounting
     OPERATING_KINDS = %w[income online_payment expense ap_payment
                          payroll_salary payroll_advance staff_meal adjustment].freeze
 
+    # Buying a machine is investing, not operating — and only the cash that actually
+    # moved counts. Deliberately excluded from OPERATING_KINDS above.
+    INVESTING_KINDS = %w[fixed_asset_purchase fixed_asset_payment].freeze
+
     CashFlowLine = Struct.new(:label, :amount_cents, :kind, keyword_init: true)
 
     Section = Struct.new(:name, :lines, keyword_init: true) do
@@ -42,18 +46,23 @@ module Accounting
 
     # ── Investing ─────────────────────────────────────────────────────────
 
+    # Read from the treasury ledger, not the FixedAsset register.
+    #
+    # The register booked the full purchase price as an outflow on the purchase date,
+    # which was wrong twice over: a machine bought on credit had not cost any cash
+    # yet, and once a purchase also created an Expense to reconcile the safe, the same
+    # machine appeared here AND in operating. Actual cash movements fix both.
     def investing
       @investing ||= begin
-        assets = FixedAsset.where(
-          company_id: Current.company.id,
-          purchase_date: @start_date..@end_date
-        ).active.ordered
+        grouped = asset_transactions.where(kind: INVESTING_KINDS).group(:kind).sum(:amount_cents)
+        lines = INVESTING_KINDS.filter_map do |kind|
+          cents = grouped[kind].to_i
+          next if cents.zero?
 
-        lines = assets.map do |fa|
           CashFlowLine.new(
-            label:        fa.name,
-            amount_cents: -fa.purchase_price_cents,
-            kind:         "fixed_asset_purchase"
+            label:        I18n.t("accounting.cash_flow.kinds.#{kind}"),
+            amount_cents: cents,
+            kind:         kind
           )
         end
         Section.new(name: :investing, lines: lines)

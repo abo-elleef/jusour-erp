@@ -217,6 +217,7 @@ Rails.application.routes.draw do
         end
       end
       resources :fixed_assets do
+        member { post :record_payment }
         member { patch :dispose }
       end
       resources :budgets, only: [:index] do
