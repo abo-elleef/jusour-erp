@@ -1239,6 +1239,11 @@ en:
         action: "Print count sheet"
         action_hint: "Blank sheet for a physical count — saves nothing"
     vendor_invoices:
+      draft_badge: "Draft"
+      save_draft: "Save as draft"
+      draft_notice: "Draft — nothing received, nothing owed. Receive it when the delivery is confirmed."
+      receive_invoice: "Receive invoice"
+      receive_confirm: "Receive this invoice? Stock will be added and the supplier balance updated."
       index_description: "Record supplier invoices, receive stock, and track AP payments."
       new_button: "New vendor invoice"
       new_title: "New vendor invoice"
@@ -1352,6 +1357,8 @@ en:
       freight_expense_description: "Goods delivery — %{invoice_number} — %{supplier}"
       view_freight_expense: "View expense"
       errors:
+        not_a_draft: "This invoice has already been received."
+        draft_lines_incomplete: "Enter a quantity for %{ingredients}, or remove those lines before receiving."
         lines_required: "Add at least one line item with an ingredient."
         not_editable: "This invoice cannot be edited after payments have been recorded or once voided."
         stock_consumed: "Cannot edit: %{ingredient} stock from this invoice has already been used."
@@ -3937,6 +3944,7 @@ en:
       removed: "Ingredient removed."
       adjusted: "Stock adjusted."
     vendor_invoice:
+      draft_saved: "Draft saved. Nothing has been received yet."
       created: "Vendor invoice recorded and stock received."
       updated: "Vendor invoice updated and stock adjusted."
       payment_recorded: "Payment recorded."

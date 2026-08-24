@@ -308,6 +308,7 @@ Rails.application.routes.draw do
       resources :vendor_invoices, only: %i[index show new create edit update] do
         member do
           get :export
+          post :receive
           post :record_payment
           patch :void
           patch :attach_invoice_image

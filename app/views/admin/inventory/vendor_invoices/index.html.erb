@@ -105,7 +105,13 @@
                 <td class="p-3 tabular-nums text-gray-600"><%= l(invoice.invoice_date) %></td>
                 <td class="p-3 text-gray-600"><%= invoice.user&.name || t("accounting.shared.em_dash") %></td>
                 <td class="p-3">
-                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= pay_class %>"><%= pay_label %></span>
+                  <%# Drafts stay listed here — this is where you come back to finish
+                      one — but must not read as a real invoice. %>
+                  <% if invoice.draft? %>
+                    <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border border-gray-300 border-dashed bg-white text-gray-500"><%= t("inventory.vendor_invoices.draft_badge") %></span>
+                  <% else %>
+                    <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= pay_class %>"><%= pay_label %></span>
+                  <% end %>
                 </td>
                 <td class="p-3 text-end font-semibold tabular-nums"><%= format_money(invoice.total_cents) %></td>
                 <td class="p-3 pe-5 text-end">

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_23_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_24_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1498,6 +1498,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_23_120000) do
     t.text "discount_notes"
     t.integer "freight_amount_cents", default: 0, null: false
     t.boolean "freight_on_account", default: false, null: false
+    t.boolean "draft", default: false, null: false
+    t.index ["company_id", "draft"], name: "index_vendor_invoices_on_company_id_and_draft"
     t.index ["company_id", "supplier_id", "invoice_number"], name: "index_vendor_invoices_on_company_supplier_and_number", unique: true
     t.index ["company_id"], name: "index_vendor_invoices_on_company_id"
     t.index ["invoice_date"], name: "index_vendor_invoices_on_invoice_date"

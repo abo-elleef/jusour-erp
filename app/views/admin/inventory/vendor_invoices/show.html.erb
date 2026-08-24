@@ -16,8 +16,25 @@
     <div>
       <div class="flex flex-wrap items-center gap-3">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @vendor_invoice.invoice_number %></h1>
-        <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= pay_class %>"><%= pay_label %></span>
+        <% if @vendor_invoice.draft? %>
+          <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border border-gray-300 border-dashed bg-white text-gray-500">
+            <%= t("inventory.vendor_invoices.draft_badge") %>
+          </span>
+        <% else %>
+          <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= pay_class %>"><%= pay_label %></span>
+        <% end %>
       </div>
+
+      <% if @vendor_invoice.draft? %>
+        <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 flex flex-wrap items-center justify-between gap-3 print-hide">
+          <p class="text-sm text-amber-900"><%= t("inventory.vendor_invoices.draft_notice") %></p>
+          <%= button_to t("inventory.vendor_invoices.receive_invoice"),
+                receive_admin_inventory_vendor_invoice_path(@vendor_invoice),
+                method: :post,
+                form: { data: { turbo_confirm: t("inventory.vendor_invoices.receive_confirm") } },
+                class: "inline-flex bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shrink-0" %>
+        </div>
+      <% end %>
       <p class="text-gray-600 text-sm mt-1 print-hide">
         <%= link_to @vendor_invoice.supplier.name, admin_inventory_supplier_path(@vendor_invoice.supplier),
               class: "font-medium text-amber-700 hover:text-amber-800" %>

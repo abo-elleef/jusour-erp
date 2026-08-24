@@ -1241,6 +1241,11 @@ ar:
         action: "طباعة ورقة الجرد"
         action_hint: "ورقة فارغة للجرد الفعلي — لا تحفظ شيئاً"
     vendor_invoices:
+      draft_badge: "مسودة"
+      save_draft: "حفظ كمسودة"
+      draft_notice: "مسودة — لم يُستلم شيء ولا يوجد مستحق. استلمها عند تأكيد التوريد."
+      receive_invoice: "استلام الفاتورة"
+      receive_confirm: "هل تريد استلام هذه الفاتورة؟ ستُضاف الكميات للمخزون ويُحدَّث رصيد المورد."
       index_description: "تسجيل فواتير الموردين واستلام المخزون وتتبع المدفوعات."
       new_button: "فاتورة مورد جديدة"
       new_title: "فاتورة مورد جديدة"
@@ -1355,6 +1360,8 @@ ar:
       freight_expense_description: "توصيل بضائع — %{invoice_number} — %{supplier}"
       view_freight_expense: "عرض المصروف"
       errors:
+        not_a_draft: "تم استلام هذه الفاتورة بالفعل."
+        draft_lines_incomplete: "أدخل كمية لـ %{ingredients}، أو احذف هذه البنود قبل الاستلام."
         lines_required: "أضف بنداً واحداً على الأقل مع مكوّن."
         not_editable: "لا يمكن تعديل هذه الفاتورة بعد تسجيل مدفوعات أو إلغائها."
         stock_consumed: "تعذّر التعديل: تم استخدام مخزون %{ingredient} من هذه الفاتورة."
@@ -3963,6 +3970,7 @@ ar:
       removed: "تم حذف المكون."
       adjusted: "تم تعديل المخزون."
     vendor_invoice:
+      draft_saved: "تم حفظ المسودة. لم يُستلم شيء بعد."
       created: "تم تسجيل فاتورة المورد واستلام المخزون."
       updated: "تم تحديث فاتورة المورد وتعديل المخزون."
       payment_recorded: "تم تسجيل الدفع."

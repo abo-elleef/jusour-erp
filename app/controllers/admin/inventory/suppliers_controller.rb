@@ -63,7 +63,9 @@ module Admin
           %i[out low].include?(@ingredient_balances[link.ingredient_id][:status])
         end
 
-        @vendor_invoices = @supplier.vendor_invoices.order(invoice_date: :desc).limit(10)
+        # Purchase history for this supplier — drafts have bought nothing yet, so they
+        # belong on the invoices index (where you resume them), not here.
+        @vendor_invoices = @supplier.vendor_invoices.posted.order(invoice_date: :desc).limit(10)
         load_price_history
         @ap_transactions = if @supplier.ap_treasury
                              @supplier.ap_treasury.treasury_transactions

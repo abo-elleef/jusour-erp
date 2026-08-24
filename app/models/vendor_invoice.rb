@@ -26,7 +26,7 @@ class VendorInvoice < ApplicationRecord
   validates :invoice_number, presence: true,
     uniqueness: { scope: %i[company_id supplier_id], case_sensitive: false }
   validates :invoice_date, :received_on, presence: true
-  validates :location, presence: true
+  validates :location, presence: true, unless: :draft?
   validates :payment_status, inclusion: { in: PAYMENT_STATUSES }
   validates :freight_amount_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :amount_paid_cents, numericality: { greater_than_or_equal_to: 0 }
@@ -36,6 +36,10 @@ class VendorInvoice < ApplicationRecord
   validate :discount_percentage_range
   validate :amount_paid_not_above_total
 
+  # Drafts have posted nothing, so they must stay out of anything that reads real
+  # activity — AP, costing, reports. `posted` is the default lens.
+  scope :drafts, -> { where(draft: true) }
+  scope :posted, -> { where(draft: false) }
   scope :unpaid, -> { where(payment_status: "unpaid") }
   scope :partially_paid, -> { where(payment_status: "partially_paid") }
   scope :paid, -> { where(payment_status: "paid") }
@@ -101,8 +105,22 @@ class VendorInvoice < ApplicationRecord
     !void? && balance_due_cents.positive?
   end
 
+  # A draft posted nothing, so there is nothing to unwind — it is always editable,
+  # and editing skips the reverse-and-re-receive a posted invoice needs.
   def editable?
+    return true if draft?
+
     unpaid? && amount_paid_cents.zero? && !void?
+  end
+
+  def fully_editable?
+    return true if draft?
+
+    editable? && stock_intact_for_edit?
+  end
+
+  def postable?
+    draft? && vendor_invoice_lines.any?
   end
 
   def stock_intact_for_edit?
@@ -110,10 +128,6 @@ class VendorInvoice < ApplicationRecord
       batch = line.stock_batch
       batch.nil? || batch.quantity_remaining.to_d >= line.quantity.to_d
     end
-  end
-
-  def fully_editable?
-    editable? && stock_intact_for_edit?
   end
 
   def subtotal_cents

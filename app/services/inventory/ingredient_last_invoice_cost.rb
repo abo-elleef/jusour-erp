@@ -48,11 +48,13 @@ module Inventory
     end
 
     # Voided invoices are excluded: their accounting was undone, so their price is
-    # not a figure to adopt as the standing cost.
+    # not a figure to adopt as the standing cost. Drafts too — nothing was received
+    # at that price yet, so it is not a price we have actually paid.
     def base_scope
       VendorInvoiceLine
         .where(ingredient_id: @ingredient.id)
         .joins(:vendor_invoice)
+        .where(vendor_invoices: { draft: false })
         .where.not(vendor_invoices: { payment_status: "void" })
     end
   end

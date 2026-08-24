@@ -272,8 +272,16 @@
   </section>
 
   <div class="flex flex-wrap items-center gap-3 pb-8">
-    <%= f.submit vendor_invoice.persisted? ? t("inventory.vendor_invoices.form.submit_update") : t("inventory.vendor_invoices.form.submit"),
+    <% draftable = vendor_invoice.new_record? || vendor_invoice.draft? %>
+    <%= f.submit vendor_invoice.persisted? && !draftable ? t("inventory.vendor_invoices.form.submit_update") : t("inventory.vendor_invoices.form.submit"),
           class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
+    <% if draftable %>
+      <%# A save point only: nothing is received and nothing is owed, so the usual
+          required-field validation must not block it. %>
+      <%= f.submit t("inventory.vendor_invoices.save_draft"), name: "save_draft",
+            formnovalidate: true,
+            class: "bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-6 py-2.5 rounded-xl border border-gray-300 transition-colors" %>
+    <% end %>
     <%= link_to t("actions.cancel"), vendor_invoice.persisted? ? admin_inventory_vendor_invoice_path(vendor_invoice) : admin_inventory_vendor_invoices_path,
           class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
   </div>

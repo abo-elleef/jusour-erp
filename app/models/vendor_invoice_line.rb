@@ -11,7 +11,28 @@ class VendorInvoiceLine < ApplicationRecord
   monetize :unit_price_cents
   monetize :line_total_cents
 
-  validates :quantity, numericality: { greater_than: 0 }
+  # A draft is a half-typed document — a line may name an ingredient before its
+  # quantity is known. Posting re-arms the strict check, so an incomplete line
+  # cannot slip into a received invoice.
+  validates :quantity, numericality: { greater_than: 0 }, unless: :draft_parent?
+  validates :quantity, numericality: { greater_than_or_equal_to: 0 }, if: :draft_parent?
+
+  before_validation :default_blank_quantity
+
+  # The column is NOT NULL, and a draft line may name an ingredient before the
+  # quantity is known. Zero still fails the strict `greater_than: 0` check once the
+  # invoice leaves draft, so an unfilled line cannot slip into a received invoice.
+  def default_blank_quantity
+    self.quantity = 0 if quantity.blank?
+  end
+
+  def draft_parent?
+    vendor_invoice&.draft?
+  end
+
+  def awaiting_quantity?
+    quantity.to_d <= 0
+  end
   validates :line_total_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 

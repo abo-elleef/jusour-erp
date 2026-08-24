@@ -5,7 +5,8 @@ require "csv"
 module Admin
   module Inventory
     class VendorInvoicesController < BaseController
-      before_action :set_vendor_invoice, only: %i[show export edit update record_payment void attach_invoice_image]
+      before_action :set_vendor_invoice,
+        only: %i[show export edit update receive record_payment void attach_invoice_image]
 
       def index
         authorize_inventory_index!(VendorInvoice)
@@ -85,11 +86,26 @@ module Admin
       end
 
       def create
-        @vendor_invoice = VendorInvoice.new(vendor_invoice_params.merge(user: current_user))
+        # Draft must be set BEFORE nested attributes are assigned: the line quantity
+        # validation consults `draft?` as each line comes in, so assigning params
+        # first would reject the half-filled rows a draft exists to keep.
+        @vendor_invoice = VendorInvoice.new
+        @vendor_invoice.draft = true if save_as_draft?
+        @vendor_invoice.assign_attributes(vendor_invoice_params.merge(user: current_user))
         authorize_inventory!(:create)
         freight = extract_freight_options!
 
-        if invoice_lines_present?
+        if save_as_draft?
+          # A save point: nothing is received, nothing is owed, no cash moves.
+          if @vendor_invoice.save
+            redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+              notice: t("flash.vendor_invoice.draft_saved")
+          else
+            build_line_items
+            load_form_data
+            render :new, status: :unprocessable_entity
+          end
+        elsif invoice_lines_present?
           ::Inventory::ReceiveVendorInvoiceService.new(
             @vendor_invoice,
             current_user,
@@ -132,6 +148,13 @@ module Admin
         unless @vendor_invoice.fully_editable?
           redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
             alert: edit_blocked_message
+          return
+        end
+
+        # A draft posted nothing, so editing it is a plain save — no reverse, no
+        # re-receive, and no stock or AP touched. Posting it is a separate step.
+        if @vendor_invoice.draft?
+          update_draft
           return
         end
 
@@ -225,7 +248,68 @@ module Admin
           notice: t("flash.vendor_invoice.image_attached")
       end
 
+      # Turns the draft into a real invoice: stock arrives, supplier AP is posted, the
+      # journal entry is written. Everything a draft deliberately skipped.
+      def receive
+        authorize_inventory!(:update)
+
+        unless @vendor_invoice.draft?
+          redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+            alert: t("inventory.vendor_invoices.errors.not_a_draft")
+          return
+        end
+
+        incomplete = @vendor_invoice.vendor_invoice_lines.select(&:awaiting_quantity?)
+        if @vendor_invoice.vendor_invoice_lines.empty?
+          redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+            alert: t("inventory.vendor_invoices.errors.lines_required")
+          return
+        elsif incomplete.any?
+          redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+            alert: t("inventory.vendor_invoices.errors.draft_lines_incomplete",
+                     ingredients: incomplete.map { |l| l.ingredient.name }.to_sentence)
+          return
+        end
+
+        @vendor_invoice.draft = false
+        ::Inventory::ReceiveVendorInvoiceService.new(
+          @vendor_invoice,
+          current_user,
+          freight_amount_cents: @vendor_invoice.freight_amount_cents,
+          freight_treasury: @vendor_invoice.freight_on_account? ? nil : default_freight_treasury,
+          freight_on_account: @vendor_invoice.freight_on_account?
+        ).call
+
+        redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+          notice: t("flash.vendor_invoice.created")
+      rescue ::Accounting::SyncVendorInvoiceFreightService::Error, ActiveRecord::RecordInvalid => e
+        @vendor_invoice.update_columns(draft: true)
+        redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+          alert: e.message
+      end
+
       private
+
+      def save_as_draft?
+        params.key?(:save_draft)
+      end
+
+      def update_draft
+        if @vendor_invoice.update(vendor_invoice_params)
+          redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+            notice: t("flash.vendor_invoice.draft_saved")
+        else
+          build_line_items
+          load_form_data
+          render :edit, status: :unprocessable_entity
+        end
+      end
+
+      # Cash delivery on a draft has no treasury stored, so fall back to the default.
+      def default_freight_treasury
+        Treasury.active.payable.visible_to(current_user).find_by(is_default: true) ||
+          Treasury.active.payable.visible_to(current_user).first
+      end
 
       # Cents → plain decimal string (e.g. 34500 → "345.00") for spreadsheet cells.
       def money_amount(cents)
