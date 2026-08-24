@@ -1756,6 +1756,8 @@ ar:
         view_daily: "يومي"
         daily_description: "إجمالي الناتج في ذلك اليوم، مجمّع حسب المنتج."
         pick_date: "اليوم"
+        include_all_templates: "تضمين كل القوالب"
+        include_all_templates_hint: "يعرض كل القوالب، مع صفر لما لم يُنتَج."
         show_day: "عرض اليوم"
         total_produced: "إجمالي الكمية"
         runs_for_day: "عدد التشغيلات"

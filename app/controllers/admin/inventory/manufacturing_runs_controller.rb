@@ -59,11 +59,22 @@ module Admin
 
       def load_daily_view
         @day = parse_daily_date(params[:date])
+        # Opt in to listing every template, so a printed sheet doubles as a
+        # checklist of what could have been made rather than only what was.
+        @include_all_templates = params[:include_all] == "1"
         day_runs = ManufacturingRun
           .where(occurred_on: @day, reversed_at: nil)
           .includes(:location, :user, manufacturing_template: [:yield_unit_ref, { output_ingredient: :ingredient_units }])
           .recent
-        @daily_rows = ::Inventory::DailyProductionSummaryService.new(runs: day_runs).call
+        @daily_rows = ::Inventory::DailyProductionSummaryService.new(
+          runs: day_runs,
+          templates: (@include_all_templates ? all_active_templates : nil)
+        ).call
+      end
+
+      def all_active_templates
+        ManufacturingTemplate.active
+          .includes(:yield_unit_ref, output_ingredient: :ingredient_units)
       end
 
       def parse_daily_date(raw)

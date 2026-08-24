@@ -1752,6 +1752,8 @@ en:
         view_daily: "Daily"
         daily_description: "Totals produced that day, grouped by output item."
         pick_date: "Day"
+        include_all_templates: "Include all templates"
+        include_all_templates_hint: "Lists every template, showing zero where nothing was produced."
         show_day: "Show day"
         total_produced: "Total qty"
         runs_for_day: "# runs"

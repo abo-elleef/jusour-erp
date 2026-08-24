@@ -1,4 +1,6 @@
 <% cell = "border border-gray-800 print:border-black p-2.5 text-center align-middle" %>
+<% th_index = "#{cell} bg-gray-100 text-gray-700 font-bold text-sm" %>
+<% td_index = "#{cell} bg-gray-50 text-gray-500 tabular-nums" %>
 <% th_item = "#{cell} bg-emerald-100 text-emerald-950 font-bold text-sm" %>
 <% th_unit = "#{cell} bg-amber-100 text-amber-950 font-bold text-sm" %>
 <% th_count = "#{cell} bg-rose-100 text-rose-950 font-bold text-sm" %>
@@ -16,6 +18,15 @@
         <%= label_tag :date, t("inventory.manufacturing.runs.pick_date"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
         <%= date_field_tag :date, @day, max: Date.current,
               class: "min-h-11 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
+      </div>
+      <div class="pb-1">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <%= hidden_field_tag :include_all, "0" %>
+          <%= check_box_tag :include_all, "1", @include_all_templates,
+                class: "h-4 w-4 rounded border-gray-300 text-amber-600" %>
+          <span class="text-sm text-gray-700"><%= t("inventory.manufacturing.runs.include_all_templates") %></span>
+        </label>
+        <p class="text-xs text-gray-500 mt-0.5 ms-6"><%= t("inventory.manufacturing.runs.include_all_templates_hint") %></p>
       </div>
       <%= submit_tag t("inventory.manufacturing.runs.show_day"),
             class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors cursor-pointer" %>
@@ -40,15 +51,18 @@
       <table class="w-full border-collapse text-sm">
         <thead>
           <tr>
-            <th class="<%= th_item %> w-[32%]"><%= t("inventory.manufacturing.runs.card_item") %></th>
+            <th class="<%= th_index %> w-[8%]"><%= t("shared.row_index") %></th>
+            <th class="<%= th_item %> w-[30%]"><%= t("inventory.manufacturing.runs.card_item") %></th>
             <th class="<%= th_unit %> w-[18%]"><%= t("inventory.manufacturing.runs.card_unit") %></th>
             <th class="<%= th_count %> w-[18%]"><%= t("inventory.manufacturing.runs.card_count") %></th>
             <th class="<%= th_notes %>"><%= t("inventory.manufacturing.runs.card_notes") %></th>
           </tr>
         </thead>
         <tbody>
-          <% @daily_rows.each do |row| %>
+          <% @daily_rows.each_with_index do |row, index| %>
             <tr>
+              <%# Plain UI numbering, always from 1 — not tied to any record id. %>
+              <td class="<%= td_index %>"><%= index + 1 %></td>
               <td class="<%= td_item %>"><%= row.ingredient.name %></td>
               <td class="<%= td_unit %>"><%= ingredient_unit_label(row.unit) %></td>
               <td class="<%= td_count %>">
