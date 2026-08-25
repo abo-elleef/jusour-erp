@@ -4,14 +4,16 @@ module Inventory
   # Voids the current in-transit shipment without moving stock (send never deducts inventory).
   # Rolls back line quantity_sent totals and restores the transfer to requested or partially_received.
   class VoidInTransitStockTransferShipmentService
-    def initialize(transfer, user)
+    # Explicit shipment: several may be open at once.
+    def initialize(transfer, user, shipment: nil)
       @transfer = transfer
       @user = user
-      @shipment = transfer.current_shipment
+      @shipment = shipment || transfer.current_shipment
     end
 
     def call
-      unless @transfer.can_void_in_transit_shipment?
+      unless @shipment.present? && @shipment.in_transit? &&
+             @shipment.stock_transfer_id == @transfer.id
         @transfer.errors.add(:status, I18n.t("inventory.stock_transfers.errors.cannot_void_shipment"))
         raise ActiveRecord::RecordInvalid, @transfer
       end
@@ -42,23 +44,12 @@ module Inventory
       latest_received = @transfer.stock_transfer_shipments.received.order(:sequence).last
 
       @transfer.update!(
-        status: status_after_void,
+        status: @transfer.recalculated_status,
         sent_at: latest_sent&.sent_at,
         sent_by: latest_sent&.sent_by,
         received_at: latest_received&.received_at,
         received_by: latest_received&.received_by
       )
-    end
-
-    def status_after_void
-      return "awaiting_receipt" if @transfer.stock_transfer_shipments.in_transit.exists?
-      return "completed" if @transfer.fully_fulfilled?
-
-      if @transfer.stock_transfer_lines.any? { |line| line.quantity_received.positive? || line.quantity_sent.positive? }
-        "partially_received"
-      else
-        "requested"
-      end
     end
   end
 end

@@ -22,6 +22,31 @@ class StockTransferShipment < ApplicationRecord
     status == "in_transit"
   end
 
+  # Lines where less arrived than left. Sending moves no stock, so the difference is
+  # goods that never made it — worth showing rather than silently folding back into
+  # the sender's outstanding amount.
+  def short_lines
+    stock_transfer_shipment_lines.select do |line|
+      line.quantity_received.to_d < line.quantity_sent.to_d
+    end
+  end
+
+  def short?
+    received? && short_lines.any?
+  end
+
+  # The receiver counts what actually arrived and is trusted over the dispatch note,
+  # so a shipment can arrive with MORE than was recorded as sent.
+  def surplus_lines
+    stock_transfer_shipment_lines.select do |line|
+      line.quantity_received.to_d > line.quantity_sent.to_d
+    end
+  end
+
+  def surplus?
+    received? && surplus_lines.any?
+  end
+
   def received?
     status == "received"
   end

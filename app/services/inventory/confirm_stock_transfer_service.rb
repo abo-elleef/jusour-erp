@@ -4,15 +4,19 @@ module Inventory
   class ConfirmStockTransferService
     class InsufficientStockError < StandardError; end
 
-    def initialize(transfer, user, line_quantities:)
+    # `shipment` is explicit: several may be open at once, so "the current one" is
+    # ambiguous. Falls back to the only open shipment when not given.
+    def initialize(transfer, user, line_quantities:, receipt_notes: nil, shipment: nil)
       @transfer = transfer
       @user = user
       @line_quantities = line_quantities.transform_keys(&:to_s)
-      @shipment = transfer.current_shipment
+      @receipt_notes = receipt_notes.presence
+      @shipment = shipment || transfer.current_shipment
     end
 
     def call
-      unless @transfer.can_confirm_receipt?
+      unless @shipment.present? && @shipment.in_transit? &&
+             @shipment.stock_transfer_id == @transfer.id
         @transfer.errors.add(:status, I18n.t("inventory.stock_transfers.errors.cannot_confirm"))
         raise ActiveRecord::RecordInvalid, @transfer
       end
@@ -30,11 +34,12 @@ module Inventory
         @shipment.update!(
           status: "received",
           received_at: occurred_at,
-          received_by: @user
+          received_by: @user,
+          receipt_notes: @receipt_notes
         )
 
         @transfer.update!(
-          status: @transfer.fully_fulfilled? ? "completed" : "partially_received",
+          status: @transfer.recalculated_status,
           received_at: occurred_at,
           received_by: @user
         )
@@ -45,16 +50,16 @@ module Inventory
 
     private
 
+    # The receiver counts what physically arrived and is treated as the source of
+    # truth — including when that is MORE than the sender recorded as dispatched.
+    # Only a negative count is rejected.
     def received_quantity_for(shipment_line)
       line = shipment_line.stock_transfer_line
       raw = @line_quantities[line.id.to_s]
       qty = raw.present? ? raw.to_d : shipment_line.quantity_sent.to_d
       raise ActiveRecord::RecordInvalid, shipment_line if qty.negative?
-      return qty if qty <= shipment_line.quantity_sent.to_d
 
-      shipment_line.errors.add(:quantity_received, I18n.t("inventory.stock_transfers.errors.exceeds_shipment",
-        ingredient: line.ingredient.name, sent: shipment_line.quantity_sent, quantity: qty))
-      raise ActiveRecord::RecordInvalid, shipment_line
+      qty
     end
 
     def move_stock!(ingredient, quantity, at:)

@@ -325,6 +325,7 @@ Rails.application.routes.draw do
           post :submit
           post :send_transfer
           post :confirm_receipt
+          post :close_short
           post :cancel
           post :void_shipment
         end

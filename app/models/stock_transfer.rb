@@ -22,6 +22,7 @@ class StockTransfer < ApplicationRecord
   belongs_to :stock_transfer_template, optional: true
   belongs_to :sent_by, class_name: "User", optional: true
   belongs_to :received_by, class_name: "User", optional: true
+  belongs_to :closed_short_by, class_name: "User", optional: true
   has_many :stock_transfer_lines, -> { order(:position, :created_at) }, dependent: :destroy, inverse_of: :stock_transfer
   has_many :stock_transfer_shipments, dependent: :destroy
   has_many :ingredients, through: :stock_transfer_lines
@@ -111,16 +112,54 @@ class StockTransfer < ApplicationRecord
     transferred_on < as_of - AGING_RECEIPT_DAYS
   end
 
+  # Finished with a shortfall accepted, rather than everything having arrived. Shares
+  # the `completed` status so the Open queue clears, but stays distinguishable.
+  def closed_short?
+    closed_short_at.present?
+  end
+
+  # Only from partially_received: while a shipment is in transit the outcome is not
+  # known yet, and a transfer that has shipped nothing should be cancelled instead.
+  def can_close_short?
+    partially_received?
+  end
+
+  # Lines that never got everything they asked for. The basis of the shortfall
+  # record — reconstructable before, but nothing surfaced it.
+  def short_lines
+    stock_transfer_lines.reject(&:fulfilled?)
+  end
+
+  # Any in-progress status. A second batch may leave before the first is confirmed —
+  # each dispatch opens its own shipment, and receive/void act on a named shipment
+  # rather than "the latest open one".
   def can_send?
-    requested? || partially_received?
+    IN_PROGRESS_STATUSES.include?(status)
+  end
+
+  def open_shipments
+    stock_transfer_shipments.in_transit.ordered
   end
 
   def can_confirm_receipt?
-    awaiting_receipt? && current_shipment.present?
+    open_shipments.any?
   end
 
   def can_void_in_transit_shipment?
-    awaiting_receipt? && current_shipment&.in_transit?
+    open_shipments.any?
+  end
+
+  # Where the transfer stands, given its shipments. Shared by confirm and void so the
+  # two can never disagree — they previously each carried their own copy of this.
+  def recalculated_status
+    return "awaiting_receipt" if stock_transfer_shipments.in_transit.exists?
+    return "completed" if fully_fulfilled?
+
+    if stock_transfer_lines.any? { |line| line.quantity_received.positive? || line.quantity_sent.positive? }
+      "partially_received"
+    else
+      "requested"
+    end
   end
 
   # Reloaded deliberately. Callers update lines through other associations (a
@@ -131,6 +170,8 @@ class StockTransfer < ApplicationRecord
     stock_transfer_lines.reload.all?(&:fulfilled?)
   end
 
+  # Kept for callers that only care that *something* is open. Prefer open_shipments
+  # and an explicit shipment id — with several open at once, "the latest" is arbitrary.
   def current_shipment
     stock_transfer_shipments.in_transit.order(:sequence).last
   end

@@ -27,6 +27,14 @@ module Accounting
       new.reverse_purchase!(asset)
     end
 
+    def self.reverse_payment!(payment:)
+      new.reverse_payment!(payment)
+    end
+
+    def self.reverse_asset!(asset:)
+      new.reverse_asset!(asset)
+    end
+
     def record_purchase!(asset, user)
       ActiveRecord::Base.transaction do
         unless asset.on_credit?
@@ -57,6 +65,34 @@ module Accounting
       payment
     end
 
+    # Reverse a single installment payment and credit the treasury back.
+    def reverse_payment!(payment)
+      ActiveRecord::Base.transaction do
+        TreasuryTransaction.where(source_record: payment, kind: "fixed_asset_payment").each do |txn|
+          txn.treasury.with_lock do
+            txn.treasury.apply_balance_delta!(-txn.amount_cents)
+            txn.destroy!
+          end
+        end
+        JournalEntryService.destroy_for_source!(payment)
+      end
+      payment
+    end
+
+    # Reverse all payments and the purchase itself, then destroy the asset.
+    # This is the correct deletion path — calling asset.destroy! directly would
+    # cascade-delete payments without reversing their treasury transactions.
+    def reverse_asset!(asset)
+      ActiveRecord::Base.transaction do
+        asset.fixed_asset_payments.ordered.reverse_each do |payment|
+          reverse_payment!(payment)
+          payment.destroy!
+        end
+        reverse_purchase_internal!(asset)
+        asset.destroy!
+      end
+    end
+
     # Undo the acquisition. Refuses once installments exist — those are separate cash
     # movements and have to be dealt with on their own rather than silently orphaned.
     def reverse_purchase!(asset)
@@ -64,19 +100,21 @@ module Accounting
         raise Error, I18n.t("accounting.fixed_assets.errors.has_payments")
       end
 
-      ActiveRecord::Base.transaction do
-        TreasuryTransaction.where(source_record: asset, kind: "fixed_asset_purchase").each do |txn|
-          txn.treasury.with_lock do
-            txn.treasury.apply_balance_delta!(-txn.amount_cents)
-            txn.destroy!
-          end
-        end
-        JournalEntryService.destroy_for_source!(asset)
-      end
+      ActiveRecord::Base.transaction { reverse_purchase_internal!(asset) }
       asset
     end
 
     private
+
+    def reverse_purchase_internal!(asset)
+      TreasuryTransaction.where(source_record: asset, kind: "fixed_asset_purchase").each do |txn|
+        txn.treasury.with_lock do
+          txn.treasury.apply_balance_delta!(-txn.amount_cents)
+          txn.destroy!
+        end
+      end
+      JournalEntryService.destroy_for_source!(asset)
+    end
 
     def move_cash!(treasury:, user:, amount_cents:, kind:, occurred_on:, source:, description:)
       treasury.with_lock do

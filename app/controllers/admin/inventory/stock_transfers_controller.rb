@@ -7,7 +7,8 @@ module Admin
       SCOPES = %w[open today all].freeze
 
       before_action :set_stock_transfer,
-        only: %i[show edit update submit destroy send_transfer confirm_receipt cancel void_shipment]
+        only: %i[show edit update submit destroy send_transfer confirm_receipt cancel
+                 close_short void_shipment]
 
       # Lands on the open work queue rather than the full history: this page is
       # used to act on transfers, and an all-time list grows past scanning.
@@ -37,7 +38,6 @@ module Admin
         @shipments = @stock_transfer.stock_transfer_shipments.ordered
           .includes(:sent_by, :received_by, :voided_by,
             stock_transfer_shipment_lines: { stock_transfer_line: { ingredient: :ingredient_category } })
-        @current_shipment = @stock_transfer.current_shipment
         @restrict_stock_transfers_to_source = Setting.restrict_stock_transfers_to_source?
         @source_shortage_lines = if @stock_transfer.completed?
           preload_source_ingredient_locations
@@ -163,13 +163,19 @@ module Admin
 
       def confirm_receipt
         authorize_inventory!(:update)
+        shipment = requested_shipment
         ::Inventory::ConfirmStockTransferService.new(
           @stock_transfer,
           current_user,
-          line_quantities: line_quantity_params
+          line_quantities: line_quantity_params,
+          receipt_notes: params[:receipt_notes],
+          shipment: shipment
         ).call
         redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
           notice: t("flash.stock_transfer.received")
+      rescue ActiveRecord::RecordNotFound
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          alert: t("inventory.stock_transfers.errors.cannot_confirm")
       rescue ::Inventory::ConfirmStockTransferService::InsufficientStockError => e
         redirect_to admin_inventory_stock_transfer_path(@stock_transfer), alert: e.message
       rescue ActiveRecord::RecordInvalid => e
@@ -189,17 +195,46 @@ module Admin
         redirect_to admin_inventory_stock_transfers_path, notice: t("flash.stock_transfer.cancelled")
       end
 
+      # Accept the shortfall and finish the transfer. Without this a partially
+      # received transfer had no terminal state and stayed in the Open queue forever.
+      def close_short
+        authorize_inventory!(:update)
+        ::Inventory::CloseShortStockTransferService.new(
+          @stock_transfer, current_user, reason: params[:closed_short_reason]
+        ).call
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          notice: t("flash.stock_transfer.closed_short")
+      rescue ::Inventory::CloseShortStockTransferService::Error => e
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer), alert: e.message
+      end
+
       def void_shipment
         authorize_inventory!(:update)
-        ::Inventory::VoidInTransitStockTransferShipmentService.new(@stock_transfer, current_user).call
+        ::Inventory::VoidInTransitStockTransferShipmentService.new(
+          @stock_transfer, current_user, shipment: requested_shipment
+        ).call
         redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
           notice: t("flash.stock_transfer.shipment_voided")
+      rescue ActiveRecord::RecordNotFound
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          alert: t("inventory.stock_transfers.errors.cannot_void_shipment")
       rescue ActiveRecord::RecordInvalid => e
         redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
           alert: e.record.errors.full_messages.to_sentence
       end
 
       private
+
+      # Several shipments can be open at once, so receive and void name the one they
+      # act on. Scoped through the transfer, and an id that does not resolve is an
+      # error — falling back to "whichever is current" would let a wrong or foreign
+      # id quietly act on a different shipment.
+      def requested_shipment
+        return nil if params[:shipment_id].blank?
+
+        @stock_transfer.stock_transfer_shipments.find_by(id: params[:shipment_id]) ||
+          raise(ActiveRecord::RecordNotFound)
+      end
 
       def set_stock_transfer
         @stock_transfer = StockTransfer.find(params[:id])

@@ -291,7 +291,11 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       expect(branch_il.quantity_on_hand.to_d).to eq(10.0)
     end
 
-    it "blocks sending while a shipment awaits receipt" do
+    # This used to be blocked — "Cannot send while a shipment is awaiting receipt".
+    # The restriction was lifted deliberately: a second batch may physically leave
+    # before the first is confirmed, and receive/void now name the shipment they act
+    # on rather than assuming the latest open one.
+    it "allows a second dispatch while the first still awaits receipt" do
       transfer = create_transfer_with_line(requested: 10.0)
       line = transfer.stock_transfer_lines.first
 
@@ -299,8 +303,26 @@ RSpec.describe "Admin::Inventory::StockTransfers", type: :request do
       expect(transfer.reload).to be_awaiting_receipt
 
       post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "4" } }
-      expect(flash[:alert]).to be_present
+
+      expect(flash[:alert]).to be_nil
       expect(transfer.reload).to be_awaiting_receipt
+      expect(transfer.open_shipments.count).to eq(2)
+      expect(line.reload.quantity_open_in_transit).to eq(10)
+      expect(line.quantity_pending_send).to eq(0)
+    end
+
+    it "still refuses a dispatch beyond what is outstanding" do
+      transfer = create_transfer_with_line(requested: 10.0)
+      line = transfer.stock_transfer_lines.first
+
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "10" } }
+      expect(transfer.reload.open_shipments.count).to eq(1)
+
+      # Everything is already on the road, so there is nothing left to send.
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: { lines: { line.id => "4" } }
+
+      expect(flash[:alert]).to be_present
+      expect(transfer.reload.open_shipments.count).to eq(1)
     end
   end
 

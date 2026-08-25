@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_24_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_24_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -245,11 +245,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_24_120000) do
     t.uuid "company_id", null: false
     t.text "notes"
     t.string "legacy_code"
+    t.uuid "treasury_id"
     t.index ["company_id", "email"], name: "index_customers_on_company_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["company_id", "legacy_code"], name: "index_customers_on_company_id_and_legacy_code", where: "((legacy_code IS NOT NULL) AND ((legacy_code)::text <> ''::text))"
     t.index ["company_id", "phone"], name: "index_customers_on_company_id_and_phone", unique: true, where: "((phone IS NOT NULL) AND ((phone)::text <> ''::text))"
     t.index ["company_id", "phone_secondary"], name: "index_customers_on_company_id_and_phone_secondary", unique: true, where: "(phone_secondary IS NOT NULL)"
     t.index ["company_id"], name: "index_customers_on_company_id"
+    t.index ["treasury_id"], name: "index_customers_on_treasury_id"
   end
 
   create_table "digital_wallet_day_closes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1203,6 +1205,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_24_120000) do
     t.datetime "updated_at", null: false
     t.uuid "voided_by_id"
     t.datetime "voided_at"
+    t.text "receipt_notes"
     t.index ["received_by_id"], name: "index_stock_transfer_shipments_on_received_by_id"
     t.index ["sent_by_id"], name: "index_stock_transfer_shipments_on_sent_by_id"
     t.index ["stock_transfer_id", "sequence"], name: "idx_on_stock_transfer_id_sequence_1bc36b196f", unique: true
@@ -1258,6 +1261,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_24_120000) do
     t.datetime "updated_at", null: false
     t.date "transferred_on", null: false
     t.uuid "stock_transfer_template_id"
+    t.datetime "closed_short_at"
+    t.text "closed_short_reason"
+    t.uuid "closed_short_by_id"
+    t.index ["closed_short_by_id"], name: "index_stock_transfers_on_closed_short_by_id"
     t.index ["company_id", "transfer_number"], name: "index_stock_transfers_on_company_id_and_transfer_number", unique: true
     t.index ["company_id"], name: "index_stock_transfers_on_company_id"
     t.index ["from_location_id"], name: "index_stock_transfers_on_from_location_id"
@@ -1355,9 +1362,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_24_120000) do
     t.uuid "company_id", null: false
     t.uuid "supplier_id"
     t.boolean "restricted", default: false, null: false
+    t.uuid "customer_id"
     t.index ["active"], name: "index_treasuries_on_active"
     t.index ["company_id", "name"], name: "index_treasuries_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_treasuries_on_company_id"
+    t.index ["customer_id"], name: "index_treasuries_on_customer_id"
     t.index ["supplier_id"], name: "index_treasuries_on_supplier_id"
   end
 
@@ -1707,6 +1716,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_24_120000) do
   add_foreign_key "stock_transfers", "locations", column: "from_location_id"
   add_foreign_key "stock_transfers", "locations", column: "to_location_id"
   add_foreign_key "stock_transfers", "stock_transfer_templates", on_delete: :nullify
+  add_foreign_key "stock_transfers", "users", column: "closed_short_by_id", on_delete: :restrict
   add_foreign_key "stock_transfers", "users", column: "received_by_id"
   add_foreign_key "stock_transfers", "users", column: "requested_by_id"
   add_foreign_key "stock_transfers", "users", column: "sent_by_id"
