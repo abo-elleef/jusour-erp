@@ -82,12 +82,39 @@ class StockTransferLine < ApplicationRecord
     available_at_source.negative?
   end
 
+  # Units genuinely still on the road — only shipments that are still in transit.
+  # A shipment confirmed short is closed: whatever did not arrive is not travelling,
+  # it simply never made it.
+  #
+  # Summed in Ruby off the loaded association rather than in SQL, so the progress
+  # table does not fire a query per line.
+  def quantity_open_in_transit
+    shipment_lines = stock_transfer_shipment_lines
+    # Transfers predating the shipments table carry quantity_sent with no shipment
+    # rows at all. With no shipment to inspect there is no way to tell travelling
+    # from arrived, so keep the old arithmetic there rather than resurrecting an
+    # already-dispatched quantity as still-to-send.
+    return [quantity_sent.to_d - quantity_received.to_d, 0].max if shipment_lines.empty?
+
+    shipment_lines.sum do |shipment_line|
+      next 0.to_d unless shipment_line.stock_transfer_shipment&.in_transit?
+
+      [shipment_line.quantity_sent.to_d - shipment_line.quantity_received.to_d, 0].max
+    end
+  end
+
+  # What still has to leave the source to fulfil the request.
+  #
+  # Measured against what was RECEIVED, not what was dispatched. A shipment
+  # confirmed short means those units never arrived, so they still need sending —
+  # measuring against quantity_sent left the line looking fully dispatched while the
+  # destination had nothing, and the send table rendered no rows at all.
   def quantity_pending_send
-    [quantity_requested.to_d - quantity_sent.to_d, 0].max
+    [quantity_requested.to_d - quantity_received.to_d - quantity_open_in_transit, 0].max
   end
 
   def quantity_in_transit
-    [quantity_sent.to_d - quantity_received.to_d, 0].max
+    quantity_open_in_transit
   end
 
   def quantity_remaining_to_receive

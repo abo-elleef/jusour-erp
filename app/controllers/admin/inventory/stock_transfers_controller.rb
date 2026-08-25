@@ -28,7 +28,12 @@ module Admin
 
       def show
         authorize_inventory!(:show)
-        @lines = @stock_transfer.stock_transfer_lines.includes(ingredient: :ingredient_category).ordered
+        # Shipment lines are preloaded because quantity_open_in_transit reads them per
+        # line; without this the progress table fires a query per row.
+        @lines = @stock_transfer.stock_transfer_lines
+          .includes(ingredient: :ingredient_category,
+                    stock_transfer_shipment_lines: :stock_transfer_shipment)
+          .ordered
         @shipments = @stock_transfer.stock_transfer_shipments.ordered
           .includes(:sent_by, :received_by, :voided_by,
             stock_transfer_shipment_lines: { stock_transfer_line: { ingredient: :ingredient_category } })

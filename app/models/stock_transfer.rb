@@ -123,8 +123,12 @@ class StockTransfer < ApplicationRecord
     awaiting_receipt? && current_shipment&.in_transit?
   end
 
+  # Reloaded deliberately. Callers update lines through other associations (a
+  # shipment line's stock_transfer_line), so a stock_transfer_lines collection loaded
+  # earlier in the same request reads stale quantities — and this decides whether the
+  # transfer is marked completed. Called once per send/receive, so the query is cheap.
   def fully_fulfilled?
-    stock_transfer_lines.all?(&:fulfilled?)
+    stock_transfer_lines.reload.all?(&:fulfilled?)
   end
 
   def current_shipment
