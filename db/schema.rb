@@ -243,7 +243,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_24_120000) do
     t.datetime "updated_at", null: false
     t.string "phone_secondary"
     t.uuid "company_id", null: false
+    t.text "notes"
+    t.string "legacy_code"
     t.index ["company_id", "email"], name: "index_customers_on_company_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
+    t.index ["company_id", "legacy_code"], name: "index_customers_on_company_id_and_legacy_code", where: "((legacy_code IS NOT NULL) AND ((legacy_code)::text <> ''::text))"
     t.index ["company_id", "phone"], name: "index_customers_on_company_id_and_phone", unique: true, where: "((phone IS NOT NULL) AND ((phone)::text <> ''::text))"
     t.index ["company_id", "phone_secondary"], name: "index_customers_on_company_id_and_phone_secondary", unique: true, where: "(phone_secondary IS NOT NULL)"
     t.index ["company_id"], name: "index_customers_on_company_id"
