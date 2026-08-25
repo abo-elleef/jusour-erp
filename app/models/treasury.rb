@@ -3,7 +3,10 @@
 class Treasury < ApplicationRecord
   include Tenantable
 
-  TYPES = %w[cash_drawer bank safe petty_cash mobile_wallet other supplier_ap].freeze
+  TYPES = %w[cash_drawer bank safe petty_cash mobile_wallet other supplier_ap customer_ar].freeze
+
+  # System-managed ledger treasuries that must not be picked as normal cash sources.
+  LEDGER_TYPES = %w[supplier_ap customer_ar].freeze
 
   has_many :treasury_transactions, dependent: :destroy
   has_many :expenses, dependent: :restrict_with_error
@@ -16,6 +19,7 @@ class Treasury < ApplicationRecord
   has_many :outgoing_transfers, class_name: "TreasuryTransfer", foreign_key: :from_treasury_id, dependent: :restrict_with_error
   has_many :incoming_transfers, class_name: "TreasuryTransfer", foreign_key: :to_treasury_id, dependent: :restrict_with_error
   belongs_to :supplier, optional: true
+  belongs_to :customer, optional: true
 
   include MoneyInputs
 
@@ -34,9 +38,10 @@ class Treasury < ApplicationRecord
   scope :ordered, -> { order(:position, :name) }
   scope :cash_drawers, -> { where(treasury_type: "cash_drawer") }
   scope :safes, -> { where(treasury_type: %w[safe petty_cash]) }
-  # Exclude supplier AP ledgers from normal cash-flow selections
-  scope :payable, -> { where.not(treasury_type: "supplier_ap") }
+  # Exclude system-managed ledger treasuries (AP/AR) from normal cash-flow selections
+  scope :payable, -> { where.not(treasury_type: LEDGER_TYPES) }
   scope :supplier_ap, -> { where(treasury_type: "supplier_ap") }
+  scope :customer_ar, -> { where(treasury_type: "customer_ar") }
   # Restricted (owner/manager-only) treasuries are hidden from everyone else.
   scope :visible_to, ->(user) { (user&.owner? || user&.manager?) ? all : where(restricted: false) }
 

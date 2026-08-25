@@ -32,8 +32,14 @@ module Accounting
       "petty_cash"    => 1300,
       "mobile_wallet" => 1400,
       "other"         => 1500,
+      "customer_ar"   => 1150,
       "supplier_ap"   => 2000
     }.freeze
+
+    # SPIKE (AR): sales revenue account for credit sales. Distribution sales post
+    # DR Accounts Receivable / CR Sales Revenue — the genuine revenue recognition
+    # the POS/drawer flow never introduced.
+    SALES_REVENUE_CODE = 4001
 
     class << self
       # ── Expense ──────────────────────────────────────────────────────
@@ -269,6 +275,46 @@ module Accounting
                                     default: "Supplier Payment — #{payment.vendor_invoice.supplier.name}") do |lines|
           lines << debit(account_for_treasury(ap_treasury), payment.amount_cents, "liability")
           lines << credit(account_for_treasury(payment.treasury), payment.amount_cents, "asset")
+        end
+      end
+
+      # ── Customer credit sale (AR raised) ──────────────────────────────
+      # SPIKE: mirror of record_vendor_invoice!, on the customer side.
+      #   DR Accounts Receivable (customer AR treasury, asset)
+      #   CR Sales Revenue (4001)   [+ CR Tax Payable if tax is charged]
+      def record_customer_charge!(source:, customer:, date:, user:, amount_cents:, revenue_cents: nil, tax_cents: 0)
+        ar_treasury = customer.ar_treasury
+        return unless ar_treasury.present?
+
+        revenue_cents ||= amount_cents - tax_cents
+        create! source: source, date: date, user: user,
+                description: I18n.t("accounting.journal_entries.auto.customer_charge",
+                                    customer: customer.display_name,
+                                    default: "Credit sale — #{customer.display_name}") do |lines|
+          lines << debit(account_for_treasury(ar_treasury), amount_cents, "asset")
+          lines << credit({ code: SALES_REVENUE_CODE,
+                            name: I18n.t("accounting.journal_entries.accounts.sales_revenue", default: "Sales revenue") },
+                          revenue_cents, "revenue")
+          if tax_cents.positive?
+            lines << credit({ code: 2100, name: I18n.t("accounting.journal_entries.accounts.tax_payable", default: "Tax payable") },
+                            tax_cents, "liability")
+          end
+        end
+      end
+
+      # ── Customer payment (AR settled) ─────────────────────────────────
+      # SPIKE: mirror of record_vendor_invoice_payment!.
+      #   DR paying treasury (cash/bank, asset)   CR Accounts Receivable (asset)
+      def record_customer_receipt!(source:, customer:, treasury:, date:, user:, amount_cents:)
+        ar_treasury = customer.ar_treasury
+        return unless ar_treasury.present?
+
+        create! source: source, date: date, user: user,
+                description: I18n.t("accounting.journal_entries.auto.customer_receipt",
+                                    customer: customer.display_name,
+                                    default: "Customer payment — #{customer.display_name}") do |lines|
+          lines << debit(account_for_treasury(treasury), amount_cents, "asset")
+          lines << credit(account_for_treasury(ar_treasury), amount_cents, "asset")
         end
       end
 

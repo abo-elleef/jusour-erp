@@ -9,6 +9,10 @@ class Customer < ApplicationRecord
 
   has_many :orders, dependent: :nullify
   has_many :loyalty_transactions, dependent: :destroy
+  # SPIKE (AR): the customer's Accounts-Receivable ledger treasury. Its balance is
+  # the amount this customer currently owes us. Created lazily on first credit sale
+  # (mirrors Supplier#ap_treasury), so ordinary POS customers never get one.
+  belongs_to :ar_treasury, class_name: "Treasury", foreign_key: :treasury_id, optional: true
   has_many :addresses, class_name: "CustomerAddress", dependent: :destroy, inverse_of: :customer
 
   accepts_nested_attributes_for :addresses, allow_destroy: true,
@@ -35,6 +39,11 @@ class Customer < ApplicationRecord
 
   def display_name
     name.presence || phone.presence || phone_secondary.presence || email.presence || "Customer"
+  end
+
+  # Amount this customer currently owes us (0 when they have no AR ledger).
+  def ar_balance_cents
+    ar_treasury&.balance_cents || 0
   end
 
   def default_address
