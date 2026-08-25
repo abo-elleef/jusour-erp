@@ -94,10 +94,10 @@ module Admin
       end
 
       def destroy
-        Accounting::FixedAssetLedgerService.reverse_asset!(asset: @fixed_asset)
+        ::Accounting::FixedAssetLedgerService.reverse_asset!(asset: @fixed_asset)
         redirect_to admin_accounting_fixed_assets_path,
           notice: t("accounting.fixed_assets.flash.deleted")
-      rescue Accounting::FixedAssetLedgerService::Error => e
+      rescue ::Accounting::FixedAssetLedgerService::Error => e
         redirect_to admin_accounting_fixed_asset_path(@fixed_asset), alert: e.message
       end
 
