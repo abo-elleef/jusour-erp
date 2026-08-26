@@ -552,6 +552,7 @@ en:
       inventory:
         view: "View inventory"
         manage: "Manage inventory"
+        finance: "Inventory finance"
       accounting:
         ledgers: "Ledgers"
         transactions: "Transactions"

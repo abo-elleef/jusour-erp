@@ -190,7 +190,7 @@
   </div>
 
   <%# ── 3. Payment form ───────────────────────────────────────────────────── %>
-  <% if @vendor_invoice.payable? %>
+  <% if @vendor_invoice.payable? && current_user.can?("inventory:finance") %>
     <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mb-6 print-hide">
       <div class="px-5 py-4 border-b border-amber-100">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.record_payment_heading") %></h2>
@@ -297,7 +297,7 @@
                   <td class="p-3 text-gray-700"><%= payment.treasury.name %></td>
                   <td class="p-3 text-gray-700"><%= payment.user.name %></td>
                   <td class="p-3 pe-5 text-end">
-                    <% unless @vendor_invoice.void? %>
+                    <% if !@vendor_invoice.void? && current_user.can?("inventory:finance") %>
                       <%= button_to t("inventory.vendor_invoices.reverse_payment"),
                             admin_inventory_vendor_invoice_vendor_invoice_payment_path(@vendor_invoice, payment),
                             method: :delete,

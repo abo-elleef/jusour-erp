@@ -552,6 +552,7 @@ ar:
       inventory:
         view: "عرض المخزون"
         manage: "إدارة المخزون"
+        finance: "مالية المخزون"
       accounting:
         ledgers: "الدفاتر"
         transactions: "المعاملات"

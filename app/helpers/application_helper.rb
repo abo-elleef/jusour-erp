@@ -1245,7 +1245,21 @@ module ApplicationHelper
       raw[:arrow] = raw[:direction] == "up" ? "▲" : "▼"
     end
 
-    t("notifications.messages.#{key}", **raw.symbolize_keys, default: legacy)
+    # Replace plain supplier name and invoice number with links when IDs are stored.
+    has_links = false
+    if raw[:supplier_id].present? && raw[:supplier].present?
+      raw[:supplier] = link_to(raw[:supplier], admin_inventory_supplier_path(raw[:supplier_id]),
+                               class: "font-medium text-blue-600 hover:underline").html_safe
+      has_links = true
+    end
+    if raw[:vendor_invoice_id].present? && raw[:invoice_number].present?
+      raw[:invoice_number] = link_to(raw[:invoice_number], admin_inventory_vendor_invoice_path(raw[:vendor_invoice_id]),
+                                     class: "font-medium text-blue-600 hover:underline").html_safe
+      has_links = true
+    end
+
+    msg = t("notifications.messages.#{key}", **raw.symbolize_keys, default: legacy)
+    has_links ? msg.html_safe : msg
   end
 
   def account_type_classes(account_type)

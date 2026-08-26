@@ -24,11 +24,13 @@ module Inventory
           message_params: {
             name: ingredient.name,
             supplier: supplier&.name,
+            supplier_id: supplier&.id,
             old_price_cents: old_cents,
             new_price_cents: new_cents,
             percent: percent.abs,
             direction: direction,
-            invoice_number: invoice&.invoice_number
+            invoice_number: invoice&.invoice_number,
+            vendor_invoice_id: invoice&.id
           }
         )
       end
