@@ -32,4 +32,8 @@ class InventoryPolicy < ApplicationPolicy
   def record_vendor_invoice_payment?
     user&.can?("inventory:manage")
   end
+
+  def reverse_vendor_invoice_payment?
+    user&.can?("inventory:manage")
+  end
 end

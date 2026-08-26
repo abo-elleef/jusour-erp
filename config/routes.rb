@@ -313,6 +313,7 @@ Rails.application.routes.draw do
           patch :void
           patch :attach_invoice_image
         end
+        resources :vendor_invoice_payments, only: [:destroy], module: :vendor_invoices
       end
       resources :stock_takes, only: %i[index show create update] do
         member do

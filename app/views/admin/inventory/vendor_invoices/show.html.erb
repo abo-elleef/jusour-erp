@@ -285,7 +285,8 @@
                 <th class="p-3 ps-5 text-start"><%= t("inventory.vendor_invoices.payment_date") %></th>
                 <th class="p-3 text-end"><%= t("inventory.vendor_invoices.payment_amount") %></th>
                 <th class="p-3 text-start"><%= t("inventory.vendor_invoices.pay_from_treasury") %></th>
-                <th class="p-3 pe-5 text-start"><%= t("inventory.vendor_invoices.recorded_by") %></th>
+                <th class="p-3 text-start"><%= t("inventory.vendor_invoices.recorded_by") %></th>
+                <th class="p-3 pe-5"></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 table-zebra">
@@ -294,7 +295,18 @@
                   <td class="p-3 ps-5 tabular-nums"><%= l(payment.payment_date) %></td>
                   <td class="p-3 text-end tabular-nums font-semibold"><%= format_money(payment.amount_cents) %></td>
                   <td class="p-3 text-gray-700"><%= payment.treasury.name %></td>
-                  <td class="p-3 pe-5 text-gray-700"><%= payment.user.name %></td>
+                  <td class="p-3 text-gray-700"><%= payment.user.name %></td>
+                  <td class="p-3 pe-5 text-end">
+                    <% unless @vendor_invoice.void? %>
+                      <%= button_to t("inventory.vendor_invoices.reverse_payment"),
+                            admin_inventory_vendor_invoice_vendor_invoice_payment_path(@vendor_invoice, payment),
+                            method: :delete,
+                            form: { data: { turbo_confirm: t("inventory.vendor_invoices.reverse_payment_confirm",
+                                              amount: format_money(payment.amount_cents),
+                                              treasury: payment.treasury.name) } },
+                            class: "text-xs font-semibold text-red-600 hover:text-red-800 hover:underline bg-transparent border-0 cursor-pointer p-0" %>
+                    <% end %>
+                  </td>
                 </tr>
               <% end %>
             </tbody>
