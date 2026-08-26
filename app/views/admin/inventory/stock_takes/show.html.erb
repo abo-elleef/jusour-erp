@@ -103,7 +103,7 @@
                 <% has_variance = item.variance.present? && !item.variance.to_d.zero? %>
                 <% base_unit = item.ingredient.unit %>
                 <% available_units = item.ingredient.available_units %>
-                <% selected_unit = item.counted_unit.presence || base_unit %>
+                <% selected_unit = item.counted_unit.presence || item.ingredient.purchase_unit_record&.unit || base_unit %>
                 <% unit_opts = available_units.map { |u| [ingredient_unit_label(u), u] } %>
                 <% location_cost = @unit_costs[item.ingredient_id] %>
                 <% expected_value_cents = item.expected_value_cents(location_cost: location_cost) %>
@@ -191,7 +191,7 @@
             <% @items.each_with_index do |item, index| %>
               <% has_variance = item.variance.present? && !item.variance.to_d.zero? %>
               <% base_unit = item.ingredient.unit %>
-              <% counted_unit = item.counted_unit.presence || base_unit %>
+              <% counted_unit = item.counted_unit.presence || item.ingredient.purchase_unit_record&.unit || base_unit %>
               <% location_cost = @unit_costs[item.ingredient_id] %>
               <% expected_value_cents = item.expected_value_cents(location_cost: location_cost) %>
               <% counted_value_cents = item.counted_value_cents(location_cost: location_cost) %>
@@ -289,7 +289,7 @@
           <% @items.each do |item| %>
             <%= hidden_field_tag "stock_take_items[#{item.id}][counted_quantity]", item.counted_quantity %>
             <%= hidden_field_tag "stock_take_items[#{item.id}][counted_unit]",
-                  item.counted_unit.presence || item.ingredient.unit %>
+                  item.counted_unit.presence || item.ingredient.purchase_unit_record&.unit || item.ingredient.unit %>
           <% end %>
           <%= submit_tag t("inventory.stock_takes.show.confirm_button"),
                 class: "bg-green-700 hover:bg-green-800 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors",

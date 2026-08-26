@@ -114,7 +114,7 @@
                       <% end %>
                     <% end %>
                   </td>
-                  <td class="<%= cell %> text-gray-700"><%= ingredient_unit_label(row.ingredient.unit) %></td>
+                  <td class="<%= cell %> text-gray-700"><%= ingredient_unit_label(row.ingredient.purchase_unit) %></td>
                   <% if show_balance %>
                     <td class="<%= cell %> text-end tabular-nums text-gray-700">
                       <%= number_with_precision(row.expected_quantity, precision: 3, strip_insignificant_zeros: true) %>
