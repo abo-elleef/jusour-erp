@@ -302,6 +302,47 @@ module Accounting
         end
       end
 
+      # ── Customer credit note / sales return ───────────────────────────
+      # Reverses the AR raised by a sale (a return or allowance). Mirror-image of
+      # record_customer_charge!:  DR Sales Revenue (4001)   CR Accounts Receivable
+      def record_customer_credit_note!(source:, customer:, date:, user:, amount_cents:, revenue_cents: nil, tax_cents: 0)
+        ar_treasury = customer.ar_treasury
+        return unless ar_treasury.present?
+
+        revenue_cents ||= amount_cents - tax_cents
+        create! source: source, date: date, user: user,
+                description: I18n.t("accounting.journal_entries.auto.customer_credit_note",
+                                    customer: customer.display_name,
+                                    default: "Credit note — #{customer.display_name}") do |lines|
+          lines << debit({ code: SALES_REVENUE_CODE,
+                           name: I18n.t("accounting.journal_entries.accounts.sales_revenue", default: "Sales revenue") },
+                         revenue_cents, "revenue")
+          if tax_cents.positive?
+            lines << debit({ code: 2100, name: I18n.t("accounting.journal_entries.accounts.tax_payable", default: "Tax payable") },
+                           tax_cents, "liability")
+          end
+          lines << credit(account_for_treasury(ar_treasury), amount_cents, "asset")
+        end
+      end
+
+      # ── Customer opening AR balance (migration) ───────────────────────
+      # A balance the customer already owed us in the previous system. Not new
+      # revenue — it was recognized before — so it credits Equity, not Revenue.
+      #   DR Accounts Receivable (asset)   CR Retained Earnings / Equity
+      def record_customer_opening_balance!(source:, customer:, date:, user:, amount_cents:)
+        ar_treasury = customer.ar_treasury
+        return unless ar_treasury.present?
+
+        create! source: source, date: date, user: user,
+                description: I18n.t("accounting.journal_entries.auto.customer_opening_balance",
+                                    customer: customer.display_name,
+                                    default: "Opening balance — #{customer.display_name}") do |lines|
+          lines << debit(account_for_treasury(ar_treasury), amount_cents, "asset")
+          lines << credit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings", default: "Retained Earnings") },
+                          amount_cents, "equity")
+        end
+      end
+
       # ── Customer payment (AR settled) ─────────────────────────────────
       # SPIKE: mirror of record_vendor_invoice_payment!.
       #   DR paying treasury (cash/bank, asset)   CR Accounts Receivable (asset)

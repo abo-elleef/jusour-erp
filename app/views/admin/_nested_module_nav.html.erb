@@ -47,7 +47,7 @@
              class="<%= "hidden" unless group_open %> flex flex-col gap-0.5 pb-1">
           <% group[:tabs].each do |tab| %>
             <% tab_active = tab_active_proc.call(tab) %>
-            <%= link_to t(tab[:label]), public_send(tab[:path]),
+            <%= link_to bt_t(tab[:label]), public_send(tab[:path]),
                   class: "block py-1.5 px-2 rounded-lg text-sm transition-colors #{tab_active ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-800 hover:text-white"}" %>
           <% end %>
         </div>

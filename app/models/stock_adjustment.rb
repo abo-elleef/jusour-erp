@@ -14,7 +14,7 @@ class StockAdjustment < ApplicationRecord
     delivery vendor_invoice manual_add manual_remove
     waste_spoilage waste_prep waste_overproduction
     cycle_count_correction clear_all_stock consumption
-    production_consumption production_output
+    production_consumption production_output customer_sale customer_return
     transfer_out transfer_in
     consolidation_out consolidation_in
   ].freeze

@@ -1,0 +1,13 @@
+<% content_for :title, t("sales.credit_notes.new_title") %>
+
+<div class="max-w-5xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("sales.credit_notes.new_title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("sales.credit_notes.new_hint") %></p>
+    </div>
+    <%= link_to t("sales.credit_notes.back"), admin_sales_credit_notes_path,
+          class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+  </div>
+  <%= render "form", credit_note: @credit_note %>
+</div>

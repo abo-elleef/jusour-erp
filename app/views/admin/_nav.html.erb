@@ -29,6 +29,11 @@
       <%= admin_nav_icon(:customers) %><span><%= t("nav.customers") %></span>
     <% end %>
   <% end %>
+  <% if current_user.can?("customers:manage") && Current.company&.feature_enabled?(:ar_credit_sales) %>
+    <%= link_to admin_sales_customer_invoices_path, class: admin_nav_link_class(admin_nav_active?("admin/sales")) do %>
+      <%= admin_nav_icon(:orders) %><span><%= t("nav.sales") %></span>
+    <% end %>
+  <% end %>
 <% end %>
 
 <%# ── Stock & finance ──────────────────────────────────────── %>
@@ -65,7 +70,7 @@
 <% end %>
 
 <%# ── Launch (operational apps — switch into a different workspace) %>
-<% if current_user.can?("pos:access") || current_user.can?("kitchen:access") || current_user.can?("production:access") %>
+<% if Current.company.restaurant? && (current_user.can?("pos:access") || current_user.can?("kitchen:access") || current_user.can?("production:access")) %>
   <div class="my-2 border-t border-gray-800"></div>
   <span class="<%= section %>"><%= t("nav.groups.launch") %></span>
   <div class="flex flex-wrap gap-1.5 px-1 mt-1">

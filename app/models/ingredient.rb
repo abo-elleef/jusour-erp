@@ -3,6 +3,7 @@
 class Ingredient < ApplicationRecord
   include Tenantable
   include UnitReferenced
+  include MoneyInputs
 
   # Stock qty moves via adjustments; keep master-data history free of that noise.
   audited associated_with: :company, except: %i[quantity_on_hand]
@@ -30,6 +31,9 @@ class Ingredient < ApplicationRecord
     foreign_key: :output_ingredient_id, dependent: :restrict_with_error, inverse_of: :output_ingredient
 
   monetize :cost_per_unit_cents
+  # Suggested selling price — a guide for sales when building customer invoices.
+  monetize :selling_price_cents
+  money_input :selling_price_cents
 
   before_validation :assign_code, on: :create
 

@@ -1,0 +1,47 @@
+<% content_for :title, t("sales.statements.title") %>
+
+<div class="max-w-4xl">
+  <%= render "admin/sales/nav" %>
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("sales.statements.title") %></h1>
+    <p class="text-gray-600 text-sm mt-1"><%= t("sales.statements.description") %></p>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-gray-200 p-4 mb-6 inline-block min-w-[14rem]">
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.statements.total_ar") %></p>
+    <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= format_money(@total_ar_cents) %></p>
+  </div>
+
+  <% if @customers.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5"><%= t("sales.statements.table.customer") %></th>
+            <th class="p-3"><%= t("sales.statements.table.tier") %></th>
+            <th class="p-3 text-end pe-5"><%= t("sales.statements.table.balance") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @customers.each do |customer| %>
+            <tr class="hover:bg-gray-100 transition-colors">
+              <td class="p-3 ps-5">
+                <%= link_to customer.display_name, admin_sales_customer_statement_path(customer),
+                      class: "font-semibold text-amber-700 hover:text-amber-800" %>
+              </td>
+              <td class="p-3 text-gray-600"><%= customer.price_tier&.name || t("customers.form.no_tier") %></td>
+              <td class="p-3 text-end pe-5 tabular-nums font-semibold <%= @balances[customer].positive? ? 'text-amber-700' : 'text-gray-400' %>">
+                <%= format_money(@balances[customer]) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("sales.statements.empty_title") %></p>
+      <p class="text-gray-500 text-sm"><%= t("sales.statements.empty_hint") %></p>
+    </section>
+  <% end %>
+</div>

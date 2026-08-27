@@ -1,0 +1,14 @@
+<%# locals: invoice %>
+<% chip = "text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border" %>
+<% if invoice.void? %>
+  <span class="<%= chip %> bg-gray-100 text-gray-600 border-gray-200"><%= t("sales.customer_invoices.statuses.void") %></span>
+<% elsif invoice.draft? %>
+  <span class="<%= chip %> bg-amber-50 text-amber-800 border-amber-200"><%= t("sales.customer_invoices.statuses.draft") %></span>
+<% else %>
+  <% classes = { "unpaid" => "bg-red-50 text-red-700 border-red-200",
+                 "partially_paid" => "bg-blue-50 text-blue-700 border-blue-200",
+                 "paid" => "bg-green-100 text-green-800 border-green-200" } %>
+  <span class="<%= chip %> <%= classes[invoice.payment_status] %>">
+    <%= t("sales.customer_invoices.payment_statuses.#{invoice.payment_status}") %>
+  </span>
+<% end %>

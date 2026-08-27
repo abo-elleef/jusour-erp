@@ -6,6 +6,7 @@ module Admin
     # Edits autosave one batch at a time via #update and return refreshed per-user
     # summaries so the pay column stays live.
     class AttendanceController < BaseController
+      before_action { require_feature!(:attendance) }
       include StaffLocationFilter
 
       def index

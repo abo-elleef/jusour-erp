@@ -10,6 +10,11 @@
       <% end %>
     </div>
     <p class="text-sm text-gray-400 mt-1 font-mono"><%= @company.slug %> · <%= @company.currency %> · <%= @company.timezone %></p>
+    <p class="text-xs mt-1">
+      <span class="inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold <%= @company.distribution? ? 'bg-amber-500/20 text-amber-300' : 'bg-indigo-500/20 text-indigo-300' %>">
+        <%= @company.distribution? ? "Distribution / Wholesale" : "Restaurant / Café" %>
+      </span>
+    </p>
   </div>
   <div class="flex gap-2 shrink-0">
     <%= link_to "Edit", edit_super_admin_company_path(@company),

@@ -6,7 +6,7 @@ class TreasuryTransaction < ApplicationRecord
   # fixed_asset_purchase / fixed_asset_payment are investing flows, not operating —
   # buying a machine is a balance-sheet swap, not an expense. Kept distinct from
   # `expense` so the cash flow statement can classify them correctly.
-  KINDS = %w[expense income drawer_open drawer_reconcile adjustment transfer ap_invoice ap_payment ar_invoice ar_payment payroll_advance payroll_salary staff_meal online_payment journal_entry fixed_asset_purchase fixed_asset_payment].freeze
+  KINDS = %w[expense income drawer_open drawer_reconcile adjustment transfer ap_invoice ap_payment ar_invoice ar_payment ar_credit_note payroll_advance payroll_salary staff_meal online_payment journal_entry fixed_asset_purchase fixed_asset_payment].freeze
 
   belongs_to :treasury
   belongs_to :user

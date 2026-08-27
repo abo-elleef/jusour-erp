@@ -28,6 +28,15 @@ module ApplicationHelper
     end
   end
 
+  # Sidebar brand: "<Company> Admin", derived from the current tenant's slug
+  # (titleized for display). Falls back to the generic app name off-tenant.
+  def admin_brand_name
+    brand = Current.company&.slug.to_s.titleize.presence
+    return t("app.admin_name") if brand.blank?
+
+    t("app.admin_name_for", brand: brand, default: "#{brand} Admin")
+  end
+
   def html_dir
     I18n.locale == :ar ? "rtl" : "ltr"
   end
@@ -300,7 +309,26 @@ module ApplicationHelper
           else "title"
           end
     scope = controller_path.delete_prefix("admin/").delete_prefix("inventory/").delete_prefix("accounting/")
-    t("admin.pages.#{scope}.#{key}", default: controller_name.humanize)
+    bt_t("admin.pages.#{scope}.#{key}", default: controller_name.humanize)
+  end
+
+  # Business-type-aware relabeling (step 5). A distribution company sees "Product"
+  # where a restaurant sees "Ingredient", etc. Only a handful of high-visibility
+  # labels are remapped; everything else falls through to the normal translation.
+  BUSINESS_TERM_OVERRIDES = {
+    "distribution" => {
+      "inventory.tools.ingredients"              => "glossary.distribution.products",
+      "inventory.tools.ingredient_categories"    => "glossary.distribution.product_categories",
+      "admin.pages.ingredients.title"            => "glossary.distribution.products",
+      "admin.pages.ingredient_categories.title"  => "glossary.distribution.product_categories",
+      "inventory.ingredients.index.new_button"   => "glossary.distribution.new_product",
+      "inventory.ingredients.index.description"  => "glossary.distribution.products_description"
+    }
+  }.freeze
+
+  def bt_t(key, **opts)
+    override = BUSINESS_TERM_OVERRIDES.dig(Current.company&.business_type.to_s, key.to_s)
+    override ? t(override, **opts) : t(key, **opts)
   end
 
   def locale_button_class(locale)
@@ -1028,8 +1056,16 @@ module ApplicationHelper
   # ── Permission-driven accounting nav ─────────────────────────────
   # Only tabs the user can? see are rendered; group/section links land on the
   # first accessible tab, so clicking never 403s.
+  # A tab is shown only when the user has the permission AND the module it belongs
+  # to is enabled for this company's business profile (tabs with no :feature are
+  # always feature-enabled).
+  def tab_feature_enabled?(tab)
+    feature = tab[:feature]
+    feature.nil? || Current.company&.feature_enabled?(feature)
+  end
+
   def accounting_visible_tabs(group)
-    group[:tabs].select { |tab| current_user.can?(tab[:permission]) }
+    group[:tabs].select { |tab| tab_feature_enabled?(tab) && current_user.can?(tab[:permission]) }
   end
 
   def accounting_visible_groups
@@ -1071,7 +1107,7 @@ module ApplicationHelper
 
   # ── Permission-driven inventory nav ──────────────────────────────
   def inventory_visible_tabs(group)
-    group[:tabs].select { |tab| current_user.can?(tab[:permission]) }
+    group[:tabs].select { |tab| tab_feature_enabled?(tab) && current_user.can?(tab[:permission]) }
   end
 
   def inventory_visible_groups

@@ -5,6 +5,7 @@ module Admin
     # Month-end review of late penalties logged from the attendance grid.
     # Grouped by staff so managers can waive (delete) some before payroll.
     class LatePenaltiesController < BaseController
+      before_action { require_feature!(:attendance) }
       include StaffLocationFilter
 
       def index

@@ -1,0 +1,95 @@
+<%# locals: credit_note %>
+<% input_class = pos_input_class %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% available_units = @ingredients.to_h { |i| [i.id, i.available_units.map { |u| [ingredient_unit_label(u), u] }] } %>
+
+<%= form_with model: credit_note, url: admin_sales_credit_notes_path, method: :post,
+      class: "space-y-6",
+      data: {
+        controller: "customer-invoice-lines",
+        searchable_select_options: ingredient_search_options(@ingredients),
+        customer_invoice_lines_available_units_value: available_units.to_json
+      } do |f| %>
+  <% if credit_note.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <%= credit_note.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.credit_notes.form.details") %></h2>
+    </div>
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div>
+        <%= f.label :customer_id, t("sales.customer_invoices.form.customer"), class: label_class %>
+        <%= f.collection_select :customer_id, @customers, :id, :display_name,
+              { prompt: t("sales.customer_invoices.form.select_customer") },
+              class: "#{input_class} appearance-none", required: true %>
+      </div>
+      <div>
+        <%= f.label :location_id, t("sales.customer_invoices.form.location"), class: label_class %>
+        <%= f.collection_select :location_id, @locations, :id, :name,
+              { prompt: t("sales.customer_invoices.form.select_location") },
+              class: "#{input_class} appearance-none", required: true %>
+      </div>
+      <div>
+        <%= f.label :customer_invoice_id, t("sales.credit_notes.form.against_invoice"), class: label_class %>
+        <%= f.collection_select :customer_invoice_id, @invoices, :id, :invoice_number,
+              { include_blank: t("sales.credit_notes.form.no_invoice") },
+              class: "#{input_class} appearance-none" %>
+        <p class="text-xs text-gray-500 mt-1"><%= t("sales.credit_notes.form.against_invoice_hint") %></p>
+      </div>
+      <div>
+        <%= f.label :credit_note_date, t("sales.customer_invoices.form.invoice_date"), class: label_class %>
+        <%= f.date_field :credit_note_date, class: input_class %>
+      </div>
+      <div class="sm:col-span-2 rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+        <label class="flex items-start gap-2.5 cursor-pointer">
+          <%= f.check_box :restock, class: "mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600" %>
+          <span>
+            <span class="block text-sm font-medium text-gray-900"><%= t("sales.credit_notes.form.restock") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("sales.credit_notes.form.restock_hint") %></span>
+          </span>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.credit_notes.form.line_items") %></h2>
+      <div class="flex items-center gap-4">
+        <p class="text-sm text-gray-600">
+          <%= t("sales.customer_invoices.form.total") %>
+          <span class="font-bold text-gray-900 tabular-nums" data-customer-invoice-lines-target="runningTotal">0.00</span>
+        </p>
+        <button type="button"
+                class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-2 rounded-xl border border-amber-200 transition-colors"
+                data-action="customer-invoice-lines#add">
+          <span aria-hidden="true">+</span> <%= t("sales.customer_invoices.form.add_line") %>
+        </button>
+      </div>
+    </div>
+    <div class="divide-y divide-gray-100" data-customer-invoice-lines-target="list">
+      <%= f.fields_for :credit_note_lines do |line_f| %>
+        <%= render "line_fields", f: line_f %>
+      <% end %>
+    </div>
+    <template data-customer-invoice-lines-target="template">
+      <%= f.fields_for :credit_note_lines, CreditNoteLine.new, child_index: "NEW_RECORD" do |line_f| %>
+        <%= render "line_fields", f: line_f %>
+      <% end %>
+    </template>
+  </section>
+
+  <div class="flex flex-wrap items-center gap-3 pb-8">
+    <%= f.submit t("sales.customer_invoices.form.save_draft"), name: "commit_action", value: "draft",
+          formnovalidate: true,
+          class: "bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-6 py-2.5 rounded-xl border border-gray-300 transition-colors" %>
+    <%= f.submit t("sales.credit_notes.form.save_and_confirm"), name: "commit_action", value: "confirm",
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
+    <%= link_to t("actions.cancel"), admin_sales_credit_notes_path,
+          class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+  </div>
+<% end %>

@@ -36,6 +36,53 @@
     </div>
   </section>
 
+  <% if Current.company&.feature_enabled?(:ar_credit_sales) %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("customers.form.commercial_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("customers.form.commercial_hint") %></p>
+      </div>
+      <div class="p-5 space-y-5">
+        <div>
+          <%= f.label :customer_type, t("customers.form.customer_type"), class: label_class %>
+          <%= f.select :customer_type,
+                options_for_select(
+                  Customer::CUSTOMER_TYPES.map { |t| [t("customers.form.types.#{t}"), t] },
+                  customer.customer_type
+                ),
+                {}, class: "#{pos_input_class} appearance-none" %>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <%= f.label :price_tier_id, t("customers.form.price_tier"), class: label_class %>
+            <%= f.collection_select :price_tier_id, PriceTier.active.ordered, :id, :name,
+                  { include_blank: t("customers.form.no_tier") }, class: "#{pos_input_class} appearance-none" %>
+          </div>
+          <div>
+            <%= f.label :discount_override_percent, t("customers.form.discount_override"), class: label_class %>
+            <%= f.number_field :discount_override_percent, step: 0.01, min: 0, max: 100, class: pos_input_class, placeholder: "—" %>
+            <p class="text-xs text-gray-500 mt-1"><%= t("customers.form.discount_override_hint") %></p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <%= f.label :credit_warning_limit_pounds, t("customers.form.warning_limit"), class: label_class %>
+            <%= f.number_field :credit_warning_limit_pounds, step: 0.01, min: 0, class: pos_input_class, placeholder: "—" %>
+          </div>
+          <div>
+            <%= f.label :credit_hard_limit_pounds, t("customers.form.hard_limit"), class: label_class %>
+            <%= f.number_field :credit_hard_limit_pounds, step: 0.01, min: 0, class: pos_input_class, placeholder: "—" %>
+          </div>
+          <div>
+            <%= f.label :credit_terms_days, t("customers.form.terms_days"), class: label_class %>
+            <%= f.number_field :credit_terms_days, step: 1, min: 0, class: pos_input_class, placeholder: "0" %>
+          </div>
+        </div>
+        <p class="text-xs text-gray-500"><%= t("customers.form.credit_limits_hint") %></p>
+      </div>
+    </section>
+  <% end %>
+
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden"
            data-controller="customer-addresses">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex justify-between items-center gap-2">

@@ -1,0 +1,5 @@
+<% content_for :title, @tier.name %>
+<div class="max-w-md">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-6"><%= t("sales.price_tiers.edit_title", name: @tier.name) %></h1>
+  <%= render "form", tier: @tier %>
+</div>

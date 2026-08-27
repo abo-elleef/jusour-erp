@@ -104,6 +104,24 @@ Rails.application.routes.draw do
 
   namespace :admin do
     root "dashboard#index"
+
+    # Distribution sales (AR / credit sales) — gated behind the ar_credit_sales feature.
+    namespace :sales do
+      resources :customer_invoices, only: %i[index new create show] do
+        member do
+          post :confirm
+          post :record_payment
+        end
+      end
+      resources :credit_notes, only: %i[index new create show] do
+        member { post :confirm }
+      end
+      resources :price_tiers, except: %i[show]
+      resources :customer_statements, only: %i[index show] do
+        member { post :record_payment }
+      end
+    end
+
     resources :categories do
       patch :reorder, on: :collection
     end
@@ -338,6 +356,15 @@ Rails.application.routes.draw do
         member { post :run }
         collection { patch :reorder }
         resources :lines, only: %i[create destroy], controller: "manufacturing_template_lines"
+      end
+      resources :import_shipments, only: %i[index new create show] do
+        member do
+          post :add_cost
+          delete :remove_cost
+          post :attach_invoice
+          delete :detach_invoice
+          post :finalize
+        end
       end
       resources :manufacturing_runs, only: %i[index show new create] do
         member { post :reverse }

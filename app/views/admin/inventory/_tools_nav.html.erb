@@ -19,7 +19,7 @@
   <% if current_group && inventory_visible_tabs(current_group).any? %>
     <div class="flex flex-wrap gap-x-1 bg-gray-50 border-b border-gray-200 -mb-px ps-2">
       <% inventory_visible_tabs(current_group).each do |tab| %>
-        <%= link_to t(tab[:label]), public_send(tab[:path]),
+        <%= link_to bt_t(tab[:label]), public_send(tab[:path]),
               class: admin_section_tab_class(inventory_tab_active?(tab)) %>
       <% end %>
     </div>

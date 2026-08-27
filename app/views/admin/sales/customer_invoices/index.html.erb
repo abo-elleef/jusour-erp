@@ -1,0 +1,79 @@
+<% content_for :title, t("sales.customer_invoices.title") %>
+
+<div class="max-w-6xl">
+  <%= render "admin/sales/nav" %>
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("sales.customer_invoices.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("sales.customer_invoices.description") %></p>
+    </div>
+    <%= link_to new_admin_sales_customer_invoice_path,
+          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
+      <span aria-hidden="true">+</span> <%= t("sales.customer_invoices.new_button") %>
+    <% end %>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-gray-200 p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.customer_invoices.stats.outstanding") %></p>
+      <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= format_money(@outstanding_cents) %></p>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-200 p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.customer_invoices.stats.drafts") %></p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @draft_count %></p>
+    </div>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-2 text-sm mb-4">
+    <span class="text-gray-500 me-1"><%= t("sales.customer_invoices.filter") %>:</span>
+    <% [[nil, "all"], ["draft", "draft"], ["confirmed", "confirmed"]].each do |val, key| %>
+      <%= link_to t("sales.customer_invoices.statuses.#{key}"),
+            admin_sales_customer_invoices_path(status: val),
+            class: "px-3 py-1.5 rounded-lg font-medium border transition-colors #{@status == val ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" %>
+    <% end %>
+  </div>
+
+  <% if @invoices.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm min-w-[48rem]">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5"><%= t("sales.customer_invoices.table.number") %></th>
+              <th class="p-3"><%= t("sales.customer_invoices.table.customer") %></th>
+              <th class="p-3"><%= t("sales.customer_invoices.table.date") %></th>
+              <th class="p-3"><%= t("sales.customer_invoices.table.status") %></th>
+              <th class="p-3 text-end"><%= t("sales.customer_invoices.table.total") %></th>
+              <th class="p-3 text-end pe-5"><%= t("sales.customer_invoices.table.balance") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @invoices.each do |inv| %>
+              <tr class="hover:bg-gray-100 transition-colors">
+                <td class="p-3 ps-5">
+                  <%= link_to inv.invoice_number, admin_sales_customer_invoice_path(inv),
+                        class: "font-semibold text-amber-700 hover:text-amber-800 tabular-nums" %>
+                </td>
+                <td class="p-3 text-gray-700"><%= inv.customer.display_name %></td>
+                <td class="p-3 text-gray-600 tabular-nums"><%= l(inv.invoice_date, format: :short) %></td>
+                <td class="p-3"><%= render "status_badge", invoice: inv %></td>
+                <td class="p-3 text-end tabular-nums text-gray-700"><%= format_money(inv.total_cents) %></td>
+                <td class="p-3 text-end pe-5 tabular-nums font-semibold <%= inv.balance_due_cents.positive? ? 'text-amber-700' : 'text-gray-400' %>">
+                  <%= format_money(inv.balance_due_cents) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("sales.customer_invoices.empty_title") %></p>
+      <p class="text-gray-500 text-sm mb-5"><%= t("sales.customer_invoices.empty_hint") %></p>
+      <%= link_to t("sales.customer_invoices.new_button"), new_admin_sales_customer_invoice_path,
+            class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+    </section>
+  <% end %>
+</div>

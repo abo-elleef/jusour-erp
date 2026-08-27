@@ -389,7 +389,7 @@ module Admin
       def ingredient_params
         permitted = params.require(:ingredient).permit(
           :name, :code, :ingredient_category_id, :unit_id, :reorder_threshold, :max_quantity,
-          :quantity_on_hand, :cost_per_unit_dollars, :active, :shelf_life_days,
+          :quantity_on_hand, :cost_per_unit_dollars, :selling_price_pounds, :active, :shelf_life_days,
           ingredient_units_attributes: %i[id unit_id base_units_per_unit purchase_unit _destroy]
         )
         # Only touch the cost when the request actually carried the field. Coercing

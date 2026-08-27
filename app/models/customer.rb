@@ -2,10 +2,15 @@
 
 class Customer < ApplicationRecord
   include Tenantable
+  include MoneyInputs
 
   INDEX_SORTABLE_COLUMNS = %w[name phone loyalty_points total_spent_cents created_at].freeze
   INDEX_DEFAULT_SORT = "created_at"
   INDEX_DEFAULT_SORT_DIRECTION = "desc"
+
+  # regular = the everyday customer (a "doctor" in dental terms; cash/immediate);
+  # commercial = a credit client with negotiated pricing and an AR balance.
+  CUSTOMER_TYPES = %w[regular commercial].freeze
 
   has_many :orders, dependent: :nullify
   has_many :loyalty_transactions, dependent: :destroy
@@ -13,6 +18,9 @@ class Customer < ApplicationRecord
   # the amount this customer currently owes us. Created lazily on first credit sale
   # (mirrors Supplier#ap_treasury), so ordinary POS customers never get one.
   belongs_to :ar_treasury, class_name: "Treasury", foreign_key: :treasury_id, optional: true
+  belongs_to :price_tier, optional: true
+  has_many :customer_invoices, dependent: :restrict_with_error
+  has_many :customer_payments, dependent: :restrict_with_error
   has_many :addresses, class_name: "CustomerAddress", dependent: :destroy, inverse_of: :customer
 
   accepts_nested_attributes_for :addresses, allow_destroy: true,
@@ -20,6 +28,12 @@ class Customer < ApplicationRecord
 
   before_validation :normalize_contact_fields
 
+  validates :customer_type, inclusion: { in: CUSTOMER_TYPES }
+  validates :discount_override_percent,
+    numericality: { greater_than_or_equal_to: 0, less_than_or_equal_to: 100 }, allow_nil: true
+  validates :credit_warning_limit_cents, :credit_hard_limit_cents,
+    numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
+  validates :credit_terms_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }, allow_nil: true
   validates :email, uniqueness: { scope: :company_id }, allow_blank: true
   validates :phone, uniqueness: { scope: :company_id }, allow_blank: true
   validates :phone_secondary, uniqueness: { scope: :company_id }, allow_blank: true
@@ -28,6 +42,7 @@ class Customer < ApplicationRecord
   validate :phones_unique_across_columns
 
   monetize :total_spent_cents, allow_nil: false
+  money_input :credit_warning_limit_cents, :credit_hard_limit_cents
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[name email phone phone_secondary loyalty_points total_spent_cents created_at updated_at]
@@ -44,6 +59,32 @@ class Customer < ApplicationRecord
   # Amount this customer currently owes us (0 when they have no AR ledger).
   def ar_balance_cents
     ar_treasury&.balance_cents || 0
+  end
+
+  def commercial?
+    customer_type == "commercial"
+  end
+
+  # The discount % applied to this customer's sale lines: a per-customer override
+  # wins over their tier; neither set means no discount.
+  def effective_discount_percent
+    return discount_override_percent if discount_override_percent.present?
+
+    price_tier&.discount_percent || 0
+  end
+
+  # Credit standing for a prospective AR balance (e.g. after adding a new invoice):
+  #   :blocked  — at/over the hard limit (sale must be refused)
+  #   :warning  — at/over the soft warning limit (allowed, but flag it)
+  #   :ok       — within limits (or no limits configured)
+  def credit_status_for(prospective_balance_cents)
+    if credit_hard_limit_cents.present? && prospective_balance_cents > credit_hard_limit_cents
+      :blocked
+    elsif credit_warning_limit_cents.present? && prospective_balance_cents > credit_warning_limit_cents
+      :warning
+    else
+      :ok
+    end
   end
 
   def default_address

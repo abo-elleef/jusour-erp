@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_08_27_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -197,6 +197,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "business_type", default: "restaurant", null: false
+    t.jsonb "feature_overrides", default: {}, null: false
     t.index ["slug"], name: "index_companies_on_slug", unique: true
   end
 
@@ -222,6 +224,43 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
     t.index ["company_id"], name: "index_company_settings_on_company_id", unique: true
   end
 
+  create_table "credit_note_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "credit_note_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.uuid "unit_id"
+    t.decimal "quantity", precision: 12, scale: 3, null: false
+    t.bigint "unit_price_cents", default: 0, null: false
+    t.bigint "line_total_cents", default: 0, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["credit_note_id"], name: "index_credit_note_lines_on_credit_note_id"
+    t.index ["ingredient_id"], name: "index_credit_note_lines_on_ingredient_id"
+  end
+
+  create_table "credit_notes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "customer_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "location_id", null: false
+    t.uuid "customer_invoice_id"
+    t.string "credit_note_number", null: false
+    t.date "credit_note_date", null: false
+    t.string "status", default: "draft", null: false
+    t.boolean "restock", default: true, null: false
+    t.bigint "total_cents", default: 0, null: false
+    t.datetime "confirmed_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "credit_note_number"], name: "index_credit_notes_on_company_id_and_credit_note_number", unique: true
+    t.index ["company_id"], name: "index_credit_notes_on_company_id"
+    t.index ["customer_id"], name: "index_credit_notes_on_customer_id"
+    t.index ["customer_invoice_id"], name: "index_credit_notes_on_customer_invoice_id"
+    t.index ["location_id"], name: "index_credit_notes_on_location_id"
+    t.index ["user_id"], name: "index_credit_notes_on_user_id"
+  end
+
   create_table "customer_addresses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "customer_id", null: false
     t.string "label"
@@ -231,6 +270,61 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["customer_id"], name: "index_customer_addresses_on_customer_id"
+  end
+
+  create_table "customer_invoice_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "customer_invoice_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.uuid "unit_id"
+    t.decimal "quantity", precision: 12, scale: 3, null: false
+    t.bigint "unit_price_cents", default: 0, null: false
+    t.bigint "line_total_cents", default: 0, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_invoice_id"], name: "index_customer_invoice_lines_on_customer_invoice_id"
+    t.index ["ingredient_id"], name: "index_customer_invoice_lines_on_ingredient_id"
+  end
+
+  create_table "customer_invoices", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "customer_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "location_id", null: false
+    t.string "invoice_number", null: false
+    t.date "invoice_date", null: false
+    t.string "status", default: "draft", null: false
+    t.string "payment_status", default: "unpaid", null: false
+    t.bigint "total_cents", default: 0, null: false
+    t.bigint "amount_paid_cents", default: 0, null: false
+    t.datetime "confirmed_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.uuid "salesperson_id"
+    t.index ["company_id", "invoice_number"], name: "index_customer_invoices_on_company_id_and_invoice_number", unique: true
+    t.index ["company_id", "status"], name: "index_customer_invoices_on_company_id_and_status"
+    t.index ["company_id"], name: "index_customer_invoices_on_company_id"
+    t.index ["customer_id"], name: "index_customer_invoices_on_customer_id"
+    t.index ["location_id"], name: "index_customer_invoices_on_location_id"
+    t.index ["salesperson_id"], name: "index_customer_invoices_on_salesperson_id"
+    t.index ["user_id"], name: "index_customer_invoices_on_user_id"
+  end
+
+  create_table "customer_payments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "customer_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "treasury_id", null: false
+    t.bigint "amount_cents", null: false
+    t.date "payment_date", null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_customer_payments_on_company_id"
+    t.index ["customer_id"], name: "index_customer_payments_on_customer_id"
+    t.index ["treasury_id"], name: "index_customer_payments_on_treasury_id"
+    t.index ["user_id"], name: "index_customer_payments_on_user_id"
   end
 
   create_table "customers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -246,11 +340,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
     t.text "notes"
     t.string "legacy_code"
     t.uuid "treasury_id"
+    t.string "customer_type", default: "regular", null: false
+    t.uuid "price_tier_id"
+    t.decimal "discount_override_percent", precision: 5, scale: 2
+    t.bigint "credit_warning_limit_cents"
+    t.bigint "credit_hard_limit_cents"
+    t.integer "credit_terms_days"
     t.index ["company_id", "email"], name: "index_customers_on_company_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["company_id", "legacy_code"], name: "index_customers_on_company_id_and_legacy_code", where: "((legacy_code IS NOT NULL) AND ((legacy_code)::text <> ''::text))"
     t.index ["company_id", "phone"], name: "index_customers_on_company_id_and_phone", unique: true, where: "((phone IS NOT NULL) AND ((phone)::text <> ''::text))"
     t.index ["company_id", "phone_secondary"], name: "index_customers_on_company_id_and_phone_secondary", unique: true, where: "(phone_secondary IS NOT NULL)"
     t.index ["company_id"], name: "index_customers_on_company_id"
+    t.index ["price_tier_id"], name: "index_customers_on_price_tier_id"
     t.index ["treasury_id"], name: "index_customers_on_treasury_id"
   end
 
@@ -383,6 +484,23 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
     t.index ["company_id"], name: "index_gift_cards_on_company_id"
   end
 
+  create_table "import_shipments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "location_id"
+    t.string "shipment_number", null: false
+    t.string "status", default: "open", null: false
+    t.date "arrival_date"
+    t.datetime "finalized_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "shipment_number"], name: "index_import_shipments_on_company_id_and_shipment_number", unique: true
+    t.index ["company_id"], name: "index_import_shipments_on_company_id"
+    t.index ["location_id"], name: "index_import_shipments_on_location_id"
+    t.index ["user_id"], name: "index_import_shipments_on_user_id"
+  end
+
   create_table "income_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "category_type", null: false
@@ -477,6 +595,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
     t.uuid "unit_id", null: false
     t.string "code", null: false
     t.decimal "max_quantity", precision: 10, scale: 3, default: "0.0", null: false
+    t.bigint "selling_price_cents", default: 0, null: false
     t.index "company_id, lower((code)::text)", name: "index_ingredients_on_company_and_lower_code", unique: true
     t.index ["active"], name: "index_ingredients_on_active"
     t.index ["company_id", "name"], name: "index_ingredients_on_company_id_and_name", unique: true
@@ -971,6 +1090,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
     t.index ["user_id"], name: "index_payroll_snapshots_on_user_id"
   end
 
+  create_table "price_tiers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "name", null: false
+    t.decimal "discount_percent", precision: 5, scale: 2, default: "0.0", null: false
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "name"], name: "index_price_tiers_on_company_id_and_name", unique: true
+    t.index ["company_id"], name: "index_price_tiers_on_company_id"
+  end
+
   create_table "print_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id", null: false
     t.uuid "printer_id"
@@ -1071,6 +1202,23 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
     t.index ["user_id"], name: "index_shift_logs_on_user_id"
   end
 
+  create_table "shipment_costs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "import_shipment_id", null: false
+    t.uuid "user_id", null: false
+    t.uuid "treasury_id"
+    t.uuid "expense_id"
+    t.string "cost_type", null: false
+    t.bigint "amount_cents", null: false
+    t.date "incurred_on", null: false
+    t.text "description"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expense_id"], name: "index_shipment_costs_on_expense_id"
+    t.index ["import_shipment_id"], name: "index_shipment_costs_on_import_shipment_id"
+    t.index ["treasury_id"], name: "index_shipment_costs_on_treasury_id"
+    t.index ["user_id"], name: "index_shipment_costs_on_user_id"
+  end
+
   create_table "staff_attendances", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.uuid "user_id", null: false
@@ -1123,6 +1271,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
     t.datetime "updated_at", null: false
     t.uuid "vendor_invoice_line_id"
     t.uuid "location_id"
+    t.bigint "provisional_cost_per_unit_cents"
     t.index ["expires_on"], name: "index_stock_batches_on_expires_on"
     t.index ["ingredient_id"], name: "index_stock_batches_on_ingredient_id"
     t.index ["location_id"], name: "index_stock_batches_on_location_id"
@@ -1511,9 +1660,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_26_120000) do
     t.integer "freight_amount_cents", default: 0, null: false
     t.boolean "freight_on_account", default: false, null: false
     t.boolean "draft", default: false, null: false
+    t.uuid "import_shipment_id"
     t.index ["company_id", "draft"], name: "index_vendor_invoices_on_company_id_and_draft"
     t.index ["company_id", "supplier_id", "invoice_number"], name: "index_vendor_invoices_on_company_supplier_and_number", unique: true
     t.index ["company_id"], name: "index_vendor_invoices_on_company_id"
+    t.index ["import_shipment_id"], name: "index_vendor_invoices_on_import_shipment_id"
     t.index ["invoice_date"], name: "index_vendor_invoices_on_invoice_date"
     t.index ["location_id"], name: "index_vendor_invoices_on_location_id"
     t.index ["payment_status"], name: "index_vendor_invoices_on_payment_status"

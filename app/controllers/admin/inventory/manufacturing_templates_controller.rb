@@ -3,6 +3,7 @@
 module Admin
   module Inventory
     class ManufacturingTemplatesController < BaseController
+      before_action { require_feature!(:manufacturing) }
       before_action :set_template, only: %i[show edit update destroy run]
 
       def index

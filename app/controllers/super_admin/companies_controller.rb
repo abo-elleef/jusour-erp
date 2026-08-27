@@ -16,6 +16,7 @@ module SuperAdmin
 
     def create
       @company = Company.new(company_params)
+      @company.feature_overrides = build_feature_overrides
       if @company.save
         redirect_to super_admin_company_path(@company), notice: "Company created."
       else
@@ -26,7 +27,9 @@ module SuperAdmin
     def edit; end
 
     def update
-      if @company.update(company_params)
+      @company.assign_attributes(company_params)
+      @company.feature_overrides = build_feature_overrides if params.key?(:feature_overrides)
+      if @company.save
         redirect_to super_admin_company_path(@company), notice: "Company updated."
       else
         render :edit, status: :unprocessable_content
@@ -51,7 +54,20 @@ module SuperAdmin
     end
 
     def company_params
-      params.require(:company).permit(:name, :slug, :timezone, :currency, :locale, :active)
+      params.require(:company).permit(:name, :slug, :timezone, :currency, :locale, :active, :business_type)
+    end
+
+    # Turn the per-feature Inherit/On/Off selects into the jsonb overrides hash:
+    # only features explicitly forced on/off get a key; "inherit" leaves the
+    # profile default in charge.
+    def build_feature_overrides
+      raw = params[:feature_overrides] || {}
+      Company::FEATURES.each_with_object({}) do |feature, acc|
+        case raw[feature]
+        when "on"  then acc[feature] = true
+        when "off" then acc[feature] = false
+        end
+      end
     end
 
     def company_stats(company)

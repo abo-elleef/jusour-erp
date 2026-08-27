@@ -59,10 +59,14 @@
         </p>
       <% end %>
     </div>
-    <div class="rounded-xl bg-gray-50 px-4 py-3">
-      <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("staff.payroll.daily_rate") %></p>
-      <p class="text-lg font-bold text-gray-900 tabular-nums mt-1"><%= format_money(payroll_summary.daily_rate_cents) %></p>
-    </div>
+    <%# Daily rate only makes sense with attendance-driven pay — hide it when the
+        attendance module is off (e.g. distribution: fixed salary + adjustments). %>
+    <% if Current.company&.feature_enabled?(:attendance) %>
+      <div class="rounded-xl bg-gray-50 px-4 py-3">
+        <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("staff.payroll.daily_rate") %></p>
+        <p class="text-lg font-bold text-gray-900 tabular-nums mt-1"><%= format_money(payroll_summary.daily_rate_cents) %></p>
+      </div>
+    <% end %>
     <div class="rounded-xl bg-red-50 px-4 py-3">
       <p class="text-xs font-semibold text-red-600 uppercase"><%= t("staff.payroll.penalties") %></p>
       <p class="text-lg font-bold text-red-700 tabular-nums mt-1">−<%= format_money(payroll_summary.penalties_cents) %></p>

@@ -9,6 +9,7 @@ class VendorInvoice < ApplicationRecord
   belongs_to :supplier
   belongs_to :user
   belongs_to :location
+  belongs_to :import_shipment, optional: true
   has_many :vendor_invoice_lines, -> { order(:position, :created_at) }, dependent: :destroy, inverse_of: :vendor_invoice
   has_many :vendor_invoice_payments, dependent: :destroy
   # Courier freight paid at receive — separate from supplier AP / Vendor purchases payments.

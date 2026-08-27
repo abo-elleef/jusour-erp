@@ -10,6 +10,9 @@ module InventoryNav
       tabs: [
         { controller: "vendor_invoices", label: "inventory.tools.vendor_invoices",
           path: :admin_inventory_vendor_invoices_path, permission: "inventory:view" },
+        { controller: "import_shipments", label: "inventory.tools.import_shipments",
+          path: :admin_inventory_import_shipments_path, permission: "inventory:view",
+          feature: :landed_cost },
         { controller: "stock_transfers",
           controllers: %w[stock_transfers stock_transfer_templates],
           label: "inventory.tools.stock_transfers",
@@ -19,7 +22,8 @@ module InventoryNav
         { controller: "manufacturing_templates",
           controllers: %w[manufacturing_templates manufacturing_runs manufacturing_template_lines],
           label: "inventory.tools.manufacturing",
-          path: :admin_inventory_manufacturing_templates_path, permission: "inventory:view" }
+          path: :admin_inventory_manufacturing_templates_path, permission: "inventory:view",
+          feature: :manufacturing }
       ]
     },
     {

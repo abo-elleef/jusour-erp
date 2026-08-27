@@ -3,6 +3,7 @@
 module Admin
   module Accounting
     class ShiftLogsController < BaseController
+      before_action { require_feature!(:attendance) }
       before_action :set_shift, only: %i[show clock_out]
 
       def index

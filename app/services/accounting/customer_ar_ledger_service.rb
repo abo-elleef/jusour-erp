@@ -36,6 +36,46 @@ module Accounting
       )
     end
 
+    # Seed a customer's starting AR balance carried over from a previous system.
+    # Raises the receivable without recognizing revenue (credits Equity).
+    def open_balance!(amount_cents:, user:, occurred_on:, source: nil, description: nil)
+      treasury = ensure_treasury!
+      treasury.with_lock do
+        treasury.apply_balance_delta!(amount_cents)
+        TreasuryTransaction.create!(
+          treasury: treasury, user: user, amount_cents: amount_cents, kind: "adjustment",
+          description: description || I18n.t("accounting.ar_ledger.opening_balance",
+                                             customer: @customer.display_name,
+                                             default: "Opening balance — #{@customer.display_name}"),
+          occurred_on: occurred_on, source_record: source,
+          balance_after_cents: treasury.balance_cents
+        )
+      end
+      JournalEntryService.record_customer_opening_balance!(
+        source: source, customer: @customer, date: occurred_on, user: user, amount_cents: amount_cents
+      )
+    end
+
+    # Reduce the receivable for a credit note / sales return (no cash moves).
+    def credit!(amount_cents:, user:, occurred_on:, source: nil, revenue_cents: nil, tax_cents: 0, description: nil)
+      treasury = ensure_treasury!
+      treasury.with_lock do
+        treasury.apply_balance_delta!(-amount_cents)
+        TreasuryTransaction.create!(
+          treasury: treasury, user: user, amount_cents: -amount_cents, kind: "ar_credit_note",
+          description: description || I18n.t("accounting.ar_ledger.credit_note",
+                                             customer: @customer.display_name,
+                                             default: "Credit note — #{@customer.display_name}"),
+          occurred_on: occurred_on, source_record: source,
+          balance_after_cents: treasury.balance_cents
+        )
+      end
+      JournalEntryService.record_customer_credit_note!(
+        source: source, customer: @customer, date: occurred_on, user: user,
+        amount_cents: amount_cents, revenue_cents: revenue_cents, tax_cents: tax_cents
+      )
+    end
+
     # Settle part (or all) of the balance. Money comes INTO the paying treasury.
     def settle!(treasury:, amount_cents:, user:, occurred_on:, source: nil, description: nil)
       ar = ensure_treasury!

@@ -86,8 +86,14 @@ module Admin
     end
 
     def customer_params
+      permitted = %i[name email phone phone_secondary]
+      # Commercial / credit fields only when the company runs credit sales.
+      if Current.company&.feature_enabled?(:ar_credit_sales)
+        permitted += %i[customer_type price_tier_id discount_override_percent
+                        credit_warning_limit_pounds credit_hard_limit_pounds credit_terms_days]
+      end
       params.require(:customer).permit(
-        :name, :email, :phone, :phone_secondary,
+        *permitted,
         addresses_attributes: %i[id label address is_default position _destroy]
       )
     end

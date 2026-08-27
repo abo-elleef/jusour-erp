@@ -1,0 +1,93 @@
+<% content_for :title, @customer.display_name %>
+<% input_class = pos_input_class %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% bucket_labels = { not_due: t("sales.statements.buckets.not_due"),
+                     days_1_30: t("sales.statements.buckets.days_1_30"),
+                     days_31_60: t("sales.statements.buckets.days_31_60"),
+                     days_61_90: t("sales.statements.buckets.days_61_90"),
+                     days_90_plus: t("sales.statements.buckets.days_90_plus") } %>
+
+<div class="max-w-4xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @customer.display_name %></h1>
+      <p class="text-gray-600 text-sm mt-1">
+        <%= t("sales.statements.balance_owed") %>:
+        <span class="font-semibold text-amber-700 tabular-nums"><%= format_money(@statement.ledger_balance_cents) %></span>
+        <% if @customer.price_tier %> · <%= @customer.price_tier.name %> (<%= @customer.effective_discount_percent %>%)<% end %>
+      </p>
+    </div>
+    <%= link_to t("sales.statements.back"), admin_sales_customer_statements_path,
+          class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+  </div>
+
+  <%# Aging buckets %>
+  <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+    <% @statement.buckets.each do |bucket, cents| %>
+      <div class="bg-white rounded-2xl border border-gray-200 p-3">
+        <p class="text-[11px] font-semibold text-gray-500 uppercase tracking-wide"><%= bucket_labels[bucket] %></p>
+        <p class="text-lg font-bold mt-1 tabular-nums <%= cents.positive? && bucket != :not_due ? 'text-red-700' : 'text-gray-900' %>"><%= format_money(cents) %></p>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Record a payment %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.customer_invoices.show.record_payment") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("sales.customer_invoices.show.record_payment_hint") %></p>
+    </div>
+    <%= form_with url: record_payment_admin_sales_customer_statement_path(@customer), method: :post,
+          class: "p-5 flex flex-wrap items-end gap-4" do %>
+      <div class="min-w-[10rem]">
+        <%= label_tag :amount, t("sales.customer_invoices.show.amount"), class: label_class %>
+        <%= number_field_tag :amount, nil, step: 0.01, min: 0, required: true, class: input_class, placeholder: "0.00" %>
+      </div>
+      <div class="min-w-[12rem]">
+        <%= label_tag :treasury_id, t("sales.customer_invoices.show.treasury"), class: label_class %>
+        <%= select_tag :treasury_id, options_from_collection_for_select(@treasuries, :id, :name),
+              include_blank: t("sales.customer_invoices.show.select_treasury"), required: true,
+              class: "#{input_class} appearance-none" %>
+      </div>
+      <div class="min-w-[10rem]">
+        <%= label_tag :payment_date, t("sales.customer_invoices.show.payment_date"), class: label_class %>
+        <%= date_field_tag :payment_date, Date.current, max: Date.current, class: input_class %>
+      </div>
+      <%= submit_tag t("sales.customer_invoices.show.record"),
+            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+    <% end %>
+  </section>
+
+  <%# Invoices %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.statements.invoices") %></h2>
+    </div>
+    <% if @invoices.any? %>
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5"><%= t("sales.customer_invoices.table.number") %></th>
+            <th class="p-3"><%= t("sales.customer_invoices.table.date") %></th>
+            <th class="p-3"><%= t("sales.customer_invoices.table.status") %></th>
+            <th class="p-3 text-end"><%= t("sales.customer_invoices.table.total") %></th>
+            <th class="p-3 text-end pe-5"><%= t("sales.customer_invoices.table.balance") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @invoices.each do |inv| %>
+            <tr class="hover:bg-gray-100 transition-colors">
+              <td class="p-3 ps-5"><%= link_to inv.invoice_number, admin_sales_customer_invoice_path(inv), class: "font-semibold text-amber-700 hover:text-amber-800 tabular-nums" %></td>
+              <td class="p-3 text-gray-600 tabular-nums"><%= l(inv.invoice_date, format: :short) %></td>
+              <td class="p-3"><%= render "admin/sales/customer_invoices/status_badge", invoice: inv %></td>
+              <td class="p-3 text-end tabular-nums text-gray-700"><%= format_money(inv.total_cents) %></td>
+              <td class="p-3 text-end pe-5 tabular-nums font-semibold <%= inv.balance_due_cents.positive? ? 'text-amber-700' : 'text-gray-400' %>"><%= format_money(inv.balance_due_cents) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("sales.statements.no_invoices") %></p>
+    <% end %>
+  </section>
+</div>

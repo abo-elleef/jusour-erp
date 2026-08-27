@@ -1,0 +1,13 @@
+<% tabs = [
+     [t("sales.nav.invoices"),     admin_sales_customer_invoices_path,   %w[customer_invoices]],
+     [t("sales.nav.statements"),   admin_sales_customer_statements_path, %w[customer_statements]],
+     [t("sales.nav.credit_notes"), admin_sales_credit_notes_path,        %w[credit_notes]],
+     [t("sales.nav.price_tiers"),  admin_sales_price_tiers_path,         %w[price_tiers]]
+   ] %>
+<div class="flex flex-wrap gap-1 mb-6 border-b border-gray-200">
+  <% tabs.each do |label, path, controllers| %>
+    <% active = controllers.include?(controller_name) %>
+    <%= link_to label, path,
+          class: "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors #{active ? 'border-amber-600 text-amber-700' : 'border-transparent text-gray-500 hover:text-gray-800'}" %>
+  <% end %>
+</div>
