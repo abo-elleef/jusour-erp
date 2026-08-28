@@ -70,7 +70,14 @@
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_takes.show.count_sheet_heading") %></h2>
+      <div class="flex flex-wrap justify-between items-start gap-3">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_takes.show.count_sheet_heading") %></h2>
+        <%# Paper for the shelf walk: the same blind sheet the vendor and category
+            pages print, scoped to this take's items. %>
+        <%= link_to t("inventory.stock_takes.show.print_count_sheet"),
+              count_sheet_admin_inventory_stock_take_path(@stock_take),
+              class: "shrink-0 inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200 transition-colors print:hidden" %>
+      </div>
       <p class="text-xs text-gray-500 mt-0.5">
         <% if @stock_take.status == "in_progress" %>
           <%= t("inventory.stock_takes.show.count_sheet_hint_in_progress") %>

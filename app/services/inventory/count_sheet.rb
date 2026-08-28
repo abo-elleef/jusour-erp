@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 module Inventory
-  # Rows for a printable physical count sheet at one location, scoped either to a
-  # vendor or to an ingredient category.
+  # Rows for a printable physical count sheet at one location, scoped to a vendor,
+  # an ingredient category, or an open stock take.
   #
   # The row set deliberately mirrors what a stock take seeds
   # (StockTakesController#seed_stock_take_items): active ingredients that have an
@@ -28,10 +28,13 @@ module Inventory
       end
     end
 
-    def initialize(location:, supplier: nil, category: nil)
+    def initialize(location:, supplier: nil, category: nil, stock_take: nil)
       @location = location
-      @supplier = supplier
       @category = category
+      @stock_take = stock_take
+      # A take scoped to a vendor prints that vendor's own product names, exactly
+      # as the vendor sheet does.
+      @supplier = supplier || stock_take&.supplier
     end
 
     # => [[group_label, [Row, ...]], ...]
@@ -41,12 +44,16 @@ module Inventory
     # group, so its rows come back alphabetically under the category name.
     def call
       return [] if @location.blank?
-      return [] if @supplier.blank? && @category.blank?
+      return [] if @supplier.blank? && @category.blank? && @stock_take.blank?
 
-      rows = build_rows
+      rows = @stock_take ? stock_take_rows : build_rows
       return [] if rows.empty?
 
-      @supplier ? group_by_category(rows) : [[@category.name, by_name(rows)]]
+      # A category sheet is already one group; everything else spans categories and
+      # is grouped so the counter walks the store once.
+      return [[@category.name, by_name(rows)]] if @category && @stock_take.blank?
+
+      group_by_category(rows)
     end
 
     private
@@ -68,6 +75,26 @@ module Inventory
           expected_quantity: il.quantity_on_hand
         )
       end
+    end
+
+    # The take's own items, not a fresh read of the location. The sheet must list
+    # exactly what will be typed back in, and expected_quantity is the snapshot
+    # taken when the count started — re-reading on-hand here would print a balance
+    # the take never had. Ingredients deactivated mid-count stay on the paper for
+    # the same reason.
+    def stock_take_rows
+      links_by_ingredient = supplier_links
+
+      @stock_take.stock_take_items
+        .includes(ingredient: [:ingredient_category, { supplier_ingredients: :supplier }])
+        .map do |item|
+          Row.new(
+            ingredient: item.ingredient,
+            link: links_by_ingredient[item.ingredient_id],
+            suppliers: item.ingredient.supplier_ingredients.map(&:supplier),
+            expected_quantity: item.expected_quantity
+          )
+        end
     end
 
     def supplier_links

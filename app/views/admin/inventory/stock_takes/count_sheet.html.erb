@@ -1,0 +1,31 @@
+<% started_at = @stock_take.started_at || @stock_take.created_at %>
+<% content_for :title, t("inventory.stock_takes.count_sheet.title", date: l(started_at.to_date, format: :long)) %>
+<%= render "admin/inventory/tools_nav" %>
+
+<div class="max-w-7xl print:max-w-none">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-1">
+    <%= t("inventory.stock_takes.count_sheet.title", date: l(started_at.to_date, format: :long)) %>
+  </h1>
+
+  <%# A take scoped to one vendor prints that vendor's own product names, the way
+      the vendor sheet does; an all-location take spans vendors, so the column
+      names the supplier instead. %>
+  <%= render "admin/inventory/count_sheets/sheet",
+        groups: @count_sheet_groups,
+        row_count: @count_sheet_row_count,
+        location: @stock_take.location,
+        filter_locations: [],
+        location_picker: false,
+        show_balance: @show_balance,
+        sheet_url: { controller: "admin/inventory/stock_takes", action: "count_sheet",
+                     id: @stock_take.id },
+        back_url: admin_inventory_stock_take_path(@stock_take),
+        back_label: t("inventory.stock_takes.count_sheet.back"),
+        subtitle: t("inventory.stock_takes.count_sheet.subtitle_location",
+                    location: @stock_take.location&.name),
+        print_heading: t("inventory.stock_takes.count_sheet.print_heading",
+                         date: l(started_at.to_date, format: :long),
+                         location: @stock_take.location&.name),
+        empty_message: t("inventory.stock_takes.count_sheet.empty"),
+        vendor_column: @stock_take.supplier ? :vendor_product : :vendor %>
+</div>

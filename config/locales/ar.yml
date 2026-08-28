@@ -1524,6 +1524,7 @@ ar:
         count_sheet_heading: "ورقة العد"
         count_sheet_hint_in_progress: "أدخل الكميات الفعلية بأي وحدة متاحة لكل مكوّن، احفظ، ثم أكّد لتطبيق التعديلات"
         count_sheet_hint_completed: "الكميات النهائية والفروقات لهذا الجرد (المتوقع والفرق بوحدة الأساس)"
+        print_count_sheet: "طباعة ورقة العد"
         inactive_ingredient: "المكوّن غير نشط"
         table:
           index: "#"
@@ -1554,6 +1555,12 @@ ar:
         failed_hint: "لم تكتمل تعديلات المخزون. يمكنك إعادة محاولة تطبيق الفروقات؛ سيتم تخطي البنود المطبّقة مسبقاً."
         retry_button: "إعادة تطبيق التعديلات"
         retry_message: "إعادة محاولة تطبيق الفروقات على المخزون؟"
+      count_sheet:
+        title: "ورقة العد — جرد %{date}"
+        back: "العودة إلى الجرد"
+        subtitle_location: "ورقة عد مغلقة لأصناف هذا الجرد في %{location}."
+        print_heading: "ورقة العد — جرد %{date} — %{location}"
+        empty: "لا توجد أصناف في هذا الجرد لعدّها."
       statuses:
         in_progress: "قيد التنفيذ"
         completing: "جاري الإنهاء"

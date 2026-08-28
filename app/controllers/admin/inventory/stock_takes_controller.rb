@@ -5,7 +5,7 @@ module Admin
     class StockTakesController < BaseController
       SORT_COLUMNS = %w[category name counted expected expected_value counted_value].freeze
 
-      before_action :set_stock_take, only: %i[show update complete cancel]
+      before_action :set_stock_take, only: %i[show update complete cancel count_sheet]
 
       def index
         authorize_inventory_index!(StockTake)
@@ -34,6 +34,19 @@ module Admin
         @variance_count = @items.count { |i| i.variance.present? && !i.variance.to_d.zero? }
         @variance_value_cents = @items.sum { |i| i.variance_value_cents(location_cost: @unit_costs[i.ingredient_id]).to_i }
         @counted_value_cents = @items.sum { |i| i.counted_value_cents(location_cost: @unit_costs[i.ingredient_id]).to_i }
+      end
+
+      # Printable blind count sheet for the take that is already open — the same
+      # artifact the vendor and category pages produce, scoped to this take's own
+      # items so what is written on paper matches what gets typed back in.
+      def count_sheet
+        authorize_inventory!(:show)
+        @show_balance = params[:show_balance] == "1"
+        @count_sheet_groups = ::Inventory::CountSheet.new(
+          location: @stock_take.location,
+          stock_take: @stock_take
+        ).call
+        @count_sheet_row_count = @count_sheet_groups.sum { |_, rows| rows.size }
       end
 
       def create

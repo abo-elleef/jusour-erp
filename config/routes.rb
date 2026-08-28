@@ -337,6 +337,7 @@ Rails.application.routes.draw do
         member do
           post :complete
           post :cancel
+          get :count_sheet
         end
       end
       resources :stock_transfers, only: %i[index show new create edit update destroy] do

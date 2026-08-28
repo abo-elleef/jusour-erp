@@ -1522,6 +1522,7 @@ en:
         count_sheet_heading: "Count sheet"
         count_sheet_hint_in_progress: "Enter physical counts in any available unit for each ingredient, save, then confirm to apply adjustments"
         count_sheet_hint_completed: "Final counts and variances for this stock take (expected and variance are in the base unit)"
+        print_count_sheet: "Print count sheet"
         inactive_ingredient: "Ingredient is inactive"
         table:
           index: "#"
@@ -1552,6 +1553,12 @@ en:
         failed_hint: "Inventory adjustments did not finish. You can retry applying variances; already-applied lines will be skipped."
         retry_button: "Retry apply adjustments"
         retry_message: "Retry applying variances to inventory?"
+      count_sheet:
+        title: "Count sheet — stock take of %{date}"
+        back: "Back to stock take"
+        subtitle_location: "Blind count sheet for the items in this stock take at %{location}."
+        print_heading: "Count sheet — stock take of %{date} — %{location}"
+        empty: "This stock take has no items to count."
       statuses:
         in_progress: "In progress"
         completing: "Finalizing"

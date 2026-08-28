@@ -1,10 +1,15 @@
 <%# locals: groups, row_count, location, filter_locations, show_balance, sheet_url,
             back_url, back_label, subtitle, print_heading, empty_message,
-            vendor_column (:vendor_product or :vendor)
+            vendor_column (:vendor_product or :vendor), location_picker: true
+
+    location_picker: false when the caller already fixes the location — a stock
+    take is bound to one, so offering to re-pick it would build a sheet for a
+    location the take does not cover.
 
     Shared by the vendor and category count sheets so the two can't drift — the
     printed artifact should be identical whichever way you scoped it. %>
 <% cell = "border border-gray-400 p-2 align-middle" %>
+<% location_picker = local_assigns.fetch(:location_picker, true) %>
 
 <div class="flex flex-wrap justify-between items-start gap-4 mb-6 print:mb-3">
   <div>
@@ -38,6 +43,7 @@
 </div>
 
 <%# A count only means something against one location's balances. %>
+<% if location_picker %>
 <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6 print:hidden">
   <%= form_with url: url_for(sheet_url), method: :get, class: "flex flex-wrap items-end gap-3" do %>
     <%= hidden_field_tag :show_balance, 1 if show_balance %>
@@ -53,6 +59,7 @@
           class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors cursor-pointer" %>
   <% end %>
 </section>
+<% end %>
 
 <% if location.blank? %>
   <section class="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center print:hidden">
