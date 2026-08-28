@@ -2,13 +2,15 @@
 <% input_class = pos_input_class %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 <% available_units = @ingredients.to_h { |i| [i.id, i.available_units.map { |u| [ingredient_unit_label(u), u] }] } %>
+<% selling_prices = @ingredients.to_h { |i| [i.id, (i.selling_price_cents.to_i / 100.0).round(2)] } %>
 
 <%= form_with model: credit_note, url: admin_sales_credit_notes_path, method: :post,
       class: "space-y-6",
       data: {
         controller: "customer-invoice-lines",
         searchable_select_options: ingredient_search_options(@ingredients),
-        customer_invoice_lines_available_units_value: available_units.to_json
+        customer_invoice_lines_available_units_value: available_units.to_json,
+        customer_invoice_lines_selling_prices_value: selling_prices.to_json
       } do |f| %>
   <% if credit_note.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
@@ -84,10 +86,10 @@
   </section>
 
   <div class="flex flex-wrap items-center gap-3 pb-8">
-    <%= f.submit t("sales.customer_invoices.form.save_draft"), name: "commit_action", value: "draft",
+    <%= button_tag t("sales.customer_invoices.form.save_draft"), type: "submit", name: "commit_action", value: "draft",
           formnovalidate: true,
           class: "bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-6 py-2.5 rounded-xl border border-gray-300 transition-colors" %>
-    <%= f.submit t("sales.credit_notes.form.save_and_confirm"), name: "commit_action", value: "confirm",
+    <%= button_tag t("sales.credit_notes.form.save_and_confirm"), type: "submit", name: "commit_action", value: "confirm",
           class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
     <%= link_to t("actions.cancel"), admin_sales_credit_notes_path,
           class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>

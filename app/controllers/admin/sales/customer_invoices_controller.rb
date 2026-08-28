@@ -74,6 +74,12 @@ module Admin
         redirect_to admin_sales_customer_invoice_path(@invoice || CustomerInvoice.find(params[:id])), alert: e.message
       rescue ::Sales::ConfirmCustomerInvoiceService::Error => e
         redirect_to admin_sales_customer_invoice_path(@invoice || CustomerInvoice.find(params[:id])), alert: e.message
+      # Anything else (e.g. a ledger/journal failure) would otherwise 500 and look
+      # like "nothing happened" — the invoice silently stays a draft. Surface it.
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.error("[ConfirmCustomerInvoice] #{e.class}: #{e.message}")
+        redirect_to admin_sales_customer_invoice_path(@invoice || CustomerInvoice.find(params[:id])),
+          alert: t("sales.customer_invoices.flash.confirm_failed", error: e.message)
       end
 
       def set_invoice

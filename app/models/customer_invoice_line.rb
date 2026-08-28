@@ -16,6 +16,7 @@ class CustomerInvoiceLine < ApplicationRecord
   validates :unit_price_cents, numericality: { greater_than_or_equal_to: 0 }
   validate :unit_valid_for_ingredient
 
+  before_validation :apply_product_selling_price
   before_validation :derive_line_total
 
   scope :ordered, -> { order(:position, :created_at) }
@@ -31,6 +32,16 @@ class CustomerInvoiceLine < ApplicationRecord
   end
 
   private
+
+  # The unit price is the product's selling price — sales can't set it, so it is
+  # enforced here rather than trusted from the form. Only applies while the price
+  # is unset/zero, so an existing line keeps the price it was invoiced at.
+  def apply_product_selling_price
+    return if ingredient.blank?
+    return if unit_price_cents.to_i.positive?
+
+    self.unit_price_cents = ingredient.selling_price_cents.to_i
+  end
 
   # Unit price (firm, after any tier/override discount the seller applied) is the
   # source of truth; the line total follows from it.

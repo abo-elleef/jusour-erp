@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
-import { renderStreamMessage } from "@hotwired/turbo"
+// turbo-rails' bundle doesn't expose renderStreamMessage as a named export, but
+// it registers Turbo on the global — use that instead of a (failing) import.
 
 // Serialises all "Add item" form submissions so requests are sent one at a time.
 // Without this, fast taps fire concurrent requests whose responses can arrive
@@ -74,7 +75,7 @@ export default class extends Controller {
       if (resp.ok) {
         const contentType = resp.headers.get("content-type") || ""
         if (contentType.includes("turbo-stream")) {
-          renderStreamMessage(await resp.text())
+          window.Turbo.renderStreamMessage(await resp.text())
         }
       }
     } catch (_err) {

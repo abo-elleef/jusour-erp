@@ -13,7 +13,9 @@ class JournalEntry < ApplicationRecord
   has_one    :reversal_entry, class_name: "JournalEntry", foreign_key: :reversal_of_id
   belongs_to :source_record, polymorphic: true, optional: true
 
-  validates :entry_number, presence: true, uniqueness: true
+  # Numbers are generated per company (see .next_entry_number), so uniqueness is
+  # scoped the same way — a global scope collided across tenants.
+  validates :entry_number, presence: true, uniqueness: { scope: :company_id }
   validates :date,         presence: true
   validates :description,  presence: true
   validates :entry_type,   inclusion: { in: ENTRY_TYPES }
