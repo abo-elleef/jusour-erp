@@ -2,10 +2,14 @@
 
 module Inventory
   class SendStockTransferService
-    def initialize(transfer, user, line_quantities:)
+    # allow_overage: the kitchen sends what is ready, which can be more than the
+    # branch asked for. That is legitimate but never silent — the UI confirms it
+    # with the sender first and only then sets this flag.
+    def initialize(transfer, user, line_quantities:, allow_overage: false)
       @transfer = transfer
       @user = user
       @line_quantities = line_quantities.transform_keys(&:to_s)
+      @allow_overage = allow_overage
     end
 
     def call
@@ -79,6 +83,7 @@ module Inventory
 
     def validate_pending_quantity!(line, qty)
       return if qty <= line.quantity_pending_send
+      return if @allow_overage
 
       line.errors.add(:quantity_sent, I18n.t("inventory.stock_transfers.errors.exceeds_pending",
         ingredient: line.ingredient.name, pending: line.quantity_pending_send, quantity: qty))

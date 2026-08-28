@@ -1649,6 +1649,7 @@ en:
       send_hint: "Confirm how much you are sending from your location. Adjust quantities if needed."
       send_partial_hint: "Send only what you have now. The receiver must confirm before you can send the remainder."
       send_unrestricted_hint: "Source stock is not blocking send. Quantities above on-hand will make the source balance negative when received."
+      confirm_overage: "You are sending more than was requested. This is allowed — confirm the quantities below are what is actually leaving the kitchen."
       mark_sent: "Mark as sent"
       confirm_heading: "Confirm receipt"
       confirm_hint: "Review what you received and confirm quantities. Stock will move when you confirm."

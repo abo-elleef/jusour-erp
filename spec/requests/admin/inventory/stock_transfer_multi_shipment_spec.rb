@@ -174,4 +174,64 @@ RSpec.describe "Multiple open shipments and receiver-as-truth", type: :request d
       expect(shipment.reload.status).to eq("in_transit")
     end
   end
+  describe "sending more than was requested" do
+    def post_send(qty, allow_overage: nil)
+      params = { lines: { line.id.to_s => qty.to_s } }
+      params[:allow_overage] = allow_overage unless allow_overage.nil?
+      post send_transfer_admin_inventory_stock_transfer_path(transfer), params: params
+      transfer.reload
+    end
+
+    it "refuses an unconfirmed overage" do
+      post_send(35)
+
+      expect(flash[:alert]).to be_present
+      expect(transfer.stock_transfer_shipments.count).to eq(0)
+      expect(line.reload.quantity_sent).to eq(0)
+    end
+
+    it "accepts the overage once the sender confirms it" do
+      post_send(35, allow_overage: "1")
+
+      expect(flash[:alert]).to be_nil
+      expect(transfer.open_shipments.count).to eq(1)
+      expect(line.reload.quantity_sent).to eq(35)
+      expect(line.quantity_open_in_transit).to eq(35)
+      expect(line.quantity_pending_send).to eq(0)
+    end
+
+    it "treats anything other than the confirmed flag as unconfirmed" do
+      post_send(35, allow_overage: "0")
+
+      expect(flash[:alert]).to be_present
+      expect(transfer.stock_transfer_shipments.count).to eq(0)
+    end
+
+    it "completes when the over-sent quantity arrives" do
+      post_send(35, allow_overage: "1")
+      confirm(transfer.open_shipments.first, 35)
+
+      expect(line.reload.quantity_received).to eq(35)
+      expect(transfer.status).to eq("completed")
+      expect(IngredientLocation.find_by(location: branch, ingredient: ingredient).quantity_on_hand.to_d).to eq(35)
+      expect(IngredientLocation.find_by(location: kitchen, ingredient: ingredient).quantity_on_hand.to_d).to eq(865)
+    end
+
+    it "still refuses an over-send that source stock cannot cover when restricted" do
+      allow(Setting).to receive(:restrict_stock_transfers_to_source?).and_return(true)
+
+      post_send(5000, allow_overage: "1")
+
+      expect(flash[:alert]).to be_present
+      expect(transfer.stock_transfer_shipments.count).to eq(0)
+    end
+
+    it "renders the send form wired for confirmation" do
+      get admin_inventory_stock_transfer_path(transfer)
+
+      expect(response.body).to include("transfer-overage")
+      expect(response.body).to include(I18n.t("inventory.stock_transfers.confirm_overage"))
+      expect(response.body).to include('data-pending="30"')
+    end
+  end
 end

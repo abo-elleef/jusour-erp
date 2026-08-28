@@ -152,7 +152,8 @@ module Admin
         ::Inventory::SendStockTransferService.new(
           @stock_transfer,
           current_user,
-          line_quantities: line_quantity_params
+          line_quantities: line_quantity_params,
+          allow_overage: params[:allow_overage] == "1"
         ).call
         redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
           notice: t("flash.stock_transfer.sent")

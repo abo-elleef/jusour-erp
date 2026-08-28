@@ -114,7 +114,14 @@
           <%= @restrict_stock_transfers_to_source ? t("inventory.stock_transfers.send_partial_hint") : t("inventory.stock_transfers.send_unrestricted_hint") %>
         </p>
       </div>
-      <%= form_with url: send_transfer_admin_inventory_stock_transfer_path(@stock_transfer), method: :post, class: "p-0" do %>
+      <%# The kitchen may send more than was requested; the controller confirms it
+          with the sender and only then sets allow_overage, which the service needs
+          before it will accept a quantity above the outstanding amount. %>
+      <%= form_with url: send_transfer_admin_inventory_stock_transfer_path(@stock_transfer), method: :post, class: "p-0",
+            data: { controller: "transfer-overage",
+                    action: "submit->transfer-overage#confirm input->transfer-overage#reset",
+                    transfer_overage_message_value: t("inventory.stock_transfers.confirm_overage") } do %>
+        <%= hidden_field_tag :allow_overage, "0", data: { transfer_overage_target: "flag" } %>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="border-b border-amber-100 bg-white/60 text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -158,10 +165,16 @@
                     <td class="p-3 text-end tabular-nums font-semibold text-amber-800"><%= transfer_line_amount(line, line.quantity_pending_send) %></td>
                     <td class="p-3 text-end tabular-nums <%= short_at_source ? 'font-semibold text-red-700' : 'text-gray-600' %>"><%= transfer_line_amount(line, line.transferable_quantity_at_source) %></td>
                     <td class="p-3 text-end">
+                      <%# max is the physical stock at source, not the outstanding amount:
+                          sending above what was requested is allowed (with confirmation),
+                          sending stock the kitchen does not have is not. %>
                       <%= number_field_tag "lines[#{line.id}]",
                             number_with_precision(line.in_line_unit(send_now_base), precision: 3, strip_insignificant_zeros: true),
                             step: 0.001, min: 0,
-                            **(@restrict_stock_transfers_to_source ? { max: line.in_line_unit(send_now_base) } : {}),
+                            **(@restrict_stock_transfers_to_source ? { max: line.in_line_unit(line.transferable_quantity_at_source) } : {}),
+                            data: { transfer_overage_target: "input",
+                                    pending: number_with_precision(line.in_line_unit(line.quantity_pending_send), precision: 3, strip_insignificant_zeros: true),
+                                    ingredient: line.ingredient.name },
                             class: "#{pos_input_class} w-28 text-end ms-auto" %>
                     </td>
                   </tr>
