@@ -3961,6 +3961,10 @@ ar:
         destroy: "حذف"
         supplier_linked: "ربط مورّد"
         supplier_unlinked: "إلغاء ربط مورّد"
+        unit_added: "إضافة وحدة"
+        unit_removed: "حذف وحدة"
+        unit_marked_purchase: "وحدة الشراء"
+        unit_unmarked_purchase: "إلغاء وحدة الشراء"
       boolean:
         "true": "نعم"
         "false": "لا"

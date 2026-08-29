@@ -15,9 +15,38 @@ class IngredientUnit < ApplicationRecord
   validate :unit_differs_from_base
   validate :unit_belongs_to_company
 
-  before_save :clear_other_purchase_units, if: :purchase_unit?
+  before_save  :clear_other_purchase_units, if: :purchase_unit?
+  after_create  :audit_unit_added
+  after_update  :audit_unit_changed, if: :saved_change_to_purchase_unit?
+  after_destroy :audit_unit_removed
 
   private
+
+  def audit_unit_added
+    write_unit_audit("unit_added", "unit" => unit_ref&.name)
+  end
+
+  def audit_unit_changed
+    _was, now = saved_change_to_purchase_unit
+    action = now ? "unit_marked_purchase" : "unit_unmarked_purchase"
+    write_unit_audit(action, "unit" => unit_ref&.name)
+  end
+
+  def audit_unit_removed
+    write_unit_audit("unit_removed", "unit" => unit_ref&.name)
+  end
+
+  def write_unit_audit(action, changes = {})
+    next_version = (ingredient.audits.maximum(:version) || 0) + 1
+    Audited::Audit.create!(
+      auditable:       ingredient,
+      associated:      ingredient.company,
+      user:            Audited.store[:current_user],
+      action:          action,
+      audited_changes: changes,
+      version:         next_version
+    )
+  end
 
   def clear_other_purchase_units
     ingredient.ingredient_units.where.not(id: id).update_all(purchase_unit: false)

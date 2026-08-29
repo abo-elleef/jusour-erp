@@ -3937,6 +3937,10 @@ en:
         destroy: "Deleted"
         supplier_linked: "Supplier linked"
         supplier_unlinked: "Supplier unlinked"
+        unit_added: "Unit added"
+        unit_removed: "Unit removed"
+        unit_marked_purchase: "Purchase unit set"
+        unit_unmarked_purchase: "Purchase unit unset"
       boolean:
         "true": "Yes"
         "false": "No"
