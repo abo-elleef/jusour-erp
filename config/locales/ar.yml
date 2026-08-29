@@ -1011,6 +1011,7 @@ ar:
           other: "%{count} تعديل"
         user: "المستخدم"
         reason: "السبب"
+        balance_after: "الرصيد بعد التعديل"
         empty: "لا توجد تعديلات مطابقة لهذه الفلاتر."
         invalid_dates: "نطاق تاريخ غير صالح."
         filters:

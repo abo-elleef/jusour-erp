@@ -50,8 +50,11 @@ class StockAdjustment < ApplicationRecord
       il = IngredientLocation.find_or_initialize_by(ingredient: ingredient, location: location)
       il.quantity_on_hand = il.quantity_on_hand.to_d + quantity_delta.to_d
       il.save!
+      update_columns(balance_after: il.quantity_on_hand)
     else
-      ingredient.update_columns(quantity_on_hand: ingredient.quantity_on_hand.to_d + quantity_delta.to_d)
+      new_qty = ingredient.quantity_on_hand.to_d + quantity_delta.to_d
+      ingredient.update_columns(quantity_on_hand: new_qty)
+      update_columns(balance_after: new_qty)
     end
   end
 

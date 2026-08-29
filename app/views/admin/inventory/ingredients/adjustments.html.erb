@@ -61,6 +61,7 @@
               <th class="p-3 text-start"><%= t("inventory.ingredients.show.location") %></th>
               <th class="p-3 text-start"><%= t("inventory.ingredients.show.adjustment_type") %></th>
               <th class="p-3 text-end"><%= t("inventory.ingredients.show.quantity_short") %></th>
+              <th class="p-3 text-end"><%= t("inventory.ingredients.adjustments.balance_after") %></th>
               <th class="p-3 text-start"><%= t("inventory.ingredients.adjustments.user") %></th>
               <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.adjustments.reason") %></th>
             </tr>
@@ -77,6 +78,14 @@
                 <td class="p-3 text-gray-900"><%= inventory_adjustment_type_label(adj.adjustment_type) %></td>
                 <td class="p-3 text-end tabular-nums font-semibold <%= adj.quantity_delta.positive? ? "text-green-700" : "text-red-700" %>">
                   <%= stock_adjustment_quantity(adj) %>
+                </td>
+                <td class="p-3 text-end tabular-nums text-gray-700">
+                  <% if adj.balance_after %>
+                    <%= number_with_precision(adj.balance_after, precision: 3, strip_insignificant_zeros: true) %>
+                    <span class="text-xs text-gray-400 ms-0.5"><%= ingredient_unit_label(@ingredient.unit) %></span>
+                  <% else %>
+                    <%= tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
+                  <% end %>
                 </td>
                 <td class="p-3 text-gray-700 whitespace-nowrap"><%= adj.user&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
                 <td class="p-3 text-gray-600"><%= adj.reason_notes.presence || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>

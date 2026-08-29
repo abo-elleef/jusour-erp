@@ -1011,6 +1011,7 @@ en:
           other: "%{count} adjustments"
         user: "User"
         reason: "Reason"
+        balance_after: "Balance after"
         empty: "No adjustments match these filters."
         invalid_dates: "Invalid date range."
         filters:
