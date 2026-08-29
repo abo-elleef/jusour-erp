@@ -1012,6 +1012,7 @@ ar:
         user: "المستخدم"
         reason: "السبب"
         balance_after: "الرصيد بعد التعديل"
+        group_by_day: "تجميع حسب اليوم"
         empty: "لا توجد تعديلات مطابقة لهذه الفلاتر."
         invalid_dates: "نطاق تاريخ غير صالح."
         filters:

@@ -1012,6 +1012,7 @@ en:
         user: "User"
         reason: "Reason"
         balance_after: "Balance after"
+        group_by_day: "Group by day"
         empty: "No adjustments match these filters."
         invalid_dates: "Invalid date range."
         filters:

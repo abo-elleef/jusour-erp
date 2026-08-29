@@ -47,10 +47,21 @@
     </div>
   <% end %>
 
+  <% group_by_day = params[:group] == "day" %>
+  <% toggle_params = request.query_parameters.merge(group_by_day ? { group: nil } : { group: "day" }).compact_blank %>
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex flex-wrap justify-between items-center gap-2">
-      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.adjustments.title") %></h2>
-      <span class="text-xs text-gray-500 tabular-nums"><%= t("inventory.ingredients.adjustments.count", count: @pagy.count) %></span>
+      <div class="flex flex-wrap items-center gap-3">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.adjustments.title") %></h2>
+        <span class="text-xs text-gray-500 tabular-nums"><%= t("inventory.ingredients.adjustments.count", count: @pagy.count) %></span>
+      </div>
+      <%= link_to adjustments_admin_inventory_ingredient_path(@ingredient, toggle_params),
+            class: "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors #{group_by_day ? 'bg-amber-600 border-amber-600 text-white' : 'border-gray-200 text-gray-600 hover:bg-gray-100'}" do %>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3.5 h-3.5 shrink-0" aria-hidden="true">
+          <path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25v-6.5c0-.69-.56-1.25-1.25-1.25H4.75Z" clip-rule="evenodd" />
+        </svg>
+        <%= t("inventory.ingredients.adjustments.group_by_day") %>
+      <% end %>
     </div>
     <% if @adjustments.any? %>
       <div class="overflow-x-auto">
@@ -66,30 +77,83 @@
               <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.adjustments.reason") %></th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-100 table-zebra">
-            <% @adjustments.each do |adj| %>
-              <tr class="hover:bg-gray-100 transition-colors">
-                <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums text-xs">
-                  <%= l(adj.created_at, format: :short) %>
+          <tbody>
+            <% if group_by_day %>
+            <% @adjustments.group_by { |adj| adj.created_at.to_date }.each do |date, day_adjs| %>
+              <%
+                day_net   = day_adjs.sum { |a| a.quantity_delta.to_d }
+                additions = day_adjs.select { |a| a.quantity_delta.to_d.positive? }.sum { |a| a.quantity_delta.to_d }
+                removals  = day_adjs.select { |a| a.quantity_delta.to_d.negative? }.sum { |a| a.quantity_delta.to_d }
+              %>
+              <tr class="bg-gray-50 border-y border-gray-200">
+                <td class="p-3 ps-5 font-semibold text-gray-900 whitespace-nowrap" colspan="2">
+                  <%= l(date, format: :long) %>
+                  <span class="ms-2 text-xs font-normal text-gray-500">(<%= t("inventory.ingredients.adjustments.count", count: day_adjs.size) %>)</span>
                 </td>
-                <td class="p-3 text-gray-700">
-                  <%= adj.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
-                </td>
-                <td class="p-3 text-gray-900"><%= inventory_adjustment_type_label(adj.adjustment_type) %></td>
-                <td class="p-3 text-end tabular-nums font-semibold <%= adj.quantity_delta.positive? ? "text-green-700" : "text-red-700" %>">
-                  <%= stock_adjustment_quantity(adj) %>
-                </td>
-                <td class="p-3 text-end tabular-nums text-gray-700">
-                  <% if adj.balance_after %>
-                    <%= number_with_precision(adj.balance_after, precision: 3, strip_insignificant_zeros: true) %>
-                    <span class="text-xs text-gray-400 ms-0.5"><%= ingredient_unit_label(@ingredient.unit) %></span>
-                  <% else %>
-                    <%= tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
+                <td class="p-3 text-gray-500 text-xs" colspan="2"></td>
+                <td class="p-3 text-end tabular-nums text-xs font-semibold whitespace-nowrap <%= day_net >= 0 ? 'text-green-700' : 'text-red-700' %>">
+                  <%= day_net >= 0 ? "+" : "" %><%= number_with_precision(day_net, precision: 3, strip_insignificant_zeros: true) %>
+                  <span class="font-normal text-gray-400 ms-0.5"><%= ingredient_unit_label(@ingredient.unit) %></span>
+                  <% if additions > 0 && removals < 0 %>
+                    <span class="block text-xs font-normal text-gray-400">
+                      <span class="text-green-600">+<%= number_with_precision(additions, precision: 3, strip_insignificant_zeros: true) %></span>
+                      /
+                      <span class="text-red-600"><%= number_with_precision(removals, precision: 3, strip_insignificant_zeros: true) %></span>
+                    </span>
                   <% end %>
                 </td>
-                <td class="p-3 text-gray-700 whitespace-nowrap"><%= adj.user&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
-                <td class="p-3 text-gray-600"><%= adj.reason_notes.presence || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
+                <td colspan="2"></td>
               </tr>
+              <% day_adjs.each do |adj| %>
+                <tr class="hover:bg-gray-100 transition-colors border-b border-gray-100">
+                  <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums text-xs">
+                    <%= l(adj.created_at, format: :short) %>
+                  </td>
+                  <td class="p-3 text-gray-700">
+                    <%= adj.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
+                  </td>
+                  <td class="p-3 text-gray-900"><%= inventory_adjustment_type_label(adj.adjustment_type) %></td>
+                  <td class="p-3 text-end tabular-nums font-semibold <%= adj.quantity_delta.positive? ? "text-green-700" : "text-red-700" %>">
+                    <%= stock_adjustment_quantity(adj) %>
+                  </td>
+                  <td class="p-3 text-end tabular-nums text-gray-700">
+                    <% if adj.balance_after %>
+                      <%= number_with_precision(adj.balance_after, precision: 3, strip_insignificant_zeros: true) %>
+                      <span class="text-xs text-gray-400 ms-0.5"><%= ingredient_unit_label(@ingredient.unit) %></span>
+                    <% else %>
+                      <%= tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
+                    <% end %>
+                  </td>
+                  <td class="p-3 text-gray-700 whitespace-nowrap"><%= adj.user&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
+                  <td class="p-3 text-gray-600"><%= adj.reason_notes.presence || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
+                </tr>
+              <% end %>
+            <% end %>
+            <% else %>
+              <% @adjustments.each do |adj| %>
+                <tr class="hover:bg-gray-100 transition-colors border-b border-gray-100">
+                  <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums text-xs">
+                    <%= l(adj.created_at, format: :short) %>
+                  </td>
+                  <td class="p-3 text-gray-700">
+                    <%= adj.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
+                  </td>
+                  <td class="p-3 text-gray-900"><%= inventory_adjustment_type_label(adj.adjustment_type) %></td>
+                  <td class="p-3 text-end tabular-nums font-semibold <%= adj.quantity_delta.positive? ? "text-green-700" : "text-red-700" %>">
+                    <%= stock_adjustment_quantity(adj) %>
+                  </td>
+                  <td class="p-3 text-end tabular-nums text-gray-700">
+                    <% if adj.balance_after %>
+                      <%= number_with_precision(adj.balance_after, precision: 3, strip_insignificant_zeros: true) %>
+                      <span class="text-xs text-gray-400 ms-0.5"><%= ingredient_unit_label(@ingredient.unit) %></span>
+                    <% else %>
+                      <%= tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
+                    <% end %>
+                  </td>
+                  <td class="p-3 text-gray-700 whitespace-nowrap"><%= adj.user&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
+                  <td class="p-3 text-gray-600"><%= adj.reason_notes.presence || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
+                </tr>
+              <% end %>
             <% end %>
           </tbody>
         </table>
