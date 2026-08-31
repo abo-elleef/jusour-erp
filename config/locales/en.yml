@@ -574,6 +574,7 @@ en:
       attendance:
         log: "Log attendance"
         view: "View attendance & shifts"
+        penalties: "Review late penalties"
       staff:
         view: "View staff"
         manage: "Manage staff"
@@ -1779,6 +1780,7 @@ en:
         negative_on_hand: "Negative on hand — valued at zero"
         zero_cost: "No unit cost set"
         negative_cost: "Negative unit cost"
+        no_invoice: "No invoices — verify price"
         cost_issue_hint: "These contribute nothing to the total until a unit cost is set."
         cost_issue_count:
           one: "1 item has no usable unit cost"
@@ -1790,6 +1792,7 @@ en:
           ingredient: "Ingredient"
           on_hand: "On hand"
           unit_cost: "Unit cost"
+          last_invoice_cost: "Last invoice cost"
           stock_value: "Stock value"
         category_subtotal: "Category subtotal"
         grand_total: "Grand total"

@@ -83,6 +83,7 @@
                 count: items.size,
                 subtotal: items.sum(&:stock_value_cents),
                 items: items,
+                last_invoice_costs: @last_invoice_costs,
                 note: (key == Admin::Inventory::ReportsController::VENDOR_GROUP_MULTIPLE ?
                         t("inventory.reports.valuation.multiple_vendors_hint") : nil) %>
         <% end %>
@@ -92,7 +93,8 @@
                 title: category.name,
                 count: items.size,
                 subtotal: items.sum(&:stock_value_cents),
-                items: items %>
+                items: items,
+                last_invoice_costs: @last_invoice_costs %>
         <% end %>
       <% end %>
     </div>

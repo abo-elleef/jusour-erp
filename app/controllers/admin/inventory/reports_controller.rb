@@ -31,6 +31,10 @@ module Admin
         # at 0.00 and are easy to miss without a count up front.
         @cost_issue_ingredients = @ingredients.select { |i| i.cost_per_unit_cents.to_i <= 0 }
 
+        # Build a hash { ingredient => Result|nil } for the invoice cost column.
+        # Uses the batch loader: 1 query for all ingredients instead of N.
+        @last_invoice_costs = ::Inventory::IngredientLastInvoiceCost.batch_call(@ingredients)
+
         respond_to do |format|
           format.html
           format.csv { send_data valuation_csv, filename: "valuation-#{Date.current}.csv" }

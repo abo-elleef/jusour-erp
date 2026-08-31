@@ -1281,8 +1281,13 @@ module ApplicationHelper
       raw[:arrow] = raw[:direction] == "up" ? "▲" : "▼"
     end
 
-    # Replace plain supplier name and invoice number with links when IDs are stored.
+    # Replace plain ingredient name, supplier name, and invoice number with links when IDs are stored.
     has_links = false
+    if raw[:ingredient_id].present? && raw[:name].present?
+      raw[:name] = link_to(raw[:name], admin_inventory_ingredient_path(raw[:ingredient_id]),
+                           class: "font-medium text-blue-600 hover:underline").html_safe
+      has_links = true
+    end
     if raw[:supplier_id].present? && raw[:supplier].present?
       raw[:supplier] = link_to(raw[:supplier], admin_inventory_supplier_path(raw[:supplier_id]),
                                class: "font-medium text-blue-600 hover:underline").html_safe

@@ -14,6 +14,7 @@ module Inventory
           ingredient: ingredient,
           message_key: "low_stock",
           message_params: {
+            ingredient_id: ingredient.id,
             name: ingredient.name,
             on_hand: ingredient.quantity_on_hand,
             unit: ingredient.unit,

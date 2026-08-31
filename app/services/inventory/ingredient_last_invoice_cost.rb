@@ -18,6 +18,46 @@ module Inventory
     # ingredient can't walk its whole invoice history.
     LOOKBACK = 25
 
+    # Batch version: returns { ingredient_id => Result|nil } in 2 queries
+    # instead of N*2. Use this when building the map for a whole collection
+    # (e.g. the valuation report).
+    def self.batch_call(ingredients)
+      ids = ingredients.map(&:id)
+      return {} if ids.empty?
+
+      base = VendorInvoiceLine
+        .where(ingredient_id: ids)
+        .joins(:vendor_invoice)
+        .where(vendor_invoices: { draft: false })
+        .where.not(vendor_invoices: { payment_status: "void" })
+        .includes(:vendor_invoice)
+        .order(Arel.sql("vendor_invoices.invoice_date DESC, vendor_invoices.created_at DESC"))
+
+      # Group LOOKBACK candidates per ingredient in Ruby — one query total.
+      candidates_by_ingredient = Hash.new { |h, k| h[k] = [] }
+      base.each do |line|
+        bucket = candidates_by_ingredient[line.ingredient_id]
+        bucket << line if bucket.size < LOOKBACK
+      end
+
+      # Count distinct invoices per ingredient from what we already loaded.
+      invoice_counts = candidates_by_ingredient.transform_values do |lines|
+        lines.map(&:vendor_invoice_id).uniq.size
+      end
+
+      ingredients.index_with do |ingredient|
+        lines = candidates_by_ingredient[ingredient.id]
+        line  = lines.detect { |l| l.base_unit_price_cents.to_i.positive? }
+        next nil if line.nil?
+
+        Result.new(
+          unit_cost_cents: line.base_unit_price_cents,
+          invoice:         line.vendor_invoice,
+          invoice_count:   invoice_counts[ingredient.id].to_i
+        )
+      end
+    end
+
     def initialize(ingredient)
       @ingredient = ingredient
     end

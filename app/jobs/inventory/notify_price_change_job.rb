@@ -22,6 +22,7 @@ module Inventory
           ingredient: ingredient,
           message_key: "price_change",
           message_params: {
+            ingredient_id: ingredient.id,
             name: ingredient.name,
             supplier: supplier&.name,
             supplier_id: supplier&.id,

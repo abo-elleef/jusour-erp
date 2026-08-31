@@ -181,22 +181,21 @@ module Admin
       def sync_cost_from_last_invoice
         authorize_inventory!(:update)
         result = ::Inventory::IngredientLastInvoiceCost.new(@ingredient).call
+        return_to = safe_return_to || admin_inventory_ingredient_path(@ingredient)
 
         if result.nil?
-          redirect_to admin_inventory_ingredient_path(@ingredient),
-            alert: t("inventory.ingredients.cost_sync.unavailable")
+          redirect_to return_to, alert: t("inventory.ingredients.cost_sync.unavailable")
           return
         end
 
         previous_cents = @ingredient.cost_per_unit_cents.to_i
         if previous_cents == result.unit_cost_cents.to_i
-          redirect_to admin_inventory_ingredient_path(@ingredient),
-            notice: t("inventory.ingredients.cost_sync.unchanged")
+          redirect_to return_to, notice: t("inventory.ingredients.cost_sync.unchanged")
           return
         end
 
         @ingredient.update!(cost_per_unit_cents: result.unit_cost_cents)
-        redirect_to admin_inventory_ingredient_path(@ingredient),
+        redirect_to return_to,
           notice: t("inventory.ingredients.cost_sync.applied",
             from: helpers.format_money(previous_cents),
             to: helpers.format_money(result.unit_cost_cents),
@@ -204,6 +203,22 @@ module Admin
       end
 
       private
+
+      # Allow a caller to pass ?return_to= so we redirect back to their page
+      # (e.g. the valuation report) rather than the ingredient show page.
+      # Only same-host paths are accepted to prevent open redirects.
+      def safe_return_to
+        url = params[:return_to].presence
+        return nil if url.blank?
+
+        uri = URI.parse(url)
+        # Reject absolute URLs pointing at a different host; allow plain paths.
+        return nil if uri.host.present? && uri.host != request.host
+
+        url
+      rescue URI::InvalidURIError
+        nil
+      end
 
       def set_ingredient
         @ingredient = Ingredient.find(params[:id])

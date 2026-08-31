@@ -572,6 +572,7 @@ ar:
       attendance:
         log: "تسجيل الحضور"
         view: "عرض الحضور والورديات"
+        penalties: "مراجعة غرامات التأخر"
       staff:
         view: "عرض الموظفين"
         manage: "إدارة الموظفين"
@@ -1781,6 +1782,7 @@ ar:
         negative_on_hand: "رصيد سالب — القيمة صفر"
         zero_cost: "لم تُحدَّد تكلفة الوحدة"
         negative_cost: "تكلفة وحدة سالبة"
+        no_invoice: "لا فواتير — تحقق من السعر"
         cost_issue_hint: "لا تُضيف هذه البنود شيئاً للإجمالي حتى تُحدَّد تكلفة الوحدة."
         cost_issue_count:
           one: "بند واحد بدون تكلفة وحدة صالحة"
@@ -1792,6 +1794,7 @@ ar:
           ingredient: "المكون"
           on_hand: "المتوفر"
           unit_cost: "تكلفة الوحدة"
+          last_invoice_cost: "تكلفة آخر فاتورة"
           stock_value: "قيمة المخزون"
         category_subtotal: "المجموع الفرعي للتصنيف"
         grand_total: "الإجمالي الكلي"
