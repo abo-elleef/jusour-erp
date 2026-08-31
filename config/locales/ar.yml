@@ -3866,7 +3866,12 @@ ar:
       total_obligation: "إجمالي الالتزام بالراتب"
       total_to_pay: "المتبقي للدفع"
       recorded_count: "مُسجّل"
+      already_paid_hint: "تم صرفه حتى الآن"
       pending_count: "معلّق"
+      still_to_pay: "لم يُصرف بعد"
+      still_to_pay_hint:
+        one: "موظف واحد لم يُدفع بعد"
+        other: "%{count} موظفين لم يُدفعوا بعد"
       status: "الحالة"
       status_recorded: "مُسجّل"
       status_draft: "مسودة"

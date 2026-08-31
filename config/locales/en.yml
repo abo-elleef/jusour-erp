@@ -3842,7 +3842,12 @@ en:
       total_obligation: "Total salary obligation"
       total_to_pay: "Remaining to pay"
       recorded_count: "Recorded"
+      already_paid_hint: "paid so far"
       pending_count: "Pending"
+      still_to_pay: "Still to pay"
+      still_to_pay_hint:
+        one: "1 employee not yet paid"
+        other: "%{count} employees not yet paid"
       status: "Status"
       status_recorded: "Recorded"
       status_draft: "Draft"
