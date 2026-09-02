@@ -2,6 +2,7 @@ ar:
   time:
     formats:
       short_time: "%H:%M"
+      long_with_time: "%-d %B %Y %I:%M %p"
   date:
     formats:
       long: "%-d %B %Y"
@@ -3704,6 +3705,7 @@ ar:
       amount: "المبلغ"
       balance_after: "الرصيد بعد"
       recorded_by: "سجّله"
+      created_at_hint: "أُنشئت %{datetime}"
       no_transactions: "لا توجد معاملات في هذه الفترة."
       types:
         cash_drawer: "صندوق الكاشير / الكاش"

@@ -74,7 +74,10 @@
       <tbody class="divide-y divide-gray-100 table-zebra">
         <% @transactions.each do |tx| %>
           <tr>
-            <td class="p-3 ps-5 whitespace-nowrap"><%= l(tx.occurred_on, format: :long) %></td>
+            <td class="p-3 ps-5 whitespace-nowrap">
+              <div><%= l(tx.occurred_on, format: :long) %></div>
+              <div class="text-xs text-gray-400 mt-0.5"><%= t("accounting.treasuries.created_at_hint", datetime: l(tx.created_at.in_time_zone, format: :long_with_time)) %></div>
+            </td>
             <td class="p-3 text-gray-600"><%= accounting_treasury_transaction_kind(tx.kind) %></td>
             <td class="p-3">
               <% source_path = treasury_transaction_source_path(tx) %>

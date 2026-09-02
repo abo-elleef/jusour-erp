@@ -2,6 +2,7 @@ en:
   time:
     formats:
       short_time: "%I:%M %p"
+      long_with_time: "%-d %B %Y %I:%M %p"
   date:
     formats:
       long: "%b %-d, %Y"
@@ -3684,6 +3685,7 @@ en:
       amount: "Amount"
       balance_after: "Balance after"
       recorded_by: "Recorded by"
+      created_at_hint: "Created %{datetime}"
       no_transactions: "No transactions in this period."
       types:
         cash_drawer: "Cash drawer / register"
