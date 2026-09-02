@@ -1522,6 +1522,7 @@ en:
           counted_value: "Counted value"
           counted_value_hint: "Counted qty × location weighted-average cost"
           completed: "Completed"
+        group_none: "No grouping"
         count_sheet_heading: "Count sheet"
         count_sheet_hint_in_progress: "Enter physical counts in any available unit for each ingredient, save, then confirm to apply adjustments"
         count_sheet_hint_completed: "Final counts and variances for this stock take (expected and variance are in the base unit)"

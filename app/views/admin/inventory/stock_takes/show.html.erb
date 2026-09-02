@@ -3,6 +3,34 @@
 <% select_class = "w-full min-w-[5.5rem] max-w-[8rem] bg-gray-50 border border-gray-200 rounded-xl px-2 py-2 text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
 <% sort_opts = { sort: @sort, direction: @direction } %>
 
+<%# ── Grouping helpers ─────────────────────────────────────────────────────── %>
+<% vendor_for_item = ->(item) {
+  links = item.ingredient.supplier_ingredients
+  return :no_vendor if links.empty?
+  return links.first.supplier if links.size == 1
+  preferred = links.select(&:preferred)
+  preferred.size == 1 ? preferred.first.supplier : :multiple_vendors
+} %>
+<% vendor_label = ->(key) {
+  case key
+  when :no_vendor       then t("inventory.reports.valuation.no_vendor")
+  when :multiple_vendors then t("inventory.reports.valuation.multiple_vendors")
+  else key.name
+  end
+} %>
+<% grouped_items = ->(items) {
+  case @group_by
+  when "category"
+    items.group_by { |i| i.ingredient.ingredient_category.name }
+         .sort_by { |name, _| name.to_s.downcase }
+  when "vendor"
+    items.group_by { |i| vendor_label.call(vendor_for_item.call(i)) }
+         .sort_by { |name, _| name.to_s.downcase }
+  else
+    { nil => items }
+  end
+} %>
+
 <div class="max-w-6xl">
   <div class="mb-4">
     <%= link_to t("inventory.stock_takes.show.back_to_list"), admin_inventory_stock_takes_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
@@ -71,7 +99,19 @@
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
       <div class="flex flex-wrap justify-between items-start gap-3">
-        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_takes.show.count_sheet_heading") %></h2>
+        <div>
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_takes.show.count_sheet_heading") %></h2>
+          <%# Group-by toggle %>
+          <div class="flex gap-1.5 mt-2 print:hidden">
+            <% [["none", t("inventory.stock_takes.show.group_none")],
+                ["category", t("inventory.reports.valuation.group_by.category")],
+                ["vendor", t("inventory.reports.valuation.group_by.vendor")]].each do |val, label| %>
+              <%= link_to label,
+                    admin_inventory_stock_take_path(@stock_take, sort: @sort, dir: @direction, group_by: (val == "none" ? nil : val)),
+                    class: "text-xs font-semibold px-3 py-1 rounded-lg border transition-colors #{@group_by == val || (val == 'none' && @group_by == 'none') ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}" %>
+            <% end %>
+          </div>
+        </div>
         <%# Paper for the shelf walk: the same blind sheet the vendor and category
             pages print, scoped to this take's items. %>
         <%= link_to t("inventory.stock_takes.show.print_count_sheet"),
@@ -106,7 +146,18 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 table-zebra">
-              <% @items.each_with_index do |item, index| %>
+              <% index = 0 %>
+              <% grouped_items.call(@items).each do |group_name, group_items| %>
+                <% if group_name %>
+                  <tr class="bg-gray-100/90">
+                    <td colspan="10" class="px-3 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                      <%= group_name %>
+                      <span class="font-normal text-gray-400 normal-case tracking-normal ms-1">(<%= group_items.size %>)</span>
+                    </td>
+                  </tr>
+                <% end %>
+              <% group_items.each do |item| %>
+                <% index += 1 %>
                 <% has_variance = item.variance.present? && !item.variance.to_d.zero? %>
                 <% base_unit = item.ingredient.unit %>
                 <% available_units = item.ingredient.available_units %>
@@ -117,7 +168,7 @@
                 <% counted_value_cents = item.counted_value_cents(location_cost: location_cost) %>
                 <% variance_value_cents = item.variance_value_cents(location_cost: location_cost) %>
                 <tr class="hover:bg-gray-100 transition-colors <%= 'bg-amber-50/40' if has_variance %>">
-                  <td class="p-3 pl-5 text-gray-400 tabular-nums"><%= index + 1 %></td>
+                  <td class="p-3 pl-5 text-gray-400 tabular-nums"><%= index %></td>
                   <td class="p-3 text-gray-600"><%= item.ingredient.ingredient_category.name %></td>
                   <td class="p-3">
                     <span class="inline-flex items-center gap-1.5 font-semibold text-gray-900">
@@ -169,6 +220,7 @@
                   </td>
                 </tr>
               <% end %>
+              <% end %>
             </tbody>
           </table>
         </div>
@@ -195,7 +247,18 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 table-zebra">
-            <% @items.each_with_index do |item, index| %>
+            <% index = 0 %>
+            <% grouped_items.call(@items).each do |group_name, group_items| %>
+              <% if group_name %>
+                <tr class="bg-gray-100/90">
+                  <td colspan="10" class="px-3 py-2 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    <%= group_name %>
+                    <span class="font-normal text-gray-400 normal-case tracking-normal ms-1">(<%= group_items.size %>)</span>
+                  </td>
+                </tr>
+              <% end %>
+            <% group_items.each do |item| %>
+              <% index += 1 %>
               <% has_variance = item.variance.present? && !item.variance.to_d.zero? %>
               <% base_unit = item.ingredient.unit %>
               <% counted_unit = item.counted_unit.presence || item.ingredient.purchase_unit_record&.unit || base_unit %>
@@ -204,7 +267,7 @@
               <% counted_value_cents = item.counted_value_cents(location_cost: location_cost) %>
               <% variance_value_cents = item.variance_value_cents(location_cost: location_cost) %>
               <tr class="hover:bg-gray-100 transition-colors <%= 'bg-amber-50/40' if has_variance %>">
-                <td class="p-3 pl-5 text-gray-400 tabular-nums"><%= index + 1 %></td>
+                <td class="p-3 pl-5 text-gray-400 tabular-nums"><%= index %></td>
                 <td class="p-3 text-gray-600"><%= item.ingredient.ingredient_category.name %></td>
                 <td class="p-3">
                   <span class="inline-flex items-center gap-1.5">
@@ -257,6 +320,7 @@
                   <%= variance_value_cents ? format_money(variance_value_cents) : t("accounting.shared.em_dash") %>
                 </td>
               </tr>
+            <% end %>
             <% end %>
           </tbody>
         </table>

@@ -22,8 +22,9 @@ module Admin
         authorize_inventory!(:show)
         @sort = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : "category"
         @direction = params[:dir].to_s == "desc" ? "desc" : "asc"
+        @group_by = %w[category vendor].include?(params[:group_by].to_s) ? params[:group_by].to_s : "none"
         @items = @stock_take.stock_take_items
-          .includes(ingredient: [:ingredient_category, :ingredient_units])
+          .includes(ingredient: [:ingredient_category, :ingredient_units, { supplier_ingredients: :supplier }])
           .joins(ingredient: :ingredient_category)
           .to_a
         @unit_costs = ::Inventory::LocationUnitCost.map_for(
@@ -141,6 +142,7 @@ module Admin
         opts = {}
         opts[:sort] = params[:sort] if SORT_COLUMNS.include?(params[:sort].to_s)
         opts[:dir] = params[:dir] if %w[asc desc].include?(params[:dir].to_s)
+        opts[:group_by] = params[:group_by] if %w[category vendor].include?(params[:group_by].to_s)
         admin_inventory_stock_take_path(@stock_take, opts)
       end
 
