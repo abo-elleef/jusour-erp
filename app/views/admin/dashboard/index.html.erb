@@ -1,12 +1,149 @@
 <% content_for :title, t("admin.dashboard.title") %>
-<h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-4"><%= t("admin.dashboard.title") %></h1>
-<p class="text-gray-600"><%= t("admin.dashboard.description") %></p>
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-  <%= link_to t("nav.categories"), admin_categories_path, class: "p-6 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center font-semibold transition-colors" %>
-  <%= link_to t("nav.menu"), admin_menu_items_path, class: "p-6 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center font-semibold transition-colors" %>
-  <%= link_to t("nav.combos"), admin_combos_path, class: "p-6 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center font-semibold transition-colors" %>
-  <%= link_to t("nav.customers"), admin_customers_path, class: "p-6 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center font-semibold transition-colors" %>
-  <%= link_to t("nav.orders"), admin_orders_path, class: "p-6 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center font-semibold transition-colors" %>
-  <%= link_to t("nav.staff"), admin_users_path, class: "p-6 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center font-semibold transition-colors" %>
-  <%= link_to t("nav.inventory"), admin_inventory_ingredients_path, class: "p-6 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center font-semibold transition-colors" %>
+
+<div class="max-w-7xl">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-6"><%= t("admin.dashboard.title") %></h1>
+
+  <%# ── Today at a glance ──────────────────────────────────────── %>
+  <% if current_user.can?("orders:view") %>
+    <section class="mb-8">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"><%= t("dashboard.today_section") %></h2>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5">
+          <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.today_revenue") %></p>
+          <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1"><%= format_money(@today_revenue_cents) %></p>
+        </div>
+        <div class="rounded-2xl border border-gray-200 bg-white p-5">
+          <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.today_orders") %></p>
+          <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1"><%= @today_order_count %></p>
+        </div>
+        <div class="rounded-2xl border border-gray-200 bg-white p-5">
+          <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.today_avg") %></p>
+          <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1"><%= format_money(@today_avg_cents) %></p>
+        </div>
+      </div>
+    </section>
+  <% end %>
+
+  <%# ── Treasury balances ──────────────────────────────────────── %>
+  <% if accounting_any_access? && @treasuries.present? %>
+    <section class="mb-8">
+      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"><%= t("dashboard.treasuries_section") %></h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <% @treasuries.each do |treasury| %>
+          <%= link_to admin_accounting_treasury_path(treasury),
+                class: "rounded-2xl border border-gray-200 bg-white p-4 hover:border-amber-300 hover:bg-amber-50/40 transition-colors group" do %>
+            <p class="text-xs font-semibold text-gray-500 uppercase truncate group-hover:text-amber-800"><%= treasury.name %></p>
+            <p class="text-2xl font-bold tabular-nums mt-1 <%= treasury.balance_cents < 0 ? 'text-red-700' : 'text-gray-900' %>">
+              <%= format_money(treasury.balance_cents) %>
+            </p>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <%# ── Inventory alerts + Pending work ───────────────────────── %>
+  <% if inventory_any_access? || current_user.can?("payroll:view") %>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+      <%# Inventory alerts %>
+      <% if inventory_any_access? %>
+        <section>
+          <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"><%= t("dashboard.inventory_section") %></h2>
+          <div class="rounded-2xl border border-gray-200 bg-white divide-y divide-gray-100 overflow-hidden">
+            <%= link_to admin_inventory_ingredients_path(q: { low_stock_true: "1" }),
+                  class: "flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors" do %>
+              <span class="text-sm font-medium text-gray-700"><%= t("dashboard.low_stock") %></span>
+              <span class="text-sm font-bold tabular-nums <%= @low_stock_count.positive? ? 'text-amber-700' : 'text-gray-400' %>">
+                <%= @low_stock_count %>
+              </span>
+            <% end %>
+            <%= link_to admin_inventory_ingredients_path(q: { out_of_stock_true: "1" }),
+                  class: "flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors" do %>
+              <span class="text-sm font-medium text-gray-700"><%= t("dashboard.out_of_stock") %></span>
+              <span class="text-sm font-bold tabular-nums <%= @out_of_stock_count.positive? ? 'text-red-700' : 'text-gray-400' %>">
+                <%= @out_of_stock_count %>
+              </span>
+            <% end %>
+            <%= link_to admin_inventory_ingredients_path(q: { no_cost_true: "1" }),
+                  class: "flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors" do %>
+              <span class="text-sm font-medium text-gray-700"><%= t("dashboard.no_cost") %></span>
+              <span class="text-sm font-bold tabular-nums <%= @no_cost_count.positive? ? 'text-orange-600' : 'text-gray-400' %>">
+                <%= @no_cost_count %>
+              </span>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+
+      <%# Pending work %>
+      <section>
+        <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"><%= t("dashboard.pending_section") %></h2>
+        <div class="rounded-2xl border border-gray-200 bg-white divide-y divide-gray-100 overflow-hidden">
+          <% if @open_stock_takes %>
+            <%= link_to admin_inventory_stock_takes_path,
+                  class: "flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors" do %>
+              <span class="text-sm font-medium text-gray-700"><%= t("dashboard.open_stock_takes") %></span>
+              <span class="text-sm font-bold tabular-nums <%= @open_stock_takes.positive? ? 'text-amber-700' : 'text-gray-400' %>">
+                <%= @open_stock_takes %>
+              </span>
+            <% end %>
+          <% end %>
+          <% if @outstanding_invoices %>
+            <%= link_to admin_inventory_vendor_invoices_path(q: { payment_status_in: %w[unpaid partially_paid] }),
+                  class: "flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors" do %>
+              <span class="text-sm font-medium text-gray-700"><%= t("dashboard.outstanding_invoices") %></span>
+              <span class="text-sm font-bold tabular-nums <%= @outstanding_invoices.positive? ? 'text-red-700' : 'text-gray-400' %>">
+                <%= @outstanding_invoices %>
+              </span>
+            <% end %>
+          <% end %>
+          <% if !@payroll_finalized_this_month.nil? %>
+            <%= link_to admin_accounting_monthly_payroll_path,
+                  class: "flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors" do %>
+              <span class="text-sm font-medium text-gray-700"><%= t("dashboard.payroll_this_month") %></span>
+              <% if @payroll_finalized_this_month %>
+                <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full"><%= t("dashboard.payroll_done") %></span>
+              <% else %>
+                <span class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full"><%= t("dashboard.payroll_pending") %></span>
+              <% end %>
+            <% end %>
+          <% end %>
+          <% if @open_stock_takes.nil? && @outstanding_invoices.nil? && @payroll_finalized_this_month.nil? %>
+            <p class="px-5 py-4 text-sm text-gray-400"><%= t("dashboard.no_pending_access") %></p>
+          <% end %>
+        </div>
+      </section>
+
+    </div>
+  <% end %>
+
+  <%# ── Quick links ─────────────────────────────────────────────── %>
+  <section class="mt-8">
+    <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"><%= t("dashboard.quick_links") %></h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <% if current_user.can?("orders:view") %>
+        <%= link_to t("nav.orders"), admin_orders_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
+      <% end %>
+      <% if current_user.can?("menu:manage") %>
+        <%= link_to t("nav.menu"), admin_menu_items_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
+      <% end %>
+      <% if current_user.can?("customers:manage") %>
+        <%= link_to t("nav.customers"), admin_customers_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
+      <% end %>
+      <% if current_user.can?("accounting:transactions") %>
+        <%= link_to t("accounting.nav.expenses"), admin_accounting_expenses_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
+        <%= link_to t("accounting.nav.incomes"), admin_accounting_incomes_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
+      <% end %>
+      <% if current_user.can?("accounting:ledgers") %>
+        <% treasury_path = @default_treasury ? admin_accounting_treasury_path(@default_treasury) : admin_accounting_treasuries_path %>
+        <%= link_to t("accounting.nav.treasuries"), treasury_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
+      <% end %>
+      <% if inventory_any_access? %>
+        <%= link_to t("inventory.tools.vendor_invoices"), admin_inventory_vendor_invoices_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
+        <%= link_to t("inventory.tools.stock_transfers"), admin_inventory_stock_transfers_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
+        <%= link_to t("nav.inventory"), admin_inventory_ingredients_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
+      <% end %>
+    </div>
+  </section>
 </div>
