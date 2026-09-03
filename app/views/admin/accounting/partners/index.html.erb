@@ -16,6 +16,8 @@
   </div>
 
   <%# Ownership summary %>
+  <%= render "admin/accounting/date_range_form" %>
+
   <% if @total_ownership != 100 && @partners.active.any? %>
     <div class="mb-4 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 flex items-center gap-2">
       <span class="text-amber-700 text-sm font-medium"><%= t("accounting.partners.ownership_warning", total: @total_ownership) %></span>
@@ -35,6 +37,7 @@
             <th class="p-3 text-start w-28"><%= t("accounting.partners.col.account") %></th>
             <th class="p-3 text-end w-28"><%= t("accounting.partners.col.ownership") %></th>
             <th class="p-3 text-end w-36"><%= t("accounting.partners.col.balance") %></th>
+            <th class="p-3 text-end w-36 text-blue-600"><%= t("accounting.partners.period_net") %></th>
             <th class="p-3 pe-5 text-start w-20"><%= t("accounting.partners.col.status") %></th>
           </tr>
         </thead>
@@ -49,6 +52,11 @@
               <td class="p-3 text-end tabular-nums font-semibold <%= balance >= 0 ? 'text-green-700' : 'text-red-600' %>">
                 <%= format_money(balance.abs) %>
                 <span class="text-xs font-normal text-gray-400 ms-1"><%= balance >= 0 ? t("accounting.partners.cr") : t("accounting.partners.dr") %></span>
+              </td>
+              <% period_bal = @period_balances[partner.id] %>
+              <td class="p-3 text-end tabular-nums font-semibold <%= period_bal >= 0 ? 'text-green-700' : 'text-red-600' %>">
+                <%= format_money(period_bal.abs) %>
+                <span class="text-xs font-normal text-gray-400 ms-1"><%= period_bal >= 0 ? t("accounting.partners.cr") : t("accounting.partners.dr") %></span>
               </td>
               <td class="p-3 pe-5">
                 <% if partner.active? %>
@@ -66,7 +74,10 @@
             <td class="p-3 text-end font-bold tabular-nums <%= @total_ownership == 100 ? 'text-green-700' : 'text-amber-600' %>">
               <%= @total_ownership %>%
             </td>
-            <td colspan="2"></td>
+            <td class="p-3 text-end text-xs text-gray-400 font-normal"><%= t("accounting.partners.all_time") %></td>
+            <td class="p-3 pe-5 text-end text-xs font-semibold tabular-nums <%= @period_credit_totals >= @period_debit_totals ? 'text-green-700' : 'text-red-600' %>">
+              <%= format_money((@period_credit_totals - @period_debit_totals).abs) %>
+            </td>
           </tr>
         </tfoot>
       </table>

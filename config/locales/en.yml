@@ -3061,6 +3061,8 @@ en:
       current_balance: "Current Balance"
       total_ownership: "Total Ownership"
       total_movements: "Movements"
+      period_net: "Period Net"
+      all_time: "All-time"
       no_movements: "No movements recorded yet."
       ledger_heading: "Account Ledger"
       ownership_warning: "Total ownership is %{total}% — should equal 100% for profit distribution."

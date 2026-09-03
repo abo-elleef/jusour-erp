@@ -3077,6 +3077,8 @@ ar:
       cr: "دائن"
       dr: "مدين"
       current_balance: "الرصيد الحالي"
+      period_net: "صافي الفترة"
+      all_time: "إجمالي"
       total_ownership: "إجمالي الملكية"
       total_movements: "الحركات"
       no_movements: "لم يتم تسجيل أي حركات بعد."

@@ -6,17 +6,37 @@ module Admin
       before_action :set_partner, only: %i[show edit update]
 
       def index
+        parse_date_range(default_start: Date.current.beginning_of_month)
         @partners = Partner.ordered
         @total_ownership = @partners.active.sum(:ownership_percentage)
+        # Compute each partner's balance for the selected date range via journal entry lines.
+        codes = @partners.pluck(:account_code)
+        lines_scope = JournalEntryLine.joins(:journal_entry)
+          .where(journal_entries: { company_id: Current.company.id })
+          .where(account_code: codes)
+          .where("journal_entries.date BETWEEN ? AND ?", @start_date, @end_date)
+        credits = lines_scope.group(:account_code).sum(:credit_cents)
+        debits  = lines_scope.group(:account_code).sum(:debit_cents)
+        @period_balances = @partners.each_with_object({}) do |p, h|
+          h[p.id] = credits[p.account_code].to_i - debits[p.account_code].to_i
+        end
+        @period_debit_totals  = debits.values.sum
+        @period_credit_totals = credits.values.sum
       end
 
       def show
-        @lines = JournalEntryLine.joins(:journal_entry)
-                                 .where(journal_entries: { company_id: Current.company.id })
-                                 .where(account_code: @partner.account_code)
-                                 .includes(:journal_entry)
-                                 .order("journal_entries.date DESC, journal_entries.entry_number DESC")
-        @balance_cents = @partner.balance_cents
+        parse_date_range(default_start: Date.current.beginning_of_month)
+        base = JournalEntryLine.joins(:journal_entry)
+          .where(journal_entries: { company_id: Current.company.id })
+          .where(account_code: @partner.account_code)
+          .includes(:journal_entry)
+        @lines = base
+          .where("journal_entries.date BETWEEN ? AND ?", @start_date, @end_date)
+          .order("journal_entries.date DESC, journal_entries.entry_number DESC")
+        @balance_cents      = @partner.balance_cents
+        @period_debit_cents  = @lines.sum(:debit_cents)
+        @period_credit_cents = @lines.sum(:credit_cents)
+        @period_net_cents    = @period_credit_cents - @period_debit_cents
       end
 
       def new
