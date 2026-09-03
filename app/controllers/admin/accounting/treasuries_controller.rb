@@ -42,16 +42,21 @@ module Admin
           { label: t("accounting.treasuries.stats_in_amount"), cents: in_cents, tone: :success },
           { label: t("accounting.treasuries.stats_out_amount"), cents: out_cents, tone: :danger }
         ]
-        @transactions = @treasury.treasury_transactions
-          .includes(:user, :source_record)
-          .on_date_range(@start_date, @end_date)
-          .recent
-          .limit(200)
+        @pagy, @transactions = pagy(:offset,
+          @treasury.treasury_transactions
+            .includes(:user, :source_record)
+            .on_date_range(@start_date, @end_date)
+            .recent,
+          limit: 100)
 
         respond_to do |format|
           format.html
           format.csv do
-            csv_data = build_transactions_csv(@transactions)
+            all_transactions = @treasury.treasury_transactions
+              .includes(:user, :source_record)
+              .on_date_range(@start_date, @end_date)
+              .recent
+            csv_data = build_transactions_csv(all_transactions)
             filename = "#{@treasury.name.parameterize}-#{@start_date}-#{@end_date}.csv"
             send_data csv_data, filename: filename, type: "text/csv; charset=utf-8", disposition: "attachment"
           end
