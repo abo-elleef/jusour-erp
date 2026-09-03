@@ -4,7 +4,7 @@ module Admin
   class DashboardController < BaseController
     def index
       load_today_stats     if current_user.can?("orders:view")
-      load_treasury_stats  if helpers.accounting_any_access?
+      load_treasury_flow   if helpers.accounting_any_access?
       load_inventory_stats if helpers.inventory_any_access?
       load_pending_stats   if helpers.inventory_any_access? || current_user.can?("payroll:view")
     end
@@ -18,10 +18,11 @@ module Admin
       @today_avg_cents     = @today_order_count.positive? ? (@today_revenue_cents / @today_order_count) : 0
     end
 
-    def load_treasury_stats
-      @treasuries = ::Treasury.visible_to(current_user).active.ordered.select(:id, :name, :balance_cents, :treasury_type)
-      visible = ::Treasury.visible_to(current_user).active
-      @default_treasury = visible.find_by(is_default: true) || visible.ordered.first
+def load_treasury_flow
+      treasury_ids = ::Treasury.visible_to(current_user).active.pluck(:id)
+      today_txns = ::TreasuryTransaction.where(treasury_id: treasury_ids, occurred_on: Date.current)
+      @treasury_in_cents  = today_txns.where("amount_cents > 0").sum(:amount_cents)
+      @treasury_out_cents = today_txns.where("amount_cents < 0").sum(:amount_cents).abs
     end
 
     def load_inventory_stats
