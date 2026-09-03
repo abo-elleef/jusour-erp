@@ -20,8 +20,24 @@ module Admin
         @sort = %w[name balance_cents].include?(params[:sort]) ? params[:sort] : nil
         @direction = params[:direction] == "desc" ? "desc" : "asc"
         @treasuries = @sort ? scoped.order(@sort => @direction) : scoped.ordered
-        # Aggregate balance of the treasuries matching the active type filter.
-        @filter_total_cents = scoped.sum(:balance_cents)
+
+        # Point-in-time balance filter.
+        # Uses opening_balance_cents + SUM(transactions up to date) — never balance_after_cents,
+        # which can be stale when back-dated transactions are inserted without a balance replay.
+        @as_of_date = params[:as_of_date].presence&.to_date rescue nil
+        if @as_of_date
+          ids = @treasuries.pluck(:id)
+          txn_sums = TreasuryTransaction
+            .where(treasury_id: ids)
+            .where(occurred_on: ..@as_of_date)
+            .group(:treasury_id)
+            .sum(:amount_cents)
+          opening = @treasuries.pluck(:id, :opening_balance_cents).to_h
+          @as_of_balances = ids.index_with { |id| opening[id].to_i + txn_sums[id].to_i }
+          @filter_total_cents = @as_of_balances.values.sum
+        else
+          @filter_total_cents = scoped.sum(:balance_cents)
+        end
       end
 
       def show
