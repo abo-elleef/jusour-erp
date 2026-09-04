@@ -6,7 +6,7 @@ module Admin
   module Inventory
     class IngredientsController < BaseController
       before_action :set_ingredient,
-        only: %i[show edit update destroy adjust adjustments sync_cost_from_last_invoice]
+        only: %i[show edit update destroy adjust adjustments batches sync_cost_from_last_invoice]
 
       SORT_COLUMNS = %w[code name quantity_on_hand suppliers status cost_per_unit_cents stock_value].freeze
 
@@ -44,15 +44,19 @@ module Admin
 
       def show
         authorize_inventory!(:show)
-        @stock_batches = @ingredient.stock_batches.fifo_order.includes(:supplier)
-        @adjustments = @ingredient.stock_adjustments.includes(:user, :unit_ref, :location).order(created_at: :desc).limit(50)
+        @stock_batches = @ingredient.stock_batches.fifo_order.includes(:supplier).limit(20)
+        @stock_batches_total = @ingredient.stock_batches.count
+        @adjustments = @ingredient.stock_adjustments
+          .includes(:user, :unit_ref, :location, :stock_transfer, stock_batch: { vendor_invoice_line: :vendor_invoice })
+          .order(created_at: :desc).limit(25)
         @recipes = @ingredient.recipes.includes(:menu_item, :unit_ref)
         @supplier_links = @ingredient.supplier_ingredients.includes(:supplier)
         @ingredient_units = @ingredient.ingredient_units.includes(:unit_ref)
         load_branch_stock
         load_balance_history_chart
         @last_invoice_cost = ::Inventory::IngredientLastInvoiceCost.new(@ingredient).call
-        @audits = @ingredient.audits.includes(:user).reorder(version: :desc)
+        @audits = @ingredient.audits.includes(:user).reorder(version: :desc).limit(50)
+        @audits_total = @ingredient.audits.count
       end
 
       # Full, paginated adjustment ledger for one ingredient, filterable by
@@ -66,7 +70,7 @@ module Admin
         @end_date = params[:end_date].presence&.to_date
 
         scope = @ingredient.stock_adjustments
-          .includes(:user, :unit_ref, :location)
+          .includes(:user, :unit_ref, :location, :stock_transfer, stock_batch: { vendor_invoice_line: :vendor_invoice })
           .order(created_at: :desc)
         scope = scope.where(location_id: @location_id) if @location_id
         scope = scope.where(stock_adjustments: { created_at: @start_date.beginning_of_day.. }) if @start_date
@@ -88,6 +92,36 @@ module Admin
       rescue Date::Error, ArgumentError
         redirect_to admin_inventory_ingredient_path(@ingredient),
           alert: t("inventory.ingredients.adjustments.invalid_dates")
+      end
+
+      def batches
+        authorize_inventory!(:show)
+
+        @location_id  = params[:location_id].presence
+        @show_empty   = params[:show_empty] == "1"
+        @supplier_id  = params[:supplier_id].presence
+
+        scope = @ingredient.stock_batches
+          .includes(:supplier, :location)
+          .fifo_order
+        scope = scope.where(location_id: @location_id) if @location_id
+        scope = scope.where(supplier_id: @supplier_id) if @supplier_id
+        scope = scope.with_stock unless @show_empty
+
+        respond_to do |format|
+          format.html do
+            @pagy, @batches = pagy(:offset, scope, limit: 50)
+            @locations  = Location.active.central_kitchens.ordered.to_a +
+                          Location.active.branches.ordered.to_a
+            @suppliers  = Supplier.active.order(:name)
+          end
+          format.csv do
+            name = @ingredient.code.to_s.parameterize.presence || "ingredient"
+            send_data batches_csv(scope),
+              filename: "batches-#{name}-#{Date.current}.csv",
+              type: "text/csv; charset=utf-8"
+          end
+        end
       end
 
       def new
@@ -366,6 +400,24 @@ module Admin
               base_unit,
               adj.user&.name,
               adj.reason_notes
+            ]
+          end
+        end
+        "﻿#{body}"
+      end
+
+      def batches_csv(scope)
+        body = CSV.generate do |csv|
+          csv << ["Received on", "Location", "Supplier", "Remaining", "Unit", "Expires on", "Expired?"]
+          scope.each do |batch|
+            csv << [
+              batch.received_on&.strftime("%Y-%m-%d"),
+              batch.location&.name,
+              batch.supplier&.name,
+              batch.quantity_remaining,
+              @ingredient.unit,
+              batch.expires_on&.strftime("%Y-%m-%d"),
+              batch.expired? ? "Yes" : "No"
             ]
           end
         end

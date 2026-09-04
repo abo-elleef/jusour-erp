@@ -602,6 +602,19 @@ module ApplicationHelper
 
   # Render a stock adjustment's delta in the unit it was entered (system
   # adjustments are base-unit), with a base-unit helper line when they differ.
+  # Returns the Rails path to the source document that triggered this adjustment,
+  # or nil when no linkable source exists (manual, waste, cycle count, etc.).
+  def stock_adjustment_source_path(adjustment)
+    case adjustment.adjustment_type
+    when "vendor_invoice", "delivery"
+      invoice = adjustment.stock_batch&.vendor_invoice_line&.vendor_invoice
+      admin_inventory_vendor_invoice_path(invoice) if invoice
+    when "transfer_in", "transfer_out"
+      transfer = adjustment.stock_transfer
+      admin_inventory_stock_transfer_path(transfer) if transfer
+    end
+  end
+
   def stock_adjustment_quantity(adjustment)
     ingredient = adjustment.ingredient
     base = adjustment.quantity_delta.to_d

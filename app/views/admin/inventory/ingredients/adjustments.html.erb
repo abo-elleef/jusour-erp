@@ -108,9 +108,15 @@
                 <td colspan="2"></td>
               </tr>
               <% day_adjs.each do |adj| %>
+                <% source_path = stock_adjustment_source_path(adj) %>
                 <tr class="hover:bg-gray-100 transition-colors border-b border-gray-100">
-                  <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums text-xs">
-                    <%= l(adj.created_at, format: :short) %>
+                  <td class="p-3 ps-5 whitespace-nowrap tabular-nums text-xs">
+                    <% if source_path %>
+                      <%= link_to l(adj.created_at, format: :short), source_path,
+                            class: "text-amber-700 hover:text-amber-900 hover:underline font-medium" %>
+                    <% else %>
+                      <span class="text-gray-600"><%= l(adj.created_at, format: :short) %></span>
+                    <% end %>
                   </td>
                   <td class="p-3 text-gray-700">
                     <%= adj.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
@@ -127,16 +133,28 @@
                       <%= tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
                     <% end %>
                   </td>
-                  <td class="p-3 text-gray-700 whitespace-nowrap"><%= adj.user&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
+                  <td class="p-3 whitespace-nowrap">
+                    <% if adj.user %>
+                      <%= link_to adj.user.name, admin_user_path(adj.user), class: "text-gray-700 hover:text-gray-900 hover:underline" %>
+                    <% else %>
+                      <%= tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
+                    <% end %>
+                  </td>
                   <td class="p-3 text-gray-600"><%= adj.reason_notes.presence || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
                 </tr>
               <% end %>
             <% end %>
             <% else %>
               <% @adjustments.each do |adj| %>
+                <% source_path = stock_adjustment_source_path(adj) %>
                 <tr class="hover:bg-gray-100 transition-colors border-b border-gray-100">
-                  <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums text-xs">
-                    <%= l(adj.created_at, format: :short) %>
+                  <td class="p-3 ps-5 whitespace-nowrap tabular-nums text-xs">
+                    <% if source_path %>
+                      <%= link_to l(adj.created_at, format: :short), source_path,
+                            class: "text-amber-700 hover:text-amber-900 hover:underline font-medium" %>
+                    <% else %>
+                      <span class="text-gray-600"><%= l(adj.created_at, format: :short) %></span>
+                    <% end %>
                   </td>
                   <td class="p-3 text-gray-700">
                     <%= adj.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
@@ -153,7 +171,13 @@
                       <%= tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
                     <% end %>
                   </td>
-                  <td class="p-3 text-gray-700 whitespace-nowrap"><%= adj.user&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
+                  <td class="p-3 whitespace-nowrap">
+                    <% if adj.user %>
+                      <%= link_to adj.user.name, admin_user_path(adj.user), class: "text-gray-700 hover:text-gray-900 hover:underline" %>
+                    <% else %>
+                      <%= tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
+                    <% end %>
+                  </td>
                   <td class="p-3 text-gray-600"><%= adj.reason_notes.presence || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %></td>
                 </tr>
               <% end %>

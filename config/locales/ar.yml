@@ -74,6 +74,8 @@ ar:
     apply: "تطبيق"
     add: "إضافة"
     remove: "إزالة"
+    expand: "عرض"
+    collapse: "إخفاء"
     done: "تم"
     customize: "اختيارات"
     export_csv: "تصدير CSV"
@@ -991,6 +993,7 @@ ar:
           hide: "إخفاء الرسم"
           range: "الفترة"
           apply: "عرض الرسم"
+          choose_range: "اختر فترة زمنية أعلاه ثم اضغط «عرض الرسم» لتحميل البيانات."
           empty: "لا توجد بيانات رصيد للفترة المحددة."
           series_balance: "الكمية المتوفرة (%{unit})"
           series_price: "سعر الشراء"
@@ -1024,6 +1027,17 @@ ar:
           to: "إلى"
           apply: "تطبيق"
           clear: "مسح"
+      batches:
+        title: "دفتر دُفعات FIFO"
+        view_all: "عرض جميع الدفعات"
+        truncated: "عرض أقدم %{shown} من إجمالي %{total} دفعة."
+        total_remaining: "إجمالي المتبقي"
+        empty: "لا توجد دفعات تطابق هذه الفلاتر."
+        filters:
+          location: "الموقع"
+          supplier: "المورّد"
+          all_suppliers: "جميع الموردين"
+          show_empty: "تضمين الدفعات المستنفدة"
     tools:
       groups:
         operations: "العمليات"
@@ -3966,6 +3980,7 @@ ar:
       empty: "لا توجد سجلات تطابق التصفية."
     audit_history:
       title: "سجل التغييرات"
+      title_truncated: "سجل التغييرات (عرض %{shown} من %{total})"
       hint: "عمليات الإنشاء والتحديث المسجّلة لهذا العنصر."
       time: "الوقت"
       user: "المستخدم"

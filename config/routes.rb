@@ -309,6 +309,7 @@ Rails.application.routes.draw do
         member do
           post :adjust
           get :adjustments
+          get :batches
           post :sync_cost_from_last_invoice
         end
         collection { get :low_stock }

@@ -76,6 +76,8 @@ en:
     apply: "Apply"
     add: "Add"
     remove: "Remove"
+    expand: "Show"
+    collapse: "Hide"
     done: "Done"
     customize: "Customize"
     export_csv: "Export CSV"
@@ -991,6 +993,7 @@ en:
           hide: "Hide chart"
           range: "Period"
           apply: "Show chart"
+          choose_range: "Select a period above and click \"Show chart\" to load the history."
           empty: "No balance history is available for the selected period."
           series_balance: "On hand (%{unit})"
           series_price: "Purchase price"
@@ -1024,6 +1027,17 @@ en:
           to: "To"
           apply: "Apply"
           clear: "Clear"
+      batches:
+        title: "FIFO batch ledger"
+        view_all: "View all batches"
+        truncated: "Showing oldest %{shown} of %{total} batches."
+        total_remaining: "Total remaining"
+        empty: "No batches match these filters."
+        filters:
+          location: "Location"
+          supplier: "Supplier"
+          all_suppliers: "All suppliers"
+          show_empty: "Include depleted batches"
     tools:
       groups:
         operations: "Operations"
@@ -3942,6 +3956,7 @@ en:
       empty: "No audit entries match these filters."
     audit_history:
       title: "Change history"
+      title_truncated: "Change history (showing %{shown} of %{total})"
       hint: "Creates and updates recorded for this record."
       time: "Time"
       user: "User"

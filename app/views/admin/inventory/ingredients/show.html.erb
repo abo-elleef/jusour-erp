@@ -16,6 +16,7 @@
 <div class="max-w-7xl">
   <%= render "admin/inventory/tools_nav" %>
 
+  <%# ── Header ──────────────────────────────────────────────────────────── %>
   <header class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div class="min-w-0">
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @ingredient.name %></h1>
@@ -31,6 +32,11 @@
       <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full <%= badge_class %>">
         <%= label %>
       </span>
+      <%# Adjust stock opens a modal — rarely needed, shouldn't dominate the page layout %>
+      <button type="button" onclick="document.getElementById('adjust-stock-modal').showModal()"
+              class="inline-flex text-xs font-semibold text-amber-800 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-300 transition-colors">
+        <%= t("inventory.ingredients.show.adjust_stock") %>
+      </button>
       <%= link_to t("inventory.ingredients.show.edit"), edit_admin_inventory_ingredient_path(@ingredient),
             class: chip_secondary %>
       <%= link_to t("inventory.consolidations.action"), new_admin_inventory_ingredient_consolidation_path(@ingredient),
@@ -38,6 +44,7 @@
     </div>
   </header>
 
+  <%# ── Key stats ───────────────────────────────────────────────────────── %>
   <div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
     <div class="rounded-2xl border p-4 <%= on_hand_stat_class %>">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.ingredients.show.on_hand") %></p>
@@ -64,17 +71,9 @@
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.ingredients.show.cost_per_unit") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@ingredient.cost_per_unit_cents) %></p>
       <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.ingredients.show.cost_hint") %></p>
-
-      <%# Nothing updates this cost when goods arrive, so offer to adopt the last
-          invoiced price. Confirmed first, with the before/after and the source
-          invoice named, because this figure drives the valuation report, recipe
-          costing, and the price stamped on manually added batches. %>
       <% if @last_invoice_cost %>
         <% invoiced = @last_invoice_cost.unit_cost_cents %>
         <% source_invoice = @last_invoice_cost.invoice %>
-        <%# `_html` keys so the invoice link sits inside the sentence rather than
-            being tacked on — Arabic word order differs from English, and Rails
-            escapes interpolations for these keys while keeping link_to markup. %>
         <% invoice_link = link_to source_invoice.invoice_number,
              admin_inventory_vendor_invoice_path(source_invoice),
              class: "font-semibold underline underline-offset-2 hover:no-underline" %>
@@ -106,73 +105,7 @@
     </div>
   </div>
 
-  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6" data-ingredient-units>
-    <div class="<%= section_head %>">
-      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.units.title") %></h2>
-      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.units.hint") %></p>
-    </div>
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm min-w-[480px]">
-        <thead class="<%= table_head %>">
-          <tr>
-            <th class="p-3 ps-5 text-start"><%= t("inventory.ingredients.show.units.unit") %></th>
-            <th class="p-3 text-start"><%= t("inventory.ingredients.show.units.type") %></th>
-            <th class="p-3 text-start"><%= t("inventory.ingredients.show.units.conversion") %></th>
-            <th class="p-3 pe-5 text-end"><%= t("inventory.ingredients.show.units.on_hand") %></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100 table-zebra">
-          <% base_label = ingredient_unit_label(@ingredient.unit) %>
-          <tr class="hover:bg-gray-100 transition-colors">
-            <td class="p-3 ps-5 font-semibold text-gray-900"><%= base_label %></td>
-            <td class="p-3">
-              <% if @ingredient.purchase_unit_record.nil? %>
-                <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200">
-                  <%= t("inventory.ingredients.show.units.purchase") %>
-                </span>
-              <% else %>
-                <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
-                  <%= t("inventory.ingredients.show.units.base") %>
-                </span>
-              <% end %>
-            </td>
-            <td class="p-3 text-gray-500"><%= t("inventory.ingredients.show.units.base_kept") %></td>
-            <td class="p-3 pe-5 text-end tabular-nums text-gray-900">
-              <%= number_with_precision(@ingredient.quantity_on_hand, precision: 3, strip_insignificant_zeros: true) %>
-              <span class="text-gray-500 text-xs"><%= base_label %></span>
-            </td>
-          </tr>
-          <% @ingredient_units.each do |iu| %>
-            <% alt_label = ingredient_unit_label(iu.unit) %>
-            <% factor = number_with_precision(iu.base_units_per_unit, precision: 4, strip_insignificant_zeros: true) %>
-            <% on_hand_alt = @ingredient.from_base(@ingredient.quantity_on_hand, iu.unit) %>
-            <tr class="hover:bg-gray-100 transition-colors">
-              <td class="p-3 ps-5 font-medium text-gray-900"><%= alt_label %></td>
-              <td class="p-3">
-                <% if iu.purchase_unit? %>
-                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200">
-                    <%= t("inventory.ingredients.show.units.purchase") %>
-                  </span>
-                <% else %>
-                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-                    <%= t("inventory.ingredients.show.units.alternate") %>
-                  </span>
-                <% end %>
-              </td>
-              <td class="p-3 text-gray-700 tabular-nums">
-                <%= t("inventory.ingredients.show.units.conversion_eq", unit: alt_label, qty: factor, base: base_label) %>
-              </td>
-              <td class="p-3 pe-5 text-end tabular-nums text-gray-900">
-                <%= number_with_precision(on_hand_alt, precision: 3, strip_insignificant_zeros: true) %>
-                <span class="text-gray-500 text-xs"><%= alt_label %></span>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
+  <%# ── Branch stock ─────────────────────────────────────────────────────── %>
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="<%= section_head %>">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.branch_stock.title") %></h2>
@@ -259,19 +192,19 @@
     <% end %>
   </section>
 
-  <details class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6 group" <%= "open" if params[:chart_days].present? %>>
+  <%# ── Balance & price chart — open by default ─────────────────────────── %>
+  <details class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6 group" open>
     <summary class="<%= section_head %> flex cursor-pointer list-none flex-wrap items-center justify-between gap-3">
       <div>
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.balance_history.title") %></h2>
         <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.balance_history.hint") %></p>
       </div>
-      <span class="text-xs font-semibold text-amber-700 group-open:hidden"><%= t("inventory.ingredients.show.balance_history.show") %></span>
-      <span class="text-xs font-semibold text-gray-500 hidden group-open:inline"><%= t("inventory.ingredients.show.balance_history.hide") %></span>
-    </summary>
-    <div class="p-5">
-      <%= form_with url: admin_inventory_ingredient_path(@ingredient), method: :get, class: "flex flex-wrap items-end gap-4" do %>
-        <div>
-          <label class="<%= label_class %>"><%= t("inventory.ingredients.show.balance_history.range") %></label>
+      <div class="flex items-center gap-3 ms-auto">
+        <%= form_with url: admin_inventory_ingredient_path(@ingredient), method: :get,
+              class: "flex items-center gap-2",
+              html: { onclick: "event.stopPropagation()" },
+              data: { turbo_frame: "balance-chart" } do %>
+          <label class="text-xs font-semibold text-gray-500 whitespace-nowrap"><%= t("inventory.ingredients.show.balance_history.range") %></label>
           <%= select_tag :chart_days,
                 options_for_select(
                   Inventory::IngredientBalanceHistoryService::ALLOWED_DAYS.map do |days|
@@ -279,18 +212,17 @@
                   end,
                   @chart_days
                 ),
-                class: "#{pos_input_class} appearance-none min-w-[14rem]" %>
-        </div>
-        <%= submit_tag t("inventory.ingredients.show.balance_history.apply"),
-              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors cursor-pointer" %>
-      <% end %>
+                class: "#{pos_input_class} appearance-none text-xs py-1.5",
+                onchange: "this.form.requestSubmit()" %>
+        <% end %>
+        <span class="text-xs font-semibold text-amber-700 group-open:hidden"><%= t("inventory.ingredients.show.balance_history.show") %></span>
+        <span class="text-xs font-semibold text-gray-500 hidden group-open:inline"><%= t("inventory.ingredients.show.balance_history.hide") %></span>
+      </div>
+    </summary>
+    <turbo-frame id="balance-chart">
+    <div class="p-5">
 
       <% if @balance_history.any? %>
-        <%# Straight segments, not splines: a spline invents in-between values that
-            never existed. The price line is stepped for the same reason — a price
-            holds flat until a receipt changes it, it doesn't drift.
-            Balance (units) and price (money) share an x-axis but need separate
-            y-axes, so each series is pinned to its own via `dataset`. %>
         <% series = [{
              name: t("inventory.ingredients.show.balance_history.series_balance",
                      unit: ingredient_unit_label(@ingredient.unit)),
@@ -334,57 +266,69 @@
         <p class="mt-4 text-sm text-gray-500"><%= t("inventory.ingredients.show.balance_history.empty") %></p>
       <% end %>
     </div>
+    </turbo-frame>
   </details>
 
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <%# ── Main two-column grid ─────────────────────────────────────────────── %>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+
+    <%# Left column: adjustments + recipes %>
     <div class="space-y-6">
-      <section class="rounded-2xl border border-amber-200 bg-amber-50/30 overflow-hidden" id="adjust">
-        <div class="<%= section_head %>">
-          <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.adjust_stock") %></h2>
-          <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.adjust_stock_hint") %></p>
+
+      <%# Recent adjustments — with # index %>
+      <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div class="<%= section_head %> flex flex-wrap justify-between items-center gap-2">
+          <div>
+            <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.recent_adjustments") %></h2>
+            <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.adjustments_hint") %></p>
+          </div>
+          <%= link_to t("inventory.ingredients.adjustments.view_all"),
+                adjustments_admin_inventory_ingredient_path(@ingredient),
+                class: "text-xs font-semibold text-amber-700 hover:text-amber-800 whitespace-nowrap" %>
         </div>
-        <div class="p-5">
-          <%= form_with url: adjust_admin_inventory_ingredient_path(@ingredient), method: :post, class: "space-y-4" do %>
-            <div>
-              <%= label_tag :location_id, t("inventory.ingredients.show.location"), class: label_class %>
-              <%= select_tag :location_id,
-                    options_for_select(@stock_locations.to_a.map { |loc| [stock_location_option_label(loc), loc.id] }),
-                    include_blank: t("inventory.ingredients.show.select_location"),
-                    required: true,
-                    class: "#{pos_input_class} appearance-none" %>
-              <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.ingredients.show.location_hint") %></p>
-            </div>
-            <div>
-              <%= label_tag :quantity_delta, t("inventory.ingredients.show.quantity_delta"), class: label_class %>
-              <% adj_units = @ingredient.available_units %>
-              <% if adj_units.size > 1 %>
-                <div class="flex gap-2">
-                  <%= number_field_tag :quantity_delta, nil, step: 0.001, required: true, class: "#{pos_input_class} basis-2/3 min-w-0" %>
-                  <%= select_tag :unit,
-                        options_for_select(adj_units.map { |u| [ingredient_unit_label(u), u] }, @ingredient.unit),
-                        class: "#{pos_input_class} appearance-none basis-1/3 min-w-0" %>
-                </div>
-              <% else %>
-                <%= number_field_tag :quantity_delta, nil, step: 0.001, required: true, class: pos_input_class %>
-              <% end %>
-            </div>
-            <div>
-              <%= label_tag :adjustment_type, t("inventory.ingredients.show.adjustment_type"), class: label_class %>
-              <%= select_tag :adjustment_type,
-                    options_for_select(
-                      StockAdjustment::ADJUSTMENT_TYPES.map { |type| [inventory_adjustment_type_label(type), type] }
-                    ),
-                    class: "#{pos_input_class} appearance-none" %>
-            </div>
-            <%= text_field_tag :reason_notes, nil,
-                  placeholder: t("inventory.ingredients.show.notes_placeholder"),
-                  class: pos_input_class %>
-            <%= submit_tag t("inventory.ingredients.show.apply_adjustment"),
-                  class: "w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors" %>
-          <% end %>
-        </div>
+        <% if @adjustments.any? %>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm min-w-[360px]">
+              <thead class="<%= table_head %>">
+                <tr>
+                  <th class="p-3 ps-5 text-end w-8 text-gray-400">#</th>
+                  <th class="p-3 text-start"><%= t("accounting.audit_log.time") %></th>
+                  <th class="p-3 text-start"><%= t("inventory.ingredients.show.location") %></th>
+                  <th class="p-3 text-start"><%= t("inventory.ingredients.show.adjustment_type") %></th>
+                  <th class="p-3 pe-5 text-end"><%= t("inventory.ingredients.show.quantity_short") %></th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 table-zebra">
+                <% @adjustments.each_with_index do |adj, i| %>
+                  <% source_path = stock_adjustment_source_path(adj) %>
+                  <tr class="hover:bg-gray-100 transition-colors">
+                    <td class="p-3 ps-5 text-end tabular-nums text-gray-400 text-xs"><%= i + 1 %></td>
+                    <td class="p-3 whitespace-nowrap tabular-nums text-xs">
+                      <% if source_path %>
+                        <%= link_to l(adj.created_at, format: :short), source_path,
+                              class: "text-amber-700 hover:text-amber-900 hover:underline font-medium" %>
+                      <% else %>
+                        <span class="text-gray-600"><%= l(adj.created_at, format: :short) %></span>
+                      <% end %>
+                    </td>
+                    <td class="p-3 text-gray-700">
+                      <%= adj.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
+                    </td>
+                    <td class="p-3 text-gray-900"><%= inventory_adjustment_type_label(adj.adjustment_type) %></td>
+                    <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= adj.quantity_delta.positive? ? "text-green-700" : "text-red-700" %>">
+                      <%= stock_adjustment_quantity(adj) %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% else %>
+          <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("inventory.ingredients.show.adjustments_empty") %></p>
+        <% end %>
       </section>
 
+      <%# Recipes %>
       <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div class="<%= section_head %>">
           <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.recipes") %></h2>
@@ -431,51 +375,10 @@
       </section>
     </div>
 
+    <%# Right column: suppliers + FIFO batches (pushed down) %>
     <div class="space-y-6">
-      <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-        <div class="<%= section_head %>">
-          <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.fifo_batches") %></h2>
-          <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.fifo_hint") %></p>
-        </div>
-        <% if @stock_batches.any? %>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm min-w-[300px]">
-              <thead class="<%= table_head %>">
-                <tr>
-                  <th class="p-3 ps-5 text-start"><%= t("inventory.ingredients.show.received") %></th>
-                  <th class="p-3 text-start"><%= t("inventory.ingredients.show.remaining") %></th>
-                  <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.show.expires") %></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 table-zebra">
-                <% @stock_batches.each do |batch| %>
-                  <tr class="hover:bg-gray-100 transition-colors">
-                    <td class="p-3 ps-5 tabular-nums text-gray-900"><%= l(batch.received_on) %></td>
-                    <td class="p-3 tabular-nums text-gray-700">
-                      <%= batch.quantity_remaining %> <%= ingredient_unit_label(@ingredient.unit) %>
-                    </td>
-                    <td class="p-3 pe-5 tabular-nums <%= batch.expired? ? "text-red-700 font-semibold" : "text-gray-700" %>">
-                      <% if batch.expired? %>
-                        <span class="inline-flex items-center gap-1.5">
-                          <%= batch.expires_on ? l(batch.expires_on) : t("accounting.shared.em_dash") %>
-                          <span class="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200">
-                            <%= t("inventory.ingredients.show.expired") %>
-                          </span>
-                        </span>
-                      <% else %>
-                        <%= batch.expires_on ? l(batch.expires_on) : t("accounting.shared.em_dash") %>
-                      <% end %>
-                    </td>
-                  </tr>
-                <% end %>
-              </tbody>
-            </table>
-          </div>
-        <% else %>
-          <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("inventory.ingredients.show.batches_empty") %></p>
-        <% end %>
-      </section>
 
+      <%# Suppliers %>
       <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div class="<%= section_head %>">
           <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.suppliers") %></h2>
@@ -512,51 +415,287 @@
         <% end %>
       </section>
 
+      <%# FIFO batches — pushed below suppliers, less frequently needed %>
       <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div class="<%= section_head %> flex flex-wrap justify-between items-center gap-2">
           <div>
-            <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.recent_adjustments") %></h2>
-            <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.adjustments_hint") %></p>
+            <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.fifo_batches") %></h2>
+            <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.fifo_hint") %></p>
           </div>
-          <%= link_to t("inventory.ingredients.adjustments.view_all"),
-                adjustments_admin_inventory_ingredient_path(@ingredient),
+          <%= link_to t("inventory.ingredients.batches.view_all"),
+                batches_admin_inventory_ingredient_path(@ingredient),
                 class: "text-xs font-semibold text-amber-700 hover:text-amber-800 whitespace-nowrap" %>
         </div>
-        <% if @adjustments.any? %>
+        <% if @stock_batches.any? %>
           <div class="overflow-x-auto">
-            <table class="w-full text-sm min-w-[320px]">
+            <table class="w-full text-sm min-w-[300px]">
               <thead class="<%= table_head %>">
                 <tr>
-                  <th class="p-3 ps-5 text-start"><%= t("accounting.audit_log.time") %></th>
-                  <th class="p-3 text-start"><%= t("inventory.ingredients.show.location") %></th>
-                  <th class="p-3 text-start"><%= t("inventory.ingredients.show.adjustment_type") %></th>
-                  <th class="p-3 pe-5 text-end"><%= t("inventory.ingredients.show.quantity_short") %></th>
+                  <th class="p-3 ps-5 text-start"><%= t("inventory.ingredients.show.received") %></th>
+                  <th class="p-3 text-start"><%= t("inventory.ingredients.show.remaining") %></th>
+                  <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.show.expires") %></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 table-zebra">
-                <% @adjustments.each do |adj| %>
+                <% @stock_batches.each do |batch| %>
                   <tr class="hover:bg-gray-100 transition-colors">
-                    <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums text-xs">
-                      <%= l(adj.created_at, format: :short) %>
+                    <td class="p-3 ps-5 tabular-nums text-gray-900"><%= l(batch.received_on) %></td>
+                    <td class="p-3 tabular-nums text-gray-700">
+                      <%= batch.quantity_remaining %> <%= ingredient_unit_label(@ingredient.unit) %>
                     </td>
-                    <td class="p-3 text-gray-700">
-                      <%= adj.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
-                    </td>
-                    <td class="p-3 text-gray-900"><%= inventory_adjustment_type_label(adj.adjustment_type) %></td>
-                    <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= adj.quantity_delta.positive? ? "text-green-700" : "text-red-700" %>">
-                      <%= stock_adjustment_quantity(adj) %>
+                    <td class="p-3 pe-5 tabular-nums <%= batch.expired? ? "text-red-700 font-semibold" : "text-gray-700" %>">
+                      <% if batch.expired? %>
+                        <span class="inline-flex items-center gap-1.5">
+                          <%= batch.expires_on ? l(batch.expires_on) : t("accounting.shared.em_dash") %>
+                          <span class="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200">
+                            <%= t("inventory.ingredients.show.expired") %>
+                          </span>
+                        </span>
+                      <% else %>
+                        <%= batch.expires_on ? l(batch.expires_on) : t("accounting.shared.em_dash") %>
+                      <% end %>
                     </td>
                   </tr>
                 <% end %>
               </tbody>
             </table>
           </div>
+          <% if @stock_batches_total > 20 %>
+            <p class="px-5 py-3 text-xs text-gray-500 border-t border-gray-100 bg-gray-50/50">
+              <%= t("inventory.ingredients.batches.truncated", shown: 20, total: @stock_batches_total) %>
+              <%= link_to t("inventory.ingredients.batches.view_all"), batches_admin_inventory_ingredient_path(@ingredient),
+                    class: "font-semibold text-amber-700 hover:text-amber-800 ms-1" %>
+            </p>
+          <% end %>
         <% else %>
-          <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("inventory.ingredients.show.adjustments_empty") %></p>
+          <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("inventory.ingredients.show.batches_empty") %></p>
         <% end %>
       </section>
     </div>
   </div>
 
-  <%= render "shared/audit_history", audits: @audits %>
+  <%# ── Units — collapsed, rarely changes ──────────────────────────────────── %>
+  <details class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6 group" data-ingredient-units>
+    <summary class="<%= section_head %> flex cursor-pointer list-none flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.show.units.title") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.show.units.hint") %></p>
+      </div>
+      <span class="text-xs font-semibold text-amber-700 group-open:hidden"><%= t("actions.expand") %></span>
+      <span class="text-xs font-semibold text-gray-500 hidden group-open:inline"><%= t("actions.collapse") %></span>
+    </summary>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[480px]">
+        <thead class="<%= table_head %>">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= t("inventory.ingredients.show.units.unit") %></th>
+            <th class="p-3 text-start"><%= t("inventory.ingredients.show.units.type") %></th>
+            <th class="p-3 text-start"><%= t("inventory.ingredients.show.units.conversion") %></th>
+            <th class="p-3 pe-5 text-end"><%= t("inventory.ingredients.show.units.on_hand") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 table-zebra">
+          <% base_label = ingredient_unit_label(@ingredient.unit) %>
+          <tr class="hover:bg-gray-100 transition-colors">
+            <td class="p-3 ps-5 font-semibold text-gray-900"><%= base_label %></td>
+            <td class="p-3">
+              <% if @ingredient.purchase_unit_record.nil? %>
+                <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200">
+                  <%= t("inventory.ingredients.show.units.purchase") %>
+                </span>
+              <% else %>
+                <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
+                  <%= t("inventory.ingredients.show.units.base") %>
+                </span>
+              <% end %>
+            </td>
+            <td class="p-3 text-gray-500"><%= t("inventory.ingredients.show.units.base_kept") %></td>
+            <td class="p-3 pe-5 text-end tabular-nums text-gray-900">
+              <%= number_with_precision(@ingredient.quantity_on_hand, precision: 3, strip_insignificant_zeros: true) %>
+              <span class="text-gray-500 text-xs"><%= base_label %></span>
+            </td>
+          </tr>
+          <% @ingredient_units.each do |iu| %>
+            <% alt_label = ingredient_unit_label(iu.unit) %>
+            <% factor = number_with_precision(iu.base_units_per_unit, precision: 4, strip_insignificant_zeros: true) %>
+            <% on_hand_alt = @ingredient.from_base(@ingredient.quantity_on_hand, iu.unit) %>
+            <tr class="hover:bg-gray-100 transition-colors">
+              <td class="p-3 ps-5 font-medium text-gray-900"><%= alt_label %></td>
+              <td class="p-3">
+                <% if iu.purchase_unit? %>
+                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200">
+                    <%= t("inventory.ingredients.show.units.purchase") %>
+                  </span>
+                <% else %>
+                  <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                    <%= t("inventory.ingredients.show.units.alternate") %>
+                  </span>
+                <% end %>
+              </td>
+              <td class="p-3 text-gray-700 tabular-nums">
+                <%= t("inventory.ingredients.show.units.conversion_eq", unit: alt_label, qty: factor, base: base_label) %>
+              </td>
+              <td class="p-3 pe-5 text-end tabular-nums text-gray-900">
+                <%= number_with_precision(on_hand_alt, precision: 3, strip_insignificant_zeros: true) %>
+                <span class="text-gray-500 text-xs"><%= alt_label %></span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <%# ── Audit history — collapsed, sticky header ────────────────────────── %>
+  <details class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-4 group">
+    <summary class="px-5 py-4 flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-gray-50/80 sticky top-0 z-10">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900">
+          <% if @audits_total > 50 %>
+            <%= t("accounting.audit_history.title_truncated", shown: 50, total: @audits_total) %>
+          <% else %>
+            <%= t("accounting.audit_history.title") %>
+          <% end %>
+        </h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.audit_history.hint") %></p>
+      </div>
+      <span class="text-xs font-semibold text-amber-700 group-open:hidden"><%= t("actions.expand") %></span>
+      <span class="text-xs font-semibold text-gray-500 hidden group-open:inline"><%= t("actions.collapse") %></span>
+    </summary>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[36rem]">
+        <thead class="border-b border-gray-100 bg-gray-50/50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start w-36"><%= t("accounting.audit_history.time") %></th>
+            <th class="p-3 text-start w-40"><%= t("accounting.audit_history.user") %></th>
+            <th class="p-3 text-start w-44"><%= t("accounting.audit_history.action") %></th>
+            <th class="p-3 pe-5 text-start"><%= t("accounting.audit_history.changes") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 table-zebra">
+          <% if @audits.blank? %>
+            <tr>
+              <td colspan="4" class="p-8 text-center text-sm text-gray-500"><%= t("accounting.audit_history.empty") %></td>
+            </tr>
+          <% else %>
+            <% @audits.each do |audit| %>
+              <% rows = audit_history_rows(audit) %>
+              <tr class="align-top">
+                <td class="p-3 ps-5 whitespace-nowrap tabular-nums text-gray-700">
+                  <%= audit.created_at ? l(audit.created_at, format: :short) : t("accounting.shared.em_dash") %>
+                </td>
+                <td class="p-3">
+                  <% if audit.user %>
+                    <%= link_to audit.user.try(:name), admin_user_path(audit.user),
+                          class: "text-gray-900 hover:text-gray-700 hover:underline" %>
+                  <% else %>
+                    <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+                  <% end %>
+                </td>
+                <td class="p-3">
+                  <span class="inline-flex whitespace-nowrap text-xs font-semibold px-2 py-0.5 rounded-full border
+                    <%= case audit.action.to_s
+                        when "create", "supplier_linked", "unit_added" then "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        when "destroy", "supplier_unlinked", "unit_removed" then "bg-red-50 text-red-700 border-red-200"
+                        when "unit_marked_purchase", "unit_unmarked_purchase" then "bg-blue-50 text-blue-700 border-blue-200"
+                        else "bg-amber-50 text-amber-800 border-amber-200"
+                        end %>">
+                    <%= t("accounting.audit_history.actions.#{audit.action}", default: audit.action.to_s) %>
+                  </span>
+                </td>
+                <td class="p-3 pe-5 text-sm text-gray-700">
+                  <% if rows.empty? %>
+                    <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+                  <% else %>
+                    <ul class="space-y-1.5">
+                      <% rows.each do |row| %>
+                        <li class="leading-snug">
+                          <span class="font-medium text-gray-900"><%= row[:label] %></span>
+                          <% if row[:kind] == :update %>
+                            <span class="text-gray-500">:</span>
+                            <span class="inline-flex flex-wrap items-baseline gap-x-1" dir="ltr">
+                              <bdi class="text-gray-500 line-through decoration-gray-300"><%= row[:from] %></bdi>
+                              <span class="text-gray-400" aria-hidden="true">→</span>
+                              <bdi class="text-gray-900"><%= row[:to] %></bdi>
+                            </span>
+                          <% else %>
+                            <span class="text-gray-500">:</span>
+                            <bdi class="text-gray-800" dir="ltr"><%= row[:value] %></bdi>
+                          <% end %>
+                        </li>
+                      <% end %>
+                    </ul>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </details>
 </div>
+
+<%# ── Adjust stock modal ───────────────────────────────────────────────────── %>
+<dialog id="adjust-stock-modal"
+        class="m-auto rounded-[28px] shadow-2xl border-0 p-0 w-[480px] max-w-[95vw] backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+        onclick="if(event.target===this)this.close()">
+  <div class="px-6 pt-6 pb-4 border-b border-gray-100 flex items-center justify-between">
+    <div>
+      <h3 class="text-base font-semibold text-gray-900"><%= t("inventory.ingredients.show.adjust_stock") %></h3>
+      <p class="text-xs text-gray-500 mt-0.5"><%= @ingredient.name %></p>
+    </div>
+    <button type="button" onclick="document.getElementById('adjust-stock-modal').close()"
+            class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+  <div class="px-6 py-5">
+    <%= form_with url: adjust_admin_inventory_ingredient_path(@ingredient), method: :post, class: "space-y-4" do %>
+      <div>
+        <%= label_tag :location_id, t("inventory.ingredients.show.location"), class: label_class %>
+        <%= select_tag :location_id,
+              options_for_select(@stock_locations.to_a.map { |loc| [stock_location_option_label(loc), loc.id] }),
+              include_blank: t("inventory.ingredients.show.select_location"),
+              required: true,
+              class: "#{pos_input_class} appearance-none" %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.ingredients.show.location_hint") %></p>
+      </div>
+      <div>
+        <%= label_tag :quantity_delta, t("inventory.ingredients.show.quantity_delta"), class: label_class %>
+        <% adj_units = @ingredient.available_units %>
+        <% if adj_units.size > 1 %>
+          <div class="flex gap-2">
+            <%= number_field_tag :quantity_delta, nil, step: 0.001, required: true, class: "#{pos_input_class} basis-2/3 min-w-0" %>
+            <%= select_tag :unit,
+                  options_for_select(adj_units.map { |u| [ingredient_unit_label(u), u] }, @ingredient.unit),
+                  class: "#{pos_input_class} appearance-none basis-1/3 min-w-0" %>
+          </div>
+        <% else %>
+          <%= number_field_tag :quantity_delta, nil, step: 0.001, required: true, class: pos_input_class %>
+        <% end %>
+      </div>
+      <div>
+        <%= label_tag :adjustment_type, t("inventory.ingredients.show.adjustment_type"), class: label_class %>
+        <%= select_tag :adjustment_type,
+              options_for_select(
+                StockAdjustment::ADJUSTMENT_TYPES.map { |type| [inventory_adjustment_type_label(type), type] }
+              ),
+              class: "#{pos_input_class} appearance-none" %>
+      </div>
+      <%= text_field_tag :reason_notes, nil,
+            placeholder: t("inventory.ingredients.show.notes_placeholder"),
+            class: pos_input_class %>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="document.getElementById('adjust-stock-modal').close()"
+                class="rounded-full px-5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+          <%= t("actions.cancel") %>
+        </button>
+        <%= submit_tag t("inventory.ingredients.show.apply_adjustment"),
+              class: "rounded-full px-5 py-2 text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white transition-colors cursor-pointer" %>
+      </div>
+    <% end %>
+  </div>
+</dialog>

@@ -1,0 +1,141 @@
+<% content_for :title, @ingredient.name %>
+
+<div class="max-w-5xl pt-4">
+  <div class="mb-6 flex flex-wrap justify-between items-start gap-3">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900 mt-2"><%= t("inventory.ingredients.batches.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1">
+        <%= link_to @ingredient.name, admin_inventory_ingredient_path(@ingredient),
+              class: "hover:text-gray-900 hover:underline transition-colors" %>
+      </p>
+    </div>
+    <% if @batches.any? %>
+      <%= link_to batches_admin_inventory_ingredient_path(@ingredient, format: :csv,
+                    location_id: @location_id, supplier_id: @supplier_id, show_empty: params[:show_empty]),
+            class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg border border-gray-200 transition-colors shrink-0" do %>
+        <span aria-hidden="true">&darr;</span> <%= t("inventory.ingredients.adjustments.export_csv") %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%= form_with url: batches_admin_inventory_ingredient_path(@ingredient), method: :get,
+        class: "rounded-2xl border border-gray-200 bg-white p-4 mb-6" do %>
+    <div class="flex flex-wrap items-end gap-3">
+      <div class="min-w-[10rem]">
+        <%= label_tag :location_id, t("inventory.ingredients.batches.filters.location"),
+              class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= select_tag :location_id,
+              options_for_select(
+                [[t("inventory.ingredients.adjustments.filters.all_locations"), ""]] +
+                  @locations.map { |loc| [loc.name, loc.id] },
+                @location_id),
+              class: pos_input_class %>
+      </div>
+      <div class="min-w-[10rem]">
+        <%= label_tag :supplier_id, t("inventory.ingredients.batches.filters.supplier"),
+              class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= select_tag :supplier_id,
+              options_for_select(
+                [[t("inventory.ingredients.batches.filters.all_suppliers"), ""]] +
+                  @suppliers.map { |s| [s.name, s.id] },
+                @supplier_id),
+              class: pos_input_class %>
+      </div>
+      <div class="flex items-center gap-2 pb-1">
+        <%= check_box_tag :show_empty, "1", @show_empty, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500" %>
+        <%= label_tag :show_empty, t("inventory.ingredients.batches.filters.show_empty"),
+              class: "text-sm text-gray-700 cursor-pointer" %>
+      </div>
+      <%= submit_tag t("inventory.ingredients.adjustments.filters.apply"),
+            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+      <% if @location_id.present? || @supplier_id.present? || @show_empty %>
+        <%= link_to t("inventory.ingredients.adjustments.filters.clear"),
+              batches_admin_inventory_ingredient_path(@ingredient),
+              class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex flex-wrap justify-between items-center gap-2">
+      <div class="flex flex-wrap items-center gap-3">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.ingredients.batches.title") %></h2>
+        <span class="text-xs text-gray-500 tabular-nums"><%= t("inventory.ingredients.adjustments.count", count: @pagy.count) %></span>
+      </div>
+      <%# Running total of remaining stock across visible batches %>
+      <% total_remaining = @batches.sum { |b| b.quantity_remaining.to_d } %>
+      <span class="text-xs font-semibold text-gray-700 tabular-nums">
+        <%= t("inventory.ingredients.batches.total_remaining") %>:
+        <%= number_with_precision(total_remaining, precision: 3, strip_insignificant_zeros: true) %>
+        <span class="font-normal text-gray-500"><%= ingredient_unit_label(@ingredient.unit) %></span>
+      </span>
+    </div>
+    <% if @batches.any? %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[600px]">
+          <thead class="border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-end w-8 text-gray-400">#</th>
+              <th class="p-3 text-start"><%= t("inventory.ingredients.show.received") %></th>
+              <th class="p-3 text-start"><%= t("inventory.ingredients.show.branch_stock.location") %></th>
+              <th class="p-3 text-start"><%= t("inventory.ingredients.show.suppliers") %></th>
+              <th class="p-3 text-end"><%= t("inventory.ingredients.show.remaining") %></th>
+              <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.show.expires") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% @batches.each_with_index do |batch, i| %>
+              <tr class="hover:bg-gray-100 transition-colors <%= batch.quantity_remaining.to_d <= 0 ? 'opacity-50' : '' %>">
+                <td class="p-3 ps-5 text-end tabular-nums text-gray-400 text-xs"><%= (@pagy.offset + i + 1) %></td>
+                <td class="p-3 tabular-nums text-gray-900 whitespace-nowrap"><%= l(batch.received_on) %></td>
+                <td class="p-3 text-gray-700">
+                  <%= batch.location&.name || tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") %>
+                </td>
+                <td class="p-3 text-gray-700">
+                  <% if batch.supplier %>
+                    <%= link_to batch.supplier.name, admin_inventory_supplier_path(batch.supplier),
+                          class: "text-amber-700 hover:text-amber-800 font-medium" %>
+                  <% else %>
+                    <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+                  <% end %>
+                </td>
+                <td class="p-3 text-end tabular-nums font-semibold <%= batch.quantity_remaining.to_d > 0 ? 'text-gray-900' : 'text-gray-400' %>">
+                  <%= number_with_precision(batch.quantity_remaining, precision: 3, strip_insignificant_zeros: true) %>
+                  <span class="text-xs font-normal text-gray-500 ms-0.5"><%= ingredient_unit_label(@ingredient.unit) %></span>
+                </td>
+                <td class="p-3 pe-5 tabular-nums <%= batch.expired? ? 'text-red-700 font-semibold' : 'text-gray-700' %>">
+                  <% if batch.expired? %>
+                    <span class="inline-flex items-center gap-1.5">
+                      <%= batch.expires_on ? l(batch.expires_on) : t("accounting.shared.em_dash") %>
+                      <span class="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200">
+                        <%= t("inventory.ingredients.show.expired") %>
+                      </span>
+                    </span>
+                  <% else %>
+                    <%= batch.expires_on ? l(batch.expires_on) : t("accounting.shared.em_dash") %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("inventory.ingredients.batches.empty") %></p>
+    <% end %>
+  </section>
+
+  <% if @pagy.pages > 1 %>
+    <div class="flex items-center justify-center gap-2 mt-6 text-sm">
+      <% if @pagy.previous %>
+        <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: @pagy.previous)),
+              class: "px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors" %>
+      <% end %>
+      <span class="text-gray-600 px-2 tabular-nums"><%= t("accounting.shared.pagination", page: @pagy.page, pages: @pagy.pages) %></span>
+      <% if @pagy.next %>
+        <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: @pagy.next)),
+              class: "px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors" %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
