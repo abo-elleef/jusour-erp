@@ -1206,6 +1206,8 @@ ar:
         search_hint: "ابحث بالاسم أو جهة الاتصال أو البريد"
         name: "الاسم"
         name_placeholder: "اسم المورد…"
+        from_date: "من"
+        to_date: "إلى"
         showing:
           one: "عرض %{count} مورد"
           other: "عرض %{count} موردين"
@@ -1218,6 +1220,9 @@ ar:
           outstanding: "المستحق"
           status: "الحالة"
           actions: "إجراءات"
+          total_row:
+            one: "الإجمالي (مورد واحد)"
+            other: "الإجمالي (%{count} موردين)"
         status_filter: "الحالة"
         status_active: "نشط"
         status_inactive: "غير نشط"

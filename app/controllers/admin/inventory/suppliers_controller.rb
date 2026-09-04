@@ -23,11 +23,19 @@ module Admin
         suppliers = scope.to_a
         supplier_ids = suppliers.map(&:id)
 
-        @invoice_total_cents_by_supplier = VendorInvoice
+        @start_date = params[:start_date].presence&.then { |d| Date.parse(d) rescue nil }
+        @end_date   = params[:end_date].presence&.then { |d| Date.parse(d) rescue nil }
+
+        invoice_scope = VendorInvoice
           .where(supplier_id: supplier_ids)
           .where.not(payment_status: "void")
+        invoice_scope = invoice_scope.where(invoice_date: @start_date..) if @start_date
+        invoice_scope = invoice_scope.where(invoice_date: ..@end_date)   if @end_date
+
+        @invoice_total_cents_by_supplier = invoice_scope
           .group(:supplier_id)
           .sum(:total_cents)
+        @date_filtered = @start_date.present? || @end_date.present?
 
         # Same figure as the supplier show page: AP treasury balance (unpaid
         # invoices minus invoice payments and direct AP payments).

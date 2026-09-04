@@ -1206,6 +1206,8 @@ en:
         search_hint: "Find by name, contact, or email"
         name: "Name"
         name_placeholder: "Supplier name…"
+        from_date: "From"
+        to_date: "To"
         showing:
           one: "Showing %{count} supplier"
           other: "Showing %{count} suppliers"
@@ -1218,6 +1220,9 @@ en:
           outstanding: "Outstanding"
           status: "Status"
           actions: "Actions"
+          total_row:
+            one: "Total (1 supplier)"
+            other: "Total (%{count} suppliers)"
         status_filter: "Status"
         status_active: "Active"
         status_inactive: "Inactive"
