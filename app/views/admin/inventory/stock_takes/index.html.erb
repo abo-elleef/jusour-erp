@@ -110,8 +110,20 @@
                     <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.stock_takes.index.completed_on", date: l(st.completed_at.to_date, format: :long)) %></p>
                   <% end %>
                 </td>
-                <td class="p-3 text-gray-700"><%= st.location&.name || t("inventory.stock_takes.index.all_locations") %></td>
-                <td class="p-3 text-gray-600"><%= st.supplier&.name || t("inventory.stock_takes.index.all_suppliers") %></td>
+                <td class="p-3 text-gray-700">
+                  <% if st.location %>
+                    <%= link_to st.location.name, admin_location_path(st.location), class: "hover:text-gray-900 hover:underline" %>
+                  <% else %>
+                    <%= t("inventory.stock_takes.index.all_locations") %>
+                  <% end %>
+                </td>
+                <td class="p-3 text-gray-600">
+                  <% if st.supplier %>
+                    <%= link_to st.supplier.name, admin_inventory_supplier_path(st.supplier), class: "hover:text-gray-900 hover:underline" %>
+                  <% else %>
+                    <%= t("inventory.stock_takes.index.all_suppliers") %>
+                  <% end %>
+                </td>
                 <td class="p-3">
                   <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= stock_take_status_class(st.status) %> <%= stock_take_status_border_class(st.status) %>">
                     <%= stock_take_status_label(st.status) %>
