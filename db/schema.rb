@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_08_30_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_06_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -253,7 +253,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_30_120000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "legacy_number"
     t.index ["company_id", "credit_note_number"], name: "index_credit_notes_on_company_id_and_credit_note_number", unique: true
+    t.index ["company_id", "legacy_number"], name: "index_credit_notes_on_company_id_and_legacy_number", unique: true, where: "(legacy_number IS NOT NULL)"
     t.index ["company_id"], name: "index_credit_notes_on_company_id"
     t.index ["customer_id"], name: "index_credit_notes_on_customer_id"
     t.index ["customer_invoice_id"], name: "index_credit_notes_on_customer_invoice_id"
@@ -302,7 +304,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_08_30_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.uuid "salesperson_id"
+    t.string "legacy_number"
     t.index ["company_id", "invoice_number"], name: "index_customer_invoices_on_company_id_and_invoice_number", unique: true
+    t.index ["company_id", "legacy_number"], name: "index_customer_invoices_on_company_id_and_legacy_number", unique: true, where: "(legacy_number IS NOT NULL)"
     t.index ["company_id", "status"], name: "index_customer_invoices_on_company_id_and_status"
     t.index ["company_id"], name: "index_customer_invoices_on_company_id"
     t.index ["customer_id"], name: "index_customer_invoices_on_customer_id"
