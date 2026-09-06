@@ -1054,6 +1054,7 @@ ar:
       stock_transfer_templates: "قوالب التحويل"
       valuation: "تقييم المخزون"
       variance: "فروقات الاستهلاك"
+      transfer_trends: "اتجاهات التحويلات"
       manufacturing: "التصنيع"
     import_shipments:
       title: "شحنات الاستيراد"
@@ -1839,6 +1840,39 @@ ar:
           actual: "فعلي"
           variance: "الفرق"
           percent: "%"
+      transfer_trends:
+        description: "البضائع التي انتقلت فعلياً بين المواقع، من التحويلات المكتملة فقط."
+        filters: "عوامل التصفية"
+        from_location: "من موقع"
+        to_location: "إلى موقع"
+        any_location: "كل المواقع"
+        granularity:
+          label: "التجميع حسب"
+          day: "يوم"
+          week: "أسبوع"
+          month: "شهر"
+        empty: "لا توجد تحويلات مكتملة في هذه الفترة"
+        empty_hint: "وسّع نطاق التواريخ أو أزل تصفية المواقع. التحويلات التي ما زالت مفتوحة غير محسوبة هنا."
+        stats:
+          transfers: "التحويلات"
+          items: "الأصناف"
+          routes: "المسارات"
+          periods: "الفترات"
+        routes_heading: "الحركة حسب المسار"
+        route: "المسار"
+        chart_heading: "الكمية المحوّلة عبر الزمن"
+        chart_hint: "كل خط يمثل صنفاً بوحدته الخاصة، لذا قارن الخط بنفسه عبر الزمن لا بخط آخر."
+        series_shown: "معروض"
+        top_n: "أعلى %{count}"
+        show_all: "إظهار الكل"
+        hide_all: "إخفاء الكل"
+        search_items: "ابحث عن صنف…"
+        no_matching_items: "لا توجد أصناف مطابقة للبحث."
+        table_heading: "بيانات الرسم البياني"
+        table_hint: "صف لكل صنف ومسار. الكميات بوحدة كل صنف، ولا تصح المقارنة إلا داخل الصف الواحد."
+        item: "الصنف"
+        unit: "الوحدة"
+        total: "الإجمالي"
     manufacturing:
       adjustment_consumption: "تصنيع %{template} — استهلاك %{ingredient} (×%{runs} دفعات، تشغيل %{run_id})"
       adjustment_output: "تصنيع %{template} — إنتاج %{output} (×%{runs} دفعات، تشغيل %{run_id})"
@@ -2877,6 +2911,7 @@ ar:
       reports:
         valuation_title: "تقييم المخزون"
         variance_title: "فروقات الاستهلاك"
+        transfer_trends_title: "اتجاهات التحويلات"
 
   customers:
     description: "حسابات الولاء وبيانات الاتصال وسجل الطلبات."

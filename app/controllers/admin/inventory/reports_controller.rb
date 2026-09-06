@@ -57,6 +57,33 @@ module Admin
         end
       end
 
+      # Goods actually moved between locations, from completed transfers only.
+      def transfer_trends
+        authorize_inventory_index!
+        parse_date_range(default_start: 30.days.ago.to_date)
+
+        @from_location = Location.find_by(id: params[:from_location_id])
+        @to_location = Location.find_by(id: params[:to_location_id])
+        @granularity = params[:granularity]
+        @locations = Location.active.ordered
+
+        @trends = ::Inventory::TransferTrendsService.new(
+          start_date: @start_date,
+          end_date: @end_date,
+          from_location: @from_location,
+          to_location: @to_location,
+          granularity: @granularity
+        ).call
+
+        respond_to do |format|
+          format.html
+          format.csv do
+            send_data transfer_trends_csv,
+              filename: "transfer-trends-#{@start_date}-#{@end_date}.csv"
+          end
+        end
+      end
+
       private
 
       # Every ingredient lands in exactly one bucket, so vendor subtotals still add
@@ -118,6 +145,27 @@ module Admin
                 row[:variance],
                 row[:variance_pct]
               ]
+            end
+          ]
+        )
+      end
+
+      # One row per ingredient and route, with the unit spelled out — the numbers
+      # are only comparable within a row.
+      def transfer_trends_csv
+        header = ["Ingredient", "Unit", "From", "To", "Transfers", "Total"] + @trends.period_labels
+        build_csv(
+          [
+            header,
+            *@trends.rows.map do |row|
+              [
+                row.ingredient.name,
+                row.unit,
+                row.from_location.name,
+                row.to_location.name,
+                row.transfer_count,
+                row.total
+              ] + @trends.periods.map { |period| row.quantities[period] }
             end
           ]
         )

@@ -32,7 +32,9 @@ module InventoryNav
         { controller: "reports", action: "valuation", label: "inventory.tools.valuation",
           path: :admin_inventory_reports_valuation_path, permission: "inventory:view" },
         { controller: "reports", action: "variance", label: "inventory.tools.variance",
-          path: :admin_inventory_reports_variance_path, permission: "inventory:view" }
+          path: :admin_inventory_reports_variance_path, permission: "inventory:view" },
+        { controller: "reports", action: "transfer_trends", label: "inventory.tools.transfer_trends",
+          path: :admin_inventory_reports_transfer_trends_path, permission: "inventory:view" }
       ]
     },
     {

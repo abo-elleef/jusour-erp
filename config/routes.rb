@@ -374,6 +374,7 @@ Rails.application.routes.draw do
       namespace :reports do
         get :valuation
         get :variance
+        get :transfer_trends
       end
     end
   end

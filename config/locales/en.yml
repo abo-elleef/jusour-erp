@@ -1054,6 +1054,7 @@ en:
       stock_transfer_templates: "Transfer templates"
       valuation: "Valuation"
       variance: "Variance"
+      transfer_trends: "Transfer trends"
       manufacturing: "Manufacturing"
     import_shipments:
       title: "Import shipments"
@@ -1837,6 +1838,39 @@ en:
           actual: "Actual"
           variance: "Variance"
           percent: "%"
+      transfer_trends:
+        description: "Goods that actually moved between locations, from completed transfers only."
+        filters: "Filters"
+        from_location: "From location"
+        to_location: "To location"
+        any_location: "Any location"
+        granularity:
+          label: "Group by"
+          day: "Day"
+          week: "Week"
+          month: "Month"
+        empty: "No completed transfers in this range"
+        empty_hint: "Widen the dates, or clear the location filters. Transfers that are still open are not counted here."
+        stats:
+          transfers: "Transfers"
+          items: "Items"
+          routes: "Routes"
+          periods: "Periods"
+        routes_heading: "Movement by route"
+        route: "Route"
+        chart_heading: "Transferred quantity over time"
+        chart_hint: "Each line is one item in its own unit, so compare a line against itself over time rather than against another line."
+        series_shown: "shown"
+        top_n: "Top %{count}"
+        show_all: "Show all"
+        hide_all: "Hide all"
+        search_items: "Search items…"
+        no_matching_items: "No items match that search."
+        table_heading: "Chart data"
+        table_hint: "One row per item and route. Quantities are in each item's own unit and are only comparable within a row."
+        item: "Item"
+        unit: "Unit"
+        total: "Total"
     manufacturing:
       adjustment_consumption: "Production %{template} — consumed %{ingredient} (×%{runs} runs, run %{run_id})"
       adjustment_output: "Production %{template} — produced %{output} (×%{runs} runs, run %{run_id})"
@@ -2867,6 +2901,7 @@ en:
       reports:
         valuation_title: "Inventory valuation"
         variance_title: "Usage variance"
+        transfer_trends_title: "Transfer trends"
 
   customers:
     description: "Loyalty accounts, contact info, and order history."

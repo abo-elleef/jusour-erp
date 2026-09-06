@@ -1,0 +1,248 @@
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% cell = "p-3 whitespace-nowrap" %>
+<%# Only the biggest movers start visible — 50 lines at once is unreadable. %>
+<% default_visible = 8 %>
+<% chart_id = "transfer-trends-chart" %>
+
+<%= render "admin/inventory/tools_nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("inventory.reports.transfer_trends.description") %></p>
+    </div>
+    <% if @trends.rows.any? %>
+      <%= link_to t("actions.export_csv"),
+            admin_inventory_reports_transfer_trends_path(format: :csv, start_date: @start_date, end_date: @end_date,
+              from_location_id: @from_location&.id, to_location_id: @to_location&.id, granularity: @trends.granularity),
+            class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors shrink-0" %>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.transfer_trends.filters") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5">
+        <%= t("accounting.shared.date_range_value", start: l(@start_date, format: :long), end: l(@end_date, format: :long)) %>
+      </p>
+    </div>
+    <div class="p-5">
+      <%= form_with url: admin_inventory_reports_transfer_trends_path, method: :get,
+            class: "flex flex-wrap items-end gap-4", data: { turbo: false } do %>
+        <div class="min-w-[10rem]">
+          <%= label_tag :start_date, t("accounting.shared.start"), class: label_class %>
+          <%= date_field_tag :start_date, @start_date, class: input_class %>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= label_tag :end_date, t("accounting.shared.end"), class: label_class %>
+          <%= date_field_tag :end_date, @end_date, class: input_class %>
+        </div>
+        <div class="min-w-[12rem]">
+          <%= label_tag :from_location_id, t("inventory.reports.transfer_trends.from_location"), class: label_class %>
+          <%= select_tag :from_location_id,
+                options_from_collection_for_select(@locations, :id, :name, @from_location&.id),
+                include_blank: t("inventory.reports.transfer_trends.any_location"),
+                class: "#{input_class} appearance-none" %>
+        </div>
+        <div class="min-w-[12rem]">
+          <%= label_tag :to_location_id, t("inventory.reports.transfer_trends.to_location"), class: label_class %>
+          <%= select_tag :to_location_id,
+                options_from_collection_for_select(@locations, :id, :name, @to_location&.id),
+                include_blank: t("inventory.reports.transfer_trends.any_location"),
+                class: "#{input_class} appearance-none" %>
+        </div>
+        <div class="min-w-[9rem]">
+          <%= label_tag :granularity, t("inventory.reports.transfer_trends.granularity.label"), class: label_class %>
+          <%= select_tag :granularity,
+                options_for_select(
+                  ::Inventory::TransferTrendsService::GRANULARITIES.map { |g|
+                    [t("inventory.reports.transfer_trends.granularity.#{g}"), g]
+                  }, @trends.granularity),
+                class: "#{input_class} appearance-none" %>
+        </div>
+        <%= submit_tag t("actions.apply_range"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors cursor-pointer" %>
+      <% end %>
+    </div>
+  </section>
+
+  <% if @trends.rows.empty? %>
+    <section class="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("inventory.reports.transfer_trends.empty") %></p>
+      <p class="text-gray-500 text-sm"><%= t("inventory.reports.transfer_trends.empty_hint") %></p>
+    </section>
+  <% else %>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.transfer_trends.stats.transfers") %></p>
+        <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @trends.transfer_count %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.transfer_trends.stats.items") %></p>
+        <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @trends.ingredient_count %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.transfer_trends.stats.routes") %></p>
+        <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @trends.routes.size %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.transfer_trends.stats.periods") %></p>
+        <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @trends.periods.size %></p>
+      </div>
+    </div>
+
+    <%# Routes are counted, never summed: totals across ingredients would be adding
+        kilograms to pieces. %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.transfer_trends.routes_heading") %></h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="<%= cell %> text-start"><%= t("inventory.reports.transfer_trends.route") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.transfer_trends.stats.items") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.transfer_trends.stats.transfers") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @trends.routes.each do |route| %>
+              <tr>
+                <td class="<%= cell %> font-medium text-gray-900">
+                  <%= route[:from_location].name %> → <%= route[:to_location].name %>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-700"><%= route[:ingredient_count] %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-700"><%= route[:transfer_count] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6"
+             data-controller="chart-series" data-chart-series-chart-id-value="<%= chart_id %>">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.transfer_trends.chart_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.transfer_trends.chart_hint") %></p>
+      </div>
+
+      <div class="grid lg:grid-cols-[1fr_18rem] gap-0">
+        <div class="p-5 min-w-0">
+          <%# Every series is rendered; the controller hides all but the top few on
+              connect, so toggling never needs a round trip. %>
+          <% labels_by_period = @trends.periods.zip(@trends.period_labels).to_h %>
+          <% series = @trends.series.map { |entry|
+               { name: "#{entry[:ingredient].name} (#{ingredient_unit_label(entry[:ingredient].unit)})",
+                 data: entry[:data].transform_keys { |period| labels_by_period[period] } }
+             } %>
+          <%# discrete: the buckets are already-formatted labels ("07 أغسطس", "March
+              2026"). Without this chartkick tries to parse them as dates, which no
+              localised label survives. %>
+          <%= line_chart series, id: chart_id, height: "360px", curve: false, legend: false,
+                discrete: true, library: {
+                interaction: { mode: "index", intersect: false },
+                scales: { x: { ticks: { maxTicksLimit: 12 } }, y: { beginAtZero: true } }
+              } %>
+        </div>
+
+        <div class="border-t lg:border-t-0 lg:border-s border-gray-100 p-4 flex flex-col min-h-0">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <span class="text-xs font-semibold text-gray-600">
+              <span class="tabular-nums" data-chart-series-target="count">—</span>
+              <%= t("inventory.reports.transfer_trends.series_shown") %>
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            <button type="button" data-action="chart-series#showTop" data-limit="<%= default_visible %>"
+                    class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 cursor-pointer">
+              <%= t("inventory.reports.transfer_trends.top_n", count: default_visible) %>
+            </button>
+            <button type="button" data-action="chart-series#showAll"
+                    class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 cursor-pointer">
+              <%= t("inventory.reports.transfer_trends.show_all") %>
+            </button>
+            <button type="button" data-action="chart-series#hideAll"
+                    class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 cursor-pointer">
+              <%= t("inventory.reports.transfer_trends.hide_all") %>
+            </button>
+          </div>
+
+          <%= text_field_tag :series_search, nil,
+                placeholder: t("inventory.reports.transfer_trends.search_items"),
+                autocomplete: "off",
+                data: { chart_series_target: "search", action: "input->chart-series#filter" },
+                class: "w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
+
+          <div class="overflow-y-auto max-h-[22rem] -mx-1 px-1 space-y-0.5">
+            <% @trends.series.each_with_index do |entry, index| %>
+              <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer"
+                     data-chart-series-target="row" data-name="<%= entry[:ingredient].name %>">
+                <%= check_box_tag "series[#{entry[:ingredient].id}]", "1", index < default_visible,
+                      id: nil,
+                      data: { chart_series_target: "checkbox", index: index, action: "chart-series#toggle" },
+                      class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/30 cursor-pointer" %>
+                <span class="text-sm text-gray-800 truncate flex-1"><%= entry[:ingredient].name %></span>
+                <span class="text-xs text-gray-400 tabular-nums shrink-0">
+                  <%= number_with_precision(entry[:total], precision: 2, strip_insignificant_zeros: true) %>
+                </span>
+              </label>
+            <% end %>
+            <p class="text-xs text-gray-500 px-2 py-3" data-chart-series-target="empty" hidden>
+              <%= t("inventory.reports.transfer_trends.no_matching_items") %>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <%# The numbers behind the chart. Each row is in its own ingredient's unit, so
+        the unit column is part of the data, not decoration. %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.transfer_trends.table_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.transfer_trends.table_hint") %></p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="<%= cell %> text-start"><%= t("inventory.reports.transfer_trends.item") %></th>
+              <th class="<%= cell %> text-start"><%= t("inventory.reports.transfer_trends.unit") %></th>
+              <th class="<%= cell %> text-start"><%= t("inventory.reports.transfer_trends.route") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.transfer_trends.stats.transfers") %></th>
+              <th class="<%= cell %> text-end font-bold"><%= t("inventory.reports.transfer_trends.total") %></th>
+              <% @trends.period_labels.each do |label| %>
+                <th class="<%= cell %> text-end"><%= label %></th>
+              <% end %>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @trends.rows.each do |row| %>
+              <tr>
+                <td class="<%= cell %> font-medium text-gray-900">
+                  <%= link_to row.ingredient.name, admin_inventory_ingredient_path(row.ingredient),
+                        class: "hover:text-amber-700 hover:underline" %>
+                </td>
+                <td class="<%= cell %> text-gray-500"><%= ingredient_unit_label(row.unit) %></td>
+                <td class="<%= cell %> text-gray-700"><%= row.from_location.name %> → <%= row.to_location.name %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= row.transfer_count %></td>
+                <td class="<%= cell %> text-end tabular-nums font-bold text-gray-900">
+                  <%= number_with_precision(row.total, precision: 3, strip_insignificant_zeros: true) %>
+                </td>
+                <% @trends.periods.each do |period| %>
+                  <% qty = row.quantities[period] %>
+                  <td class="<%= cell %> text-end tabular-nums <%= qty.to_d.zero? ? 'text-gray-300' : 'text-gray-700' %>">
+                    <%= qty.to_d.zero? ? "—" : number_with_precision(qty, precision: 3, strip_insignificant_zeros: true) %>
+                  </td>
+                <% end %>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
+</div>
