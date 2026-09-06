@@ -211,6 +211,18 @@
         </div>
       </section>
 
+      <%# Numbers drill through to the transfers they came from. status=completed
+          matches exactly what this report counts — the index otherwise lands on
+          its open work queue, which by definition holds none of them. %>
+      <% drill_url = ->(row, from, to) {
+           admin_inventory_stock_transfers_path(
+             ingredient_id: row.ingredient.id,
+             from_location_id: row.from_location.id,
+             to_location_id: row.to_location.id,
+             start_date: from, end_date: to, status: "completed"
+           )
+         } %>
+
       <%# The numbers behind the chart, inside the same controller scope so the
           checkboxes drive these rows as well as the chart lines. %>
       <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -250,12 +262,24 @@
                   <td class="<%= cell %> text-gray-700"><%= row.from_location.name %> → <%= row.to_location.name %></td>
                   <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= row.transfer_count %></td>
                   <td class="<%= cell %> text-end tabular-nums font-bold text-gray-900">
-                    <%= number_with_precision(row.total, precision: 3, strip_insignificant_zeros: true) %>
+                    <%= link_to number_with_precision(row.total, precision: 3, strip_insignificant_zeros: true),
+                          drill_url.(row, @start_date, @end_date),
+                          class: "hover:text-amber-700 hover:underline",
+                          title: t("inventory.reports.transfer_trends.open_transfers") %>
                   </td>
                   <% @trends.periods.each do |period| %>
                     <% qty = row.quantities[period] %>
                     <td class="<%= cell %> text-end tabular-nums <%= qty.to_d.zero? ? 'text-gray-300' : 'text-gray-700' %>">
-                      <%= qty.to_d.zero? ? "—" : number_with_precision(qty, precision: 3, strip_insignificant_zeros: true) %>
+                      <%# Only a non-zero cell is worth opening; a zero has nothing behind it. %>
+                      <% if qty.to_d.zero? %>
+                        —
+                      <% else %>
+                        <% from, to = @trends.period_bounds[period] %>
+                        <%= link_to number_with_precision(qty, precision: 3, strip_insignificant_zeros: true),
+                              drill_url.(row, from, to),
+                              class: "hover:text-amber-700 hover:underline",
+                              title: t("inventory.reports.transfer_trends.open_transfers") %>
+                      <% end %>
                     </td>
                   <% end %>
                 </tr>

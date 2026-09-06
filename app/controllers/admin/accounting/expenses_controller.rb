@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module Admin
   module Accounting
     class ExpensesController < BaseController
@@ -29,7 +31,17 @@ module Admin
             tone: :danger
           }
         ]
-        @pagy, @expenses = pagy(:offset, scope.order(expense_date: :desc, created_at: :desc), limit: 50)
+        ordered = scope.order(expense_date: :desc, created_at: :desc)
+
+        # CSV exports the whole filtered set, not the page on screen — an export
+        # that silently stopped at 50 rows would be worse than none.
+        if request.format.csv?
+          return send_data expenses_csv(ordered),
+            filename: "expenses-#{@start_date}-#{@end_date}.csv",
+            type: "text/csv; charset=utf-8"
+        end
+
+        @pagy, @expenses = pagy(:offset, ordered, limit: 50)
         @active_category_id = params[:category_id].presence
         @totals_by_category = Expense.joins(:expense_category)
           .on_date_range(@start_date, @end_date)
@@ -112,6 +124,34 @@ module Admin
       end
 
       private
+
+      # Every column an accountant needs to reconcile outside the system,
+      # including the reversal flag — a reversed row is in the ledger but not in
+      # the totals, and an export that hid that would not tie back.
+      def expenses_csv(scope)
+        CSV.generate do |csv|
+          csv << [
+            t("accounting.shared.start"), t("accounting.shared.category"),
+            t("accounting.shared.description"), t("accounting.shared.amount"),
+            t("accounting.shared.treasury"), t("accounting.shared.reference_number"),
+            t("accounting.shared.recorded_by"), t("accounting.export.source"),
+            t("accounting.export.reversed")
+          ]
+          scope.find_each do |record|
+            csv << [
+              record.expense_date,
+              record.expense_category&.name,
+              record.description,
+              helpers.format_money(record.amount_cents),
+              record.treasury&.name,
+              record.reference_number,
+              record.user&.name,
+              record.is_auto_generated? ? t("accounting.shared.auto") : t("accounting.export.manual"),
+              record.reversed_at.present? ? t("accounting.export.reversed_yes") : t("accounting.export.reversed_no")
+            ]
+          end
+        end
+      end
 
       def set_expense
         @expense = Expense.find(params[:id])

@@ -20,6 +20,12 @@ module Admin
         # An explicit status tab wins; otherwise fall back to a scope tab.
         @scope_name = @status ? nil : (params[:scope].presence_in(SCOPES) || "open")
 
+        # A drill-down names exactly which transfers it means, so it must not be
+        # re-narrowed by the default open-work-queue scope — the report it comes
+        # from counts completed transfers, which that scope hides.
+        @scope_name = "all" if @status.nil? && drilled_down? && params[:scope].blank?
+        @drill_ingredient = Ingredient.find_by(id: params[:ingredient_id]) if params[:ingredient_id].present?
+
         load_tab_counts
         scope = apply_sort(apply_scope(with_index_associations))
         @pagy, @stock_transfers = pagy(:offset, scope, limit: 50)
@@ -376,7 +382,7 @@ module Admin
       end
 
       def apply_scope(scope)
-        scope = apply_location_filter(scope)
+        scope = filtered_base(scope)
         return scope.where(status: @status) if @status
 
         case @scope_name
@@ -386,10 +392,59 @@ module Admin
         end
       end
 
+      # Every narrowing filter in one place, so the tab badges and the list they
+      # lead to are always counting the same rows.
+      def filtered_base(scope)
+        scope = apply_location_filter(scope)
+        scope = apply_route_filter(scope)
+        scope = apply_date_filter(scope)
+        apply_ingredient_filter(scope)
+      end
+
+      # Drill-down from the transfer trends report, which analyses one ingredient
+      # on one route over one period.
+      def apply_route_filter(scope)
+        scope = scope.where(from_location_id: params[:from_location_id]) if params[:from_location_id].present?
+        scope = scope.where(to_location_id: params[:to_location_id]) if params[:to_location_id].present?
+        scope
+      end
+
+      def apply_date_filter(scope)
+        from = safe_filter_date(:start_date)
+        to = safe_filter_date(:end_date)
+        return scope if from.nil? && to.nil?
+
+        scope.where(transferred_on: (from || to)..(to || from))
+      end
+
+      def apply_ingredient_filter(scope)
+        return scope if params[:ingredient_id].blank?
+
+        scope.where(
+          id: StockTransferLine.where(ingredient_id: params[:ingredient_id]).select(:stock_transfer_id)
+        )
+      end
+
+      def safe_filter_date(key)
+        params[key].presence&.to_date
+      rescue ArgumentError, TypeError, Date::Error
+        nil
+      end
+
+      # True when the list has been narrowed by a drill-down rather than by the
+      # tabs, so the page can say so — an unexplained short list reads as data
+      # loss on a work queue.
+      def drilled_down?
+        params[:ingredient_id].present? || params[:from_location_id].present? ||
+          params[:to_location_id].present? || params[:start_date].present? ||
+          params[:end_date].present?
+      end
+      helper_method :drilled_down?
+
       # One grouped query plus one for today; the rest is derived so the tab
       # badges always match what clicking the tab actually returns.
       def load_tab_counts
-        counting_base = apply_location_filter(StockTransfer.all)
+        counting_base = filtered_base(StockTransfer.all)
         @status_counts = counting_base.group(:status).count
         @all_count     = @status_counts.values.sum
         @open_count    = StockTransfer::IN_PROGRESS_STATUSES.sum { |st| @status_counts[st].to_i }

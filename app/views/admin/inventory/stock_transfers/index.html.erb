@@ -39,10 +39,41 @@
       <% end %>
     </div>
 
+    <%# A work queue that is quietly filtered reads as missing data, so say what
+        narrowed it and offer one click back to the full list. %>
+    <% if drilled_down? %>
+      <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 mb-4">
+        <div class="text-sm text-amber-900">
+          <span class="font-semibold"><%= t("inventory.stock_transfers.drill.heading") %></span>
+          <span class="text-amber-800">
+            <% parts = [] %>
+            <% parts << @drill_ingredient.name if @drill_ingredient %>
+            <% if params[:from_location_id].present? || params[:to_location_id].present? %>
+              <% from = @locations.find { |l| l.id == params[:from_location_id] } %>
+              <% to = @locations.find { |l| l.id == params[:to_location_id] } %>
+              <% parts << "#{from&.name || "…"} → #{to&.name || "…"}" %>
+            <% end %>
+            <% if params[:start_date].present? || params[:end_date].present? %>
+              <% parts << [params[:start_date], params[:end_date]].compact_blank.join(" – ") %>
+            <% end %>
+            <%= parts.join(" · ") %>
+          </span>
+        </div>
+        <%= link_to t("inventory.stock_transfers.drill.clear"),
+              admin_inventory_stock_transfers_path,
+              class: "shrink-0 text-sm font-semibold text-amber-900 hover:bg-amber-100 px-3 py-1.5 rounded-lg border border-amber-300" %>
+      </div>
+    <% end %>
+
     <%= form_with url: admin_inventory_stock_transfers_path, method: :get,
                   class: "flex items-end gap-2 pb-2", data: { turbo: false } do %>
       <%= hidden_field_tag :scope, @scope_name if @scope_name %>
       <%= hidden_field_tag :status, @status if @status %>
+      <%# Drill-down filters ride along: changing location must not silently drop
+          the narrowing the user arrived with. %>
+      <% %i[ingredient_id from_location_id to_location_id start_date end_date].each do |key| %>
+        <%= hidden_field_tag key, params[key] if params[key].present? %>
+      <% end %>
       <%= hidden_field_tag :sort, @sort if @sort %>
       <%= hidden_field_tag :dir, @direction if @sort %>
       <div class="min-w-[12rem]">

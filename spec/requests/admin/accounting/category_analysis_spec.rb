@@ -257,5 +257,95 @@ RSpec.describe "Accounting category analysis report", type: :request do
       expect(response.body).to include("Rent")
       expect(response.body).to include("Catering")
     end
+    it "splits the category filter into an expense column and an income column" do
+      spend(20_000)
+
+      get admin_accounting_category_analysis_index_path(start_date: 30.days.ago.to_date, end_date: Date.current)
+
+      expect(response.body).to include("md:grid-cols-2")
+      # The type is a column heading now, not a badge on every row — that
+      # repetition was what made the filter unreadable.
+      rows = response.body.scan(/<label[^>]*>\s*<input[^>]*name="category_ids\[\]".*?<\/label>/m)
+      expect(rows).to be_present
+      expect(rows.count { |row| row.include?(I18n.t("accounting.category_analysis.kind.expense")) }).to eq(0)
+    end
+
+    it "collapses to a single column when only one kind is in play" do
+      spend(20_000)
+
+      get admin_accounting_category_analysis_index_path(start_date: 30.days.ago.to_date,
+        end_date: Date.current, kind: "expense")
+
+      expect(response.body).not_to include("md:grid-cols-2")
+      expect(response.body).to include(%(name="category_ids[]"))
+    end
+  end
+
+  describe "drilling into a number" do
+    it "links a category total to its own ledger, filtered and dated" do
+      spend(20_000)
+      earn(50_000)
+
+      get admin_accounting_category_analysis_index_path(start_date: 30.days.ago.to_date, end_date: Date.current)
+
+      # Expense rows go to expenses, income rows to incomes — each carrying its
+      # category, the report's dates, and the flag that keeps those dates out of
+      # the shared session range.
+      expect(response.body).to match(%r{/admin/accounting/expenses\?[^"]*category_id=#{rent.id}})
+      expect(response.body).to match(%r{/admin/accounting/incomes\?[^"]*category_id=#{catering.id}})
+      expect(response.body).to match(%r{/admin/accounting/expenses\?[^"]*transient_range=1})
+      expect(response.body).to match(%r{/admin/accounting/expenses\?[^"]*end_date=#{Date.current}})
+    end
+
+    it "dates a period cell to that bucket, clamped to the report range" do
+      # Report starts mid-week, so the first weekly bucket begins before it.
+      start_date = Date.new(2026, 6, 3)
+      end_date = Date.new(2026, 6, 20)
+      spend(20_000, on: Date.new(2026, 6, 4))
+
+      result = analysis(start_date: start_date, end_date: end_date, granularity: "week")
+      first_period = result.periods.first
+      from, to = result.period_bounds[first_period]
+
+      expect(first_period).to be < start_date
+      # Clamped: a drill-down must not list entries outside the analysed range.
+      expect(from).to eq(start_date)
+      expect(to).to eq(first_period.end_of_week)
+      expect(result.period_bounds[result.periods.last].last).to eq(end_date)
+    end
+
+    it "does not offer a link on a zero cell" do
+      spend(20_000, on: Date.current)
+
+      get admin_accounting_category_analysis_index_path(start_date: 4.days.ago.to_date,
+        end_date: Date.current, granularity: "day")
+
+      # One dash per empty day for the single category.
+      expect(response.body.scan(/>\s*—\s*</).size).to be >= 4
+    end
+
+    it "keeps a drill-down range out of the shared session range" do
+      spend(20_000)
+
+      # Establish a working range on the report.
+      get admin_accounting_category_analysis_index_path(start_date: "2026-06-01", end_date: "2026-09-06")
+      expect(session[:admin_start_date]).to eq("2026-06-01")
+
+      # Drill into one narrow bucket.
+      get admin_accounting_expenses_path(category_id: rent.id, start_date: "2026-08-29",
+        end_date: "2026-09-04", transient_range: 1)
+      expect(response).to have_http_status(:ok)
+
+      # The working range survived: another report still opens where it was.
+      expect(session[:admin_start_date]).to eq("2026-06-01")
+      expect(session[:admin_end_date]).to eq("2026-09-06")
+    end
+
+    it "still persists a range the user actually chose" do
+      get admin_accounting_expenses_path(start_date: "2026-07-01", end_date: "2026-07-31")
+
+      expect(session[:admin_start_date]).to eq("2026-07-01")
+      expect(session[:admin_end_date]).to eq("2026-07-31")
+    end
   end
 end

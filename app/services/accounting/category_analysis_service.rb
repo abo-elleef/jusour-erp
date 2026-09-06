@@ -18,8 +18,8 @@ module Accounting
       end
     end
 
-    Result = Struct.new(:rows, :periods, :period_labels, :granularity, :series,
-                        :expense_cents, :income_cents, :entry_count,
+    Result = Struct.new(:rows, :periods, :period_labels, :period_bounds, :granularity,
+                        :series, :expense_cents, :income_cents, :entry_count,
                         :categories, keyword_init: true) do
       def net_cents
         income_cents - expense_cents
@@ -49,6 +49,7 @@ module Accounting
         rows: rows.sort_by { |row| [row.kind == :expense ? 0 : 1, -row.total_cents] },
         periods: periods,
         period_labels: periods.map { |period| period_label(period) },
+        period_bounds: periods.index_with { |period| period_bounds(period) },
         granularity: @granularity,
         series: build_series(rows),
         expense_cents: expense_cents,
@@ -140,6 +141,20 @@ module Accounting
         end
         list
       end
+    end
+
+    # The window a bucket actually covers, clamped to the report's own range.
+    # Without the clamp a drill-down on the first or last bucket would list
+    # entries from outside the analysed range, and the total on screen would not
+    # match the rows it opened.
+    def period_bounds(period)
+      finish = case @granularity
+               when "week" then period.end_of_week
+               when "month" then period.end_of_month
+               else period
+               end
+
+      [[period, @start_date].max, [finish, @end_date].min]
     end
 
     def period_for(date)

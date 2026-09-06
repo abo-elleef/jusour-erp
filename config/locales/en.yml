@@ -1670,6 +1670,9 @@ en:
       line_items: "Progress summary"
       group_by_category: "Group by category"
       flat_list: "Flat list"
+      drill:
+        heading: "Filtered from a report:"
+        clear: "Clear filters"
       uncategorized: "Uncategorized"
       shipment_history: "Shipment history"
       shipment_number: "Shipment #%{number}"
@@ -1866,6 +1869,7 @@ en:
         hide_all: "Hide all"
         search_items: "Search items…"
         no_matching_items: "No items match that search."
+        open_transfers: "Open the transfers behind this number"
         nothing_selected: "No items selected. Tick an item beside the chart to show it here."
         search_hint: "Search finds items in this list. Only ticked items appear in the chart and the table."
         table_heading: "Chart data"
@@ -3529,6 +3533,13 @@ en:
       total: "Total"
       share: "Share"
       average: "Average"
+      open_entries: "Open the entries behind this number"
+    export:
+      source: "Source"
+      manual: "Manual"
+      reversed: "Reversed"
+      reversed_yes: "Yes"
+      reversed_no: "No"
     shared:
       date_range: "Date range"
       date_range_value: "%{start} – %{end}"

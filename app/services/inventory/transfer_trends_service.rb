@@ -27,8 +27,9 @@ module Inventory
       end
     end
 
-    Result = Struct.new(:rows, :periods, :period_labels, :granularity, :series,
-                        :routes, :transfer_count, :ingredient_count, keyword_init: true)
+    Result = Struct.new(:rows, :periods, :period_labels, :period_bounds, :granularity,
+                        :series, :routes, :transfer_count, :ingredient_count,
+                        keyword_init: true)
 
     def initialize(start_date:, end_date:, from_location: nil, to_location: nil, granularity: nil)
       @start_date = start_date
@@ -47,6 +48,7 @@ module Inventory
         rows: rows,
         periods: periods,
         period_labels: periods.map { |period| period_label(period) },
+        period_bounds: periods.index_with { |period| period_bounds(period) },
         granularity: @granularity,
         series: build_series(rows),
         routes: build_routes(rows),
@@ -151,6 +153,20 @@ module Inventory
         end
         list
       end
+    end
+
+    # The window a bucket actually covers, clamped to the report's own range.
+    # Without the clamp a drill-down on the first or last bucket would list
+    # transfers from outside the analysed range, and the total on screen would
+    # not match the rows it opened.
+    def period_bounds(period)
+      finish = case @granularity
+               when "week" then period.end_of_week
+               when "month" then period.end_of_month
+               else period
+               end
+
+      [[period, @start_date].max, [finish, @end_date].min]
     end
 
     def period_for(date)

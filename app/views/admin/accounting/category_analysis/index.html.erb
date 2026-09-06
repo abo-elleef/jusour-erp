@@ -59,25 +59,37 @@
           </div>
         </div>
 
-        <%# Categories follow their configured position, not the alphabet. %>
-        <% if @analysis.categories.values.any?(&:present?) %>
+        <%# One column per kind. The type belongs in the column heading, not
+            repeated on all forty rows — that badge was most of the clutter.
+            Categories follow their configured position, not the alphabet. %>
+        <% populated_kinds = @analysis.categories.reject { |_, categories| categories.empty? } %>
+        <% if populated_kinds.any? %>
           <div>
             <p class="<%= label_class %>"><%= t("accounting.category_analysis.categories") %></p>
             <p class="text-xs text-gray-500 mb-2"><%= t("accounting.category_analysis.categories_hint") %></p>
-            <div class="flex flex-wrap gap-x-5 gap-y-2 max-h-40 overflow-y-auto rounded-xl border border-gray-200 p-3">
-              <% @analysis.categories.each do |kind, categories| %>
-                <% next if categories.empty? %>
-                <% categories.each do |category| %>
-                  <label class="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
-                    <%= check_box_tag "category_ids[]", category.id, @category_ids.include?(category.id),
-                          id: nil,
-                          class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/30 cursor-pointer" %>
-                    <span><%= category.name %></span>
-                    <span class="text-xs <%= kind == :expense ? 'text-rose-500' : 'text-emerald-600' %>">
+            <div class="grid gap-4 <%= populated_kinds.size > 1 ? "md:grid-cols-2" : "" %>">
+              <% populated_kinds.each do |kind, categories| %>
+                <% expense = kind == :expense %>
+                <section class="rounded-xl border border-gray-200 overflow-hidden">
+                  <div class="flex items-baseline justify-between gap-2 px-3 py-2 border-b border-gray-100 <%= expense ? "bg-rose-50/60" : "bg-emerald-50/60" %>">
+                    <span class="text-xs font-semibold <%= expense ? "text-rose-700" : "text-emerald-700" %>">
                       <%= t("accounting.category_analysis.kind.#{kind}") %>
                     </span>
-                  </label>
-                <% end %>
+                    <span class="text-xs text-gray-500 tabular-nums"><%= categories.size %></span>
+                  </div>
+                  <%# One per line rather than wrapped inline: a wrapped list of
+                      forty names has no column to scan down. %>
+                  <div class="max-h-56 overflow-y-auto p-2 space-y-0.5">
+                    <% categories.each do |category| %>
+                      <label class="flex items-center gap-2 px-2 py-1 rounded-lg text-sm text-gray-800 hover:bg-gray-50 cursor-pointer">
+                        <%= check_box_tag "category_ids[]", category.id, @category_ids.include?(category.id),
+                              id: nil,
+                              class: "shrink-0 rounded border-gray-300 text-amber-600 focus:ring-amber-500/30 cursor-pointer" %>
+                        <span class="truncate"><%= category.name %></span>
+                      </label>
+                    <% end %>
+                  </div>
+                </section>
               <% end %>
             </div>
           </div>
@@ -201,6 +213,13 @@
         </div>
       </section>
 
+      <%# Numbers drill through to the ledger they came from. transient_range keeps
+          the narrow bucket dates out of the shared session range — see
+          SessionDateRange#transient_date_range?. %>
+      <% drill_url = ->(row, from, to) {
+           params = { category_id: row.category.id, start_date: from, end_date: to, transient_range: 1 }
+           row.kind == :expense ? admin_accounting_expenses_path(params) : admin_accounting_incomes_path(params)
+         } %>
       <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
           <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.category_analysis.table_heading") %></h2>
@@ -230,20 +249,35 @@
                   <%# Renumbered by the controller as rows are filtered, so a
                       narrowed table never reads 1, 4, 7. %>
                   <td class="<%= cell %> text-gray-400 tabular-nums" data-row-index><%= row_number %></td>
-                  <td class="<%= cell %> font-medium text-gray-900"><%= row.category.name %></td>
+                  <td class="<%= cell %> font-medium text-gray-900">
+                    <%= link_to row.category.name, drill_url.(row, @start_date, @end_date),
+                          class: "hover:text-amber-700 hover:underline" %>
+                  </td>
                   <td class="<%= cell %>">
                     <span class="text-xs font-semibold px-2 py-0.5 rounded-full <%= row.kind == :expense ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700' %>">
                       <%= t("accounting.category_analysis.kind.#{row.kind}") %>
                     </span>
                   </td>
                   <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= row.entry_count %></td>
-                  <td class="<%= cell %> text-end tabular-nums font-bold text-gray-900"><%= format_money(row.total_cents) %></td>
+                  <td class="<%= cell %> text-end tabular-nums font-bold text-gray-900">
+                    <%= link_to format_money(row.total_cents), drill_url.(row, @start_date, @end_date),
+                          class: "hover:text-amber-700 hover:underline",
+                          title: t("accounting.category_analysis.open_entries") %>
+                  </td>
                   <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= number_with_precision(row.share_pct, precision: 1) %>%</td>
                   <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= format_money(row.average_cents) %></td>
                   <% @analysis.periods.each do |period| %>
                     <% cents = row.amounts[period] || 0 %>
                     <td class="<%= cell %> text-end tabular-nums <%= cents.zero? ? 'text-gray-300' : 'text-gray-700' %>">
-                      <%= cents.zero? ? "—" : format_money(cents) %>
+                      <%# Only a non-zero cell is worth opening; a zero has nothing behind it. %>
+                      <% if cents.zero? %>
+                        —
+                      <% else %>
+                        <% from, to = @analysis.period_bounds[period] %>
+                        <%= link_to format_money(cents), drill_url.(row, from, to),
+                              class: "hover:text-amber-700 hover:underline",
+                              title: t("accounting.category_analysis.open_entries") %>
+                      <% end %>
                     </td>
                   <% end %>
                 </tr>

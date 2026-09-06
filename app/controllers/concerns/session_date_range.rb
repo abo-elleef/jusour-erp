@@ -18,7 +18,7 @@ module SessionDateRange
     if date_range_param_submitted?
       @start_date = safe_date_param(:start_date) || session_stored_start || default_start.to_date
       @end_date = safe_date_param(:end_date) || session_stored_end || default_end
-      persist_date_range_to_session!
+      persist_date_range_to_session! unless transient_date_range?
     elsif session_date_range_present?
       @start_date = session_stored_start
       @end_date = session_stored_end
@@ -31,6 +31,13 @@ module SessionDateRange
   def persist_date_range_to_session!
     session[SESSION_START_KEY] = @start_date.iso8601
     session[SESSION_END_KEY] = @end_date.iso8601
+  end
+
+  # A drill-down link carries a deliberately narrow range — one chart bucket,
+  # opened to explain a single number. That is a lens, not the range the user is
+  # working in, so it must not overwrite the range the other reports share.
+  def transient_date_range?
+    params[:transient_range] == "1"
   end
 
   def date_range_param_submitted?

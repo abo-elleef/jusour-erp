@@ -308,4 +308,76 @@ RSpec.describe "Inventory transfer trends report", type: :request do
       expect(colors).not_to include("null")
     end
   end
+
+  describe "drilling into a number" do
+    it "links a cell to the transfers behind it, dated to that bucket" do
+      tomatoes = ingredient("Tomatoes")
+      completed_transfer(on: 3.days.ago.to_date, lines: { tomatoes => [10, 10] })
+
+      get admin_inventory_reports_transfer_trends_path(start_date: 30.days.ago.to_date, end_date: Date.current)
+
+      expect(response.body).to match(%r{/admin/inventory/stock_transfers\?[^"]*ingredient_id=#{tomatoes.id}})
+      expect(response.body).to match(%r{/admin/inventory/stock_transfers\?[^"]*from_location_id=#{kitchen.id}})
+      expect(response.body).to match(%r{/admin/inventory/stock_transfers\?[^"]*to_location_id=#{branch.id}})
+      # The report counts completed transfers; the index defaults to the open
+      # queue, which holds none of them.
+      expect(response.body).to match(%r{/admin/inventory/stock_transfers\?[^"]*status=completed})
+    end
+
+    it "clamps a bucket to the report range" do
+      tomatoes = ingredient("Tomatoes")
+      completed_transfer(on: Date.new(2026, 6, 4), lines: { tomatoes => [10, 10] })
+
+      result = trends(start_date: Date.new(2026, 6, 3), end_date: Date.new(2026, 6, 20), granularity: "week")
+      first = result.periods.first
+      from, to = result.period_bounds[first]
+
+      expect(first).to be < Date.new(2026, 6, 3)
+      expect(from).to eq(Date.new(2026, 6, 3))
+      expect(result.period_bounds[result.periods.last].last).to eq(Date.new(2026, 6, 20))
+    end
+  end
+
+  describe "the transfers index filters the drill-down relies on" do
+    it "narrows by ingredient, route and date, and says it is filtered" do
+      tomatoes = ingredient("Tomatoes")
+      onions = ingredient("Onions")
+      wanted = completed_transfer(on: 3.days.ago.to_date, to: branch, lines: { tomatoes => [10, 10] })
+      other_item = completed_transfer(on: 3.days.ago.to_date, to: branch, lines: { onions => [5, 5] })
+      other_route = completed_transfer(on: 3.days.ago.to_date, to: other_branch, lines: { tomatoes => [7, 7] })
+      out_of_range = completed_transfer(on: 90.days.ago.to_date, to: branch, lines: { tomatoes => [9, 9] })
+
+      get admin_inventory_stock_transfers_path(ingredient_id: tomatoes.id, from_location_id: kitchen.id,
+        to_location_id: branch.id, start_date: 30.days.ago.to_date, end_date: Date.current, status: "completed")
+
+      expect(response.body).to include(wanted.transfer_number)
+      expect(response.body).not_to include(other_item.transfer_number)
+      expect(response.body).not_to include(other_route.transfer_number)
+      expect(response.body).not_to include(out_of_range.transfer_number)
+      expect(response.body).to include(I18n.t("inventory.stock_transfers.drill.heading"))
+      expect(response.body).to include(I18n.t("inventory.stock_transfers.drill.clear"))
+    end
+
+    it "leaves the plain index completely untouched" do
+      tomatoes = ingredient("Tomatoes")
+      open_one = create(:stock_transfer, company: company, from_location: kitchen,
+        to_location: branch, requested_by: owner, transferred_on: Date.current, status: "requested")
+      create(:stock_transfer_line, stock_transfer: open_one, ingredient: tomatoes, quantity_requested: 5)
+
+      get admin_inventory_stock_transfers_path
+
+      expect(response.body).to include(open_one.transfer_number)
+      expect(response.body).not_to include(I18n.t("inventory.stock_transfers.drill.heading"))
+    end
+
+    it "does not let the open-queue default hide what a drill-down asked for" do
+      tomatoes = ingredient("Tomatoes")
+      done = completed_transfer(on: 3.days.ago.to_date, lines: { tomatoes => [10, 10] })
+
+      # No scope or status given — the page would normally show only open work.
+      get admin_inventory_stock_transfers_path(ingredient_id: tomatoes.id)
+
+      expect(response.body).to include(done.transfer_number)
+    end
+  end
 end
