@@ -271,5 +271,21 @@ RSpec.describe "Inventory transfer trends report", type: :request do
       expect(response.body).to include(I18n.t("inventory.reports.transfer_trends.nothing_selected"))
       expect(response.body).to include(I18n.t("inventory.reports.transfer_trends.search_hint"))
     end
+    it "numbers the table rows and gives each item a swatch tied to its series" do
+      tomatoes = ingredient("Tomatoes")
+      onions = ingredient("Onions")
+      completed_transfer(on: 3.days.ago.to_date, lines: { tomatoes => [10, 10], onions => [5, 5] })
+
+      get admin_inventory_reports_transfer_trends_path(start_date: 30.days.ago.to_date, end_date: Date.current)
+
+      # Rendered numbered up front, so the column is right before any JS runs.
+      indexes = response.body.scan(/data-row-index>(\d+)</).flatten
+      expect(indexes).to eq(%w[1 2])
+
+      # One swatch per series, each carrying the dataset index it takes its colour from.
+      swatches = response.body.scan(/data-chart-series-target="swatch" data-index="(\d+)"/).flatten
+      expect(swatches).to eq(%w[0 1])
+      expect(response.body).to include(I18n.t("shared.row_index"))
+    end
   end
 end

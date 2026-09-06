@@ -16,7 +16,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "checkbox", "search", "row", "count", "empty",
-    "tableRow", "tableEmpty"
+    "tableRow", "tableEmpty", "swatch"
   ]
   static values = { chartId: String, storageKey: String }
 
@@ -58,6 +58,24 @@ export default class extends Controller {
       chart.setDatasetVisibility(Number(box.dataset.index), box.checked)
     })
     chart.update()
+    this.paintSwatches(chart)
+  }
+
+  // With 50+ items a legend is unusable, so the picker list carries the colour
+  // instead. Read from the chart rather than reproducing its palette here — a
+  // second copy of the colours is a swatch that eventually names the wrong line.
+  paintSwatches(chart) {
+    if (this._swatchesPainted) return
+
+    this.swatchTargets.forEach((swatch) => {
+      const dataset = chart.data.datasets[Number(swatch.dataset.index)]
+      const color = dataset?.borderColor ?? dataset?.backgroundColor
+      if (typeof color !== "string") return
+
+      swatch.style.backgroundColor = color
+      swatch.style.borderColor = color
+    })
+    this._swatchesPainted = true
   }
 
   // One ingredient can appear on several routes, so every row carrying its id
@@ -67,8 +85,15 @@ export default class extends Controller {
       this.checkboxTargets.filter((box) => box.checked).map((box) => box.dataset.ingredientId)
     )
 
+    let visibleIndex = 0
     this.tableRowTargets.forEach((row) => {
-      row.hidden = !selected.has(row.dataset.ingredientId)
+      const visible = selected.has(row.dataset.ingredientId)
+      row.hidden = !visible
+
+      // Numbering follows what is on screen, so the column stays 1..n however
+      // much of the table is filtered out.
+      const indexCell = row.querySelector("[data-row-index]")
+      if (visible && indexCell) indexCell.textContent = ++visibleIndex
     })
 
     if (this.hasTableEmptyTarget) this.tableEmptyTarget.hidden = selected.size > 0
