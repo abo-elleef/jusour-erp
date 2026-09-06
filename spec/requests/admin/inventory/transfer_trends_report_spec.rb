@@ -287,5 +287,21 @@ RSpec.describe "Inventory transfer trends report", type: :request do
       expect(swatches).to eq(%w[0 1])
       expect(response.body).to include(I18n.t("shared.row_index"))
     end
+    it "sends a colour for every series, past chartkick's twenty" do
+      # 25 items: chartkick's own palette runs out at 20 and greys the rest.
+      items = 25.times.map { |n| ingredient("Item #{format('%02d', n)}") }
+      completed_transfer(on: 3.days.ago.to_date,
+        lines: items.to_h { |ing| [ing, [5, 5]] })
+
+      get admin_inventory_reports_transfer_trends_path(start_date: 30.days.ago.to_date, end_date: Date.current)
+
+      colors = response.body[/&quot;colors&quot;:\[(.*?)\]/, 1] || response.body[/"colors":\[(.*?)\]/, 1]
+      expect(colors).to be_present
+
+      entries = colors.scan(/#[0-9A-F]{6}/)
+      expect(entries.size).to eq(25)
+      expect(entries.uniq.size).to eq(25)
+      expect(colors).not_to include("null")
+    end
   end
 end

@@ -145,8 +145,10 @@
             <%# discrete: the buckets are already-formatted labels ("07 أغسطس", "March
                 2026"). Without this chartkick tries to parse them as dates, which no
                 localised label survives. %>
+            <%# An explicit palette sized to the series count: chartkick's own list
+                stops at 20 and every line past it comes out grey. %>
             <%= line_chart series, id: chart_id, height: "360px", curve: false, legend: false,
-                  discrete: true, library: {
+                  discrete: true, colors: chart_series_colors(series.size), library: {
                   interaction: { mode: "index", intersect: false },
                   scales: { x: { ticks: { maxTicksLimit: 12 } }, y: { beginAtZero: true } }
                 } %>
