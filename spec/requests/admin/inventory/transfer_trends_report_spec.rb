@@ -224,5 +224,52 @@ RSpec.describe "Inventory transfer trends report", type: :request do
       expect(response.body).to include("Ingredient,Unit,From,To,Transfers,Total")
       expect(response.body).to include("Tomatoes,kg,Central Kitchen,Branch A,1,7.0")
     end
+    it "starts with only the biggest movers ticked, since 50 lines is unreadable" do
+      # Volumes descend with the alphabet so "biggest" and "first" are distinguishable.
+      items = 12.times.map { |n| [ingredient("Item #{format('%02d', n)}"), (12 - n) * 10] }
+      completed_transfer(on: 3.days.ago.to_date,
+        lines: items.to_h { |ing, qty| [ing, [qty, qty]] })
+
+      get admin_inventory_reports_transfer_trends_path(start_date: 30.days.ago.to_date, end_date: Date.current)
+
+      boxes = response.body.scan(/<input[^>]*data-chart-series-target="checkbox"[^>]*>/)
+      checked = boxes.map { |box| box.include?("checked") }
+
+      expect(boxes.size).to eq(12)
+      expect(checked.count(true)).to eq(8)
+      # The ticked ones are the first eight, and the list is ordered by volume.
+      expect(checked).to eq([true] * 8 + [false] * 4)
+      expect(response.body.index("Item 00")).to be < response.body.index("Item 11")
+    end
+    it "names the weekday on daily buckets and not on weekly or monthly ones" do
+      tomatoes = ingredient("Tomatoes")
+      completed_transfer(on: 3.days.ago.to_date, lines: { tomatoes => [10, 10] })
+      thursday = Date.new(2026, 8, 13)
+
+      day = trends(start_date: 10.days.ago.to_date, end_date: Date.current, granularity: "day")
+      week = trends(start_date: 120.days.ago.to_date, end_date: Date.current, granularity: "week")
+      month = trends(start_date: 400.days.ago.to_date, end_date: Date.current, granularity: "month")
+
+      expect(day.period_labels.first).to match(/\A#{I18n.l(day.periods.first, format: "%a")} /)
+      expect(week.period_labels.first).to eq(I18n.l(week.periods.first, format: "%d %b"))
+      expect(month.period_labels.first).to eq(I18n.l(month.periods.first, format: "%B %Y"))
+      expect(thursday.strftime("%a")).to eq("Thu")
+    end
+
+    it "puts the chart and the table in one controller scope, keyed by ingredient" do
+      tomatoes = ingredient("Tomatoes")
+      # Two routes for one item: both rows must follow the same checkbox.
+      completed_transfer(on: 3.days.ago.to_date, to: branch, lines: { tomatoes => [10, 10] })
+      completed_transfer(on: 3.days.ago.to_date, to: other_branch, lines: { tomatoes => [4, 4] })
+
+      get admin_inventory_reports_transfer_trends_path(start_date: 30.days.ago.to_date, end_date: Date.current)
+
+      expect(response.body).to include('data-chart-series-storage-key-value="saqr:transfer-trends:series"')
+      expect(response.body.scan(/data-chart-series-target="tableRow"[^>]*data-ingredient-id="#{tomatoes.id}"/).size).to eq(2)
+      expect(response.body).to include(%(data-chart-series-target="checkbox"))
+      expect(response.body).to include(%(data-ingredient-id="#{tomatoes.id}"))
+      expect(response.body).to include(I18n.t("inventory.reports.transfer_trends.nothing_selected"))
+      expect(response.body).to include(I18n.t("inventory.reports.transfer_trends.search_hint"))
+    end
   end
 end

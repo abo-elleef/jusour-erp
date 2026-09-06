@@ -1866,6 +1866,8 @@ en:
         hide_all: "Hide all"
         search_items: "Search items…"
         no_matching_items: "No items match that search."
+        nothing_selected: "No items selected. Tick an item beside the chart to show it here."
+        search_hint: "Search finds items in this list. Only ticked items appear in the chart and the table."
         table_heading: "Chart data"
         table_hint: "One row per item and route. Quantities are in each item's own unit and are only comparable within a row."
         item: "Item"

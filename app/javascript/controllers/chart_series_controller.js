@@ -1,14 +1,27 @@
 import { Controller } from "@hotwired/stimulus"
 
-// A transfer report routinely carries 50+ ingredients, which is far past what one
-// line chart can show. The server renders every series but marks only the biggest
-// few visible; this drives the rest from a filterable checkbox list beside the
-// chart, so the manager builds the comparison they actually want.
+// A transfer report routinely carries 50+ ingredients, far past what one line
+// chart can show. The server renders every series but ticks only the biggest few;
+// this drives the rest from a filterable checkbox list beside the chart.
+//
+// Two independent things act on this page, and keeping them separate is what
+// makes it predictable:
+//
+//   SELECTION (the checkboxes) decides what the report shows — chart series and
+//   table rows together. It is what gets remembered.
+//
+//   SEARCH only filters the checkbox list itself, as an aid to finding an item in
+//   a long list. It never hides a chart line or a table row, so typing in it can
+//   never make data appear to vanish.
 export default class extends Controller {
-  static targets = ["checkbox", "search", "row", "count", "empty"]
-  static values = { chartId: String }
+  static targets = [
+    "checkbox", "search", "row", "count", "empty",
+    "tableRow", "tableEmpty"
+  ]
+  static values = { chartId: String, storageKey: String }
 
   connect() {
+    this.restore()
     this.applyAll()
   }
 
@@ -28,7 +41,16 @@ export default class extends Controller {
     return null
   }
 
-  async applyAll() {
+  // Table and storage are synchronous; only the chart has to wait for Chartkick,
+  // so the rest must not be held up behind it.
+  applyAll() {
+    this.applyTable()
+    this.updateCount()
+    this.persist()
+    this.applyChart()
+  }
+
+  async applyChart() {
     const chart = await this.chart()
     if (!chart) return
 
@@ -36,16 +58,24 @@ export default class extends Controller {
       chart.setDatasetVisibility(Number(box.dataset.index), box.checked)
     })
     chart.update()
-    this.updateCount()
   }
 
-  async toggle(event) {
-    const chart = await this.chart()
-    if (!chart) return
+  // One ingredient can appear on several routes, so every row carrying its id
+  // follows the same checkbox.
+  applyTable() {
+    const selected = new Set(
+      this.checkboxTargets.filter((box) => box.checked).map((box) => box.dataset.ingredientId)
+    )
 
-    chart.setDatasetVisibility(Number(event.target.dataset.index), event.target.checked)
-    chart.update()
-    this.updateCount()
+    this.tableRowTargets.forEach((row) => {
+      row.hidden = !selected.has(row.dataset.ingredientId)
+    })
+
+    if (this.hasTableEmptyTarget) this.tableEmptyTarget.hidden = selected.size > 0
+  }
+
+  toggle() {
+    this.applyAll()
   }
 
   showAll(event) {
@@ -72,8 +102,7 @@ export default class extends Controller {
     this.applyAll()
   }
 
-  // Filters the list only — hiding a row leaves its series exactly as it was, so
-  // searching never silently changes what the chart shows.
+  // Filters the picker list only — see the note at the top of this file.
   filter() {
     const term = this.searchTarget.value.trim().toLowerCase()
     let shown = 0
@@ -92,5 +121,50 @@ export default class extends Controller {
 
     const visible = this.checkboxTargets.filter((box) => box.checked).length
     this.countTarget.textContent = `${visible} / ${this.checkboxTargets.length}`
+  }
+
+  // Remembered per browser, not per user record: this is a viewing preference,
+  // the same kind of thing as the report date range.
+  persist() {
+    if (!this.hasStorageKeyValue) return
+
+    const selected = this.checkboxTargets
+      .filter((box) => box.checked)
+      .map((box) => box.dataset.ingredientId)
+
+    try {
+      window.localStorage.setItem(this.storageKeyValue, JSON.stringify(selected))
+    } catch (error) {
+      // Private mode, or storage full. Losing the preference is not worth an error.
+    }
+  }
+
+  restore() {
+    if (!this.hasStorageKeyValue) return
+
+    let stored
+    try {
+      stored = window.localStorage.getItem(this.storageKeyValue)
+    } catch (error) {
+      return
+    }
+    // No stored preference at all: keep the server's "top N" defaults. An empty
+    // array is a real choice (everything hidden) and must not fall back to them.
+    if (stored === null) return
+
+    let ids
+    try {
+      ids = JSON.parse(stored)
+    } catch (error) {
+      return
+    }
+    if (!Array.isArray(ids)) return
+
+    // Ids saved under different filters may not be on the page now; they are
+    // simply ignored rather than clearing the whole preference.
+    const selected = new Set(ids)
+    this.checkboxTargets.forEach((box) => {
+      box.checked = selected.has(box.dataset.ingredientId)
+    })
   }
 }

@@ -171,8 +171,16 @@ module Inventory
 
     # Explicit strftime rather than the app's :short date format, which carries a
     # time component ("Mar 15 00:00") that means nothing on a date axis.
+    #
+    # Daily buckets carry the weekday: transfer volume runs on a weekly rhythm, and
+    # a bare date makes that unreadable. A week or month bucket spans weekdays, so
+    # naming one there would be meaningless.
     def period_label(period)
-      @granularity == "month" ? I18n.l(period, format: "%B %Y") : I18n.l(period, format: "%d %b")
+      case @granularity
+      when "month" then I18n.l(period, format: "%B %Y")
+      when "week" then I18n.l(period, format: "%d %b")
+      else I18n.l(period, format: "%a %d %b")
+      end
     end
 
     # A day-by-day line over a year is unreadable; pick a bucket that fits the
