@@ -190,7 +190,7 @@
                   <%= check_box_tag "series[#{entry[:ingredient].id}]", "1", index < default_visible,
                         id: nil,
                         data: { chart_series_target: "checkbox", index: index,
-                                ingredient_id: entry[:ingredient].id,
+                                series_key: entry[:ingredient].id,
                                 action: "change->chart-series#toggle" },
                         class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/30 cursor-pointer" %>
                   <%# Painted from the chart's own dataset colour once it renders, so
@@ -237,7 +237,7 @@
               <% row_number = 0 %>
               <% @trends.rows.each do |row| %>
                 <% row_number += 1 %>
-                <tr data-chart-series-target="tableRow" data-ingredient-id="<%= row.ingredient.id %>">
+                <tr data-chart-series-target="tableRow" data-series-key="<%= row.ingredient.id %>">
                   <%# A running count of the rows actually on screen, not a fixed row
                       id — the controller renumbers it whenever the selection changes,
                       so a filtered table never reads 1, 4, 7. %>

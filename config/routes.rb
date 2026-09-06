@@ -186,6 +186,7 @@ Rails.application.routes.draw do
       resources :sales_reports, only: [:index]
       resources :food_costs, only: [:index]
       resources :usage_reports, only: [:index]
+      resources :category_analysis, only: [:index]
       resources :expense_categories do
         collection { patch :reorder }
       end

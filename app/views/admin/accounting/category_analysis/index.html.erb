@@ -1,0 +1,263 @@
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% cell = "p-3 whitespace-nowrap" %>
+<% default_visible = 8 %>
+<% chart_id = "category-analysis-chart" %>
+<% show_kind = @analysis.rows.map(&:kind).uniq.size > 1 %>
+
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.category_analysis.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("accounting.category_analysis.description") %></p>
+    </div>
+    <% if @analysis.rows.any? %>
+      <%= link_to t("actions.export_csv"),
+            admin_accounting_category_analysis_index_path(format: :csv, start_date: @start_date, end_date: @end_date,
+              kind: @kind, category_ids: @category_ids, granularity: @analysis.granularity),
+            class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors shrink-0" %>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.category_analysis.filters") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5">
+        <%= t("accounting.shared.date_range_value", start: l(@start_date, format: :long), end: l(@end_date, format: :long)) %>
+      </p>
+    </div>
+    <div class="p-5">
+      <%= form_with url: admin_accounting_category_analysis_index_path, method: :get,
+            class: "space-y-4", data: { turbo: false } do %>
+        <div class="flex flex-wrap items-end gap-4">
+          <div class="min-w-[10rem]">
+            <%= label_tag :start_date, t("accounting.shared.start"), class: label_class %>
+            <%= date_field_tag :start_date, @start_date, class: input_class %>
+          </div>
+          <div class="min-w-[10rem]">
+            <%= label_tag :end_date, t("accounting.shared.end"), class: label_class %>
+            <%= date_field_tag :end_date, @end_date, class: input_class %>
+          </div>
+          <div class="min-w-[10rem]">
+            <%= label_tag :kind, t("accounting.category_analysis.kind.label"), class: label_class %>
+            <%= select_tag :kind,
+                  options_for_select(
+                    ::Accounting::CategoryAnalysisService::KINDS.map { |k|
+                      [t("accounting.category_analysis.kind.#{k}"), k]
+                    }, @kind),
+                  class: "#{input_class} appearance-none" %>
+          </div>
+          <div class="min-w-[9rem]">
+            <%= label_tag :granularity, t("accounting.category_analysis.granularity.label"), class: label_class %>
+            <%= select_tag :granularity,
+                  options_for_select(
+                    ::Accounting::CategoryAnalysisService::GRANULARITIES.map { |g|
+                      [t("accounting.category_analysis.granularity.#{g}"), g]
+                    }, @analysis.granularity),
+                  class: "#{input_class} appearance-none" %>
+          </div>
+        </div>
+
+        <%# Categories follow their configured position, not the alphabet. %>
+        <% if @analysis.categories.values.any?(&:present?) %>
+          <div>
+            <p class="<%= label_class %>"><%= t("accounting.category_analysis.categories") %></p>
+            <p class="text-xs text-gray-500 mb-2"><%= t("accounting.category_analysis.categories_hint") %></p>
+            <div class="flex flex-wrap gap-x-5 gap-y-2 max-h-40 overflow-y-auto rounded-xl border border-gray-200 p-3">
+              <% @analysis.categories.each do |kind, categories| %>
+                <% next if categories.empty? %>
+                <% categories.each do |category| %>
+                  <label class="flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
+                    <%= check_box_tag "category_ids[]", category.id, @category_ids.include?(category.id),
+                          id: nil,
+                          class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/30 cursor-pointer" %>
+                    <span><%= category.name %></span>
+                    <span class="text-xs <%= kind == :expense ? 'text-rose-500' : 'text-emerald-600' %>">
+                      <%= t("accounting.category_analysis.kind.#{kind}") %>
+                    </span>
+                  </label>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <%= submit_tag t("actions.apply_range"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors cursor-pointer" %>
+      <% end %>
+    </div>
+  </section>
+
+  <% if @analysis.rows.empty? %>
+    <section class="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("accounting.category_analysis.empty") %></p>
+      <p class="text-gray-500 text-sm"><%= t("accounting.category_analysis.empty_hint") %></p>
+    </section>
+  <% else %>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.category_analysis.stats.expense") %></p>
+        <p class="text-xl font-bold mt-1 text-rose-600 tabular-nums"><%= format_money(@analysis.expense_cents) %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.category_analysis.stats.income") %></p>
+        <p class="text-xl font-bold mt-1 text-emerald-600 tabular-nums"><%= format_money(@analysis.income_cents) %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.category_analysis.stats.net") %></p>
+        <p class="text-xl font-bold mt-1 tabular-nums <%= @analysis.net_cents.negative? ? 'text-rose-600' : 'text-gray-900' %>">
+          <%= format_money(@analysis.net_cents) %>
+        </p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.category_analysis.stats.entries") %></p>
+        <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= @analysis.entry_count %></p>
+      </div>
+    </div>
+
+    <%# One controller spans the chart and the table below it: the checkboxes drive
+        both, so both must sit inside its scope. %>
+    <div data-controller="chart-series"
+         data-chart-series-chart-id-value="<%= chart_id %>"
+         data-chart-series-storage-key-value="saqr:category-analysis:series">
+      <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.category_analysis.chart_heading") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.category_analysis.chart_hint") %></p>
+        </div>
+
+        <div class="grid lg:grid-cols-[1fr_18rem] gap-0">
+          <div class="p-5 min-w-0">
+            <% labels_by_period = @analysis.periods.zip(@analysis.period_labels).to_h %>
+            <% series = @analysis.series.map { |entry|
+                 name = show_kind ? "#{entry[:row].category.name} · #{t("accounting.category_analysis.kind.#{entry[:row].kind}")}" : entry[:row].category.name
+                 { name: name, data: entry[:data].transform_keys { |period| labels_by_period[period] } }
+               } %>
+            <%# discrete: the buckets are already-formatted labels; without it
+                chartkick tries to date-parse them. colors: chartkick's own list
+                stops at 20 and greys everything after. %>
+            <%= line_chart series, id: chart_id, height: "360px", curve: false, legend: false,
+                  discrete: true, colors: chart_series_colors(series.size),
+                  prefix: money_symbol, library: {
+                    interaction: { mode: "index", intersect: false },
+                    scales: { x: { ticks: { maxTicksLimit: 12 } }, y: { beginAtZero: true } }
+                  } %>
+          </div>
+
+          <div class="border-t lg:border-t-0 lg:border-s border-gray-100 p-4 flex flex-col min-h-0">
+            <div class="flex items-center justify-between gap-2 mb-2">
+              <span class="text-xs font-semibold text-gray-600">
+                <span class="tabular-nums" data-chart-series-target="count">—</span>
+                <%= t("accounting.category_analysis.series_shown") %>
+              </span>
+            </div>
+            <div class="flex flex-wrap gap-1.5 mb-3">
+              <button type="button" data-action="chart-series#showTop" data-limit="<%= default_visible %>"
+                      class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 cursor-pointer">
+                <%= t("accounting.category_analysis.top_n", count: default_visible) %>
+              </button>
+              <button type="button" data-action="chart-series#showAll"
+                      class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 cursor-pointer">
+                <%= t("accounting.category_analysis.show_all") %>
+              </button>
+              <button type="button" data-action="chart-series#hideAll"
+                      class="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-100 cursor-pointer">
+                <%= t("accounting.category_analysis.hide_all") %>
+              </button>
+            </div>
+
+            <%= text_field_tag :series_search, nil,
+                  placeholder: t("accounting.category_analysis.search_categories"),
+                  autocomplete: "off",
+                  data: { chart_series_target: "search", action: "input->chart-series#filter" },
+                  class: "w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
+            <p class="text-xs text-gray-500 mt-1.5 mb-3"><%= t("accounting.category_analysis.search_hint") %></p>
+
+            <div class="overflow-y-auto max-h-[22rem] -mx-1 px-1 space-y-0.5">
+              <% @analysis.series.each_with_index do |entry, index| %>
+                <label class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer"
+                       data-chart-series-target="row" data-name="<%= entry[:row].category.name %>">
+                  <%= check_box_tag "series[#{entry[:key]}]", "1", index < default_visible,
+                        id: nil,
+                        data: { chart_series_target: "checkbox", index: index,
+                                series_key: entry[:key],
+                                action: "change->chart-series#toggle" },
+                        class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/30 cursor-pointer" %>
+                  <%# Painted from the chart's own dataset colour once it renders. %>
+                  <span class="w-3 h-3 rounded-full shrink-0 border border-gray-200 bg-gray-200"
+                        data-chart-series-target="swatch" data-index="<%= index %>"></span>
+                  <span class="text-sm text-gray-800 truncate flex-1"><%= entry[:row].category.name %></span>
+                  <span class="text-xs tabular-nums shrink-0 <%= entry[:row].kind == :expense ? 'text-rose-500' : 'text-emerald-600' %>">
+                    <%= format_money(entry[:total_cents]) %>
+                  </span>
+                </label>
+              <% end %>
+              <p class="text-xs text-gray-500 px-2 py-3" data-chart-series-target="empty" hidden>
+                <%= t("accounting.category_analysis.no_matching_categories") %>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.category_analysis.table_heading") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.category_analysis.table_hint") %></p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <tr>
+                <th class="<%= cell %> text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
+                <th class="<%= cell %> text-start"><%= t("accounting.category_analysis.category") %></th>
+                <th class="<%= cell %> text-start"><%= t("accounting.category_analysis.type") %></th>
+                <th class="<%= cell %> text-end"><%= t("accounting.category_analysis.entries") %></th>
+                <th class="<%= cell %> text-end font-bold"><%= t("accounting.category_analysis.total") %></th>
+                <th class="<%= cell %> text-end"><%= t("accounting.category_analysis.share") %></th>
+                <th class="<%= cell %> text-end"><%= t("accounting.category_analysis.average") %></th>
+                <% @analysis.period_labels.each do |label| %>
+                  <th class="<%= cell %> text-end"><%= label %></th>
+                <% end %>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <% row_number = 0 %>
+              <% @analysis.rows.each do |row| %>
+                <% row_number += 1 %>
+                <tr data-chart-series-target="tableRow" data-series-key="<%= row.kind %>-<%= row.category.id %>">
+                  <%# Renumbered by the controller as rows are filtered, so a
+                      narrowed table never reads 1, 4, 7. %>
+                  <td class="<%= cell %> text-gray-400 tabular-nums" data-row-index><%= row_number %></td>
+                  <td class="<%= cell %> font-medium text-gray-900"><%= row.category.name %></td>
+                  <td class="<%= cell %>">
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full <%= row.kind == :expense ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700' %>">
+                      <%= t("accounting.category_analysis.kind.#{row.kind}") %>
+                    </span>
+                  </td>
+                  <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= row.entry_count %></td>
+                  <td class="<%= cell %> text-end tabular-nums font-bold text-gray-900"><%= format_money(row.total_cents) %></td>
+                  <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= number_with_precision(row.share_pct, precision: 1) %>%</td>
+                  <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= format_money(row.average_cents) %></td>
+                  <% @analysis.periods.each do |period| %>
+                    <% cents = row.amounts[period] || 0 %>
+                    <td class="<%= cell %> text-end tabular-nums <%= cents.zero? ? 'text-gray-300' : 'text-gray-700' %>">
+                      <%= cents.zero? ? "—" : format_money(cents) %>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+              <%# Every category can be unticked, and an empty table body reads as a bug. %>
+              <tr data-chart-series-target="tableEmpty" hidden>
+                <td colspan="<%= 7 + @analysis.periods.size %>" class="p-6 text-center text-sm text-gray-500">
+                  <%= t("accounting.category_analysis.nothing_selected") %>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  <% end %>
+</div>

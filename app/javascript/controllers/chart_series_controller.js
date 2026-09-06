@@ -1,8 +1,14 @@
 import { Controller } from "@hotwired/stimulus"
 
-// A transfer report routinely carries 50+ ingredients, far past what one line
-// chart can show. The server renders every series but ticks only the biggest few;
-// this drives the rest from a filterable checkbox list beside the chart.
+// Shared by any report that plots more series than one chart can legibly show.
+// The server renders every series but ticks only the biggest few; this drives the
+// rest from a filterable checkbox list beside the chart, and keeps the data table
+// under it in step.
+//
+// Wiring: each checkbox carries data-series-key and data-index; each table row
+// carries the data-series-key of the series it belongs to (several rows may share
+// one key). storage-key-value scopes what gets remembered, so two reports on the
+// same origin do not overwrite each other.
 //
 // Two independent things act on this page, and keeping them separate is what
 // makes it predictable:
@@ -78,16 +84,16 @@ export default class extends Controller {
     this._swatchesPainted = true
   }
 
-  // One ingredient can appear on several routes, so every row carrying its id
-  // follows the same checkbox.
+  // One series can own several table rows (an ingredient shipped on two routes,
+  // say), so every row carrying its key follows the same checkbox.
   applyTable() {
     const selected = new Set(
-      this.checkboxTargets.filter((box) => box.checked).map((box) => box.dataset.ingredientId)
+      this.checkboxTargets.filter((box) => box.checked).map((box) => box.dataset.seriesKey)
     )
 
     let visibleIndex = 0
     this.tableRowTargets.forEach((row) => {
-      const visible = selected.has(row.dataset.ingredientId)
+      const visible = selected.has(row.dataset.seriesKey)
       row.hidden = !visible
 
       // Numbering follows what is on screen, so the column stays 1..n however
@@ -155,7 +161,7 @@ export default class extends Controller {
 
     const selected = this.checkboxTargets
       .filter((box) => box.checked)
-      .map((box) => box.dataset.ingredientId)
+      .map((box) => box.dataset.seriesKey)
 
     try {
       window.localStorage.setItem(this.storageKeyValue, JSON.stringify(selected))
@@ -189,7 +195,7 @@ export default class extends Controller {
     // simply ignored rather than clearing the whole preference.
     const selected = new Set(ids)
     this.checkboxTargets.forEach((box) => {
-      box.checked = selected.has(box.dataset.ingredientId)
+      box.checked = selected.has(box.dataset.seriesKey)
     })
   }
 }

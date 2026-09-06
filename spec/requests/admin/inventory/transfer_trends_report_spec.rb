@@ -265,9 +265,9 @@ RSpec.describe "Inventory transfer trends report", type: :request do
       get admin_inventory_reports_transfer_trends_path(start_date: 30.days.ago.to_date, end_date: Date.current)
 
       expect(response.body).to include('data-chart-series-storage-key-value="saqr:transfer-trends:series"')
-      expect(response.body.scan(/data-chart-series-target="tableRow"[^>]*data-ingredient-id="#{tomatoes.id}"/).size).to eq(2)
+      expect(response.body.scan(/data-chart-series-target="tableRow"[^>]*data-series-key="#{tomatoes.id}"/).size).to eq(2)
       expect(response.body).to include(%(data-chart-series-target="checkbox"))
-      expect(response.body).to include(%(data-ingredient-id="#{tomatoes.id}"))
+      expect(response.body).to include(%(data-series-key="#{tomatoes.id}"))
       expect(response.body).to include(I18n.t("inventory.reports.transfer_trends.nothing_selected"))
       expect(response.body).to include(I18n.t("inventory.reports.transfer_trends.search_hint"))
     end
