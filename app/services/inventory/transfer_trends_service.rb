@@ -178,9 +178,18 @@ module Inventory
     def period_label(period)
       case @granularity
       when "month" then I18n.l(period, format: "%B %Y")
-      when "week" then I18n.l(period, format: "%d %b")
+      when "week" then week_label(period)
       else I18n.l(period, format: "%a %d %b")
       end
+    end
+
+    # Weeks run Saturday to Friday, set app-wide by config.beginning_of_week so
+    # payroll, the overtime check and every weekly report agree. The label spells
+    # out both ends: a lone start date leaves the reader guessing where it stops.
+    def week_label(period)
+      finish = period.end_of_week
+      start_format = period.month == finish.month ? "%d" : "%d %b"
+      "#{I18n.l(period, format: start_format)} – #{I18n.l(finish, format: "%d %b")}"
     end
 
     # A day-by-day line over a year is unreadable; pick a bucket that fits the

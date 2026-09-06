@@ -178,6 +178,20 @@ RSpec.describe "Accounting category analysis report", type: :request do
       expect(row_for(result, "Rent").amounts[Date.current.beginning_of_month]).to eq(15_000)
     end
 
+    it "runs weeks Saturday to Friday and labels both ends" do
+      spend(10_000)
+
+      result = analysis(start_date: 120.days.ago.to_date, end_date: Date.current, granularity: "week")
+      first = result.periods.first
+
+      expect(first.strftime("%A")).to eq("Saturday")
+      expect(first.end_of_week.strftime("%A")).to eq("Friday")
+      expect(result.period_labels.first)
+        .to eq("#{I18n.l(first, format: first.month == first.end_of_week.month ? "%d" : "%d %b")} – #{I18n.l(first.end_of_week, format: "%d %b")}")
+      # Consecutive buckets are exactly seven days apart, with no gap or overlap.
+      expect(result.periods.each_cons(2).all? { |a, b| (b - a).to_i == 7 }).to be true
+    end
+
     it "names the weekday on daily buckets only" do
       spend(10_000)
 

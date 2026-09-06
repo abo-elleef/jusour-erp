@@ -34,6 +34,12 @@ module SaqrPos
     # in config/environments, which are processed later.
     #
     config.time_zone = "Cairo"
+
+    # The business week runs Saturday to Friday — the weekend here is Friday and
+    # Saturday, so a Monday-start week (Rails' default) splits every weekend
+    # across two weeks. This is app-wide on purpose: payroll weeks, the overtime
+    # check and every weekly report must agree on where a week starts.
+    config.beginning_of_week = :saturday
     # config.eager_load_paths << Rails.root.join("extras")
 
     # Don't generate system test files.

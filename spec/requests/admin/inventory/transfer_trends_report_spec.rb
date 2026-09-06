@@ -251,7 +251,11 @@ RSpec.describe "Inventory transfer trends report", type: :request do
       month = trends(start_date: 400.days.ago.to_date, end_date: Date.current, granularity: "month")
 
       expect(day.period_labels.first).to match(/\A#{I18n.l(day.periods.first, format: "%a")} /)
-      expect(week.period_labels.first).to eq(I18n.l(week.periods.first, format: "%d %b"))
+      # A week bucket names both ends, so the reader is never left guessing where
+      # it stops. Weeks run Saturday to Friday, app-wide.
+      expect(week.periods.first.strftime("%a")).to eq("Sat")
+      expect(week.period_labels.first).to include("–")
+      expect(week.period_labels.first).to end_with(I18n.l(week.periods.first.end_of_week, format: "%d %b"))
       expect(month.period_labels.first).to eq(I18n.l(month.periods.first, format: "%B %Y"))
       expect(thursday.strftime("%a")).to eq("Thu")
     end
