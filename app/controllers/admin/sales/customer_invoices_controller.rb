@@ -6,7 +6,7 @@ module Admin
       before_action :set_invoice, only: %i[show confirm record_payment]
 
       def index
-        @status = params[:status].presence_in(%w[draft confirmed void])
+        @status = params[:status].presence_in(%w[draft confirmed historical void])
         scope = CustomerInvoice.recent.includes(:customer, :location)
         scope = scope.where(status: @status) if @status
         @pagy, @invoices = pagy(:offset, scope, limit: 50)

@@ -5,6 +5,8 @@ require "csv"
 module Admin
   module Accounting
     class SalesReportsController < BaseController
+      before_action { require_feature!(:menu) }
+
       def index
         parse_date_range
         @report = ::Accounting::SalesReportService.new(@start_date, @end_date).call

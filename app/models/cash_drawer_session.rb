@@ -8,6 +8,10 @@ class CashDrawerSession < ApplicationRecord
   belongs_to :user
   belongs_to :treasury, optional: true
   belongs_to :location, optional: true
+  # Where the opening float was carried in from (a safe, usually). The float is a
+  # transfer between two treasuries, not income — without a source there is nothing
+  # to credit it against.
+  belongs_to :float_source_treasury, class_name: "Treasury", optional: true
   has_many :payments, dependent: :nullify
 
   monetize :opening_float_cents
@@ -23,6 +27,14 @@ class CashDrawerSession < ApplicationRecord
   before_validation :assign_company_from_associations, on: :create
 
   scope :open, -> { where(status: "open") }
+
+  # Cash actually taken during the session: everything counted at close beyond the
+  # float that was already in the drawer when it opened.
+  def cash_collected_cents
+    return 0 if counted_cash_cents.blank?
+
+    counted_cash_cents.to_i - opening_float_cents.to_i
+  end
 
   private
 

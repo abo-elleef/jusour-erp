@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 class ProductionController < ApplicationController
+  include FeatureGated
   include ManufacturingBulkRecording
+
+  before_action { require_feature!(:manufacturing) }
 
   before_action :require_production_access!
   layout "kitchen"

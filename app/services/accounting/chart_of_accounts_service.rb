@@ -50,7 +50,7 @@ module Accounting
     def current_asset_lines
       @current_asset_lines ||= begin
         counters = Hash.new(0)
-        non_ap_treasuries.select { |t| CURRENT_ASSET_TYPES.include?(t.treasury_type) }.map do |t|
+        treasury_lines = non_ap_treasuries.select { |t| CURRENT_ASSET_TYPES.include?(t.treasury_type) }.map do |t|
           base = ASSET_BASE_CODES.fetch(t.treasury_type, 1500)
           counters[base] += 1
           AccountLine.new(
@@ -62,7 +62,35 @@ module Accounting
             normal_balance: :debit
           )
         end
+        treasury_lines + [sales_clearing_line].compact
       end
+    end
+
+    # Sales recognised but not yet banked. Unlike every other current asset this one
+    # has no treasury behind it — it lives only in the ledger — so its balance is
+    # read straight from the journal (debits less credits on 1160).
+    def sales_clearing_line
+      return @sales_clearing_line if defined?(@sales_clearing_line)
+
+      scope = JournalEntryLine.joins(:journal_entry)
+        .where(journal_entries: { company_id: Current.company.id },
+               account_code: JournalEntryService::SALES_CLEARING_CODE)
+      scope = scope.where(journal_entries: { date: @start_date..@end_date }) if @start_date && @end_date
+      balance = scope.sum(:debit_cents).to_i - scope.sum(:credit_cents).to_i
+
+      @sales_clearing_line =
+        if balance.zero?
+          nil
+        else
+          AccountLine.new(
+            code:           JournalEntryService::SALES_CLEARING_CODE,
+            name:           I18n.t("accounting.journal_entries.accounts.sales_clearing", default: "Sales clearing"),
+            account_type:   :asset,
+            subtype:        "sales_clearing",
+            balance_cents:  balance,
+            normal_balance: :debit
+          )
+        end
     end
 
     def total_current_assets_cents
@@ -184,11 +212,16 @@ module Accounting
 
     # ── Revenue ───────────────────────────────────────────────────────
 
+    # Read from the ledger, not from the Income table, so every way the company
+    # earns money lands in one place: manual income, POS takings recognised at
+    # day close, and credit sales invoiced to customers. (Income rows post their
+    # own entries, so nothing is lost by no longer reading that table directly —
+    # and reading both would double-count.)
     def revenue_lines
-      @revenue_lines ||= income_totals.map do |(code, category_name), cents|
+      @revenue_lines ||= ledger_totals(:revenue).map do |code, (name, cents)|
         AccountLine.new(
           code:           code,
-          name:           category_name,
+          name:           name,
           account_type:   :revenue,
           subtype:        "income",
           balance_cents:  cents,
@@ -203,11 +236,19 @@ module Accounting
 
     # ── Expenses — dynamic categories ────────────────────────────────
 
+    # Everything the ledger charges to an expense account except the fixed system
+    # accounts, which `fixed_expense_lines` already reads from the same place.
+    # Picks up goods bought on a vendor invoice (5100), which the Expense table
+    # never saw, and drops the auto-generated COGS rows, which are a management
+    # figure rather than a ledger fact — the app expenses stock when it is bought,
+    # so charging it again when it is sold would count the same cost twice.
     def dynamic_expense_lines
-      @dynamic_expense_lines ||= expense_totals.map do |(code, category_name), cents|
+      @dynamic_expense_lines ||= ledger_totals(:expense)
+        .except(*FIXED_EXPENSE_ACCOUNTS.map { |a| a[:code] })
+        .map do |code, (name, cents)|
         AccountLine.new(
           code:           code,
-          name:           category_name,
+          name:           name,
           account_type:   :expense,
           subtype:        "expense",
           balance_cents:  cents,
@@ -269,24 +310,35 @@ module Accounting
         .order(:name)
     end
 
-    def income_totals
-      @income_totals ||= begin
-        scope = Income.joins(:income_category)
-        scope = scope.on_date_range(@start_date, @end_date) if @start_date && @end_date
-        scope.group("income_categories.account_code", "income_categories.name")
-             .order("income_categories.account_code")
-             .sum(:amount_cents)
+    # { account_code => [name, balance_cents] } for one side of the ledger, ordered
+    # by code. Revenue accounts are credit-normal and expense accounts debit-normal,
+    # so each is netted in its own direction — a credit note debiting 4001 reduces
+    # revenue, a refunded expense credited back reduces the expense.
+    def ledger_totals(account_type)
+      @ledger_totals ||= {}
+      @ledger_totals[account_type] ||= begin
+        scope = journal_lines.where(account_type: account_type.to_s)
+        sign = account_type.to_sym == :revenue ? 1 : -1
+
+        names = scope.pluck(:account_code, :account_name).to_h
+        totals = scope.group(:account_code)
+          .pluck(Arel.sql("account_code"),
+                 Arel.sql("SUM(credit_cents) - SUM(debit_cents)"))
+
+        totals.filter_map { |code, cents|
+          balance = cents.to_i * sign
+          next if balance.zero?
+
+          [code, [names[code], balance]]
+        }.sort_by(&:first).to_h
       end
     end
 
-    def expense_totals
-      @expense_totals ||= begin
-        scope = Expense.joins(:expense_category)
-        scope = scope.on_date_range(@start_date, @end_date) if @start_date && @end_date
-        scope.group("expense_categories.account_code", "expense_categories.name")
-             .order("expense_categories.account_code")
-             .sum(:amount_cents)
-      end
+    def journal_lines
+      scope = JournalEntryLine.joins(:journal_entry)
+        .where(journal_entries: { company_id: Current.company.id })
+      scope = scope.where(journal_entries: { date: @start_date..@end_date }) if @start_date && @end_date
+      scope
     end
   end
 end

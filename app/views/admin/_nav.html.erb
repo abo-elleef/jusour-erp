@@ -12,14 +12,15 @@
 <% end %>
 
 <%# ── Sell & serve ─────────────────────────────────────────── %>
-<% if current_user.can?("orders:view") || current_user.can?("menu:manage") || current_user.can?("customers:manage") %>
+<% menu_selling = tab_feature_enabled?(feature: :menu) %>
+<% if (menu_selling && (current_user.can?("orders:view") || current_user.can?("menu:manage"))) || current_user.can?("customers:manage") %>
   <span class="<%= section %>"><%= t("nav.groups.sell_serve") %></span>
-  <% if current_user.can?("orders:view") %>
+  <% if menu_selling && current_user.can?("orders:view") %>
     <%= link_to admin_orders_path, class: admin_nav_link_class(admin_nav_active?("admin/orders")) do %>
       <%= admin_nav_icon(:orders) %><span><%= t("nav.orders") %></span>
     <% end %>
   <% end %>
-  <% if current_user.can?("menu:manage") %>
+  <% if menu_selling && current_user.can?("menu:manage") %>
     <%= link_to admin_menu_items_path, class: admin_nav_link_class(admin_nav_active?("admin/menu_items", "admin/categories", "admin/combos", "admin/menu_promos", "admin/modifiers", "admin/modifier_groups", "admin/tax_rates")) do %>
       <%= admin_nav_icon(:menu) %><span><%= t("nav.menu") %></span>
     <% end %>

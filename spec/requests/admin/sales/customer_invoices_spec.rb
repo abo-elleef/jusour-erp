@@ -31,6 +31,46 @@ RSpec.describe "Admin::Sales::CustomerInvoices", type: :request do
     expect(response.body).to include("customer-invoice-lines")
   end
 
+  describe "historical (imported) documents" do
+    let!(:historical) do
+      inv = CustomerInvoice.new(company: company, customer: customer, user: owner,
+        location: location, invoice_date: Date.new(2026, 1, 3), legacy_number: "2052",
+        notes: "Legacy invoice #2052")
+      inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 5,
+        unit: ingredient.unit, unit_price_cents: 20_000)
+      inv.save!
+      inv.update_columns(status: "historical")
+      inv
+    end
+
+    it "shows them on the index under their own filter" do
+      get admin_sales_customer_invoices_path(status: "historical", locale: "en")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(historical.invoice_number)
+      expect(response.body).to include("Historical")
+    end
+
+    it "excludes them from the draft filter and the outstanding total" do
+      get admin_sales_customer_invoices_path(status: "draft", locale: "en")
+      expect(response.body).not_to include(historical.invoice_number)
+      expect(CustomerInvoice.outstanding.sum(:total_cents)).to eq(0)
+    end
+
+    it "explains itself on the show page instead of offering a payment form" do
+      get admin_sales_customer_invoice_path(historical, locale: "en")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Imported from the previous system")
+      expect(response.body).not_to include("Record a payment")
+      expect(response.body).not_to include("Confirm sale")
+    end
+
+    it "refuses to confirm one" do
+      post confirm_admin_sales_customer_invoice_path(historical)
+      expect(historical.reload.status).to eq("historical")
+      expect(customer.reload.ar_balance_cents).to eq(0)
+    end
+  end
+
   it "creates a draft" do
     expect {
       post admin_sales_customer_invoices_path, params: {

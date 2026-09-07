@@ -47,6 +47,9 @@ module Sales
     private
 
     def validate!
+      # Only a draft can be confirmed — a historical invoice is already a completed
+      # sale from the previous system, and confirming it would post AR and deduct
+      # stock for goods that left years ago.
       raise Error, I18n.t("sales.customer_invoices.errors.not_draft", default: "Only a draft invoice can be confirmed.") unless @invoice.draft?
       raise Error, I18n.t("sales.customer_invoices.errors.no_lines", default: "Add at least one line before confirming.") if @invoice.customer_invoice_lines.empty?
       raise Error, I18n.t("sales.customer_invoices.errors.no_location", default: "A selling location is required.") if @invoice.location.blank?

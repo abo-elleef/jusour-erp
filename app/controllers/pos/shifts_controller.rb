@@ -45,6 +45,7 @@ module Pos
         location: @pos_location,
         session_date: BusinessDay.today(location: @pos_location),
         opening_float_cents: (params[:opening_float].to_f * 100).to_i,
+        float_source_treasury: Treasury.float_source,
         status: "open"
       )
       ::Accounting::CashReconciliationService.new(session).compute_expected!

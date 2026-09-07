@@ -120,6 +120,7 @@ Rails.application.routes.draw do
       resources :customer_statements, only: %i[index show] do
         member { post :record_payment }
       end
+      resources :reports, only: %i[index]
     end
 
     resources :categories do

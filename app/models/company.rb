@@ -6,6 +6,10 @@ class Company < ApplicationRecord
 
   # Toggleable modules. A feature is ON unless the company's profile turns it off
   # (see PROFILE_FEATURE_DEFAULTS) or a per-company override says otherwise.
+  # `menu` covers menu-based selling as a whole — the menu catalogue, the POS
+  # tickets it produces, and the reports built on them (sales, food cost, usage,
+  # tax). A distributor sells products from a price list, not dishes from a menu,
+  # so all of it is off for them.
   FEATURES = %w[manufacturing attendance kds menu ar_credit_sales price_tiers landed_cost].freeze
 
   # Per-profile default state. Anything not listed defaults to ON.

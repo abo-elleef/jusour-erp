@@ -79,16 +79,25 @@ RSpec.describe Accounting::TreasuryLedgerService do
   end
 
   describe ".sync_drawer_open!" do
-    it "deducts opening float from drawer treasury" do
+    # The float is carried into the drawer out of a safe, so it moves between two
+    # treasuries: the safe loses it, the drawer gains it, the company is no richer.
+    it "moves the opening float from the safe into the drawer" do
       drawer = Treasury.create!(
         name: "Register 1",
         treasury_type: "cash_drawer",
         opening_balance_cents: 30_000,
         balance_cents: 30_000
       )
+      safe = Treasury.create!(
+        name: "Main Safe",
+        treasury_type: "safe",
+        opening_balance_cents: 100_000,
+        balance_cents: 100_000
+      )
       session = CashDrawerSession.create!(
         user: user,
         treasury: drawer,
+        float_source_treasury: safe,
         location: create(:location, company: Current.company),
         session_date: Date.current,
         opening_float_cents: 10_000,
@@ -97,7 +106,8 @@ RSpec.describe Accounting::TreasuryLedgerService do
 
       described_class.sync_drawer_open!(session)
 
-      expect(drawer.reload.balance_cents).to eq(20_000)
+      expect(drawer.reload.balance_cents).to eq(40_000)
+      expect(safe.reload.balance_cents).to eq(90_000)
     end
   end
 

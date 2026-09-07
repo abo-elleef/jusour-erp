@@ -7,6 +7,8 @@ module Admin
     # Combined management report: what was sold (menu items) and what it consumed
     # in ingredients (theoretical vs actual), over a date range.
     class UsageReportsController < BaseController
+      before_action { require_feature!(:menu) }
+
       def index
         parse_date_range
         @food_cost = ::Accounting::FoodCostService.new(@start_date, @end_date).call

@@ -4,6 +4,9 @@
   <span class="<%= chip %> bg-gray-100 text-gray-600 border-gray-200"><%= t("sales.customer_invoices.statuses.void") %></span>
 <% elsif invoice.draft? %>
   <span class="<%= chip %> bg-amber-50 text-amber-800 border-amber-200"><%= t("sales.customer_invoices.statuses.draft") %></span>
+<% elsif invoice.historical? %>
+  <%# Imported from the previous system: it has no payment status of its own. %>
+  <span class="<%= chip %> bg-slate-100 text-slate-700 border-slate-300"><%= t("sales.customer_invoices.statuses.historical") %></span>
 <% else %>
   <% classes = { "unpaid" => "bg-red-50 text-red-700 border-red-200",
                  "partially_paid" => "bg-blue-50 text-blue-700 border-blue-200",

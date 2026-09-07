@@ -5,6 +5,8 @@ require "csv"
 module Admin
   module Accounting
     class TaxReportsController < BaseController
+      before_action { require_feature!(:menu) }
+
       def index
         parse_date_range
         completed_orders = Order.completed.where(created_at: BusinessDay.range_between(@start_date, @end_date))

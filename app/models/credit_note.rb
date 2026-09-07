@@ -6,7 +6,9 @@
 class CreditNote < ApplicationRecord
   include Tenantable
 
-  STATUSES = %w[draft confirmed void].freeze
+  # historical = a return that happened before this system (see CustomerInvoice).
+  # Counted by sales reporting, invisible to the ledger and to stock.
+  STATUSES = %w[draft confirmed historical void].freeze
 
   belongs_to :customer
   belongs_to :user
@@ -29,6 +31,8 @@ class CreditNote < ApplicationRecord
   before_save :recalculate_total
 
   scope :confirmed, -> { where(status: "confirmed") }
+  scope :historical, -> { where(status: "historical") }
+  scope :realized, -> { where(status: %w[confirmed historical]) }
   scope :recent, -> { order(credit_note_date: :desc, created_at: :desc) }
 
   def self.next_number(company: Current.company, year: Date.current.year)
@@ -43,8 +47,9 @@ class CreditNote < ApplicationRecord
     format("%s%05d", prefix, (max_seq || 0) + 1)
   end
 
-  def draft?     = status == "draft"
-  def confirmed? = status == "confirmed"
+  def draft?      = status == "draft"
+  def confirmed?  = status == "confirmed"
+  def historical? = status == "historical"
 
   def subtotal_cents
     credit_note_lines.reject(&:marked_for_destruction?).sum(&:line_total_cents)

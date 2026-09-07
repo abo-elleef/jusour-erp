@@ -49,6 +49,13 @@ class Treasury < ApplicationRecord
     active.find_by(is_default: true) || active.ordered.first
   end
 
+  # The treasury a cashier carries their opening float out of. A safe is the usual
+  # home for it; fall back to the company default so opening a drawer never fails
+  # for want of a source.
+  def self.float_source
+    active.where(treasury_type: "safe").ordered.first || default_treasury
+  end
+
   def self.create_staff_drawer!(user_name:, company: nil)
     company ||= Current.company
     raise ArgumentError, "company is required" if company.blank?

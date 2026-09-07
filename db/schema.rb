@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_06_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_06_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -144,7 +144,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_06_120000) do
     t.uuid "treasury_id"
     t.uuid "location_id"
     t.uuid "company_id", null: false
+    t.uuid "float_source_treasury_id"
     t.index ["company_id"], name: "index_cash_drawer_sessions_on_company_id"
+    t.index ["float_source_treasury_id"], name: "index_cash_drawer_sessions_on_float_source_treasury_id"
     t.index ["location_id"], name: "index_cash_drawer_sessions_on_location_id"
     t.index ["treasury_id"], name: "index_cash_drawer_sessions_on_treasury_id"
     t.index ["user_id"], name: "index_cash_drawer_sessions_on_user_id"
@@ -1703,6 +1705,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_06_120000) do
   add_foreign_key "cash_drawer_sessions", "companies"
   add_foreign_key "cash_drawer_sessions", "locations"
   add_foreign_key "cash_drawer_sessions", "treasuries"
+  add_foreign_key "cash_drawer_sessions", "treasuries", column: "float_source_treasury_id"
   add_foreign_key "cash_drawer_sessions", "users"
   add_foreign_key "categories", "companies"
   add_foreign_key "combo_items", "combos"

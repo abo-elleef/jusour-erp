@@ -109,15 +109,29 @@ module Accounting
       )
     end
 
+    # The float is carried into the drawer from a safe: it leaves one treasury and
+    # arrives in the other. Both legs are recorded, so neither treasury drifts.
     def sync_drawer_open!(session)
       remove_for_source(session, kinds: %w[drawer_open])
       return if session.treasury_id.blank?
       return unless session.opening_float_cents.positive?
 
+      if session.float_source_treasury.present?
+        record!(
+          treasury: session.float_source_treasury,
+          user: session.user,
+          amount_cents: -session.opening_float_cents,
+          kind: "drawer_open",
+          description: drawer_open_description(session),
+          occurred_on: session.session_date,
+          source: session
+        )
+      end
+
       record!(
         treasury: session.treasury,
         user: session.user,
-        amount_cents: -session.opening_float_cents,
+        amount_cents: session.opening_float_cents,
         kind: "drawer_open",
         description: drawer_open_description(session),
         occurred_on: session.session_date,
@@ -126,15 +140,18 @@ module Accounting
       JournalEntryService.record_drawer_open!(session)
     end
 
+    # Only the cash *taken* during the session lands here — the float went into the
+    # drawer when it opened, so banking the full counted amount would count it twice.
     def sync_drawer_reconcile!(session)
       remove_for_source(session, kinds: %w[drawer_reconcile])
       return if session.treasury_id.blank?
       return unless session.counted_cash_cents
+      return if session.cash_collected_cents.zero?
 
       record!(
         treasury: session.treasury,
         user: session.user,
-        amount_cents: session.counted_cash_cents,
+        amount_cents: session.cash_collected_cents,
         kind: "drawer_reconcile",
         description: drawer_reconcile_description(session),
         occurred_on: session.session_date,

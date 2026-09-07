@@ -40,6 +40,17 @@ module Accounting
     # DR Accounts Receivable / CR Sales Revenue — the genuine revenue recognition
     # the POS/drawer flow never introduced.
     SALES_REVENUE_CODE = 4001
+    TAX_PAYABLE_CODE   = 2100
+
+    # Sales made but not yet sitting in a treasury. A day's takings are recognised
+    # against this account, and each treasury clears its share as the money lands
+    # (cash counted into the drawer, a wallet settled, a card payout received).
+    # Whatever is left is cash over/short plus takings still in transit.
+    #
+    # Numbered like customer_ar (1150): carved into the 1100 block, because the
+    # 1000-1599 range is handed out to treasuries as base + index and 1600+ belongs
+    # to fixed assets.
+    SALES_CLEARING_CODE = 1160
 
     class << self
       # ── Expense ──────────────────────────────────────────────────────
@@ -106,10 +117,13 @@ module Accounting
       end
 
       # ── Drawer Open ───────────────────────────────────────────────────
-      # Float leaves a safe/source to open the drawer (if opening_float > 0)
+      # The float is carried into the drawer out of a safe: cash moves between two
+      # treasuries and the company is no richer for it. (It used to be credited to
+      # equity, which both invented income and left the float double-counted.)
       def record_drawer_open!(session)
         destroy_for_source!(session, kind: :open)
         return unless session.opening_float_cents.to_i.positive?
+        return if session.float_source_treasury.blank?
 
         create! source: session, date: session.session_date, user: session.user,
                 description: I18n.t("accounting.journal_entries.auto.drawer_open",
@@ -118,26 +132,28 @@ module Accounting
                 source_tag: :open do |lines|
           lines << debit(account_for_treasury(session.treasury),
                          session.opening_float_cents, "asset")
-          lines << credit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings", default: "Retained Earnings") },
-                          session.opening_float_cents, "equity")
+          lines << credit(account_for_treasury(session.float_source_treasury),
+                          session.opening_float_cents, "asset")
         end
       end
 
       # ── Drawer Reconcile ──────────────────────────────────────────────
-      # Counted cash is confirmed into the treasury
+      # Cash taken during the session lands in the drawer. Only the takings post —
+      # the float was already debited to the drawer when it opened — and they clear
+      # against sales clearing, where the day's revenue was recognised. Any gap
+      # between the two is the cash over/short, and it stays visible in 1160.
       def record_drawer_reconcile!(session)
         destroy_for_source!(session, kind: :reconcile)
-        return unless session.counted_cash_cents.to_i.positive?
+        collected = session.cash_collected_cents
+        return unless collected.positive?
 
         create! source: session, date: Date.current, user: session.user,
                 description: I18n.t("accounting.journal_entries.auto.drawer_reconcile",
                                     treasury: session.treasury.name,
                                     default: "Cash Drawer Reconciled — #{session.treasury.name}"),
                 source_tag: :reconcile do |lines|
-          lines << debit(account_for_treasury(session.treasury),
-                         session.counted_cash_cents, "asset")
-          lines << credit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings", default: "Retained Earnings") },
-                          session.counted_cash_cents, "equity")
+          lines << debit(account_for_treasury(session.treasury), collected, "asset")
+          lines << credit(sales_clearing_account, collected, "asset")
         end
       end
 
@@ -151,8 +167,49 @@ module Accounting
                                     default: "Digital Payment Received — #{treasury.name}"),
                 source_tag: :online do |lines|
           lines << debit(account_for_treasury(treasury), amount_cents, "asset")
-          lines << credit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings", default: "Retained Earnings") },
-                          amount_cents, "equity")
+          lines << credit(sales_clearing_account, amount_cents, "asset")
+        end
+      end
+
+      # ── Daily POS Sales ───────────────────────────────────────────────
+      # One entry per location per business day recognising the day's takings:
+      #
+      #   DR Sales clearing (1160)   everything sold
+      #     CR Sales revenue (4001)  net of tax
+      #     CR Tax payable   (2100)  tax collected
+      #
+      # Posted per day rather than per ticket: at a few hundred orders a day the
+      # ledger has to stay readable, and the per-order detail already lives in the
+      # orders tables where the sales reports read it. Each treasury clears its own
+      # share of 1160 as the money arrives, so card takings finally reach the books
+      # even though no drawer session ever sees them.
+      #
+      # Idempotent: re-running for the same day replaces the day's entry.
+      def record_daily_sales!(location:, business_date:, user:, orders: nil)
+        orders ||= Order.completed.where(created_at: BusinessDay.range(business_date, location: location),
+                                         location_id: location.id)
+        destroy_for_daily_sales!(location: location, business_date: business_date)
+
+        net_sales_cents = orders.sum(:subtotal_cents).to_i - orders.sum(:discount_cents).to_i
+        tax_cents       = orders.sum(:tax_cents).to_i
+        tip_cents       = orders.sum(:tip_cents).to_i
+        total_cents     = net_sales_cents + tax_cents + tip_cents
+        return if total_cents.zero?
+
+        create! source: location, date: business_date, user: user,
+                description: I18n.t("accounting.journal_entries.auto.daily_sales",
+                                    location: location.name, date: business_date,
+                                    default: "Sales — #{location.name} #{business_date}"),
+                source_tag: :daily_sales do |lines|
+          lines << debit(sales_clearing_account, total_cents, "asset")
+          lines << credit({ code: SALES_REVENUE_CODE,
+                            name: I18n.t("accounting.journal_entries.accounts.sales_revenue", default: "Sales revenue") },
+                          net_sales_cents + tip_cents, "revenue")
+          if tax_cents.positive?
+            lines << credit({ code: TAX_PAYABLE_CODE,
+                              name: I18n.t("accounting.journal_entries.accounts.tax_payable", default: "Tax payable") },
+                            tax_cents, "liability")
+          end
         end
       end
 
@@ -501,6 +558,20 @@ module Accounting
         { account_code: account[:code], account_name: account[:name],
           account_type: account_type, debit_cents: 0, credit_cents: amount_cents,
           treasury_id: account[:treasury_id], notes: notes }
+      end
+
+      # A day's entry is keyed by location *and* date, so the generic source cleanup
+      # (which would wipe every day for the location) is too broad here.
+      def destroy_for_daily_sales!(location:, business_date:)
+        JournalEntry.unscoped.where(
+          source_record_type: "Location", source_record_id: location.id,
+          company_id: Current.company.id, date: business_date
+        ).where("journal_entries.description LIKE ?", "%[daily_sales]%").destroy_all
+      end
+
+      def sales_clearing_account
+        { code: SALES_CLEARING_CODE,
+          name: I18n.t("accounting.journal_entries.accounts.sales_clearing", default: "Sales clearing") }
       end
 
       def account_for_treasury(treasury)

@@ -2,6 +2,8 @@
 
 module Admin
   class OrdersController < BaseController
+    before_action { require_feature!(:menu) }
+
     before_action :set_order, only: %i[show void refund change_payment_method]
 
     def index

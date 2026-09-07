@@ -49,11 +49,11 @@ RSpec.describe Sales::LegacyHistoryImporter do
     expect(CustomerInvoice.count).to eq(1)
   end
 
-  it "imports invoices as drafts with the legacy number and no ledger impact" do
+  it "imports invoices as historical with the legacy number and no ledger impact" do
     import([row], fallback_phone: "01000000001")
 
     invoice = CustomerInvoice.sole
-    expect(invoice).to be_draft
+    expect(invoice).to be_historical
     expect(invoice.legacy_number).to eq("2052")
     expect(invoice.invoice_date).to eq(Date.new(2026, 1, 3))
     expect(invoice.location).to eq(location)
@@ -63,13 +63,13 @@ RSpec.describe Sales::LegacyHistoryImporter do
     expect(JournalEntry.count).to eq(0)
   end
 
-  it "imports a return as a draft credit note" do
+  it "imports a return as a historical credit note" do
     result = import([row("doc_type" => "return", "doc_number" => "139")],
       fallback_phone: "01000000001")
 
     note = CreditNote.sole
     expect(result.credit_notes_created).to eq(1)
-    expect(note).to be_draft
+    expect(note).to be_historical
     expect(note.legacy_number).to eq("139")
     expect(note.total_cents).to eq(100_000)
   end
@@ -116,6 +116,30 @@ RSpec.describe Sales::LegacyHistoryImporter do
     expect(result.skipped_existing).to eq(1)
     expect(result.invoices_created).to eq(0)
     expect(CustomerInvoice.count).to eq(1)
+  end
+
+  it "counts a historical sale as realized, but never as outstanding" do
+    import([row, row("doc_type" => "return", "doc_number" => "139")],
+      fallback_phone: "01000000001")
+
+    expect(CustomerInvoice.realized.count).to eq(1)
+    expect(CreditNote.realized.count).to eq(1)
+    expect(CustomerInvoice.draft.count).to eq(0)
+    expect(CustomerInvoice.confirmed.count).to eq(0)
+    expect(CustomerInvoice.outstanding.count).to eq(0)
+  end
+
+  it "refuses to confirm a historical invoice" do
+    import([row], fallback_phone: "01000000001")
+    invoice = CustomerInvoice.sole
+
+    expect {
+      Sales::ConfirmCustomerInvoiceService.new(invoice, owner).call
+    }.to raise_error(Sales::ConfirmCustomerInvoiceService::Error)
+
+    expect(invoice.reload).to be_historical
+    expect(invoice.customer.ar_balance_cents).to eq(0)
+    expect(StockAdjustment.count).to eq(0)
   end
 
   it "writes nothing on a dry run" do

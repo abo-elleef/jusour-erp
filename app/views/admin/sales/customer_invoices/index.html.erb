@@ -26,7 +26,7 @@
 
   <div class="flex flex-wrap items-center gap-2 text-sm mb-4">
     <span class="text-gray-500 me-1"><%= t("sales.customer_invoices.filter") %>:</span>
-    <% [[nil, "all"], ["draft", "draft"], ["confirmed", "confirmed"]].each do |val, key| %>
+    <% [[nil, "all"], ["draft", "draft"], ["confirmed", "confirmed"], ["historical", "historical"]].each do |val, key| %>
       <%= link_to t("sales.customer_invoices.statuses.#{key}"),
             admin_sales_customer_invoices_path(status: val),
             class: "px-3 py-1.5 rounded-lg font-medium border transition-colors #{@status == val ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" %>
@@ -54,12 +54,15 @@
                   <%= link_to inv.invoice_number, admin_sales_customer_invoice_path(inv),
                         class: "font-semibold text-amber-700 hover:text-amber-800 tabular-nums" %>
                 </td>
-                <td class="p-3 text-gray-700"><%= inv.customer.display_name %></td>
+                <td class="p-3">
+                  <%= link_to inv.customer.display_name, admin_customer_path(inv.customer),
+                        class: "text-gray-700 hover:text-amber-700 hover:underline" %>
+                </td>
                 <td class="p-3 text-gray-600 tabular-nums"><%= l(inv.invoice_date, format: :short) %></td>
                 <td class="p-3"><%= render "status_badge", invoice: inv %></td>
                 <td class="p-3 text-end tabular-nums text-gray-700"><%= format_money(inv.total_cents) %></td>
-                <td class="p-3 text-end pe-5 tabular-nums font-semibold <%= inv.balance_due_cents.positive? ? 'text-amber-700' : 'text-gray-400' %>">
-                  <%= format_money(inv.balance_due_cents) %>
+                <td class="p-3 text-end pe-5 tabular-nums font-semibold <%= inv.balance_due_cents.positive? && !inv.historical? ? 'text-amber-700' : 'text-gray-400' %>">
+                  <%= inv.historical? ? "—" : format_money(inv.balance_due_cents) %>
                 </td>
               </tr>
             <% end %>

@@ -3,11 +3,11 @@
 module Sales
   # Imports sales history (invoices + returns) exported from the previous system.
   #
-  # Everything lands as a DRAFT: the history is searchable and ties back to the old
-  # document numbers, but nothing touches the AR ledger or stock. That is deliberate
-  # — the export carries no payment history (every row shows 0 paid), so replaying it
-  # as confirmed would invent an outstanding balance and drive on-hand deeply
-  # negative. The real AR opening balance belongs in a single opening-balance entry.
+  # Everything lands as HISTORICAL: these sales really happened, so they count in the
+  # sales reports, but the money and the goods moved before this system existed —
+  # replaying them would invent an AR balance (the export shows 0 paid on every row)
+  # and drive on-hand deeply negative. The real AR opening balance belongs in a single
+  # opening-balance entry, not in 134 replayed invoices.
   #
   # Row hash (string keys), one per line item, document fields repeated:
   #   doc_type       "invoice" | "return"
@@ -206,7 +206,7 @@ module Sales
       customer = find_or_create_customer(doc)
       invoice = CustomerInvoice.create!(
         company: @company, customer: customer, user: @recorder, salesperson: @recorder,
-        location: @location, invoice_date: doc[:date], status: "draft",
+        location: @location, invoice_date: doc[:date], status: "historical",
         payment_status: "unpaid", legacy_number: doc[:number], notes: notes_for(doc)
       )
 
@@ -225,7 +225,7 @@ module Sales
       customer = find_or_create_customer(doc)
       note = CreditNote.create!(
         company: @company, customer: customer, user: @recorder, location: @location,
-        credit_note_date: doc[:date], status: "draft",
+        credit_note_date: doc[:date], status: "historical",
         legacy_number: doc[:number], notes: notes_for(doc)
       )
 

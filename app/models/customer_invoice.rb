@@ -6,7 +6,12 @@
 class CustomerInvoice < ApplicationRecord
   include Tenantable
 
-  STATUSES = %w[draft confirmed void].freeze
+  # historical = a sale that really happened before this system, imported from the
+  # previous one. It counts as a sale in the operational sales reports, but it
+  # never touches the ledger, AR or stock — the money and the goods moved long
+  # before we existed, so replaying them would double-count. It is terminal: a
+  # historical invoice can't be confirmed (see Sales::ConfirmCustomerInvoiceService).
+  STATUSES = %w[draft confirmed historical void].freeze
   PAYMENT_STATUSES = %w[unpaid partially_paid paid].freeze
 
   belongs_to :customer
@@ -37,6 +42,10 @@ class CustomerInvoice < ApplicationRecord
 
   scope :draft, -> { where(status: "draft") }
   scope :confirmed, -> { where(status: "confirmed") }
+  scope :historical, -> { where(status: "historical") }
+  # Every invoice that represents a real sale, whether we booked it or inherited it.
+  # This is what sales reporting counts; `confirmed` alone is what the ledger knows.
+  scope :realized, -> { where(status: %w[confirmed historical]) }
   scope :outstanding, -> { where(status: "confirmed", payment_status: %w[unpaid partially_paid]) }
   scope :recent, -> { order(invoice_date: :desc, created_at: :desc) }
 
@@ -56,6 +65,7 @@ class CustomerInvoice < ApplicationRecord
 
   def draft?      = status == "draft"
   def confirmed?  = status == "confirmed"
+  def historical? = status == "historical"
   def void?       = status == "void"
 
   def subtotal_cents

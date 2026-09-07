@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class KitchenController < ApplicationController
+  include FeatureGated
+
+  before_action { require_feature!(:kds) }
   before_action :require_kitchen!
   layout "kitchen"
 

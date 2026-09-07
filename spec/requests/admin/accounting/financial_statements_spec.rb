@@ -88,8 +88,14 @@ RSpec.describe "Admin::Accounting::FinancialStatements", type: :request do
       expect(response.body).to include("صافي الربح")
     end
 
+    # The statements read the ledger, so emptying a source table is not enough —
+    # journal entries are deliberately kept when their source is deleted (reversals,
+    # not deletions, are how the ledger takes something back).
     context "when there is no revenue" do
-      before { Income.destroy_all }
+      before do
+        Income.destroy_all
+        JournalEntry.where(id: JournalEntryLine.where(account_type: "revenue").select(:journal_entry_id)).destroy_all
+      end
 
       it "shows the empty-revenue message" do
         get profit_loss_admin_accounting_financial_statements_path
@@ -98,7 +104,10 @@ RSpec.describe "Admin::Accounting::FinancialStatements", type: :request do
     end
 
     context "when there are no expenses" do
-      before { Expense.destroy_all }
+      before do
+        Expense.destroy_all
+        JournalEntry.where(id: JournalEntryLine.where(account_type: "expense").select(:journal_entry_id)).destroy_all
+      end
 
       it "shows the empty-expense message" do
         get profit_loss_admin_accounting_financial_statements_path
