@@ -3804,6 +3804,21 @@ en:
       delete_confirm: "Delete this expense?"
       recurrence: "Recurrence"
       stats_spent: "Spent"
+      tabs:
+        transactions: "Transactions"
+        ledger: "Ledger Summary"
+      ledger_note: "These figures come from journal entry lines — the same source as the P&L. They will match exactly."
+      ledger:
+        purchases: "Purchases"
+        purchases_hint: "Vendor invoices posted to account 5100"
+        payroll: "Payroll"
+        payroll_hint: "Salaries, advances & staff meals (5500–5502)"
+        operations: "Operating Expenses"
+        operations_hint: "All other expense accounts"
+        operations_breakdown: "Operating Expenses Breakdown"
+        operations_total: "Operations Total"
+        total: "Total Expenses (matches P&L)"
+        view_in_pl: "View in P&L →"
       totals:
         system_controlled: "System-controlled expenses (auto-generated)"
         custom_controlled: "Custom-controlled expenses (manually entered)"

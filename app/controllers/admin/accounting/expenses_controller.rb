@@ -28,6 +28,10 @@ module Admin
         @total_active_cents  = active_scope.sum(:amount_cents)
         @system_cents        = active_scope.where(is_auto_generated: true).sum(:amount_cents)
         @custom_cents        = active_scope.where(is_auto_generated: false).sum(:amount_cents)
+
+        # Ledger summary — from journal entry lines so it matches the P&L exactly
+        @ledger_tab = params[:tab] == "ledger"
+        @ledger_summary = build_ledger_summary(@start_date, @end_date)
         @range_sums = [
           {
             label: t("accounting.expenses.stats_spent"),
@@ -155,6 +159,41 @@ module Admin
             ]
           end
         end
+      end
+
+      PURCHASES_CODES = [5100].freeze
+      PAYROLL_CODES   = [
+        ::Accounting::JournalEntryService::ADVANCE_CODE,
+        ::Accounting::JournalEntryService::SALARY_CODE,
+        ::Accounting::JournalEntryService::STAFF_MEAL_CODE
+      ].freeze
+
+      def build_ledger_summary(start_date, end_date)
+        base = JournalEntryLine.joins(:journal_entry)
+          .where(journal_entries: { company_id: Current.company.id })
+          .where("account_code >= 5000 AND account_code < 6000")
+        base = base.where(journal_entries: { date: start_date.. })  if start_date
+        base = base.where(journal_entries: { date: ..end_date })    if end_date
+
+        # net debit per account code (debit - credit = expense amount)
+        totals = base.group(:account_code, :account_name)
+                     .sum("debit_cents - credit_cents")
+                     .reject { |_, v| v <= 0 }
+
+        purchases_cents = totals.select { |(code, _), _| PURCHASES_CODES.include?(code) }.values.sum
+        payroll_cents   = totals.select { |(code, _), _| PAYROLL_CODES.include?(code) }.values.sum
+        operations_lines = totals.reject { |(code, _), _| (PURCHASES_CODES + PAYROLL_CODES).include?(code) }
+                                 .map { |(code, name), cents| { code: code, name: name, cents: cents } }
+                                 .sort_by { |l| l[:code] }
+        operations_cents = operations_lines.sum { |l| l[:cents] }
+
+        {
+          purchases_cents: purchases_cents,
+          payroll_cents:   payroll_cents,
+          operations_lines: operations_lines,
+          operations_cents: operations_cents,
+          total_cents: purchases_cents + payroll_cents + operations_cents
+        }
       end
 
       def set_expense
