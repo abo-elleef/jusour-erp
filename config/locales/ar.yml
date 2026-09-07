@@ -3123,6 +3123,7 @@ ar:
       as_of: "حتى تاريخ"
       download_pdf: "تحميل PDF"
       print: "طباعة"
+      drill_down_hint: "انقر لعرض القيود المحاسبية التي كوّنت هذا الرقم"
       subtypes:
         accounts_payable: "ذمم دائنة"
         short_term_loan: "قصير الأجل"
@@ -3370,6 +3371,8 @@ ar:
         auto: "تلقائية"
         manual: "يدوية"
         reversal: "قيود العكس"
+        account_code_label: "مصفّى بالحساب"
+        account_code_hint: "يعرض القيود التي تمس هذا الحساب"
       account_types:
         asset: "أصل"
         liability: "خصم"

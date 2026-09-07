@@ -3102,6 +3102,7 @@ en:
       as_of: "As of"
       download_pdf: "Download PDF"
       print: "Print"
+      drill_down_hint: "Click to see the journal entries behind this number"
       subtypes:
         accounts_payable: "AP"
         short_term_loan: "Short-term"
@@ -3351,6 +3352,8 @@ en:
         auto: "Auto-generated"
         manual: "Manual"
         reversal: "Reversals"
+        account_code_label: "Filtered by account"
+        account_code_hint: "Showing entries that touch this account"
       account_types:
         asset: "Asset"
         liability: "Liability"

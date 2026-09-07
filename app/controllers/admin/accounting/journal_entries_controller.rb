@@ -12,6 +12,13 @@ module Admin
 
         scope = scope.by_type(params[:entry_type]) if params[:entry_type].present?
 
+        @account_code = params[:account_code].presence
+        if @account_code
+          scope = scope.where(
+            id: JournalEntryLine.where(account_code: @account_code).select(:journal_entry_id)
+          )
+        end
+
         @entry_type      = params[:entry_type]
         @total_count     = scope.count
         @reversed_count  = scope.where(entry_type: "reversal").count
