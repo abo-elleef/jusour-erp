@@ -336,6 +336,12 @@ Rails.application.routes.draw do
         end
         resources :vendor_invoice_payments, only: [:destroy], module: :vendor_invoices
       end
+      resources :vendor_credit_notes, only: %i[index show new create] do
+        member do
+          post :confirm
+          patch :void
+        end
+      end
       resources :stock_takes, only: %i[index show create update] do
         member do
           post :complete

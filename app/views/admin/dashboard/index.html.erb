@@ -145,6 +145,7 @@
       <% end %>
       <% if inventory_any_access? %>
         <%= link_to t("inventory.tools.vendor_invoices"), admin_inventory_vendor_invoices_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
+        <%= link_to t("inventory.tools.vendor_credit_notes"), admin_inventory_vendor_credit_notes_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
         <%= link_to t("inventory.tools.stock_transfers"), admin_inventory_stock_transfers_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
         <%= link_to t("nav.inventory"), admin_inventory_ingredients_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
       <% end %>

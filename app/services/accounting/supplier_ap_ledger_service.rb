@@ -25,6 +25,14 @@ module Accounting
       new(payment.vendor_invoice.supplier).reverse_payment!(payment, user)
     end
 
+    def self.record_credit_note!(credit_note:, user:)
+      new(credit_note.supplier).record_credit_note!(credit_note, user)
+    end
+
+    def self.reverse_credit_note!(credit_note:, user:)
+      new(credit_note.supplier).reverse_credit_note!(credit_note, user)
+    end
+
     def initialize(supplier)
       @supplier = supplier
     end
@@ -76,6 +84,41 @@ module Accounting
           end
         end
       JournalEntryService.reverse_vendor_invoice!(invoice)
+    end
+
+    def record_credit_note!(credit_note, user)
+      treasury = ensure_treasury!
+      treasury.with_lock do
+        treasury.apply_balance_delta!(-credit_note.total_cents)
+        TreasuryTransaction.create!(
+          treasury: treasury,
+          user: user,
+          amount_cents: -credit_note.total_cents,
+          kind: "ap_credit_note",
+          description: I18n.t(
+            "accounting.ap_ledger.credit_note_received",
+            credit_note_number: credit_note.credit_note_number,
+            supplier: @supplier.name,
+            default: "Credit Note #{credit_note.credit_note_number} — #{@supplier.name}"
+          ),
+          occurred_on: credit_note.credit_note_date,
+          source_record: credit_note,
+          balance_after_cents: treasury.balance_cents
+        )
+      end
+      JournalEntryService.record_vendor_credit_note!(credit_note)
+    end
+
+    def reverse_credit_note!(credit_note, _user)
+      TreasuryTransaction
+        .where(source_record: credit_note, kind: "ap_credit_note")
+        .find_each do |txn|
+          txn.treasury.with_lock do
+            txn.treasury.apply_balance_delta!(-txn.amount_cents)
+            txn.destroy!
+          end
+        end
+      JournalEntryService.destroy_for_source!(credit_note)
     end
 
     def reverse_payment!(payment, _user)

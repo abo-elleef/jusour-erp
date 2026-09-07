@@ -1,0 +1,94 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <%= link_to t("inventory.vendor_credit_notes.title"), admin_inventory_vendor_credit_notes_path,
+            class: "text-sm text-gray-500 hover:text-gray-700" %>
+      <span class="text-gray-300">/</span>
+      <h1 class="text-xl font-bold text-gray-900"><%= @vendor_credit_note.credit_note_number %></h1>
+      <%= render "admin/inventory/vendor_credit_notes/status_badge", cn: @vendor_credit_note %>
+    </div>
+    <div class="flex items-center gap-2">
+      <% if @vendor_credit_note.postable? %>
+        <%= button_to t("inventory.vendor_credit_notes.confirm_button"),
+              confirm_admin_inventory_vendor_credit_note_path(@vendor_credit_note),
+              method: :post,
+              class: "bg-green-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-green-700 transition-colors",
+              data: { turbo_confirm: t("inventory.vendor_credit_notes.confirm_prompt") } %>
+      <% end %>
+      <% if @vendor_credit_note.draft? %>
+        <%= button_to t("actions.void"), void_admin_inventory_vendor_credit_note_path(@vendor_credit_note),
+              method: :patch,
+              class: "text-sm font-semibold text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors",
+              data: { turbo_confirm: t("inventory.vendor_credit_notes.void_prompt") } %>
+      <% end %>
+    </div>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_credit_notes.form.details") %></h2>
+    </div>
+    <dl class="grid grid-cols-2 sm:grid-cols-4 gap-px bg-gray-100">
+      <% [
+        [t("inventory.vendor_credit_notes.supplier"), link_to(@vendor_credit_note.supplier.name, admin_inventory_supplier_path(@vendor_credit_note.supplier), class: "text-amber-700 hover:underline")],
+        [t("inventory.vendor_credit_notes.date"), l(@vendor_credit_note.credit_note_date)],
+        [t("inventory.vendor_credit_notes.total"), content_tag(:span, format_money(@vendor_credit_note.total_cents), class: "font-bold")],
+        [t("inventory.vendor_credit_notes.recorded_by"), @vendor_credit_note.user&.name || "—"],
+      ].each do |label, value| %>
+        <div class="bg-white px-5 py-4">
+          <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"><%= label %></dt>
+          <dd class="text-sm text-gray-900"><%= value %></dd>
+        </div>
+      <% end %>
+    </dl>
+    <% if @vendor_credit_note.notes.present? %>
+      <div class="px-5 py-4 border-t border-gray-100">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"><%= t("inventory.vendor_credit_notes.notes") %></p>
+        <p class="text-sm text-gray-700"><%= @vendor_credit_note.notes %></p>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_credit_notes.form.lines") %></h2>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="<%= table_head %>">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= t("inventory.vendor_invoices.form.ingredient") %></th>
+            <th class="p-3 text-end"><%= t("inventory.vendor_invoices.form.quantity") %></th>
+            <th class="p-3 text-start"><%= t("inventory.vendor_invoices.form.unit") %></th>
+            <th class="p-3 text-end"><%= t("inventory.vendor_invoices.form.unit_price") %></th>
+            <th class="p-3 pe-5 text-end"><%= t("inventory.vendor_invoices.form.line_total") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @vendor_credit_note.vendor_credit_note_lines.ordered.each do |line| %>
+            <tr>
+              <td class="p-3 ps-5 font-medium text-gray-900">
+                <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient),
+                      class: "hover:text-amber-700" %>
+              </td>
+              <td class="p-3 text-end tabular-nums"><%= line.quantity.to_s.sub(/\.?0+$/, "") %></td>
+              <td class="p-3 text-gray-600"><%= line.unit&.name || line.ingredient.unit %></td>
+              <td class="p-3 text-end tabular-nums"><%= format_money(line.unit_price_cents) %></td>
+              <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= format_money(line.line_total_cents) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot>
+          <tr class="border-t-2 border-gray-200 bg-gray-50/80">
+            <td colspan="4" class="p-3 ps-5 text-xs font-semibold text-gray-500 uppercase tracking-wide text-end">
+              <%= t("inventory.vendor_credit_notes.total") %>
+            </td>
+            <td class="p-3 pe-5 text-end font-bold text-gray-900 tabular-nums">
+              <%= format_money(@vendor_credit_note.total_cents) %>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+</div>

@@ -286,6 +286,26 @@ module Accounting
         end
       end
 
+      # ── Vendor Credit Note (purchase return / AP reduced) ────────────
+      # DR AP treasury (liability reduced)
+      # CR Purchases 5100 (expense reversed)
+      def record_vendor_credit_note!(credit_note)
+        destroy_for_source!(credit_note)
+        ap_treasury = credit_note.supplier.ap_treasury
+        return unless ap_treasury.present?
+
+        create! source: credit_note, date: credit_note.credit_note_date, user: credit_note.user,
+                description: I18n.t("accounting.journal_entries.auto.vendor_credit_note",
+                                    supplier: credit_note.supplier.name,
+                                    ref: credit_note.credit_note_number,
+                                    default: "Purchase Return — #{credit_note.supplier.name}") do |lines|
+          lines << debit(account_for_treasury(ap_treasury), credit_note.total_cents, "liability")
+          lines << credit({ code: 5100,
+                            name: I18n.t("accounting.journal_entries.accounts.purchases", default: "Purchases / Inventory") },
+                          credit_note.total_cents, "expense")
+        end
+      end
+
       # ── Fixed asset acquisition ───────────────────────────────────────
       #
       # A capital purchase, not an expense: the asset account is debited and either

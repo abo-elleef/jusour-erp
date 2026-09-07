@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_06_160000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_07_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1613,6 +1613,41 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_06_160000) do
     t.index ["role_id"], name: "index_users_on_role_id"
   end
 
+  create_table "vendor_credit_note_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "vendor_credit_note_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.uuid "unit_id"
+    t.decimal "quantity", precision: 10, scale: 3, default: "0.0", null: false
+    t.integer "unit_price_cents", default: 0, null: false
+    t.integer "line_total_cents", default: 0, null: false
+    t.integer "position", default: 0, null: false
+    t.text "line_notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id"], name: "index_vendor_credit_note_lines_on_ingredient_id"
+    t.index ["unit_id"], name: "index_vendor_credit_note_lines_on_unit_id"
+    t.index ["vendor_credit_note_id"], name: "index_vendor_credit_note_lines_on_vendor_credit_note_id"
+  end
+
+  create_table "vendor_credit_notes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "supplier_id", null: false
+    t.uuid "user_id", null: false
+    t.string "credit_note_number", null: false
+    t.date "credit_note_date", null: false
+    t.string "status", default: "draft", null: false
+    t.integer "total_cents", default: 0, null: false
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "credit_note_number"], name: "index_vendor_credit_notes_on_company_and_number", unique: true
+    t.index ["company_id"], name: "index_vendor_credit_notes_on_company_id"
+    t.index ["credit_note_date"], name: "index_vendor_credit_notes_on_credit_note_date"
+    t.index ["status"], name: "index_vendor_credit_notes_on_status"
+    t.index ["supplier_id"], name: "index_vendor_credit_notes_on_supplier_id"
+    t.index ["user_id"], name: "index_vendor_credit_notes_on_user_id"
+  end
+
   create_table "vendor_invoice_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "vendor_invoice_id", null: false
     t.uuid "ingredient_id", null: false
@@ -1902,6 +1937,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_06_160000) do
   add_foreign_key "users", "companies"
   add_foreign_key "users", "roles"
   add_foreign_key "users", "treasuries", column: "assigned_treasury_id", on_delete: :nullify
+  add_foreign_key "vendor_credit_note_lines", "ingredients"
+  add_foreign_key "vendor_credit_note_lines", "units"
+  add_foreign_key "vendor_credit_note_lines", "vendor_credit_notes"
+  add_foreign_key "vendor_credit_notes", "companies"
+  add_foreign_key "vendor_credit_notes", "suppliers"
+  add_foreign_key "vendor_credit_notes", "users"
   add_foreign_key "vendor_invoice_lines", "ingredients"
   add_foreign_key "vendor_invoice_lines", "units"
   add_foreign_key "vendor_invoice_lines", "vendor_invoices"

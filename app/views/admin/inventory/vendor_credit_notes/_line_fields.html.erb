@@ -1,0 +1,63 @@
+<%# locals: f %>
+<% input_class = pos_input_class %>
+<% line = f.object %>
+<% ingredient = line.ingredient || @ingredients.find { |i| i.id == line.ingredient_id } %>
+
+<div class="px-5 py-4 space-y-3" data-vendor-invoice-lines-target="row">
+  <%= f.hidden_field :_destroy, value: false, data: { vendor_invoice_lines_target: "destroy" } %>
+  <%= f.hidden_field :id %>
+  <%= f.hidden_field :position, value: line.position.to_i, data: { vendor_invoice_lines_target: "position" } %>
+
+  <div class="flex gap-3 items-start">
+    <div class="flex-1 min-w-0 grid grid-cols-12 gap-3 items-start">
+      <div class="col-span-4">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("inventory.vendor_invoices.form.ingredient") %></label>
+        <%= render "shared/searchable_select",
+              form: f,
+              field: :ingredient_id,
+              selected: line.ingredient_id,
+              placeholder: t("inventory.vendor_invoices.search_ingredient"),
+              input_class: input_class,
+              html: { data: { action: "searchable-select:change->vendor-invoice-lines#ingredientChanged" } } %>
+      </div>
+      <div class="col-span-2">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("inventory.vendor_invoices.form.unit") %></label>
+        <% unit_opts = ingredient ? ingredient.available_unit_records.map { |u| [helpers.ingredient_unit_label(u.name), u.id] } : [] %>
+        <%= f.select :unit_id,
+              options_for_select(unit_opts, line.unit_id),
+              { include_blank: ingredient.nil? },
+              class: "#{input_class} appearance-none px-2",
+              data: { vendor_invoice_lines_target: "unitSelect" } %>
+      </div>
+      <div class="col-span-2">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("inventory.vendor_invoices.form.quantity") %></label>
+        <%= f.number_field :quantity, step: 0.001, min: 0, placeholder: "0", class: input_class,
+              data: { action: "input->vendor-invoice-lines#recalculate" } %>
+      </div>
+      <div class="col-span-2">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("inventory.vendor_invoices.form.unit_price") %></label>
+        <%= f.text_field :unit_price_cents_input,
+              value: line.unit_price_cents.to_i.zero? ? nil : (line.unit_price_cents.to_d / 100).round(2),
+              step: 0.01, min: 0, placeholder: "0.00", class: input_class,
+              data: { action: "input->vendor-invoice-lines#recalculate" } %>
+      </div>
+      <div class="col-span-2">
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("inventory.vendor_invoices.form.line_total") %></label>
+        <div class="text-sm font-semibold tabular-nums pt-2.5 text-gray-700"
+             data-vendor-invoice-lines-target="lineTotal">
+          <%= line.line_total_cents.to_i.zero? ? "—" : format_money(line.line_total_cents) %>
+        </div>
+      </div>
+    </div>
+    <div class="pt-7 shrink-0">
+      <button type="button"
+              class="text-red-400 hover:text-red-600 transition-colors"
+              aria-label="<%= t("actions.remove") %>"
+              data-action="click->vendor-invoice-lines#removeLine">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>

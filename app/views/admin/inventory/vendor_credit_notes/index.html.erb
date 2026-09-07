@@ -1,0 +1,57 @@
+<div class="space-y-6">
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-gray-900"><%= t("inventory.vendor_credit_notes.title") %></h1>
+    <%= link_to t("inventory.vendor_credit_notes.new_button"), new_admin_inventory_vendor_credit_note_path,
+          class: "inline-flex items-center gap-2 bg-amber-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-amber-700 transition-colors" %>
+  </div>
+
+  <% if @vendor_credit_notes.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[36rem]">
+          <thead class="<%= table_head %>">
+            <tr>
+              <th class="p-3 ps-5 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
+              <th class="p-3 text-start"><%= t("inventory.vendor_credit_notes.number") %></th>
+              <th class="p-3 text-start"><%= t("inventory.vendor_credit_notes.supplier") %></th>
+              <th class="p-3 text-start"><%= t("inventory.vendor_credit_notes.date") %></th>
+              <th class="p-3 text-start"><%= t("inventory.vendor_credit_notes.status") %></th>
+              <th class="p-3 text-end"><%= t("inventory.vendor_credit_notes.total") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("customers.table.actions") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% @vendor_credit_notes.each_with_index do |cn, index| %>
+              <tr class="hover:bg-gray-100 transition-colors">
+                <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= table_row_number(index, pagy: @pagy) %></td>
+                <td class="p-3">
+                  <%= link_to cn.credit_note_number, admin_inventory_vendor_credit_note_path(cn),
+                        class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                </td>
+                <td class="p-3">
+                  <%= link_to cn.supplier.name, admin_inventory_supplier_path(cn.supplier),
+                        class: "text-gray-700 hover:text-amber-700" %>
+                </td>
+                <td class="p-3 tabular-nums text-gray-600"><%= l(cn.credit_note_date) %></td>
+                <td class="p-3"><%= render "admin/inventory/vendor_credit_notes/status_badge", cn: cn %></td>
+                <td class="p-3 text-end font-semibold tabular-nums"><%= format_money(cn.total_cents) %></td>
+                <td class="p-3 pe-5 text-end">
+                  <%= link_to t("actions.view"), admin_inventory_vendor_credit_note_path(cn),
+                        class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("inventory.vendor_credit_notes.empty_title") %></p>
+      <p class="text-gray-500 text-sm mb-5"><%= t("inventory.vendor_credit_notes.empty_description") %></p>
+      <%= link_to t("inventory.vendor_credit_notes.new_button"), new_admin_inventory_vendor_credit_note_path,
+            class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+    </section>
+  <% end %>
+</div>
