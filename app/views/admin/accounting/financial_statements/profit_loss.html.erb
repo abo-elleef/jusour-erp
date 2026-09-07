@@ -179,11 +179,6 @@
           <% end %>
         </div>
 
-        <%# COGS subtotal %>
-        <div class="flex items-center justify-between px-5 py-2.5 text-sm bg-red-50/60">
-          <span class="font-semibold text-red-700"><%= t("accounting.financial_statements.trading.total_cogs") %></span>
-          <span class="font-bold text-red-700 tabular-nums">(<%= format_money(cogs_cents) %>)</span>
-        </div>
       </div>
     </details>
 
@@ -198,9 +193,16 @@
     </div>
 
     <%# ── OPERATING EXPENSES ── %>
-    <div class="px-5 py-3 bg-red-50 border-b border-red-100 border-t border-t-gray-200">
-      <h2 class="text-xs font-bold text-red-700 uppercase tracking-wide"><%= t("accounting.financial_statements.trading.expenses_section") %></h2>
-    </div>
+    <details class="group" open>
+      <summary class="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 border-t-2 border-t-gray-200 bg-red-50/60 select-none list-none [&::-webkit-details-marker]:hidden">
+        <span class="text-sm font-semibold text-gray-700"><%= t("accounting.financial_statements.trading.operating_expenses") %></span>
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-bold text-red-700 tabular-nums">(<%= format_money(@coa.total_operating_expenses_cents) %>)</span>
+          <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+      </summary>
 
     <%# Sub-section 1: Payroll %>
     <% if @coa.payroll_expense_lines.any? %>
@@ -264,11 +266,7 @@
       </details>
     <% end %>
 
-    <%# Total operating expenses row %>
-    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-red-50/60">
-      <span class="text-sm font-bold text-red-800"><%= t("accounting.financial_statements.trading.operating_expenses") %></span>
-      <span class="text-sm font-black text-red-700 tabular-nums">(<%= format_money(@coa.total_operating_expenses_cents) %>)</span>
-    </div>
+    </details><%# end outer operating expenses details %>
 
     <%# ── NET PROFIT ── %>
     <div class="flex items-center justify-between px-5 py-5 border-t-2 border-gray-900 <%= net_profit_cents >= 0 ? 'bg-emerald-50' : 'bg-orange-50' %>">
