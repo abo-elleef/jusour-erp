@@ -10,6 +10,8 @@ module InventoryNav
       tabs: [
         { controller: "vendor_invoices", label: "inventory.tools.vendor_invoices",
           path: :admin_inventory_vendor_invoices_path, permission: "inventory:view" },
+        { controller: "vendor_credit_notes", label: "inventory.tools.vendor_credit_notes",
+          path: :admin_inventory_vendor_credit_notes_path, permission: "inventory:view" },
         { controller: "import_shipments", label: "inventory.tools.import_shipments",
           path: :admin_inventory_import_shipments_path, permission: "inventory:view",
           feature: :landed_cost },

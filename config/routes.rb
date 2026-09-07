@@ -209,9 +209,10 @@ Rails.application.routes.draw do
       resources :chart_of_accounts, only: [:index]
       resources :financial_statements, only: [] do
         collection do
-          get :profit_loss
-          get :balance_sheet
-          get :cash_flow
+          get  :profit_loss
+          get  :balance_sheet
+          get  :cash_flow
+          post :update_inventory_snapshot
         end
       end
       resources :journal_entries, only: %i[index show new create] do

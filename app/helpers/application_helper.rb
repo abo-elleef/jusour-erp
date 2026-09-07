@@ -54,7 +54,7 @@ module ApplicationHelper
   ACCOUNTING_TRANSACTIONS_GROUP  = %w[expenses incomes shift_logs monthly_payroll attendance late_penalties cash_drawer digital_wallet_day_closes business_days].freeze
   ACCOUNTING_LEDGERS_GROUP       = %w[treasuries journal_entries chart_of_accounts fixed_assets partners loans].freeze
 
-  INVENTORY_OPERATIONS_GROUP = %w[vendor_invoices stock_transfers stock_transfer_templates stock_takes manufacturing_templates manufacturing_runs manufacturing_template_lines].freeze
+  INVENTORY_OPERATIONS_GROUP = %w[vendor_invoices vendor_credit_notes stock_transfers stock_transfer_templates stock_takes manufacturing_templates manufacturing_runs manufacturing_template_lines].freeze
   INVENTORY_SETUP_GROUP      = %w[suppliers ingredients ingredient_categories units].freeze
   INVENTORY_REPORTS_GROUP    = %w[reports].freeze
 

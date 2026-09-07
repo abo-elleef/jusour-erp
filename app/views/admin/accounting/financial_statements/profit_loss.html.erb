@@ -1,6 +1,10 @@
 <% content_for :title, t("accounting.financial_statements.profit_loss_title") %>
 <%= render "admin/accounting/nav" %>
 
+<% cogs_cents = @opening_cents + @coa.purchases_cents - @closing_cents %>
+<% gross_profit_cents = @coa.total_revenue_cents - cogs_cents %>
+<% net_profit_cents   = gross_profit_cents - @coa.total_operating_expenses_cents %>
+
 <div class="max-w-3xl print:max-w-none">
 
   <%# ── Header ──────────────────────────────────────────────────── %>
@@ -32,7 +36,7 @@
     <%= render "admin/accounting/date_range_form" %>
   </div>
 
-  <%# ── Print header (visible only when printing) ─────────────── %>
+  <%# ── Print header ───────────────────────────────────────────── %>
   <div class="hidden print:block mb-6">
     <p class="text-lg font-bold text-gray-900"><%= Current.company.name %></p>
     <p class="text-base font-semibold text-gray-700"><%= t("accounting.financial_statements.profit_loss_title") %></p>
@@ -41,105 +45,210 @@
     </p>
   </div>
 
-  <%# ── Summary cards ──────────────────────────────────────────── %>
-  <div class="grid grid-cols-3 gap-4 mb-6 print:mb-4">
-    <div class="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4 print:rounded-lg print:border print:border-gray-300 print:bg-white">
-      <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1"><%= t("accounting.financial_statements.total_revenue") %></p>
-      <p class="text-xl font-bold text-blue-800"><%= format_money(@coa.total_revenue_cents) %></p>
-    </div>
-    <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 print:rounded-lg print:border print:border-gray-300 print:bg-white">
-      <p class="text-xs font-semibold text-red-600 uppercase tracking-wide mb-1"><%= t("accounting.financial_statements.total_expenses") %></p>
-      <p class="text-xl font-bold text-red-800"><%= format_money(@coa.total_expenses_cents) %></p>
-    </div>
-    <% net = @coa.net_income_cents %>
-    <div class="rounded-2xl border <%= net >= 0 ? 'border-emerald-200 bg-emerald-50' : 'border-orange-200 bg-orange-50' %> px-5 py-4 print:rounded-lg print:border print:border-gray-300 print:bg-white">
-      <p class="text-xs font-semibold <%= net >= 0 ? 'text-emerald-600' : 'text-orange-600' %> uppercase tracking-wide mb-1"><%= t("accounting.financial_statements.net_income") %></p>
-      <p class="text-xl font-bold <%= net >= 0 ? 'text-emerald-800' : 'text-orange-800' %>"><%= format_money(net.abs) %> <%= net < 0 ? "(#{t('accounting.financial_statements.loss')})" : "" %></p>
-    </div>
-  </div>
+  <%# ── Trading Account ─────────────────────────────────────────── %>
+  <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-4 print:rounded-none">
 
-  <%# ── Revenue section ────────────────────────────────────────── %>
-  <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-4 print:rounded-none print:border print:border-gray-300">
-    <div class="px-5 py-3 bg-gray-50 border-b border-gray-100">
-      <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide"><%= t("accounting.financial_statements.revenue") %></h2>
+    <%# ── REVENUE ── %>
+    <div class="px-5 py-3 bg-blue-50 border-b border-blue-100">
+      <h2 class="text-xs font-bold text-blue-700 uppercase tracking-wide"><%= t("accounting.financial_statements.trading.revenue_section") %></h2>
     </div>
 
-    <% if @coa.revenue_lines.any? %>
-      <table class="w-full text-sm">
-        <tbody class="divide-y divide-gray-50">
-          <% @coa.revenue_lines.each do |line| %>
-            <tr class="hover:bg-gray-50/60 print:hover:bg-white">
-              <td class="px-5 py-2.5 text-gray-500 font-mono text-xs w-16"><%= line.code %></td>
-              <td class="px-3 py-2.5 text-gray-800"><%= line.name %></td>
-              <td class="px-5 py-2.5 text-end tabular-nums font-medium text-gray-900 print:text-gray-900">
-                <%= link_to format_money(line.balance_cents),
-                      admin_accounting_journal_entries_path(
-                        account_code: line.code,
-                        start_date: @start_date, end_date: @end_date
-                      ),
-                      class: "hover:text-blue-700 hover:underline print:no-underline print:text-gray-900",
-                      title: t("accounting.financial_statements.drill_down_hint") %>
-              </td>
-            </tr>
+    <details class="group" open>
+      <summary class="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 select-none list-none [&::-webkit-details-marker]:hidden">
+        <span class="text-sm font-semibold text-gray-700"><%= t("accounting.financial_statements.trading.net_sales") %></span>
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-bold text-gray-900 tabular-nums"><%= format_money(@coa.total_revenue_cents) %></span>
+          <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+      </summary>
+      <% if @coa.revenue_lines.any? %>
+        <table class="w-full text-sm border-b border-gray-100">
+          <tbody class="divide-y divide-gray-50">
+            <% @coa.revenue_lines.each do |line| %>
+              <tr class="hover:bg-gray-50/60">
+                <td class="px-8 py-2 text-gray-400 font-mono text-xs w-16"><%= line.code %></td>
+                <td class="px-3 py-2 text-gray-600"><%= line.name %></td>
+                <td class="px-5 py-2 text-end tabular-nums text-gray-700">
+                  <%= link_to format_money(line.balance_cents),
+                        admin_accounting_journal_entries_path(account_code: line.code, start_date: @start_date, end_date: @end_date),
+                        class: "hover:text-blue-700 hover:underline",
+                        title: t("accounting.financial_statements.drill_down_hint") %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </details>
+
+    <%# ── COST OF GOODS SOLD ── %>
+    <div class="px-5 py-3 bg-red-50 border-b border-red-100 border-t border-t-gray-200">
+      <h2 class="text-xs font-bold text-red-700 uppercase tracking-wide"><%= t("accounting.financial_statements.trading.cogs_section") %></h2>
+    </div>
+
+    <details class="group" open>
+      <summary class="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 select-none list-none [&::-webkit-details-marker]:hidden">
+        <span class="text-sm font-semibold text-gray-700"><%= t("accounting.financial_statements.trading.cost_of_goods_sold") %></span>
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-bold text-red-700 tabular-nums">(<%= format_money(cogs_cents) %>)</span>
+          <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+      </summary>
+
+      <div class="border-b border-gray-100">
+        <%# Opening stock row with inline edit %>
+        <div class="flex items-center justify-between px-8 py-2.5 text-sm border-b border-gray-50 hover:bg-gray-50/60">
+          <span class="text-gray-600"><%= t("accounting.financial_statements.trading.opening_stock") %>
+            <% if @opening_snapshot %>
+              <span class="ms-2 text-xs text-gray-400"><%= l(@opening_snapshot.snapshot_date, format: :short) %></span>
+            <% end %>
+          </span>
+          <div class="flex items-center gap-2">
+            <span class="tabular-nums text-gray-700"><%= format_money(@opening_cents) %></span>
+            <button type="button"
+                    class="print:hidden text-xs text-blue-600 hover:underline"
+                    onclick="document.getElementById('opening-stock-form').classList.toggle('hidden')">
+              <%= t("actions.edit") %>
+            </button>
+          </div>
+        </div>
+        <div id="opening-stock-form" class="hidden px-8 py-3 bg-blue-50/40 border-b border-blue-100">
+          <%= form_with url: update_inventory_snapshot_admin_accounting_financial_statements_path, method: :post, class: "flex flex-wrap items-end gap-3" do |f| %>
+            <%= hidden_field_tag :start_date, @start_date %>
+            <%= hidden_field_tag :end_date, @end_date %>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1"><%= t("accounting.financial_statements.trading.snapshot_date") %></label>
+              <%= date_field_tag :snapshot_date, @opening_snapshot&.snapshot_date || @start_date, class: pos_input_class %>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1"><%= t("accounting.financial_statements.trading.stock_value") %></label>
+              <%= text_field_tag :value_cents_input,
+                    @opening_cents.zero? ? nil : (@opening_cents.to_d / 100).round(2),
+                    placeholder: "0.00", step: 0.01, class: pos_input_class %>
+            </div>
+            <%= submit_tag t("actions.save"), class: "bg-blue-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition-colors" %>
           <% end %>
-        </tbody>
-        <tfoot class="border-t-2 border-gray-200 bg-gray-50">
-          <tr>
-            <td colspan="2" class="px-5 py-3 text-sm font-bold text-gray-700 text-end"><%= t("accounting.financial_statements.total_revenue") %></td>
-            <td class="px-5 py-3 text-end tabular-nums font-bold text-gray-900"><%= format_money(@coa.total_revenue_cents) %></td>
-          </tr>
-        </tfoot>
-      </table>
-    <% else %>
-      <p class="px-5 py-6 text-sm text-gray-400 text-center"><%= t("accounting.financial_statements.no_revenue") %></p>
-    <% end %>
-  </div>
+        </div>
 
-  <%# ── Expenses section ───────────────────────────────────────── %>
-  <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6 print:rounded-none print:border print:border-gray-300">
-    <div class="px-5 py-3 bg-gray-50 border-b border-gray-100">
-      <h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide"><%= t("accounting.financial_statements.expenses") %></h2>
+        <%# Purchases row %>
+        <div class="flex items-center justify-between px-8 py-2.5 text-sm border-b border-gray-50 hover:bg-gray-50/60">
+          <span class="text-gray-600"><%= t("accounting.financial_statements.trading.purchases") %></span>
+          <span class="tabular-nums text-gray-700">
+            <%= link_to format_money(@coa.purchases_cents),
+                  admin_accounting_journal_entries_path(account_code: 5100, start_date: @start_date, end_date: @end_date),
+                  class: "hover:text-blue-700 hover:underline",
+                  title: t("accounting.financial_statements.drill_down_hint") %>
+          </span>
+        </div>
+
+        <%# Closing stock row with inline edit %>
+        <div class="flex items-center justify-between px-8 py-2.5 text-sm border-b border-gray-50 hover:bg-gray-50/60">
+          <span class="text-gray-600"><%= t("accounting.financial_statements.trading.closing_stock") %>
+            <% if @closing_snapshot %>
+              <span class="ms-2 text-xs text-gray-400"><%= l(@closing_snapshot.snapshot_date, format: :short) %></span>
+            <% end %>
+          </span>
+          <div class="flex items-center gap-2">
+            <span class="tabular-nums text-gray-700">(<%= format_money(@closing_cents) %>)</span>
+            <button type="button"
+                    class="print:hidden text-xs text-blue-600 hover:underline"
+                    onclick="document.getElementById('closing-stock-form').classList.toggle('hidden')">
+              <%= t("actions.edit") %>
+            </button>
+          </div>
+        </div>
+        <div id="closing-stock-form" class="hidden px-8 py-3 bg-blue-50/40 border-b border-blue-100">
+          <%= form_with url: update_inventory_snapshot_admin_accounting_financial_statements_path, method: :post, class: "flex flex-wrap items-end gap-3" do |f| %>
+            <%= hidden_field_tag :start_date, @start_date %>
+            <%= hidden_field_tag :end_date, @end_date %>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1"><%= t("accounting.financial_statements.trading.snapshot_date") %></label>
+              <%= date_field_tag :snapshot_date, @closing_snapshot&.snapshot_date || @end_date, class: pos_input_class %>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1"><%= t("accounting.financial_statements.trading.stock_value") %></label>
+              <%= text_field_tag :value_cents_input,
+                    @closing_cents.zero? ? nil : (@closing_cents.to_d / 100).round(2),
+                    placeholder: "0.00", step: 0.01, class: pos_input_class %>
+            </div>
+            <%= submit_tag t("actions.save"), class: "bg-blue-600 text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-blue-700 transition-colors" %>
+          <% end %>
+        </div>
+
+        <%# COGS subtotal %>
+        <div class="flex items-center justify-between px-5 py-2.5 text-sm bg-red-50/60">
+          <span class="font-semibold text-red-700"><%= t("accounting.financial_statements.trading.total_cogs") %></span>
+          <span class="font-bold text-red-700 tabular-nums">(<%= format_money(cogs_cents) %>)</span>
+        </div>
+      </div>
+    </details>
+
+    <%# ── GROSS PROFIT ── %>
+    <div class="flex items-center justify-between px-5 py-4 border-t-2 border-gray-300 <%= gross_profit_cents >= 0 ? 'bg-emerald-50' : 'bg-orange-50' %>">
+      <span class="text-base font-bold <%= gross_profit_cents >= 0 ? 'text-emerald-800' : 'text-orange-800' %>">
+        <%= t("accounting.financial_statements.trading.gross_profit") %>
+      </span>
+      <span class="text-lg font-bold tabular-nums <%= gross_profit_cents >= 0 ? 'text-emerald-700' : 'text-orange-700' %>">
+        <%= gross_profit_cents < 0 ? "(" : "" %><%= format_money(gross_profit_cents.abs) %><%= gross_profit_cents < 0 ? ")" : "" %>
+      </span>
     </div>
 
-    <% if @coa.expense_lines.any? %>
-      <table class="w-full text-sm">
-        <tbody class="divide-y divide-gray-50">
-          <% @coa.expense_lines.each do |line| %>
-            <tr class="hover:bg-gray-50/60 print:hover:bg-white">
-              <td class="px-5 py-2.5 text-gray-500 font-mono text-xs w-16"><%= line.code %></td>
-              <td class="px-3 py-2.5 text-gray-800"><%= line.name %></td>
-              <td class="px-5 py-2.5 text-end tabular-nums font-medium text-gray-900 print:text-gray-900">
-                <%= link_to format_money(line.balance_cents),
-                      admin_accounting_journal_entries_path(
-                        account_code: line.code,
-                        start_date: @start_date, end_date: @end_date
-                      ),
-                      class: "hover:text-blue-700 hover:underline print:no-underline print:text-gray-900",
-                      title: t("accounting.financial_statements.drill_down_hint") %>
-              </td>
-            </tr>
-          <% end %>
-        </tbody>
-        <tfoot class="border-t-2 border-gray-200 bg-gray-50">
-          <tr>
-            <td colspan="2" class="px-5 py-3 text-sm font-bold text-gray-700 text-end"><%= t("accounting.financial_statements.total_expenses") %></td>
-            <td class="px-5 py-3 text-end tabular-nums font-bold text-gray-900"><%= format_money(@coa.total_expenses_cents) %></td>
-          </tr>
-        </tfoot>
-      </table>
-    <% else %>
-      <p class="px-5 py-6 text-sm text-gray-400 text-center"><%= t("accounting.financial_statements.no_expenses") %></p>
-    <% end %>
-  </div>
+    <%# ── OPERATING EXPENSES ── %>
+    <div class="px-5 py-3 bg-red-50 border-b border-red-100 border-t border-t-gray-200">
+      <h2 class="text-xs font-bold text-red-700 uppercase tracking-wide"><%= t("accounting.financial_statements.trading.expenses_section") %></h2>
+    </div>
 
-  <%# ── Net Income row ─────────────────────────────────────────── %>
-  <div class="rounded-2xl border-2 <%= @coa.net_income_cents >= 0 ? 'border-emerald-400 bg-emerald-50' : 'border-orange-400 bg-orange-50' %> px-5 py-4 flex items-center justify-between print:rounded-none">
-    <span class="text-base font-bold <%= @coa.net_income_cents >= 0 ? 'text-emerald-900' : 'text-orange-900' %>">
-      <%= t("accounting.financial_statements.net_income") %>
-    </span>
-    <span class="text-lg font-bold tabular-nums <%= @coa.net_income_cents >= 0 ? 'text-emerald-700' : 'text-orange-700' %>">
-      <%= @coa.net_income_cents < 0 ? "(" : "" %><%= format_money(@coa.net_income_cents.abs) %><%= @coa.net_income_cents < 0 ? ")" : "" %>
-    </span>
-  </div>
+    <details class="group" open>
+      <summary class="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 select-none list-none [&::-webkit-details-marker]:hidden">
+        <span class="text-sm font-semibold text-gray-700"><%= t("accounting.financial_statements.trading.operating_expenses") %></span>
+        <div class="flex items-center gap-3">
+          <span class="text-sm font-bold text-red-700 tabular-nums">(<%= format_money(@coa.total_operating_expenses_cents) %>)</span>
+          <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+        </div>
+      </summary>
+      <% if @coa.operating_expense_lines.any? %>
+        <table class="w-full text-sm border-b border-gray-100">
+          <tbody class="divide-y divide-gray-50">
+            <% @coa.operating_expense_lines.each do |line| %>
+              <tr class="hover:bg-gray-50/60">
+                <td class="px-8 py-2 text-gray-400 font-mono text-xs w-16"><%= line.code %></td>
+                <td class="px-3 py-2 text-gray-600"><%= line.name %></td>
+                <td class="px-5 py-2 text-end tabular-nums text-gray-700">
+                  <%= link_to format_money(line.balance_cents),
+                        admin_accounting_journal_entries_path(account_code: line.code, start_date: @start_date, end_date: @end_date),
+                        class: "hover:text-blue-700 hover:underline",
+                        title: t("accounting.financial_statements.drill_down_hint") %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </details>
+
+    <%# ── NET PROFIT ── %>
+    <div class="flex items-center justify-between px-5 py-5 border-t-2 border-gray-900 <%= net_profit_cents >= 0 ? 'bg-emerald-50' : 'bg-orange-50' %>">
+      <span class="text-lg font-black <%= net_profit_cents >= 0 ? 'text-emerald-900' : 'text-orange-900' %>">
+        <%= t("accounting.financial_statements.trading.net_profit") %>
+      </span>
+      <span class="text-xl font-black tabular-nums <%= net_profit_cents >= 0 ? 'text-emerald-700' : 'text-orange-700' %>">
+        <%= net_profit_cents < 0 ? "(" : "" %><%= format_money(net_profit_cents.abs) %><%= net_profit_cents < 0 ? ")" : "" %>
+      </span>
+    </div>
+
+  </div><%# end trading account card %>
+
+  <%# ── Stock value notice if missing ─────────────────────────── %>
+  <% if @opening_cents.zero? || @closing_cents.zero? %>
+    <div class="print:hidden rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800 mb-4">
+      <%= t("accounting.financial_statements.trading.snapshot_hint") %>
+    </div>
+  <% end %>
 
 </div>

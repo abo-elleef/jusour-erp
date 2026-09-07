@@ -294,6 +294,33 @@ module Accounting
       @net_income_cents ||= total_revenue_cents - total_expenses_cents
     end
 
+    # ── Trading Account helpers ───────────────────────────────────────
+    # Total of vendor purchases debited to account 5100 in the period.
+    PURCHASES_CODE = 5100
+
+    def purchases_cents
+      @purchases_cents ||= begin
+        scope = journal_lines.where(account_code: PURCHASES_CODE)
+        scope.sum(:debit_cents).to_i - scope.sum(:credit_cents).to_i
+      end
+    end
+
+    # Gross profit = Revenue − COGS (opening + purchases − closing).
+    # opening_cents and closing_cents come from InventorySnapshot (user input).
+    def gross_profit_cents(opening_cents:, closing_cents:)
+      cogs = opening_cents.to_i + purchases_cents - closing_cents.to_i
+      total_revenue_cents - cogs
+    end
+
+    # Expenses excluding purchases (5100), for display below Gross Profit.
+    def operating_expense_lines
+      @operating_expense_lines ||= expense_lines.reject { |l| l.code == PURCHASES_CODE }
+    end
+
+    def total_operating_expenses_cents
+      @total_operating_expenses_cents ||= operating_expense_lines.sum(&:balance_cents)
+    end
+
     private
 
     def non_ap_treasuries

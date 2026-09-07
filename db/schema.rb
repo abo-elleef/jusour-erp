@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_07_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_07_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -609,6 +609,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_07_120000) do
     t.index ["ingredient_category_id"], name: "index_ingredients_on_ingredient_category_id"
     t.index ["name"], name: "index_ingredients_on_name"
     t.index ["unit_id"], name: "index_ingredients_on_unit_id"
+  end
+
+  create_table "inventory_snapshots", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.date "snapshot_date", null: false
+    t.integer "value_cents", default: 0, null: false
+    t.string "label"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "snapshot_date"], name: "index_inventory_snapshots_on_company_and_date", unique: true
+    t.index ["company_id"], name: "index_inventory_snapshots_on_company_id"
   end
 
   create_table "journal_entries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1781,6 +1792,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_07_120000) do
   add_foreign_key "ingredients", "companies"
   add_foreign_key "ingredients", "ingredient_categories"
   add_foreign_key "ingredients", "units"
+  add_foreign_key "inventory_snapshots", "companies"
   add_foreign_key "journal_entries", "companies"
   add_foreign_key "journal_entries", "journal_entries", column: "reversal_of_id"
   add_foreign_key "journal_entries", "users", column: "created_by_id"
