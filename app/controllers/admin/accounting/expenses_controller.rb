@@ -24,10 +24,14 @@ module Admin
         @total_count    = scope.count
         @reversed_count = scope.where.not(reversed_at: nil).count
         @active_count   = scope.where(reversed_at: nil).count
+        active_scope = scope.where(reversed_at: nil).unscope(:includes)
+        @total_active_cents  = active_scope.sum(:amount_cents)
+        @system_cents        = active_scope.where(is_auto_generated: true).sum(:amount_cents)
+        @custom_cents        = active_scope.where(is_auto_generated: false).sum(:amount_cents)
         @range_sums = [
           {
             label: t("accounting.expenses.stats_spent"),
-            cents: scope.where(reversed_at: nil).unscope(:includes).sum(:amount_cents),
+            cents: @total_active_cents,
             tone: :danger
           }
         ]

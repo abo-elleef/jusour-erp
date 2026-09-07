@@ -3804,6 +3804,10 @@ en:
       delete_confirm: "Delete this expense?"
       recurrence: "Recurrence"
       stats_spent: "Spent"
+      totals:
+        system_controlled: "System-controlled expenses (auto-generated)"
+        custom_controlled: "Custom-controlled expenses (manually entered)"
+        grand_total: "Total"
     incomes:
       title: "Income"
       new: "New income"

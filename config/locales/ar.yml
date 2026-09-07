@@ -3823,6 +3823,10 @@ ar:
       delete_confirm: "حذف هذا المصروف؟"
       recurrence: "التكرار"
       stats_spent: "المصروف"
+      totals:
+        system_controlled: "مصروفات النظام (مُدخَلة تلقائيًا)"
+        custom_controlled: "مصروفات مخصصة (مُدخَلة يدويًا)"
+        grand_total: "الإجمالي"
     incomes:
       title: "الإيرادات"
       new: "إيراد جديد"

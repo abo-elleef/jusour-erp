@@ -81,6 +81,39 @@
           </tr>
         <% end %>
       </tbody>
+      <tfoot class="border-t-2 border-gray-200 bg-gray-50/80 text-sm">
+        <% if @system_cents > 0 %>
+          <tr class="border-t border-gray-100">
+            <td colspan="5" class="p-3 ps-5 text-xs text-gray-500">
+              <%= t("accounting.expenses.totals.system_controlled") %>
+            </td>
+            <td class="p-3 text-end tabular-nums text-gray-600 font-medium">
+              <%= format_money(@system_cents) %>
+            </td>
+            <td></td>
+          </tr>
+        <% end %>
+        <% if @custom_cents > 0 %>
+          <tr class="border-t border-gray-100">
+            <td colspan="5" class="p-3 ps-5 text-xs text-gray-500">
+              <%= t("accounting.expenses.totals.custom_controlled") %>
+            </td>
+            <td class="p-3 text-end tabular-nums text-gray-600 font-medium">
+              <%= format_money(@custom_cents) %>
+            </td>
+            <td></td>
+          </tr>
+        <% end %>
+        <tr class="border-t border-gray-200">
+          <td colspan="5" class="p-3 ps-5 text-xs font-bold text-gray-700 uppercase tracking-wide">
+            <%= t("accounting.expenses.totals.grand_total") %>
+          </td>
+          <td class="p-3 text-end tabular-nums font-black text-gray-900">
+            <%= format_money(@total_active_cents) %>
+          </td>
+          <td></td>
+        </tr>
+      </tfoot>
     </table>
     <%= render "admin/accounting/pagination", pagy: @pagy %>
   </section>
