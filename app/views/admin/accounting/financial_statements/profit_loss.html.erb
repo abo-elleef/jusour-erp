@@ -202,20 +202,21 @@
       <h2 class="text-xs font-bold text-red-700 uppercase tracking-wide"><%= t("accounting.financial_statements.trading.expenses_section") %></h2>
     </div>
 
-    <details class="group" open>
-      <summary class="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 select-none list-none [&::-webkit-details-marker]:hidden">
-        <span class="text-sm font-semibold text-gray-700"><%= t("accounting.financial_statements.trading.operating_expenses") %></span>
-        <div class="flex items-center gap-3">
-          <span class="text-sm font-bold text-red-700 tabular-nums">(<%= format_money(@coa.total_operating_expenses_cents) %>)</span>
-          <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-          </svg>
-        </div>
-      </summary>
-      <% if @coa.operating_expense_lines.any? %>
+    <%# Sub-section 1: Payroll %>
+    <% if @coa.payroll_expense_lines.any? %>
+      <details class="group" open>
+        <summary class="flex items-center justify-between px-5 py-2.5 cursor-pointer hover:bg-gray-50 border-b border-gray-100 bg-gray-50/40 select-none list-none [&::-webkit-details-marker]:hidden">
+          <span class="text-xs font-bold text-gray-500 uppercase tracking-wide"><%= t("accounting.financial_statements.trading.payroll_expenses") %></span>
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-semibold text-red-700 tabular-nums">(<%= format_money(@coa.total_payroll_expense_cents) %>)</span>
+            <svg class="w-3.5 h-3.5 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </summary>
         <table class="w-full text-sm border-b border-gray-100">
           <tbody class="divide-y divide-gray-50">
-            <% @coa.operating_expense_lines.each do |line| %>
+            <% @coa.payroll_expense_lines.each do |line| %>
               <tr class="hover:bg-gray-50/60">
                 <td class="px-8 py-2 text-gray-400 font-mono text-xs w-16"><%= line.code %></td>
                 <td class="px-3 py-2 text-gray-600"><%= line.name %></td>
@@ -229,8 +230,45 @@
             <% end %>
           </tbody>
         </table>
-      <% end %>
-    </details>
+      </details>
+    <% end %>
+
+    <%# Sub-section 2: Other operating expenses %>
+    <% if @coa.other_expense_lines.any? %>
+      <details class="group" open>
+        <summary class="flex items-center justify-between px-5 py-2.5 cursor-pointer hover:bg-gray-50 border-b border-gray-100 bg-gray-50/40 select-none list-none [&::-webkit-details-marker]:hidden">
+          <span class="text-xs font-bold text-gray-500 uppercase tracking-wide"><%= t("accounting.financial_statements.trading.other_expenses") %></span>
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-semibold text-red-700 tabular-nums">(<%= format_money(@coa.total_other_expense_cents) %>)</span>
+            <svg class="w-3.5 h-3.5 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </div>
+        </summary>
+        <table class="w-full text-sm border-b border-gray-100">
+          <tbody class="divide-y divide-gray-50">
+            <% @coa.other_expense_lines.each do |line| %>
+              <tr class="hover:bg-gray-50/60">
+                <td class="px-8 py-2 text-gray-400 font-mono text-xs w-16"><%= line.code %></td>
+                <td class="px-3 py-2 text-gray-600"><%= line.name %></td>
+                <td class="px-5 py-2 text-end tabular-nums text-gray-700">
+                  <%= link_to format_money(line.balance_cents),
+                        admin_accounting_journal_entries_path(account_code: line.code, start_date: @start_date, end_date: @end_date),
+                        class: "hover:text-blue-700 hover:underline",
+                        title: t("accounting.financial_statements.drill_down_hint") %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </details>
+    <% end %>
+
+    <%# Total operating expenses row %>
+    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-red-50/60">
+      <span class="text-sm font-bold text-red-800"><%= t("accounting.financial_statements.trading.operating_expenses") %></span>
+      <span class="text-sm font-black text-red-700 tabular-nums">(<%= format_money(@coa.total_operating_expenses_cents) %>)</span>
+    </div>
 
     <%# ── NET PROFIT ── %>
     <div class="flex items-center justify-between px-5 py-5 border-t-2 border-gray-900 <%= net_profit_cents >= 0 ? 'bg-emerald-50' : 'bg-orange-50' %>">

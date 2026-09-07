@@ -312,9 +312,31 @@ module Accounting
       total_revenue_cents - cogs
     end
 
+    PAYROLL_CODES = [
+      JournalEntryService::ADVANCE_CODE,
+      JournalEntryService::SALARY_CODE,
+      JournalEntryService::STAFF_MEAL_CODE
+    ].freeze
+
     # Expenses excluding purchases (5100), for display below Gross Profit.
     def operating_expense_lines
       @operating_expense_lines ||= expense_lines.reject { |l| l.code == PURCHASES_CODE }
+    end
+
+    def payroll_expense_lines
+      @payroll_expense_lines ||= operating_expense_lines.select { |l| PAYROLL_CODES.include?(l.code) }
+    end
+
+    def other_expense_lines
+      @other_expense_lines ||= operating_expense_lines.reject { |l| PAYROLL_CODES.include?(l.code) }
+    end
+
+    def total_payroll_expense_cents
+      @total_payroll_expense_cents ||= payroll_expense_lines.sum(&:balance_cents)
+    end
+
+    def total_other_expense_cents
+      @total_other_expense_cents ||= other_expense_lines.sum(&:balance_cents)
     end
 
     def total_operating_expenses_cents
