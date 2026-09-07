@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module Admin
   module Accounting
     class JournalEntriesController < BaseController
@@ -28,7 +30,11 @@ module Admin
           active:   t("accounting.journal_entries.stats_original"),
           reversed: t("accounting.journal_entries.stats_reversals")
         }
-        @journal_entries = scope
+
+        respond_to do |format|
+          format.html { @journal_entries = scope }
+          format.csv  { send_journal_entries_csv(scope) }
+        end
       end
 
       def show
@@ -119,6 +125,44 @@ module Admin
       end
 
       private
+
+      def send_journal_entries_csv(scope)
+        entries = scope.includes(:lines, :created_by)
+        bom = "\xEF\xBB\xBF"
+        csv = CSV.generate(bom) do |out|
+          out << [
+            t("accounting.journal_entries.csv.entry_number"),
+            t("accounting.journal_entries.csv.date"),
+            t("accounting.journal_entries.csv.description"),
+            t("accounting.journal_entries.csv.account_code"),
+            t("accounting.journal_entries.csv.account_name"),
+            t("accounting.journal_entries.csv.debit"),
+            t("accounting.journal_entries.csv.credit"),
+            t("accounting.journal_entries.csv.entry_type"),
+            t("accounting.journal_entries.csv.created_by")
+          ]
+          entries.each do |entry|
+            entry.lines.each do |line|
+              next if @account_code && line.account_code.to_s != @account_code.to_s
+
+              out << [
+                entry.entry_number,
+                entry.date.iso8601,
+                entry.description,
+                line.account_code,
+                line.account_name,
+                line.debit_cents.to_i.zero? ? nil : (line.debit_cents.to_d / 100).round(2),
+                line.credit_cents.to_i.zero? ? nil : (line.credit_cents.to_d / 100).round(2),
+                entry.entry_type,
+                entry.created_by&.name
+              ]
+            end
+          end
+        end
+
+        filename = ["journal_entries", @start_date, @end_date, @account_code].compact.join("_") + ".csv"
+        send_data csv, filename: filename, type: "text/csv; charset=utf-8", disposition: "attachment"
+      end
 
       def journal_entry_params
         params.require(:journal_entry).permit(

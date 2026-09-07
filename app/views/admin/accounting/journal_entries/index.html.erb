@@ -7,8 +7,17 @@
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.journal_entries.title") %></h1>
       <p class="text-sm text-gray-500 mt-0.5"><%= t("accounting.journal_entries.description") %></p>
     </div>
-    <%= link_to t("accounting.journal_entries.new_button"), new_admin_accounting_journal_entry_path,
-          class: "bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+    <div class="flex items-center gap-2">
+      <%= link_to t("accounting.journal_entries.export_csv"),
+            admin_accounting_journal_entries_path(
+              format: :csv,
+              start_date: @start_date, end_date: @end_date,
+              entry_type: @entry_type, account_code: @account_code
+            ),
+            class: "inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700 border border-gray-300 bg-white hover:bg-gray-50 px-4 py-2.5 rounded-xl transition-colors" %>
+      <%= link_to t("accounting.journal_entries.new_button"), new_admin_accounting_journal_entry_path,
+            class: "bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+    </div>
   </div>
 
   <%= render "admin/accounting/date_range_form" %>
