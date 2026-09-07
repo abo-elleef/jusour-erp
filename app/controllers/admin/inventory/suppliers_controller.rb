@@ -37,6 +37,23 @@ module Admin
           .sum(:total_cents)
         @date_filtered = @start_date.present? || @end_date.present?
 
+        # When date-filtering, also capture invoices from suppliers not in the
+        # current view (e.g. inactive suppliers hidden by the status filter) so
+        # the footer total matches the ledger (account 5100).
+        if @date_filtered && @status != "all"
+          all_invoice_scope = VendorInvoice
+            .where(company_id: Current.company.id)
+            .where.not(payment_status: "void")
+          all_invoice_scope = all_invoice_scope.where(invoice_date: @start_date..) if @start_date
+          all_invoice_scope = all_invoice_scope.where(invoice_date: ..@end_date)   if @end_date
+
+          all_total = all_invoice_scope.sum(:total_cents)
+          visible_total = @invoice_total_cents_by_supplier.values.sum
+          @hidden_suppliers_invoice_cents = all_total - visible_total
+        else
+          @hidden_suppliers_invoice_cents = 0
+        end
+
         # Same figure as the supplier show page: AP treasury balance (unpaid
         # invoices minus invoice payments and direct AP payments).
         @outstanding_cents_by_supplier = suppliers.to_h { |s| [s.id, s.ap_balance_cents] }

@@ -1225,6 +1225,9 @@ en:
           total_row:
             one: "Total (1 supplier)"
             other: "Total (%{count} suppliers)"
+          hidden_suppliers_row: "Other suppliers (not shown in current filter)"
+          view_all: "View all"
+          grand_total_row: "Grand Total"
         status_filter: "Status"
         status_active: "Active"
         status_inactive: "Inactive"

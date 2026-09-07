@@ -1225,6 +1225,9 @@ ar:
           total_row:
             one: "الإجمالي (مورد واحد)"
             other: "الإجمالي (%{count} موردين)"
+          hidden_suppliers_row: "موردون آخرون (لا تظهر في الفلتر الحالي)"
+          view_all: "عرض الكل"
+          grand_total_row: "الإجمالي الكلي"
         status_filter: "الحالة"
         status_active: "نشط"
         status_inactive: "غير نشط"
