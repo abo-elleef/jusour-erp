@@ -60,6 +60,42 @@ RSpec.describe "Ingredient balance chart", type: :request do
     expect(response.body).to include("10.0")
   end
 
+  it "offers a two-week range alongside the others" do
+    get admin_inventory_ingredient_path(ingredient)
+
+    expect(::Inventory::IngredientBalanceHistoryService::ALLOWED_DAYS).to eq([1, 3, 7, 14, 30, 90])
+    expect(response.body).to include(I18n.t("inventory.ingredients.show.balance_history.ranges.14"))
+    # Sits between one week and one month, so the list still reads shortest first.
+    expect(response.body.index(I18n.t("inventory.ingredients.show.balance_history.ranges.7")))
+      .to be < response.body.index(I18n.t("inventory.ingredients.show.balance_history.ranges.14"))
+    expect(response.body.index(I18n.t("inventory.ingredients.show.balance_history.ranges.14")))
+      .to be < response.body.index(I18n.t("inventory.ingredients.show.balance_history.ranges.30"))
+  end
+
+  it "plots fourteen days when two weeks is chosen" do
+    get admin_inventory_ingredient_path(ingredient, chart_days: 14)
+
+    history = ::Inventory::IngredientBalanceHistoryService.new(ingredient: ingredient, days: 14).call
+
+    expect(response).to have_http_status(:ok)
+    expect(history.size).to eq(14)
+    # Fourteen days including today, so the window opens thirteen days back.
+    expect(history.keys.map(&:to_date).min).to eq(Date.current - 13)
+    expect(history.keys.map(&:to_date).max).to eq(Date.current)
+  end
+
+  # Both lines on this chart must cover the same window, or the price line would
+  # imply a cost that did not apply to the balance beside it.
+  it "keeps the price series on the same fourteen-day window" do
+    price(1_000, on: Date.current - 20)
+    price(1_500, on: Date.current - 2)
+
+    prices = ::Inventory::IngredientPriceHistoryService.new(ingredient: ingredient, days: 14).call
+
+    expect(prices).to be_present
+    expect(prices.keys.map(&:to_date).min).to be >= Date.current - 13
+  end
+
   it "still renders straight lines on the location chart" do
     location = create(:location, :central_kitchen, company: company)
     location.ingredient_locations.create!(ingredient: ingredient, quantity_on_hand: 5,

@@ -5,7 +5,7 @@ module Inventory
   # stock-adjustment deltas forward from the balance at the start of the range.
   class IngredientBalanceHistoryService
     DEFAULT_DAYS = 7
-    ALLOWED_DAYS = [1, 3, 7, 30, 90].freeze
+    ALLOWED_DAYS = [1, 3, 7, 14, 30, 90].freeze
 
     def initialize(ingredient:, days: DEFAULT_DAYS, as_of: Date.current)
       @ingredient = ingredient

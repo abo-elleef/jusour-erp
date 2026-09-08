@@ -1004,6 +1004,7 @@ en:
             "1": "Today"
             "3": "Last 3 days (including today)"
             "7": "1 week (including today)"
+            "14": "2 weeks (including today)"
             "30": "Last 30 days (including today)"
             "90": "Last 90 days (including today)"
       adjustments:
