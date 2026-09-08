@@ -3704,6 +3704,7 @@ en:
       auto: "(auto)"
       system: "(system)"
       em_dash: "—"
+      search_placeholder: "Search by description or category…"
       view_entry: "View entry →"
       journal_entries_heading: "Journal Entries"
       invoice_je_label: "Vendor Invoice"

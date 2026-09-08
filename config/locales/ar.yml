@@ -3723,6 +3723,7 @@ ar:
       auto: "(تلقائي)"
       system: "(نظام)"
       em_dash: "—"
+      search_placeholder: "بحث بالوصف أو الفئة…"
       view_entry: "عرض القيد ←"
       journal_entries_heading: "القيود المحاسبية"
       invoice_je_label: "فاتورة مورد"
