@@ -84,6 +84,34 @@ module Admin
         end
       end
 
+      # What happened to purchase prices between this period and the one before,
+      # and how much of the spend change was price rather than buying differently.
+      def vendor_basket
+        authorize_inventory_index!
+        parse_date_range(default_start: Date.current.beginning_of_month)
+
+        @supplier = Supplier.find_by(id: params[:supplier_id])
+        @category = IngredientCategory.find_by(id: params[:category_id])
+        @suppliers = Supplier.active.order(:name)
+        @categories = IngredientCategory.ordered
+
+        @basket = ::Inventory::VendorBasketDriftService.new(
+          start_date: @start_date,
+          end_date: @end_date,
+          supplier: @supplier,
+          category: @category
+        ).call
+
+        respond_to do |format|
+          format.html
+          format.csv do
+            send_data vendor_basket_csv,
+              filename: "purchase-price-drift-#{@start_date}-#{@end_date}.csv",
+              type: "text/csv; charset=utf-8"
+          end
+        end
+      end
+
       private
 
       # Every ingredient lands in exactly one bucket, so vendor subtotals still add
@@ -167,6 +195,32 @@ module Admin
                 row.total
               ] + @trends.periods.map { |period| row.quantities[period] }
             end
+          ]
+        )
+      end
+
+      def vendor_basket_csv
+        money = ->(cents) { helpers.format_money(cents) }
+        build_csv(
+          [
+            ["Purchase price drift", "#{@start_date} to #{@end_date} vs #{@basket.prior_start_date} to #{@basket.prior_end_date}"],
+            ["Ingredient", "Unit", "Qty before", "Qty now", "Price before", "Price now",
+             "Change %", "Price impact", "Spend before", "Spend now", "Verify"],
+            *@basket.rows.map do |row|
+              [
+                row.ingredient.name, row.unit,
+                row.prior_quantity, row.quantity,
+                money.(row.prior_price_cents), money.(row.price_cents),
+                row.price_change_pct, money.(row.price_impact_cents),
+                money.(row.prior_spend_cents), money.(row.spend_cents),
+                row.suspicious? ? "check invoice" : ""
+              ]
+            end,
+            [],
+            ["Spend before", money.(@basket.prior_spend_cents)],
+            ["Spend now", money.(@basket.spend_cents)],
+            ["Price effect", money.(@basket.price_effect_cents)],
+            ["Buying-mix effect", money.(@basket.mix_effect_cents)]
           ]
         )
       end

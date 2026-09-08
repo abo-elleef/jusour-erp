@@ -1,0 +1,166 @@
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% cell = "p-3 whitespace-nowrap" %>
+
+<%= render "admin/inventory/tools_nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("inventory.reports.vendor_basket.description") %></p>
+    </div>
+    <% if @basket.rows.any? %>
+      <%= link_to t("actions.export_csv"),
+            admin_inventory_reports_vendor_basket_path(format: :csv, start_date: @start_date, end_date: @end_date,
+              supplier_id: @supplier&.id, category_id: @category&.id),
+            class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors shrink-0" %>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.vendor_basket.filters") %></h2>
+      <%# The comparison window is derived, never chosen: same length, immediately
+          before, so a 12-day range is not compared against a full month. %>
+      <p class="text-xs text-gray-500 mt-0.5">
+        <%= t("inventory.reports.vendor_basket.comparing",
+              current: "#{l(@start_date, format: :long)} – #{l(@end_date, format: :long)}",
+              prior: "#{l(@basket.prior_start_date, format: :long)} – #{l(@basket.prior_end_date, format: :long)}") %>
+      </p>
+    </div>
+    <div class="p-5">
+      <%= form_with url: admin_inventory_reports_vendor_basket_path, method: :get,
+            class: "flex flex-wrap items-end gap-4", data: { turbo: false } do %>
+        <div class="min-w-[10rem]">
+          <%= label_tag :start_date, t("accounting.shared.start"), class: label_class %>
+          <%= date_field_tag :start_date, @start_date, class: input_class %>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= label_tag :end_date, t("accounting.shared.end"), class: label_class %>
+          <%= date_field_tag :end_date, @end_date, class: input_class %>
+        </div>
+        <div class="min-w-[12rem]">
+          <%= label_tag :supplier_id, t("inventory.reports.vendor_basket.vendor"), class: label_class %>
+          <%= select_tag :supplier_id,
+                options_from_collection_for_select(@suppliers, :id, :name, @supplier&.id),
+                include_blank: t("inventory.reports.vendor_basket.all_vendors"),
+                class: "#{input_class} appearance-none" %>
+        </div>
+        <div class="min-w-[12rem]">
+          <%= label_tag :category_id, t("inventory.reports.vendor_basket.category"), class: label_class %>
+          <%= select_tag :category_id,
+                options_from_collection_for_select(@categories, :id, :name, @category&.id),
+                include_blank: t("inventory.reports.vendor_basket.all_categories"),
+                class: "#{input_class} appearance-none" %>
+        </div>
+        <%= submit_tag t("actions.apply_range"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors cursor-pointer" %>
+      <% end %>
+    </div>
+  </section>
+
+  <% if @basket.rows.empty? %>
+    <section class="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("inventory.reports.vendor_basket.empty") %></p>
+      <p class="text-gray-500 text-sm"><%= t("inventory.reports.vendor_basket.empty_hint") %></p>
+    </section>
+  <% else %>
+    <%# The headline: how much of the spend change was price, and how much was
+        buying differently. These two always add up to the change exactly. %>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.vendor_basket.stats.prior_spend") %></p>
+        <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@basket.prior_spend_cents) %></p>
+        <p class="text-xs text-gray-500 mt-1"><%= t("inventory.reports.vendor_basket.stats.invoices", count: @basket.prior_invoice_count) %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.vendor_basket.stats.spend") %></p>
+        <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@basket.spend_cents) %></p>
+        <p class="text-xs text-gray-500 mt-1"><%= t("inventory.reports.vendor_basket.stats.invoices", count: @basket.invoice_count) %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.vendor_basket.stats.price_effect") %></p>
+        <p class="text-xl font-bold mt-1 tabular-nums <%= @basket.price_effect_cents.positive? ? "text-rose-600" : "text-emerald-600" %>">
+          <%= format_money(@basket.price_effect_cents) %>
+        </p>
+        <p class="text-xs text-gray-500 mt-1"><%= t("inventory.reports.vendor_basket.stats.price_effect_hint") %></p>
+      </div>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.vendor_basket.stats.mix_effect") %></p>
+        <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@basket.mix_effect_cents) %></p>
+        <p class="text-xs text-gray-500 mt-1"><%= t("inventory.reports.vendor_basket.stats.mix_effect_hint") %></p>
+      </div>
+    </div>
+
+    <% if @basket.suspicious_rows.any? %>
+      <%# Never hidden: a mistyped line still spent real money, so it stays in
+          the totals. But it must not be handed over as a price rise to argue
+          with a vendor about. %>
+      <div class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 mb-6">
+        <p class="text-sm font-semibold text-amber-900"><%= t("inventory.reports.vendor_basket.verify_heading", count: @basket.suspicious_rows.size) %></p>
+        <p class="text-xs text-amber-800 mt-0.5"><%= t("inventory.reports.vendor_basket.verify_hint") %></p>
+      </div>
+    <% end %>
+
+    <% if @basket.unresolved_unit_lines.positive? %>
+      <div class="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3 mb-6">
+        <p class="text-xs text-gray-700"><%= t("inventory.reports.vendor_basket.unresolved_units", count: @basket.unresolved_unit_lines) %></p>
+      </div>
+    <% end %>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.vendor_basket.table_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.vendor_basket.table_hint") %></p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="<%= cell %> text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
+              <th class="<%= cell %> text-start"><%= t("inventory.reports.vendor_basket.item") %></th>
+              <th class="<%= cell %> text-start"><%= t("inventory.reports.vendor_basket.unit") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.vendor_basket.qty_before") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.vendor_basket.qty_now") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.vendor_basket.price_before") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.vendor_basket.price_now") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.vendor_basket.change") %></th>
+              <th class="<%= cell %> text-end font-bold"><%= t("inventory.reports.vendor_basket.price_impact") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% row_number = 0 %>
+            <% @basket.rows.each do |row| %>
+              <% row_number += 1 %>
+              <tr class="<%= "bg-amber-50/50" if row.suspicious? %>">
+                <td class="<%= cell %> text-gray-400 tabular-nums"><%= row_number %></td>
+                <td class="<%= cell %> font-medium text-gray-900">
+                  <%= link_to row.ingredient.name, admin_inventory_ingredient_path(row.ingredient),
+                        class: "hover:text-amber-700 hover:underline" %>
+                  <% if row.suspicious? %>
+                    <span class="ms-1 text-xs font-semibold text-amber-700"><%= t("inventory.reports.vendor_basket.verify_badge") %></span>
+                  <% elsif !row.bought_before? %>
+                    <span class="ms-1 text-xs font-semibold text-emerald-700"><%= t("inventory.reports.vendor_basket.new_badge") %></span>
+                  <% elsif !row.bought_now? %>
+                    <span class="ms-1 text-xs font-semibold text-gray-500"><%= t("inventory.reports.vendor_basket.dropped_badge") %></span>
+                  <% end %>
+                </td>
+                <td class="<%= cell %> text-gray-500"><%= ingredient_unit_label(row.unit) %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= number_with_precision(row.prior_quantity, precision: 3, strip_insignificant_zeros: true) %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-700"><%= number_with_precision(row.quantity, precision: 3, strip_insignificant_zeros: true) %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= format_money(row.prior_price_cents) %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-900"><%= format_money(row.price_cents) %></td>
+                <td class="<%= cell %> text-end tabular-nums <%= row.price_change_pct.to_f.positive? ? "text-rose-600" : "text-emerald-600" %>">
+                  <%= row.price_change_pct.nil? ? "—" : "#{number_with_precision(row.price_change_pct, precision: 1)}%" %>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums font-bold <%= row.price_impact_cents.positive? ? "text-rose-700" : "text-gray-700" %>">
+                  <%= row.price_impact_cents.zero? ? "—" : format_money(row.price_impact_cents) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
+</div>

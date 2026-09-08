@@ -384,6 +384,7 @@ Rails.application.routes.draw do
         get :valuation
         get :variance
         get :transfer_trends
+        get :vendor_basket
       end
     end
   end
