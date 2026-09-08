@@ -80,6 +80,10 @@
             <% end %>
           </tbody>
         </table>
+      <% else %>
+        <%# A period with no revenue must say so. An empty section reads as a
+            rendering fault, which on a financial statement is worse than a zero. %>
+        <p class="px-5 py-6 text-sm text-gray-400 text-center"><%= t("accounting.financial_statements.no_revenue") %></p>
       <% end %>
     </details>
 
@@ -264,6 +268,12 @@
           </tbody>
         </table>
       </details>
+    <% end %>
+
+    <%# Both sub-sections above are conditional, so an expense-free period leaves
+        this card blank unless it says otherwise. %>
+    <% if @coa.payroll_expense_lines.none? && @coa.other_expense_lines.none? %>
+      <p class="px-5 py-6 text-sm text-gray-400 text-center"><%= t("accounting.financial_statements.no_expenses") %></p>
     <% end %>
 
     </details><%# end outer operating expenses details %>

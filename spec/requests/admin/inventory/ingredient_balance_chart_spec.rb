@@ -96,6 +96,103 @@ RSpec.describe "Ingredient balance chart", type: :request do
     expect(prices.keys.map(&:to_date).min).to be >= Date.current - 13
   end
 
+  describe "filtering the balance by location" do
+    let(:kitchen) { create(:location, :central_kitchen, company: company, name: "Central Kitchen") }
+    let(:branch) { create(:location, company: company, name: "Branch A") }
+
+    def unit_label
+      ApplicationController.helpers.ingredient_unit_label(ingredient.unit)
+    end
+
+    def stock_at(location, on_hand)
+      location.ingredient_locations.create!(ingredient: ingredient, quantity_on_hand: on_hand,
+        reorder_threshold: 1)
+    end
+
+    def adjust(location, delta, on: Time.current)
+      StockAdjustment.create!(ingredient: ingredient, user: owner, location: location,
+        quantity_delta: delta, adjustment_type: "manual_add", created_at: on, updated_at: on)
+    end
+
+    it "offers every stock location plus an all-locations default" do
+      stock_at(kitchen, 8)
+      stock_at(branch, 4)
+
+      get admin_inventory_ingredient_path(ingredient)
+
+      expect(response.body).to include(I18n.t("inventory.ingredients.show.balance_history.all_locations"))
+      expect(response.body).to include("Central Kitchen", "Branch A")
+      expect(response.body).to include("chart_location_id")
+    end
+
+    it "walks only the chosen location's movements" do
+      stock_at(kitchen, 8)
+      stock_at(branch, 4)
+      adjust(kitchen, 3, on: 1.day.ago)
+      adjust(branch, 1, on: 1.day.ago)
+
+      kitchen_series = ::Inventory::IngredientBalanceHistoryService.new(
+        ingredient: ingredient, days: 7, location: kitchen
+      ).call
+      branch_series = ::Inventory::IngredientBalanceHistoryService.new(
+        ingredient: ingredient, days: 7, location: branch
+      ).call
+
+      # Recording the adjustment applies its delta, so the kitchen now holds 11
+      # and the walk backwards puts it at 8 before that movement.
+      expect(kitchen_series.values.last).to eq(11.0)
+      expect(kitchen_series.values.first).to eq(8.0)
+      # The point of the filter: each location stands on its own, and neither is
+      # the ingredient's company-wide total.
+      expect(branch_series.values.last).to eq(5.0)
+      expect(kitchen_series.values.last).not_to eq(branch_series.values.last)
+      expect(kitchen_series.values.last).not_to eq(ingredient.reload.quantity_on_hand.to_f)
+    end
+
+    it "leaves the company-wide series alone when no location is chosen" do
+      stock_at(kitchen, 8)
+      stock_at(branch, 4)
+
+      overall = ::Inventory::IngredientBalanceHistoryService.new(ingredient: ingredient, days: 7).call
+
+      expect(overall.values.last).to eq(ingredient.quantity_on_hand.to_f)
+    end
+
+    it "names the series after the location so a filtered chart cannot be misread" do
+      stock_at(branch, 4)
+
+      get admin_inventory_ingredient_path(ingredient, chart_location_id: branch.id)
+
+      expect(response.body).to include(
+        I18n.t("inventory.ingredients.show.balance_history.series_balance_at",
+          location: "Branch A", unit: unit_label)
+      )
+      expect(response.body).to include(I18n.t("inventory.ingredients.show.balance_history.location_note"))
+    end
+
+    it "ignores a location id that is not a stock location" do
+      stock_at(kitchen, 8)
+
+      get admin_inventory_ingredient_path(ingredient, chart_location_id: SecureRandom.uuid)
+
+      expect(response).to have_http_status(:ok)
+      # Falls back to the company-wide series rather than an empty chart.
+      expect(response.body).to include(
+        I18n.t("inventory.ingredients.show.balance_history.series_balance", unit: unit_label)
+      )
+    end
+
+    # Price is the same wherever the stock sits, so the filter must not touch it.
+    it "keeps the price line company-wide" do
+      stock_at(branch, 4)
+      price(1_000, on: Date.current - 3)
+
+      get admin_inventory_ingredient_path(ingredient, chart_location_id: branch.id)
+
+      expect(response.body).to include(I18n.t("inventory.ingredients.show.balance_history.series_price"))
+    end
+  end
+
   it "still renders straight lines on the location chart" do
     location = create(:location, :central_kitchen, company: company)
     location.ingredient_locations.create!(ingredient: ingredient, quantity_on_hand: 5,

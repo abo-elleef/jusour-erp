@@ -7,20 +7,23 @@ module Inventory
     DEFAULT_DAYS = 7
     ALLOWED_DAYS = [1, 3, 7, 14, 30, 90].freeze
 
-    def initialize(ingredient:, days: DEFAULT_DAYS, as_of: Date.current)
+    # location: nil walks the company-wide balance; a location walks that
+    # location's own, seeded from its IngredientLocation rather than the
+    # ingredient's total. Same reconstruction either way.
+    def initialize(ingredient:, days: DEFAULT_DAYS, as_of: Date.current, location: nil)
       @ingredient = ingredient
       @days = ALLOWED_DAYS.include?(days.to_i) ? days.to_i : DEFAULT_DAYS
       @as_of = as_of.to_date
+      @location = location
     end
 
     def call
       start_date = @as_of - (@days - 1)
       end_date = @as_of
-      current = @ingredient.quantity_on_hand.to_d
+      current = opening_on_hand
       start_time = start_date.beginning_of_day
 
-      deltas_from_start = StockAdjustment
-        .where(ingredient_id: @ingredient.id)
+      deltas_from_start = scoped_adjustments
         .where("created_at >= ?", start_time)
         .order(:created_at)
 
@@ -35,6 +38,24 @@ module Inventory
         (by_day[day] || []).each { |adj| running += adj.quantity_delta.to_d }
         series[day.to_s] = running.to_f.round(3)
       end
+    end
+
+    private
+
+    def opening_on_hand
+      return @ingredient.quantity_on_hand.to_d if @location.nil?
+
+      IngredientLocation
+        .find_by(ingredient_id: @ingredient.id, location_id: @location.id)
+        &.quantity_on_hand.to_d
+    end
+
+    # A handful of movements carry no location (production runs, historically),
+    # so a per-location walk cannot see them. That is why the location series is
+    # only ever shown on its own, never summed against the company-wide line.
+    def scoped_adjustments
+      scope = StockAdjustment.where(ingredient_id: @ingredient.id)
+      @location ? scope.where(location_id: @location.id) : scope
     end
   end
 end

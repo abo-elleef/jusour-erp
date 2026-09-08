@@ -10,6 +10,12 @@ RSpec.describe "Admin::Accounting::FinancialStatements", type: :request do
 
   before { sign_in owner }
 
+  # Reaches the presenter the view renders from, so a spec can assert on the
+  # same numbers the page shows.
+  def assigns_coa
+    @request.env["action_controller.instance"].instance_variable_get(:@coa)
+  end
+
   # ── Shared data ──────────────────────────────────────────────────────────
 
   let!(:cash) do
@@ -112,6 +118,22 @@ RSpec.describe "Admin::Accounting::FinancialStatements", type: :request do
       it "shows the empty-expense message" do
         get profit_loss_admin_accounting_financial_statements_path
         expect(response.body).to include(I18n.t("accounting.financial_statements.no_expenses"))
+      end
+    end
+
+    # The operating-expenses card is built from two conditional sub-sections
+    # (payroll, other). "No expenses" must mean both are empty — not just one, or
+    # a period with real rent would claim to have had no expenses at all.
+    context "when one expense sub-section is empty but the other is not" do
+      it "does not claim there were no expenses" do
+        get profit_loss_admin_accounting_financial_statements_path
+
+        expect(response.body).not_to include(I18n.t("accounting.financial_statements.no_expenses"))
+        # The seeded rent expense is a non-payroll operating expense, so exactly
+        # one of the two sub-sections has lines here.
+        states = [assigns_coa.payroll_expense_lines.any?, assigns_coa.other_expense_lines.any?]
+        expect(states).to include(false)
+        expect(states).to include(true)
       end
     end
 

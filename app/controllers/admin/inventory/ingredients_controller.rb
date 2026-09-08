@@ -442,11 +442,17 @@ module Admin
         @chart_days = ::Inventory::IngredientBalanceHistoryService::ALLOWED_DAYS.include?(params[:chart_days].to_i) ?
           params[:chart_days].to_i :
           ::Inventory::IngredientBalanceHistoryService::DEFAULT_DAYS
+        # Blank means every location — the ingredient's own total, which is the
+        # only figure that includes movements recorded without a location.
+        @chart_location = @stock_locations.find { |loc| loc.id == params[:chart_location_id] }
         @balance_history = ::Inventory::IngredientBalanceHistoryService.new(
           ingredient: @ingredient,
-          days: @chart_days
+          days: @chart_days,
+          location: @chart_location
         ).call
         # Second series on the same chart: what this stock cost over the window.
+        # Purchase price does not vary by branch, so it stays company-wide and is
+        # unaffected by the location filter.
         @price_history = ::Inventory::IngredientPriceHistoryService.new(
           ingredient: @ingredient,
           days: @chart_days
