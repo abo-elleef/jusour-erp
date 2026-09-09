@@ -1,12 +1,15 @@
 # frozen_string_literal: true
 
 class StockTransferShipment < ApplicationRecord
-  STATUSES = %w[in_transit received voided].freeze
+  # voided: cancelled while still travelling, so no stock ever moved.
+  # reverted: was received, and the stock has been moved back to the source.
+  STATUSES = %w[in_transit received voided reverted].freeze
 
   belongs_to :stock_transfer
   belongs_to :sent_by, class_name: "User"
   belongs_to :received_by, class_name: "User", optional: true
   belongs_to :voided_by, class_name: "User", optional: true
+  belongs_to :reverted_by, class_name: "User", optional: true
   has_many :stock_transfer_shipment_lines, dependent: :destroy
   has_many :stock_transfer_lines, through: :stock_transfer_shipment_lines
 
@@ -20,6 +23,16 @@ class StockTransferShipment < ApplicationRecord
 
   def in_transit?
     status == "in_transit"
+  end
+
+  def reverted?
+    status == "reverted"
+  end
+
+  # Only a received shipment can be reverted; one still travelling is voided
+  # instead, which moves no stock because sending never moved any.
+  def can_revert?
+    status == "received"
   end
 
   # Lines where less arrived than left. Sending moves no stock, so the difference is

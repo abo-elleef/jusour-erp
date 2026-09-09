@@ -5,11 +5,16 @@ module Inventory
     # allow_overage: the kitchen sends what is ready, which can be more than the
     # branch asked for. That is legitimate but never silent — the UI confirms it
     # with the sender first and only then sets this flag.
-    def initialize(transfer, user, line_quantities:, allow_overage: false)
+    # send_token: one-shot idempotency key minted when the send form renders. A
+    # double click posts it twice and the unique index rejects the second, so a
+    # slip of the mouse cannot dispatch the same goods twice. A deliberate second
+    # send carries a fresh token and is unaffected.
+    def initialize(transfer, user, line_quantities:, allow_overage: false, send_token: nil)
       @transfer = transfer
       @user = user
       @line_quantities = line_quantities.transform_keys(&:to_s)
       @allow_overage = allow_overage
+      @send_token = send_token.presence
     end
 
     def call
@@ -31,7 +36,8 @@ module Inventory
           sequence: sequence,
           status: "in_transit",
           sent_by: @user,
-          sent_at: occurred_at
+          sent_at: occurred_at,
+          send_token: @send_token
         )
 
         shipment_lines.each do |line, qty|

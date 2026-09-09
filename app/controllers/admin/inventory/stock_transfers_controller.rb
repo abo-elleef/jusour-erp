@@ -8,7 +8,7 @@ module Admin
 
       before_action :set_stock_transfer,
         only: %i[show edit update submit destroy send_transfer confirm_receipt cancel
-                 close_short void_shipment]
+                 close_short void_shipment revert_shipment]
 
       # Lands on the open work queue rather than the full history: this page is
       # used to act on transfers, and an all-time list grows past scanning.
@@ -159,10 +159,35 @@ module Admin
           @stock_transfer,
           current_user,
           line_quantities: line_quantity_params,
-          allow_overage: params[:allow_overage] == "1"
+          allow_overage: params[:allow_overage] == "1",
+          send_token: params[:send_token]
         ).call
         redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
           notice: t("flash.stock_transfer.sent")
+      rescue ActiveRecord::RecordInvalid => e
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          alert: e.record.errors.full_messages.to_sentence
+      rescue ActiveRecord::RecordNotUnique
+        # The same form was submitted twice — a double click. The first one won,
+        # so this is already done rather than an error to show the user.
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          notice: t("flash.stock_transfer.sent")
+      end
+
+      def revert_shipment
+        authorize_inventory!(:update)
+        result = ::Inventory::RevertReceivedStockTransferShipmentService.new(
+          @stock_transfer,
+          current_user,
+          shipment: requested_shipment,
+          reason: params[:revert_reason]
+        ).call
+
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          notice: revert_notice(result)
+      rescue ActiveRecord::RecordNotFound
+        redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
+          alert: t("inventory.stock_transfers.errors.cannot_revert_shipment")
       rescue ActiveRecord::RecordInvalid => e
         redirect_to admin_inventory_stock_transfer_path(@stock_transfer),
           alert: e.record.errors.full_messages.to_sentence
@@ -236,6 +261,16 @@ module Admin
       # act on. Scoped through the transfer, and an id that does not resolve is an
       # error — falling back to "whichever is current" would let a wrong or foreign
       # id quietly act on a different shipment.
+      # A reversal that could not be fully covered leaves the destination
+      # negative, which the user must know about immediately — it is the
+      # difference between a clean correction and stock that needs recounting.
+      def revert_notice(result)
+        return t("flash.stock_transfer.shipment_reverted") unless result.left_destination_short?
+
+        t("flash.stock_transfer.shipment_reverted_short",
+          items: result.short_lines.map { |row| row[:line].ingredient.name }.to_sentence)
+      end
+
       def requested_shipment
         return nil if params[:shipment_id].blank?
 

@@ -1728,6 +1728,12 @@ en:
       confirm_heading: "Confirm receipt"
       confirm_hint: "Review what you received and confirm quantities. Stock will move when you confirm."
       confirm_partial_hint: "Confirm what you actually received for this shipment. You can receive less than sent if needed."
+      revert_shipment: "Revert to source"
+      revert_shipment_confirm: "Send shipment %{number} back from %{from} to %{to}? Stock moves immediately and the sender will be able to send it again."
+      revert_reason: "Reason"
+      revert_reason_placeholder: "e.g. sent twice by mistake"
+      shipment_reverted_by: "reverted by %{name} on %{at}"
+      shipment_revert_reason: "Revert reason"
       void_shipment: "Void shipment"
       void_shipment_confirm: "Void shipment #%{number}? Nothing has been received yet for this shipment and stock will not move."
       confirm_receipt: "Confirm receipt"
@@ -1750,6 +1756,7 @@ en:
         in_transit: "In transit"
         received: "Received"
         voided: "Voided"
+        reverted: "Reverted"
       form:
         details: "Transfer details"
         details_hint: "Choose the physical transfer date, then source and destination locations."
@@ -1780,9 +1787,13 @@ en:
         cannot_submit: "Only a draft can be submitted."
         cannot_discard: "Only a draft can be discarded."
         draft_lines_incomplete: "Enter a quantity for %{ingredients}, or remove those lines before submitting."
+        cannot_revert_shipment: "This shipment cannot be reverted. Only a received shipment can be sent back."
+        revert_reason_required: "Give a reason for reverting this shipment — it moves stock back to the source."
       adjustment:
         out: "Transfer out %{number} shipment %{shipment} to %{to} (from %{from})"
         in: "Transfer in %{number} shipment %{shipment} from %{from} (to %{to})"
+        revert_out: "Reverted shipment %{shipment} of transfer %{number} — returned out of %{location}"
+        revert_in: "Reverted shipment %{shipment} of transfer %{number} — returned into %{location}"
     stock_transfer_templates:
       title: "Transfer templates"
       description: "Save fixed ingredient lists (e.g. weekly kitchen → branch) so new transfers start pre-filled."
@@ -3848,6 +3859,7 @@ en:
       delete_confirm: "Delete this expense?"
       recurrence: "Recurrence"
       stats_spent: "Spent"
+      categories_summary: "Categories"
       tabs:
         transactions: "Transactions"
         ledger: "Ledger Summary"
@@ -4508,6 +4520,8 @@ en:
       received: "Receipt confirmed. Stock has been updated at both locations."
       cancelled: "Transfer request cancelled."
       shipment_voided: "In-transit shipment voided. You can edit and send again."
+      shipment_reverted: "Shipment reverted — the goods are back at the source."
+      shipment_reverted_short: "Shipment reverted, but %{items} had already been used at the destination, so its balance is now negative. Count it."
     stock_transfer_template:
       created: "Transfer template created."
       updated: "Transfer template updated."

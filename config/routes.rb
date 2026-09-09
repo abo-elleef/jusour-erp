@@ -358,6 +358,7 @@ Rails.application.routes.draw do
           post :close_short
           post :cancel
           post :void_shipment
+          post :revert_shipment
         end
       end
       resources :stock_transfer_templates do

@@ -118,10 +118,14 @@
           with the sender and only then sets allow_overage, which the service needs
           before it will accept a quantity above the outstanding amount. %>
       <%= form_with url: send_transfer_admin_inventory_stock_transfer_path(@stock_transfer), method: :post, class: "p-0",
-            data: { controller: "transfer-overage",
-                    action: "submit->transfer-overage#confirm input->transfer-overage#reset",
+            data: { controller: "transfer-overage submit-once",
+                    action: "submit->transfer-overage#confirm input->transfer-overage#reset submit->submit-once#guard",
                     transfer_overage_message_value: t("inventory.stock_transfers.confirm_overage") } do %>
         <%= hidden_field_tag :allow_overage, "0", data: { transfer_overage_target: "flag" } %>
+        <%# One-shot idempotency key: a double click posts it twice and the second
+            insert loses to the unique index, so the goods cannot be dispatched
+            twice by mistake. A deliberate second send renders a fresh token. %>
+        <%= hidden_field_tag :send_token, SecureRandom.uuid %>
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead class="border-b border-amber-100 bg-white/60 text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -184,7 +188,9 @@
           </table>
         </div>
         <div class="px-5 py-4 border-t border-amber-100">
-          <%= submit_tag t("inventory.stock_transfers.mark_sent"), class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold" %>
+          <%= submit_tag t("inventory.stock_transfers.mark_sent"),
+                data: { submit_once_target: "submit" },
+                class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold cursor-pointer" %>
         </div>
       <% end %>
     </section>
@@ -317,6 +323,9 @@
                 <% elsif shipment.voided_at %>
                   · <%= t("inventory.stock_transfers.shipment_voided_by", name: shipment.voided_by.name, at: l(shipment.voided_at, format: :short)) %>
                 <% end %>
+                <% if shipment.reverted_at %>
+                  · <%= t("inventory.stock_transfers.shipment_reverted_by", name: shipment.reverted_by&.name, at: l(shipment.reverted_at, format: :short)) %>
+                <% end %>
               </span>
               <% if shipment.short? %>
                 <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200">
@@ -334,6 +343,37 @@
                 <span class="font-semibold"><%= t("inventory.stock_transfers.shipment_notes") %>:</span>
                 <%= shipment.receipt_notes %>
               </p>
+            <% end %>
+            <% if shipment.reverted_reason.present? %>
+              <p class="text-xs text-purple-800 mb-3">
+                <span class="font-semibold"><%= t("inventory.stock_transfers.shipment_revert_reason") %>:</span>
+                <%= shipment.reverted_reason %>
+              </p>
+            <% end %>
+            <%# A received shipment can still be sent back — a double-sent load has
+                to be correctable after it has arrived. The reason is required
+                because this moves real stock. %>
+            <% if shipment.can_revert? %>
+              <%= form_with url: revert_shipment_admin_inventory_stock_transfer_path(@stock_transfer),
+                    method: :post, class: "flex flex-wrap items-end gap-2 mb-3",
+                    data: { controller: "submit-once", action: "submit->submit-once#guard" } do %>
+                <%= hidden_field_tag :shipment_id, shipment.id %>
+                <div class="min-w-[16rem] flex-1">
+                  <%= label_tag "revert_reason_#{shipment.id}", t("inventory.stock_transfers.revert_reason"),
+                        class: "block text-xs font-semibold text-gray-600 mb-1" %>
+                  <%= text_field_tag :revert_reason, nil,
+                        id: "revert_reason_#{shipment.id}",
+                        placeholder: t("inventory.stock_transfers.revert_reason_placeholder"),
+                        class: "#{pos_input_class} text-sm" %>
+                </div>
+                <%= submit_tag t("inventory.stock_transfers.revert_shipment"),
+                      data: { submit_once_target: "submit",
+                              turbo_confirm: t("inventory.stock_transfers.revert_shipment_confirm",
+                                               number: shipment.sequence,
+                                               from: @stock_transfer.to_location.name,
+                                               to: @stock_transfer.from_location.name) },
+                      class: "shrink-0 border border-purple-300 text-purple-800 hover:bg-purple-50 px-4 py-2.5 rounded-xl text-sm font-semibold cursor-pointer" %>
+              <% end %>
             <% end %>
             <% if shipment.short? %>
               <p class="text-xs text-red-700 mb-3">

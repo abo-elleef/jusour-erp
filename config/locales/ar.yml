@@ -1730,6 +1730,12 @@ ar:
       confirm_heading: "تأكيد الاستلام"
       confirm_hint: "راجع ما استلمته وأكد الكميات. سيتم تحديث المخزون عند التأكيد."
       confirm_partial_hint: "أكد ما استلمته فعلياً في هذه الشحنة. يمكنك استلام أقل من المرسل."
+      revert_shipment: "إرجاع إلى المصدر"
+      revert_shipment_confirm: "هل تريد إرجاع الشحنة %{number} من %{from} إلى %{to}؟ سينتقل المخزون فوراً وسيتمكن المُرسل من إرسالها مرة أخرى."
+      revert_reason: "السبب"
+      revert_reason_placeholder: "مثال: أُرسلت مرتين بالخطأ"
+      shipment_reverted_by: "أُرجعت بواسطة %{name} في %{at}"
+      shipment_revert_reason: "سبب الإرجاع"
       void_shipment: "إلغاء الشحنة"
       void_shipment_confirm: "إلغاء الشحنة #%{number}؟ لم يُستلم شيء من هذه الشحنة ولن يتحرك المخزون."
       confirm_receipt: "تأكيد الاستلام"
@@ -1752,6 +1758,7 @@ ar:
         in_transit: "قيد النقل"
         received: "مستلم"
         voided: "ملغاة"
+        reverted: "مُرتجع"
       form:
         details: "تفاصيل التحويل"
         details_hint: "اختر تاريخ التحويل الفعلي، ثم موقع المصدر والوجهة."
@@ -1782,9 +1789,13 @@ ar:
         cannot_submit: "لا يمكن إرسال إلا المسودات."
         cannot_discard: "لا يمكن حذف إلا المسودات."
         draft_lines_incomplete: "أدخل كمية لـ %{ingredients}، أو احذف هذه البنود قبل الإرسال."
+        cannot_revert_shipment: "لا يمكن إرجاع هذه الشحنة. الشحنات المستلمة فقط يمكن إرجاعها."
+        revert_reason_required: "اذكر سبب إرجاع هذه الشحنة — فهي تُرجع المخزون إلى المصدر."
       adjustment:
         out: "تحويل صادر %{number} شحنة %{shipment} إلى %{to} (من %{from})"
         in: "تحويل وارد %{number} شحنة %{shipment} من %{from} (إلى %{to})"
+        revert_out: "إرجاع الشحنة %{shipment} من التحويل %{number} — خرجت من %{location}"
+        revert_in: "إرجاع الشحنة %{shipment} من التحويل %{number} — دخلت إلى %{location}"
     stock_transfer_templates:
       title: "قوالب التحويل"
       description: "احفظ قوائم المكونات الثابتة (مثل تموين أسبوعي من المطبخ للفرع) ليبدأ التحويل معبّأً مسبقاً."
@@ -3867,6 +3878,7 @@ ar:
       delete_confirm: "حذف هذا المصروف؟"
       recurrence: "التكرار"
       stats_spent: "المصروف"
+      categories_summary: "التصنيفات"
       tabs:
         transactions: "المعاملات"
         ledger: "ملخص دفتر الأستاذ"
@@ -4535,6 +4547,8 @@ ar:
       received: "تم تأكيد الاستلام. تم تحديث المخزون في كلا الموقعين."
       cancelled: "تم إلغاء طلب التحويل."
       shipment_voided: "تم إلغاء الشحنة قيد النقل. يمكنك التعديل والإرسال مجدداً."
+      shipment_reverted: "تم إرجاع الشحنة — البضائع عادت إلى المصدر."
+      shipment_reverted_short: "تم إرجاع الشحنة، لكن %{items} كان قد استُهلك في الموقع المستلم، لذا أصبح رصيده سالباً. راجع الجرد."
     stock_transfer_template:
       created: "تم إنشاء قالب التحويل."
       updated: "تم تحديث قالب التحويل."

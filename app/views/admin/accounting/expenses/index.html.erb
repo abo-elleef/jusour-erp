@@ -124,21 +124,29 @@
 
   <% else %>
     <%# ── TRANSACTIONS TAB — expense records ────────────────────────── %>
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-      <% @totals_by_category.each do |(category_id, category_name), cents| %>
-        <% active = @active_category_id == category_id.to_s %>
-        <% filter_params = { start_date: @start_date, end_date: @end_date } %>
-        <% filter_params[:category_id] = category_id unless active %>
-        <%= link_to admin_accounting_expenses_path(filter_params),
-              class: "rounded-2xl border p-3 transition-colors #{active ? 'border-amber-400 bg-amber-50 ring-1 ring-amber-400' : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/50'}" do %>
-          <p class="text-xs <%= active ? 'text-amber-700 font-semibold' : 'text-gray-500' %>"><%= category_name %></p>
-          <p class="font-bold tabular-nums <%= active ? 'text-amber-900' : '' %>"><%= format_money(cents) %></p>
-          <% if active %>
-            <p class="text-xs text-amber-600 mt-1">✕ <%= t("actions.clear") %></p>
+    <details class="mb-6 group" <%= @active_category_id.present? ? "open" : "" %>>
+      <summary class="flex items-center justify-between cursor-pointer select-none rounded-2xl border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50 transition-colors list-none">
+        <span class="text-sm font-semibold text-gray-700"><%= t("accounting.expenses.categories_summary") %></span>
+        <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
+        <% @totals_by_category.each do |(category_id, category_name), cents| %>
+          <% active = @active_category_id == category_id.to_s %>
+          <% filter_params = { start_date: @start_date, end_date: @end_date } %>
+          <% filter_params[:category_id] = category_id unless active %>
+          <%= link_to admin_accounting_expenses_path(filter_params),
+                class: "rounded-2xl border p-3 transition-colors #{active ? 'border-amber-400 bg-amber-50 ring-1 ring-amber-400' : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/50'}" do %>
+            <p class="text-xs <%= active ? 'text-amber-700 font-semibold' : 'text-gray-500' %>"><%= category_name %></p>
+            <p class="font-bold tabular-nums <%= active ? 'text-amber-900' : '' %>"><%= format_money(cents) %></p>
+            <% if active %>
+              <p class="text-xs text-amber-600 mt-1">✕ <%= t("actions.clear") %></p>
+            <% end %>
           <% end %>
         <% end %>
-      <% end %>
-    </div>
+      </div>
+    </details>
 
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <table class="w-full text-sm">

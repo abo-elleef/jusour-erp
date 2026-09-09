@@ -955,6 +955,9 @@ module ApplicationHelper
                   when "in_transit" then "bg-blue-100 text-blue-900 border-blue-200"
                   when "received" then "bg-green-100 text-green-800 border-green-200"
                   when "voided" then "bg-red-50 text-red-800 border-red-200"
+                  # Distinct from voided: stock really moved and was moved back,
+                  # which is a different thing from a load that never left.
+                  when "reverted" then "bg-purple-50 text-purple-800 border-purple-200"
                   else "bg-gray-100 text-gray-700 border-gray-200"
                   end
     [label, badge_class]
