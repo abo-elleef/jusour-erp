@@ -35,6 +35,22 @@ module Admin
         end
       end
 
+      def balance_sheet_lines
+        @as_of        = params[:as_of]&.to_date || Date.current
+        @account_code = params[:account_code].to_i
+        @account_name = params[:account_name].to_s
+
+        @je_lines = ::JournalEntryLine
+          .joins(:journal_entry)
+          .where(journal_entries: { company_id: ::Current.company.id })
+          .where(account_code: @account_code)
+          .where("journal_entries.date <= ?", @as_of)
+          .includes(:journal_entry)
+          .order("journal_entries.date DESC")
+
+        @balance_cents = @je_lines.sum("credit_cents - debit_cents")
+      end
+
       def balance_sheet
         @as_of = params[:as_of]&.to_date || Date.current
         @coa = ::Accounting::ChartOfAccountsService.new(
