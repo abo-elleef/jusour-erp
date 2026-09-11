@@ -821,6 +821,8 @@ en:
         remove_out_of_stock_filter: "Remove out of stock filter"
         remove_expiring_filter: "Remove expiring soon filter"
         expiring_within_days: "Expiring within %{days} days"
+        branch_stock:
+          title: "View stock by branch"
         reorder_at: "Reorder at %{threshold}"
         max_at: "Max %{quantity}"
         reorder_missing: "Set reorder at"
@@ -2654,6 +2656,7 @@ en:
       select_ingredient: "Select ingredient…"
       unassign: "Remove"
       confirm_unassign: "Stop tracking %{name} at this location? Local stock record will be removed."
+      branch_stock: "Branch stock"
       clear_stock: "Clear all stock"
       clear_stock_confirm: "Set every ingredient at %{name} to zero? This writes clear-all-stock adjustments and cannot be undone from this screen."
       balance_history:

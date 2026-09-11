@@ -8,45 +8,34 @@ module Admin
 
       def index
         authorize @location, :show?, policy_class: LocationPolicy
-        @all_ingredient_locations = @location.ingredient_locations
-          .joins(:ingredient)
-          .merge(Ingredient.active)
-          .includes(ingredient: :ingredient_category)
-          .order("ingredients.name ASC")
-
-        @low_stock_count = @location.ingredient_locations.low_stock.count
-        @out_of_stock_count = @location.ingredient_locations.out_of_stock.count
-        @has_positive_stock = @location.ingredient_locations.where("quantity_on_hand > 0").exists?
 
         @stock_filter = params[:stock].presence
-        @ingredient_locations = apply_stock_filter(@all_ingredient_locations)
+        @search       = params[:search].to_s.strip
 
-        assigned_ids = @location.ingredient_locations.pluck(:ingredient_id)
-        @available_ingredients = Ingredient.active
-          .where.not(id: assigned_ids)
-          .includes(:ingredient_category)
+        # All active ingredients, left-joined to this location's stock rows so
+        # every ingredient appears even if the branch has never tracked it.
+        base = Ingredient.active
+          .includes(:ingredient_category, :suppliers, :unit_ref, :ingredient_units,
+                    ingredient_locations: nil)
+          .left_joins(:ingredient_locations)
+          .where("ingredient_locations.location_id = ? OR ingredient_locations.id IS NULL", @location.id)
+          .select("ingredients.*, COALESCE((SELECT quantity_on_hand FROM ingredient_locations WHERE ingredient_id = ingredients.id AND location_id = '#{@location.id}' LIMIT 1), 0) AS branch_quantity")
           .order(:name)
 
-        load_balance_history_chart
-      end
+        base = base.where("ingredients.name ILIKE :q OR ingredients.code ILIKE :q", q: "%#{@search}%") if @search.present?
 
-      def create
-        authorize @location, :update?, policy_class: LocationPolicy
-        ingredient = Ingredient.find(params[:ingredient_id])
-        il = @location.ingredient_locations.find_or_initialize_by(ingredient: ingredient)
-        if il.new_record?
-          il.reorder_threshold = ingredient.reorder_threshold
-          il.max_quantity = ingredient.max_quantity
-        end
-        il.quantity_on_hand = 0 if il.new_record?
+        @ingredients = apply_branch_stock_filter(base)
 
-        if il.save
-          redirect_to admin_location_ingredients_path(@location),
-            notice: t("flash.ingredient_location.assigned")
-        else
-          redirect_to admin_location_ingredients_path(@location),
-            alert: il.errors.full_messages.to_sentence
-        end
+        il_map = @location.ingredient_locations.index_by(&:ingredient_id)
+        @ingredient_location_map = il_map
+
+        @low_stock_count  = il_map.values.count { |il| il.stock_status == :low }
+        @out_of_stock_count = il_map.values.count { |il| il.stock_status == :out }
+        @total_tracked    = il_map.size
+
+        @has_positive_stock = il_map.values.any? { |il| il.quantity_on_hand > 0 }
+
+        @adjustment_types = StockAdjustment::ADJUSTMENT_TYPES
       end
 
       def update
@@ -71,7 +60,6 @@ module Admin
         authorize @location, :update?, policy_class: LocationPolicy
         ingredient = Ingredient.find(params[:id])
         ensure_ingredient_assigned!(ingredient)
-        # The delta may be entered in an alternate unit; store it in the base unit.
         delta = ingredient.to_base(BigDecimal(params[:quantity_delta].to_s), params[:unit])
 
         StockAdjustment.create!(
@@ -121,11 +109,20 @@ module Admin
         @ingredient_location = @location.ingredient_locations.find_by!(ingredient_id: params[:id])
       end
 
-      def apply_stock_filter(scope)
+      def apply_branch_stock_filter(scope)
         case @stock_filter
-        when "low" then scope.low_stock
-        when "out" then scope.out_of_stock
-        else scope
+        when "low"
+          scope.where(
+            "ingredients.id IN (SELECT ingredient_id FROM ingredient_locations WHERE location_id = ? AND quantity_on_hand > 0 AND reorder_threshold IS NOT NULL AND quantity_on_hand <= reorder_threshold)",
+            @location.id
+          )
+        when "out"
+          scope.where(
+            "ingredients.id IN (SELECT ingredient_id FROM ingredient_locations WHERE location_id = ? AND quantity_on_hand <= 0)",
+            @location.id
+          )
+        else
+          scope
         end
       end
 
@@ -136,22 +133,9 @@ module Admin
       def ensure_ingredient_assigned!(ingredient)
         @location.ingredient_locations.find_or_create_by!(ingredient: ingredient) do |il|
           il.reorder_threshold = ingredient.reorder_threshold
-          il.max_quantity = ingredient.max_quantity
-          il.quantity_on_hand = 0
+          il.max_quantity      = ingredient.max_quantity
+          il.quantity_on_hand  = 0
         end
-      end
-
-      def load_balance_history_chart
-        @chart_days = ::Inventory::LocationBalanceHistoryService::ALLOWED_DAYS.include?(params[:chart_days].to_i) ?
-          params[:chart_days].to_i :
-          ::Inventory::LocationBalanceHistoryService::DEFAULT_DAYS
-        @chart_ingredient_ids = Array(params[:chart_ingredient_ids]).map(&:presence).compact.uniq
-          .first(::Inventory::LocationBalanceHistoryService::MAX_INGREDIENTS)
-        @balance_history = ::Inventory::LocationBalanceHistoryService.new(
-          location: @location,
-          ingredient_ids: @chart_ingredient_ids,
-          days: @chart_days
-        ).call
       end
     end
   end

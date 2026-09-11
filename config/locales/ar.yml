@@ -819,6 +819,8 @@ ar:
         remove_out_of_stock_filter: "إزالة تصفية نفاد المخزون"
         remove_expiring_filter: "إزالة تصفية قرب انتهاء الصلاحية"
         expiring_within_days: "ينتهي خلال %{days} أيام"
+        branch_stock:
+          title: "عرض المخزون حسب الفرع"
         reorder_at: "إعادة الطلب عند %{threshold}"
         max_at: "الحد الأقصى %{quantity}"
         reorder_missing: "حدد حد إعادة الطلب"
@@ -2667,6 +2669,7 @@ ar:
       select_ingredient: "اختر مكونًا…"
       unassign: "إزالة"
       confirm_unassign: "إيقاف تتبع %{name} في هذا الموقع؟ سيتم حذف سجل المخزون المحلي."
+      branch_stock: "مخزون الفرع"
       clear_stock: "تصفير كل المخزون"
       clear_stock_confirm: "تصفير كل المكونات في %{name}؟ سيتم تسجيل تعديلات تصفير المخزون ولا يمكن التراجع من هذه الشاشة."
       balance_history:

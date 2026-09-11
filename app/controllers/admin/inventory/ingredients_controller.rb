@@ -33,6 +33,8 @@ module Admin
             @out_of_stock_count = Ingredient.active.out_of_stock.count
             @expiring_count = Ingredient.active.expiring_soon.count
             @total_ingredients = Ingredient.active.count
+            @accessible_locations = Location.active.ordered
+              .where(id: current_user.accessible_location_ids)
           end
           format.csv do
             send_data stock_by_location_csv(@ingredients),

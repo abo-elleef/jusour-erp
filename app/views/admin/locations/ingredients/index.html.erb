@@ -1,229 +1,267 @@
-<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
-<% chip_secondary = "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
-<% chip_destructive = "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
-
-<div class="max-w-5xl">
+<div class="max-w-7xl">
+  <%# ── Header ──────────────────────────────────────────────────────── %>
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <p class="text-sm text-gray-500 mb-1">
-        <%= link_to t("admin.locations.title"), admin_locations_path, class: "hover:underline" %> /
-        <%= link_to @location.name, admin_location_path(@location), class: "hover:underline" %> /
+        <%= link_to t("inventory.tools.ingredients"), admin_inventory_ingredients_path, class: "hover:underline" %> /
       </p>
-      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("admin.locations.ingredients_title") %></h1>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+        <%= @location.name %>
+      </h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("admin.locations.ingredients_description") %></p>
     </div>
-    <% if policy(@location).update? && @has_positive_stock && !@location.central_kitchen? %>
-      <%= button_to t("admin.locations.clear_stock"),
-            clear_stock_admin_location_ingredients_path(@location),
-            method: :post,
-            form: { data: { turbo_confirm: t("admin.locations.clear_stock_confirm", name: @location.name) }, class: "shrink-0" },
-            class: "inline-flex items-center text-sm font-semibold text-red-700 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors" %>
+    <div class="flex flex-wrap gap-2 shrink-0">
+      <% if policy(@location).update? && @has_positive_stock && !@location.central_kitchen? %>
+        <%= button_to t("admin.locations.clear_stock"),
+              clear_stock_admin_location_ingredients_path(@location),
+              method: :post,
+              form: { data: { turbo_confirm: t("admin.locations.clear_stock_confirm", name: @location.name) }, class: "shrink-0" },
+              class: "inline-flex items-center text-sm font-semibold text-red-700 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors" %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Stat tiles ──────────────────────────────────────────────────── %>
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4 border-2 border-transparent">
+      <p class="text-sm text-gray-500"><%= t("inventory.ingredients.index.stats.active") %></p>
+      <p class="text-2xl font-bold mt-1"><%= @ingredients.size %></p>
+    </div>
+    <%= link_to admin_location_ingredients_path(@location, stock: "low"),
+          class: "bg-white rounded-lg shadow p-4 border-2 transition-colors #{@stock_filter == 'low' ? 'border-amber-400 ring-1 ring-amber-200' : 'border-transparent hover:border-amber-200'}" do %>
+      <p class="text-sm text-gray-500"><%= t("inventory.ingredients.index.stats.low_stock") %></p>
+      <p class="text-2xl font-bold mt-1 text-red-600"><%= @low_stock_count %></p>
+      <p class="text-xs text-amber-600 mt-1"><%= t("inventory.ingredients.index.stats.click_to_filter") %></p>
+    <% end %>
+    <%= link_to admin_location_ingredients_path(@location, stock: "out"),
+          class: "bg-white rounded-lg shadow p-4 border-2 transition-colors #{@stock_filter == 'out' ? 'border-red-500 ring-1 ring-red-200' : 'border-transparent hover:border-red-200'}" do %>
+      <p class="text-sm text-gray-500"><%= t("inventory.ingredients.index.stats.out_of_stock") %></p>
+      <p class="text-2xl font-bold mt-1 text-red-700"><%= @out_of_stock_count %></p>
+      <p class="text-xs text-amber-600 mt-1"><%= t("inventory.ingredients.index.stats.click_to_filter") %></p>
     <% end %>
   </div>
 
-  <div class="grid grid-cols-3 gap-4 mb-6">
-    <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.locations.stats_ingredients") %></p>
-      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @all_ingredient_locations.size %></p>
-    </div>
-    <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.inventory.low_stock") %></p>
-      <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= @low_stock_count %></p>
-    </div>
-    <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.inventory.out_of_stock") %></p>
-      <p class="text-2xl font-bold mt-1 text-red-700 tabular-nums"><%= @out_of_stock_count %></p>
+  <%# ── Search + filter bar ─────────────────────────────────────────── %>
+  <div class="bg-white rounded-lg shadow p-4 mb-4">
+    <%= form_with url: admin_location_ingredients_path(@location), method: :get,
+          class: "flex flex-wrap gap-3 items-end" do %>
+      <%= hidden_field_tag :stock, @stock_filter if @stock_filter.present? %>
+      <div class="flex-1 min-w-[200px]">
+        <%= label_tag :search, t("inventory.ingredients.index.search_label"), class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= text_field_tag :search, @search,
+              placeholder: t("inventory.ingredients.index.search_placeholder"),
+              class: "w-full border border-gray-300 rounded-lg px-3 py-2" %>
+      </div>
+      <div class="flex gap-2">
+        <%= submit_tag t("actions.apply_filters"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer" %>
+        <% if @search.present? || @stock_filter.present? %>
+          <%= link_to t("inventory.ingredients.index.clear_filters"),
+                admin_location_ingredients_path(@location),
+                class: "px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50" %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <%# ── Table ───────────────────────────────────────────────────────── %>
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left min-w-[900px]">
+        <thead class="bg-gray-50 border-b text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 pl-4 w-12 text-gray-400"><%= t("shared.row_index") %></th>
+            <th class="p-3"><%= t("inventory.ingredients.index.table.code") %></th>
+            <th class="p-3"><%= t("inventory.ingredients.index.table.ingredient") %></th>
+            <th class="p-3"><%= t("inventory.ingredients.index.table.unit") %></th>
+            <th class="p-3"><%= t("admin.locations.branch_stock") %></th>
+            <th class="p-3"><%= t("inventory.ingredients.index.table.suppliers") %></th>
+            <th class="p-3"><%= t("inventory.ingredients.index.table.status") %></th>
+            <th class="p-3 text-right"><%= t("inventory.ingredients.index.table.cost_per_unit") %></th>
+            <th class="p-3 pr-4 text-right"><%= t("inventory.ingredients.index.table.actions") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 table-zebra">
+          <% if @ingredients.empty? %>
+            <tr>
+              <td colspan="9" class="p-12 text-center">
+                <p class="text-gray-600 font-medium mb-1"><%= t("inventory.ingredients.index.empty_title") %></p>
+                <p class="text-gray-500 text-sm">
+                  <%= @search.present? || @stock_filter.present? ?
+                        t("inventory.ingredients.index.empty_description_filtered") :
+                        t("inventory.ingredients.index.empty_description") %>
+                </p>
+              </td>
+            </tr>
+          <% end %>
+
+          <% @ingredients.each_with_index do |ingredient, index| %>
+            <% il = @ingredient_location_map[ingredient.id] %>
+            <% branch_qty = il&.quantity_on_hand || 0 %>
+            <% branch_status = il&.stock_status || :out %>
+            <% reorder = (il&.reorder_threshold || ingredient.reorder_threshold).to_d %>
+            <% max_qty = (il&.max_quantity || ingredient.max_quantity).to_d %>
+            <% stock_pct = reorder.positive? ? [[(branch_qty.to_d / reorder * 100), 0].max, 100].min : (branch_qty.positive? ? 60 : 0) %>
+
+            <tr class="hover:bg-gray-50/80 <%= branch_status == :out ? 'bg-red-50/30' : branch_status == :low ? 'bg-amber-50/30' : '' %>">
+              <td class="p-3 pl-4 text-gray-400 tabular-nums"><%= index + 1 %></td>
+              <td class="p-3 font-mono text-xs font-semibold text-amber-700 whitespace-nowrap"><%= ingredient.code %></td>
+              <td class="p-3">
+                <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient),
+                      class: "font-medium text-blue-600 hover:underline" %>
+                <p class="text-xs text-gray-500 mt-0.5"><%= ingredient.ingredient_category.name %></p>
+              </td>
+              <td class="p-3 text-gray-700 whitespace-nowrap"><%= ingredient_unit_label(ingredient.unit) %></td>
+
+              <%# Branch stock + bar %>
+              <td class="p-3 min-w-[150px]">
+                <div class="font-medium text-gray-900 tabular-nums">
+                  <%= number_with_precision(branch_qty, precision: 3, strip_insignificant_zeros: true) %>
+                  <span class="text-xs text-gray-500 font-normal"><%= ingredient_unit_label(ingredient.unit) %></span>
+                </div>
+                <div class="mt-1.5 h-1.5 w-full max-w-[120px] bg-gray-200 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full <%= branch_status == :out ? 'bg-red-500' : branch_status == :low ? 'bg-amber-500' : 'bg-green-500' %>"
+                       style="width: <%= stock_pct %>%"></div>
+                </div>
+                <p class="text-xs text-gray-500 mt-0.5">
+                  <% if reorder.positive? %>
+                    <%= t("inventory.ingredients.index.reorder_at", threshold: number_with_precision(reorder, precision: 3, strip_insignificant_zeros: true)) %>
+                  <% end %>
+                </p>
+                <p class="text-xs text-gray-400">
+                  <% if max_qty.positive? %>
+                    <%= t("inventory.ingredients.index.max_at", quantity: number_with_precision(max_qty, precision: 3, strip_insignificant_zeros: true)) %>
+                  <% end %>
+                </p>
+              </td>
+
+              <td class="p-3 text-gray-600 max-w-[180px]">
+                <%= ingredient_suppliers_summary(ingredient) %>
+              </td>
+
+              <td class="p-3">
+                <% case branch_status
+                   when :out %>
+                  <span class="inline-flex text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-800"><%= t("admin.inventory.status_out") %></span>
+                <% when :low %>
+                  <span class="inline-flex text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800"><%= t("admin.inventory.status_low") %></span>
+                <% else %>
+                  <span class="inline-flex text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-800"><%= t("admin.inventory.status_ok") %></span>
+                <% end %>
+              </td>
+
+              <td class="p-3 text-right text-gray-700 tabular-nums whitespace-nowrap">
+                <%= humanized_money_with_symbol(ingredient.cost_per_unit) rescue "—" %>
+              </td>
+
+              <td class="p-3 pr-4 text-right">
+                <div class="flex items-center justify-end gap-2">
+                  <%= link_to t("actions.view"), admin_inventory_ingredient_path(ingredient),
+                        class: "text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                  <% if policy(@location).update? %>
+                    <button type="button"
+                            class="text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors"
+                            data-action="click->modal#open"
+                            data-modal-id="adjust-modal-<%= ingredient.id %>">
+                      <%= t("inventory.ingredients.index.adjust") %>
+                    </button>
+                  <% end %>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     </div>
   </div>
 
-  <% if @all_ingredient_locations.any? %>
-    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
-      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-        <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.locations.balance_history.title") %></h2>
-        <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.locations.balance_history.hint", max: Inventory::LocationBalanceHistoryService::MAX_INGREDIENTS) %></p>
-      </div>
-      <div class="p-5">
-        <%= form_with url: admin_location_ingredients_path(@location), method: :get, class: "space-y-4" do %>
-          <%= hidden_field_tag :stock, @stock_filter if @stock_filter.present? %>
-          <div class="flex flex-wrap items-end gap-4">
-            <div>
-              <label class="<%= label_class %>"><%= t("admin.locations.balance_history.range") %></label>
-              <%= select_tag :chart_days,
-                    options_for_select(
-                      Inventory::LocationBalanceHistoryService::ALLOWED_DAYS.map { |d| [t("admin.locations.balance_history.days", count: d), d] },
-                      @chart_days
-                    ),
-                    class: "#{pos_input_class} appearance-none min-w-[8rem]" %>
-            </div>
-            <%= submit_tag t("admin.locations.balance_history.apply"),
-                  class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors cursor-pointer" %>
-            <% if @chart_ingredient_ids.any? %>
-              <%= link_to t("actions.clear"), admin_location_ingredients_path(@location, stock: @stock_filter),
-                    class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
-            <% end %>
-          </div>
-
+  <%# ── Adjust modals (one per ingredient, hidden by default) ───────── %>
+  <% if policy(@location).update? %>
+    <% @ingredients.each do |ingredient| %>
+      <dialog id="adjust-modal-<%= ingredient.id %>"
+              class="rounded-2xl shadow-xl border border-gray-200 p-0 w-full max-w-md backdrop:bg-black/40 m-auto"
+              style="position: fixed; inset: 0; margin: auto;"
+              data-controller="modal"
+              data-modal-id-value="adjust-modal-<%= ingredient.id %>">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <p class="<%= label_class %>"><%= t("admin.locations.balance_history.pick_ingredients") %></p>
-            <div class="max-h-40 overflow-y-auto rounded-xl border border-gray-200 bg-gray-50/50 p-3 grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              <% @all_ingredient_locations.each do |il| %>
-                <label class="inline-flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
-                  <%= check_box_tag "chart_ingredient_ids[]", il.ingredient_id,
-                        @chart_ingredient_ids.map(&:to_s).include?(il.ingredient_id.to_s),
-                        id: "chart_ingredient_#{il.ingredient_id}",
-                        class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500" %>
-                  <span class="truncate"><%= il.ingredient.name %></span>
-                </label>
-              <% end %>
-            </div>
+            <h2 class="text-base font-bold text-gray-900"><%= ingredient.name %></h2>
+            <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.index.adjust") %> · <%= @location.name %></p>
           </div>
-        <% end %>
-
-        <% if @balance_history.any? %>
-          <div class="mt-5">
-            <%# Straight segments: smoothing invents balances between the daily closings. %>
-            <%= line_chart @balance_history, height: "280px", curve: false,
-                  library: { scales: { x: { ticks: { maxTicksLimit: 10 } } } } %>
-          </div>
-        <% else %>
-          <p class="mt-4 text-sm text-gray-500"><%= t("admin.locations.balance_history.empty") %></p>
-        <% end %>
-      </div>
-    </section>
-  <% end %>
-
-  <% if policy(@location).update? && @available_ingredients.any? %>
-    <section class="rounded-2xl border border-amber-200 bg-amber-50/30 p-5 mb-6">
-      <h2 class="text-sm font-semibold text-gray-900 mb-1"><%= t("admin.locations.assign_ingredient") %></h2>
-      <p class="text-xs text-gray-500 mb-4"><%= t("admin.locations.assign_ingredient_hint") %></p>
-      <% ingredient_options_json = @available_ingredients.map { |i| { value: i.id, label: i.name } }.to_json %>
-      <%= form_with url: admin_location_ingredients_path(@location), method: :post,
-            class: "flex flex-wrap items-end gap-3",
-            data: { searchable_select_options: ingredient_options_json } do %>
-        <div class="flex-1 min-w-[200px]"
-             data-controller="searchable-select"
-             data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
-          <%= label_tag :ingredient_id, t("admin.inventory.ingredient"), class: label_class %>
-          <%= hidden_field_tag :ingredient_id, nil,
-                data: { searchable_select_target: "hidden" } %>
-          <input type="text"
-                 autocomplete="off" spellcheck="false" role="combobox"
-                 aria-expanded="false" aria-autocomplete="list"
-                 placeholder="<%= t("admin.locations.select_ingredient") %>"
-                 class="<%= pos_input_class %>"
-                 data-searchable-select-target="input"
-                 data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
-          <ul data-searchable-select-target="menu" role="listbox"
-              class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
+          <button type="button"
+                  class="text-gray-400 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  data-action="click->modal#close"
+                  aria-label="<%= t("actions.close") %>">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
-        <%= submit_tag t("admin.locations.assign_button"),
-              class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors cursor-pointer" %>
-      <% end %>
-    </section>
-  <% end %>
 
-  <div class="flex gap-2 mb-4">
-    <%= link_to t("admin.inventory.filter_all"), admin_location_ingredients_path(@location),
-          class: "text-sm px-3 py-1.5 rounded-lg #{@stock_filter.nil? ? "bg-gray-900 text-white" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"} font-medium transition-colors" %>
-    <%= link_to t("admin.inventory.filter_low"), admin_location_ingredients_path(@location, stock: "low"),
-          class: "text-sm px-3 py-1.5 rounded-lg #{@stock_filter == "low" ? "bg-amber-600 text-white" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"} font-medium transition-colors" %>
-    <%= link_to t("admin.inventory.filter_out"), admin_location_ingredients_path(@location, stock: "out"),
-          class: "text-sm px-3 py-1.5 rounded-lg #{@stock_filter == "out" ? "bg-red-600 text-white" : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"} font-medium transition-colors" %>
-  </div>
-
-  <% if @ingredient_locations.any? %>
-    <div class="space-y-4">
-      <% @ingredient_locations.each do |il| %>
-        <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-          <div class="px-5 py-4 flex flex-wrap justify-between items-start gap-3 border-b border-gray-100 bg-gray-50/80">
-            <div class="min-w-0">
-              <h2 class="text-sm font-semibold text-gray-900"><%= il.ingredient.name %></h2>
-              <p class="text-xs text-gray-500 mt-0.5">
-                <%= il.ingredient.ingredient_category.name %> · <%= ingredient_unit_label(il.ingredient.unit) %>
-              </p>
-            </div>
-            <div class="flex items-center gap-2">
-              <% case il.stock_status
-                 when :out %>
-                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-800"><%= t("admin.inventory.status_out") %></span>
-              <% when :low %>
-                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800"><%= t("admin.inventory.status_low") %></span>
-              <% else %>
-                <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-800"><%= t("admin.inventory.status_ok") %></span>
-              <% end %>
-              <% if policy(@location).update? %>
-                <%= button_to t("admin.locations.unassign"),
-                      admin_location_ingredient_path(@location, il.ingredient),
-                      method: :delete,
-                      form: { data: { turbo_confirm: t("admin.locations.confirm_unassign", name: il.ingredient.name) }, class: "inline" },
-                      class: chip_destructive %>
-              <% end %>
-            </div>
-          </div>
-
-          <div class="p-5 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <%= form_with url: adjust_admin_location_ingredient_path(@location, ingredient),
+              method: :post,
+              class: "px-6 py-5 space-y-4" do %>
+          <div class="grid grid-cols-2 gap-3">
             <div>
-              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("admin.inventory.quantity") %></p>
-              <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums">
-                <%= number_with_precision(il.quantity_on_hand, precision: 3) %>
-                <span class="text-sm font-semibold text-gray-600"><%= ingredient_unit_label(il.ingredient.unit) %></span>
-              </p>
-              <p class="text-xs text-gray-500 mt-1">
-                <%= t("admin.locations.global_quantity") %>:
-                <%= number_with_precision(il.ingredient.quantity_on_hand, precision: 3) %>
-                <%= ingredient_unit_label(il.ingredient.unit) %>
-              </p>
+              <%= label_tag :quantity_delta, t("inventory.ingredients.show.quantity_delta"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+              <%= number_field_tag :quantity_delta, nil,
+                    step: 0.001, required: true,
+                    placeholder: "+5 or −2",
+                    class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" %>
             </div>
-
-            <% if policy(@location).update? %>
-              <div>
-                <%= form_with model: il,
-                      url: admin_location_ingredient_path(@location, il.ingredient),
-                      method: :patch,
-                      class: "space-y-2" do |f| %>
-                  <div class="grid grid-cols-2 gap-2">
-                    <div>
-                      <%= f.label :reorder_threshold, t("admin.inventory.threshold"), class: label_class %>
-                      <%= f.number_field :reorder_threshold, step: 0.001, min: 0, class: pos_input_class %>
-                    </div>
-                    <div>
-                      <%= f.label :max_quantity, t("inventory.ingredients.form.max_quantity"), class: label_class %>
-                      <%= f.number_field :max_quantity, step: 0.001, min: 0, class: pos_input_class %>
-                    </div>
-                  </div>
-                  <%= f.submit t("actions.save"),
-                        class: "w-full bg-white border border-gray-200 text-gray-700 text-xs font-semibold px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer" %>
-                <% end %>
-              </div>
-
-              <div>
-                <%= form_with url: adjust_admin_location_ingredient_path(@location, il.ingredient),
-                      method: :post,
-                      class: "space-y-2" do %>
-                  <%= label_tag :quantity_delta, t("inventory.ingredients.show.quantity_delta"), class: label_class %>
-                  <%= number_field_tag :quantity_delta, nil, step: 0.001, required: true, class: pos_input_class, placeholder: "+5 or -2" %>
-                  <%= select_tag :adjustment_type,
-                        options_for_select(
-                          StockAdjustment::ADJUSTMENT_TYPES.map { |type| [inventory_adjustment_type_label(type), type] },
-                          "manual_add"
-                        ),
-                        class: "#{pos_input_class} appearance-none" %>
-                  <%= text_field_tag :reason_notes, nil,
-                        placeholder: t("inventory.ingredients.show.notes_placeholder"),
-                        class: pos_input_class %>
-                  <%= submit_tag t("inventory.ingredients.show.apply_adjustment"),
-                        class: "w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded-xl shadow-sm transition-colors cursor-pointer" %>
-                <% end %>
-              </div>
-            <% end %>
+            <div>
+              <%= label_tag :unit, t("inventory.ingredients.alternate_units.unit"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+              <%= select_tag :unit,
+                    options_for_select(ingredient.available_units.map { |u| [ingredient_unit_label(u), u] }, ingredient.unit),
+                    class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm appearance-none" %>
+            </div>
           </div>
-        </section>
-      <% end %>
-    </div>
-  <% else %>
-    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-      <p class="text-gray-900 font-semibold mb-1"><%= t("admin.locations.no_stock_title") %></p>
-      <p class="text-gray-500 text-sm"><%= t("admin.locations.no_stock_description") %></p>
-    </section>
+          <div>
+            <%= label_tag :adjustment_type, t("inventory.ingredients.show.adjustment_type"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+            <%= select_tag :adjustment_type,
+                  options_for_select(
+                    StockAdjustment::ADJUSTMENT_TYPES.map { |type| [inventory_adjustment_type_label(type), type] },
+                    "manual_add"
+                  ),
+                  class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm appearance-none" %>
+          </div>
+          <div>
+            <%= label_tag :reason_notes, t("inventory.ingredients.show.notes_placeholder"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+            <%= text_field_tag :reason_notes, nil,
+                  placeholder: t("inventory.ingredients.show.notes_placeholder"),
+                  class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" %>
+          </div>
+          <div class="flex gap-3 pt-1">
+            <%= submit_tag t("inventory.ingredients.show.apply_adjustment"),
+                  class: "flex-1 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-colors cursor-pointer" %>
+            <button type="button"
+                    data-action="click->modal#close"
+                    class="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition-colors">
+              <%= t("actions.cancel") %>
+            </button>
+          </div>
+        <% end %>
+      </dialog>
+    <% end %>
   <% end %>
 </div>
+
+<script>
+// Lightweight <dialog> controller — no Stimulus dependency needed.
+// Opens the native <dialog> matching data-modal-id on the button.
+document.addEventListener("click", function(e) {
+  const openBtn = e.target.closest("[data-action='click->modal#open']");
+  if (openBtn) {
+    const id = openBtn.dataset.modalId;
+    document.getElementById(id)?.showModal();
+  }
+  const closeBtn = e.target.closest("[data-action='click->modal#close']");
+  if (closeBtn) {
+    closeBtn.closest("dialog")?.close();
+  }
+});
+// Click backdrop to close
+document.addEventListener("click", function(e) {
+  if (e.target.tagName === "DIALOG") e.target.close();
+});
+</script>
