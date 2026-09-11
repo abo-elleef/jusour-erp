@@ -1,9 +1,18 @@
 # frozen_string_literal: true
 
 module Sales
-  # Confirms a draft customer invoice: runs the two-limit credit check, raises
-  # Accounts Receivable (revenue recognition via the AR ledger), and deducts the
-  # sold stock FIFO from the selling location.
+  # Confirms a draft customer invoice and deducts the sold stock FIFO from the
+  # selling location.
+  #
+  # How the money is recognised depends on how the sale was settled:
+  #
+  #   on account  — runs the two-limit credit check and raises Accounts Receivable
+  #   paid now    — banks the money straight into a treasury, no receivable at all
+  #
+  # The second path exists because the whole distribution vertical sells this way:
+  # a doctor at the counter pays cash or by wallet and walks out. Routing that
+  # through AR would raise a debt and clear it in the same breath, and their
+  # statements would read as though they were forever in and out of arrears.
   #
   # Cost/COGS is deliberately NOT posted to the ledger here (step-2 decision) —
   # only the physical stock leaves; margin is finalized later via landed cost.
@@ -20,6 +29,8 @@ module Sales
 
     def call
       validate!
+      return settle_now! if @invoice.paid_on_issue?
+
       customer = @invoice.customer
 
       # Two-limit credit control against the balance this invoice would create.
@@ -45,6 +56,44 @@ module Sales
     end
 
     private
+
+    # Money in hand: it goes into the treasury for the method used, revenue is
+    # recognised against it, and the invoice is settled on the spot. No credit
+    # check — nothing is being extended.
+    def settle_now!
+      treasury = @invoice.treasury ||
+                 SettlementTreasury.for(method: @invoice.payment_method, user: @user)
+      if treasury.blank?
+        raise Error, I18n.t("sales.customer_invoices.errors.no_settlement_treasury",
+                            default: "No treasury is set up to receive this payment method.")
+      end
+
+      amount_cents = @invoice.total_cents
+
+      ActiveRecord::Base.transaction do
+        deduct_stock!
+        treasury.with_lock do
+          treasury.apply_balance_delta!(amount_cents)
+          TreasuryTransaction.create!(
+            treasury: treasury, user: @user, amount_cents: amount_cents, kind: "cash_sale",
+            description: I18n.t("sales.customer_invoices.treasury_description",
+                                number: @invoice.invoice_number,
+                                default: "Sale #{@invoice.invoice_number}"),
+            occurred_on: @invoice.invoice_date, source_record: @invoice,
+            balance_after_cents: treasury.balance_cents
+          )
+        end
+        Accounting::JournalEntryService.record_customer_cash_sale!(
+          source: @invoice, treasury: treasury, date: @invoice.invoice_date,
+          user: @user, amount_cents: amount_cents
+        )
+        @invoice.update!(status: "confirmed", payment_status: "paid",
+                         amount_paid_cents: amount_cents, treasury: treasury,
+                         confirmed_at: Time.current)
+      end
+
+      Result.new(invoice: @invoice, credit_warning: false)
+    end
 
     def validate!
       # Only a draft can be confirmed — a historical invoice is already a completed

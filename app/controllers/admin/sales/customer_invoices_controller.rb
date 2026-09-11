@@ -87,9 +87,11 @@ module Admin
       end
 
       def load_form_data
-        # Credit sales are to commercial customers only — also keeps the picker
-        # sane on large customer bases.
-        @customers = Customer.where(customer_type: "commercial").order(:name)
+        # Every customer, not just commercial ones: the distribution vertical sells
+        # to walk-in doctors through this same form, settling at the counter. Credit
+        # is still controlled where it matters — at confirm, against the limits.
+        @customers = Customer.order(:name)
+        @settlement_methods = ::Sales::SettlementTreasury.available_methods(user: current_user)
         @locations = Location.active.ordered
         @ingredients = Ingredient.active.order(:name)
         # Teammates the sale can be credited to (drives their bonus).
@@ -110,7 +112,7 @@ module Admin
 
       def invoice_params
         params.require(:customer_invoice).permit(
-          :customer_id, :location_id, :invoice_date, :notes, :salesperson_id,
+          :customer_id, :location_id, :invoice_date, :notes, :salesperson_id, :payment_method,
           customer_invoice_lines_attributes: %i[id ingredient_id quantity unit unit_price_pounds _destroy]
         )
       end

@@ -3,6 +3,11 @@
 module Accounting
   # Cashier sales for one cash-drawer session: hard cash + shared digital wallets.
   # Prefers payments linked to the session; falls back to order owner + time window.
+  #
+  # Counts takings from both selling motions. A restaurant's cash arrives as POS
+  # payments; a distributor's arrives as customer invoices settled at the counter,
+  # which are not orders at all. Leaving those out made the drawer read over by the
+  # whole day's invoice cash, every day.
   class SessionSalesSummary
     Result = Struct.new(
       :opening_float_cents,
@@ -51,10 +56,10 @@ module Accounting
     def call
       Result.new(
         opening_float_cents: @opening_float_cents.to_i,
-        cash_cents: sum_for("cash"),
+        cash_cents: sum_for("cash") + invoice_sales_for("cash"),
         cash_refunds_cents: refunds_for("cash"),
-        instapay_cents: sum_for("instapay"),
-        vodafone_cash_cents: sum_for("vodafone_cash")
+        instapay_cents: sum_for("instapay") + invoice_sales_for("instapay"),
+        vodafone_cash_cents: sum_for("vodafone_cash") + invoice_sales_for("vodafone_cash")
       )
     end
 
@@ -91,6 +96,17 @@ module Accounting
 
     def sum_for(method)
       base_scope.where(payment_method: method).sum(:amount_cents).to_i
+    end
+
+    # Counter sales settled on the invoice itself, taken by this cashier during the
+    # session. They carry no Payment row — the invoice is the payment.
+    def invoice_sales_for(method)
+      return 0 if @user_id.blank?
+
+      CustomerInvoice.confirmed
+        .where(payment_method: method, user_id: @user_id)
+        .where(confirmed_at: range_start..range_end)
+        .sum(:total_cents).to_i
     end
 
     def refunds_for(method)

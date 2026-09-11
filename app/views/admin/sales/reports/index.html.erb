@@ -138,6 +138,36 @@
       </section>
     </div>
 
+    <%# ── By payment method ────────────────────────────────────── %>
+    <% if @report[:by_payment_method].many? %>
+      <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.reports.by_payment_method") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("sales.reports.by_payment_method_hint") %></p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <tr>
+                <th class="p-3 ps-5 text-start"><%= t("sales.reports.method") %></th>
+                <th class="p-3 text-end"><%= t("sales.reports.invoices") %></th>
+                <th class="p-3 text-end pe-5"><%= t("sales.reports.gross") %></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <% @report[:by_payment_method].each do |row| %>
+                <tr class="hover:bg-gray-50 transition-colors">
+                  <td class="p-3 ps-5 text-gray-800"><%= t("sales.customer_invoices.payment_methods.#{row.name}") %></td>
+                  <td class="p-3 text-end tabular-nums text-gray-600"><%= row.units %></td>
+                  <td class="p-3 text-end pe-5 tabular-nums font-semibold text-gray-900"><%= format_money(row.revenue_cents) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    <% end %>
+
     <%# ── Day by day ───────────────────────────────────────────── %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">

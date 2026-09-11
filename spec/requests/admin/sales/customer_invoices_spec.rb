@@ -31,6 +31,41 @@ RSpec.describe "Admin::Sales::CustomerInvoices", type: :request do
     expect(response.body).to include("customer-invoice-lines")
   end
 
+  describe "settling at the counter" do
+    it "creates and confirms a cash sale in one go, with no receivable" do
+      post admin_sales_customer_invoices_path, params: {
+        commit_action: "confirm",
+        customer_invoice: { customer_id: customer.id, location_id: location.id,
+          invoice_date: Date.current, payment_method: "cash",
+          customer_invoice_lines_attributes: line_attrs }
+      }
+
+      inv = CustomerInvoice.last
+      expect(inv.payment_method).to eq("cash")
+      expect(inv.status).to eq("confirmed")
+      expect(inv.payment_status).to eq("paid")
+      expect(inv.treasury).to eq(owner.assigned_treasury)
+      expect(customer.reload.ar_balance_cents).to eq(0)
+    end
+
+    it "defaults to on account when nothing is chosen" do
+      post admin_sales_customer_invoices_path, params: {
+        commit_action: "draft",
+        customer_invoice: { customer_id: customer.id, location_id: location.id,
+          invoice_date: Date.current, customer_invoice_lines_attributes: line_attrs }
+      }
+
+      expect(CustomerInvoice.last.payment_method).to eq("on_account")
+    end
+
+    it "offers walk-in customers, not only commercial ones" do
+      walk_in = create(:customer, company: company, name: "Dr Walk-in", customer_type: "regular")
+
+      get new_admin_sales_customer_invoice_path(locale: "en")
+      expect(response.body).to include(walk_in.name)
+    end
+  end
+
   describe "historical (imported) documents" do
     let!(:historical) do
       inv = CustomerInvoice.new(company: company, customer: customer, user: owner,

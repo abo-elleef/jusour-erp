@@ -656,6 +656,21 @@ module ApplicationHelper
     end.to_json
   end
 
+  # Options for a searchable customer picker. Selling to walk-in customers through
+  # the invoice form puts the whole customer base in one control, so it has to be
+  # searchable by phone and old-system code as well as by name.
+  def customer_search_options(customers)
+    customers.map do |customer|
+      option = { value: customer.id, label: customer.display_name }
+      hints = [customer.phone, customer.phone_secondary, customer.legacy_code].compact_blank
+      if hints.any?
+        option[:keywords] = hints.join(" ")
+        option[:aliases] = hints
+      end
+      option
+    end.to_json
+  end
+
   # ingredient_id => { id, name, position } for client-side category grouping on transfer forms.
   def ingredient_categories_json(ingredients)
     ingredients.to_h do |ingredient|

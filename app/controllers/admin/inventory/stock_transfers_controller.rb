@@ -107,6 +107,10 @@ module Admin
 
         was_draft = @stock_transfer.draft?
         promoting = was_draft && !save_as_draft?
+
+        # Snapshot units before any changes so we can detect what changed.
+        unit_snapshot_before = capture_line_units(@stock_transfer)
+
         @stock_transfer.assign_attributes(stock_transfer_params)
 
         # Persist the edits while the record is still a draft, so placeholder
@@ -115,6 +119,8 @@ module Admin
         # the status inline would let an untouched placeholder line slip into a
         # submitted transfer.
         return render_edit_with_errors unless save_transfer_with_lines
+
+        audit_unit_changes(@stock_transfer, unit_snapshot_before)
 
         if promoting
           begin
@@ -282,22 +288,8 @@ module Admin
         @stock_transfer = StockTransfer.find(params[:id])
       end
 
-      # Units on a template-built transfer are fixed. Enforced here as well as in the
-      # form: a disabled input is a hint, not a guarantee, and `unit` feeds the
-      # base-unit conversion, so accepting a switched unit would silently corrupt
-      # quantities. Only saved lines are pinned — a line the requester added by hand
-      # is not part of the template and keeps its unit choice.
-      def strip_locked_units!(attrs)
-        lines = attrs[:stock_transfer_lines_attributes]
-        return attrs if lines.blank?
-
-        lines.each_value { |line| line.delete(:unit) if line[:id].present? }
-        attrs
-      end
-
       def stock_transfer_params
-        raw = permitted_stock_transfer_params
-        @stock_transfer&.units_locked? ? strip_locked_units!(raw) : raw
+        permitted_stock_transfer_params
       end
 
       def permitted_stock_transfer_params
@@ -519,6 +511,33 @@ module Admin
             # newest created_at first (id desc equivalent for UUIDs with timestamps)
             scope.order(created_at: :desc)
           end
+        end
+      end
+
+      # Returns {line_id => unit} for all persisted lines on a transfer.
+      def capture_line_units(transfer)
+        transfer.stock_transfer_lines.select(&:persisted?).to_h { |l| [l.id, l.unit] }
+      end
+
+      # Compare current line units against the snapshot taken before the save;
+      # write one AuditLogEntry per line whose unit actually changed.
+      def audit_unit_changes(transfer, before_snapshot)
+        transfer.stock_transfer_lines.each do |line|
+          next unless line.persisted?
+          old_unit = before_snapshot[line.id]
+          next if old_unit.blank? || old_unit == line.unit
+
+          ::AuditLogEntry.record!(
+            action: "stock_transfer_line.unit_changed",
+            record: line,
+            user: current_user,
+            changes_snapshot: {
+              line_id: line.id,
+              ingredient: line.ingredient&.name,
+              from_unit: old_unit,
+              to_unit: line.unit
+            }
+          )
         end
       end
 

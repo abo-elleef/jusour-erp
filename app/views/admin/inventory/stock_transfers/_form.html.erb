@@ -134,7 +134,7 @@
       <div class="divide-y divide-gray-100" data-stock-transfer-lines-target="list">
         <% stock_transfer.stock_transfer_lines.reject(&:marked_for_destruction?).each do |line| %>
           <%= f.fields_for :stock_transfer_lines, line do |line_form| %>
-            <%= render "line_fields", f: line_form, units_locked: stock_transfer.units_locked? %>
+            <%= render "line_fields", f: line_form %>
           <% end %>
         <% end %>
       </div>
@@ -143,7 +143,7 @@
       <%# A line the requester adds by hand isn't part of the template, so it keeps
           its unit choice even on a template-built transfer. %>
       <%= f.fields_for :stock_transfer_lines, StockTransferLine.new, child_index: "NEW_RECORD" do |line_form| %>
-        <%= render "line_fields", f: line_form, units_locked: false %>
+        <%= render "line_fields", f: line_form %>
       <% end %>
     </template>
   </section>

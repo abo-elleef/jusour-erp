@@ -5,6 +5,9 @@ class PosController < ApplicationController
 
   layout "pos"
 
+  include FeatureGated
+
+  before_action { require_feature!(:menu) }
   before_action :require_cashier!
   before_action :set_order, except: %i[new_order submit set_location set_workstation]
   before_action :ensure_order_persisted!, only: %i[update_fulfillment update_notes attach_customer apply_coupon manager_discount split merge]

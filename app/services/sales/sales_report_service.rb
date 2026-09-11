@@ -25,6 +25,7 @@ module Sales
         by_product: by_product,
         by_customer: by_customer,
         by_salesperson: by_salesperson,
+        by_payment_method: by_payment_method,
         daily: daily
       }
     end
@@ -113,6 +114,21 @@ module Sales
                   revenue_cents: cents.to_i, returns_cents: 0)
         }
         .sort_by { |r| -r.revenue_cents }
+    end
+
+    # How the money came in: on account (still owed, or settled later against the
+    # customer's balance) versus taken at the counter by cash or wallet.
+    def by_payment_method
+      counts = invoices.group(:payment_method).count
+      totals = invoices.group(:payment_method).sum(:total_cents)
+
+      CustomerInvoice::PAYMENT_METHODS.filter_map do |method|
+        total = totals[method].to_i
+        next if total.zero? && counts[method].to_i.zero?
+
+        Row.new(key: method, name: method, units: counts[method].to_i,
+                revenue_cents: total, returns_cents: 0)
+      end.sort_by { |r| -r.revenue_cents }
     end
 
     def daily

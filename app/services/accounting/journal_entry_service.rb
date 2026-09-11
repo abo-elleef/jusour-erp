@@ -213,6 +213,30 @@ module Accounting
         end
       end
 
+      # ── Cash sale (paid on issue) ─────────────────────────────────────
+      # A counter sale settled on the spot never passes through Accounts
+      # Receivable — the money is in the till the moment the sale is made:
+      #
+      #   DR <treasury>            what was taken
+      #     CR Sales revenue (4001)
+      #
+      # Routing it through AR instead would raise a receivable and clear it in the
+      # same breath, leaving the customer's statement full of debts they never owed.
+      def record_customer_cash_sale!(source:, treasury:, date:, user:, amount_cents:)
+        destroy_for_source!(source)
+        return unless amount_cents.positive?
+
+        create! source: source, date: date, user: user,
+                description: I18n.t("accounting.journal_entries.auto.cash_sale",
+                                    number: source.try(:invoice_number),
+                                    default: "Cash sale — #{source.try(:invoice_number)}") do |lines|
+          lines << debit(account_for_treasury(treasury), amount_cents, "asset")
+          lines << credit({ code: SALES_REVENUE_CODE,
+                            name: I18n.t("accounting.journal_entries.accounts.sales_revenue", default: "Sales revenue") },
+                          amount_cents, "revenue")
+        end
+      end
+
       # ── Payroll Advance ───────────────────────────────────────────────
       def record_payroll_advance!(advance)
         destroy_for_source!(advance)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_09_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_10_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -307,13 +307,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_09_120000) do
     t.datetime "updated_at", null: false
     t.uuid "salesperson_id"
     t.string "legacy_number"
+    t.uuid "treasury_id"
+    t.string "payment_method", default: "on_account", null: false
     t.index ["company_id", "invoice_number"], name: "index_customer_invoices_on_company_id_and_invoice_number", unique: true
     t.index ["company_id", "legacy_number"], name: "index_customer_invoices_on_company_id_and_legacy_number", unique: true, where: "(legacy_number IS NOT NULL)"
+    t.index ["company_id", "payment_method"], name: "index_customer_invoices_on_company_id_and_payment_method"
     t.index ["company_id", "status"], name: "index_customer_invoices_on_company_id_and_status"
     t.index ["company_id"], name: "index_customer_invoices_on_company_id"
     t.index ["customer_id"], name: "index_customer_invoices_on_customer_id"
     t.index ["location_id"], name: "index_customer_invoices_on_location_id"
     t.index ["salesperson_id"], name: "index_customer_invoices_on_salesperson_id"
+    t.index ["treasury_id"], name: "index_customer_invoices_on_treasury_id"
     t.index ["user_id"], name: "index_customer_invoices_on_user_id"
   end
 
@@ -1765,6 +1769,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_09_120000) do
   add_foreign_key "combos", "companies"
   add_foreign_key "company_settings", "companies"
   add_foreign_key "customer_addresses", "customers"
+  add_foreign_key "customer_invoices", "treasuries"
   add_foreign_key "customers", "companies"
   add_foreign_key "digital_wallet_day_closes", "companies"
   add_foreign_key "digital_wallet_day_closes", "locations"

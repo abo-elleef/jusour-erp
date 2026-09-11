@@ -23,11 +23,16 @@
       <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.customer_invoices.form.details") %></h2>
     </div>
     <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
-      <div>
+      <%# Its own options attribute: `closest` wins over the form-level ingredient
+          list, so the two searchable pickers on this form stay independent. %>
+      <div data-searchable-select-options="<%= customer_search_options(@customers) %>">
         <%= f.label :customer_id, t("sales.customer_invoices.form.customer"), class: label_class %>
-        <%= f.collection_select :customer_id, @customers, :id, :display_name,
-              { prompt: t("sales.customer_invoices.form.select_customer") },
-              class: "#{input_class} appearance-none", required: true %>
+        <%= render "shared/searchable_select",
+              form: f,
+              field: :customer_id,
+              selected: invoice.customer_id,
+              placeholder: t("sales.customer_invoices.form.select_customer"),
+              input_class: input_class %>
       </div>
       <div>
         <%= f.label :location_id, t("sales.customer_invoices.form.location"), class: label_class %>
@@ -45,6 +50,13 @@
               { selected: invoice.salesperson_id || current_user.id },
               class: "#{input_class} appearance-none" %>
         <p class="text-xs text-gray-500 mt-1"><%= t("sales.customer_invoices.form.salesperson_hint") %></p>
+      </div>
+      <div>
+        <%= f.label :payment_method, t("sales.customer_invoices.form.payment_method"), class: label_class %>
+        <% method_options = [[t("sales.customer_invoices.payment_methods.on_account"), CustomerInvoice::ON_ACCOUNT]] +
+                            @settlement_methods.map { |m| [t("sales.customer_invoices.payment_methods.#{m}"), m] } %>
+        <%= f.select :payment_method, method_options, {}, class: "#{input_class} appearance-none" %>
+        <p class="text-xs text-gray-500 mt-1"><%= t("sales.customer_invoices.form.payment_method_hint") %></p>
       </div>
       <div class="sm:col-span-2">
         <%= f.label :notes, t("sales.customer_invoices.form.notes"), class: label_class %>
