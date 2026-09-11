@@ -29,7 +29,7 @@ module Permission
     { key: "attendance:log",          group: "staff" },
     { key: "attendance:view",         group: "staff" },
     { key: "attendance:penalties",     group: "staff" },
-    { key: "attendance:penalties:waive", group: "staff" },
+    { key: "attendance:waive_penalties", group: "staff" },
     { key: "staff:view",              group: "staff" },
     { key: "staff:manage",            group: "staff" },
     { key: "payroll:view",            group: "staff" },
@@ -67,7 +67,7 @@ module Permission
       permissions: %w[
         dashboard:view orders:view orders:refund menu:manage customers:manage
         inventory:view inventory:manage accounting:transactions accounting:reports
-        attendance:log attendance:view attendance:penalties attendance:penalties:waive staff:view locations:manage printers:manage
+        attendance:log attendance:view attendance:penalties attendance:waive_penalties staff:view locations:manage printers:manage
         pos:access kitchen:access production:access
       ]
     },
@@ -84,7 +84,7 @@ module Permission
       permissions: %w[
         dashboard:view orders:view inventory:view inventory:finance
         accounting:ledgers accounting:transactions accounting:reports accounting:setup
-        attendance:view attendance:penalties attendance:penalties:waive staff:view staff:manage payroll:view payroll:manage
+        attendance:view attendance:penalties attendance:waive_penalties staff:view staff:manage payroll:view payroll:manage
         settings:general locations:manage printers:manage pos:access
       ]
     },

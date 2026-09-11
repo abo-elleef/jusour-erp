@@ -6,7 +6,7 @@ class PayrollAdjustmentPolicy < ApplicationPolicy
   end
 
   def destroy?
-    admin? && user.can?("attendance:penalties:waive")
+    admin? && user.can?("attendance:waive_penalties")
   end
 
   class Scope < Scope

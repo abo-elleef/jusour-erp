@@ -582,6 +582,7 @@ en:
         log: "Log attendance"
         view: "View attendance & shifts"
         penalties: "Review late penalties"
+        waive_penalties: "Waive late penalties"
       staff:
         view: "View staff"
         manage: "Manage staff"
