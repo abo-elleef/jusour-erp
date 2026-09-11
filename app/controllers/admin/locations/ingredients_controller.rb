@@ -6,25 +6,26 @@ module Admin
       before_action :set_location
       before_action :set_ingredient_location, only: %i[update destroy]
 
+      SORT_COLUMNS = %w[code name branch_quantity status cost_per_unit_cents suppliers].freeze
+
       def index
         authorize @location, :show?, policy_class: LocationPolicy
 
         @stock_filter = params[:stock].presence
         @search       = params[:search].to_s.strip
+        @sort         = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : "name"
+        @direction    = params[:dir].to_s == "desc" ? "desc" : "asc"
 
         # All active ingredients, left-joined to this location's stock rows so
         # every ingredient appears even if the branch has never tracked it.
+        loc_id = @location.id
         base = Ingredient.active
-          .includes(:ingredient_category, :suppliers, :unit_ref, :ingredient_units,
-                    ingredient_locations: nil)
-          .left_joins(:ingredient_locations)
-          .where("ingredient_locations.location_id = ? OR ingredient_locations.id IS NULL", @location.id)
-          .select("ingredients.*, COALESCE((SELECT quantity_on_hand FROM ingredient_locations WHERE ingredient_id = ingredients.id AND location_id = '#{@location.id}' LIMIT 1), 0) AS branch_quantity")
-          .order(:name)
+          .includes(:ingredient_category, :suppliers, :unit_ref, :ingredient_units)
+          .select("ingredients.*, COALESCE((SELECT quantity_on_hand FROM ingredient_locations WHERE ingredient_id = ingredients.id AND location_id = '#{loc_id}' LIMIT 1), 0) AS branch_quantity")
 
         base = base.where("ingredients.name ILIKE :q OR ingredients.code ILIKE :q", q: "%#{@search}%") if @search.present?
 
-        @ingredients = apply_branch_stock_filter(base)
+        @ingredients = apply_branch_sort(apply_branch_stock_filter(base))
 
         il_map = @location.ingredient_locations.index_by(&:ingredient_id)
         @ingredient_location_map = il_map
@@ -107,6 +108,36 @@ module Admin
 
       def set_ingredient_location
         @ingredient_location = @location.ingredient_locations.find_by!(ingredient_id: params[:id])
+      end
+
+      def apply_branch_sort(scope)
+        dir = @direction == "desc" ? "DESC" : "ASC"
+        bq  = "(SELECT COALESCE(quantity_on_hand, 0) FROM ingredient_locations WHERE ingredient_id = ingredients.id AND location_id = '#{@location.id}' LIMIT 1)"
+        name_tiebreak = "LOWER(ingredients.name) ASC"
+        case @sort
+        when "code"
+          scope.order(Arel.sql("LOWER(ingredients.code) #{dir}, #{name_tiebreak}"))
+        when "branch_quantity"
+          scope.order(Arel.sql("#{bq} #{dir}, #{name_tiebreak}"))
+        when "cost_per_unit_cents"
+          scope.order(Arel.sql("ingredients.cost_per_unit_cents #{dir}, #{name_tiebreak}"))
+        when "status"
+          scope.order(Arel.sql(<<~SQL.squish))
+            CASE
+              WHEN #{bq} <= 0 THEN 0
+              WHEN #{bq} <= COALESCE(ingredients.reorder_threshold, 0) THEN 1
+              ELSE 2
+            END #{dir}, #{name_tiebreak}
+          SQL
+        when "suppliers"
+          scope.order(Arel.sql(<<~SQL.squish))
+            (SELECT COUNT(*) FROM supplier_ingredients
+             WHERE supplier_ingredients.ingredient_id = ingredients.id) #{dir},
+            #{name_tiebreak}
+          SQL
+        else
+          scope.order(Arel.sql("#{name_tiebreak}"))
+        end
       end
 
       def apply_branch_stock_filter(scope)
