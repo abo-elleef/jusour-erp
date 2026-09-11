@@ -113,6 +113,10 @@ en:
 
   shared:
     row_index: "#"
+    date: "Date"
+    notes: "Notes"
+    amount: "Amount"
+    total: "Total"
     searchable_select:
       no_results: "No matches"
 
@@ -3248,6 +3252,9 @@ en:
       capital_contribution: "%{name} — capital contribution"
       partner_drawings: "%{name} — drawings / distribution"
       note: "Note: Internal transfers between accounts and drawer operations are excluded. Manual journal entries on financing accounts are reflected in the Financing section."
+      total: "Total"
+      treasury: "Treasury / Account"
+      journal_entry: "Journal Entry"
       kinds:
         income: "Cash received from customers"
         online_payment: "Online payments received"
@@ -3259,6 +3266,10 @@ en:
         payroll_advance: "Payroll advances paid"
         staff_meal: "Staff meals"
         adjustment: "Other cash adjustments"
+        loan_proceeds: "Loan proceeds"
+        loan_repayment: "Loan repayment"
+        capital_contribution: "Capital contribution"
+        partner_drawings: "Partner drawings / distributions"
     partners:
       title: "Partners"
       description: "Manage partner current accounts — track advances, profit distributions, and individual balances."

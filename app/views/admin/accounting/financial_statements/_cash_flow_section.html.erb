@@ -7,13 +7,17 @@
     <table class="w-full text-sm">
       <tbody class="divide-y divide-gray-50">
         <% section.lines.each do |line| %>
+          <% detail_url = cash_flow_lines_admin_accounting_financial_statements_path(
+               kind: line.kind, start_date: start_date, end_date: end_date) %>
           <tr class="hover:bg-gray-50/60 print:hover:bg-white">
             <td class="px-5 py-2.5 text-gray-800"><%= line.label %></td>
             <td class="px-5 py-2.5 text-end tabular-nums <%= line.amount_cents >= 0 ? 'text-gray-900 font-medium' : 'text-red-700 font-medium' %>">
-              <% if line.amount_cents >= 0 %>
-                <%= format_money(line.amount_cents) %>
-              <% else %>
-                (<%= format_money(line.amount_cents.abs) %>)
+              <%= link_to detail_url, class: "hover:underline" do %>
+                <% if line.amount_cents >= 0 %>
+                  <%= format_money(line.amount_cents) %>
+                <% else %>
+                  (<%= format_money(line.amount_cents.abs) %>)
+                <% end %>
               <% end %>
             </td>
           </tr>

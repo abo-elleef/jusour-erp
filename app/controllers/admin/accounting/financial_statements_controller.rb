@@ -74,6 +74,54 @@ module Admin
         ), notice: t("accounting.financial_statements.snapshot_saved")
       end
 
+      def cash_flow_lines
+        parse_date_range(default_start: Date.current.beginning_of_year)
+        @kind       = params[:kind].to_s
+        @cf         = ::Accounting::CashFlowService.new(start_date: @start_date, end_date: @end_date)
+
+        operating_kinds  = ::Accounting::CashFlowService::OPERATING_KINDS
+        investing_kinds  = ::Accounting::CashFlowService::INVESTING_KINDS
+        financing_kinds  = %w[loan_proceeds loan_repayment capital_contribution partner_drawings]
+
+        if operating_kinds.include?(@kind) || investing_kinds.include?(@kind)
+          @transactions = ::TreasuryTransaction
+            .joins(:treasury)
+            .where(treasuries: { company_id: ::Current.company.id })
+            .where.not(treasuries: { treasury_type: "supplier_ap" })
+            .where(occurred_on: @start_date..@end_date, kind: @kind)
+            .includes(:treasury)
+            .order(occurred_on: :desc)
+          render :cash_flow_lines_treasury
+        elsif financing_kinds.include?(@kind)
+          @je_lines = ::JournalEntryLine
+            .joins(:journal_entry)
+            .where(journal_entries: { company_id: ::Current.company.id, date: @start_date..@end_date })
+            .then do |scope|
+              case @kind
+              when "loan_proceeds"
+                loan_codes = ::Loan.where(company_id: ::Current.company.id).pluck(:account_code)
+                scope.where(account_code: loan_codes).where("credit_cents > 0")
+              when "loan_repayment"
+                loan_codes = ::Loan.where(company_id: ::Current.company.id).pluck(:account_code)
+                scope.where(account_code: loan_codes).where("debit_cents > 0")
+              when "capital_contribution"
+                partner_codes = ::Partner.where(company_id: ::Current.company.id).pluck(:account_code)
+                scope.where(account_code: partner_codes).where("credit_cents > 0")
+              when "partner_drawings"
+                partner_codes = ::Partner.where(company_id: ::Current.company.id).pluck(:account_code)
+                scope.where(account_code: partner_codes).where("debit_cents > 0")
+              end
+            end
+            .includes(:journal_entry)
+            .order("journal_entries.date DESC")
+          render :cash_flow_lines_je
+        else
+          redirect_to cash_flow_admin_accounting_financial_statements_path(
+            start_date: @start_date, end_date: @end_date
+          )
+        end
+      end
+
       def cash_flow
         parse_date_range(default_start: Date.current.beginning_of_year)
         @cf = ::Accounting::CashFlowService.new(start_date: @start_date, end_date: @end_date)

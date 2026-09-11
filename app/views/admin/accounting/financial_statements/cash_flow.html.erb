@@ -70,19 +70,22 @@
   <%= render "cash_flow_section",
              section: @cf.operating,
              heading: t("accounting.cash_flow.operating_activities"),
-             total_label: t("accounting.cash_flow.net_operating") %>
+             total_label: t("accounting.cash_flow.net_operating"),
+             start_date: @start_date, end_date: @end_date %>
 
   <%# ── Investing Activities ────────────────────────────────────── %>
   <%= render "cash_flow_section",
              section: @cf.investing,
              heading: t("accounting.cash_flow.investing_activities"),
-             total_label: t("accounting.cash_flow.net_investing") %>
+             total_label: t("accounting.cash_flow.net_investing"),
+             start_date: @start_date, end_date: @end_date %>
 
   <%# ── Financing Activities ────────────────────────────────────── %>
   <%= render "cash_flow_section",
              section: @cf.financing,
              heading: t("accounting.cash_flow.financing_activities"),
-             total_label: t("accounting.cash_flow.net_financing") %>
+             total_label: t("accounting.cash_flow.net_financing"),
+             start_date: @start_date, end_date: @end_date %>
 
   <%# ── Net change reconciliation ───────────────────────────────── %>
   <div class="rounded-2xl border-2 <%= @cf.net_change_cents >= 0 ? 'border-emerald-400 bg-emerald-50' : 'border-orange-400 bg-orange-50' %> overflow-hidden mt-2 print:rounded-none">

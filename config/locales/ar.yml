@@ -111,6 +111,10 @@ ar:
 
   shared:
     row_index: "#"
+    date: "التاريخ"
+    notes: "ملاحظات"
+    amount: "المبلغ"
+    total: "الإجمالي"
     searchable_select:
       no_results: "لا توجد نتائج"
 
@@ -3269,6 +3273,9 @@ ar:
       capital_contribution: "%{name} — مساهمة رأس المال"
       partner_drawings: "%{name} — سحوبات / توزيعات"
       note: "ملاحظة: يتم استثناء التحويلات الداخلية بين الحسابات وعمليات الدرج. تنعكس قيود اليومية اليدوية على حسابات التمويل في قسم الأنشطة التمويلية."
+      total: "الإجمالي"
+      treasury: "الخزينة / الحساب"
+      journal_entry: "قيد يومية"
       kinds:
         income: "نقد مستلم من العملاء"
         online_payment: "مدفوعات إلكترونية مستلمة"
@@ -3280,6 +3287,10 @@ ar:
         payroll_advance: "سلف راتب مدفوعة"
         staff_meal: "وجبات الموظفين"
         adjustment: "تعديلات نقدية أخرى"
+        loan_proceeds: "عائدات القرض"
+        loan_repayment: "سداد القرض"
+        capital_contribution: "مساهمة رأس المال"
+        partner_drawings: "سحوبات الشركاء / توزيعات"
     partners:
       title: "الشركاء"
       description: "إدارة الحسابات الجارية للشركاء — متابعة السلف وتوزيع الأرباح والأرصدة."
