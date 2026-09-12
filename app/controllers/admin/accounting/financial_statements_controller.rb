@@ -120,30 +120,17 @@ module Admin
             format.csv  { send_cash_flow_lines_csv(treasury_lines_csv) }
           end
         elsif financing_kinds.include?(@kind)
-          @je_lines = ::JournalEntryLine
-            .joins(:journal_entry)
-            .where(journal_entries: { company_id: ::Current.company.id, date: @start_date..@end_date })
-            .then do |scope|
-              case @kind
-              when "loan_proceeds"
-                loan_codes = ::Loan.where(company_id: ::Current.company.id).pluck(:account_code)
-                scope.where(account_code: loan_codes).where("credit_cents > 0")
-              when "loan_repayment"
-                loan_codes = ::Loan.where(company_id: ::Current.company.id).pluck(:account_code)
-                scope.where(account_code: loan_codes).where("debit_cents > 0")
-              when "capital_contribution"
-                partner_codes = ::Partner.where(company_id: ::Current.company.id).pluck(:account_code)
-                scope.where(account_code: partner_codes).where("credit_cents > 0")
-              when "partner_drawings"
-                partner_codes = ::Partner.where(company_id: ::Current.company.id).pluck(:account_code)
-                scope.where(account_code: partner_codes).where("debit_cents > 0")
-              end
-            end
-            .includes(:journal_entry)
-            .order("journal_entries.date DESC")
+          # Financing reads cash movement, not journal lines, so the drill-down
+          # has to read the same transactions or the rows will not add up to the
+          # line they came from.
+          inflow = %w[loan_proceeds capital_contribution].include?(@kind)
+          @transactions = @cf.financing_transactions_for(params[:account_code])
+            .where(inflow ? "treasury_transactions.amount_cents > 0" : "treasury_transactions.amount_cents < 0")
+            .includes(:treasury)
+            .order(occurred_on: :desc)
           respond_to do |format|
-            format.html { render :cash_flow_lines_je }
-            format.csv  { send_cash_flow_lines_csv(je_lines_csv) }
+            format.html { render :cash_flow_lines_treasury }
+            format.csv  { send_cash_flow_lines_csv(treasury_lines_csv) }
           end
         else
           redirect_to cash_flow_admin_accounting_financial_statements_path(
@@ -202,32 +189,6 @@ module Admin
           end
           csv << []
           csv << [t("shared.total"), nil, nil, csv_amount(@transactions.sum(:amount_cents))]
-        end
-      end
-
-      def je_lines_csv
-        credit_kinds = %w[loan_proceeds capital_contribution]
-        CSV.generate do |csv|
-          csv << [t("shared.date"), t("accounting.cash_flow.journal_entry"),
-                  t("accounting.journal_entries.col.code"),
-                  t("shared.notes"), t("shared.amount")]
-          total = 0
-          @je_lines.each do |jel|
-            # Signed like the treasury export and like the statement's own total:
-            # money in is positive, a repayment or drawing is negative. (The HTML
-            # table prints the row unsigned and only the footer carries the sign.)
-            amount = @kind.in?(credit_kinds) ? jel.credit_cents : -jel.debit_cents
-            total += amount
-            csv << [
-              jel.journal_entry.date,
-              jel.journal_entry.entry_number,
-              jel.account_code,
-              jel.notes.presence || jel.journal_entry.description,
-              csv_amount(amount)
-            ]
-          end
-          csv << []
-          csv << [t("shared.total"), nil, nil, nil, csv_amount(total)]
         end
       end
     end

@@ -172,54 +172,116 @@ RSpec.describe Accounting::CashFlowService do
 
   # ── Financing ─────────────────────────────────────────────────────────
 
+  # Financing reports cash that actually moved. Journal lines on a loan or
+  # partner account say what an entry was about; they do not say whether money
+  # changed hands, and the section used to trust them.
   describe "#financing" do
+    # Mirrors the app: the entry is written, then sync_je_treasuries! records the
+    # movement for whichever line carries a treasury.
+    def financing_entry(account_code:, debit_cents: 0, credit_cents: 0, moved_cents: nil, date: Date.current)
+      je = manual_je(date: date)
+      je_line(journal_entry: je, account_code: account_code,
+              debit_cents: debit_cents, credit_cents: credit_cents)
+      if moved_cents
+        txn(treasury: cash, kind: "journal_entry", amount_cents: moved_cents, occurred_on: date)
+          .update!(source_record: je)
+      end
+      je
+    end
+
     context "with loans" do
       let!(:loan) { Loan.create!(name: "Bank Loan", loan_type: "bank_loan", principal_cents: 100_000, company: company) }
 
-      it "treats JEL credits on the loan account as loan proceeds (inflow)" do
-        je = manual_je
-        je_line(journal_entry: je, account_code: loan.account_code, credit_cents: 20_000)
+      it "reports a drawdown from the cash that arrived" do
+        financing_entry(account_code: loan.account_code, credit_cents: 20_000, moved_cents: 20_000)
+
         line = service.financing.lines.find { |l| l.kind == "loan_proceeds" }
-        expect(line).not_to be_nil
         expect(line.amount_cents).to eq(20_000)
+        expect(line.account_code).to eq(loan.account_code)
       end
 
-      it "treats JEL debits on the loan account as repayments (outflow)" do
-        je = manual_je
-        je_line(journal_entry: je, account_code: loan.account_code, debit_cents: 5_000)
+      it "reports a repayment from the cash that left" do
+        financing_entry(account_code: loan.account_code, debit_cents: 5_000, moved_cents: -5_000)
+
         line = service.financing.lines.find { |l| l.kind == "loan_repayment" }
-        expect(line).not_to be_nil
         expect(line.amount_cents).to eq(-5_000)
       end
 
-      it "excludes JELs outside the date range" do
-        je = manual_je(date: 2.years.ago.to_date)
-        je_line(journal_entry: je, account_code: loan.account_code, credit_cents: 10_000)
+      # The bug this rewrite exists to kill: an entry debiting the loan and
+      # crediting an expense account is not a repayment, because no cash left.
+      it "ignores an entry on the loan account that moved no cash" do
+        financing_entry(account_code: loan.account_code, debit_cents: 5_000, moved_cents: nil)
+
         expect(service.financing.lines).to be_empty
+        expect(service.financing.total_cents).to eq(0)
+        expect(service).to be_balanced
+      end
+
+      it "excludes movement outside the date range" do
+        financing_entry(account_code: loan.account_code, credit_cents: 10_000,
+                        moved_cents: 10_000, date: 2.years.ago.to_date)
+
+        expect(service.financing.lines).to be_empty
+      end
+
+      it "splits a period with money moving both ways into two lines" do
+        financing_entry(account_code: loan.account_code, credit_cents: 20_000, moved_cents: 20_000)
+        financing_entry(account_code: loan.account_code, debit_cents: 8_000, moved_cents: -8_000)
+
+        expect(service.financing.lines.map(&:kind)).to contain_exactly("loan_proceeds", "loan_repayment")
+        expect(service.financing.total_cents).to eq(12_000)
       end
     end
 
     context "with partners" do
       let!(:partner) { Partner.create!(name: "Ahmed", ownership_percentage: 100, company: company) }
 
-      it "treats JEL credits on partner account as capital contribution (inflow)" do
-        je = manual_je
-        je_line(journal_entry: je, account_code: partner.account_code, credit_cents: 15_000)
+      it "reports a contribution from the cash that arrived" do
+        financing_entry(account_code: partner.account_code, credit_cents: 15_000, moved_cents: 15_000)
+
         line = service.financing.lines.find { |l| l.kind == "capital_contribution" }
-        expect(line).not_to be_nil
         expect(line.amount_cents).to eq(15_000)
       end
 
-      it "treats JEL debits on partner account as drawings (outflow)" do
-        je = manual_je
-        je_line(journal_entry: je, account_code: partner.account_code, debit_cents: 8_000)
+      it "reports a drawing from the cash that left" do
+        financing_entry(account_code: partner.account_code, debit_cents: 8_000, moved_cents: -8_000)
+
         line = service.financing.lines.find { |l| l.kind == "partner_drawings" }
-        expect(line).not_to be_nil
         expect(line.amount_cents).to eq(-8_000)
+      end
+
+      it "keeps the drawing out of operating, so the cash is counted once" do
+        financing_entry(account_code: partner.account_code, debit_cents: 8_000, moved_cents: -8_000)
+
+        expect(service.operating.lines.find { |l| l.kind == "journal_entry" }).to be_nil
+        expect(service.net_change_cents).to eq(-8_000)
+        expect(service).to be_balanced
       end
     end
 
-    it "returns an empty section when there are no loans or partner JELs" do
+    # Reproduces the pair of entries found in production (both described
+    # "تيست"): one moved a pound of cash onto the loan, the other debited the
+    # loan and credited an expense account without touching cash. The second was
+    # being reported as a 1.00 repayment, which is where the statement's
+    # unexplained 1.00 came from.
+    it "reports only the pound that moved, not the one that did not" do
+      loan = Loan.create!(name: "Test Loan", loan_type: "bank_loan",
+                          principal_cents: 0, company: company)
+      drawdown = manual_je
+      je_line(journal_entry: drawdown, account_code: loan.account_code, credit_cents: 100)
+      txn(treasury: cash, kind: "journal_entry", amount_cents: 100).update!(source_record: drawdown)
+
+      paper = manual_je
+      je_line(journal_entry: paper, account_code: loan.account_code, debit_cents: 100)
+      je_line(journal_entry: paper, account_code: 5006, credit_cents: 100)
+
+      expect(service.financing.lines.map(&:kind)).to eq(%w[loan_proceeds])
+      expect(service.financing.total_cents).to eq(100)
+      expect(service.unclassified_cents).to eq(0)
+      expect(service).to be_balanced
+    end
+
+    it "returns an empty section when no financing cash moved" do
       expect(service.financing.lines).to be_empty
       expect(service.financing.total_cents).to eq(0)
     end

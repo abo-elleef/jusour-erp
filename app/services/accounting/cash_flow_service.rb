@@ -26,7 +26,7 @@ module Accounting
     # moved counts. Deliberately excluded from OPERATING_KINDS above.
     INVESTING_KINDS = %w[fixed_asset_purchase fixed_asset_payment].freeze
 
-    CashFlowLine = Struct.new(:label, :amount_cents, :kind, keyword_init: true)
+    CashFlowLine = Struct.new(:label, :amount_cents, :kind, :account_code, keyword_init: true)
 
     Section = Struct.new(:name, :lines, keyword_init: true) do
       def total_cents
@@ -154,6 +154,17 @@ module Accounting
       @ending_balance_cents ||= beginning_balance_cents + net_change_cents
     end
 
+    # The journal-entry cash movements whose entry touches this account. Public
+    # so the drill-down can list exactly the rows that make up the line.
+    def financing_transactions_for(account_code)
+      ids = JournalEntryLine.where(account_code: account_code)
+                            .distinct.pluck(:journal_entry_id).compact
+      return TreasuryTransaction.none if ids.empty?
+
+      asset_transactions.where(kind: JOURNAL_ENTRY_KIND,
+                               source_record_type: "JournalEntry", source_record_id: ids)
+    end
+
     private
 
     def operating_treasuries
@@ -208,65 +219,51 @@ module Accounting
         .where(occurred_on: @start_date..@end_date)
     end
 
-    # JournalEntryLines restricted to the date range.
-    def je_lines_in_range
-      @je_lines_in_range ||= JournalEntryLine
-        .joins(:journal_entry)
-        .where(journal_entries: { company_id: Current.company.id, date: @start_date..@end_date })
-    end
-
     def loan_lines
       Loan.where(company_id: Current.company.id).flat_map do |loan|
-        scope   = je_lines_in_range.where(account_code: loan.account_code)
-        credits = scope.sum(:credit_cents)
-        debits  = scope.sum(:debit_cents)
-        lines   = []
-
-        if credits > 0
-          lines << CashFlowLine.new(
-            label:        I18n.t("accounting.cash_flow.loan_proceeds", name: loan.name),
-            amount_cents: credits,
-            kind:         "loan_proceeds"
-          )
-        end
-
-        if debits > 0
-          lines << CashFlowLine.new(
-            label:        I18n.t("accounting.cash_flow.loan_repayment", name: loan.name),
-            amount_cents: -debits,
-            kind:         "loan_repayment"
-          )
-        end
-
-        lines
+        financing_lines_for(
+          loan.account_code, name: loan.name,
+          inflow:  { key: "accounting.cash_flow.loan_proceeds",  kind: "loan_proceeds" },
+          outflow: { key: "accounting.cash_flow.loan_repayment", kind: "loan_repayment" }
+        )
       end
     end
 
     def partner_lines
       Partner.where(company_id: Current.company.id).flat_map do |partner|
-        scope   = je_lines_in_range.where(account_code: partner.account_code)
-        credits = scope.sum(:credit_cents)
-        debits  = scope.sum(:debit_cents)
-        lines   = []
-
-        if credits > 0
-          lines << CashFlowLine.new(
-            label:        I18n.t("accounting.cash_flow.capital_contribution", name: partner.name),
-            amount_cents: credits,
-            kind:         "capital_contribution"
-          )
-        end
-
-        if debits > 0
-          lines << CashFlowLine.new(
-            label:        I18n.t("accounting.cash_flow.partner_drawings", name: partner.name),
-            amount_cents: -debits,
-            kind:         "partner_drawings"
-          )
-        end
-
-        lines
+        financing_lines_for(
+          partner.account_code, name: partner.name,
+          inflow:  { key: "accounting.cash_flow.capital_contribution", kind: "capital_contribution" },
+          outflow: { key: "accounting.cash_flow.partner_drawings",     kind: "partner_drawings" }
+        )
       end
     end
+
+    # Built from cash that actually moved, not from the journal lines on the
+    # account. Those lines say what an entry was *about*; they do not say
+    # whether any money changed hands. An entry that debited a loan and credited
+    # an expense account was being reported here as a repayment, so the section
+    # claimed an outflow the treasuries never saw — the statement inventing cash
+    # is exactly the failure this report exists to catch.
+    #
+    # Direction comes from the movement itself: money arriving is a drawdown or
+    # a contribution, money leaving is a repayment or a drawing.
+    def financing_lines_for(account_code, name:, inflow:, outflow:)
+      txns = financing_transactions_for(account_code)
+      received = txns.where("treasury_transactions.amount_cents > 0").sum(:amount_cents)
+      paid     = txns.where("treasury_transactions.amount_cents < 0").sum(:amount_cents)
+      lines    = []
+
+      if received.positive?
+        lines << CashFlowLine.new(label: I18n.t(inflow[:key], name: name), amount_cents: received,
+                                  kind: inflow[:kind], account_code: account_code)
+      end
+      if paid.negative?
+        lines << CashFlowLine.new(label: I18n.t(outflow[:key], name: name), amount_cents: paid,
+                                  kind: outflow[:kind], account_code: account_code)
+      end
+      lines
+    end
+
   end
 end

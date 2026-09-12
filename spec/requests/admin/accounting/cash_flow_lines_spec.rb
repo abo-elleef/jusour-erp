@@ -94,42 +94,65 @@ RSpec.describe "Admin::Accounting cash flow lines", type: :request do
     end
   end
 
-  # The financing kinds read journal entry lines instead of the treasury ledger,
-  # so they render a different template and build a different CSV.
-  describe "the journal-entry-backed drill-down" do
+  # Financing lines are per account and now read cash movement, so the
+  # drill-down has to be filtered the same way or the rows will not add up.
+  describe "the financing drill-down" do
     let!(:loan) do
       Loan.create!(company: company, name: "Bank loan", loan_type: "bank_loan",
                    principal_cents: 500_000)
     end
 
-    let!(:je) do
-      entry = JournalEntry.create!(
+    let!(:entry) do
+      je = JournalEntry.create!(
         company: company, created_by: owner, date: Date.current,
         description: "Loan drawdown", entry_number: "JE-TEST-1"
       )
-      entry.lines.create!(account_code: loan.account_code,
-                          account_name: "Bank loan", account_type: "liability",
-                          credit_cents: 500_000, debit_cents: 0)
-      entry
+      je.lines.create!(account_code: loan.account_code, account_name: "Bank loan",
+                       account_type: "liability", credit_cents: 500_000, debit_cents: 0)
+      TreasuryTransaction.create!(treasury: cash, user: owner, amount_cents: 500_000,
+                                  kind: "journal_entry", description: "Loan drawdown",
+                                  occurred_on: Date.current, source_record: je,
+                                  balance_after_cents: 0, company: company)
+      je
     end
 
-    it "renders the page with the export button and no currency symbol" do
-      get lines_path("loan_proceeds")
+    def loan_lines_path(format: nil)
+      cash_flow_lines_admin_accounting_financial_statements_path(
+        { start_date: Date.current.beginning_of_month, end_date: Date.current,
+          kind: "loan_proceeds", account_code: loan.account_code }.compact.merge(format ? { format: format } : {})
+      )
+    end
+
+    it "lists the cash behind the financing line" do
+      get loan_lines_path
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Loan drawdown")
-      expect(response.body).to include(I18n.t("actions.export_csv"))
+      expect(response.body).to include(ApplicationController.helpers.format_amount(500_000))
       expect(response.body).not_to include(ApplicationHelper::MONEY_SYMBOL)
     end
 
-    it "exports the lines as CSV" do
-      get lines_path("loan_proceeds"), params: { format: :csv }
+    it "exports it as CSV" do
+      get loan_lines_path(format: :csv)
 
       expect(response).to have_http_status(:ok)
       rows = CSV.parse(response.body.sub("\ufeff", ""))
-      expect(rows[1]).to include("JE-TEST-1", loan.account_code.to_s, "5000.00")
-      expect(rows.last.first).to eq(I18n.t("shared.total"))
-      expect(rows.last.last).to eq("5000.00")
+      expect(rows[1]).to eq([Date.current.to_s, "Cash Drawer", "Loan drawdown", "5000.00"])
+    end
+
+    it "shows nothing for an entry on the account that moved no cash" do
+      dud = JournalEntry.create!(company: company, created_by: owner, date: Date.current,
+                                 description: "Paper only", entry_number: "JE-TEST-2")
+      dud.lines.create!(account_code: loan.account_code, account_name: "Bank loan",
+                        account_type: "liability", debit_cents: 700_00, credit_cents: 0)
+
+      get cash_flow_lines_admin_accounting_financial_statements_path(
+        start_date: Date.current.beginning_of_month, end_date: Date.current,
+        kind: "loan_repayment", account_code: loan.account_code
+      )
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include("Paper only")
     end
   end
 

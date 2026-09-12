@@ -7,8 +7,10 @@
     <table class="w-full text-sm">
       <tbody class="divide-y divide-gray-50">
         <% section.lines.each do |line| %>
+          <%# Financing lines are per account, so the drill-down needs to know which. %>
           <% detail_url = cash_flow_lines_admin_accounting_financial_statements_path(
-               kind: line.kind, start_date: start_date, end_date: end_date) %>
+               { kind: line.kind, start_date: start_date, end_date: end_date }
+                 .merge(line.account_code ? { account_code: line.account_code } : {})) %>
           <tr class="hover:bg-gray-50/60 print:hover:bg-white">
             <td class="px-5 py-2.5 text-gray-800"><%= line.label %></td>
             <td class="px-5 py-2.5 text-end tabular-nums <%= line.amount_cents >= 0 ? 'text-gray-900 font-medium' : 'text-red-700 font-medium' %>">
