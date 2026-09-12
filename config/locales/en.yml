@@ -3268,9 +3268,6 @@ en:
         advance_timing_hint: "Paid %{paid}, charged %{expensed}."
         digital_payments: "Card and wallet takings received"
         digital_payments_hint: "Clears Sales clearing (1160) rather than crediting revenue, so it is cash against revenue recognised elsewhere."
-        reversed_entries: "Cash paid on entries later reversed"
-        reversed_entries_hint: "Expense cash %{cash} against %{records} of live expense records. A reversal restores the money with a journal entry, which the cash flow does not count."
-        reversed_entries_back: "Reversed entries restored to cash"
         ledger_only_expenses: "Expenses posted by journal entry"
         ledger_only_expenses_hint: "P&L charged %{ledger}, expense records hold %{records}. The rest was posted straight to the ledger — loan interest, delivery billed on an invoice, or a hand-written entry."
         ledger_only_expenses_reverse: "Expense records with no P&L charge"
@@ -3281,7 +3278,6 @@ en:
         equity_adjustments_formula: "Sum of cash adjustments posted to Retained Earnings = %{result}"
         advance_timing_formula: "Advances charged %{expensed} − advances paid %{paid} = %{result}"
         digital_payments_formula: "Sum of card and wallet receipts in the period = %{result}"
-        reversed_entries_formula: "Live expense records %{records} − expense cash paid %{cash} = %{result}"
         ledger_only_expenses_formula: "P&L other operating expenses %{ledger} − expense records %{records} = %{result}"
     cash_flow:
       title: "Cash Flow Statement"

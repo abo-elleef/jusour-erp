@@ -125,22 +125,50 @@ RSpec.describe Accounting::ProfitVsCashService do
       expect(line(:digital_payments).amount_cents).to eq(17_00)
     end
 
-    it "names cash paid on an entry that was later reversed" do
-      # The reversal leaves the outflow in the treasury ledger and marks the
-      # record reversed, so the two sides disagree by the reversed amount.
-      category = ExpenseCategory.find_or_create_by!(name: "Supplies", company: company) do |c|
+    # A reversal writes a journal entry and a treasury transaction on the same
+    # date, exactly as the original did, so both statements move together and
+    # there is nothing for the bridge to explain. Claiming otherwise would
+    # subtract money the cash flow has already given back.
+    it "invents no line for an expense reversed inside the period" do
+      supplies = ExpenseCategory.find_or_create_by!(name: "Supplies", company: company) do |c|
         c.category_type = "other"
         c.position = 97
       end
-      expense = Expense.create!(expense_category: category, user: owner, treasury: cash,
-                                description: "Reversed later", amount_cents: 90_00,
+      expense = Expense.create!(expense_category: supplies, user: owner, treasury: cash,
+                                description: "Oops", amount_cents: 90_00,
                                 expense_date: Date.current, recurrence: "one_time",
-                                is_auto_generated: true, company: company)
+                                is_auto_generated: false, company: company)
+      original = JournalEntry.for_source(expense).first
+      reversal = Accounting::JournalEntryService.record_reversal!(original_je: original, user: owner)
+      reversal.lines.each do |l|
+        next if l.treasury_id.blank?
+
+        TreasuryTransaction.create!(treasury: cash, user: owner, kind: "journal_entry",
+                                    amount_cents: l.debit_cents - l.credit_cents,
+                                    description: reversal.description, occurred_on: reversal.date,
+                                    source_record: reversal, balance_after_cents: 0, company: company)
+      end
       expense.update_column(:reversed_at, Time.current)
 
-      expect(bridge.expense_kind_cash_cents).to eq(90_00)
-      expect(bridge.active_expense_records_cents).to eq(0)
-      expect(line(:reversed_entries).amount_cents).to eq(-90_00)
+      expect(bridge.coa.total_other_expense_cents).to eq(0)
+      expect(bridge.lines.map(&:key)).not_to include(:ledger_only_expenses)
+      expect(bridge).to be_balanced
+    end
+
+    # The P&L for this period still carries it, because the reversal lands in a
+    # later one — so the records it is measured against have to carry it too.
+    it "counts an expense that was only reversed after the period closed" do
+      supplies = ExpenseCategory.find_or_create_by!(name: "Supplies", company: company) do |c|
+        c.category_type = "other"
+        c.position = 97
+      end
+      expense = Expense.create!(expense_category: supplies, user: owner, treasury: cash,
+                                description: "Reversed next month", amount_cents: 90_00,
+                                expense_date: Date.current, recurrence: "one_time",
+                                is_auto_generated: true, company: company)
+      expense.update_column(:reversed_at, end_date + 10.days)
+
+      expect(bridge.active_expense_records_cents).to eq(90_00)
     end
 
     it "names P&L expense that has no expense record behind it" do

@@ -64,8 +64,6 @@ module Accounting
         Line.new(key: :advance_timing, amount_cents: -advance_timing_cents,
                  hint_values: { paid: advances_paid_cents, expensed: advances_expensed_cents }),
         Line.new(key: :digital_payments, amount_cents: digital_payments_cents),
-        Line.new(key: :reversed_entries, amount_cents: -reversed_expense_cash_cents,
-                 hint_values: { cash: expense_kind_cash_cents, records: active_expense_records_cents }),
         Line.new(key: :ledger_only_expenses, amount_cents: ledger_only_expenses_cents,
                  hint_values: { ledger: coa.total_other_expense_cents, records: non_vendor_expense_records_cents })
       ].reject(&:zero?)
@@ -99,11 +97,9 @@ module Accounting
     # Both settlement paths — a payment against an invoice and a direct payment
     # against a supplier's standing balance — land in this one category.
     def vendor_cash_paid_cents
-      @vendor_cash_paid_cents ||= Expense
+      @vendor_cash_paid_cents ||= expense_records_live_in_period
         .joins(:expense_category)
         .where(expense_categories: { name: VENDOR_PURCHASES_CATEGORY })
-        .where(company_id: Current.company.id, reversed_at: nil)
-        .where(expense_date: @start_date..@end_date)
         .sum(:amount_cents)
     end
 
@@ -135,30 +131,32 @@ module Accounting
       @digital_payments_cents ||= asset_treasury_transactions.where(kind: "online_payment").sum(:amount_cents)
     end
 
-    # Cash that left on an expense the books no longer recognise. Reversing an
-    # expense leaves the original outflow in the treasury ledger and restores
-    # the money with a `journal_entry` transaction, so the cash side and the
-    # expense records disagree by exactly the reversed amount.
-    def reversed_expense_cash_cents
-      @reversed_expense_cash_cents ||= expense_kind_cash_cents - active_expense_records_cents
-    end
-
-    # The mirror: operating expense on the P&L with no expense record behind it,
-    # because it was posted straight to the ledger — loan interest, delivery
-    # billed on a vendor invoice, or an entry written by hand.
+    # Operating expense on the P&L with no expense record behind it, because it
+    # was posted straight to the ledger — loan interest, delivery billed on a
+    # vendor invoice, or an entry written by hand. Those charge profit in a
+    # period where no cash left, which is a real divergence.
+    #
+    # There is deliberately no line for reversals. An expense and its reversal
+    # each write a journal entry and a treasury transaction on the same date, so
+    # once the cash flow counts `journal_entry` movements the two sides move
+    # together and a reversal cannot pull profit and cash apart. A line for it
+    # would subtract money the statement has already given back.
     def ledger_only_expenses_cents
       @ledger_only_expenses_cents ||= coa.total_other_expense_cents - non_vendor_expense_records_cents
     end
 
-    def expense_kind_cash_cents
-      @expense_kind_cash_cents ||= asset_treasury_transactions.where(kind: "expense").sum(:amount_cents).abs
+    # "Live as at the end of the period", not "live today". An expense reversed
+    # in a later month was still a real charge in this one — the P&L for this
+    # period still carries it, so the records it is compared against must too.
+    def active_expense_records_cents
+      @active_expense_records_cents ||= expense_records_live_in_period.sum(:amount_cents)
     end
 
-    def active_expense_records_cents
-      @active_expense_records_cents ||= Expense
-        .where(company_id: Current.company.id, reversed_at: nil)
+    def expense_records_live_in_period
+      Expense
+        .where(company_id: Current.company.id)
         .where(expense_date: @start_date..@end_date)
-        .sum(:amount_cents)
+        .where("expenses.reversed_at IS NULL OR expenses.reversed_at > ?", @end_date.end_of_day)
     end
 
     def non_vendor_expense_records_cents

@@ -14,7 +14,6 @@
   alternate_labels = {
     inventory_build:      { positive: :inventory_release },
     unpaid_purchases:     { negative: :overpaid_purchases },
-    reversed_entries:     { positive: :reversed_entries_back },
     ledger_only_expenses: { negative: :ledger_only_expenses_reverse }
   }
 
@@ -36,8 +35,6 @@
       cash_flow_lines_admin_accounting_financial_statements_path(kind: "payroll_advance", **range)
     when :digital_payments
       cash_flow_lines_admin_accounting_financial_statements_path(kind: "online_payment", **range)
-    when :reversed_entries
-      admin_accounting_expenses_path(reversed: "1", **range)
     when :ledger_only_expenses
       admin_accounting_expenses_path(tab: "ledger", **range)
     end

@@ -3289,9 +3289,6 @@ ar:
         advance_timing_hint: "مدفوع %{paid}، محمَّل %{expensed}."
         digital_payments: "متحصلات الكروت والمحافظ"
         digital_payments_hint: "تُقفل حساب وسيط المبيعات (1160) بدل إثبات إيراد، فهي نقد مقابل إيراد أُثبت في موضع آخر."
-        reversed_entries: "نقد خرج على قيود عُكست لاحقاً"
-        reversed_entries_hint: "نقد المصروفات %{cash} مقابل %{records} من سجلات المصروفات السارية. العكس يعيد المبلغ بقيد يومية لا تحتسبه قائمة التدفقات."
-        reversed_entries_back: "قيود معكوسة أُعيد نقدها"
         ledger_only_expenses: "مصروفات مُقيَّدة بقيد يومية"
         ledger_only_expenses_hint: "حُمِّل على أ.خ %{ledger}، بينما سجلات المصروفات %{records}. الفارق قُيِّد مباشرة في الدفاتر — فوائد قرض، أو توصيل محمَّل على فاتورة، أو قيد يدوي."
         ledger_only_expenses_reverse: "سجلات مصروفات بلا تحميل على أ.خ"
@@ -3302,7 +3299,6 @@ ar:
         equity_adjustments_formula: "مجموع التعديلات النقدية المقيدة على الأرباح المحتجزة = %{result}"
         advance_timing_formula: "السلف المحمَّلة %{expensed} − السلف المدفوعة %{paid} = %{result}"
         digital_payments_formula: "مجموع متحصلات الكروت والمحافظ خلال الفترة = %{result}"
-        reversed_entries_formula: "سجلات المصروفات السارية %{records} − نقد المصروفات المدفوع %{cash} = %{result}"
         ledger_only_expenses_formula: "مصروفات تشغيلية أخرى في أ.خ %{ledger} − سجلات المصروفات %{records} = %{result}"
     cash_flow:
       title: "قائمة التدفقات النقدية"
