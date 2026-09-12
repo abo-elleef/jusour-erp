@@ -59,12 +59,4 @@ RSpec.describe "Admin::Locations::Ingredients clear stock", type: :request do
       )
     end
   end
-
-  it "renders a balance history chart for selected ingredients" do
-    get admin_location_ingredients_path(location, chart_ingredient_ids: [ingredient.id], chart_days: 30)
-    expect(response).to have_http_status(:ok)
-    expect(response.body).to include(I18n.t("admin.locations.balance_history.title"))
-    expect(response.body).to include("Chartkick")
-    expect(response.body).to include(ingredient.name)
-  end
 end

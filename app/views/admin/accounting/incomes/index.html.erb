@@ -47,7 +47,7 @@
       <%= link_to admin_accounting_incomes_path(filter_params),
             class: "rounded-2xl border p-3 transition-colors #{ active ? 'border-emerald-400 bg-emerald-100 ring-1 ring-emerald-300' : 'border-emerald-100 bg-emerald-50/50 hover:bg-emerald-100/70' }" do %>
         <p class="text-xs text-gray-600 truncate"><%= name %><%= " ✕" if active %></p>
-        <p class="font-bold tabular-nums text-emerald-800"><%= format_money(cents) %></p>
+        <p class="font-bold tabular-nums text-emerald-800"><%= format_amount(cents) %></p>
       <% end %>
     <% end %>
   </div>
@@ -78,7 +78,7 @@
               <%= income.description %>
               <% if income.is_auto_generated? %><span class="text-xs text-gray-400"><%= t("accounting.shared.auto") %></span><% end %>
             </td>
-            <td class="p-3 text-end font-semibold tabular-nums text-emerald-700"><%= format_money(income.amount_cents) %></td>
+            <td class="p-3 text-end font-semibold tabular-nums text-emerald-700"><%= format_amount(income.amount_cents) %></td>
             <td class="p-3 pe-5 text-end" onclick="event.stopPropagation()">
               <% unless income.is_auto_generated? %>
                 <% unless income.reversed_at.present? %>

@@ -21,7 +21,7 @@ RSpec.describe "Admin::Accounting::Expenses", type: :request do
 
   before { sign_in owner }
 
-  def money(cents) = ApplicationController.helpers.format_money(cents)
+  def money(cents) = ApplicationController.helpers.format_amount(cents)
 
   def create_expense(amount_cents: 20_000)
     Expense.create!(
@@ -48,6 +48,17 @@ RSpec.describe "Admin::Accounting::Expenses", type: :request do
       expect(response.body).to include(money(35_000))
       expect(response.body).to include(I18n.t("accounting.expenses.stats_spent"))
       expect(response.body).not_to include(money(85_000))
+    end
+
+    it "renders the ledger tab with bare amounts and no currency symbol" do
+      create_expense(amount_cents: 20_000)
+
+      get admin_accounting_expenses_path(
+        start_date: Date.current.beginning_of_month, end_date: Date.current, tab: "ledger"
+      )
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("accounting.expenses.ledger.total"))
+      expect(response.body).not_to include(ApplicationHelper::MONEY_SYMBOL)
     end
   end
 

@@ -345,6 +345,16 @@ module ApplicationHelper
     MONEY_SYMBOL
   end
 
+  # App-wide rule: views show bare numbers. The currency is a constant for the
+  # whole system, so repeating "ج.م." on every cell is noise that costs column
+  # width and makes tables harder to scan. Use this everywhere.
+  def format_amount(cents)
+    Money.new(cents || 0).format(locale: I18n.locale, symbol: false)
+  end
+
+  # Only for the few places the currency has to be explicit: printed/exported
+  # documents, a lone figure with no column header to name it, and anywhere the
+  # reader might not be looking at a page that already establishes the currency.
   def format_money(cents)
     Money.new(cents || 0).format(locale: I18n.locale, symbol: MONEY_SYMBOL)
   end

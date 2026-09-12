@@ -1696,7 +1696,6 @@ ar:
       from_location_hint: "الموقع الذي سيرسل المخزون."
       to_location_hint: "الموقع الذي يطلب ويستلم المخزون."
       unit: "الوحدة"
-      unit_locked_hint: "محددة من قالب التحويل. تواصل مع مديرك لتغيير الوحدة في القالب."
       order_limit: "حد الطلب"
       counted_quantity: "الرصيد المعدود"
       quantity_requested: "المطلوب"

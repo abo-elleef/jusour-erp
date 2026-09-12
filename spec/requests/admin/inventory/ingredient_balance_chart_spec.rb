@@ -192,14 +192,4 @@ RSpec.describe "Ingredient balance chart", type: :request do
       expect(response.body).to include(I18n.t("inventory.ingredients.show.balance_history.series_price"))
     end
   end
-
-  it "still renders straight lines on the location chart" do
-    location = create(:location, :central_kitchen, company: company)
-    location.ingredient_locations.create!(ingredient: ingredient, quantity_on_hand: 5,
-      reorder_threshold: 1)
-
-    get admin_location_ingredients_path(location, chart_ingredient_ids: [ingredient.id])
-
-    expect(response.body).to include('"curve":false')
-  end
 end

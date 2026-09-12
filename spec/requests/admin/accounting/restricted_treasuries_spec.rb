@@ -70,7 +70,7 @@ RSpec.describe "Restricted treasuries", type: :request do
 
       get admin_accounting_treasury_path(open_treasury, start_date: Date.current, end_date: Date.current)
       expect(response).to have_http_status(:ok)
-      money = ApplicationController.helpers.method(:format_money)
+      money = ApplicationController.helpers.method(:format_amount)
       expect(response.body).to include(money.call(8_000))
       expect(response.body).to include(money.call(3_000))
       expect(response.body).to include(I18n.t("accounting.treasuries.stats_in_amount"))

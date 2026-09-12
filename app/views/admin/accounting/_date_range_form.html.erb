@@ -41,7 +41,7 @@
                         else "bg-white border-gray-200 text-gray-900"
                         end %>
               <span class="inline-flex items-baseline gap-1.5 px-2.5 py-1.5 rounded-lg border <%= tone %>">
-                <span class="text-sm font-bold tabular-nums"><%= format_money(sum[:cents]) %></span>
+                <span class="text-sm font-bold tabular-nums"><%= format_amount(sum[:cents]) %></span>
                 <span class="text-xs font-medium opacity-80"><%= sum[:label] %></span>
               </span>
             <% end %>

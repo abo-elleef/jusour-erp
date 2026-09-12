@@ -83,13 +83,6 @@ class StockTransfer < ApplicationRecord
     stock_transfer_template_id.present?
   end
 
-  # A template fixes the unit each ingredient is ordered in, so the requester
-  # can't quietly switch it — changing it is a template decision, not a per-transfer
-  # one. Hand-built transfers stay free to pick units.
-  def units_locked?
-    from_template?
-  end
-
   def editable?
     draft? || requested?
   end

@@ -34,7 +34,7 @@ RSpec.describe "Admin::Accounting::Incomes", type: :request do
     post reverse_admin_accounting_income_path(income)
   end
 
-  def money(cents) = ApplicationController.helpers.format_money(cents)
+  def money(cents) = ApplicationController.helpers.format_amount(cents)
 
   describe "GET /admin/accounting/incomes" do
     it "shows the sum of active incomes in the selected range" do
