@@ -146,6 +146,13 @@ module Admin
         end
       end
 
+      # Why the P&L's profit and the cash flow's net change differ. Same date
+      # range, same two numbers those pages show, with the gap itemised.
+      def profit_vs_cash
+        parse_date_range(default_start: Date.current.beginning_of_year)
+        @bridge = ::Accounting::ProfitVsCashService.new(start_date: @start_date, end_date: @end_date)
+      end
+
       def cash_flow
         parse_date_range(default_start: Date.current.beginning_of_year)
         @cf = ::Accounting::CashFlowService.new(start_date: @start_date, end_date: @end_date)

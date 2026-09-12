@@ -212,6 +212,7 @@ Rails.application.routes.draw do
           get  :profit_loss
           get  :balance_sheet
           get  :cash_flow
+          get  :profit_vs_cash
           get  :cash_flow_lines
           get  :balance_sheet_lines
           post :update_inventory_snapshot
