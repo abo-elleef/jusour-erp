@@ -47,7 +47,7 @@
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
         <%= t("accounting.cash_flow.beginning_balance") %>
       </p>
-      <p class="text-xl font-bold text-gray-900"><%= format_money(@cf.beginning_balance_cents) %></p>
+      <p class="text-xl font-bold text-gray-900"><%= format_amount(@cf.beginning_balance_cents) %></p>
     </div>
     <% net = @cf.net_change_cents %>
     <div class="rounded-2xl border <%= net >= 0 ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50' %> px-5 py-4">
@@ -55,14 +55,14 @@
         <%= t("accounting.cash_flow.net_change") %>
       </p>
       <p class="text-xl font-bold <%= net >= 0 ? 'text-emerald-800' : 'text-red-800' %>">
-        <%= net >= 0 ? "+" : "−" %> <%= format_money(net.abs) %>
+        <%= net >= 0 ? "+" : "−" %> <%= format_amount(net.abs) %>
       </p>
     </div>
     <div class="rounded-2xl border border-blue-200 bg-blue-50 px-5 py-4">
       <p class="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
         <%= t("accounting.cash_flow.ending_balance") %>
       </p>
-      <p class="text-xl font-bold text-blue-800"><%= format_money(@cf.ending_balance_cents) %></p>
+      <p class="text-xl font-bold text-blue-800"><%= format_amount(@cf.ending_balance_cents) %></p>
     </div>
   </div>
 
@@ -93,17 +93,29 @@
       <tbody>
         <tr class="border-b border-gray-100">
           <td class="px-5 py-3 font-medium text-gray-700"><%= t("accounting.cash_flow.beginning_balance") %></td>
-          <td class="px-5 py-3 text-end tabular-nums font-medium text-gray-900"><%= format_money(@cf.beginning_balance_cents) %></td>
+          <td class="px-5 py-3 text-end tabular-nums font-medium text-gray-900"><%= format_amount(@cf.beginning_balance_cents) %></td>
         </tr>
+        <% unless @cf.balanced? %>
+          <tr class="border-b border-gray-100 bg-amber-50/60">
+            <td class="px-5 py-3">
+              <span class="font-semibold text-amber-800"><%= t("accounting.cash_flow.unclassified") %></span>
+              <p class="text-xs text-amber-600 mt-0.5"><%= t("accounting.cash_flow.unclassified_hint") %></p>
+            </td>
+            <td class="px-5 py-3 text-end tabular-nums font-semibold text-amber-800 whitespace-nowrap">
+              <% u = @cf.unclassified_cents %>
+              <%= u >= 0 ? "+" : "−" %> <%= format_amount(u.abs) %>
+            </td>
+          </tr>
+        <% end %>
         <tr class="border-b border-gray-100">
           <td class="px-5 py-3 font-medium text-gray-700"><%= t("accounting.cash_flow.net_change") %></td>
           <td class="px-5 py-3 text-end tabular-nums font-medium <%= @cf.net_change_cents >= 0 ? 'text-emerald-700' : 'text-red-700' %>">
-            <%= @cf.net_change_cents >= 0 ? "+" : "−" %> <%= format_money(@cf.net_change_cents.abs) %>
+            <%= @cf.net_change_cents >= 0 ? "+" : "−" %> <%= format_amount(@cf.net_change_cents.abs) %>
           </td>
         </tr>
         <tr>
           <td class="px-5 py-3 text-base font-bold text-gray-900"><%= t("accounting.cash_flow.ending_balance") %></td>
-          <td class="px-5 py-3 text-end tabular-nums text-base font-bold text-gray-900"><%= format_money(@cf.ending_balance_cents) %></td>
+          <td class="px-5 py-3 text-end tabular-nums text-base font-bold text-gray-900"><%= format_amount(@cf.ending_balance_cents) %></td>
         </tr>
       </tbody>
     </table>

@@ -26,11 +26,11 @@ RSpec.describe Accounting::CashFlowService do
     described_class.new(start_date: start_date, end_date: end_date)
   end
 
-  def txn(treasury:, kind:, amount_cents:, occurred_on: Date.current)
+  def txn(treasury:, kind:, amount_cents:, occurred_on: Date.current, source_record: nil)
     TreasuryTransaction.create!(
       treasury: treasury, user: owner,
       kind: kind, amount_cents: amount_cents,
-      description: kind, occurred_on: occurred_on,
+      description: kind, occurred_on: occurred_on, source_record: source_record,
       balance_after_cents: treasury.balance_cents
     )
   end
@@ -84,9 +84,16 @@ RSpec.describe Accounting::CashFlowService do
       expect(service.operating.lines).to be_empty
     end
 
-    it "excludes journal_entry kind (captured in financing via JELs)" do
+    # Used to be excluded wholesale, on the grounds that financing reads loan and
+    # partner flows from the journal. That held for those two accounts only, so
+    # every reversal disappeared: the outflow stayed and the restoring entry did
+    # not. Entries touching a financing account are still excluded, below.
+    it "includes journal_entry kind so reversals are not lost" do
       txn(treasury: cash, kind: "journal_entry", amount_cents: -500)
-      expect(service.operating.lines).to be_empty
+
+      line = service.operating.lines.find { |l| l.kind == "journal_entry" }
+      expect(line).to be_present
+      expect(line.amount_cents).to eq(-500)
     end
 
     it "excludes supplier_ap treasury transactions" do
@@ -221,34 +228,87 @@ RSpec.describe Accounting::CashFlowService do
   # ── Totals ────────────────────────────────────────────────────────────
 
   describe "#net_change_cents" do
-    it "sums operating + investing + financing" do
+    it "reports what the treasuries actually did" do
       txn(treasury: cash, kind: "income",  amount_cents: 10_000)
       txn(treasury: cash, kind: "expense", amount_cents: -3_000)
       txn(treasury: cash, kind: "fixed_asset_purchase", amount_cents: -2_000)
 
       expect(service.net_change_cents).to eq(10_000 - 3_000 - 2_000)
+      expect(service.classified_change_cents).to eq(service.net_change_cents)
+      expect(service).to be_balanced
+    end
+
+    it "counts movement the sections cannot classify, and says so" do
+      txn(treasury: cash, kind: "income", amount_cents: 10_000)
+      txn(treasury: cash, kind: "drawer_reconcile", amount_cents: 7_000)
+
+      expect(service.classified_change_cents).to eq(10_000)
+      expect(service.net_change_cents).to eq(17_000)
+      expect(service.unclassified_cents).to eq(7_000)
+      expect(service).not_to be_balanced
+    end
+
+    it "excludes supplier_ap movement" do
+      ap = Treasury.create!(
+        name: "AP", treasury_type: "supplier_ap",
+        balance_cents: 0, opening_balance_cents: 0, company: company
+      )
+      txn(treasury: ap, kind: "ap_invoice", amount_cents: 40_000)
+
+      expect(service.net_change_cents).to eq(0)
     end
   end
 
-  describe "#ending_balance_cents" do
-    it "sums all active non-AP treasury balances" do
-      expect(service.ending_balance_cents).to eq(30_000 + 20_000)
+  # Balances are built from the ledger rather than from Treasury#balance_cents,
+  # which is a live figure: reading it for a period that has already closed
+  # reports the balance now, not the balance then.
+  describe "#beginning_balance_cents and #ending_balance_cents" do
+    it "opens with the float plus everything banked before the period" do
+      txn(treasury: cash, kind: "income", amount_cents: 5_000, occurred_on: start_date - 3)
+      txn(treasury: cash, kind: "income", amount_cents: 1_000)
+
+      expect(service.beginning_balance_cents).to eq(5_000)
+      expect(service.ending_balance_cents).to eq(5_000 + 1_000)
+    end
+
+    it "ignores movement after the period, which a live balance would include" do
+      txn(treasury: cash, kind: "income", amount_cents: 1_000)
+      txn(treasury: cash, kind: "income", amount_cents: 99_000, occurred_on: end_date + 5)
+
+      expect(service.ending_balance_cents).to eq(1_000)
+    end
+
+    it "always reconciles: opening + change = ending" do
+      txn(treasury: cash, kind: "income", amount_cents: 1_000)
+      txn(treasury: cash, kind: "drawer_reconcile", amount_cents: 700)
+
+      svc = service
+      expect(svc.beginning_balance_cents + svc.net_change_cents).to eq(svc.ending_balance_cents)
     end
 
     it "excludes supplier_ap treasuries" do
       Treasury.create!(
         name: "AP", treasury_type: "supplier_ap",
-        balance_cents: 99_000, opening_balance_cents: 0, company: company
+        balance_cents: 99_000, opening_balance_cents: 99_000, company: company
       )
-      expect(service.ending_balance_cents).to eq(30_000 + 20_000)
+
+      expect(service.beginning_balance_cents).to eq(0)
     end
   end
 
-  describe "#beginning_balance_cents" do
-    it "equals ending_balance minus net_change" do
-      txn(treasury: cash, kind: "income", amount_cents: 5_000)
-      svc = service
-      expect(svc.beginning_balance_cents).to eq(svc.ending_balance_cents - svc.net_change_cents)
+  describe "journal entries that the financing section already reports" do
+    it "are left out of operating, to avoid counting the same cash twice" do
+      partner = Partner.create!(company: company, name: "Owner", ownership_percentage: 100)
+      drawing = JournalEntry.create!(company: company, created_by: owner, date: Date.current,
+                                     description: "Drawing", entry_number: "JE-CF-DBL")
+      drawing.lines.create!(account_code: partner.account_code, account_name: "Owner",
+                            account_type: "equity", debit_cents: 30_000, credit_cents: 0)
+      txn(treasury: cash, kind: "journal_entry", amount_cents: -30_000, source_record: drawing)
+
+      expect(service.financing.total_cents).to eq(-30_000)
+      expect(service.operating.lines.find { |l| l.kind == "journal_entry" }).to be_nil
+      expect(service.net_change_cents).to eq(-30_000)
+      expect(service).to be_balanced
     end
   end
 end

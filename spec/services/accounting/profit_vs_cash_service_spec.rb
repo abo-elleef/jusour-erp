@@ -28,6 +28,16 @@ RSpec.describe Accounting::ProfitVsCashService do
                         debit_cents: debit, credit_cents: credit)
   end
 
+  # Mirrors sync_je_treasuries!: an entry that moves cash also writes a
+  # journal_entry transaction against the treasury, which is what makes the
+  # measured cash movement agree with the ledger.
+  def je_treasury_txn(entry, amount_cents:)
+    TreasuryTransaction.create!(treasury: cash, user: owner, amount_cents: amount_cents,
+                                kind: "journal_entry", description: entry.description,
+                                occurred_on: entry.date, source_record: entry,
+                                balance_after_cents: 0, company: company)
+  end
+
   def treasury_txn(kind:, amount_cents:)
     TreasuryTransaction.create!(treasury: cash, user: owner, amount_cents: amount_cents,
                                 kind: kind, description: kind, occurred_on: Date.current,
@@ -87,10 +97,11 @@ RSpec.describe Accounting::ProfitVsCashService do
 
     it "subtracts owner drawings, which never reach the P&L" do
       partner = Partner.create!(company: company, name: "Owner", ownership_percentage: 100)
-      journal(description: "Drawing") do |e|
+      entry = journal(description: "Drawing") do |e|
         post(e, code: partner.account_code, name: "Owner", type: "equity", debit: 400_00)
         post(e, code: 1001, name: "Cash", type: "asset", credit: 400_00)
       end
+      je_treasury_txn(entry, amount_cents: -400_00)
 
       expect(line(:financing).amount_cents).to eq(-400_00)
     end
@@ -112,6 +123,31 @@ RSpec.describe Accounting::ProfitVsCashService do
       treasury_txn(kind: "online_payment", amount_cents: 17_00)
 
       expect(line(:digital_payments).amount_cents).to eq(17_00)
+    end
+
+    it "names cash paid on an entry that was later reversed" do
+      # The reversal leaves the outflow in the treasury ledger and marks the
+      # record reversed, so the two sides disagree by the reversed amount.
+      category = ExpenseCategory.find_or_create_by!(name: "Supplies", company: company) do |c|
+        c.category_type = "other"
+        c.position = 97
+      end
+      expense = Expense.create!(expense_category: category, user: owner, treasury: cash,
+                                description: "Reversed later", amount_cents: 90_00,
+                                expense_date: Date.current, recurrence: "one_time",
+                                is_auto_generated: true, company: company)
+      expense.update_column(:reversed_at, Time.current)
+
+      expect(bridge.expense_kind_cash_cents).to eq(90_00)
+      expect(bridge.active_expense_records_cents).to eq(0)
+      expect(line(:reversed_entries).amount_cents).to eq(-90_00)
+    end
+
+    it "names P&L expense that has no expense record behind it" do
+      journal(description: "Loan interest") { |e| post(e, code: 5600, name: "Interest", type: "expense", debit: 45_00) }
+
+      expect(bridge.ledger_only_expenses_cents).to eq(45_00)
+      expect(line(:ledger_only_expenses).amount_cents).to eq(45_00)
     end
 
     it "drops lines with nothing to say" do
@@ -139,14 +175,25 @@ RSpec.describe Accounting::ProfitVsCashService do
                       recurrence: "one_time", is_auto_generated: true, company: company)
 
       treasury_txn(kind: "income", amount_cents: 3_000_00)
-      treasury_txn(kind: "expense", amount_cents: -200_00)
       treasury_txn(kind: "adjustment", amount_cents: -10_00)
 
       partner = Partner.create!(company: company, name: "Owner", ownership_percentage: 100)
-      journal(description: "Drawing") do |e|
+      entry = journal(description: "Drawing") do |e|
         post(e, code: partner.account_code, name: "Owner", type: "equity", debit: 250_00)
         post(e, code: 1001, name: "Cash", type: "asset", credit: 250_00)
       end
+      je_treasury_txn(entry, amount_cents: -250_00)
+
+      # Rent was posted by journal entry with no expense record behind it, and
+      # the cash for it left as an ordinary expense transaction — the pair the
+      # ledger-only and reversed-entry lines exist to name.
+      rent_category = ExpenseCategory.find_or_create_by!(name: "Rent", company: company) do |c|
+        c.category_type = "other"
+        c.position = 98
+      end
+      Expense.create!(expense_category: rent_category, user: owner, treasury: cash,
+                      description: "Rent", amount_cents: 200_00, expense_date: Date.current,
+                      recurrence: "one_time", is_auto_generated: true, company: company)
     end
 
     it "walks from profit to cash with nothing left over" do

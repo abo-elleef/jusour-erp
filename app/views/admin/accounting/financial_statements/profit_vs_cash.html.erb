@@ -12,8 +12,10 @@
   # sign differs per key: building stock costs cash (negative), while an unpaid
   # invoice saves it (positive), so the alternate label is keyed by sign.
   alternate_labels = {
-    inventory_build:  { positive: :inventory_release },
-    unpaid_purchases: { negative: :overpaid_purchases }
+    inventory_build:      { positive: :inventory_release },
+    unpaid_purchases:     { negative: :overpaid_purchases },
+    reversed_entries:     { positive: :reversed_entries_back },
+    ledger_only_expenses: { negative: :ledger_only_expenses_reverse }
   }
 %>
 

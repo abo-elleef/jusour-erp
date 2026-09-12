@@ -101,7 +101,8 @@ module Admin
         investing_kinds  = ::Accounting::CashFlowService::INVESTING_KINDS
         financing_kinds  = %w[loan_proceeds loan_repayment capital_contribution partner_drawings]
 
-        if operating_kinds.include?(@kind) || investing_kinds.include?(@kind)
+        if operating_kinds.include?(@kind) || investing_kinds.include?(@kind) ||
+           @kind == ::Accounting::CashFlowService::JOURNAL_ENTRY_KIND
           @transactions = ::TreasuryTransaction
             .joins(:treasury)
             .where(treasuries: { company_id: ::Current.company.id })
@@ -109,6 +110,11 @@ module Admin
             .where(occurred_on: @start_date..@end_date, kind: @kind)
             .includes(:treasury)
             .order(occurred_on: :desc)
+          # The statement excludes financing entries from this line, so the
+          # drill-down has to exclude them too or the rows will not add up to it.
+          if @kind == ::Accounting::CashFlowService::JOURNAL_ENTRY_KIND
+            @transactions = @transactions.where(id: @cf.journal_entry_transactions.select(:id))
+          end
           respond_to do |format|
             format.html { render :cash_flow_lines_treasury }
             format.csv  { send_cash_flow_lines_csv(treasury_lines_csv) }
