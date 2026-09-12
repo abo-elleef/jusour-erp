@@ -19,12 +19,19 @@
         <%= l(@start_date, format: :long) %> – <%= l(@end_date, format: :long) %>
       </p>
     </div>
-    <div class="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-right">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5"><%= t("accounting.cash_flow.total") %></p>
-      <% total = @transactions.sum(:amount_cents) %>
-      <p class="text-xl font-bold <%= total >= 0 ? 'text-emerald-700' : 'text-red-700' %>">
-        <%= total >= 0 ? format_money(total) : "(#{format_money(total.abs)})" %>
-      </p>
+    <div class="flex flex-wrap items-center gap-3">
+      <%= link_to t("actions.export_csv"),
+            cash_flow_lines_admin_accounting_financial_statements_path(
+              start_date: @start_date, end_date: @end_date, kind: @kind, format: :csv
+            ),
+            class: "inline-flex items-center border border-gray-200 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-50 transition-colors" %>
+      <div class="rounded-2xl border border-gray-200 bg-white px-5 py-3 text-right">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5"><%= t("accounting.cash_flow.total") %></p>
+        <% total = @transactions.sum(:amount_cents) %>
+        <p class="text-xl font-bold <%= total >= 0 ? 'text-emerald-700' : 'text-red-700' %>">
+          <%= total >= 0 ? format_amount(total) : "(#{format_amount(total.abs)})" %>
+        </p>
+      </div>
     </div>
   </div>
 
@@ -48,9 +55,9 @@
                 <td class="px-5 py-2.5 text-gray-500 max-w-xs truncate"><%= tx.description.presence || "—" %></td>
                 <td class="px-5 py-2.5 text-end tabular-nums font-medium <%= tx.amount_cents >= 0 ? 'text-gray-900' : 'text-red-700' %>">
                   <% if tx.amount_cents >= 0 %>
-                    <%= format_money(tx.amount_cents) %>
+                    <%= format_amount(tx.amount_cents) %>
                   <% else %>
-                    (<%= format_money(tx.amount_cents.abs) %>)
+                    (<%= format_amount(tx.amount_cents.abs) %>)
                   <% end %>
                 </td>
               </tr>
@@ -60,7 +67,7 @@
             <tr>
               <td colspan="3" class="px-5 py-3 font-bold text-gray-900"><%= t("shared.total") %></td>
               <td class="px-5 py-3 text-end tabular-nums font-bold <%= total >= 0 ? 'text-emerald-700' : 'text-red-700' %>">
-                <%= total >= 0 ? format_money(total) : "(#{format_money(total.abs)})" %>
+                <%= total >= 0 ? format_amount(total) : "(#{format_amount(total.abs)})" %>
               </td>
             </tr>
           </tfoot>

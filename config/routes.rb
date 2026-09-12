@@ -170,7 +170,7 @@ Rails.application.routes.draw do
           post :bulk_update
         end
       end
-      resources :ingredients, only: %i[index create update destroy], module: :locations do
+      resources :ingredients, only: %i[index update destroy], module: :locations do
         member { post :adjust }
         collection { post :clear_stock }
       end

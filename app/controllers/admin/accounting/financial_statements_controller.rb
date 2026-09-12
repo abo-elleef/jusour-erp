@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module Admin
   module Accounting
     class FinancialStatementsController < BaseController
@@ -107,7 +109,10 @@ module Admin
             .where(occurred_on: @start_date..@end_date, kind: @kind)
             .includes(:treasury)
             .order(occurred_on: :desc)
-          render :cash_flow_lines_treasury
+          respond_to do |format|
+            format.html { render :cash_flow_lines_treasury }
+            format.csv  { send_cash_flow_lines_csv(treasury_lines_csv) }
+          end
         elsif financing_kinds.include?(@kind)
           @je_lines = ::JournalEntryLine
             .joins(:journal_entry)
@@ -130,7 +135,10 @@ module Admin
             end
             .includes(:journal_entry)
             .order("journal_entries.date DESC")
-          render :cash_flow_lines_je
+          respond_to do |format|
+            format.html { render :cash_flow_lines_je }
+            format.csv  { send_cash_flow_lines_csv(je_lines_csv) }
+          end
         else
           redirect_to cash_flow_admin_accounting_financial_statements_path(
             start_date: @start_date, end_date: @end_date
@@ -153,6 +161,60 @@ module Admin
                       type: "application/pdf",
                       disposition: "inline"
           end
+        end
+      end
+
+      private
+
+      # UTF-8 BOM so Excel renders the Arabic columns instead of mojibake — the
+      # same trick the other exports use.
+      def send_cash_flow_lines_csv(body)
+        send_data "\ufeff#{body}",
+          filename: "cash-flow-#{@kind}-#{@start_date}-#{@end_date}.csv",
+          type: "text/csv; charset=utf-8"
+      end
+
+      # Amounts go out as plain decimals, not formatted money: a spreadsheet has
+      # to be able to sum the column, and thousands separators break that.
+      def csv_amount(cents)
+        format("%.2f", cents.to_d / 100)
+      end
+
+      def treasury_lines_csv
+        CSV.generate do |csv|
+          csv << [t("shared.date"), t("accounting.cash_flow.treasury"),
+                  t("shared.notes"), t("shared.amount")]
+          @transactions.each do |tx|
+            csv << [tx.occurred_on, tx.treasury.name, tx.description, csv_amount(tx.amount_cents)]
+          end
+          csv << []
+          csv << [t("shared.total"), nil, nil, csv_amount(@transactions.sum(:amount_cents))]
+        end
+      end
+
+      def je_lines_csv
+        credit_kinds = %w[loan_proceeds capital_contribution]
+        CSV.generate do |csv|
+          csv << [t("shared.date"), t("accounting.cash_flow.journal_entry"),
+                  t("accounting.journal_entries.col.code"),
+                  t("shared.notes"), t("shared.amount")]
+          total = 0
+          @je_lines.each do |jel|
+            # Signed like the treasury export and like the statement's own total:
+            # money in is positive, a repayment or drawing is negative. (The HTML
+            # table prints the row unsigned and only the footer carries the sign.)
+            amount = @kind.in?(credit_kinds) ? jel.credit_cents : -jel.debit_cents
+            total += amount
+            csv << [
+              jel.journal_entry.date,
+              jel.journal_entry.entry_number,
+              jel.account_code,
+              jel.notes.presence || jel.journal_entry.description,
+              csv_amount(amount)
+            ]
+          end
+          csv << []
+          csv << [t("shared.total"), nil, nil, nil, csv_amount(total)]
         end
       end
     end
