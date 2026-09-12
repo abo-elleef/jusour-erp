@@ -50,6 +50,22 @@ RSpec.describe "Admin::Accounting::Expenses", type: :request do
       expect(response.body).not_to include(money(85_000))
     end
 
+    it "can show only the reversed rows, which every total leaves out" do
+      create_expense(amount_cents: 20_000)
+      reversed = create_expense(amount_cents: 50_000)
+      post_reverse(reversed)
+
+      get admin_accounting_expenses_path(
+        start_date: Date.current.beginning_of_month, end_date: Date.current, reversed: "1"
+      )
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("accounting.reversal.reversed_badge"))
+      # The reversed row is the only one listed, and it is still excluded from
+      # the money total — this filter changes what you can see, not the maths.
+      expect(response.body).to include(money(0))
+    end
+
     it "renders the ledger tab with bare amounts and no currency symbol" do
       create_expense(amount_cents: 20_000)
 

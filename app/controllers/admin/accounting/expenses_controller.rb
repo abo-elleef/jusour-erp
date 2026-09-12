@@ -20,6 +20,10 @@ module Admin
         scope = scope.on_date_range(@start_date, @end_date)
         scope = scope.where(is_auto_generated: false) if params[:manual_only] == "1"
         scope = scope.where(expense_category_id: params[:category_id]) if params[:category_id].present?
+        # Reversed rows are excluded from every total on this page, which left no
+        # way to look at them. The profit-vs-cash bridge links straight here.
+        @reversed_only = params[:reversed] == "1"
+        scope = scope.where.not(reversed_at: nil) if @reversed_only
 
         @total_count    = scope.count
         @reversed_count = scope.where.not(reversed_at: nil).count

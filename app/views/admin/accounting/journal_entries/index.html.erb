@@ -50,6 +50,10 @@
           class: "text-sm px-4 py-2 rounded-xl border font-medium #{@entry_type == 'reversal' ? 'bg-orange-600 text-white border-orange-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}" %>
   </div>
 
+  <%# Sorting swaps the table inside this frame, so the reader stays where they
+      clicked instead of being thrown back to the top of the page. The filters
+      above stay outside it: those change the counts, so they reload in full. %>
+  <%= turbo_frame_tag "journal_entries_table", data: { turbo_action: "advance" } do %>
   <% if @journal_entries.empty? %>
     <div class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
       <p class="text-gray-400 text-sm"><%= t("accounting.journal_entries.empty") %></p>
@@ -58,13 +62,14 @@
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <table class="w-full text-sm">
         <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <% sort_opts = { sort: @sort, direction: @direction } %>
           <tr>
             <th class="p-3 ps-5 text-start w-36"><%= t("accounting.journal_entries.col.number") %></th>
-            <th class="p-3 text-start w-28"><%= t("accounting.journal_entries.col.date") %></th>
+            <th class="p-3 text-start w-28"><%= sort_header_link(t("accounting.journal_entries.col.date"), :date, **sort_opts) %></th>
             <th class="p-3 text-start"><%= t("accounting.journal_entries.col.description") %></th>
             <th class="p-3 text-start w-24"><%= t("accounting.journal_entries.col.type") %></th>
-            <th class="p-3 text-end w-32"><%= t("accounting.journal_entries.col.debits") %></th>
-            <th class="p-3 pe-5 text-end w-32"><%= t("accounting.journal_entries.col.credits") %></th>
+            <th class="p-3 text-end w-32"><%= sort_header_link(t("accounting.journal_entries.col.debits"), :debits, **sort_opts) %></th>
+            <th class="p-3 pe-5 text-end w-32"><%= sort_header_link(t("accounting.journal_entries.col.credits"), :credits, **sort_opts) %></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 table-zebra">
@@ -109,5 +114,6 @@
         </tfoot>
       </table>
     </section>
+  <% end %>
   <% end %>
 </div>

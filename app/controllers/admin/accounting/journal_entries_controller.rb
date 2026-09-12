@@ -5,6 +5,8 @@ require "csv"
 module Admin
   module Accounting
     class JournalEntriesController < BaseController
+      SORT_COLUMNS = %w[date debits credits].freeze
+
       def index
         parse_date_range
 
@@ -31,9 +33,13 @@ module Admin
           reversed: t("accounting.journal_entries.stats_reversals")
         }
 
+        @sort      = SORT_COLUMNS.include?(params[:sort]) ? params[:sort] : "date"
+        @direction = params[:dir] == "asc" ? "asc" : "desc"
+        entries    = sort_entries(scope.to_a)
+
         respond_to do |format|
-          format.html { @journal_entries = scope }
-          format.csv  { send_journal_entries_csv(scope) }
+          format.html { @journal_entries = entries }
+          format.csv  { send_journal_entries_csv(entries) }
         end
       end
 
@@ -126,10 +132,26 @@ module Admin
 
       private
 
-      def send_journal_entries_csv(scope)
-        entries = scope.includes(:lines, :created_by)
-        bom = "\xEF\xBB\xBF"
-        csv = CSV.generate(bom) do |out|
+      # Sorted in Ruby rather than SQL: debits and credits are summed from the
+      # entry's lines, which are already loaded for the table and its totals, so
+      # a GROUP BY would buy nothing and make the two orderings behave
+      # differently. The page is a single date range, not the whole ledger.
+      def sort_entries(entries)
+        sorted = case @sort
+                 when "debits"  then entries.sort_by { |e| [e.total_debits_cents, e.date, e.entry_number] }
+                 when "credits" then entries.sort_by { |e| [e.total_credits_cents, e.date, e.entry_number] }
+                 else entries.sort_by { |e| [e.date, e.entry_number] }
+                 end
+        @direction == "desc" ? sorted.reverse : sorted
+      end
+
+      # Takes the already-sorted, already-eager-loaded entries so the export lands
+      # in the same order as the table the reader is looking at.
+      def send_journal_entries_csv(entries)
+        # CSV.generate appends to the string it is given, and this file is
+        # frozen_string_literal, so the BOM has to be an unfrozen copy — without
+        # the +, every export raised IOError: not opened for writing.
+        csv = CSV.generate(+"\xEF\xBB\xBF") do |out|
           out << [
             t("accounting.journal_entries.csv.entry_number"),
             t("accounting.journal_entries.csv.date"),

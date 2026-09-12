@@ -52,6 +52,45 @@ RSpec.describe "Admin::Accounting profit vs cash", type: :request do
     expect(response.body).not_to include(ApplicationHelper::MONEY_SYMBOL)
   end
 
+  it "shows the equation behind each figure and links it to the entries" do
+    JournalEntry.create!(company: company, created_by: owner, date: Date.current,
+                         description: "Sales", entry_number: "JE-PVC-2")
+      .lines.create!(account_code: 4001, account_name: "Sales", account_type: "revenue",
+                     credit_cents: 1_000_00, debit_cents: 0)
+    InventorySnapshot.create!(company: company, snapshot_date: Date.current.beginning_of_month - 1,
+                              value_cents: 100_00)
+    InventorySnapshot.create!(company: company, snapshot_date: Date.current.end_of_month,
+                              value_cents: 250_00)
+
+    get page_path
+
+    # The inventory line states its own arithmetic, and both numbers in it are
+    # the ones the reader can check against the P&L.
+    expect(response.body).to include(
+      I18n.t("accounting.profit_vs_cash.lines.inventory_build_formula",
+             opening: "100.00", closing: "250.00", result: "−150.00")
+    )
+    expect(response.body).to include(I18n.t("accounting.profit_vs_cash.drill_down_hint"))
+    expect(response.body).to include("/admin/accounting/financial_statements/profit_loss")
+  end
+
+  it "sends the reversed-entries line to the rows it is talking about" do
+    category = ExpenseCategory.find_or_create_by!(name: "Supplies", company: company) do |c|
+      c.category_type = "other"
+      c.position = 97
+    end
+    expense = Expense.create!(expense_category: category, user: owner, treasury: cash,
+                              description: "Reversed later", amount_cents: 90_00,
+                              expense_date: Date.current, recurrence: "one_time",
+                              is_auto_generated: true, company: company)
+    expense.update_column(:reversed_at, Time.current)
+
+    get page_path
+
+    expect(response.body).to include(I18n.t("accounting.profit_vs_cash.lines.reversed_entries"))
+    expect(response.body).to match(%r{/admin/accounting/expenses\?[^"]*reversed=1})
+  end
+
   it "appears in the accounting reports nav" do
     get cash_flow_admin_accounting_financial_statements_path
 

@@ -17,6 +17,34 @@
     reversed_entries:     { positive: :reversed_entries_back },
     ledger_only_expenses: { negative: :ledger_only_expenses_reverse }
   }
+
+  range = { start_date: @start_date, end_date: @end_date }
+
+  # Every line lands on the page that already itemises it, so the bridge is a
+  # map rather than a dead end — the same drill-down the P&L and cash flow give.
+  detail_path_for = lambda do |key|
+    case key
+    when :inventory_build
+      profit_loss_admin_accounting_financial_statements_path(**range)
+    when :unpaid_purchases
+      admin_accounting_journal_entries_path(account_code: 5100, **range)
+    when :financing, :investing
+      cash_flow_admin_accounting_financial_statements_path(**range)
+    when :equity_adjustments
+      cash_flow_lines_admin_accounting_financial_statements_path(kind: "adjustment", **range)
+    when :advance_timing
+      cash_flow_lines_admin_accounting_financial_statements_path(kind: "payroll_advance", **range)
+    when :digital_payments
+      cash_flow_lines_admin_accounting_financial_statements_path(kind: "online_payment", **range)
+    when :reversed_entries
+      admin_accounting_expenses_path(reversed: "1", **range)
+    when :ledger_only_expenses
+      admin_accounting_expenses_path(tab: "ledger", **range)
+    end
+  end
+
+  # Equations read better with a signed number than with accounting parentheses.
+  signed = ->(cents) { "#{cents.negative? ? "−" : ""}#{format_amount(cents.abs)}" }
 %>
 
 <div class="max-w-3xl print:max-w-none">
@@ -42,8 +70,20 @@
   </div>
 
   <%# ── The two ends, and the gap between them ──────────────────── %>
+  <%
+    profit_formula = t("accounting.profit_vs_cash.net_profit_formula",
+                       revenue: format_amount(@bridge.coa.total_revenue_cents),
+                       cogs:    format_amount(@bridge.cogs_cents),
+                       opex:    format_amount(@bridge.coa.total_operating_expenses_cents),
+                       result:  signed.call(net_profit))
+    cash_formula = t("accounting.profit_vs_cash.cash_change_formula", result: signed.call(cash_change))
+    gap_formula  = t("accounting.profit_vs_cash.gap_formula",
+                     profit: signed.call(net_profit), cash: signed.call(cash_change),
+                     result: signed.call(gap))
+  %>
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
     <%= link_to profit_loss_admin_accounting_financial_statements_path(start_date: @start_date, end_date: @end_date),
+          title: profit_formula,
           class: "rounded-2xl border border-gray-200 bg-white p-4 hover:border-gray-300 transition-colors" do %>
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"><%= t("accounting.profit_vs_cash.net_profit") %></p>
       <p class="text-xl font-black tabular-nums <%= net_profit >= 0 ? 'text-emerald-700' : 'text-red-700' %>">
@@ -51,7 +91,8 @@
       </p>
     <% end %>
 
-    <div class="rounded-2xl border-2 <%= gap.zero? ? 'border-gray-200' : 'border-amber-300 bg-amber-50' %> p-4">
+    <div class="rounded-2xl border-2 <%= gap.zero? ? 'border-gray-200' : 'border-amber-300 bg-amber-50' %> p-4"
+         title="<%= gap_formula %>">
       <p class="text-xs font-semibold <%= gap.zero? ? 'text-gray-500' : 'text-amber-700' %> uppercase tracking-wide mb-1">
         <%= t("accounting.profit_vs_cash.gap") %>
       </p>
@@ -61,6 +102,7 @@
     </div>
 
     <%= link_to cash_flow_admin_accounting_financial_statements_path(start_date: @start_date, end_date: @end_date),
+          title: cash_formula,
           class: "rounded-2xl border border-gray-200 bg-white p-4 hover:border-gray-300 transition-colors" do %>
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"><%= t("accounting.profit_vs_cash.cash_change") %></p>
       <p class="text-xl font-black tabular-nums <%= cash_change >= 0 ? 'text-emerald-700' : 'text-red-700' %>">
@@ -78,10 +120,13 @@
 
     <table class="w-full text-sm">
       <tbody class="divide-y divide-gray-100">
-        <tr class="bg-gray-50/60">
+        <tr class="bg-gray-50/60" title="<%= profit_formula %>">
           <td class="px-5 py-3 font-bold text-gray-900"><%= t("accounting.profit_vs_cash.net_profit") %></td>
           <td class="px-5 py-3 text-end tabular-nums font-bold text-gray-900">
-            <%= net_profit >= 0 ? format_amount(net_profit) : "(#{format_amount(net_profit.abs)})" %>
+            <%= link_to net_profit >= 0 ? format_amount(net_profit) : "(#{format_amount(net_profit.abs)})",
+                  profit_loss_admin_accounting_financial_statements_path(**range),
+                  class: "hover:underline hover:text-blue-700",
+                  title: t("accounting.profit_vs_cash.drill_down_hint") %>
           </td>
         </tr>
 
@@ -92,18 +137,28 @@
         <% @bridge.lines.each do |line| %>
           <% sign = line.amount_cents.negative? ? :negative : :positive %>
           <% key = alternate_labels.dig(line.key, sign) || line.key %>
-          <% hint = t("accounting.profit_vs_cash.lines.#{line.key}_hint",
-                      **(line.hint_values || {}).transform_values { |v| format_amount(v) },
-                      default: "") %>
-          <tr class="hover:bg-gray-50/60">
+          <% values = (line.hint_values || {}).transform_values { |v| format_amount(v) } %>
+          <% hint = t("accounting.profit_vs_cash.lines.#{line.key}_hint", **values, default: "") %>
+          <% formula = t("accounting.profit_vs_cash.lines.#{line.key}_formula",
+                         **values, result: signed.call(line.amount_cents), default: "") %>
+          <% href = detail_path_for.call(line.key) %>
+          <% amount_text = line.amount_cents.negative? ? "(#{format_amount(line.amount_cents.abs)})" : "+ #{format_amount(line.amount_cents)}" %>
+          <tr class="hover:bg-gray-50/60" title="<%= formula %>">
             <td class="px-5 py-2.5">
-              <span class="text-gray-800"><%= t("accounting.profit_vs_cash.lines.#{key}") %></span>
+              <span class="text-gray-800 <%= "border-b border-dotted border-gray-300 cursor-help" if formula.present? %>">
+                <%= t("accounting.profit_vs_cash.lines.#{key}") %>
+              </span>
               <% if hint.present? %>
                 <p class="text-xs text-gray-400 mt-0.5"><%= hint %></p>
               <% end %>
             </td>
             <td class="px-5 py-2.5 text-end tabular-nums font-medium whitespace-nowrap <%= line.amount_cents.negative? ? 'text-red-700' : 'text-emerald-700' %>">
-              <%= line.amount_cents.negative? ? "(#{format_amount(line.amount_cents.abs)})" : "+ #{format_amount(line.amount_cents)}" %>
+              <% if href %>
+                <%= link_to amount_text, href, class: "hover:underline hover:text-blue-700",
+                      title: t("accounting.profit_vs_cash.drill_down_hint") %>
+              <% else %>
+                <%= amount_text %>
+              <% end %>
             </td>
           </tr>
         <% end %>
@@ -116,19 +171,26 @@
             </td>
             <td class="px-5 py-2.5 text-end tabular-nums font-semibold text-amber-800 whitespace-nowrap">
               <% r = @bridge.residual_cents %>
-              <%= r.negative? ? "(#{format_amount(r.abs)})" : "+ #{format_amount(r)}" %>
+              <%= link_to r.negative? ? "(#{format_amount(r.abs)})" : "+ #{format_amount(r)}",
+                    admin_accounting_journal_entries_path(**range),
+                    class: "hover:underline",
+                    title: t("accounting.profit_vs_cash.drill_down_hint") %>
             </td>
           </tr>
         <% end %>
       </tbody>
 
       <tfoot>
-        <tr class="border-t-2 border-gray-900 <%= cash_change >= 0 ? 'bg-emerald-50' : 'bg-orange-50' %>">
+        <tr class="border-t-2 border-gray-900 <%= cash_change >= 0 ? 'bg-emerald-50' : 'bg-orange-50' %>"
+            title="<%= cash_formula %>">
           <td class="px-5 py-4 text-base font-black <%= cash_change >= 0 ? 'text-emerald-900' : 'text-orange-900' %>">
             <%= t("accounting.profit_vs_cash.cash_change") %>
           </td>
           <td class="px-5 py-4 text-end tabular-nums text-lg font-black <%= cash_change >= 0 ? 'text-emerald-700' : 'text-orange-700' %>">
-            <%= cash_change >= 0 ? format_amount(cash_change) : "(#{format_amount(cash_change.abs)})" %>
+            <%= link_to cash_change >= 0 ? format_amount(cash_change) : "(#{format_amount(cash_change.abs)})",
+                  cash_flow_admin_accounting_financial_statements_path(**range),
+                  class: "hover:underline hover:text-blue-700",
+                  title: t("accounting.profit_vs_cash.drill_down_hint") %>
           </td>
         </tr>
       </tfoot>
