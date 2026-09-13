@@ -57,7 +57,7 @@
       <summary class="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 select-none list-none [&::-webkit-details-marker]:hidden">
         <span class="text-sm font-semibold text-gray-700"><%= t("accounting.financial_statements.trading.net_sales") %></span>
         <div class="flex items-center gap-3">
-          <span class="text-sm font-bold text-gray-900 tabular-nums"><%= format_money(@coa.total_revenue_cents) %></span>
+          <span class="text-sm font-bold text-gray-900 tabular-nums"><%= format_amount(@coa.total_revenue_cents) %></span>
           <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
           </svg>
@@ -71,10 +71,10 @@
                 <td class="px-8 py-2 text-gray-400 font-mono text-xs w-16"><%= line.code %></td>
                 <td class="px-3 py-2 text-gray-600"><%= line.name %></td>
                 <td class="px-5 py-2 text-end tabular-nums text-gray-700">
-                  <%= link_to format_money(line.balance_cents),
-                        admin_accounting_journal_entries_path(account_code: line.code, start_date: @start_date, end_date: @end_date),
+                  <%= link_to format_amount(line.balance_cents),
+                        pnl_drill_down_path(line.code, start_date: @start_date, end_date: @end_date),
                         class: "hover:text-blue-700 hover:underline",
-                        title: t("accounting.financial_statements.drill_down_hint") %>
+                        title: pnl_drill_down_hint(line.code) %>
                 </td>
               </tr>
             <% end %>
@@ -96,7 +96,7 @@
       <summary class="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 select-none list-none [&::-webkit-details-marker]:hidden">
         <span class="text-sm font-semibold text-gray-700"><%= t("accounting.financial_statements.trading.cost_of_goods_sold") %></span>
         <div class="flex items-center gap-3">
-          <span class="text-sm font-bold text-red-700 tabular-nums">(<%= format_money(cogs_cents) %>)</span>
+          <span class="text-sm font-bold text-red-700 tabular-nums">(<%= format_amount(cogs_cents) %>)</span>
           <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
           </svg>
@@ -112,7 +112,7 @@
             <% end %>
           </span>
           <div class="flex items-center gap-2">
-            <span class="tabular-nums text-gray-700"><%= format_money(@opening_cents) %></span>
+            <span class="tabular-nums text-gray-700"><%= format_amount(@opening_cents) %></span>
             <button type="button"
                     class="print:hidden text-xs text-blue-600 hover:underline"
                     onclick="document.getElementById('opening-stock-form').classList.toggle('hidden')">
@@ -142,8 +142,8 @@
         <div class="flex items-center justify-between px-8 py-2.5 text-sm border-b border-gray-50 hover:bg-gray-50/60">
           <span class="text-gray-600"><%= t("accounting.financial_statements.trading.purchases") %></span>
           <span class="tabular-nums text-gray-700">
-            <%= link_to format_money(@coa.purchases_cents),
-                  admin_accounting_journal_entries_path(account_code: 5100, start_date: @start_date, end_date: @end_date),
+            <%= link_to format_amount(@coa.purchases_cents),
+                  pnl_drill_down_path(5100, start_date: @start_date, end_date: @end_date),
                   class: "hover:text-blue-700 hover:underline",
                   title: t("accounting.financial_statements.drill_down_hint") %>
           </span>
@@ -157,7 +157,7 @@
             <% end %>
           </span>
           <div class="flex items-center gap-2">
-            <span class="tabular-nums text-gray-700">(<%= format_money(@closing_cents) %>)</span>
+            <span class="tabular-nums text-gray-700">(<%= format_amount(@closing_cents) %>)</span>
             <button type="button"
                     class="print:hidden text-xs text-blue-600 hover:underline"
                     onclick="document.getElementById('closing-stock-form').classList.toggle('hidden')">
@@ -192,7 +192,7 @@
         <%= t("accounting.financial_statements.trading.gross_profit") %>
       </span>
       <span class="text-lg font-bold tabular-nums <%= gross_profit_cents >= 0 ? 'text-emerald-700' : 'text-orange-700' %>">
-        <%= gross_profit_cents < 0 ? "(" : "" %><%= format_money(gross_profit_cents.abs) %><%= gross_profit_cents < 0 ? ")" : "" %>
+        <%= gross_profit_cents < 0 ? "(" : "" %><%= format_amount(gross_profit_cents.abs) %><%= gross_profit_cents < 0 ? ")" : "" %>
       </span>
     </div>
 
@@ -201,7 +201,7 @@
       <summary class="flex items-center justify-between px-5 py-3 cursor-pointer hover:bg-gray-50 border-b border-gray-100 border-t-2 border-t-gray-200 bg-red-50/60 select-none list-none [&::-webkit-details-marker]:hidden">
         <span class="text-sm font-semibold text-gray-700"><%= t("accounting.financial_statements.trading.operating_expenses") %></span>
         <div class="flex items-center gap-3">
-          <span class="text-sm font-bold text-red-700 tabular-nums">(<%= format_money(@coa.total_operating_expenses_cents) %>)</span>
+          <span class="text-sm font-bold text-red-700 tabular-nums">(<%= format_amount(@coa.total_operating_expenses_cents) %>)</span>
           <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
           </svg>
@@ -214,7 +214,7 @@
         <summary class="flex items-center justify-between px-5 py-2.5 cursor-pointer hover:bg-gray-50 border-b border-gray-100 bg-gray-50/40 select-none list-none [&::-webkit-details-marker]:hidden">
           <span class="text-xs font-bold text-gray-500 uppercase tracking-wide"><%= t("accounting.financial_statements.trading.payroll_expenses") %></span>
           <div class="flex items-center gap-3">
-            <span class="text-sm font-semibold text-red-700 tabular-nums">(<%= format_money(@coa.total_payroll_expense_cents) %>)</span>
+            <span class="text-sm font-semibold text-red-700 tabular-nums">(<%= format_amount(@coa.total_payroll_expense_cents) %>)</span>
             <svg class="w-3.5 h-3.5 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -227,10 +227,10 @@
                 <td class="px-8 py-2 text-gray-400 font-mono text-xs w-16"><%= line.code %></td>
                 <td class="px-3 py-2 text-gray-600"><%= line.name %></td>
                 <td class="px-5 py-2 text-end tabular-nums text-gray-700">
-                  <%= link_to format_money(line.balance_cents),
-                        admin_accounting_journal_entries_path(account_code: line.code, start_date: @start_date, end_date: @end_date),
+                  <%= link_to format_amount(line.balance_cents),
+                        pnl_drill_down_path(line.code, start_date: @start_date, end_date: @end_date),
                         class: "hover:text-blue-700 hover:underline",
-                        title: t("accounting.financial_statements.drill_down_hint") %>
+                        title: pnl_drill_down_hint(line.code) %>
                 </td>
               </tr>
             <% end %>
@@ -245,7 +245,7 @@
         <summary class="flex items-center justify-between px-5 py-2.5 cursor-pointer hover:bg-gray-50 border-b border-gray-100 bg-gray-50/40 select-none list-none [&::-webkit-details-marker]:hidden">
           <span class="text-xs font-bold text-gray-500 uppercase tracking-wide"><%= t("accounting.financial_statements.trading.other_expenses") %></span>
           <div class="flex items-center gap-3">
-            <span class="text-sm font-semibold text-red-700 tabular-nums">(<%= format_money(@coa.total_other_expense_cents) %>)</span>
+            <span class="text-sm font-semibold text-red-700 tabular-nums">(<%= format_amount(@coa.total_other_expense_cents) %>)</span>
             <svg class="w-3.5 h-3.5 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
             </svg>
@@ -258,10 +258,10 @@
                 <td class="px-8 py-2 text-gray-400 font-mono text-xs w-16"><%= line.code %></td>
                 <td class="px-3 py-2 text-gray-600"><%= line.name %></td>
                 <td class="px-5 py-2 text-end tabular-nums text-gray-700">
-                  <%= link_to format_money(line.balance_cents),
-                        admin_accounting_journal_entries_path(account_code: line.code, start_date: @start_date, end_date: @end_date),
+                  <%= link_to format_amount(line.balance_cents),
+                        pnl_drill_down_path(line.code, start_date: @start_date, end_date: @end_date),
                         class: "hover:text-blue-700 hover:underline",
-                        title: t("accounting.financial_statements.drill_down_hint") %>
+                        title: pnl_drill_down_hint(line.code) %>
                 </td>
               </tr>
             <% end %>
@@ -284,7 +284,7 @@
         <%= t("accounting.financial_statements.trading.net_profit") %>
       </span>
       <span class="text-xl font-black tabular-nums <%= net_profit_cents >= 0 ? 'text-emerald-700' : 'text-orange-700' %>">
-        <%= net_profit_cents < 0 ? "(" : "" %><%= format_money(net_profit_cents.abs) %><%= net_profit_cents < 0 ? ")" : "" %>
+        <%= net_profit_cents < 0 ? "(" : "" %><%= format_amount(net_profit_cents.abs) %><%= net_profit_cents < 0 ? ")" : "" %>
       </span>
     </div>
 

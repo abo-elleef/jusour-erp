@@ -5,7 +5,7 @@ require "csv"
 module Admin
   module Accounting
     class ExpensesController < BaseController
-      before_action :set_expense, only: %i[show edit update reverse]
+      before_action :set_expense, only: %i[show edit update destroy]
 
       def show
         authorize @expense
@@ -20,18 +20,11 @@ module Admin
         scope = scope.on_date_range(@start_date, @end_date)
         scope = scope.where(is_auto_generated: false) if params[:manual_only] == "1"
         scope = scope.where(expense_category_id: params[:category_id]) if params[:category_id].present?
-        # Reversed rows are excluded from every total on this page, which left no
-        # way to look at them. The profit-vs-cash bridge links straight here.
-        @reversed_only = params[:reversed] == "1"
-        scope = scope.where.not(reversed_at: nil) if @reversed_only
-
-        @total_count    = scope.count
-        @reversed_count = scope.where.not(reversed_at: nil).count
-        @active_count   = scope.where(reversed_at: nil).count
-        active_scope = scope.where(reversed_at: nil).unscope(:includes)
-        @total_active_cents  = active_scope.sum(:amount_cents)
-        @system_cents        = active_scope.where(is_auto_generated: true).sum(:amount_cents)
-        @custom_cents        = active_scope.where(is_auto_generated: false).sum(:amount_cents)
+        @total_count = scope.count
+        totals_scope = scope.unscope(:includes)
+        @total_active_cents  = totals_scope.sum(:amount_cents)
+        @system_cents        = totals_scope.where(is_auto_generated: true).sum(:amount_cents)
+        @custom_cents        = totals_scope.where(is_auto_generated: false).sum(:amount_cents)
 
         # Ledger summary — from journal entry lines so it matches the P&L exactly
         @ledger_tab = params[:tab] == "ledger"
@@ -57,7 +50,6 @@ module Admin
         @active_category_id = params[:category_id].presence
         @totals_by_category = Expense.joins(:expense_category)
           .on_date_range(@start_date, @end_date)
-          .where(reversed_at: nil)
           .group("expense_categories.id", "expense_categories.name")
           .sum(:amount_cents)
         @categories = ExpenseCategory.ordered
@@ -85,20 +77,12 @@ module Admin
 
       def edit
         authorize @expense
-        if @expense.reversed_at.present?
-          return redirect_to admin_accounting_expenses_path,
-                             alert: t("accounting.reversal.cannot_edit_reversed")
-        end
         @categories = ExpenseCategory.manual.ordered
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       end
 
       def update
         authorize @expense
-        if @expense.reversed_at.present?
-          return redirect_to admin_accounting_expenses_path,
-                             alert: t("accounting.reversal.cannot_edit_reversed")
-        end
         if @expense.update(expense_params)
           redirect_to admin_accounting_expenses_path, notice: t("flash.accounting.expense_updated")
         else
@@ -108,46 +92,45 @@ module Admin
         end
       end
 
-      def reverse
-        authorize @expense, :destroy?
-        je = JournalEntry.for_source(@expense).first
+      # Deleting removes the row, its treasury movement and its journal entry, so
+      # the P&L and the cash flow both stop reporting it. This is the only way to
+      # undo a expense: reversal used to be the alternative and is gone, because a
+      # reversal left the original on the books and the two reports then had to be
+      # read together to see that nothing had really happened.
+      def destroy
+        authorize @expense
 
-        if je.nil?
-          return redirect_to admin_accounting_expenses_path,
-                             alert: t("accounting.reversal.no_journal_entry")
-        end
+        # Captured before the row goes: an audit entry for a deletion that does not
+        # say what was deleted is barely an audit at all, and nothing else survives.
+        snapshot = {
+          description:  @expense.description,
+          amount_cents: @expense.amount_cents,
+          date:         @expense.expense_date,
+          category:     @expense.expense_category&.name,
+          treasury:     @expense.treasury&.name
+        }
 
-        if @expense.reversed_at.present? || je.reversed?
-          return redirect_to admin_accounting_expenses_path,
-                             alert: t("accounting.reversal.already_reversed")
-        end
+        @expense.destroy!
+        AuditLogEntry.record!(action: "expense.destroy", record: @expense, user: current_user,
+                              changes_snapshot: snapshot)
 
-        ActiveRecord::Base.transaction do
-          reversal = ::Accounting::JournalEntryService.record_reversal!(
-            original_je: je, user: current_user
-          )
-          sync_je_treasuries!(reversal)
-          @expense.update_column(:reversed_at, Time.current)
-          AuditLogEntry.record!(action: "expense.reverse", record: @expense, user: current_user)
-        end
-
-        redirect_to admin_accounting_expenses_path,
-                    notice: t("accounting.reversal.expense_reversed")
+        redirect_to admin_accounting_expenses_path, notice: t("flash.accounting.expense_deleted")
+      rescue ArgumentError => e
+        redirect_to admin_accounting_expenses_path, alert: e.message
       end
 
       private
 
-      # Every column an accountant needs to reconcile outside the system,
-      # including the reversal flag — a reversed row is in the ledger but not in
-      # the totals, and an export that hid that would not tie back.
+      # Every column an accountant needs to reconcile outside the system. Every
+      # row here is live: an undone record is deleted, not flagged, so there is
+      # no longer a state the totals leave out.
       def expenses_csv(scope)
         CSV.generate do |csv|
           csv << [
             t("accounting.shared.start"), t("accounting.shared.category"),
             t("accounting.shared.description"), t("accounting.shared.amount"),
             t("accounting.shared.treasury"), t("accounting.shared.reference_number"),
-            t("accounting.shared.recorded_by"), t("accounting.export.source"),
-            t("accounting.export.reversed")
+            t("accounting.shared.recorded_by"), t("accounting.export.source")
           ]
           scope.find_each do |record|
             csv << [
@@ -158,8 +141,7 @@ module Admin
               record.treasury&.name,
               record.reference_number,
               record.user&.name,
-              record.is_auto_generated? ? t("accounting.shared.auto") : t("accounting.export.manual"),
-              record.reversed_at.present? ? t("accounting.export.reversed_yes") : t("accounting.export.reversed_no")
+              record.is_auto_generated? ? t("accounting.shared.auto") : t("accounting.export.manual")
             ]
           end
         end

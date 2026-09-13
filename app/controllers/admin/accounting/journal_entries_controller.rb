@@ -23,15 +23,9 @@ module Admin
           )
         end
 
-        @entry_type      = params[:entry_type]
-        @total_count     = scope.count
-        @reversed_count  = scope.where(entry_type: "reversal").count
-        @active_count    = @total_count - @reversed_count
-        @count_labels    = {
-          total:    t("accounting.journal_entries.stats_total"),
-          active:   t("accounting.journal_entries.stats_original"),
-          reversed: t("accounting.journal_entries.stats_reversals")
-        }
+        @entry_type   = params[:entry_type]
+        @total_count  = scope.count
+        @count_labels = { total: t("accounting.journal_entries.stats_total") }
 
         @sort      = SORT_COLUMNS.include?(params[:sort]) ? params[:sort] : "date"
         @direction = params[:dir] == "asc" ? "asc" : "desc"
@@ -44,43 +38,9 @@ module Admin
       end
 
       def show
-        @journal_entry = JournalEntry.includes(:lines, :created_by, :reversal_entry).find(params[:id])
+        @journal_entry = JournalEntry.includes(:lines, :created_by).find(params[:id])
         @audit_entries = AuditLogEntry.where(record_type: "JournalEntry", record_id: @journal_entry.id)
                                       .includes(:user).order(created_at: :asc)
-      end
-
-      def reverse
-        @journal_entry = JournalEntry.includes(:reversal_entry).find(params[:id])
-
-        unless @journal_entry.manual?
-          return redirect_to admin_accounting_journal_entry_path(@journal_entry),
-                             alert: t("accounting.journal_entries.flash.cannot_reverse_auto")
-        end
-
-        if @journal_entry.reversed?
-          return redirect_to admin_accounting_journal_entry_path(@journal_entry),
-                             alert: t("accounting.reversal.already_reversed")
-        end
-
-        reversal = nil
-        ActiveRecord::Base.transaction do
-          reversal = ::Accounting::JournalEntryService.record_reversal!(
-            original_je: @journal_entry, user: current_user
-          )
-          sync_je_treasuries!(reversal)
-        end
-
-        snapshot = { original: @journal_entry.entry_number, reversal: reversal.entry_number }
-        AuditLogEntry.record!(action: "journal_entry.reverse", record: @journal_entry,
-                              user: current_user, changes_snapshot: snapshot)
-        AuditLogEntry.record!(action: "journal_entry.create", record: reversal,
-                              user: current_user, changes_snapshot: snapshot)
-
-        redirect_to admin_accounting_journal_entry_path(reversal),
-                    notice: t("accounting.journal_entries.flash.reversed",
-                              number: reversal.entry_number)
-      rescue ArgumentError => e
-        redirect_to admin_accounting_journal_entry_path(@journal_entry), alert: e.message
       end
 
       def new

@@ -4,8 +4,25 @@
     {
       "name": "Rails",
       "runtimeExecutable": "bin/rails",
-      "runtimeArgs": ["server"],
+      "runtimeArgs": [
+        "server"
+      ],
       "port": 3000,
+      "autoPort": false
+    },
+    {
+      "name": "Rails (prod copy)",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "DATABASE_URL=postgres:///saqr_pos_prod_copy",
+        "bin/rails",
+        "server",
+        "-p",
+        "3001",
+        "--pid",
+        "tmp/pids/server-prod-copy.pid"
+      ],
+      "port": 3001,
       "autoPort": false
     }
   ]

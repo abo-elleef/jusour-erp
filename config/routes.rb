@@ -191,15 +191,11 @@ Rails.application.routes.draw do
       resources :expense_categories do
         collection { patch :reorder }
       end
-      resources :expenses, except: [:destroy] do
-        member { post :reverse }
-      end
+      resources :expenses
       resources :income_categories do
         collection { patch :reorder }
       end
-      resources :incomes, except: [:destroy] do
-        member { post :reverse }
-      end
+      resources :incomes
       resources :discount_rules, except: [:show]
       resources :treasuries do
         member { post :adjust }
@@ -218,9 +214,7 @@ Rails.application.routes.draw do
           post :update_inventory_snapshot
         end
       end
-      resources :journal_entries, only: %i[index show new create] do
-        member { post :reverse }
-      end
+      resources :journal_entries, only: %i[index show new create]
       resources :partners, only: %i[index show new create edit update] do
         member do
           get  :new_advance,    path: "advance/new"

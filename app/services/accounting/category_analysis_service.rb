@@ -5,8 +5,6 @@ module Accounting
   # category cost or earned, how much of the total it accounts for, and how it
   # moved over time.
   #
-  # Reversed entries are excluded throughout. A reversal cancels the record, so
-  # counting it would overstate both the totals and the entry counts.
   class CategoryAnalysisService
     GRANULARITIES = %w[day week month].freeze
     KINDS = %w[both expense income].freeze
@@ -66,7 +64,7 @@ module Accounting
       category_key = kind == :expense ? :expense_category_id : :income_category_id
 
       scope = (kind == :expense ? Expense : Income)
-        .where(reversed_at: nil, date_column => @start_date..@end_date)
+        .where(date_column => @start_date..@end_date)
       scope = scope.where(category_key => @category_ids) if @category_ids
 
       # Aggregated in the database: a year of entries is far too many to load.

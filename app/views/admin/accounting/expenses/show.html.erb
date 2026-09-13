@@ -7,11 +7,6 @@
     <div>
       <div class="flex flex-wrap items-center gap-2 mb-1">
         <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @expense.description %></h1>
-        <% if @expense.reversed_at.present? %>
-          <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-gray-100 text-gray-500 border border-gray-200">
-            <%= t("accounting.reversal.reversed_badge") %>
-          </span>
-        <% end %>
         <% if @expense.is_auto_generated? %>
           <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700 border border-blue-200">
             <%= t("accounting.shared.auto") %>
@@ -25,13 +20,14 @@
       </p>
     </div>
     <div class="flex flex-wrap gap-2 shrink-0">
-      <% unless @expense.is_auto_generated? || @expense.reversed_at.present? %>
+      <% unless @expense.is_auto_generated? %>
         <%= link_to t("actions.edit"), edit_admin_accounting_expense_path(@expense),
               class: "border border-gray-200 text-gray-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50" %>
-        <%= button_to t("accounting.reversal.reverse_entry"),
-              reverse_admin_accounting_expense_path(@expense),
+        <%= button_to t("actions.delete"),
+              admin_accounting_expense_path(@expense),
+              method: :delete,
               class: "border border-red-200 text-red-700 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-red-50 cursor-pointer",
-              data: { turbo_confirm: t("accounting.reversal.confirm") } %>
+              data: { turbo_confirm: t("accounting.records.confirm_delete") } %>
       <% end %>
       <%= link_to t("accounting.expenses.title"), admin_accounting_expenses_path,
             class: "border border-gray-200 text-gray-500 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-gray-50" %>

@@ -66,22 +66,18 @@ RSpec.describe "Expense and income CSV export", type: :request do
     expect(response.body).to include("Row 59")
   end
 
-  it "marks a reversed row rather than dropping it" do
-    kept = spend(20_000, description: "Still counted")
-    reversed = spend(80_000, description: "Cancelled")
-    post reverse_admin_accounting_expense_path(reversed)
+  # There is no longer a state the totals leave out: an expense that should not
+  # stand is deleted, so the export is every row and every row counts.
+  it "exports only rows that still exist" do
+    spend(20_000, description: "Still counted")
+    gone = spend(80_000, description: "Cancelled")
 
+    delete admin_accounting_expense_path(gone)
     get admin_accounting_expenses_path(format: :csv, start_date: 30.days.ago.to_date, end_date: Date.current)
 
     parsed = rows(response.body)
-    cancelled = parsed.find { |row| row.include?("Cancelled") }
-    counted = parsed.find { |row| row.include?("Still counted") }
-
-    # It is in the ledger but not in the totals; an export that hid it, or that
-    # showed it without saying so, would not reconcile.
-    expect(cancelled.last).to eq(I18n.t("accounting.export.reversed_yes"))
-    expect(counted.last).to eq(I18n.t("accounting.export.reversed_no"))
-    expect(kept.reload.reversed_at).to be_nil
+    expect(parsed.find { |row| row.include?("Still counted") }).to be_present
+    expect(parsed.find { |row| row.include?("Cancelled") }).to be_nil
   end
 
   it "exports incomes the same way" do

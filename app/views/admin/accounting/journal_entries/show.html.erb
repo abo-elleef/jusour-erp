@@ -21,18 +21,9 @@
           <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700 border border-blue-200">
             <%= t("accounting.journal_entries.type.auto") %>
           </span>
-        <% elsif @journal_entry.reversal? %>
-          <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-orange-100 text-orange-700 border border-orange-200">
-            <%= t("accounting.journal_entries.type.reversal") %>
-          </span>
         <% else %>
           <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-700 border border-amber-200">
             <%= t("accounting.journal_entries.type.manual") %>
-          </span>
-        <% end %>
-        <% if @journal_entry.reversed? %>
-          <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-gray-100 text-gray-500 border border-gray-200">
-            <%= t("accounting.reversal.reversed_badge") %>
           </span>
         <% end %>
         <% unless @journal_entry.balanced? %>
@@ -46,40 +37,12 @@
         <%= l(@journal_entry.date, format: :long) %> &middot;
         <%= t("accounting.journal_entries.recorded_by", name: @journal_entry.created_by.name) %>
       </p>
-      <% if @journal_entry.reversal? && @journal_entry.original_entry %>
-        <p class="text-xs text-orange-600 mt-1">
-          <%= t("accounting.reversal.reverses_link") %>
-          <%= link_to @journal_entry.original_entry.entry_number,
-                admin_accounting_journal_entry_path(@journal_entry.original_entry),
-                class: "font-mono font-semibold underline" %>
-        </p>
-      <% end %>
-      <% if @journal_entry.reversed? && @journal_entry.reversal_entry %>
-        <p class="text-xs text-gray-500 mt-1">
-          <%= t("accounting.reversal.reversed_by_link") %>
-          <%= link_to @journal_entry.reversal_entry.entry_number,
-                admin_accounting_journal_entry_path(@journal_entry.reversal_entry),
-                class: "font-mono font-semibold underline" %>
-        </p>
-      <% end %>
     </div>
     <div class="flex items-center gap-2">
       <button onclick="window.print()"
               class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 border border-gray-300 bg-white hover:bg-gray-50 px-4 py-2 rounded-xl transition-colors cursor-pointer">
         <%= t("accounting.journal_entries.actions.print") %>
       </button>
-      <% if @journal_entry.manual? %>
-        <% if @journal_entry.reversed? %>
-          <span class="text-sm text-gray-400 border border-gray-200 px-4 py-2 rounded-xl bg-gray-50 cursor-not-allowed">
-            <%= t("accounting.reversal.reverse_entry") %>
-          </span>
-        <% else %>
-          <%= button_to t("accounting.reversal.reverse_entry"),
-                reverse_admin_accounting_journal_entry_path(@journal_entry),
-                data: { turbo_confirm: t("accounting.reversal.confirm") },
-                class: "text-sm text-red-600 hover:text-red-800 border border-red-200 px-4 py-2 rounded-xl hover:bg-red-50 cursor-pointer" %>
-        <% end %>
-      <% end %>
       <%= link_to t("actions.back"), admin_accounting_journal_entries_path,
             class: "text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50" %>
     </div>

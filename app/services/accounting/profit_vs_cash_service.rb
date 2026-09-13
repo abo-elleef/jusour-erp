@@ -97,7 +97,7 @@ module Accounting
     # Both settlement paths — a payment against an invoice and a direct payment
     # against a supplier's standing balance — land in this one category.
     def vendor_cash_paid_cents
-      @vendor_cash_paid_cents ||= expense_records_live_in_period
+      @vendor_cash_paid_cents ||= expense_records_in_period
         .joins(:expense_category)
         .where(expense_categories: { name: VENDOR_PURCHASES_CATEGORY })
         .sum(:amount_cents)
@@ -136,27 +136,21 @@ module Accounting
     # vendor invoice, or an entry written by hand. Those charge profit in a
     # period where no cash left, which is a real divergence.
     #
-    # There is deliberately no line for reversals. An expense and its reversal
-    # each write a journal entry and a treasury transaction on the same date, so
-    # once the cash flow counts `journal_entry` movements the two sides move
-    # together and a reversal cannot pull profit and cash apart. A line for it
-    # would subtract money the statement has already given back.
     def ledger_only_expenses_cents
       @ledger_only_expenses_cents ||= coa.total_other_expense_cents - non_vendor_expense_records_cents
     end
 
-    # "Live as at the end of the period", not "live today". An expense reversed
-    # in a later month was still a real charge in this one — the P&L for this
-    # period still carries it, so the records it is compared against must too.
+    # Every expense record in the period. There is no longer a second state to
+    # filter out: an expense that should not stand is deleted, not flagged, so
+    # the rows here and the journal entries they wrote move together.
     def active_expense_records_cents
-      @active_expense_records_cents ||= expense_records_live_in_period.sum(:amount_cents)
+      @active_expense_records_cents ||= expense_records_in_period.sum(:amount_cents)
     end
 
-    def expense_records_live_in_period
+    def expense_records_in_period
       Expense
         .where(company_id: Current.company.id)
         .where(expense_date: @start_date..@end_date)
-        .where("expenses.reversed_at IS NULL OR expenses.reversed_at > ?", @end_date.end_of_day)
     end
 
     def non_vendor_expense_records_cents

@@ -3,9 +3,18 @@
 module Accounting
   class CashFlowService
     # Kinds recorded on asset treasuries that represent real operational cash flows.
-    # Excluded: transfer/drawer_open/drawer_reconcile (internal wash),
-    #           ap_invoice (non-cash AP accrual).
-    OPERATING_KINDS = %w[income online_payment expense ap_payment
+    #
+    # `drawer_reconcile` belongs here despite the name: it banks
+    # `counted_cash_cents - opening_float_cents` — the cash customers actually paid
+    # during the session — and records that one leg only. It was excluded as an
+    # "internal wash", which it never was. `drawer_open` is the wash: it records both
+    # the leg leaving the safe and the leg entering the drawer, so the pair nets to
+    # zero. The giveaway was `online_payment`, which is raised by the very same
+    # session and was counted here all along, so a session's card and wallet takings
+    # reached the statement while its cash silently fell into the unclassified line.
+    #
+    # Excluded: transfer/drawer_open (internal wash), ap_invoice (non-cash AP accrual).
+    OPERATING_KINDS = %w[income online_payment drawer_reconcile expense ap_payment
                          payroll_salary payroll_advance staff_meal adjustment].freeze
 
     # Cash moved by a journal entry — a reversal, or an entry written by hand.
@@ -53,6 +62,10 @@ module Accounting
             kind:         kind
           )
         end
+        # Its own line, never folded into the expense line above. That line answers
+        # "what did we pay out in expenses", and it has to be built from Expense
+        # records alone to answer it — cash arriving because an entry was written or
+        # reversed is a different question and gets its own row.
         je_cents = journal_entry_cash_cents
         unless je_cents.zero?
           lines << CashFlowLine.new(
@@ -63,6 +76,15 @@ module Accounting
         end
         Section.new(name: :operating, lines: lines)
       end
+    end
+
+    # The transactions behind one line. The journal-entry line excludes whatever the
+    # financing section already reports, so its drill-down has to exclude the same
+    # rows — a line whose rows do not add up to it is worse than no drill-down.
+    def transactions_for_kind(kind)
+      return journal_entry_transactions if kind == JOURNAL_ENTRY_KIND
+
+      asset_transactions.where(kind: kind)
     end
 
     # Journal-entry cash, minus anything the financing section already reports

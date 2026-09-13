@@ -43,8 +43,8 @@ module AccountingNav
         { controller: "tax_reports",          label: "accounting.nav.tax",           path: :admin_accounting_tax_reports_path,                         permission: "accounting:reports", feature: :menu },
         { controller: "category_analysis",    label: "accounting.nav.category_analysis", path: :admin_accounting_category_analysis_index_path,         permission: "accounting:reports" },
         { controller: "budgets",              label: "accounting.nav.budgets",       path: :admin_accounting_budgets_path,                             permission: "accounting:reports" },
-        { controller: "financial_statements", action: "profit_loss",   label: "accounting.nav.profit_loss",   path: :profit_loss_admin_accounting_financial_statements_path,   permission: "accounting:reports" },
         { controller: "financial_statements", action: "balance_sheet", label: "accounting.nav.balance_sheet", path: :balance_sheet_admin_accounting_financial_statements_path, permission: "accounting:reports" },
+        { controller: "financial_statements", action: "profit_loss",   label: "accounting.nav.profit_loss",   path: :profit_loss_admin_accounting_financial_statements_path,   permission: "accounting:reports" },        
         { controller: "financial_statements", action: "cash_flow",     label: "accounting.nav.cash_flow",     path: :cash_flow_admin_accounting_financial_statements_path,     permission: "accounting:reports" },
         { controller: "financial_statements", action: "profit_vs_cash", label: "accounting.nav.profit_vs_cash", path: :profit_vs_cash_admin_accounting_financial_statements_path, permission: "accounting:reports" }
       ]

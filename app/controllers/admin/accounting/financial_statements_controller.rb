@@ -103,18 +103,11 @@ module Admin
 
         if operating_kinds.include?(@kind) || investing_kinds.include?(@kind) ||
            @kind == ::Accounting::CashFlowService::JOURNAL_ENTRY_KIND
-          @transactions = ::TreasuryTransaction
-            .joins(:treasury)
-            .where(treasuries: { company_id: ::Current.company.id })
-            .where.not(treasuries: { treasury_type: "supplier_ap" })
-            .where(occurred_on: @start_date..@end_date, kind: @kind)
+          # Built by the service, not rebuilt here, so the rows always add up to
+          # the line they came from.
+          @transactions = @cf.transactions_for_kind(@kind)
             .includes(:treasury)
             .order(occurred_on: :desc)
-          # The statement excludes financing entries from this line, so the
-          # drill-down has to exclude them too or the rows will not add up to it.
-          if @kind == ::Accounting::CashFlowService::JOURNAL_ENTRY_KIND
-            @transactions = @transactions.where(id: @cf.journal_entry_transactions.select(:id))
-          end
           respond_to do |format|
             format.html { render :cash_flow_lines_treasury }
             format.csv  { send_cash_flow_lines_csv(treasury_lines_csv) }

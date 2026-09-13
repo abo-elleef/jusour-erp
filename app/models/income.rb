@@ -23,7 +23,6 @@ class Income < ApplicationRecord
   validates :recurrence, inclusion: { in: RECURRENCES }
   validates :amount_cents, numericality: { greater_than: 0 }
   validates :treasury, presence: true, unless: :is_auto_generated?
-  validate :immutable_once_reversed, on: :update
 
   scope :manual, -> { where(is_auto_generated: false) }
   scope :auto_generated, -> { where(is_auto_generated: true) }
@@ -49,12 +48,13 @@ class Income < ApplicationRecord
     Accounting::JournalEntryService.record_income!(self)
   end
 
+  # Deleting takes the ledger with it. Keeping the journal entry after the record
+  # is gone leaves the P&L reporting money against something nobody can open or
+  # trace, and the cash flow — which reads the treasury — stops agreeing with it.
+  # This is the only way to undo one: an edit rewrites the entry, a delete removes
+  # it, and the audit log keeps what was there.
   def remove_treasury_ledger
     Accounting::TreasuryLedgerService.remove_source!(self)
-    # JEs are intentionally preserved on delete — reversals maintain the audit sequence
-  end
-
-  def immutable_once_reversed
-    errors.add(:base, I18n.t("accounting.reversal.cannot_edit_reversed")) if reversed_at.present?
+    Accounting::JournalEntryService.destroy_for_source!(self)
   end
 end

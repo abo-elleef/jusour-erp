@@ -34,11 +34,23 @@ module Admin
 
         ApplicationRecord.transaction do
           ::Accounting::TreasuryLedgerService.remove_source!(@advance)
+          # Has to run while the advance still exists — it is addressed by class and
+          # id — and cannot be left to the model's `dependent: :destroy`, which only
+          # reaches treasury transactions. Editing an advance already clears its
+          # entry through `sync_payroll_advance!`; deleting one did not, so every
+          # deletion left an entry behind for a payment that no longer existed and
+          # the P&L went on counting it.
+          ::Accounting::JournalEntryService.destroy_for_source!(@advance)
           @advance.destroy!
         end
 
         redirect_to admin_user_path(@user, payroll_show_url_params(month)),
           notice: t("flash.payroll_advance.removed")
+      rescue ArgumentError => e
+        # Raised when the entry has already been reversed: deleting it would strip
+        # the reversal of what it reverses. Say so instead of returning a 500.
+        redirect_to admin_user_path(@user, payroll_show_url_params(month)),
+          alert: e.message
       end
 
       private

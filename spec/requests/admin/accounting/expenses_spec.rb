@@ -32,38 +32,28 @@ RSpec.describe "Admin::Accounting::Expenses", type: :request do
     )
   end
 
-  def post_reverse(expense)
-    post reverse_admin_accounting_expense_path(expense)
-  end
-
   describe "GET /admin/accounting/expenses" do
-    it "shows the sum of active expenses in the selected range" do
+    # Every row listed is a live one now: undoing an expense deletes it rather
+    # than flagging it, so the total is simply the sum of what is there.
+    it "shows the sum of expenses in the selected range" do
       create_expense(amount_cents: 20_000)
       create_expense(amount_cents: 15_000)
-      reversed = create_expense(amount_cents: 50_000)
-      post_reverse(reversed)
 
       get admin_accounting_expenses_path(start_date: Date.current.beginning_of_month, end_date: Date.current)
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(money(35_000))
       expect(response.body).to include(I18n.t("accounting.expenses.stats_spent"))
-      expect(response.body).not_to include(money(85_000))
     end
 
-    it "can show only the reversed rows, which every total leaves out" do
+    it "drops a deleted expense out of the total" do
       create_expense(amount_cents: 20_000)
-      reversed = create_expense(amount_cents: 50_000)
-      post_reverse(reversed)
+      gone = create_expense(amount_cents: 50_000)
 
-      get admin_accounting_expenses_path(
-        start_date: Date.current.beginning_of_month, end_date: Date.current, reversed: "1"
-      )
+      delete admin_accounting_expense_path(gone)
+      get admin_accounting_expenses_path(start_date: Date.current.beginning_of_month, end_date: Date.current)
 
-      expect(response).to have_http_status(:ok)
-      expect(response.body).to include(I18n.t("accounting.reversal.reversed_badge"))
-      # The reversed row is the only one listed, and it is still excluded from
-      # the money total — this filter changes what you can see, not the maths.
-      expect(response.body).to include(money(0))
+      expect(response.body).to include(money(20_000))
+      expect(response.body).not_to include(money(70_000))
     end
 
     it "renders the ledger tab with bare amounts and no currency symbol" do
@@ -78,132 +68,50 @@ RSpec.describe "Admin::Accounting::Expenses", type: :request do
     end
   end
 
-  # ── Reversal ─────────────────────────────────────────────────────────────
-
-  describe "POST /admin/accounting/expenses/:id/reverse" do
-    it "preserves the original journal entry (does not delete it)" do
-      expense = create_expense
-      je = JournalEntry.for_source(expense).first
-      post_reverse(expense)
-      expect(JournalEntry.exists?(je.id)).to be true
-    end
-
-    it "creates a new reversal journal entry" do
-      expense = create_expense
-      expect { post_reverse(expense) }.to change(JournalEntry, :count).by(1)
-      reversal = JournalEntry.last
-      expect(reversal.entry_type).to eq("reversal")
-    end
-
-    it "reversal entry flips debit/credit lines" do
-      expense = create_expense(amount_cents: 10_000)
-      je = JournalEntry.for_source(expense).first
-      post_reverse(expense)
-      reversal = JournalEntry.last
-
-      je.lines.each do |original_line|
-        rev_line = reversal.lines.find { |l| l.account_code == original_line.account_code }
-        expect(rev_line.debit_cents).to eq(original_line.credit_cents)
-        expect(rev_line.credit_cents).to eq(original_line.debit_cents)
-      end
-    end
-
-    it "cancels the treasury balance effect (net zero after reversal)" do
-      expense = create_expense(amount_cents: 5_000)
-      balance_after_expense = cash.reload.balance_cents
-      post_reverse(expense)
-      expect(cash.reload.balance_cents).to eq(balance_after_expense + 5_000)
-    end
-
-    it "creates TreasuryTransactions for the reversal entry" do
-      expense = create_expense
-      post_reverse(expense)
-      reversal = JournalEntry.last
-      txns = TreasuryTransaction.where(source_record: reversal)
-      expect(txns.count).to be >= 1
-    end
-
-    it "stamps reversed_at on the expense" do
-      expense = create_expense
-      expect { post_reverse(expense) }
-        .to change { expense.reload.reversed_at }.from(nil)
-    end
-
-    it "redirects to expenses index with a notice" do
-      expense = create_expense
-      post_reverse(expense)
-      expect(response).to redirect_to(admin_accounting_expenses_path)
-      expect(flash[:notice]).to be_present
-    end
-
-    it "cannot reverse an already-reversed expense" do
-      expense = create_expense
-      post_reverse(expense)
-      je_count_before = JournalEntry.count
-      post_reverse(expense)
-      expect(JournalEntry.count).to eq(je_count_before)
-      expect(response).to redirect_to(admin_accounting_expenses_path)
-      expect(flash[:alert]).to be_present
-    end
-
-    it "redirects with alert if no journal entry exists" do
-      expense = create_expense
-      JournalEntry.for_source(expense).destroy_all
-      post_reverse(expense)
-      expect(flash[:alert]).to be_present
-    end
-  end
-
-  # ── Edit/Update blocked for reversed expenses ─────────────────────────────
-
-  describe "GET /admin/accounting/expenses/:id/edit (reversed)" do
-    it "redirects with alert instead of showing the form" do
-      expense = create_expense
-      post_reverse(expense)
-      get edit_admin_accounting_expense_path(expense)
-      expect(response).to redirect_to(admin_accounting_expenses_path)
-      expect(flash[:alert]).to be_present
-    end
-  end
-
-  describe "PATCH /admin/accounting/expenses/:id (reversed)" do
-    it "redirects with alert and does not update the record" do
+  # Deleting used to be impossible by route, and the model deliberately kept the
+  # journal entry when a record was destroyed by other means. Both are reversed,
+  # and reversal itself is gone: a deleted expense takes its ledger with it, so
+  # the P&L stops reporting money against a row nobody can open.
+  describe "DELETE /admin/accounting/expenses/:id" do
+    it "deletes the expense, its journal entry and its treasury movement" do
       expense = create_expense(amount_cents: 20_000)
-      post_reverse(expense)
-      patch admin_accounting_expense_path(expense), params: {
-        expense: { amount_pounds: "999" }
-      }
-      expect(expense.reload.amount_cents).to eq(20_000)
-      expect(response).to redirect_to(admin_accounting_expenses_path)
-      expect(flash[:alert]).to be_present
+      expect(JournalEntry.for_source(expense)).to exist
+      expect(TreasuryTransaction.where(source_record: expense)).to exist
+
+      expect { delete admin_accounting_expense_path(expense) }
+        .to change(Expense, :count).by(-1)
+
+      expect(JournalEntry.where(source_record_type: "Expense", source_record_id: expense.id)).to be_empty
+      expect(TreasuryTransaction.where(source_record_type: "Expense", source_record_id: expense.id)).to be_empty
     end
 
-    it "does not trigger JE recreation (no FK violation, no new JE)" do
-      expense = create_expense
-      post_reverse(expense)
-      je_count_before = JournalEntry.count
-      patch admin_accounting_expense_path(expense), params: {
-        expense: { amount_pounds: "999" }
-      }
-      expect(JournalEntry.count).to eq(je_count_before)
-    end
-  end
+    it "restores the treasury balance" do
+      expense = create_expense(amount_cents: 20_000)
+      expect(cash.reload.balance_cents).to eq(80_000)
 
-  # ── Model validation ─────────────────────────────────────────────────────
+      delete admin_accounting_expense_path(expense)
 
-  describe "Expense model — immutable_once_reversed" do
-    it "prevents update via model when reversed_at is set" do
-      expense = create_expense
-      expense.update_column(:reversed_at, Time.current)
-      result = expense.update(amount_cents: 99_999)
-      expect(result).to be false
-      expect(expense.errors[:base]).to be_present
-      expect(expense.reload.amount_cents).not_to eq(99_999)
+      expect(cash.reload.balance_cents).to eq(100_000)
     end
 
-    it "allows update_column to bypass the validation (needed internally)" do
+    it "leaves no journal lines behind" do
       expense = create_expense
-      expect { expense.update_column(:reversed_at, Time.current) }.not_to raise_error
+      entry_id = JournalEntry.for_source(expense).first.id
+
+      delete admin_accounting_expense_path(expense)
+
+      expect(JournalEntryLine.where(journal_entry_id: entry_id)).to be_empty
+    end
+
+    it "records an audit entry carrying what was deleted" do
+      expense = create_expense(amount_cents: 20_000)
+
+      delete admin_accounting_expense_path(expense)
+
+      audit = AuditLogEntry.find_by(action: "expense.destroy", record_id: expense.id)
+      expect(audit).to be_present
+      expect(audit.changes_snapshot["amount_cents"]).to eq(20_000)
+      expect(audit.changes_snapshot["description"]).to eq("Office supplies")
     end
   end
 end

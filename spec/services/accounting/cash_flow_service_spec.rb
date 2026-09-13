@@ -72,11 +72,18 @@ RSpec.describe Accounting::CashFlowService do
       expect(service.operating.total_cents).to eq(3_000)
     end
 
-    it "excludes internal kinds (transfer, drawer_open, drawer_reconcile)" do
-      txn(treasury: cash, kind: "transfer",          amount_cents: 5_000)
-      txn(treasury: cash, kind: "drawer_open",       amount_cents: 1_000)
-      txn(treasury: cash, kind: "drawer_reconcile",  amount_cents: -500)
+    it "excludes internal kinds (transfer, drawer_open)" do
+      txn(treasury: cash, kind: "transfer",    amount_cents: 5_000)
+      txn(treasury: cash, kind: "drawer_open", amount_cents: 1_000)
       expect(service.operating.lines).to be_empty
+    end
+
+    # Not internal, despite sitting next to drawer_open: this leg is the cash the
+    # customers actually paid during the session, banked once. drawer_open is the
+    # wash — it records the safe leg and the drawer leg, and the pair nets to zero.
+    it "counts drawer_reconcile as operating cash from customers" do
+      txn(treasury: cash, kind: "drawer_reconcile", amount_cents: 7_000)
+      expect(service.operating.total_cents).to eq(7_000)
     end
 
     it "excludes ap_invoice (non-cash accrual)" do
@@ -88,12 +95,34 @@ RSpec.describe Accounting::CashFlowService do
     # partner flows from the journal. That held for those two accounts only, so
     # every reversal disappeared: the outflow stayed and the restoring entry did
     # not. Entries touching a financing account are still excluded, below.
-    it "includes journal_entry kind so reversals are not lost" do
+    # The expense line answers "what did we pay out in expenses", so it is built
+    # from Expense records alone. Cash arriving because an entry was written or
+    # reversed is a different question and gets its own row.
+    it "keeps journal_entry cash off the expense line" do
+      txn(treasury: cash, kind: "expense",       amount_cents: -2_000)
+      txn(treasury: cash, kind: "journal_entry", amount_cents: 500)
+
+      lines = service.operating.lines
+      expect(lines.find { |l| l.kind == "expense" }.amount_cents).to eq(-2_000)
+      expect(lines.find { |l| l.kind == "journal_entry" }.amount_cents).to eq(500)
+    end
+
+    it "reports journal_entry cash even with no expense in the period" do
       txn(treasury: cash, kind: "journal_entry", amount_cents: -500)
 
       line = service.operating.lines.find { |l| l.kind == "journal_entry" }
       expect(line).to be_present
       expect(line.amount_cents).to eq(-500)
+    end
+
+    # A line whose drill-down does not add up to it is worse than no drill-down.
+    it "backs each line with exactly the rows it was built from" do
+      txn(treasury: cash, kind: "expense",       amount_cents: -2_000)
+      txn(treasury: cash, kind: "journal_entry", amount_cents: 500)
+
+      service.operating.lines.each do |line|
+        expect(service.transactions_for_kind(line.kind).sum(:amount_cents)).to eq(line.amount_cents)
+      end
     end
 
     it "excludes supplier_ap treasury transactions" do
@@ -302,7 +331,7 @@ RSpec.describe Accounting::CashFlowService do
 
     it "counts movement the sections cannot classify, and says so" do
       txn(treasury: cash, kind: "income", amount_cents: 10_000)
-      txn(treasury: cash, kind: "drawer_reconcile", amount_cents: 7_000)
+      txn(treasury: cash, kind: "ap_invoice", amount_cents: 7_000)
 
       expect(service.classified_change_cents).to eq(10_000)
       expect(service.net_change_cents).to eq(17_000)

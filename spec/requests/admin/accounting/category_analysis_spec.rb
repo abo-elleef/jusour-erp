@@ -61,10 +61,10 @@ RSpec.describe "Accounting category analysis report", type: :request do
       expect(result.entry_count).to eq(4)
     end
 
-    it "never counts a reversed entry" do
+    it "never counts a deleted entry" do
       spend(20_000)
-      reversed = spend(80_000)
-      post reverse_admin_accounting_expense_path(reversed)
+      gone = spend(80_000)
+      delete admin_accounting_expense_path(gone)
 
       result = analysis
 

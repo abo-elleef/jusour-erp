@@ -3210,6 +3210,7 @@ en:
       download_pdf: "Download PDF"
       print: "Print"
       drill_down_hint: "Click to see the journal entries behind this number"
+      drill_down_records_hint: "Click to see the records behind this number"
       snapshot_saved: "Stock value saved."
       trading:
         revenue_section: "Income"
@@ -3305,6 +3306,7 @@ en:
       kinds:
         income: "Cash received from customers"
         online_payment: "Online payments received"
+        drawer_reconcile: "Cash sales collected from drawer"
         expense: "Cash paid for operating expenses"
         ap_payment: "Payments to suppliers"
         fixed_asset_purchase: "Equipment purchased"
@@ -3509,21 +3511,16 @@ en:
       type:
         auto: "Auto"
         manual: "Manual"
-        reversal: "Reversal"
       flash:
         created: "Journal entry recorded successfully."
         deleted: "Journal entry deleted and treasury balances reversed."
         cannot_delete_auto: "Auto-generated journal entries cannot be deleted. Manage them through their source record."
-        cannot_reverse_auto: "Auto-generated entries cannot be reversed directly. Use the Reverse Entry button on the source record."
-        reversed: "Reversal entry %{number} created. Treasury balances updated."
       actions:
         delete: "Delete Entry"
         print: "Print"
       confirm_delete: "Delete this journal entry? Treasury balances will be reversed. This cannot be undone."
       reversal_of: "Reversal of %{number}: %{description}"
       stats_total: "Entries"
-      stats_original: "Original"
-      stats_reversals: "Reversals"
       audit_log_heading: "Audit Trail"
       audit:
         create: "Entry created"
@@ -3542,7 +3539,6 @@ en:
         all: "All Entries"
         auto: "Auto-generated"
         manual: "Manual"
-        reversal: "Reversals"
         account_code_label: "Filtered by account"
         account_code_hint: "Showing entries that touch this account"
       account_types:
@@ -3907,20 +3903,9 @@ en:
       actual: "Actual"
       variance: "Variance"
       no_consumption: "No ingredient consumption in this period."
-    reversal:
-      reverse_entry: "Reverse Entry"
-      confirm: "Create a reversal entry? This will create a new journal entry that cancels the accounting effect. The original entry is preserved."
-      reversed_badge: "Reversed"
-      already_reversed: "This entry has already been reversed."
-      no_journal_entry: "No journal entry found for this record."
-      expense_reversed: "Reversal entry created. Expense accounting effect cancelled."
-      income_reversed: "Reversal entry created. Income accounting effect cancelled."
-      reverses_link: "Reversal of:"
-      reversed_by_link: "Reversed by:"
-      cannot_edit_reversed: "Reversed records cannot be edited. Create a new entry instead."
+    records:
+      confirm_delete: "Delete this permanently? Its journal entry and treasury movement go with it, so the P&L and the cash flow both stop reporting it. This cannot be undone."
       stats_total: "Total"
-      stats_active: "Counted in totals"
-      stats_reversed: "Reversed"
     recurrence:
       one_time: "One-time"
       daily: "Daily"
@@ -4673,9 +4658,11 @@ en:
       owner_only: "Owner access only."
       expense_recorded: "Expense recorded."
       expense_updated: "Expense updated."
+      expense_deleted: "Expense deleted, along with its journal entry."
       expense_removed: "Expense removed."
       income_recorded: "Income recorded."
       income_updated: "Income updated."
+      income_deleted: "Income deleted, along with its journal entry."
       income_removed: "Income removed."
       category_created: "Category created."
       category_updated: "Category updated."

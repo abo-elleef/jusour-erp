@@ -52,7 +52,17 @@
               <tr class="hover:bg-gray-50/60">
                 <td class="px-5 py-2.5 text-gray-600 whitespace-nowrap tabular-nums"><%= l(tx.occurred_on, format: :short) %></td>
                 <td class="px-5 py-2.5 text-gray-800 font-medium"><%= tx.treasury.name %></td>
-                <td class="px-5 py-2.5 text-gray-500 max-w-xs truncate"><%= tx.description.presence || "—" %></td>
+                <td class="px-5 py-2.5 text-gray-500 max-w-xs truncate">
+                  <%# The row is a treasury movement, but what the reader wants is the
+                      expense or income it came from. Movements with no record behind
+                      them (a manual entry, a drawer reconcile) stay plain text. %>
+                  <% if (source_path = treasury_source_path(tx)) %>
+                    <%= link_to tx.description.presence || "—", source_path,
+                          class: "text-gray-700 hover:text-blue-700 hover:underline" %>
+                  <% else %>
+                    <%= tx.description.presence || "—" %>
+                  <% end %>
+                </td>
                 <td class="px-5 py-2.5 text-end tabular-nums font-medium <%= tx.amount_cents >= 0 ? 'text-gray-900' : 'text-red-700' %>">
                   <% if tx.amount_cents >= 0 %>
                     <%= format_amount(tx.amount_cents) %>

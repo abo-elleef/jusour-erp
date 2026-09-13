@@ -3231,6 +3231,7 @@ ar:
       download_pdf: "تحميل PDF"
       print: "طباعة"
       drill_down_hint: "انقر لعرض القيود المحاسبية التي كوّنت هذا الرقم"
+      drill_down_records_hint: "انقر لعرض السجلات التي كوّنت هذا الرقم"
       snapshot_saved: "تم حفظ قيمة المخزون."
       trading:
         revenue_section: "الإيرادات"
@@ -3326,6 +3327,7 @@ ar:
       kinds:
         income: "نقد مستلم من العملاء"
         online_payment: "مدفوعات إلكترونية مستلمة"
+        drawer_reconcile: "نقد مبيعات محصَّل من الدرج"
         expense: "نقد مدفوع للمصروفات التشغيلية"
         ap_payment: "مدفوعات للموردين"
         fixed_asset_purchase: "شراء معدات"
@@ -3528,21 +3530,16 @@ ar:
       type:
         auto: "تلقائي"
         manual: "يدوي"
-        reversal: "عكس"
       flash:
         created: "تم تسجيل القيد اليومي بنجاح."
         deleted: "تم حذف القيد اليومي وعكس أرصدة الخزائن."
         cannot_delete_auto: "لا يمكن حذف القيود المُنشأة تلقائياً. أدرها من خلال السجل المصدر."
-        cannot_reverse_auto: "لا يمكن عكس القيود التلقائية مباشرةً. استخدم زر «عكس القيد» من السجل المصدر."
-        reversed: "تم إنشاء قيد العكس %{number}. تم تحديث أرصدة الخزائن."
       actions:
         delete: "حذف القيد"
         print: "طباعة"
       confirm_delete: "هل تريد حذف هذا القيد؟ سيتم عكس أرصدة الخزائن المتأثرة. لا يمكن التراجع عن هذا الإجراء."
       reversal_of: "عكس %{number}: %{description}"
       stats_total: "القيود"
-      stats_original: "أصلية"
-      stats_reversals: "عكسية"
       audit_log_heading: "سجل التدقيق"
       audit:
         create: "تم إنشاء القيد"
@@ -3561,7 +3558,6 @@ ar:
         all: "جميع القيود"
         auto: "تلقائية"
         manual: "يدوية"
-        reversal: "قيود العكس"
         account_code_label: "مصفّى بالحساب"
         account_code_hint: "يعرض القيود التي تمس هذا الحساب"
       account_types:
@@ -3926,20 +3922,9 @@ ar:
       actual: "الفعلي"
       variance: "الفرق"
       no_consumption: "لا يوجد استهلاك مكونات في هذه الفترة."
-    reversal:
-      reverse_entry: "عكس القيد"
-      confirm: "هل تريد إنشاء قيد عكسي؟ سيُنشئ قيداً جديداً يلغي الأثر المحاسبي. يُحتفظ بالقيد الأصلي."
-      reversed_badge: "معكوس"
-      already_reversed: "تم عكس هذا القيد مسبقاً."
-      no_journal_entry: "لم يُعثر على قيد يومي لهذا السجل."
-      expense_reversed: "تم إنشاء قيد العكس. تم إلغاء الأثر المحاسبي للمصروف."
-      income_reversed: "تم إنشاء قيد العكس. تم إلغاء الأثر المحاسبي للإيراد."
-      reverses_link: "عكس للقيد:"
-      reversed_by_link: "معكوس بواسطة:"
-      cannot_edit_reversed: "لا يمكن تعديل السجلات المعكوسة. أنشئ قيداً جديداً بدلاً من ذلك."
+    records:
+      confirm_delete: "حذف هذا السجل نهائياً؟ سيُحذف معه قيد اليومية والحركة النقدية، فلن يظهر بعدها في قائمة الأرباح والخسائر ولا في التدفقات النقدية. لا يمكن التراجع عن هذا."
       stats_total: "الإجمالي"
-      stats_active: "محسوب في الإجماليات"
-      stats_reversed: "معكوس"
     recurrence:
       one_time: "لمرة واحدة"
       daily: "يومي"
@@ -4704,9 +4689,11 @@ ar:
       owner_only: "للمالك فقط."
       expense_recorded: "تم تسجيل المصروف."
       expense_updated: "تم تحديث المصروف."
+      expense_deleted: "تم حذف المصروف مع قيد اليومية الخاص به."
       expense_removed: "تم حذف المصروف."
       income_recorded: "تم تسجيل الإيراد."
       income_updated: "تم تحديث الإيراد."
+      income_deleted: "تم حذف الإيراد مع قيد اليومية الخاص به."
       income_removed: "تم حذف الإيراد."
       category_created: "تم إنشاء التصنيف."
       category_updated: "تم تحديث التصنيف."

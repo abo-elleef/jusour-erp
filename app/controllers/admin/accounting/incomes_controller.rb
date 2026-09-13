@@ -5,7 +5,7 @@ require "csv"
 module Admin
   module Accounting
     class IncomesController < BaseController
-      before_action :set_income, only: %i[show edit update reverse]
+      before_action :set_income, only: %i[show edit update destroy]
 
       def show
         authorize @income
@@ -21,13 +21,11 @@ module Admin
         scope = scope.where(is_auto_generated: false) if params[:manual_only] == "1"
         scope = scope.where(income_category_id: params[:category_id]) if params[:category_id].present?
 
-        @total_count    = scope.count
-        @reversed_count = scope.where.not(reversed_at: nil).count
-        @active_count   = scope.where(reversed_at: nil).count
+        @total_count = scope.count
         @range_sums = [
           {
             label: t("accounting.incomes.stats_earned"),
-            cents: scope.where(reversed_at: nil).unscope(:includes).sum(:amount_cents),
+            cents: scope.unscope(:includes).sum(:amount_cents),
             tone: :success
           }
         ]
@@ -45,7 +43,6 @@ module Admin
         @active_category_id = params[:category_id].presence
         @totals_by_category = Income.joins(:income_category)
           .on_date_range(@start_date, @end_date)
-          .where(reversed_at: nil)
           .group("income_categories.id", "income_categories.name")
           .sum(:amount_cents)
         @categories = IncomeCategory.ordered
@@ -73,20 +70,12 @@ module Admin
 
       def edit
         authorize @income
-        if @income.reversed_at.present?
-          return redirect_to admin_accounting_incomes_path,
-                             alert: t("accounting.reversal.cannot_edit_reversed")
-        end
         @categories = IncomeCategory.manual.ordered
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       end
 
       def update
         authorize @income
-        if @income.reversed_at.present?
-          return redirect_to admin_accounting_incomes_path,
-                             alert: t("accounting.reversal.cannot_edit_reversed")
-        end
         if @income.update(income_params)
           redirect_to admin_accounting_incomes_path, notice: t("flash.accounting.income_updated")
         else
@@ -96,46 +85,45 @@ module Admin
         end
       end
 
-      def reverse
-        authorize @income, :destroy?
-        je = JournalEntry.for_source(@income).first
+      # Deleting removes the row, its treasury movement and its journal entry, so
+      # the P&L and the cash flow both stop reporting it. This is the only way to
+      # undo a income: reversal used to be the alternative and is gone, because a
+      # reversal left the original on the books and the two reports then had to be
+      # read together to see that nothing had really happened.
+      def destroy
+        authorize @income
 
-        if je.nil?
-          return redirect_to admin_accounting_incomes_path,
-                             alert: t("accounting.reversal.no_journal_entry")
-        end
+        # Captured before the row goes: an audit entry for a deletion that does not
+        # say what was deleted is barely an audit at all, and nothing else survives.
+        snapshot = {
+          description:  @income.description,
+          amount_cents: @income.amount_cents,
+          date:         @income.income_date,
+          category:     @income.income_category&.name,
+          treasury:     @income.treasury&.name
+        }
 
-        if @income.reversed_at.present? || je.reversed?
-          return redirect_to admin_accounting_incomes_path,
-                             alert: t("accounting.reversal.already_reversed")
-        end
+        @income.destroy!
+        AuditLogEntry.record!(action: "income.destroy", record: @income, user: current_user,
+                              changes_snapshot: snapshot)
 
-        ActiveRecord::Base.transaction do
-          reversal = ::Accounting::JournalEntryService.record_reversal!(
-            original_je: je, user: current_user
-          )
-          sync_je_treasuries!(reversal)
-          @income.update_column(:reversed_at, Time.current)
-          AuditLogEntry.record!(action: "income.reverse", record: @income, user: current_user)
-        end
-
-        redirect_to admin_accounting_incomes_path,
-                    notice: t("accounting.reversal.income_reversed")
+        redirect_to admin_accounting_incomes_path, notice: t("flash.accounting.income_deleted")
+      rescue ArgumentError => e
+        redirect_to admin_accounting_incomes_path, alert: e.message
       end
 
       private
 
-      # Every column an accountant needs to reconcile outside the system,
-      # including the reversal flag — a reversed row is in the ledger but not in
-      # the totals, and an export that hid that would not tie back.
+      # Every column an accountant needs to reconcile outside the system. Every
+      # row here is live: an undone record is deleted, not flagged, so there is
+      # no longer a state the totals leave out.
       def incomes_csv(scope)
         CSV.generate do |csv|
           csv << [
             t("accounting.shared.start"), t("accounting.shared.category"),
             t("accounting.shared.description"), t("accounting.shared.amount"),
             t("accounting.shared.treasury"), t("accounting.shared.reference_number"),
-            t("accounting.shared.recorded_by"), t("accounting.export.source"),
-            t("accounting.export.reversed")
+            t("accounting.shared.recorded_by"), t("accounting.export.source")
           ]
           scope.find_each do |record|
             csv << [
@@ -146,8 +134,7 @@ module Admin
               record.treasury&.name,
               record.reference_number,
               record.user&.name,
-              record.is_auto_generated? ? t("accounting.shared.auto") : t("accounting.export.manual"),
-              record.reversed_at.present? ? t("accounting.export.reversed_yes") : t("accounting.export.reversed_no")
+              record.is_auto_generated? ? t("accounting.shared.auto") : t("accounting.export.manual")
             ]
           end
         end

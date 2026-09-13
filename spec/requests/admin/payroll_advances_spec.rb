@@ -93,5 +93,29 @@ RSpec.describe "Admin payroll advances", type: :request do
         expect(treasury.reload.balance_cents).to eq(500_000)
       end
     end
+
+    # The treasury side was always cleaned up; the journal side was not, so the
+    # advance vanished while its entry stayed on the books and the P&L kept
+    # reporting salary advances that had been deleted.
+    it "removes the advance's journal entry too" do
+      travel_to Time.zone.local(2026, 6, 15, 10, 0, 0) do
+        advance = Accounting::PayPayrollAdvanceService.new(
+          user: staff,
+          amount_cents: 100_000,
+          treasury: treasury,
+          paid_by: owner,
+          paid_on: Date.new(2026, 6, 15)
+        ).call
+
+        expect(JournalEntry.where(source_record: advance)).to exist
+
+        delete admin_user_payroll_advance_path(staff, advance)
+
+        expect(JournalEntry.where(source_record_type: "PayrollAdvance",
+                                  source_record_id: advance.id)).to be_empty
+        expect(TreasuryTransaction.where(source_record_type: "PayrollAdvance",
+                                         source_record_id: advance.id)).to be_empty
+      end
+    end
   end
 end
