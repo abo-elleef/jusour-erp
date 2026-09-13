@@ -25,6 +25,13 @@ class InventoryPolicy < ApplicationPolicy
     user&.can?("inventory:manage")
   end
 
+  # Owner-only, deliberately not a permission key: copying a transfer reproduces
+  # someone else's request wholesale, and we want that kept to the account owner
+  # rather than delegable through the role editor.
+  def duplicate?
+    user&.owner?
+  end
+
   def complete?
     user&.can?("inventory:manage")
   end

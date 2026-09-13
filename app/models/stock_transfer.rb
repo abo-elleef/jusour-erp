@@ -169,6 +169,41 @@ class StockTransfer < ApplicationRecord
     stock_transfer_shipments.in_transit.order(:sequence).last
   end
 
+  # An unsaved copy of this transfer, for an owner to review before it is
+  # created. Nothing is persisted here — the form saves it like any other new
+  # request, so the copy gets its own transfer number and its own audit trail.
+  #
+  # `transferred_on` deliberately resets to today rather than carrying the
+  # source's date over: a copy is a new movement happening now, and silently
+  # backdating it would misstate when the stock moved.
+  def duplicate
+    copy = StockTransfer.new(
+      from_location_id: from_location_id,
+      to_location_id: to_location_id,
+      notes: notes,
+      stock_transfer_template_id: stock_transfer_template_id,
+      transferred_on: Date.current
+    )
+
+    stock_transfer_lines.ordered.each do |line|
+      copy.stock_transfer_lines.build(
+        ingredient_id: line.ingredient_id,
+        # By id, not name — the string writer re-resolves the unit per line.
+        unit_id: line.unit_id,
+        # `order_limit` is the destination's par level, stable enough to carry
+        # over. `counted_quantity` is what was on the shelf the day the source
+        # was raised, so it is left blank rather than shown as if still true.
+        order_limit: line.order_limit,
+        position: line.position,
+        # Stored quantities are base-unit; the form edits them in the line's
+        # own unit, and the input setter converts back on save.
+        quantity_requested_input: line.in_line_unit(line.quantity_requested)
+      )
+    end
+
+    copy
+  end
+
   # Timestamp on `transferred_on` at the current clock time, so late-entered
   # send/receive still land on the physical transfer day.
   def occurred_at(now: Time.current)

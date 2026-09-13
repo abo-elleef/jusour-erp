@@ -11,7 +11,9 @@
     </div>
   <% end %>
 
-  <% if stock_transfer.new_record? && @transfer_templates&.any? %>
+  <%# Hidden while reviewing a copy: picking a template here navigates away to a
+      blank form, which would throw the copied lines away. %>
+  <% if stock_transfer.new_record? && @source_transfer.blank? && @transfer_templates&.any? %>
     <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden">
       <div class="px-5 py-4 border-b border-amber-100">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_transfers.form.template") %></h2>

@@ -349,6 +349,7 @@ Rails.application.routes.draw do
       end
       resources :stock_transfers, only: %i[index show new create edit update destroy] do
         member do
+          get :duplicate
           post :submit
           post :send_transfer
           post :confirm_receipt

@@ -3,13 +3,32 @@
 <div class="max-w-7xl">
   <div class="mb-6 flex flex-wrap justify-between items-start gap-4">
     <div>
-      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.stock_transfers.new") %></h1>
-      <p class="text-gray-600 text-sm mt-1"><%= t("inventory.stock_transfers.new_description") %></p>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+        <%= @source_transfer ? t("inventory.stock_transfers.duplicate_title") : t("inventory.stock_transfers.new") %>
+      </h1>
+      <p class="text-gray-600 text-sm mt-1">
+        <%= @source_transfer ? t("inventory.stock_transfers.duplicate_description") : t("inventory.stock_transfers.new_description") %>
+      </p>
     </div>
     <%= link_to t("inventory.stock_transfers.form.manage_templates"),
           admin_inventory_stock_transfer_templates_path,
           class: "text-sm font-semibold text-amber-700 hover:text-amber-800 shrink-0" %>
   </div>
+
+  <% if @source_transfer %>
+    <%# Nothing has been created yet — say so, so the copy isn't mistaken for a
+        saved transfer, and link back to what it was copied from. %>
+    <div class="rounded-2xl border border-amber-200 bg-amber-50/60 px-5 py-4 mb-6 text-sm text-amber-900">
+      <p class="font-semibold"><%= t("inventory.stock_transfers.duplicate_banner_title") %></p>
+      <p class="mt-1">
+        <%= t("inventory.stock_transfers.duplicate_banner_body_html",
+              number: link_to(@source_transfer.transfer_number,
+                        admin_inventory_stock_transfer_path(@source_transfer),
+                        class: "font-semibold underline hover:no-underline"),
+              date: l(@source_transfer.transferred_on, format: :long)).html_safe %>
+      </p>
+    </div>
+  <% end %>
 
   <%= render "form", stock_transfer: @stock_transfer %>
 </div>

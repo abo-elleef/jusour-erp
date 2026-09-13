@@ -7,7 +7,7 @@ module Admin
       SCOPES = %w[open today all].freeze
 
       before_action :set_stock_transfer,
-        only: %i[show edit update submit destroy send_transfer confirm_receipt cancel
+        only: %i[show edit update submit destroy duplicate send_transfer confirm_receipt cancel
                  close_short void_shipment revert_shipment]
 
       # Lands on the open work queue rather than the full history: this page is
@@ -84,6 +84,25 @@ module Admin
           load_form_data
           render :new, status: :unprocessable_entity
         end
+      end
+
+      # Owner-only. A GET that saves nothing: it renders the new-transfer form
+      # pre-filled from the source so the owner can review and adjust before
+      # anything is created. Any status can be copied — the point is to repeat a
+      # request that already happened, and a completed transfer is the most
+      # likely thing to want again.
+      def duplicate
+        authorize_inventory!(:duplicate)
+
+        # Authorize first: `record_for_policy` reads @stock_transfer, and from
+        # here on it holds the unsaved copy rather than the source.
+        @source_transfer = @stock_transfer
+        @stock_transfer = @source_transfer.duplicate
+        @stock_transfer.requested_by = current_user
+
+        build_line_items
+        load_form_data
+        render :new
       end
 
       def edit
