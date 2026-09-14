@@ -10,8 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_10_130000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_14_130000) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
 
@@ -1661,12 +1662,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_10_130000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "kind", default: "goods_return", null: false
+    t.uuid "location_id"
+    t.uuid "vendor_invoice_id"
     t.index ["company_id", "credit_note_number"], name: "index_vendor_credit_notes_on_company_and_number", unique: true
+    t.index ["company_id", "kind"], name: "index_vendor_credit_notes_on_company_id_and_kind"
     t.index ["company_id"], name: "index_vendor_credit_notes_on_company_id"
     t.index ["credit_note_date"], name: "index_vendor_credit_notes_on_credit_note_date"
+    t.index ["location_id"], name: "index_vendor_credit_notes_on_location_id"
     t.index ["status"], name: "index_vendor_credit_notes_on_status"
     t.index ["supplier_id"], name: "index_vendor_credit_notes_on_supplier_id"
     t.index ["user_id"], name: "index_vendor_credit_notes_on_user_id"
+    t.index ["vendor_invoice_id"], name: "index_vendor_credit_notes_on_vendor_invoice_id"
   end
 
   create_table "vendor_invoice_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1724,6 +1731,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_10_130000) do
     t.boolean "freight_on_account", default: false, null: false
     t.boolean "draft", default: false, null: false
     t.uuid "import_shipment_id"
+    t.integer "credit_applied_cents", default: 0, null: false
     t.index ["company_id", "draft"], name: "index_vendor_invoices_on_company_id_and_draft"
     t.index ["company_id", "supplier_id", "invoice_number"], name: "index_vendor_invoices_on_company_supplier_and_number", unique: true
     t.index ["company_id"], name: "index_vendor_invoices_on_company_id"
@@ -1965,8 +1973,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_10_130000) do
   add_foreign_key "vendor_credit_note_lines", "units"
   add_foreign_key "vendor_credit_note_lines", "vendor_credit_notes"
   add_foreign_key "vendor_credit_notes", "companies"
+  add_foreign_key "vendor_credit_notes", "locations"
   add_foreign_key "vendor_credit_notes", "suppliers"
   add_foreign_key "vendor_credit_notes", "users"
+  add_foreign_key "vendor_credit_notes", "vendor_invoices"
   add_foreign_key "vendor_invoice_lines", "ingredients"
   add_foreign_key "vendor_invoice_lines", "units"
   add_foreign_key "vendor_invoice_lines", "vendor_invoices"

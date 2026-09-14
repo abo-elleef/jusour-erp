@@ -8,7 +8,7 @@ module Admin
       def index
         authorize_inventory_index!(VendorCreditNote)
         @q = VendorCreditNote.ransack(params[:q])
-        scope = @q.result.includes(:supplier, :user).recent
+        scope = @q.result.includes(:supplier, :user, :location, :vendor_invoice).recent
         @pagy, @vendor_credit_notes = pagy(:offset, scope, limit: 50)
         @suppliers = ::Supplier.active.order(:name)
       end
@@ -21,6 +21,7 @@ module Admin
         authorize_inventory!(:create)
         @vendor_credit_note = VendorCreditNote.new(
           credit_note_date: Date.current,
+          kind: "goods_return",
           vendor_credit_note_lines: [VendorCreditNoteLine.new(position: 0)]
         )
         load_form_data
@@ -72,8 +73,19 @@ module Admin
 
       def load_form_data
         @suppliers   = ::Supplier.active.order(:name)
+        @locations   = ::Location.active.order(:name)
         @ingredients = ::Ingredient.active.includes(:ingredient_units).order(:name)
         @units       = ::Unit.ordered
+        # Outstanding invoices per supplier, so the form can offer the invoice the
+        # credit comes off and the JS can swap the list when the supplier changes.
+        @supplier_open_invoices = ::VendorInvoice.posted.outstanding
+          .order(invoice_date: :desc)
+          .group_by(&:supplier_id)
+          .transform_values do |invoices|
+            invoices.map do |invoice|
+              ["#{invoice.invoice_number} — #{helpers.format_amount(invoice.balance_due_cents)}", invoice.id]
+            end
+          end
         @ingredient_available_units = @ingredients.to_h do |i|
           [i.id, i.available_unit_records.map { |u| [helpers.ingredient_unit_label(u.name), u.id] }]
         end
@@ -81,9 +93,9 @@ module Admin
 
       def vendor_credit_note_params
         params.require(:vendor_credit_note).permit(
-          :supplier_id, :credit_note_date, :notes,
+          :supplier_id, :credit_note_date, :notes, :kind, :location_id, :vendor_invoice_id,
           vendor_credit_note_lines_attributes: %i[
-            id ingredient_id unit_id quantity unit_price_cents_input position line_notes _destroy
+            id ingredient_id unit_id quantity unit_price_pounds position line_notes _destroy
           ]
         )
       end

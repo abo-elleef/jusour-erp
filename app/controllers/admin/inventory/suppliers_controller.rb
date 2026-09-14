@@ -94,7 +94,7 @@ module Admin
         load_price_history
         @ap_transactions = if @supplier.ap_treasury
                              @supplier.ap_treasury.treasury_transactions
-                               .where(kind: %w[ap_invoice ap_payment])
+                               .where(kind: %w[ap_invoice ap_payment ap_credit_note])
                                .order(occurred_on: :desc, created_at: :desc)
                                .limit(50)
                            else

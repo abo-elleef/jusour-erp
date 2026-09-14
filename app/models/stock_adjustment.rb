@@ -11,7 +11,7 @@ class StockAdjustment < ApplicationRecord
   references_unit :unit, column: :unit_id
 
   ADJUSTMENT_TYPES = %w[
-    delivery vendor_invoice manual_add manual_remove
+    delivery vendor_invoice vendor_credit_note manual_add manual_remove
     waste_spoilage waste_prep waste_overproduction
     cycle_count_correction clear_all_stock consumption
     production_consumption production_output customer_sale customer_return

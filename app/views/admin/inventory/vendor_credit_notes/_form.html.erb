@@ -5,9 +5,10 @@
 <%= form_with model: [:admin, :inventory, vendor_credit_note],
       class: "space-y-6",
       data: {
-        controller: "vendor-invoice-lines",
+        controller: "vendor-credit-note-lines",
         searchable_select_options: ingredient_search_options(@ingredients),
-        vendor_invoice_lines_available_units_value: @ingredient_available_units.to_json
+        vendor_credit_note_lines_available_units_value: @ingredient_available_units.to_json,
+        vendor_credit_note_lines_supplier_invoices_value: @supplier_open_invoices.to_json
       } do |f| %>
   <% if vendor_credit_note.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
@@ -24,11 +25,38 @@
         <%= f.label :supplier_id, t("inventory.vendor_credit_notes.supplier"), class: label_class %>
         <%= f.collection_select :supplier_id, @suppliers, :id, :name,
               { prompt: t("inventory.vendor_credit_notes.select_supplier") },
-              class: "#{input_class} appearance-none", required: true %>
+              class: "#{input_class} appearance-none", required: true,
+              data: { action: "change->vendor-credit-note-lines#supplierChanged" } %>
       </div>
       <div>
         <%= f.label :credit_note_date, t("inventory.vendor_credit_notes.date"), class: label_class %>
         <%= f.date_field :credit_note_date, class: input_class, required: true %>
+      </div>
+      <div>
+        <%= f.label :kind, t("inventory.vendor_credit_notes.kind"), class: label_class %>
+        <%= f.select :kind,
+              VendorCreditNote::KINDS.map { |k| [t("inventory.vendor_credit_notes.kinds.#{k}"), k] },
+              {},
+              class: "#{input_class} appearance-none",
+              data: { action: "change->vendor-credit-note-lines#kindChanged" } %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.vendor_credit_notes.kind_hint") %></p>
+      </div>
+      <div data-vendor-credit-note-lines-target="locationField">
+        <%= f.label :location_id, t("inventory.vendor_credit_notes.location"), class: label_class %>
+        <%= f.collection_select :location_id, @locations, :id, :name,
+              { prompt: t("inventory.vendor_credit_notes.select_location") },
+              class: "#{input_class} appearance-none" %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.vendor_credit_notes.location_hint") %></p>
+      </div>
+      <div class="sm:col-span-2">
+        <%= f.label :vendor_invoice_id, t("inventory.vendor_credit_notes.invoice"), class: label_class %>
+        <% invoice_opts = @supplier_open_invoices[vendor_credit_note.supplier_id] || [] %>
+        <%= f.select :vendor_invoice_id,
+              options_for_select(invoice_opts, vendor_credit_note.vendor_invoice_id),
+              { include_blank: t("inventory.vendor_credit_notes.no_invoice") },
+              class: "#{input_class} appearance-none",
+              data: { vendor_credit_note_lines_target: "invoiceSelect" } %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.vendor_credit_notes.invoice_hint") %></p>
       </div>
       <div class="sm:col-span-2">
         <%= f.label :notes, t("inventory.vendor_credit_notes.notes"), class: label_class %>
@@ -42,26 +70,29 @@
       <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_credit_notes.form.lines") %></h2>
     </div>
 
-    <div class="divide-y divide-gray-100" data-vendor-invoice-lines-target="lineContainer">
-      <% if vendor_credit_note.vendor_credit_note_lines.empty? %>
-        <% vendor_credit_note.vendor_credit_note_lines.build(position: 0) %>
-      <% end %>
+    <% if vendor_credit_note.vendor_credit_note_lines.empty? %>
+      <% vendor_credit_note.vendor_credit_note_lines.build(position: 0) %>
+    <% end %>
+    <div class="divide-y divide-gray-100" data-vendor-credit-note-lines-target="list">
       <%= f.fields_for :vendor_credit_note_lines do |lf| %>
         <%= render "admin/inventory/vendor_credit_notes/line_fields", f: lf %>
       <% end %>
     </div>
 
+    <template data-vendor-credit-note-lines-target="template">
+      <%= f.fields_for :vendor_credit_note_lines, VendorCreditNoteLine.new(position: 0), child_index: "NEW_RECORD" do |lf| %>
+        <%= render "admin/inventory/vendor_credit_notes/line_fields", f: lf %>
+      <% end %>
+    </template>
+
     <div class="px-5 py-4 border-t border-gray-100 flex items-center justify-between">
       <%= link_to t("inventory.vendor_invoices.form.add_line"),
             "#",
             class: "text-sm font-semibold text-amber-700 hover:text-amber-800",
-            data: {
-              action: "click->vendor-invoice-lines#addLine",
-              vendor_invoice_lines_target: "addLineButton"
-            } %>
+            data: { action: "click->vendor-credit-note-lines#add" } %>
       <div class="text-sm font-bold text-gray-900 tabular-nums">
         <%= t("inventory.vendor_credit_notes.form.total") %>:
-        <span data-vendor-invoice-lines-target="grandTotal">—</span>
+        <span class="tabular-nums" data-vendor-credit-note-lines-target="runningTotal">—</span>
       </div>
     </div>
   </section>

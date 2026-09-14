@@ -67,6 +67,7 @@ en:
     back_to_sign_in: "Back to sign in"
 
   actions:
+    void: "Void"
     save: "Save"
     cancel: "Cancel"
     create: "Create"
@@ -748,6 +749,7 @@ en:
     adjustment_types:
       delivery: "Delivery"
       vendor_invoice: "Vendor invoice"
+      vendor_credit_note: "Vendor credit note — return"
       manual_add: "Manual add"
       manual_remove: "Manual remove"
       waste_spoilage: "Waste — spoilage"
@@ -1312,6 +1314,7 @@ en:
         ap_running_balance: "Balance"
         ap_invoice_badge: "Invoice"
         ap_payment_badge: "Payment"
+        ap_credit_note_badge: "Credit note"
         direct_ap_payment:
           title: "Pay outstanding balance"
           hint: "Record a direct payment to this supplier against the outstanding AP balance, without a linked invoice."
@@ -1383,6 +1386,22 @@ en:
       total: "Total"
       notes: "Notes"
       recorded_by: "Recorded by"
+      invoice: "Against invoice"
+      invoice_hint: "The credit comes off this invoice's balance due. Leave blank for a standing credit that only reduces the supplier balance."
+      no_invoice: "No specific invoice"
+      errors:
+        exceeds_invoice_balance: "The credit is larger than the balance left on invoice %{invoice_number}."
+      kind: "Type"
+      kind_hint: "A goods return sends the items back and removes them from stock. A price adjustment only reduces what you owe."
+      kinds:
+        goods_return: "Goods return"
+        price_adjustment: "Price adjustment"
+      location: "Return from location"
+      location_hint: "Stock leaves this location when the note is confirmed. Required for a goods return."
+      select_location: "Select location…"
+      stock_effect_return: "Confirming this note removes these quantities from stock."
+      stock_effect_adjustment: "A price adjustment: stock is not affected, only the supplier balance."
+      stock_adjustment_note: "Returned on credit note %{credit_note_number} — %{supplier}"
       select_supplier: "Select supplier…"
       created: "Credit note created."
       confirmed: "Credit note confirmed and AP balance updated."
@@ -1471,6 +1490,8 @@ en:
         paid: "Paid"
         void: "Void"
       amount_paid: "Paid so far"
+      credit_applied: "Credited back"
+      credit_applied_hint: "Returns and rebates posted against this invoice."
       balance_due: "Balance due"
       payment_amount: "Payment amount"
       payments_heading: "Payment history"
@@ -4064,6 +4085,7 @@ en:
         payroll_salary: "Payroll salary"
         ap_invoice: "AP — Invoice received"
         ap_payment: "AP — Payment made"
+        ap_credit_note: "AP — Credit note"
         staff_meal: "Staff meal"
         online_payment: "Online payment"
       transactions:

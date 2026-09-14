@@ -12,6 +12,9 @@ class VendorInvoice < ApplicationRecord
   belongs_to :import_shipment, optional: true
   has_many :vendor_invoice_lines, -> { order(:position, :created_at) }, dependent: :destroy, inverse_of: :vendor_invoice
   has_many :vendor_invoice_payments, dependent: :destroy
+  # Returns and rebates credited back against this invoice. They settle it exactly
+  # as a payment does — the goods went back instead of the money going out.
+  has_many :vendor_credit_notes, dependent: :nullify
   # Courier freight paid at receive — separate from supplier AP / Vendor purchases payments.
   has_one :freight_expense, as: :source_record, class_name: "Expense", dependent: :nullify
 
@@ -169,16 +172,22 @@ class VendorInvoice < ApplicationRecord
     discount_cents.positive?
   end
 
+  # What has come off the invoice by any route: cash paid out, plus credit notes
+  # posted against it. Both reduce what the supplier is still owed.
+  def settled_cents
+    amount_paid_cents + credit_applied_cents
+  end
+
   def balance_due_cents
-    total_cents - amount_paid_cents
+    total_cents - settled_cents
   end
 
   def sync_payment_status!
     return if void?
 
-    new_status = if amount_paid_cents.zero?
+    new_status = if settled_cents <= 0
                    "unpaid"
-                 elsif amount_paid_cents >= total_cents
+                 elsif settled_cents >= total_cents
                    "paid"
                  else
                    "partially_paid"
@@ -188,7 +197,8 @@ class VendorInvoice < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[invoice_number invoice_date received_on payment_status total_cents amount_paid_cents supplier_id created_at]
+    %w[invoice_number invoice_date received_on payment_status total_cents amount_paid_cents
+       credit_applied_cents supplier_id created_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -227,7 +237,7 @@ class VendorInvoice < ApplicationRecord
   end
 
   def amount_paid_not_above_total
-    return if amount_paid_cents.to_i <= total_cents.to_i
+    return if amount_paid_cents.to_i + credit_applied_cents.to_i <= total_cents.to_i
 
     errors.add(:amount_paid_cents, "cannot exceed invoice total")
   end

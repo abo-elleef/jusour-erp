@@ -65,6 +65,7 @@ ar:
     back_to_sign_in: "العودة لتسجيل الدخول"
 
   actions:
+    void: "إلغاء"
     save: "حفظ"
     cancel: "إلغاء"
     create: "إنشاء"
@@ -746,6 +747,7 @@ ar:
     adjustment_types:
       delivery: "تسليم"
       vendor_invoice: "فاتورة مورد"
+      vendor_credit_note: "إشعار دائن — مرتجع"
       manual_add: "إضافة يدوية"
       manual_remove: "خصم يدوي"
       waste_spoilage: "هدر — تلف"
@@ -1312,6 +1314,7 @@ ar:
         ap_running_balance: "الرصيد"
         ap_invoice_badge: "فاتورة"
         ap_payment_badge: "دفعة"
+        ap_credit_note_badge: "إشعار دائن"
         direct_ap_payment:
           title: "سداد الرصيد المستحق"
           hint: "تسجيل دفعة مباشرة لهذا المورد مقابل رصيد الذمم المستحقة، دون ربطها بفاتورة."
@@ -1383,6 +1386,22 @@ ar:
       total: "الإجمالي"
       notes: "ملاحظات"
       recorded_by: "أدخله"
+      invoice: "مقابل فاتورة"
+      invoice_hint: "يُخصم الإشعار من رصيد هذه الفاتورة. اتركه فارغاً لرصيد دائن عام يخفّض رصيد المورد فقط."
+      no_invoice: "بدون فاتورة محددة"
+      errors:
+        exceeds_invoice_balance: "قيمة الإشعار أكبر من الرصيد المتبقي على الفاتورة %{invoice_number}."
+      kind: "النوع"
+      kind_hint: "مرتجع بضاعة يُعيد الأصناف ويخصمها من المخزون. تسوية سعر تخفّض المستحق فقط."
+      kinds:
+        goods_return: "مرتجع بضاعة"
+        price_adjustment: "تسوية سعر"
+      location: "المرتجع من فرع"
+      location_hint: "يُخصم المخزون من هذا الفرع عند تأكيد الإشعار. مطلوب لمرتجع البضاعة."
+      select_location: "اختر الفرع…"
+      stock_effect_return: "تأكيد هذا الإشعار يخصم هذه الكميات من المخزون."
+      stock_effect_adjustment: "تسوية سعر: لا يتأثر المخزون، يتغيّر رصيد المورد فقط."
+      stock_adjustment_note: "مرتجع على الإشعار الدائن %{credit_note_number} — %{supplier}"
       select_supplier: "اختر مورداً…"
       created: "تم إنشاء الإشعار الدائن."
       confirmed: "تم تأكيد الإشعار الدائن وتحديث رصيد الموردين."
@@ -1471,6 +1490,8 @@ ar:
         paid: "مدفوعة"
         void: "ملغاة"
       amount_paid: "المدفوع"
+      credit_applied: "مخصوم بإشعار دائن"
+      credit_applied_hint: "المرتجعات والتسويات المسجلة على هذه الفاتورة."
       balance_due: "الرصيد المستحق"
       payment_amount: "مبلغ الدفع"
       payments_heading: "سجل المدفوعات"
@@ -4087,6 +4108,7 @@ ar:
         payroll_salary: "راتب شهري"
         ap_invoice: "ذمم — فاتورة مستلمة"
         ap_payment: "ذمم — دفعة محوّلة"
+        ap_credit_note: "ذمم — إشعار دائن"
         staff_meal: "وجبة موظف"
         online_payment: "دفع إلكتروني"
       transactions:
