@@ -10,13 +10,16 @@ class VendorCreditNoteLine < ApplicationRecord
 
   monetize :unit_price_cents
   monetize :line_total_cents
-  money_input :unit_price_cents
+  # The line total is what the supplier credited, so it is what gets typed. Unit
+  # price is derived from it — the other way round, rounding the per-unit figure
+  # would lose fractions of a pound off the credited total.
+  money_input :line_total_cents
 
   validates :quantity, numericality: { greater_than: 0 }
-  validates :unit_price_cents, numericality: { greater_than_or_equal_to: 0 }
+  validates :line_total_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
-  before_validation :derive_line_total
+  before_validation :derive_unit_price
 
   scope :ordered, -> { order(:position, :created_at) }
 
@@ -30,7 +33,7 @@ class VendorCreditNoteLine < ApplicationRecord
 
   private
 
-  def derive_line_total
-    self.line_total_cents = (quantity.to_d * unit_price_cents.to_i).round
+  def derive_unit_price
+    self.unit_price_cents = quantity.to_d.zero? ? 0 : (line_total_cents.to_d / quantity.to_d).round
   end
 end

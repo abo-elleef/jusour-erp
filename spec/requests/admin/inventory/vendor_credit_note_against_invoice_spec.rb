@@ -35,12 +35,12 @@ RSpec.describe "Vendor credit note applied to an invoice", type: :request do
     Inventory::ReceiveVendorInvoiceService.new(inv, owner).call
   end
 
-  def credit_note_for(invoice, quantity:, unit_price:)
+  def credit_note_for(invoice, quantity:, line_total:)
     VendorCreditNote.create!(
       supplier: supplier, user: owner, company: company, credit_note_date: Date.current,
       kind: "goods_return", location: location, vendor_invoice: invoice,
       vendor_credit_note_lines_attributes: {
-        "0" => { ingredient_id: ingredient.id, quantity: quantity, unit_price_pounds: unit_price, position: "0" }
+        "0" => { ingredient_id: ingredient.id, quantity: quantity, line_total_pounds: line_total, position: "0" }
       }
     )
   end
@@ -50,7 +50,7 @@ RSpec.describe "Vendor credit note applied to an invoice", type: :request do
     expect(invoice.total_cents).to eq(10_000)
     expect(ap_treasury.reload.balance_cents).to eq(10_000)
 
-    credit_note = credit_note_for(invoice, quantity: 1, unit_price: "10.00")
+    credit_note = credit_note_for(invoice, quantity: 1, line_total: "10.00")
     post confirm_admin_inventory_vendor_credit_note_path(credit_note)
 
     invoice.reload
@@ -70,7 +70,7 @@ RSpec.describe "Vendor credit note applied to an invoice", type: :request do
   end
 
   it "refuses a payment larger than the balance left after the credit" do
-    credit_note = credit_note_for(invoice, quantity: 1, unit_price: "10.00")
+    credit_note = credit_note_for(invoice, quantity: 1, line_total: "10.00")
     post confirm_admin_inventory_vendor_credit_note_path(credit_note)
 
     expect {
@@ -83,7 +83,7 @@ RSpec.describe "Vendor credit note applied to an invoice", type: :request do
   end
 
   it "closes the invoice outright when the whole thing is credited back" do
-    credit_note = credit_note_for(invoice, quantity: 10, unit_price: "10.00")
+    credit_note = credit_note_for(invoice, quantity: 10, line_total: "100.00")
     post confirm_admin_inventory_vendor_credit_note_path(credit_note)
 
     invoice.reload
@@ -98,7 +98,7 @@ RSpec.describe "Vendor credit note applied to an invoice", type: :request do
       supplier: supplier, user: owner, company: company, credit_note_date: Date.current,
       kind: "goods_return", location: location, vendor_invoice: invoice,
       vendor_credit_note_lines_attributes: {
-        "0" => { ingredient_id: ingredient.id, quantity: 11, unit_price_pounds: "10.00", position: "0" }
+        "0" => { ingredient_id: ingredient.id, quantity: 11, line_total_pounds: "110.00", position: "0" }
       }
     )
     expect(note).not_to be_valid
@@ -111,7 +111,7 @@ RSpec.describe "Vendor credit note applied to an invoice", type: :request do
       supplier: other, user: owner, company: company, credit_note_date: Date.current,
       kind: "price_adjustment", vendor_invoice: invoice,
       vendor_credit_note_lines_attributes: {
-        "0" => { ingredient_id: ingredient.id, quantity: 1, unit_price_pounds: "1.00", position: "0" }
+        "0" => { ingredient_id: ingredient.id, quantity: 1, line_total_pounds: "1.00", position: "0" }
       }
     )
     expect(note).not_to be_valid

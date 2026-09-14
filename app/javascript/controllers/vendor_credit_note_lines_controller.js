@@ -93,15 +93,17 @@ export default class extends Controller {
     })
   }
 
+  // The typed figure is the line total — what the supplier actually credited.
+  // Unit price is shown back as total ÷ quantity, never typed.
   recalc() {
     let total = 0
     this.visibleRows().forEach((row) => {
       const qty = parseFloat(row.querySelector("[data-role='qty']")?.value) || 0
-      const price = parseFloat(row.querySelector("[data-role='price']")?.value) || 0
-      const line = qty * price
+      const line = parseFloat(row.querySelector("[data-role='line-total']")?.value) || 0
       total += line
-      const display = row.querySelector("[data-role='line-total']")
-      if (display) display.textContent = line > 0 ? this.format(line) : "—"
+
+      const display = row.querySelector("[data-role='unit-price']")
+      if (display) display.textContent = line > 0 && qty > 0 ? this.format(line / qty) : "—"
     })
     if (this.hasRunningTotalTarget) {
       this.runningTotalTarget.textContent = total > 0 ? this.format(total) : "—"

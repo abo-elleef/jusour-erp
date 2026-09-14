@@ -23,7 +23,7 @@ RSpec.describe "Vendor credit notes", type: :request do
     expect(response.body).to include("vendor_credit_note[vendor_credit_note_lines_attributes]")
   end
 
-  it "creates a draft with the line price entered in pounds" do
+  it "creates a draft from the line total, deriving the unit price" do
     expect {
       post admin_inventory_vendor_credit_notes_path, params: {
         vendor_credit_note: {
@@ -36,7 +36,7 @@ RSpec.describe "Vendor credit notes", type: :request do
               ingredient_id: ingredient.id,
               unit_id: ingredient.unit_ref&.id,
               quantity: "10",
-              unit_price_pounds: "1.23",
+              line_total_pounds: "12.30",
               position: "0",
               _destroy: "false"
             }
@@ -48,6 +48,7 @@ RSpec.describe "Vendor credit notes", type: :request do
     credit_note = VendorCreditNote.order(:created_at).last
     expect(response).to redirect_to(admin_inventory_vendor_credit_note_path(credit_note))
     expect(credit_note).to be_draft
+    expect(credit_note.vendor_credit_note_lines.sole.line_total_cents).to eq(1_230)
     expect(credit_note.vendor_credit_note_lines.sole.unit_price_cents).to eq(123)
     expect(credit_note.total_cents).to eq(1_230)
   end
@@ -61,7 +62,7 @@ RSpec.describe "Vendor credit notes", type: :request do
         kind: kind, location: note_location,
         vendor_credit_note_lines_attributes: {
           "0" => { ingredient_id: ingredient.id, unit_id: ingredient.unit_ref&.id,
-                   quantity: "10", unit_price_pounds: "1.23", position: "0" }
+                   quantity: "10", line_total_pounds: "12.30", position: "0" }
         }
       )
     end
@@ -133,7 +134,7 @@ RSpec.describe "Vendor credit notes", type: :request do
         supplier: supplier, user: owner, credit_note_date: Date.current, company: company,
         kind: "goods_return",
         vendor_credit_note_lines_attributes: {
-          "0" => { ingredient_id: ingredient.id, quantity: "1", unit_price_pounds: "1.00", position: "0" }
+          "0" => { ingredient_id: ingredient.id, quantity: "1", line_total_pounds: "1.00", position: "0" }
         }
       )
       expect(note).not_to be_valid

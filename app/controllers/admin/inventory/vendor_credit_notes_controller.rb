@@ -95,7 +95,7 @@ module Admin
         params.require(:vendor_credit_note).permit(
           :supplier_id, :credit_note_date, :notes, :kind, :location_id, :vendor_invoice_id,
           vendor_credit_note_lines_attributes: %i[
-            id ingredient_id unit_id quantity unit_price_pounds position line_notes _destroy
+            id ingredient_id unit_id quantity line_total_pounds position line_notes _destroy
           ]
         )
       end
