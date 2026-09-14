@@ -7,6 +7,8 @@ ar:
     formats:
       long: "%-d %B %Y"
       short: "%-d %b %H:%M"
+      day_header: "%A، %-d %B %Y"
+      day_month: "%-d %B"
   locale:
     switcher_label: "اللغة"
     en: "English"
@@ -4089,6 +4091,16 @@ ar:
       recorded_by: "سجّله"
       created_at_hint: "أُنشئت %{datetime}"
       no_transactions: "لا توجد معاملات في هذه الفترة."
+      no_transactions_week: "لا توجد معاملات في هذا الأسبوع."
+      entered_at: "وقت التسجيل"
+      group_flat: "قائمة"
+      group_by_day: "حسب اليوم"
+      day_net: "الصافي"
+      day_count: "%{count} معاملة"
+      week_totals: "هذا الأسبوع"
+      week_nav: "التنقل بين الأسابيع"
+      previous_week: "الأسبوع السابق"
+      next_week: "الأسبوع التالي"
       types:
         cash_drawer: "صندوق الكاشير / الكاش"
         bank: "حساب بنكي"

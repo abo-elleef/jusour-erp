@@ -124,6 +124,14 @@ module ApplicationHelper
     t("accounting.treasuries.transaction_kinds.#{kind}", default: kind.to_s.humanize)
   end
 
+  # "Sep 5 – Sep 11, 2026". Names both ends of the week: a Saturday→Friday week
+  # (see config.beginning_of_week) reads wrong to anyone expecting a Monday
+  # start unless the closing day is spelled out. Only the year is dropped from
+  # the opening day — a bare day number reads as a price next to the totals.
+  def treasury_week_label(week_start, week_end)
+    "#{l(week_start, format: :day_month)} – #{l(week_end, format: :long)}"
+  end
+
   # "≈ 0.26 gallon · 0.99 liter" — shows a base quantity in the ingredient's
   # alternate (purchase) units. Returns nil when there are no alternates.
   def ingredient_alt_unit_hint(ingredient, base_quantity)

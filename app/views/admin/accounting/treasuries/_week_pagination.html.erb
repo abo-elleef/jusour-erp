@@ -1,0 +1,39 @@
+<%# Footer for day-grouped mode. One page is one business week (Sat→Fri), so
+    there are no page numbers to window — just a step back and forward, bounded
+    by the date range above. %>
+<div class="flex flex-wrap items-center justify-between gap-4 px-5 py-3 border-t border-gray-100 bg-gray-50/60 text-sm">
+  <div class="flex flex-wrap items-center gap-2">
+    <span class="text-gray-500 shrink-0"><%= t("accounting.treasuries.week_totals") %></span>
+    <span class="inline-flex items-baseline gap-1.5 px-2.5 py-1 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-900">
+      <span class="font-bold tabular-nums"><%= format_amount(@week_in_cents) %></span>
+      <span class="text-xs font-medium opacity-80"><%= t("accounting.treasuries.stats_in_amount") %></span>
+    </span>
+    <span class="inline-flex items-baseline gap-1.5 px-2.5 py-1 rounded-lg border bg-red-50 border-red-200 text-red-900">
+      <span class="font-bold tabular-nums"><%= format_amount(@week_out_cents) %></span>
+      <span class="text-xs font-medium opacity-80"><%= t("accounting.treasuries.stats_out_amount") %></span>
+    </span>
+  </div>
+
+  <nav class="flex items-center gap-1" aria-label="<%= t("accounting.treasuries.week_nav") %>">
+    <% base_params = request.query_parameters.except("page") %>
+    <% if @previous_week %>
+      <%= link_to t("accounting.treasuries.previous_week"),
+            url_for(base_params.merge(week: @previous_week.iso8601)),
+            class: "px-2.5 py-1 rounded-lg text-amber-700 hover:bg-amber-50 font-semibold" %>
+    <% else %>
+      <span class="px-2.5 py-1 rounded-lg text-gray-300 font-semibold"><%= t("accounting.treasuries.previous_week") %></span>
+    <% end %>
+
+    <span class="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-semibold whitespace-nowrap">
+      <%= treasury_week_label(@week_start, @week_end) %>
+    </span>
+
+    <% if @next_week %>
+      <%= link_to t("accounting.treasuries.next_week"),
+            url_for(base_params.merge(week: @next_week.iso8601)),
+            class: "px-2.5 py-1 rounded-lg text-amber-700 hover:bg-amber-50 font-semibold" %>
+    <% else %>
+      <span class="px-2.5 py-1 rounded-lg text-gray-300 font-semibold"><%= t("accounting.treasuries.next_week") %></span>
+    <% end %>
+  </nav>
+</div>

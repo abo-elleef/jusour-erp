@@ -43,6 +43,7 @@ module Admin
       def show
         authorize @treasury
         parse_date_range
+        @group_by_day = params[:group_by] == "day"
         txn_scope = @treasury.treasury_transactions.on_date_range(@start_date, @end_date)
         @total_count    = txn_scope.count
         @active_count   = txn_scope.where("amount_cents > 0").count
@@ -58,12 +59,16 @@ module Admin
           { label: t("accounting.treasuries.stats_in_amount"), cents: in_cents, tone: :success },
           { label: t("accounting.treasuries.stats_out_amount"), cents: out_cents, tone: :danger }
         ]
-        @pagy, @transactions = pagy(:offset,
-          @treasury.treasury_transactions
-            .includes(:user, :source_record)
-            .on_date_range(@start_date, @end_date)
-            .recent,
-          limit: 100)
+        listing = @treasury.treasury_transactions
+          .includes(:user, :source_record)
+          .on_date_range(@start_date, @end_date)
+          .recent
+
+        if @group_by_day
+          load_week_page(listing)
+        else
+          @pagy, @transactions = pagy(:offset, listing, limit: 100)
+        end
 
         respond_to do |format|
           format.html
@@ -142,6 +147,37 @@ module Admin
       end
 
       private
+
+      # Grouped mode swaps row pagination for week pagination: one page is one
+      # business week (Saturday→Friday, per config.beginning_of_week) and the
+      # footer steps a whole week at a time. Weeks stay inside the active date
+      # range, so the filter above still bounds what is reachable.
+      def load_week_page(listing)
+        @first_week = @start_date.beginning_of_week
+        # A reversed range (end before start) would make the clamp below blow up.
+        @last_week  = [@end_date.beginning_of_week, @first_week].max
+
+        requested = safe_date_param(:week)&.beginning_of_week
+        # Default to the newest week in range, matching the descending order of
+        # the flat list.
+        @week_start = requested ? requested.clamp(@first_week, @last_week) : @last_week
+        @week_end   = @week_start.end_of_week
+
+        @previous_week = @week_start - 1.week if @week_start > @first_week
+        @next_week     = @week_start + 1.week if @week_start < @last_week
+
+        # A first or last week is usually only partly covered by the range; clip
+        # it so the day groups never show days the filter excludes.
+        rows = listing.where(occurred_on: [@week_start, @start_date].max..[@week_end, @end_date].min).to_a
+
+        @day_groups = rows.group_by(&:occurred_on).sort_by(&:first).reverse.map do |day, day_rows|
+          in_cents  = day_rows.sum { |tx| [tx.amount_cents, 0].max }
+          out_cents = day_rows.sum { |tx| [tx.amount_cents, 0].min }.abs
+          { day: day, rows: day_rows, in_cents: in_cents, out_cents: out_cents, net_cents: in_cents - out_cents }
+        end
+        @week_in_cents  = @day_groups.sum { |g| g[:in_cents] }
+        @week_out_cents = @day_groups.sum { |g| g[:out_cents] }
+      end
 
       def build_transactions_csv(transactions)
         require "csv"

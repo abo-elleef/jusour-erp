@@ -1,0 +1,33 @@
+<%# One transaction row, shared by the flat list and the day-grouped list.
+    Grouped mode drops the date — the day header above already carries it —
+    and keeps only the "created at" hint, which back-dated rows need. %>
+<tr>
+  <td class="p-3 ps-5 whitespace-nowrap">
+    <% unless grouped %>
+      <div><%= l(tx.occurred_on, format: :long) %></div>
+    <% end %>
+    <% entered_at = l(tx.created_at.in_time_zone, format: :long_with_time) %>
+    <div class="text-xs text-gray-400 <%= "mt-0.5" unless grouped %>">
+      <%# The "Created" prefix only earns its place under the date it qualifies;
+          grouped mode puts this column under an "Entered" header instead. %>
+      <%= grouped ? entered_at : t("accounting.treasuries.created_at_hint", datetime: entered_at) %>
+    </div>
+  </td>
+  <td class="p-3 text-gray-600"><%= accounting_treasury_transaction_kind(tx.kind) %></td>
+  <td class="p-3">
+    <% source_path = treasury_transaction_source_path(tx) %>
+    <% if source_path %>
+      <%# Breaks out of the transactions frame: the target is a whole other page. %>
+      <%= link_to treasury_transaction_description(tx, current_user), source_path,
+            data: { turbo_frame: "_top" },
+            class: "text-amber-700 hover:text-amber-900 hover:underline underline-offset-2" %>
+    <% else %>
+      <%= treasury_transaction_description(tx, current_user) %>
+    <% end %>
+  </td>
+  <td class="p-3 text-end font-semibold tabular-nums <%= tx.inflow? ? 'text-emerald-700' : 'text-red-700' %>">
+    <%= tx.inflow? ? "+" : "" %><%= format_money(tx.amount_cents) %>
+  </td>
+  <td class="p-3 text-end tabular-nums"><%= format_money(tx.balance_after_cents) %></td>
+  <td class="p-3 pe-5 text-gray-500 text-xs"><%= tx.user.name %></td>
+</tr>

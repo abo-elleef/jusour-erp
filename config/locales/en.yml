@@ -7,6 +7,8 @@ en:
     formats:
       long: "%b %-d, %Y"
       short: "%b %-d %H:%M"
+      day_header: "%A, %b %-d, %Y"
+      day_month: "%b %-d"
   locale:
     switcher_label: "Language"
     en: "English"
@@ -4066,6 +4068,18 @@ en:
       recorded_by: "Recorded by"
       created_at_hint: "Created %{datetime}"
       no_transactions: "No transactions in this period."
+      no_transactions_week: "No transactions in this week."
+      entered_at: "Entered"
+      group_flat: "List"
+      group_by_day: "By day"
+      day_net: "net"
+      day_count:
+        one: "1 transaction"
+        other: "%{count} transactions"
+      week_totals: "This week"
+      week_nav: "Move between weeks"
+      previous_week: "Earlier week"
+      next_week: "Later week"
       types:
         cash_drawer: "Cash drawer / register"
         bank: "Bank account"
