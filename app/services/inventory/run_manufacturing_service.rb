@@ -57,6 +57,13 @@ module Inventory
         Inventory::CheckLowStockJob.perform_later(ingredient_id) if ingredient.low_stock?
       end
 
+      # The new batch shifts the output's weighted average cost. Only the output
+      # moves — inputs were drawn down at costs they already carried. Under a
+      # bulk run this enqueues inside the outer transaction, so a worker can read
+      # ahead of the commit; the nightly inventory:sync_manufactured_costs task
+      # corrects anything that lands early.
+      Inventory::SyncManufacturedCostJob.perform_later(@template.output_ingredient_id)
+
       run
     end
 

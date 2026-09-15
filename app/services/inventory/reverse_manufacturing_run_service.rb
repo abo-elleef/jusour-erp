@@ -19,6 +19,10 @@ module Inventory
         @run.update!(reversed_at: Time.current, reversed_by: @user)
       end
 
+      # The output batch has been zeroed out, so the average of what remains has
+      # moved with it.
+      Inventory::SyncManufacturedCostJob.perform_later(@template.output_ingredient_id)
+
       @run
     end
 

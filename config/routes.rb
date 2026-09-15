@@ -317,6 +317,7 @@ Rails.application.routes.draw do
           get :adjustments
           get :batches
           post :sync_cost_from_last_invoice
+          post :sync_cost_from_batches
         end
         collection { get :low_stock }
         resources :recipes, only: %i[create destroy]

@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe Inventory::RunManufacturingService do
+  include ActiveJob::TestHelper
+
   let(:user) { create(:user) }
   let(:category) { IngredientCategory.create!(name: "Proteins", position: 1, company: Current.company) }
 
@@ -117,6 +119,20 @@ RSpec.describe Inventory::RunManufacturingService do
       expect(marinated.reload.quantity_on_hand.to_d).to eq(5)
     end
 
+    it "queues a cost sync for the output, and only the output" do
+      expect {
+        described_class.new(
+          template: template, user: user, location: kitchen,
+          runs_count: 1, shelf_life_days: 5
+        ).call
+      }.to have_enqueued_job(Inventory::SyncManufacturedCostJob).with(marinated.id).exactly(:once)
+
+      # Inputs were drawn down at costs their batches already carried, so their
+      # own averages have not moved.
+      expect(Inventory::SyncManufacturedCostJob).not_to have_been_enqueued.with(chicken.id)
+      expect(Inventory::SyncManufacturedCostJob).not_to have_been_enqueued.with(buttermilk.id)
+    end
+
     it "rejects zero shelf life" do
       expect {
         described_class.new(
@@ -191,6 +207,8 @@ RSpec.describe Inventory::RunManufacturingService do
 end
 
 RSpec.describe Inventory::ReverseManufacturingRunService do
+  include ActiveJob::TestHelper
+
   let(:user) { create(:user) }
   let(:category) { IngredientCategory.create!(name: "Proteins Reverse", position: 1, company: Current.company) }
   let(:chicken) do
@@ -243,6 +261,14 @@ RSpec.describe Inventory::ReverseManufacturingRunService do
     expect(chicken.reload.quantity_on_hand.to_d).to eq(10)
     expect(marinated.reload.quantity_on_hand.to_d).to eq(0)
     expect(run.output_batch.quantity_remaining.to_d).to eq(0)
+  end
+
+  it "queues a cost sync once the output batch is zeroed" do
+    run = record_run
+
+    expect {
+      described_class.new(run: run, user: user).call
+    }.to have_enqueued_job(Inventory::SyncManufacturedCostJob).with(marinated.id)
   end
 
   it "refuses undo when some of the produced stock has been used" do

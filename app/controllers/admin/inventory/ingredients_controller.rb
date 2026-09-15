@@ -6,7 +6,8 @@ module Admin
   module Inventory
     class IngredientsController < BaseController
       before_action :set_ingredient,
-        only: %i[show edit update destroy adjust adjustments batches sync_cost_from_last_invoice]
+        only: %i[show edit update destroy adjust adjustments batches sync_cost_from_last_invoice
+                 sync_cost_from_batches]
 
       SORT_COLUMNS = %w[code name quantity_on_hand suppliers status cost_per_unit_cents stock_value].freeze
 
@@ -57,6 +58,11 @@ module Admin
         load_branch_stock
         load_balance_history_chart
         @last_invoice_cost = ::Inventory::IngredientLastInvoiceCost.new(@ingredient).call
+        # Manufactured items cost out from their own batches rather than an
+        # invoice; the preview lets a hand-kept cost be shown against what the
+        # batches actually say.
+        @manufactured = @ingredient.output_manufacturing_templates.exists?
+        @batch_cost_cents = ::Inventory::SyncManufacturedCostService.preview(ingredient: @ingredient) if @manufactured
         @audits = @ingredient.audits.includes(:user).reorder(version: :desc).limit(50)
         @audits_total = @ingredient.audits.count
       end
@@ -236,6 +242,36 @@ module Admin
             from: helpers.format_money(previous_cents),
             to: helpers.format_money(result.unit_cost_cents),
             invoice: result.invoice.invoice_number)
+      end
+
+      # Hand the cost of a manufactured item over to
+      # Inventory::SyncManufacturedCostService and sync it now. Also the way back
+      # for an item whose cost was taken over by hand: marking it derived again
+      # puts the nightly sweep back in charge.
+      def sync_cost_from_batches
+        authorize_inventory!(:update)
+        return_to = safe_return_to || admin_inventory_ingredient_path(@ingredient)
+
+        unless @ingredient.output_manufacturing_templates.exists?
+          redirect_to return_to, alert: t("inventory.ingredients.cost_derive.not_manufactured")
+          return
+        end
+
+        previous_cents = @ingredient.cost_per_unit_cents.to_i
+        @ingredient.update!(cost_source: "derived")
+        result = ::Inventory::SyncManufacturedCostService.call(ingredient: @ingredient)
+
+        case result.skipped_reason
+        when :no_batches
+          redirect_to return_to, alert: t("inventory.ingredients.cost_derive.no_batches")
+        when :unchanged
+          redirect_to return_to, notice: t("inventory.ingredients.cost_derive.unchanged")
+        else
+          redirect_to return_to,
+            notice: t("inventory.ingredients.cost_derive.applied",
+              from: helpers.format_money(previous_cents),
+              to: helpers.format_money(result.new_cents))
+        end
       end
 
       private
@@ -474,7 +510,13 @@ module Admin
         # means zero, so clearing it in the form keeps working.
         if permitted.key?(:cost_per_unit_dollars)
           dollars = permitted.delete(:cost_per_unit_dollars)
-          permitted[:cost_per_unit_cents] = (BigDecimal(dollars.to_s.presence || "0") * 100).round
+          cents = (BigDecimal(dollars.to_s.presence || "0") * 100).round
+          permitted[:cost_per_unit_cents] = cents
+          # Typing a *different* cost takes the number back by hand — otherwise the
+          # next sync would overwrite the edit and it would look like the save was
+          # lost. Re-saving the same figure (an unrelated edit through the same
+          # form) leaves a derived cost derived.
+          permitted[:cost_source] = "manual" if cents != @ingredient&.cost_per_unit_cents.to_i
         end
 
         permitted[:shelf_life_days] = nil if permitted[:shelf_life_days].blank?

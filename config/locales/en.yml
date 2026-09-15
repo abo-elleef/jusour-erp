@@ -926,6 +926,19 @@ en:
         vendor_product_name_placeholder: "What this supplier calls it"
         vendor_sku: "Vendor code / SKU"
         vendor_sku_placeholder: "Supplier's item code"
+      cost_derive:
+        derived_badge: "Derived from stock batches"
+        manual_badge: "Set by hand — the nightly sync leaves it alone."
+        synced_at: "updated %{time} ago"
+        batches_say: "Batches average %{amount}"
+        no_batches_hint: "No stock left to average — the last calculated cost is kept."
+        action_switch: "Use batch cost"
+        action_refresh: "Refresh from batches"
+        confirm: "Change the cost per unit from %{from} to %{to}, and let it follow the stock batches from now on? It will refresh after each production run and every night."
+        applied: "Cost per unit changed from %{from} to %{to}, and now follows the stock batches."
+        unchanged: "Cost per unit already matches the stock batches."
+        no_batches: "No stock left to average — the current cost is kept."
+        not_manufactured: "This ingredient is not produced by a manufacturing template."
       cost_sync:
         action: "Use last invoice price"
         differs_html: "Last invoice %{invoice}: %{invoiced}"
@@ -943,6 +956,7 @@ en:
         max_quantity_hint: "Target stock for purchase requests"
         cost_per_unit: "Cost per unit"
         cost_hint: "Set manually. Drives stock valuation, recipe costing and manual stock adds."
+        cost_hint_manufactured: "Averaged from this item's own stock batches. Refreshes after production and every night."
         stock_value: "Stock value"
         stock_value_hint: "On hand × cost per unit"
         units:

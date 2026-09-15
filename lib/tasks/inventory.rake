@@ -67,4 +67,56 @@ namespace :inventory do
 
     puts "Done — #{updated} adjustment(s) updated, #{skipped} skipped (missing ingredient)."
   end
+
+  # Refresh the master cost of manufactured ingredients from the weighted average
+  # of their own remaining stock batches.
+  #
+  # Production runs and reversals sync their own output, but sales, transfers and
+  # stock takes all draw batches down and move the average without touching the
+  # ingredient — so this nightly sweep is what actually keeps the number honest,
+  # and it makes every other trigger self-healing within a day.
+  #
+  #   bin/rails inventory:sync_manufactured_costs
+  #
+  # Schedule it at 04:30 UTC on Heroku Scheduler. The intent is 6:30 AM Cairo,
+  # just past the BusinessDay boundary of 6 AM, so the previous day's production
+  # is settled before the average is taken. Scheduler runs in UTC and Cairo shifts
+  # with DST (UTC+2 winter, UTC+3 summer), so 04:30 UTC lands at 06:30 in winter
+  # and 07:30 in summer — always after the boundary. Do NOT use 03:30 UTC: that
+  # fires at 05:30 Cairo in winter, before the day has rolled over.
+  #
+  # Safe to re-run: it only writes when the average has actually moved, never
+  # writes zero, and never touches a cost someone owns by hand (cost_source
+  # "manual").
+  desc "Refresh derived costs for manufactured ingredients from their stock batches"
+  task sync_manufactured_costs: :environment do
+    changed = 0
+    examined = 0
+
+    Company.find_each do |company|
+      previous = Current.company
+      Current.company = company
+      begin
+        results = Inventory::SyncManufacturedCostService.call_for_company
+        next if results.empty?
+
+        examined += results.size
+        moved = results.select(&:changed?)
+        changed += moved.size
+
+        puts "#{company.name}: #{moved.size} changed of #{results.size} derived"
+        moved.sort_by { |r| -r.new_cents }.each do |result|
+          puts format("  %-30s %10.2f -> %10.2f  (%d batches)",
+            result.ingredient.name,
+            result.previous_cents / 100.0,
+            result.new_cents / 100.0,
+            result.batch_count)
+        end
+      ensure
+        Current.company = previous
+      end
+    end
+
+    puts "Done — #{changed} cost(s) updated across #{examined} derived ingredient(s)."
+  end
 end

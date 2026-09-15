@@ -70,6 +70,39 @@
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.ingredients.show.cost_per_unit") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@ingredient.cost_per_unit_cents) %></p>
+      <% if @manufactured %>
+        <% if @ingredient.cost_source == "derived" %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.ingredients.show.cost_hint_manufactured") %></p>
+          <p class="text-xs text-emerald-700 mt-2 font-medium">
+            <%= t("inventory.ingredients.cost_derive.derived_badge") %>
+            <% if @ingredient.cost_synced_at %>
+              · <%= t("inventory.ingredients.cost_derive.synced_at", time: time_ago_in_words(@ingredient.cost_synced_at)) %>
+            <% end %>
+          </p>
+          <% if @batch_cost_cents %>
+            <%= button_to t("inventory.ingredients.cost_derive.action_refresh"),
+                  sync_cost_from_batches_admin_inventory_ingredient_path(@ingredient),
+                  method: :post,
+                  class: "mt-2 inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200 transition-colors" %>
+          <% else %>
+            <p class="text-xs text-gray-500 mt-2"><%= t("inventory.ingredients.cost_derive.no_batches_hint") %></p>
+          <% end %>
+        <% else %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.ingredients.cost_derive.manual_badge") %></p>
+          <% if @batch_cost_cents && @batch_cost_cents != @ingredient.cost_per_unit_cents.to_i %>
+            <p class="text-xs text-amber-800 mt-2 font-medium">
+              <%= t("inventory.ingredients.cost_derive.batches_say", amount: format_amount(@batch_cost_cents)) %>
+            </p>
+            <%= button_to t("inventory.ingredients.cost_derive.action_switch"),
+                  sync_cost_from_batches_admin_inventory_ingredient_path(@ingredient),
+                  method: :post,
+                  form: { data: { turbo_confirm: t("inventory.ingredients.cost_derive.confirm",
+                                                   from: format_money(@ingredient.cost_per_unit_cents),
+                                                   to: format_money(@batch_cost_cents)) } },
+                  class: "mt-2 inline-flex text-xs font-semibold text-amber-800 hover:bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-300 transition-colors" %>
+          <% end %>
+        <% end %>
+      <% else %>
       <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.ingredients.show.cost_hint") %></p>
       <% if @last_invoice_cost %>
         <% invoiced = @last_invoice_cost.unit_cost_cents %>
@@ -96,6 +129,7 @@
                                                  count: @last_invoice_cost.invoice_count) } },
                 class: "mt-2 inline-flex text-xs font-semibold text-amber-800 hover:bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-300 transition-colors" %>
         <% end %>
+      <% end %>
       <% end %>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">

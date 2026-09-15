@@ -6,9 +6,16 @@ class Ingredient < ApplicationRecord
   include MoneyInputs
 
   # Stock qty moves via adjustments; keep master-data history free of that noise.
-  audited associated_with: :company, except: %i[quantity_on_hand]
+  # cost_synced_at only ever moves alongside cost_per_unit_cents, which is
+  # audited — recording the timestamp too would double every cost row.
+  audited associated_with: :company, except: %i[quantity_on_hand cost_synced_at]
 
   UNITS = %w[kg g lbs oz liters ml pieces packs gallons bales].freeze
+  # "derived" hands cost_per_unit_cents to
+  # Inventory::SyncManufacturedCostService, which averages the ingredient's own
+  # stock batches. "manual" means someone owns the number by hand and no sync
+  # may touch it. Only manufacturing template outputs are ever derived.
+  COST_SOURCES = %w[manual derived].freeze
 
   belongs_to :ingredient_category
   # Base unit, referenced by id but exposed as a name (`ingredient.unit`).
@@ -44,6 +51,7 @@ class Ingredient < ApplicationRecord
   validates :max_quantity, numericality: { greater_than_or_equal_to: 0 }
   validates :quantity_on_hand, numericality: true
   validates :shelf_life_days, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :cost_source, inclusion: { in: COST_SOURCES }
   before_validation :discard_alternate_units_on_base_change, on: :update
 
   # Next auto code for an ingredient in `category`: "<CATEGORY_CODE>-NNN", where
