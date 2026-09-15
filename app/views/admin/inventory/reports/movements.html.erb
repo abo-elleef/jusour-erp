@@ -201,19 +201,7 @@
         </table>
       </div>
 
-      <% if @pagy.pages > 1 %>
-        <div class="flex items-center justify-center gap-2 py-4 text-sm border-t border-gray-100">
-          <% if @pagy.previous %>
-            <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: @pagy.previous)),
-                  class: "px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors" %>
-          <% end %>
-          <span class="text-gray-600 px-2 tabular-nums"><%= t("accounting.shared.pagination", page: @pagy.page, pages: @pagy.pages) %></span>
-          <% if @pagy.next %>
-            <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: @pagy.next)),
-                  class: "px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors" %>
-          <% end %>
-        </div>
-      <% end %>
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
     <% end %>
   </section>
 </div>

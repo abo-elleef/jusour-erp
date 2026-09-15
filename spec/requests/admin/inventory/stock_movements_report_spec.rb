@@ -120,6 +120,19 @@ RSpec.describe "Admin::Inventory::Reports#movements", type: :request do
     expect(response.body).not_to include("Foreign Item")
   end
 
+  it "paginates at 50 with windowed page links" do
+    60.times { |n| adjust(flour, 1, at: n.minutes.ago) }
+
+    get admin_inventory_reports_movements_path
+
+    # 50 rows on page one, and the windowed bar offers page 2.
+    expect(response.body.scan(admin_inventory_ingredient_path(flour)).size).to eq(50)
+    expect(response.body).to include(
+      I18n.t("accounting.shared.pagination_showing", from: 1, to: 50, count: 60)
+    )
+    expect(response.body).to include(admin_inventory_reports_movements_path(page: 2))
+  end
+
   it "exports CSV with the item on every row" do
     adjust(flour, 5)
 
