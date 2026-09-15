@@ -66,8 +66,12 @@ module Accounting
       to_date = from_date + 1.day
 
       ActiveRecord::Base.transaction do
-        # Closing the day is when its takings become revenue.
+        # Closing the day is when its takings become revenue, and when what they
+        # cost is recognised against them.
         JournalEntryService.record_daily_sales!(
+          location: @location, business_date: from_date, user: @user
+        )
+        DailyCogsService.call(
           location: @location, business_date: from_date, user: @user
         )
         current.update!(closed_at: Time.current, closed_by: @user)

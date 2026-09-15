@@ -36,3 +36,48 @@ namespace :accounting do
     puts "Posted #{posted} location-days (#{from}#{" → #{to}" if to != from})."
   end
 end
+
+# Replaces the legacy per-order COGS rows with the branch-day rows that took over
+# from them. Safe to re-run: the per-order rows are gone after the first pass, and
+# each branch-day row is rewritten rather than added to.
+#
+#   bin/rails accounting:migrate_order_cogs
+namespace :accounting do
+  desc "Replace legacy per-order COGS expense rows with one row per branch-day"
+  task migrate_order_cogs: :environment do
+    removed = 0
+    rebuilt = 0
+
+    Company.find_each do |company|
+      previous = Current.company
+      Current.company = company
+      begin
+        legacy = Expense.where(source_record_type: "Order", is_auto_generated: true)
+        next if legacy.empty?
+
+        # Group the orders those rows came from into the branch-days that now own
+        # the cost, before the rows that point at them are deleted.
+        pairs = Order.where(id: legacy.select(:source_record_id))
+                     .where.not(location_id: nil)
+                     .includes(:location)
+                     .map { |order| [order.location, BusinessDay.for(order.created_at, location: order.location)] }
+                     .uniq { |location, date| [location.id, date] }
+
+        removed += legacy.destroy_all.size
+
+        user = User.where(company_id: company.id, role: "owner").first ||
+               User.where(company_id: company.id).first
+        next if user.nil?
+
+        pairs.each do |location, date|
+          Accounting::DailyCogsService.call(location: location, business_date: date, user: user)
+          rebuilt += 1
+        end
+      ensure
+        Current.company = previous
+      end
+    end
+
+    puts "Removed #{removed} per-order COGS rows; rebuilt #{rebuilt} branch-day rows."
+  end
+end

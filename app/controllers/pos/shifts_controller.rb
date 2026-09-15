@@ -136,7 +136,9 @@ module Pos
     end
 
     def unpaid_orders_for(user)
-      Order.awaiting_payment
+      # Same definition as Collect Payment, so the shift warning and the screen it
+      # sends the cashier to can never disagree about what is still owed.
+      Order.not_fully_paid
         .where(user: user)
         .includes(:payments)
         .limit(100)

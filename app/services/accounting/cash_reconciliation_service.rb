@@ -2,7 +2,7 @@
 
 module Accounting
   class CashReconciliationService
-    VARIANCE_ALERT_THRESHOLD_CENTS = 1000
+    VARIANCE_ALERT_THRESHOLD_CENTS = 10_000
 
     def initialize(session)
       @session = session

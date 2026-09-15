@@ -7,10 +7,22 @@ require "rails_helper"
 # every way the company earns money is counted exactly once, whichever report you
 # open and whichever selling motion produced it.
 RSpec.describe "Ledger-backed revenue reporting" do
+  include ActiveSupport::Testing::TimeHelpers
+
+  # Pinned to the middle of a trading day. A business day runs from its start hour
+  # (06:00 by default), so between midnight and that hour the calendar date and the
+  # business date are different days — and every assertion here depends on orders
+  # rung "now" belonging to the day being posted. Unpinned, the whole file passed in
+  # the afternoon and failed at 02:00.
+  around { |example| travel_to(Time.zone.local(2026, 6, 10, 12, 0, 0)) { example.run } }
+
   let(:company) { create(:company, business_type: "distribution") }
   let(:user) { create(:user, :owner, company: company) }
   let(:location) { create(:location, company: company) }
-  let(:today) { Date.current }
+  # The business day everything here is dated to. Derived rather than assumed to be
+  # the calendar date: `record_daily_sales!` scopes orders by the business day, and
+  # the two are different days before the start hour.
+  let(:business_day) { BusinessDay.for(Time.current, location: location) }
 
   let!(:cash) do
     Treasury.create!(company: company, name: "Cash", treasury_type: "cash_drawer",
@@ -26,23 +38,23 @@ RSpec.describe "Ledger-backed revenue reporting" do
   before { Current.company = company }
 
   def coa
-    Accounting::ChartOfAccountsService.new(start_date: today, end_date: today)
+    Accounting::ChartOfAccountsService.new(start_date: business_day, end_date: business_day)
   end
 
   def pnl
-    Accounting::PnlService.new(today, today).call
+    Accounting::PnlService.new(business_day, business_day).call
   end
 
   def record_income!(cents)
     cat = IncomeCategory.create!(company: company, name: "Misc income", category_type: "other")
     Income.create!(company: company, income_category: cat, amount_cents: cents,
-      income_date: today, description: "Misc", recurrence: "one_time",
+      income_date: business_day, description: "Misc", recurrence: "one_time",
       user: user, treasury: cash, is_auto_generated: false)
   end
 
   def confirm_invoice!(cents)
     invoice = CustomerInvoice.new(company: company, customer: customer, user: user,
-      location: location, invoice_date: today)
+      location: location, invoice_date: business_day)
     invoice.customer_invoice_lines.build(ingredient: ingredient, quantity: 1,
       unit: ingredient.unit, unit_price_cents: cents)
     invoice.save!
@@ -55,7 +67,7 @@ RSpec.describe "Ledger-backed revenue reporting" do
       status: "completed", subtotal_cents: subtotal, discount_cents: 0,
       tax_cents: tax, tip_cents: 0, total_cents: subtotal + tax)
     Accounting::JournalEntryService.record_daily_sales!(
-      location: location, business_date: today, user: user
+      location: location, business_date: business_day, user: user
     )
   end
 
@@ -91,7 +103,7 @@ RSpec.describe "Ledger-backed revenue reporting" do
     it "nets a credit note back off revenue" do
       invoice = confirm_invoice!(120_000)
       note = CreditNote.new(company: company, customer: customer, user: user,
-        location: location, credit_note_date: today, customer_invoice: invoice, restock: false)
+        location: location, credit_note_date: business_day, customer_invoice: invoice, restock: false)
       note.credit_note_lines.build(ingredient: ingredient, quantity: 1, unit: ingredient.unit,
         unit_price_cents: 20_000)
       note.save!
@@ -105,7 +117,7 @@ RSpec.describe "Ledger-backed revenue reporting" do
     it "counts an expense once" do
       cat = ExpenseCategory.create!(company: company, name: "Rent", category_type: "rent")
       Expense.create!(company: company, expense_category: cat, amount_cents: 30_000,
-        expense_date: today, description: "Rent", recurrence: "one_time",
+        expense_date: business_day, description: "Rent", recurrence: "one_time",
         user: user, treasury: cash, is_auto_generated: false)
 
       expect(coa.total_expenses_cents).to eq(30_000)
@@ -114,7 +126,7 @@ RSpec.describe "Ledger-backed revenue reporting" do
     it "leaves auto-generated COGS out — stock is expensed when bought, not when sold" do
       cogs = ExpenseCategory.create!(company: company, name: "COGS", category_type: "other")
       Expense.create!(company: company, expense_category: cogs, amount_cents: 25_000,
-        expense_date: today, description: "COGS — Order #1", recurrence: "one_time",
+        expense_date: business_day, description: "COGS — Order #1", recurrence: "one_time",
         user: user, is_auto_generated: true)
 
       expect(coa.total_expenses_cents).to eq(0)
@@ -128,7 +140,7 @@ RSpec.describe "Ledger-backed revenue reporting" do
       post_pos_day!(subtotal: 80_000)
       cat = ExpenseCategory.create!(company: company, name: "Rent", category_type: "rent")
       Expense.create!(company: company, expense_category: cat, amount_cents: 30_000,
-        expense_date: today, description: "Rent", recurrence: "one_time",
+        expense_date: business_day, description: "Rent", recurrence: "one_time",
         user: user, treasury: cash, is_auto_generated: false)
 
       expect(pnl[:net_profit_cents]).to eq(coa.net_income_cents)

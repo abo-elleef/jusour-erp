@@ -7,6 +7,22 @@ class Order < ApplicationRecord
   STATUSES = %w[draft submitted in_progress ready completed cancelled].freeze
   ORDER_TYPES = %w[delivery pickup table].freeze
 
+  # Advisory-lock namespace, so order numbering can never contend with another
+  # part of the app that reaches for an advisory lock of its own.
+  ORDER_NUMBER_LOCK_NAMESPACE = 8_301
+
+  # Refunds are not deducted: a refunded payment settled the order when it was
+  # taken, and re-opening a balance for it would send the cashier chasing money
+  # the customer has already been given back.
+  BALANCE_DUE_SQL = <<~SQL.squish.freeze
+    orders.total_cents > COALESCE((
+      SELECT SUM(payments.amount_cents)
+      FROM payments
+      WHERE payments.order_id = orders.id
+      AND payments.status IN ('completed', 'partially_refunded')
+    ), 0)
+  SQL
+
   belongs_to :customer, optional: true
   belongs_to :user
   belongs_to :location, optional: true
@@ -26,9 +42,11 @@ class Order < ApplicationRecord
   monetize :tip_cents, allow_nil: false
   monetize :total_cents, allow_nil: true
 
-  validates :order_number, presence: true, uniqueness: { scope: :company_id }
+  validates :order_number, presence: true,
+                           uniqueness: { scope: %i[company_id location_id business_date] }
   validates :order_type, presence: true, inclusion: { in: ORDER_TYPES }
 
+  before_validation :assign_business_date, on: :create
   before_validation :assign_order_number, on: :create
   before_save :clear_fulfillment_fields_for_type
   before_create :generate_receipt_token
@@ -64,7 +82,6 @@ class Order < ApplicationRecord
       after do
         Loyalty::AwardPointsJob.perform_later(id)
         Inventory::DeductStockService.new(self).call
-        Accounting::AutoCostService.new(self).call
         AuditLogEntry.record!(action: "order.complete", record: self, user: user)
         Printing::PrintReceiptJob.perform_later(id)
       end
@@ -89,15 +106,17 @@ class Order < ApplicationRecord
   scope :completed, -> { where(status: "completed") }
   scope :open_orders, -> { where(status: %w[submitted in_progress ready]) }
   scope :unpaid, -> {
-    where.not(status: %w[draft cancelled])
-      .where(
-        "orders.total_cents > COALESCE((
-          SELECT SUM(payments.amount_cents)
-          FROM payments
-          WHERE payments.order_id = orders.id
-          AND payments.status IN ('completed', 'partially_refunded')
-        ), 0)"
-      )
+    where.not(status: %w[draft cancelled]).where(BALANCE_DUE_SQL)
+  }
+  # Everything still owed money, drafts included. A part-paid cart and an order
+  # rung up to be settled later are both draft — leaving drafts out hid them from
+  # the only screen that exists to collect on them. Orders with no lines are still
+  # excluded: an empty cart owes nothing.
+  scope :not_fully_paid, -> {
+    where.not(status: "cancelled")
+      .where("EXISTS (SELECT 1 FROM order_items WHERE order_items.order_id = orders.id)")
+      .where(BALANCE_DUE_SQL)
+      .order(created_at: :desc)
   }
 
   def self.ransackable_attributes(_auth_object = nil)
@@ -168,16 +187,36 @@ class Order < ApplicationRecord
 
   private
 
+  def assign_business_date
+    self.business_date ||= BusinessDay.for(created_at || Time.current, location: location)
+  end
+
+  # Numbers restart at 1 for each branch every business day, so a cashier can read
+  # their own count off the ticket.
+  #
+  # The lock is an advisory one on the branch-day rather than a row lock on the
+  # highest order: two registers reading the same maximum before either has
+  # committed is exactly the race that hands both of them the same number, and no
+  # lock on an existing row prevents it. It is released when the transaction ends.
   def assign_order_number
     return if order_number.present?
 
-    last = Order.where(company_id: company_id)
+    lock_branch_day!
+    last = Order.unscoped
+                .where(company_id: company_id, location_id: location_id, business_date: business_date)
                 .where("order_number ~ '^[0-9]+$'")
                 .order(Arel.sql("order_number::integer DESC"))
                 .limit(1)
-                .lock("FOR UPDATE SKIP LOCKED")
-                .first
-    self.order_number = (last&.order_number.to_i + 1).to_s
+                .pick(:order_number)
+    self.order_number = (last.to_i + 1).to_s
+  end
+
+  def lock_branch_day!
+    key = Zlib.crc32("#{company_id}:#{location_id}:#{business_date}")
+    key -= 2**32 if key >= 2**31 # pg_advisory_xact_lock takes a signed int4
+    self.class.connection.execute(
+      "SELECT pg_advisory_xact_lock(#{ORDER_NUMBER_LOCK_NAMESPACE}, #{key})"
+    )
   end
 
   def generate_receipt_token

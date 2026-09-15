@@ -115,15 +115,22 @@ RSpec.describe "POS shift flow", type: :request do
         opening_float: "100.00"
       }
 
-      patch reconcile_pos_shift_path, params: { counted_cash: "50.00" }
+      # Counted far enough above the float to trip the gate whatever the threshold
+      # is set to, so raising it never quietly turns this test green.
+      over_gate = format(
+        "%.2f",
+        (10_000 + ::Accounting::CashReconciliationService::VARIANCE_ALERT_THRESHOLD_CENTS + 100) / 100.0
+      )
+
+      patch reconcile_pos_shift_path, params: { counted_cash: over_gate }
       expect(response).to have_http_status(:unprocessable_entity)
       expect(response.body).to include(I18n.t("pos.shift.variance_detected"))
 
-      patch reconcile_pos_shift_path, params: { counted_cash: "50.00", manager_pin: "0000" }
+      patch reconcile_pos_shift_path, params: { counted_cash: over_gate, manager_pin: "0000" }
       expect(response).to have_http_status(:unprocessable_entity)
 
       manager
-      patch reconcile_pos_shift_path, params: { counted_cash: "50.00", manager_pin: "9999" }
+      patch reconcile_pos_shift_path, params: { counted_cash: over_gate, manager_pin: "9999" }
       expect(response).to redirect_to(pos_shift_path)
       expect(cashier.reload.todays_cash_drawer_session(location: branch).status).to eq("reconciled")
     end

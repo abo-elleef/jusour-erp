@@ -17,8 +17,12 @@ class OrderPolicy < ApplicationPolicy
     record_payment?
   end
 
+  # Drafts are payable too: a part-paid cart and an order rung up to be settled
+  # later are both drafts, and Collect Payment exists to close exactly those. An
+  # empty cart stays out — there is nothing to collect on it.
   def record_payment?
-    return false if record.cancelled? || record.draft?
+    return false if record.cancelled?
+    return false if record.draft? && record.order_items.empty?
 
     user.can_access_pos? && record.amount_due_cents.positive?
   end

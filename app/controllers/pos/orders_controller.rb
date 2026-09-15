@@ -15,7 +15,7 @@ module Pos
       @filter_type = nil if @filter_type == "all"
 
       @q = Order.ransack(params[:q])
-      scope = @q.result.awaiting_payment.includes(:customer, :user)
+      scope = @q.result.not_fully_paid.includes(:customer, :user)
       scope = scope.where(order_type: @filter_type) if @filter_type.present?
 
       orders = scope.limit(100).to_a

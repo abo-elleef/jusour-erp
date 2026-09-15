@@ -4053,6 +4053,8 @@ ar:
       monthly: "شهري"
       annually: "سنوي"
     expenses:
+      auto:
+        daily_cogs: "تكلفة المبيعات — %{location} %{date}"
       title: "المصروفات"
       new: "مصروف جديد"
       edit: "تعديل المصروف"

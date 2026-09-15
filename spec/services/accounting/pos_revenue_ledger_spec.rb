@@ -7,10 +7,22 @@ require "rails_helper"
 # transfer rather than income, and the sales clearing account tells the truth about
 # what has and hasn't been banked.
 RSpec.describe "POS revenue reaches the ledger" do
+  include ActiveSupport::Testing::TimeHelpers
+
+  # Pinned to the middle of a trading day. A business day runs from its start hour
+  # (06:00 by default), so between midnight and that hour the calendar date and the
+  # business date are different days — and every assertion here depends on orders
+  # rung "now" belonging to the day being posted. Unpinned, the whole file passed in
+  # the afternoon and failed at 02:00.
+  around { |example| travel_to(Time.zone.local(2026, 6, 10, 12, 0, 0)) { example.run } }
+
   let(:company) { create(:company) }
   let(:user) { create(:user, :owner, company: company) }
   let(:location) { create(:location, company: company) }
-  let(:business_date) { Date.current }
+  # The day an order rung now belongs to, not the calendar date — the business
+  # day is what `record_daily_sales!` scopes by, so deriving it the same way
+  # keeps the spec and the service in agreement whatever the start hour is set to.
+  let(:business_date) { BusinessDay.for(Time.current, location: location) }
 
   let!(:drawer) do
     Treasury.create!(company: company, name: "Register 1", treasury_type: "cash_drawer",

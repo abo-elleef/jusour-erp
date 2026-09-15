@@ -35,7 +35,12 @@
       <% back_label = @from_shift ? t("pos.shift.back_to_shift_orders") : t("nav.orders") %>
       <%= link_to "← #{back_label}", back_path,
             class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors" %>
+      <%# Numbers restart at 1 each day per branch, so the date is part of the name. %>
       <span class="text-xl font-bold tracking-tight text-gray-900"><%= @order.order_number %></span>
+      <span class="text-sm font-medium text-gray-500 tabular-nums">
+        <%= l(@order.business_date || @order.created_at.to_date, format: :long) %>
+        · <%= l(@order.created_at, format: :short_time) %>
+      </span>
       <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= order_type_class(@order.order_type) %> <%= order_type_border_class(@order.order_type) %>">
         <%= @order.fulfillment_summary %>
       </span>

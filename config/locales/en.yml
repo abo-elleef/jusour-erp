@@ -4034,6 +4034,8 @@ en:
       monthly: "Monthly"
       annually: "Annually"
     expenses:
+      auto:
+        daily_cogs: "Cost of sales — %{location} %{date}"
       title: "Expenses"
       new: "New expense"
       edit: "Edit expense"
