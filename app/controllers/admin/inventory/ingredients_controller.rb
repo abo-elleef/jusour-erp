@@ -151,6 +151,7 @@ module Admin
         ActiveRecord::Base.transaction do
           @ingredient.save!
           assign_initial_stock_location!(@ingredient, stock_location) if stock_location
+          assign_initial_supplier!(@ingredient)
         end
 
         redirect_to admin_inventory_ingredient_path(@ingredient), notice: t("flash.ingredient.created")
@@ -298,7 +299,24 @@ module Admin
 
       def load_form_data
         @categories = IngredientCategory.active.ordered
-        load_stock_locations if @ingredient&.new_record?
+        return unless @ingredient&.new_record?
+
+        load_stock_locations
+        load_supplier_assignment
+      end
+
+      # The new-ingredient form carries an optional supplier section so a vendor
+      # can be linked in the same step; these are its options and its re-render
+      # values after a failed save.
+      def load_supplier_assignment
+        @available_suppliers = Supplier.active.order(:name)
+        @supplier_link_values =
+          if params[:supplier_ingredient].present?
+            params.require(:supplier_ingredient)
+              .permit(:supplier_id, :price_dollars, :preferred, :vendor_product_name, :vendor_sku).to_h
+          else
+            {}.with_indifferent_access
+          end
       end
 
       def load_stock_locations
@@ -325,6 +343,24 @@ module Admin
           quantity_on_hand: ingredient.quantity_on_hand,
           reorder_threshold: ingredient.reorder_threshold,
           max_quantity: ingredient.max_quantity
+        )
+      end
+
+      # Blank supplier means "none for now" — suppliers stay editable on the
+      # ingredient page afterwards. Price falls back to the cost per unit that
+      # was typed on the same form, which is what the edit page prefills too.
+      def assign_initial_supplier!(ingredient)
+        supplier_id = @supplier_link_values[:supplier_id].presence
+        return if supplier_id.blank?
+        return unless Supplier.active.exists?(id: supplier_id)
+
+        price_dollars = @supplier_link_values[:price_dollars].presence
+        ingredient.supplier_ingredients.create!(
+          supplier_id: supplier_id,
+          price_cents: price_dollars ? (price_dollars.to_d * 100).round : ingredient.cost_per_unit_cents,
+          preferred: ActiveModel::Type::Boolean.new.cast(@supplier_link_values[:preferred]),
+          vendor_product_name: @supplier_link_values[:vendor_product_name].presence,
+          vendor_sku: @supplier_link_values[:vendor_sku].presence
         )
       end
 
