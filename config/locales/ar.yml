@@ -57,6 +57,8 @@ ar:
     email: "البريد الإلكتروني"
     email_placeholder: "you@restaurant.com"
     password: "كلمة المرور"
+    show_password: "إظهار كلمة المرور"
+    hide_password: "إخفاء كلمة المرور"
     remember_me: "البقاء مسجّلاً على هذا الجهاز"
     forgot_password: "نسيت كلمة المرور؟"
     forgot_password_title: "إعادة تعيين كلمة المرور"

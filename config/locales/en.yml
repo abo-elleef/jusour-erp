@@ -59,6 +59,8 @@ en:
     email: "Email"
     email_placeholder: "you@restaurant.com"
     password: "Password"
+    show_password: "Show password"
+    hide_password: "Hide password"
     remember_me: "Keep me signed in on this device"
     forgot_password: "Forgot your password?"
     forgot_password_title: "Reset password"
