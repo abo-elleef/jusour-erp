@@ -4,14 +4,12 @@ module Inventory
   class UpdateVendorInvoiceService
     class Error < StandardError; end
 
-    def initialize(vendor_invoice, user, attributes, freight_amount_cents: 0, freight_treasury: nil,
-                   freight_on_account: false)
+    def initialize(vendor_invoice, user, attributes, freight_amount_cents: 0, freight_treasury: nil)
       @invoice = vendor_invoice
       @user = user
       @attributes = attributes
       @freight_amount_cents = freight_amount_cents
       @freight_treasury = freight_treasury
-      @freight_on_account = freight_on_account
       @stock_handler = VendorInvoiceStockHandler.new(@invoice, @user)
     end
 
@@ -34,8 +32,7 @@ module Inventory
           invoice: @invoice,
           user: @user,
           amount_cents: @freight_amount_cents,
-          treasury: @freight_treasury,
-          on_account: @freight_on_account
+          treasury: @freight_treasury
         )
       end
 

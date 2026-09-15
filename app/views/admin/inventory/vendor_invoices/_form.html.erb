@@ -147,11 +147,6 @@
              vendor_invoice.freight_amount_cents.to_d / 100
            end %>
       <% freight_treasury_id = @freight_form_treasury_id.presence || freight&.treasury_id || Treasury.default_treasury&.id %>
-      <% freight_on_account = if defined?(@freight_form_on_account) && !@freight_form_on_account.nil?
-                               @freight_form_on_account
-                             else
-                               vendor_invoice.freight_on_account?
-                             end %>
       <div>
         <%= label_tag "vendor_invoice_freight_amount_dollars",
               t("inventory.vendor_invoices.form.freight_amount"), class: label_class %>
@@ -166,30 +161,10 @@
                 action: "input->vendor-invoice-lines#recalculate"
               } %>
       </div>
-      <%# Two ways to settle delivery: cash now (an expense out of a treasury) or
-          billed by the vendor on this invoice, in which case it joins the invoice
-          total and is paid when the invoice is paid. %>
-      <div class="sm:col-span-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
-        <label class="flex items-start gap-2.5 cursor-pointer">
-          <%= hidden_field_tag "vendor_invoice[freight_on_account]", "0" %>
-          <%= check_box_tag "vendor_invoice[freight_on_account]", "1", freight_on_account,
-                class: "mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600",
-                data: { vendor_invoice_lines_target: "freightOnAccount",
-                        action: "change->vendor-invoice-lines#recalculate" } %>
-          <span>
-            <span class="block text-sm font-medium text-gray-900">
-              <%= t("inventory.vendor_invoices.form.freight_on_account") %>
-            </span>
-            <span class="block text-xs text-gray-500 mt-0.5">
-              <%= t("inventory.vendor_invoices.form.freight_on_account_hint") %>
-            </span>
-          </span>
-        </label>
-      </div>
-      <%# Hidden server-side too when already on account, so it is correct before
-          the JS runs and without it. %>
-      <div class="<%= "hidden" if freight_on_account %>"
-           data-vendor-invoice-lines-target="freightTreasuryWrap">
+      <%# Delivery is always paid at receive: cash out of a treasury, recorded as its
+          own expense. It never joins the invoice total or the supplier balance.
+          Delivery the vendor actually bills goes in as an ordinary line item. %>
+      <div>
         <%= label_tag "vendor_invoice_freight_treasury_id",
               t("inventory.vendor_invoices.form.freight_treasury"), class: label_class %>
         <%= select_tag "vendor_invoice[freight_treasury_id]",

@@ -152,21 +152,10 @@ class VendorInvoice < ApplicationRecord
     end
   end
 
-  # Goods after any discount — the discount applies to goods only, never delivery.
+  # Goods after any discount. This is the whole invoice total: delivery paid at
+  # receive is a separate Expense and never reaches AP.
   def goods_total_cents
     [subtotal_cents - discount_cents, 0].max
-  end
-
-  # Delivery billed by the vendor on this invoice and settled with it. Only this
-  # form of delivery belongs in total_cents, because total_cents is what drives
-  # supplier AP and balance due. Delivery paid in cash at receive leaves through a
-  # linked Expense instead and must stay out of the total.
-  def freight_on_account_cents
-    freight_on_account? ? freight_amount_cents.to_i : 0
-  end
-
-  def freight_paid_now?
-    !freight_on_account? && freight_amount_cents.to_i.positive?
   end
 
   def discounted?
@@ -222,8 +211,11 @@ class VendorInvoice < ApplicationRecord
     self.invoice_number = self.class.next_invoice_number(company: company || Current.company)
   end
 
+  # Delivery never joins the total. It leaves at receive through a linked Expense,
+  # so folding it in here would bill the supplier twice — once in AP, once in cash.
+  # Delivery the vendor genuinely bills goes in as an ordinary invoice line.
   def recalculate_total
-    self.total_cents = goods_total_cents + freight_on_account_cents
+    self.total_cents = goods_total_cents
   end
 
   def discount_type_and_value_consistency

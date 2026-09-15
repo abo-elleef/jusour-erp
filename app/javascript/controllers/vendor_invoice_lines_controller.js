@@ -5,8 +5,7 @@ export default class extends Controller {
     "list", "template", "row", "unitSelect", "expiresOn",
     "lineTotalDollars", "unitPriceDisplay", "detailsModal", "detailsDot",
     "runningTotal", "runningTotalWrap", "subtotalDisplay", "grandTotalDisplay", "discountPreviewWrap",
-    "freightAmount", "freightDisplay", "freightPreviewWrap", "lineCount",
-    "freightOnAccount", "freightTreasuryWrap"
+    "freightAmount", "freightDisplay", "freightPreviewWrap", "lineCount"
   ]
   static values = {
     availableUnits: Object,
@@ -211,17 +210,10 @@ export default class extends Controller {
       ? (parseFloat(this.freightAmountTarget.value) || 0)
       : 0
     const freightCents = Math.round(freightDollars * 100)
-    const freightOnAccount = this.hasFreightOnAccountTarget && this.freightOnAccountTarget.checked
 
-    // A treasury only means something when the delivery is paid in cash now.
-    if (this.hasFreightTreasuryWrapTarget) {
-      this.freightTreasuryWrapTarget.classList.toggle("hidden", freightOnAccount)
-    }
-
-    // Delivery billed on the invoice is part of what is owed, so it belongs in the
-    // total — matching VendorInvoice#recalculate_total. Cash delivery does not.
-    const goodsCents = Math.max(0, subtotalCents - discountCents)
-    const totalCents = goodsCents + (freightOnAccount ? freightCents : 0)
+    // Delivery is paid at receive out of a treasury, so it never joins what the
+    // supplier is owed — matching VendorInvoice#recalculate_total.
+    const totalCents = Math.max(0, subtotalCents - discountCents)
 
     if (this.hasGrandTotalDisplayTarget) {
       const label = this.formatMoney(totalCents)

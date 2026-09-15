@@ -160,13 +160,12 @@
     </div>
     <div class="rounded-2xl border border-violet-200 bg-violet-50/50 p-4">
       <p class="text-xs font-semibold text-violet-700 uppercase tracking-wide"><%= t("inventory.vendor_invoices.freight") %></p>
-      <%# Two settlement paths: a cash Expense, or billed on the invoice with no
-          Expense at all. Read the amount from the invoice either way. %>
+      <%# Delivery is paid at receive through its own Expense — never part of the
+          invoice total. The amount is stored on the invoice, so a draft that has not
+          created its Expense yet still shows it. %>
       <% if @vendor_invoice.freight_amount_cents.to_i.positive? %>
         <p class="text-2xl font-bold mt-1 text-violet-900 tabular-nums"><%= format_money(@vendor_invoice.freight_amount_cents) %></p>
-        <% if @vendor_invoice.freight_on_account? %>
-          <p class="text-xs text-violet-800 mt-1"><%= t("inventory.vendor_invoices.freight_on_account_note") %></p>
-        <% elsif @freight_expense %>
+        <% if @freight_expense %>
           <p class="text-xs text-violet-800 mt-1">
             <%= @freight_expense.treasury.name %>
             <% if current_user.can?("accounting:transactions") %>
