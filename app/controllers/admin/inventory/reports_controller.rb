@@ -8,6 +8,57 @@ module Admin
       VENDOR_GROUP_NONE = :no_vendor
       VENDOR_GROUP_MULTIPLE = :multiple_vendors
 
+      MOVEMENT_INCLUDES = [
+        :user, :unit_ref, :location, :stock_transfer,
+        { ingredient: :unit_ref, stock_batch: { vendor_invoice_line: :vendor_invoice } }
+      ].freeze
+
+      # Instantiating every row of an unfiltered month at once would be a large
+      # object graph, so the movements CSV walks the ordered scope in slices.
+      CSV_BATCH_SIZE = 2_000
+
+      # Every stock movement in the company, across all items — the cross-item
+      # counterpart to the per-ingredient ledger on the ingredient page.
+      # Quantities are never totalled across items: they are each in their own
+      # base unit, so only the per-item rollup adds anything up.
+      def movements
+        authorize_inventory_index!
+        parse_date_range(default_start: Date.current.beginning_of_month)
+
+        @ingredient = Ingredient.find_by(id: params[:ingredient_id])
+        @location = Location.find_by(id: params[:location_id])
+        @adjustment_type = params[:adjustment_type].presence_in(StockAdjustment::ADJUSTMENT_TYPES)
+        @user = User.find_by(id: params[:user_id])
+        @group_by_ingredient = params[:group] == "ingredient"
+
+        scope = movements_scope
+        @type_counts = scope.group(:adjustment_type).count
+        @movement_count = @type_counts.values.sum
+        @item_count = scope.distinct.count("stock_adjustments.ingredient_id")
+        @addition_count = scope.additions.count
+        @removal_count = @movement_count - @addition_count
+
+        respond_to do |format|
+          format.html do
+            if @group_by_ingredient
+              @item_rows = movements_by_ingredient(scope)
+            else
+              listing = scope.includes(*MOVEMENT_INCLUDES).order(created_at: :desc, id: :desc)
+              @pagy, @movements = pagy(:offset, listing, limit: 50, count: @movement_count)
+            end
+            load_movement_filter_options
+          end
+          format.csv do
+            send_data movements_csv(scope),
+              filename: "stock-movements-#{@start_date}-#{@end_date}.csv",
+              type: "text/csv; charset=utf-8"
+          end
+        end
+      rescue Date::Error, ArgumentError
+        redirect_to admin_inventory_reports_movements_path,
+          alert: t("inventory.reports.movements.invalid_dates")
+      end
+
       def valuation
         authorize_inventory_index!
         @group_by = params[:group_by].to_s == "vendor" ? "vendor" : "category"
@@ -113,6 +164,59 @@ module Admin
       end
 
       private
+
+      def movements_scope
+        scope = StockAdjustment.for_current_company
+          .where(created_at: @start_date.beginning_of_day..@end_date.end_of_day)
+        scope = scope.where(ingredient_id: @ingredient.id) if @ingredient
+        scope = scope.where(location_id: @location.id) if @location
+        scope = scope.where(adjustment_type: @adjustment_type) if @adjustment_type
+        scope = scope.where(user_id: @user.id) if @user
+        scope
+      end
+
+      def load_movement_filter_options
+        @locations = Location.active.central_kitchens.ordered.to_a +
+                     Location.active.branches.ordered.to_a
+        @ingredients = Ingredient.order(:name)
+        @users = User.active.order(:name)
+        @filtered = @ingredient || @location || @adjustment_type || @user
+      end
+
+      # Net movement per item over the range. quantity_delta is stored in the
+      # ingredient's base unit, so these sums are meaningful within a row — and
+      # only within a row.
+      def movements_by_ingredient(scope)
+        totals = scope.group("stock_adjustments.ingredient_id").pluck(
+          Arel.sql("stock_adjustments.ingredient_id"),
+          Arel.sql("COUNT(*)"),
+          Arel.sql("SUM(quantity_delta)"),
+          Arel.sql("SUM(CASE WHEN quantity_delta > 0 THEN quantity_delta ELSE 0 END)"),
+          Arel.sql("SUM(CASE WHEN quantity_delta < 0 THEN quantity_delta ELSE 0 END)")
+        )
+        ingredients = Ingredient.where(id: totals.map(&:first)).includes(:unit_ref).index_by(&:id)
+        totals.filter_map do |id, count, net, additions, removals|
+          ingredient = ingredients[id]
+          next unless ingredient
+
+          { ingredient: ingredient, count: count, net: net.to_d,
+            additions: additions.to_d, removals: removals.to_d }
+        end.sort_by { |row| row[:ingredient].name.to_s.downcase }
+      end
+
+      def each_movement(scope)
+        return enum_for(:each_movement, scope) unless block_given?
+
+        ordered = scope.includes(*MOVEMENT_INCLUDES).order(created_at: :desc, id: :desc)
+        offset = 0
+        loop do
+          batch = ordered.offset(offset).limit(CSV_BATCH_SIZE).to_a
+          break if batch.empty?
+
+          batch.each { |row| yield row }
+          offset += CSV_BATCH_SIZE
+        end
+      end
 
       # Every ingredient lands in exactly one bucket, so vendor subtotals still add
       # up to the same grand total as the category view. An ingredient can be
@@ -223,6 +327,28 @@ module Admin
             ["Buying-mix effect", money.(@basket.mix_effect_cents)]
           ]
         )
+      end
+
+      # Unit is spelled out per row because quantities across items are in
+      # different units and must not be summed in a spreadsheet.
+      def movements_csv(scope)
+        rows = [["Time", "Item", "Code", "Location", "Type", "Quantity", "Unit",
+                 "Balance after", "User", "Reason"]]
+        each_movement(scope).each do |adj|
+          rows << [
+            adj.created_at.strftime("%Y-%m-%d %H:%M"),
+            adj.ingredient&.name,
+            adj.ingredient&.code,
+            adj.location&.name,
+            helpers.inventory_adjustment_type_label(adj.adjustment_type),
+            adj.quantity_delta,
+            adj.ingredient&.unit,
+            adj.balance_after,
+            adj.user&.name,
+            adj.reason_notes
+          ]
+        end
+        "\ufeff#{build_csv(rows)}"
       end
 
       def build_csv(rows)

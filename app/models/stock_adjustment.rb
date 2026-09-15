@@ -28,6 +28,13 @@ class StockAdjustment < ApplicationRecord
   # +maintain_batches+ is true. Defaults to the ingredient master cost.
   attr_accessor :batch_cost_per_unit_cents
 
+  # stock_adjustments carries no company_id of its own, so any query that does
+  # not start from an ingredient (the cross-item movements report) has to reach
+  # tenancy through the join or it reads across companies.
+  scope :for_current_company, -> { joins(:ingredient).merge(Ingredient.all) }
+  scope :additions, -> { where(arel_table[:quantity_delta].gt(0)) }
+  scope :removals, -> { where(arel_table[:quantity_delta].lt(0)) }
+
   validates :quantity_delta, numericality: true
   validate :quantity_delta_not_zero
   validates :adjustment_type, inclusion: { in: ADJUSTMENT_TYPES }

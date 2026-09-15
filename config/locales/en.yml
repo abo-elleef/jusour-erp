@@ -772,6 +772,10 @@ en:
       production_output: "Production — output"
       consolidation_out: "Consolidation — out"
       consolidation_in: "Consolidation — in"
+      customer_sale: "Customer sale"
+      customer_return: "Customer return"
+      transfer_out: "Transfer — out"
+      transfer_in: "Transfer — in"
     consolidations:
       action: "Consolidate stock"
       back: "← Back to %{name}"
@@ -1091,6 +1095,7 @@ en:
       stock_takes: "Stock takes"
       stock_transfers: "Transfers"
       stock_transfer_templates: "Transfer templates"
+      movements: "Stock movements"
       valuation: "Valuation"
       variance: "Variance"
       transfer_trends: "Transfer trends"
@@ -1920,6 +1925,34 @@ en:
         one: "%{count} repeated ingredient"
         other: "%{count} repeated ingredients"
     reports:
+      movements:
+        description: "Every stock movement across all items — receiving, waste, counts, production, transfers and sales. Quantities are each in the item's own unit, so they are never totalled across items."
+        filters: "Filters"
+        item: "Item"
+        all_items: "All items"
+        location: "Location"
+        all_locations: "All locations"
+        type: "Type"
+        all_types: "All types"
+        user: "User"
+        all_users: "All users"
+        clear_filters: "Clear filters"
+        by_type: "By type"
+        stats:
+          movements: "Movements"
+          items: "Items affected"
+          additions: "Additions"
+          removals: "Removals"
+        in: "In"
+        out: "Out"
+        net: "Net"
+        group_by_item: "Group by item"
+        ledger_heading: "Movements"
+        ledger_hint: "Newest first. The time links to the document behind the movement where there is one."
+        by_item_heading: "Net movement by item"
+        by_item_hint: "One row per item, in that item's own unit. Rows are not comparable with each other."
+        empty: "No stock movements in this range."
+        invalid_dates: "Those dates could not be read."
       valuation:
         description: "On-hand stock valued at ingredient cost per unit."
         stats:
@@ -3120,6 +3153,7 @@ en:
       stock_takes:
         title: "Stock takes"
       reports:
+        movements_title: "Stock movements"
         valuation_title: "Inventory valuation"
         variance_title: "Usage variance"
         transfer_trends_title: "Transfer trends"

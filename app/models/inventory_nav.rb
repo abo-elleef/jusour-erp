@@ -31,6 +31,8 @@ module InventoryNav
     {
       key: :reports, icon: :reports, label: "inventory.tools.groups.reports",
       tabs: [
+        { controller: "reports", action: "movements", label: "inventory.tools.movements",
+          path: :admin_inventory_reports_movements_path, permission: "inventory:view" },
         { controller: "reports", action: "valuation", label: "inventory.tools.valuation",
           path: :admin_inventory_reports_valuation_path, permission: "inventory:view" },
         { controller: "reports", action: "variance", label: "inventory.tools.variance",

@@ -1,0 +1,219 @@
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% base_params = request.query_parameters.except("page", "group") %>
+
+<%= render "admin/inventory/tools_nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("inventory.reports.movements.description") %></p>
+    </div>
+    <% if @movement_count.positive? %>
+      <%= link_to admin_inventory_reports_movements_path(base_params.merge(format: :csv)),
+            class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors shrink-0" do %>
+        <span aria-hidden="true">&darr;</span> <%= t("actions.export_csv") %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.movements.filters") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5">
+        <%= t("accounting.shared.date_range_value",
+              start: l(@start_date, format: :long), end: l(@end_date, format: :long)) %>
+      </p>
+    </div>
+    <div class="p-5">
+      <%# turbo: false because the date range is session-backed (SessionDateRange);
+          the Turbo page cache would repaint stale defaults. %>
+      <%= form_with url: admin_inventory_reports_movements_path, method: :get,
+            class: "flex flex-wrap items-end gap-4",
+            data: { turbo: false, searchable_select_options: ingredient_search_options(@ingredients) } do %>
+        <div class="min-w-[9rem]">
+          <%= label_tag :start_date, t("accounting.shared.start"), class: label_class %>
+          <%= date_field_tag :start_date, @start_date, class: pos_input_class %>
+        </div>
+        <div class="min-w-[9rem]">
+          <%= label_tag :end_date, t("accounting.shared.end"), class: label_class %>
+          <%= date_field_tag :end_date, @end_date, class: pos_input_class %>
+        </div>
+        <%# Searchable: too many items to scroll a plain select. %>
+        <div class="min-w-[14rem]"
+             data-controller="searchable-select"
+             data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
+          <%= label_tag :ingredient_id, t("inventory.reports.movements.item"), class: label_class %>
+          <%= hidden_field_tag :ingredient_id, @ingredient&.id,
+                data: { searchable_select_target: "hidden" } %>
+          <input type="text"
+                 autocomplete="off" spellcheck="false" role="combobox"
+                 aria-expanded="false" aria-autocomplete="list"
+                 placeholder="<%= t("inventory.reports.movements.all_items") %>"
+                 class="<%= pos_input_class %>"
+                 data-searchable-select-target="input"
+                 data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+          <ul data-searchable-select-target="menu" role="listbox"
+              class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= label_tag :location_id, t("inventory.reports.movements.location"), class: label_class %>
+          <%= select_tag :location_id,
+                options_for_select([[t("inventory.reports.movements.all_locations"), ""]] +
+                  @locations.map { |loc| [loc.name, loc.id] }, @location&.id),
+                class: pos_input_class %>
+        </div>
+        <div class="min-w-[11rem]">
+          <%= label_tag :adjustment_type, t("inventory.reports.movements.type"), class: label_class %>
+          <%= select_tag :adjustment_type,
+                options_for_select([[t("inventory.reports.movements.all_types"), ""]] +
+                  StockAdjustment::ADJUSTMENT_TYPES.map { |type| [inventory_adjustment_type_label(type), type] },
+                  @adjustment_type),
+                class: pos_input_class %>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= label_tag :user_id, t("inventory.reports.movements.user"), class: label_class %>
+          <%= select_tag :user_id,
+                options_for_select([[t("inventory.reports.movements.all_users"), ""]] +
+                  @users.map { |user| [user.name, user.id] }, @user&.id),
+                class: pos_input_class %>
+        </div>
+        <%= hidden_field_tag :group, params[:group] if @group_by_ingredient %>
+        <%= submit_tag t("actions.apply"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors cursor-pointer" %>
+        <% if @filtered %>
+          <%= link_to t("inventory.reports.movements.clear_filters"),
+                admin_inventory_reports_movements_path(start_date: @start_date, end_date: @end_date),
+                class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-3 py-2.5" %>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.movements.stats.movements") %></p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= number_with_delimiter(@movement_count) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.movements.stats.items") %></p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= number_with_delimiter(@item_count) %></p>
+    </div>
+    <div class="rounded-2xl border border-green-200 bg-green-50/40 p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.movements.stats.additions") %></p>
+      <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= number_with_delimiter(@addition_count) %></p>
+    </div>
+    <div class="rounded-2xl border border-red-200 bg-red-50/40 p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.reports.movements.stats.removals") %></p>
+      <p class="text-2xl font-bold mt-1 text-red-700 tabular-nums"><%= number_with_delimiter(@removal_count) %></p>
+    </div>
+  </div>
+
+  <% if @type_counts.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-4 mb-6">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3"><%= t("inventory.reports.movements.by_type") %></p>
+      <div class="flex flex-wrap gap-2">
+        <% @type_counts.sort_by { |_type, count| -count }.each do |type, count| %>
+          <% active = @adjustment_type == type %>
+          <%= link_to admin_inventory_reports_movements_path(base_params.merge(adjustment_type: active ? nil : type).compact_blank),
+                class: "inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors #{active ? 'bg-amber-600 border-amber-600 text-white' : 'border-gray-200 text-gray-700 hover:bg-gray-100'}" do %>
+            <%= inventory_adjustment_type_label(type) %>
+            <span class="tabular-nums <%= active ? 'text-amber-100' : 'text-gray-400' %>"><%= number_with_delimiter(count) %></span>
+          <% end %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 flex flex-wrap justify-between items-center gap-2">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900">
+          <%= @group_by_ingredient ? t("inventory.reports.movements.by_item_heading") : t("inventory.reports.movements.ledger_heading") %>
+        </h2>
+        <p class="text-xs text-gray-500 mt-0.5">
+          <%= @group_by_ingredient ? t("inventory.reports.movements.by_item_hint") : t("inventory.reports.movements.ledger_hint") %>
+        </p>
+      </div>
+      <%= link_to admin_inventory_reports_movements_path(base_params.merge(group: @group_by_ingredient ? nil : "ingredient").compact_blank),
+            class: "inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors #{@group_by_ingredient ? 'bg-amber-600 border-amber-600 text-white' : 'border-gray-200 text-gray-600 hover:bg-gray-100'}" do %>
+        <%= t("inventory.reports.movements.group_by_item") %>
+      <% end %>
+    </div>
+
+    <% if @movement_count.zero? %>
+      <p class="px-5 py-10 text-center text-sm text-gray-500"><%= t("inventory.reports.movements.empty") %></p>
+    <% elsif @group_by_ingredient %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[620px]">
+          <thead class="border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("inventory.reports.movements.item") %></th>
+              <th class="p-3 text-end"><%= t("inventory.reports.movements.stats.movements") %></th>
+              <th class="p-3 text-end"><%= t("inventory.reports.movements.in") %></th>
+              <th class="p-3 text-end"><%= t("inventory.reports.movements.out") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("inventory.reports.movements.net") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @item_rows.each do |row| %>
+              <% unit = ingredient_unit_label(row[:ingredient].unit) %>
+              <tr class="hover:bg-gray-100 transition-colors">
+                <td class="p-3 ps-5">
+                  <%= link_to row[:ingredient].name, admin_inventory_ingredient_path(row[:ingredient]),
+                        class: "font-medium text-amber-700 hover:text-amber-900 hover:underline" %>
+                  <span class="block text-xs text-gray-400"><%= unit %></span>
+                </td>
+                <td class="p-3 text-end tabular-nums text-gray-600"><%= number_with_delimiter(row[:count]) %></td>
+                <td class="p-3 text-end tabular-nums text-green-700">
+                  <%= number_with_precision(row[:additions], precision: 3, strip_insignificant_zeros: true) %>
+                </td>
+                <td class="p-3 text-end tabular-nums text-red-700">
+                  <%= number_with_precision(row[:removals], precision: 3, strip_insignificant_zeros: true) %>
+                </td>
+                <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= row[:net].negative? ? "text-red-700" : "text-green-700" %>">
+                  <%= row[:net].negative? ? "" : "+" %><%= number_with_precision(row[:net], precision: 3, strip_insignificant_zeros: true) %>
+                  <span class="text-xs font-normal text-gray-400 ms-0.5"><%= unit %></span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[820px]">
+          <thead class="border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("accounting.audit_log.time") %></th>
+              <th class="p-3 text-start"><%= t("inventory.reports.movements.item") %></th>
+              <th class="p-3 text-start"><%= t("inventory.ingredients.show.location") %></th>
+              <th class="p-3 text-start"><%= t("inventory.ingredients.show.adjustment_type") %></th>
+              <th class="p-3 text-end"><%= t("inventory.ingredients.show.quantity_short") %></th>
+              <th class="p-3 text-end"><%= t("inventory.ingredients.adjustments.balance_after") %></th>
+              <th class="p-3 text-start"><%= t("inventory.ingredients.adjustments.user") %></th>
+              <th class="p-3 pe-5 text-start"><%= t("inventory.ingredients.adjustments.reason") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <%= render partial: "admin/inventory/shared/adjustment_row",
+                  collection: @movements, as: :adjustment, locals: { show_ingredient: true } %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if @pagy.pages > 1 %>
+        <div class="flex items-center justify-center gap-2 py-4 text-sm border-t border-gray-100">
+          <% if @pagy.previous %>
+            <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: @pagy.previous)),
+                  class: "px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors" %>
+          <% end %>
+          <span class="text-gray-600 px-2 tabular-nums"><%= t("accounting.shared.pagination", page: @pagy.page, pages: @pagy.pages) %></span>
+          <% if @pagy.next %>
+            <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: @pagy.next)),
+                  class: "px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors" %>
+          <% end %>
+        </div>
+      <% end %>
+    <% end %>
+  </section>
+</div>

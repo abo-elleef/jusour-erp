@@ -389,6 +389,7 @@ Rails.application.routes.draw do
         member { post :reverse }
       end
       namespace :reports do
+        get :movements
         get :valuation
         get :variance
         get :transfer_trends

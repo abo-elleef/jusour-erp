@@ -770,6 +770,10 @@ ar:
       production_output: "إنتاج — مخرجات"
       consolidation_out: "دمج — صادر"
       consolidation_in: "دمج — وارد"
+      customer_sale: "بيع لعميل"
+      customer_return: "مرتجع من عميل"
+      transfer_out: "تحويل — صادر"
+      transfer_in: "تحويل — وارد"
     consolidations:
       action: "دمج المخزون"
       back: "← العودة إلى %{name}"
@@ -1091,6 +1095,7 @@ ar:
       stock_takes: "جرد المخزون"
       stock_transfers: "تحويلات المخزون"
       stock_transfer_templates: "قوالب التحويل"
+      movements: "حركات المخزون"
       valuation: "تقييم المخزون"
       variance: "فروقات الاستهلاك"
       transfer_trends: "اتجاهات التحويلات"
@@ -1922,6 +1927,34 @@ ar:
         one: "مكون مكرر واحد"
         other: "%{count} مكونات مكررة"
     reports:
+      movements:
+        description: "كل حركات المخزون على جميع الأصناف — استلام وهدر وجرد وإنتاج وتحويلات ومبيعات. الكميات بوحدة كل صنف، لذلك لا تُجمع بين الأصناف."
+        filters: "الفلاتر"
+        item: "الصنف"
+        all_items: "كل الأصناف"
+        location: "الفرع"
+        all_locations: "كل الفروع"
+        type: "النوع"
+        all_types: "كل الأنواع"
+        user: "المستخدم"
+        all_users: "كل المستخدمين"
+        clear_filters: "مسح الفلاتر"
+        by_type: "حسب النوع"
+        stats:
+          movements: "الحركات"
+          items: "الأصناف المتأثرة"
+          additions: "الإضافات"
+          removals: "الخصومات"
+        in: "وارد"
+        out: "صادر"
+        net: "الصافي"
+        group_by_item: "تجميع حسب الصنف"
+        ledger_heading: "الحركات"
+        ledger_hint: "الأحدث أولاً. الوقت يرتبط بالمستند وراء الحركة إن وُجد."
+        by_item_heading: "صافي الحركة لكل صنف"
+        by_item_hint: "صف لكل صنف بوحدته الخاصة. الصفوف غير قابلة للمقارنة ببعضها."
+        empty: "لا توجد حركات مخزون في هذه الفترة."
+        invalid_dates: "تعذّرت قراءة هذه التواريخ."
       valuation:
         description: "قيمة المخزون المتوفر حسب تكلفة الوحدة لكل مكون."
         stats:
@@ -3133,6 +3166,7 @@ ar:
       stock_takes:
         title: "جرد المخزون"
       reports:
+        movements_title: "حركات المخزون"
         valuation_title: "تقييم المخزون"
         variance_title: "فروقات الاستهلاك"
         transfer_trends_title: "اتجاهات التحويلات"
