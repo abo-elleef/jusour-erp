@@ -10,6 +10,7 @@ class VendorInvoice < ApplicationRecord
   belongs_to :user
   belongs_to :location
   belongs_to :import_shipment, optional: true
+  belongs_to :historical_settled_by, class_name: "User", optional: true
   has_many :vendor_invoice_lines, -> { order(:position, :created_at) }, dependent: :destroy, inverse_of: :vendor_invoice
   has_many :vendor_invoice_payments, dependent: :destroy
   # Returns and rebates credited back against this invoice. They settle it exactly
@@ -172,10 +173,18 @@ class VendorInvoice < ApplicationRecord
     discount_cents.positive?
   end
 
-  # What has come off the invoice by any route: cash paid out, plus credit notes
-  # posted against it. Both reduce what the supplier is still owed.
+  # What has come off the invoice by any route: cash paid out, credit notes
+  # posted against it, and any amount settled before payments were tracked per
+  # invoice. All three reduce what the supplier is still owed.
   def settled_cents
-    amount_paid_cents + credit_applied_cents
+    amount_paid_cents + credit_applied_cents + historical_settled_cents
+  end
+
+  # Settled by a payment that was recorded against the supplier's AP balance
+  # rather than against this invoice. The cash movement is already on the ledger,
+  # so this carries no expense and no treasury entry of its own.
+  def historical?
+    historical_settled_cents.positive?
   end
 
   def balance_due_cents
@@ -198,7 +207,7 @@ class VendorInvoice < ApplicationRecord
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[invoice_number invoice_date received_on payment_status total_cents amount_paid_cents
-       credit_applied_cents supplier_id created_at]
+       credit_applied_cents historical_settled_cents supplier_id created_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -237,7 +246,7 @@ class VendorInvoice < ApplicationRecord
   end
 
   def amount_paid_not_above_total
-    return if amount_paid_cents.to_i + credit_applied_cents.to_i <= total_cents.to_i
+    return if settled_cents.to_i <= total_cents.to_i
 
     errors.add(:amount_paid_cents, "cannot exceed invoice total")
   end

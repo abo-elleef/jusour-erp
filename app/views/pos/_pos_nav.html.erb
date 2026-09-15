@@ -34,6 +34,8 @@
   <% if current_user.admin_access? %>
     <%= link_to t("nav.admin"), admin_root_path, class: pos_nav_link_class(request.path.start_with?("/admin")) %>
   <% end %>
+  <%= link_to t("auth.change_password"), edit_account_password_path,
+        class: pos_nav_link_class(request.path == edit_account_password_path) %>
   <%= button_to t("actions.sign_out"), destroy_user_session_path, method: :delete,
         class: "px-3 py-1.5 rounded-xl text-sm font-semibold text-gray-600 border border-transparent hover:bg-gray-100 transition-colors" %>
 </nav>

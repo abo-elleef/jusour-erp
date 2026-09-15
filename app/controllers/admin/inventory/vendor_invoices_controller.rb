@@ -6,7 +6,8 @@ module Admin
   module Inventory
     class VendorInvoicesController < BaseController
       before_action :set_vendor_invoice,
-        only: %i[show export edit update receive record_payment void attach_invoice_image]
+        only: %i[show export edit update receive record_payment void attach_invoice_image
+                 mark_historical unmark_historical]
 
       def index
         authorize_inventory_index!(VendorInvoice)
@@ -215,6 +216,34 @@ module Admin
         render :show, status: :unprocessable_entity
       end
 
+      # Settles this invoice against a payment that was recorded on the supplier's
+      # AP balance rather than here. Owner-only, and moves no money — see
+      # MarkInvoiceHistoricalService.
+      def mark_historical
+        authorize_inventory!(:mark_invoice_historical)
+
+        amount = params[:amount_pounds].presence && (params[:amount_pounds].to_f * 100).round
+        ::Accounting::MarkInvoiceHistoricalService.new(
+          invoice: @vendor_invoice, user: current_user, amount_cents: amount
+        ).call
+
+        redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+          notice: t("flash.vendor_invoice.marked_historical")
+      rescue ::Accounting::MarkInvoiceHistoricalService::Error, ActiveRecord::RecordInvalid => e
+        redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice), alert: e.message
+      end
+
+      def unmark_historical
+        authorize_inventory!(:mark_invoice_historical)
+
+        ::Accounting::MarkInvoiceHistoricalService.new(invoice: @vendor_invoice, user: current_user).undo
+
+        redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
+          notice: t("flash.vendor_invoice.unmarked_historical")
+      rescue ::Accounting::MarkInvoiceHistoricalService::Error, ActiveRecord::RecordInvalid => e
+        redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice), alert: e.message
+      end
+
       def void
         authorize_inventory!(:destroy)
 
@@ -335,6 +364,10 @@ module Admin
         )
         @payment_jes = payment_jes.index_by(&:source_record_id)
         @freight_je = @freight_expense && JournalEntry.for_source(@freight_expense).includes(:lines).first
+        # How far this supplier's open invoices still overstate what their AP
+        # ledger says is owed — the ceiling on what may be marked historical.
+        @historical_cap_cents =
+          ::Accounting::MarkInvoiceHistoricalService.remaining_overstatement_cents(@vendor_invoice.supplier)
       end
 
       def prefill_supplier

@@ -31,6 +31,14 @@
     </div>
   </div>
 
+  <%# Supplier AP ledgers are derived from their invoices, so they get no
+      free-hand adjustment — see TreasuriesController#adjust. %>
+  <% if @treasury.supplier_ap? %>
+    <section class="rounded-2xl border border-gray-200 bg-gray-50 p-5 mb-6">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.treasuries.manual_adjustment") %></h2>
+      <p class="text-sm text-gray-600 mt-1"><%= t("accounting.treasuries.ap_adjustment_blocked_hint") %></p>
+    </section>
+  <% else %>
   <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
     <h2 class="text-sm font-semibold text-gray-900 mb-4"><%= t("accounting.treasuries.manual_adjustment") %></h2>
     <%= form_with url: adjust_admin_accounting_treasury_path(@treasury), method: :post, class: "flex flex-wrap items-end gap-4" do %>
@@ -50,6 +58,7 @@
     <% end %>
     <p class="text-xs text-gray-400 mt-2"><%= t("accounting.treasuries.adjustment_hint") %></p>
   </section>
+  <% end %>
 
   <%= render "admin/accounting/date_range_form" %>
 

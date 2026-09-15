@@ -60,6 +60,8 @@
             </svg>
           </button>
         <% end %>
+        <%= link_to t("auth.change_password"), edit_account_password_path,
+              class: "px-3 py-1.5 rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-200 dark:text-gray-300 dark:hover:bg-gray-800" %>
         <%= render "shared/locale_switcher", theme: themeable ? :auto : :dark %>
       </div>
     </header>

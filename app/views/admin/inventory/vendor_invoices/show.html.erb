@@ -185,6 +185,13 @@
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.vendor_invoices.amount_paid") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@vendor_invoice.amount_paid_cents) %></p>
     </div>
+    <% if @vendor_invoice.historical_settled_cents.positive? %>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4 print-hide">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.vendor_invoices.historical.settled") %></p>
+        <p class="text-2xl font-bold mt-1 text-purple-700 tabular-nums"><%= format_money(@vendor_invoice.historical_settled_cents) %></p>
+        <p class="text-xs text-gray-500 mt-1"><%= t("inventory.vendor_invoices.historical.settled_hint") %></p>
+      </div>
+    <% end %>
     <% if @vendor_invoice.credit_applied_cents.positive? %>
       <div class="rounded-2xl border border-gray-200 bg-white p-4 print-hide">
         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("inventory.vendor_invoices.credit_applied") %></p>
@@ -229,6 +236,76 @@
               class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
       <% end %>
     </section>
+  <% end %>
+
+  <%# ── 3b. Historical settlement — owner only ───────────────────────────────
+      For invoices paid before payments were forced through the invoice. The
+      money already left through a direct AP payment, so this moves nothing: it
+      only records which invoice that payment belonged to. The cap comes from the
+      supplier's own AP ledger, so this can never settle more than the ledger
+      says has genuinely been paid. %>
+  <% if InventoryPolicy.new(current_user, @vendor_invoice).mark_invoice_historical? %>
+    <%# What has already been settled this way, and by whom. %>
+    <% if @vendor_invoice.historical? %>
+      <section class="rounded-2xl border border-purple-200 bg-purple-50/40 px-5 py-4 mb-6 print-hide flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.vendor_invoices.historical.marked_heading") %></h2>
+          <p class="text-xs text-gray-600 mt-0.5">
+            <%= t("inventory.vendor_invoices.historical.marked_by",
+                  amount: format_money(@vendor_invoice.historical_settled_cents),
+                  user: @vendor_invoice.historical_settled_by&.name,
+                  at: l(@vendor_invoice.historical_settled_at.in_time_zone, format: :long_with_time)) %>
+          </p>
+          <%# The point of a partial marking: the rest is a normal debt, paid the
+              normal way from the payment form above. %>
+          <% if @vendor_invoice.payable? %>
+            <p class="text-xs font-semibold text-purple-900 mt-1">
+              <%= t("inventory.vendor_invoices.historical.remainder_payable",
+                    balance: format_money(@vendor_invoice.balance_due_cents)) %>
+            </p>
+          <% end %>
+        </div>
+        <%= button_to t("inventory.vendor_invoices.historical.undo"),
+              mark_historical_admin_inventory_vendor_invoice_path(@vendor_invoice), method: :delete,
+              class: "border border-purple-300 text-purple-800 hover:bg-purple-100 text-sm font-semibold px-4 py-2 rounded-xl",
+              form: { data: { turbo_confirm: t("inventory.vendor_invoices.historical.undo_confirm") } } %>
+      </section>
+    <% end %>
+
+    <%# The form stays available after a partial marking, so more of the invoice
+        can be attributed to old direct payments without undoing what is already
+        recorded. Each submission adds to the historical amount. %>
+    <% if @vendor_invoice.payable? && @historical_cap_cents.positive? %>
+      <section class="rounded-2xl border border-purple-200 bg-purple-50/40 overflow-hidden mb-6 print-hide">
+        <div class="px-5 py-4 border-b border-purple-100">
+          <h2 class="text-sm font-semibold text-gray-900">
+            <%= t(@vendor_invoice.historical? ? "inventory.vendor_invoices.historical.heading_more" : "inventory.vendor_invoices.historical.heading") %>
+          </h2>
+          <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.vendor_invoices.historical.hint") %></p>
+        </div>
+        <%= form_with url: mark_historical_admin_inventory_vendor_invoice_path(@vendor_invoice), method: :post,
+              class: "p-5 flex flex-wrap items-end gap-4" do %>
+          <% max_cents = [@vendor_invoice.balance_due_cents, @historical_cap_cents].min %>
+          <div class="min-w-[10rem]">
+            <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("inventory.vendor_invoices.historical.amount") %></label>
+            <%= number_field_tag :amount_pounds, (max_cents / 100.0).round(2),
+                  step: 0.01, min: 0.01, max: (max_cents / 100.0).round(2), class: pos_input_class %>
+            <p class="text-xs text-gray-500 mt-1">
+              <%= t("inventory.vendor_invoices.historical.partial_hint") %>
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              <%= t("inventory.vendor_invoices.historical.cap_hint",
+                    cap: format_money(@historical_cap_cents),
+                    supplier: @vendor_invoice.supplier.name,
+                    ap: format_money(@vendor_invoice.supplier.ap_balance_cents)) %>
+            </p>
+          </div>
+          <%= submit_tag t("inventory.vendor_invoices.historical.submit"),
+                class: "bg-purple-700 hover:bg-purple-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors",
+                data: { turbo_confirm: t("inventory.vendor_invoices.historical.confirm") } %>
+        <% end %>
+      </section>
+    <% end %>
   <% end %>
 
   <%# ── 4. Line items — HERO ──────────────────────────────────────────────── %>

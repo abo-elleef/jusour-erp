@@ -4,7 +4,7 @@ module Admin
   module Inventory
     class SuppliersController < BaseController
       before_action :set_supplier,
-        only: %i[show edit update destroy direct_ap_payment purchase_request count_sheet]
+        only: %i[show edit update destroy pay_supplier purchase_request count_sheet]
 
       SORT_COLUMNS = %w[name contact lead_time ingredients invoice_total outstanding status].freeze
 
@@ -92,6 +92,9 @@ module Admin
         # belong on the invoices index (where you resume them), not here.
         @vendor_invoices = @supplier.vendor_invoices.posted.order(invoice_date: :desc).limit(10)
         load_price_history
+        # What a payment can actually land on, in the order it will be applied.
+        @payable_invoices = ::Accounting::PaySupplierService.open_invoices_for(@supplier)
+        @payable_total_cents = @payable_invoices.sum(&:balance_due_cents)
         @ap_transactions = if @supplier.ap_treasury
                              @supplier.ap_treasury.treasury_transactions
                                .where(kind: %w[ap_invoice ap_payment ap_credit_note])
@@ -150,27 +153,27 @@ module Admin
         end
       end
 
-      def direct_ap_payment
+      # One payment to the supplier, spread across their open invoices oldest
+      # first. There is deliberately no way to move a supplier's AP balance
+      # without naming the invoices it settles — see PaySupplierService.
+      def pay_supplier
         authorize_inventory!(:update)
         treasury = Treasury.active.payable.visible_to(current_user).find_by(id: params[:treasury_id])
-        amount_cents = (params[:amount_pounds].to_f * 100).round
 
-        ::Accounting::RecordDirectApPaymentService.new(
+        allocations = ::Accounting::PaySupplierService.new(
           supplier:     @supplier,
           user:         current_user,
           treasury:     treasury,
-          amount_cents: amount_cents,
-          description:  params[:description].presence,
+          amount_cents: (params[:amount_pounds].to_f * 100).round,
           payment_date: params[:payment_date].presence&.to_date || Date.current
         ).call
 
         redirect_to admin_inventory_supplier_path(@supplier),
-          notice: t("inventory.suppliers.show.direct_ap_payment.success")
-      rescue ::Accounting::RecordDirectApPaymentService::Error => e
+          notice: t("inventory.suppliers.show.pay_supplier.success",
+                    count: allocations.size,
+                    settled: allocations.count(&:settles_invoice?))
+      rescue ::Accounting::PaySupplierService::Error => e
         redirect_to admin_inventory_supplier_path(@supplier), alert: e.message
-      rescue ActiveRecord::RecordNotFound
-        redirect_to admin_inventory_supplier_path(@supplier),
-          alert: t("inventory.suppliers.show.direct_ap_payment.errors.treasury_required")
       end
 
       def destroy

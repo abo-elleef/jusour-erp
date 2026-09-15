@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_14_130000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_14_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1732,9 +1732,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_14_130000) do
     t.boolean "draft", default: false, null: false
     t.uuid "import_shipment_id"
     t.integer "credit_applied_cents", default: 0, null: false
+    t.integer "historical_settled_cents", default: 0, null: false
+    t.datetime "historical_settled_at"
+    t.uuid "historical_settled_by_id"
     t.index ["company_id", "draft"], name: "index_vendor_invoices_on_company_id_and_draft"
     t.index ["company_id", "supplier_id", "invoice_number"], name: "index_vendor_invoices_on_company_supplier_and_number", unique: true
     t.index ["company_id"], name: "index_vendor_invoices_on_company_id"
+    t.index ["historical_settled_by_id"], name: "index_vendor_invoices_on_historical_settled_by_id"
     t.index ["import_shipment_id"], name: "index_vendor_invoices_on_import_shipment_id"
     t.index ["invoice_date"], name: "index_vendor_invoices_on_invoice_date"
     t.index ["location_id"], name: "index_vendor_invoices_on_location_id"
@@ -1988,6 +1992,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_14_130000) do
   add_foreign_key "vendor_invoices", "locations"
   add_foreign_key "vendor_invoices", "suppliers"
   add_foreign_key "vendor_invoices", "users"
+  add_foreign_key "vendor_invoices", "users", column: "historical_settled_by_id"
   add_foreign_key "workstations", "companies"
   add_foreign_key "workstations", "locations"
   add_foreign_key "workstations", "printers", column: "receipt_printer_id"

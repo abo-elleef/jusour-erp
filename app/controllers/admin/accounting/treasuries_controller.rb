@@ -130,6 +130,16 @@ module Admin
 
       def adjust
         authorize @treasury, :update?
+        # A supplier AP ledger is derived: its balance is what the open invoices
+        # still owe. A free-hand adjustment breaks that identity silently — 23 of
+        # them are why the AP ledger and the invoice list drifted apart. Settle an
+        # invoice, or raise a credit note.
+        if @treasury.supplier_ap?
+          redirect_to admin_accounting_treasury_path(@treasury),
+            alert: t("flash.accounting.treasury_ap_adjustment_blocked")
+          return
+        end
+
         amount_cents = (params[:amount_pounds].to_f * 100).round
         if amount_cents.zero?
           redirect_to admin_accounting_treasury_path(@treasury), alert: t("flash.accounting.treasury_adjustment_invalid")

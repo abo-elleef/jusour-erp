@@ -23,6 +23,12 @@ Rails.application.routes.draw do
 
   patch "locale", to: "locales#update", as: :locale
 
+  # Self-service password change — every signed-in role reaches this, not just
+  # the owners/accountants who can open /admin/users.
+  namespace :account do
+    resource :password, only: %i[edit update]
+  end
+
   get "up" => "rails/health#show", as: :rails_health_check
 
   get "pos", to: "pos#index"
@@ -319,7 +325,7 @@ Rails.application.routes.draw do
       end
       resources :suppliers do
         member do
-          post :direct_ap_payment
+          post :pay_supplier
           get :purchase_request
           get :count_sheet
         end
@@ -327,6 +333,8 @@ Rails.application.routes.draw do
       resources :vendor_invoices, only: %i[index show new create edit update] do
         member do
           get :export
+          post :mark_historical
+          delete :mark_historical, action: :unmark_historical
           post :receive
           post :record_payment
           patch :void
