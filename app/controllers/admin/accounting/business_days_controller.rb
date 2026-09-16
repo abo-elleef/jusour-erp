@@ -15,6 +15,10 @@ module Admin
         # Everyone who can reach this page can act on it; the section gate is the
         # authority, not the role name.
         @can_configure = current_user.can?("accounting:day_close")
+        # The company-wide start hour is fiscal configuration and stays owner-only,
+        # matching the `require_owner!` on #update_defaults. Rendering it to everyone
+        # with day_close handed sub-managers a form that always failed on submit.
+        @can_configure_company = current_user.owner?
         @branches = Location.active.branches.ordered.includes(:location_operating_days)
         @rows = @branches.map { |location| row_for(location) }
         @any_manual = @rows.any? { |row| row[:manual?] }

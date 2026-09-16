@@ -2477,6 +2477,8 @@ ar:
     title: "صقر POS"
     location:
       label: "الفرع"
+      select: "اختر الفرع"
+      none_assigned: "لا يوجد فرع مخصص لك. اطلب من المدير تخصيص فرع."
       serving: "قائمة %{name}"
     workstation:
       label: "الكاشير"
@@ -2586,6 +2588,7 @@ ar:
       no_drawer_banner: "الصندوق غير مفتوح. لن تتمكن من استلام المدفوعات النقدية."
       start_shift: "بدء الوردية"
       time_tracking: "تتبع الوقت"
+      time_tracking_optional: "اختياري. الوردية تُفتح وتُغلق بدرج النقد، وليس بتسجيل الوقت."
       drawer_open: "الصندوق مفتوح"
       drawer_open_badge: "الصندوق مفتوح"
       drawer_closed_badge: "الصندوق مغلق"
@@ -4475,7 +4478,7 @@ ar:
       open_drawers: "أدراج مفتوحة"
       clear: "جاهز"
       actions: "إجراءات"
-      automatic_flip: "انقلاب بالساعة"
+      automatic_flip: "يتغيّر تلقائيًا"
       advance: "تقديم اليوم"
       advance_all: "تقديم كل الفروع اليدوية الجاهزة"
       advance_confirm: "تقديم %{branch} إلى %{date}؟"

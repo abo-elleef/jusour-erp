@@ -18,6 +18,22 @@ RSpec.describe "Admin::Accounting::BusinessDays", type: :request do
       expect(response.body).to include("Downtown")
       expect(response.body).to include(I18n.t("accounting.business_days.company_defaults"))
     end
+
+    it "offers the company start hour to the owner as an editable form" do
+      sign_in owner
+      get admin_accounting_business_days_path
+      expect(response.body).to include(I18n.t("accounting.business_days.company_start_hour"))
+    end
+
+    # The form posts to an owner-only action, so rendering it to everyone with
+    # accounting:day_close handed sub-managers a control that always failed.
+    it "shows the company start hour to a sub-manager as read-only" do
+      sign_in create(:user, company: company, role: "sub_manager")
+      get admin_accounting_business_days_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("accounting.business_days.owner_configure_hint"))
+      expect(response.body).not_to include(I18n.t("accounting.business_days.company_start_hour"))
+    end
   end
 
   describe "PATCH defaults" do

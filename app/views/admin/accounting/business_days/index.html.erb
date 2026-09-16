@@ -21,7 +21,7 @@
       <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.business_days.company_defaults_hint") %></p>
     </div>
     <div class="p-5">
-      <% if @can_configure %>
+      <% if @can_configure_company %>
         <%= form_with url: update_defaults_admin_accounting_business_days_path, method: :patch, class: "flex flex-wrap items-end gap-3" do %>
           <div>
             <%= label_tag :business_day_start_hour, t("accounting.business_days.company_start_hour"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>

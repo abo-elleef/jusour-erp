@@ -2468,6 +2468,8 @@ en:
     title: "Saqr POS"
     location:
       label: "Branch"
+      select: "Select branch"
+      none_assigned: "No branch is assigned to you. Ask a manager to assign one."
       serving: "Menu for %{name}"
     workstation:
       label: "Register"
@@ -2573,6 +2575,7 @@ en:
       no_drawer_banner: "Your drawer is not open. You won't be able to take cash payments."
       start_shift: "Start shift"
       time_tracking: "Time tracking"
+      time_tracking_optional: "Optional. Your shift is opened and closed by the cash drawer, not by the clock."
       drawer_open: "Drawer open"
       drawer_open_badge: "Drawer open"
       drawer_closed_badge: "Drawer closed"
@@ -4450,7 +4453,7 @@ en:
       open_drawers: "Open drawers"
       clear: "Clear"
       actions: "Actions"
-      automatic_flip: "Clock flip"
+      automatic_flip: "Rolls over automatically"
       advance: "Advance day"
       advance_all: "Advance all clear manual branches"
       advance_confirm: "Advance %{branch} to %{date}?"

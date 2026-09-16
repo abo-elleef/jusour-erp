@@ -70,7 +70,7 @@ class PosController < ApplicationController
       return
     end
 
-    session[:pos_location_id] = location.id
+    remember_pos_location!(location)
     session.delete(:pos_workstation_id)
     if (order = current_draft_order) && order.location_id != location.id
       session.delete(:current_order_id)

@@ -5,14 +5,22 @@
           class: "inline-flex items-center gap-2",
           data: { turbo_frame: "_top" } do %>
       <label for="pos_location_id" class="sr-only"><%= t("pos.location.label") %></label>
+      <%# A blank option whenever nothing is actually selected: without it the browser
+          shows the first branch as chosen while no branch is set, and the cashier has
+          to pick another branch and come back to get one. %>
       <%= select_tag :location_id,
             options_from_collection_for_select(@pos_locations, :id, :name, @pos_location&.id),
             id: "pos_location_id",
-            class: "border border-gray-200 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-800 bg-white",
+            include_blank: (@pos_location ? false : t("pos.location.select")),
+            class: "border rounded-xl px-3 py-1.5 text-sm font-semibold #{@pos_location ? 'border-gray-200 text-gray-800 bg-white' : 'border-amber-300 text-amber-900 bg-amber-50'}",
             onchange: "this.form.requestSubmit()" %>
     <% end %>
   <% elsif @pos_location %>
     <span class="text-sm font-semibold text-gray-600 px-2 py-1.5"><%= @pos_location.name %></span>
+  <% else %>
+    <span class="text-sm font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5">
+      <%= t("pos.location.none_assigned") %>
+    </span>
   <% end %>
   <% if @pos_workstations.present? && @pos_workstations.any? %>
     <%= form_with url: pos_set_workstation_path, method: :patch,

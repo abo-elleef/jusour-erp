@@ -35,26 +35,6 @@
   </div>
 <% end %>
 
-<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
-  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-    <h2 class="text-sm font-semibold text-gray-900"><%= t("pos.shift.time_tracking") %></h2>
-  </div>
-  <div class="p-5 flex flex-wrap items-center justify-between gap-3">
-    <% if current_user.clocked_in? %>
-      <p class="text-sm text-gray-700">
-        <%= t("accounting.clock_widget.on_shift") %>
-        · <%= t("accounting.clock_widget.since", time: l(current_user.current_shift.clocked_in_at, format: :short_time)) %>
-      </p>
-      <%= button_to t("accounting.clock_widget.clock_out"), clock_out_pos_shift_path, method: :patch,
-            class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
-    <% else %>
-      <p class="text-sm text-gray-500"><%= t("accounting.clock_widget.not_clocked_in") %></p>
-      <%= button_to t("accounting.clock_widget.clock_in"), clock_in_pos_shift_path, method: :post,
-            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
-    <% end %>
-  </div>
-</section>
-
 <% if @open_session %>
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
@@ -125,3 +105,27 @@
     </div>
   </section>
 <% end %>
+
+<%# Optional, and deliberately below the drawer: the drawer is what opens and
+    closes a shift. The clock is only kept for companies that still want the hours. %>
+<section class="rounded-2xl border border-gray-200 bg-gray-50/60 overflow-hidden mb-6">
+  <div class="p-5 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-sm font-semibold text-gray-700"><%= t("pos.shift.time_tracking") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("pos.shift.time_tracking_optional") %></p>
+      <% if current_user.clocked_in? %>
+        <p class="text-sm text-gray-700 mt-2">
+          <%= t("accounting.clock_widget.on_shift") %>
+          · <%= t("accounting.clock_widget.since", time: l(current_user.current_shift.clocked_in_at, format: :short_time)) %>
+        </p>
+      <% end %>
+    </div>
+    <% if current_user.clocked_in? %>
+      <%= button_to t("accounting.clock_widget.clock_out"), clock_out_pos_shift_path, method: :patch,
+            class: "border border-gray-300 text-gray-700 hover:bg-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+    <% else %>
+      <%= button_to t("accounting.clock_widget.clock_in"), clock_in_pos_shift_path, method: :post,
+            class: "border border-gray-300 text-gray-700 hover:bg-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+    <% end %>
+  </div>
+</section>
