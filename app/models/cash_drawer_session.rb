@@ -12,6 +12,9 @@ class CashDrawerSession < ApplicationRecord
   # transfer between two treasuries, not income — without a source there is nothing
   # to credit it against.
   belongs_to :float_source_treasury, class_name: "Treasury", optional: true
+  # Where the counted cash is handed over to at close — the safe it physically
+  # goes into. Optional: a drawer can be counted without being banked yet.
+  belongs_to :deposit_treasury, class_name: "Treasury", optional: true
   has_many :payments, dependent: :nullify
 
   monetize :opening_float_cents
@@ -34,6 +37,13 @@ class CashDrawerSession < ApplicationRecord
     return 0 if counted_cash_cents.blank?
 
     counted_cash_cents.to_i - opening_float_cents.to_i
+  end
+
+  # Everything in the drawer leaves at close, float included. Each open draws a
+  # fresh float from its source, so a drawer that kept yesterday's would be holding
+  # two by tomorrow.
+  def deposit_cents
+    counted_cash_cents.to_i
   end
 
   private

@@ -1,0 +1,14 @@
+<%# locals: order
+
+    Its own partial so a Turbo Stream can refresh just this, leaving the drawer
+    open and the cashier where they were. %>
+<%= form_with url: pos_update_notes_path, method: :patch, data: { turbo_stream: true } do |f| %>
+  <%= f.text_area :notes, value: order.notes,
+        placeholder: t("pos.cart.notes_placeholder"),
+        rows: 3,
+        class: "w-full rounded-2xl border border-stone-300 bg-stone-50 px-4 py-3 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-500 resize-none" %>
+  <div class="flex justify-end mt-2">
+    <%= f.submit t("actions.save"),
+          class: "rounded-full px-5 py-2 text-sm font-medium bg-stone-800 text-white hover:bg-stone-700 transition-colors cursor-pointer" %>
+  </div>
+<% end %>

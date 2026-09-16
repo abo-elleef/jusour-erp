@@ -1,5 +1,8 @@
-<%= turbo_stream.replace "cart-meta-strip" do %>
-  <%= render "pos/cart_meta_strip", order: @order, open_customer_dialog: true %>
+<%= turbo_stream.replace "cart-chips" do %>
+  <%= render "pos/cart_chips", order: @order %>
+<% end %>
+<%= turbo_stream.update "drawer-customer-body" do %>
+  <%= render "pos/order_customer", order: @order, embedded: true %>
 <% end %>
 <%= turbo_stream.replace "order-summary" do %>
   <%= render "pos/order_summary", order: @order %>

@@ -56,6 +56,11 @@ class OrderPolicy < ApplicationPolicy
     user.can_access_pos?
   end
 
+  # Money in one press, so it is not for anyone who can merely ring a sale.
+  def collect_all_cash?
+    user.owner? || user.manager?
+  end
+
   def apply_discount?
     user.can_access_pos?
   end
@@ -84,8 +89,14 @@ class OrderPolicy < ApplicationPolicy
     user.owner? || user.manager?
   end
 
+  # A cashier may throw away their own cart, and only while it is still a cart.
+  # Anything paid against, or anything that has left `draft`, is a record of
+  # something that happened — that gets voided by a manager, not deleted.
   def destroy?
-    false
+    return false unless record.draft?
+    return false if record.payments.any?
+
+    user.can_access_pos? && record.user_id == user.id
   end
 
   class Scope < Scope

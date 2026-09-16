@@ -157,6 +157,26 @@ module Accounting
         end
       end
 
+      # ── Drawer Deposit ────────────────────────────────────────────────
+      # Handing the counted cash over to a safe. Both sides are assets, so the
+      # company is no richer for it — the money has only changed hands.
+      def record_drawer_deposit!(session)
+        destroy_for_source!(session, kind: :deposit)
+        amount = session.deposit_cents
+        return unless amount.positive?
+        return if session.deposit_treasury.blank?
+
+        create! source: session, date: Date.current, user: session.user,
+                description: I18n.t("accounting.journal_entries.auto.drawer_deposit",
+                                    from: session.treasury.name,
+                                    to: session.deposit_treasury.name,
+                                    default: "Drawer banked — #{session.treasury.name} → #{session.deposit_treasury.name}"),
+                source_tag: :deposit do |lines|
+          lines << debit(account_for_treasury(session.deposit_treasury), amount, "asset")
+          lines << credit(account_for_treasury(session.treasury), amount, "asset")
+        end
+      end
+
       # ── Online / Digital Payment session total ────────────────────────
       def record_online_payment!(treasury:, amount_cents:, user:, session:)
         return unless amount_cents.positive?

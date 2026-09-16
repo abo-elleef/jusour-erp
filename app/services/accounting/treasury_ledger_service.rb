@@ -44,6 +44,10 @@ module Accounting
       new.sync_session_online_payments!(session)
     end
 
+    def self.sync_drawer_deposit!(session)
+      new.sync_drawer_deposit!(session)
+    end
+
     def sync_expense!(expense)
       remove_for_source(expense)
       return if expense.treasury_id.blank?
@@ -160,6 +164,38 @@ module Accounting
       JournalEntryService.record_drawer_reconcile!(session)
     end
 
+    # Hands the counted cash over to the safe it physically goes into: out of the
+    # drawer, into the destination, both legs recorded so neither drifts. The whole
+    # count leaves, float included — every open pulls a fresh float in, so a drawer
+    # that kept one would be holding two by the next shift.
+    def sync_drawer_deposit!(session)
+      remove_for_source(session, kinds: %w[drawer_deposit])
+      return if session.deposit_treasury_id.blank? || session.treasury_id.blank?
+      return unless session.deposit_cents.positive?
+
+      description = drawer_deposit_description(session)
+
+      record!(
+        treasury: session.treasury,
+        user: session.user,
+        amount_cents: -session.deposit_cents,
+        kind: "drawer_deposit",
+        description: description,
+        occurred_on: session.session_date,
+        source: session
+      )
+      record!(
+        treasury: session.deposit_treasury,
+        user: session.user,
+        amount_cents: session.deposit_cents,
+        kind: "drawer_deposit",
+        description: description,
+        occurred_on: session.session_date,
+        source: session
+      )
+      JournalEntryService.record_drawer_deposit!(session)
+    end
+
     def sync_session_online_payments!(session)
       remove_for_source(session, kinds: %w[online_payment])
 
@@ -259,6 +295,16 @@ module Accounting
           balance_after_cents: treasury.balance_cents
         )
       end
+    end
+
+    def drawer_deposit_description(session)
+      I18n.t(
+        "accounting.treasuries.transactions.drawer_deposit",
+        from: session.treasury.name,
+        to: session.deposit_treasury.name,
+        date: I18n.l(session.session_date, format: :long),
+        default: "Drawer banked — #{session.treasury.name} → #{session.deposit_treasury.name}"
+      )
     end
 
     def payroll_advance_description(advance)

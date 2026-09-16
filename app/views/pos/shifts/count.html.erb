@@ -1,10 +1,13 @@
-<div class="<%= pos_viewport_min_h_class %> bg-gray-100 flex flex-col">
+<%# Owns its own scroll container — the POS layout locks the page height, so the
+    sales summary plus the count form was being clipped, not scrolled. %>
+<div class="<%= pos_viewport_h_class %> bg-gray-100 flex flex-col overflow-hidden">
   <header class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white shrink-0">
     <span class="text-xl font-bold tracking-tight text-gray-900"><%= t("pos.shift.close_title") %></span>
     <%= render "pos/pos_nav" %>
   </header>
 
-  <div class="p-5 max-w-lg mx-auto w-full flex-1">
+  <div class="flex-1 min-h-0 overflow-y-auto">
+    <div class="p-5 max-w-lg mx-auto w-full">
     <div class="mb-4">
       <%= link_to t("pos.shift.back_to_shift"), pos_shift_path,
             class: "text-sm font-semibold text-amber-700 hover:text-amber-800" %>
@@ -35,6 +38,7 @@
           <%= password_field_tag :manager_pin, nil, maxlength: 4, autocomplete: "off",
                 class: "w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm", required: true %>
         </div>
+        <%= render "pos/shifts/deposit_treasury_field" %>
         <%= submit_tag t("accounting.cash_drawer.reconcile_drawer"), class: "w-full bg-gray-900 text-white py-3 rounded-xl font-bold" %>
       <% end %>
     <% else %>
@@ -43,8 +47,10 @@
         <p class="text-xs text-gray-500 mb-4"><%= t("pos.shift.count_cash_hint") %></p>
         <%= render "shared/cash_denomination_count",
               reconcile_url: reconcile_pos_shift_path,
-              submit_label: t("accounting.cash_drawer.reconcile_drawer") %>
+              submit_label: t("accounting.cash_drawer.reconcile_drawer"),
+              extra_fields: capture { render "pos/shifts/deposit_treasury_field" } %>
       </div>
     <% end %>
+    </div>
   </div>
 </div>

@@ -164,6 +164,8 @@ class User < ApplicationRecord
   # Permission-based check — the way ALL new authorization should be written
   # (policies + views), instead of branching on role names.
   def can?(permission)
+    return false if permission.blank?
+
     role_record = effective_role
     return role_record.can?(permission) if role_record
 

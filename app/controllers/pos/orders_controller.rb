@@ -14,12 +14,31 @@ module Pos
       @filter_type = params[:order_type].presence
       @filter_type = nil if @filter_type == "all"
 
-      @q = Order.ransack(params[:q])
-      scope = @q.result.not_fully_paid.includes(:customer, :user)
-      scope = scope.where(order_type: @filter_type) if @filter_type.present?
+      @orders = outstanding_orders
+    end
 
-      orders = scope.limit(100).to_a
-      @orders = orders.select { |order| order.amount_due_cents.positive? }
+    # Settles everything currently listed, in cash, in one press. Scoped to the
+    # same filters as the page: what the cashier is looking at is what they are
+    # collecting, which is the only version of this they can check before pressing.
+    def collect_all_cash
+      authorize Order, :collect_all_cash?
+
+      unless current_user.open_cash_drawer_session(location: @pos_location)
+        return redirect_to pos_orders_path(order_type: @filter_type),
+                           alert: t("flash.pos.shift.no_open_drawer")
+      end
+
+      result = Payments::BulkCashCollectService.call(orders: outstanding_orders, user: current_user)
+
+      if result.any?
+        redirect_to pos_orders_path(order_type: @filter_type),
+                    notice: t("flash.pos.cash_collected",
+                              count: result.settled.size,
+                              amount: helpers.format_money(result.collected_cents))
+      else
+        redirect_to pos_orders_path(order_type: @filter_type),
+                    alert: t("flash.pos.nothing_to_collect")
+      end
     end
 
     def sync_offline
@@ -108,12 +127,34 @@ module Pos
 
       result = Orders::CompleteService.call_all(open_orders_for(current_user))
 
-      if result.any?
+      # Three outcomes, not two. "Nothing was completed" and "there was nothing to
+      # complete" are different things, and telling a cashier the second when the
+      # first is true sends them looking for orders the page says do not exist.
+      if result.completed.any?
+        redirect_to pos_shift_path(tab: "orders"), flash: {
+          notice: t("flash.pos.orders_completed", count: result.completed.size),
+          alert: (t("flash.pos.orders_not_completable", count: result.skipped.size) if result.skipped.any?)
+        }.compact
+      elsif result.skipped.any?
         redirect_to pos_shift_path(tab: "orders"),
-                    notice: t("flash.pos.orders_completed", count: result.completed.size)
+                    alert: t("flash.pos.orders_not_completable", count: result.skipped.size)
       else
         redirect_to pos_shift_path(tab: "orders"), alert: t("flash.pos.no_orders_to_complete")
       end
+    end
+
+    def destroy
+      @order = Order.find(params[:id])
+      authorize @order, :destroy?
+
+      number = @order.order_number
+      order_id = @order.id
+      AuditLogEntry.record!(action: "order.discard", record: @order, user: current_user)
+      @order.destroy!
+      session.delete(:current_order_id) if session[:current_order_id] == order_id
+
+      redirect_to pos_shift_path(tab: "orders"),
+                  notice: t("flash.pos.order_discarded", number: number)
     end
 
     def print_receipt
@@ -132,6 +173,17 @@ module Pos
     end
 
     private
+
+    def outstanding_orders
+      @filter_type ||= begin
+        t = params[:order_type].presence
+        t == "all" ? nil : t
+      end
+      @q ||= Order.ransack(params[:q])
+      scope = @q.result.not_fully_paid.includes(:customer, :user, :payments)
+      scope = scope.where(order_type: @filter_type) if @filter_type.present?
+      scope.limit(100).to_a.select { |order| order.amount_due_cents.positive? }
+    end
 
     # The same set that blocks the shift from closing, so pressing the button
     # always clears the blocker rather than leaving a remainder the cashier cannot

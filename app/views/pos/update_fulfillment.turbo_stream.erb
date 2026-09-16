@@ -1,9 +1,7 @@
-<%# Update only the chip label and dialog body — never replace the <dialog>
-    element itself so showModal() centering is preserved across radio changes. %>
 <%= turbo_stream.update "fulfillment-chip-label" do %>
   <%= @order.fulfillment_summary %>
 <% end %>
-<%= turbo_stream.update "fulfillment-dialog-body" do %>
+<%= turbo_stream.update "drawer-fulfillment-body" do %>
   <%= render "pos/order_fulfillment", order: @order, embedded: true %>
 <% end %>
 <%= turbo_stream.replace "order-summary" do %>

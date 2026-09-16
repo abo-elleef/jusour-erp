@@ -1,7 +1,18 @@
-<%= turbo_stream.replace "cart-meta-strip" do %>
-  <%= render "pos/cart_meta_strip", order: @order,
+<%# Never replaces #cart-meta-strip: that would destroy the open <dialog>. The
+    chips and the customer section are updated in place, so the drawer stays put
+    and a validation error lands in front of the cashier instead of behind a
+    closed panel. %>
+<%= turbo_stream.replace "cart-chips" do %>
+  <%= render "pos/cart_chips", order: @order %>
+<% end %>
+<%= turbo_stream.update "drawer-customer-body" do %>
+  <%= render "pos/order_customer", order: @order,
         customer_form_errors: @customer_form_errors,
-        open_customer_dialog: @customer_form_errors&.any? %>
+        edit_customer_errors: nil,
+        embedded: true %>
+<% end %>
+<%= turbo_stream.update "drawer-notes-body" do %>
+  <%= render "pos/order_notes_form", order: @order %>
 <% end %>
 <%= turbo_stream.replace "cart" do %>
   <%= render "pos/cart_body", order: @order %>

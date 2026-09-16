@@ -13,7 +13,64 @@
             options_from_collection_for_select(@locations, :id, :name, @location&.id),
             class: pos_input_class, include_blank: false %>
     </div>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.cash_drawer.drawer_filter") %></label>
+      <%= select_tag :treasury_id,
+            options_from_collection_for_select(@drawer_treasuries, :id, :name, @treasury&.id),
+            class: pos_input_class, include_blank: t("accounting.cash_drawer.all_drawers") %>
+    </div>
     <%= submit_tag t("actions.view"), class: "bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-semibold" %>
+  <% end %>
+
+  <%# The day at a glance, before the shift-by-shift detail below it. %>
+  <% if @totals.shifts.positive? %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-4">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.cash_drawer.day_summary") %></h2>
+        <% if @totals.fully_closed? %>
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full border border-green-300 bg-green-50 text-green-800">
+            <%= t("accounting.cash_drawer.all_closed") %>
+          </span>
+        <% else %>
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full border border-amber-300 bg-amber-50 text-amber-900">
+            <%= t("accounting.cash_drawer.still_open", count: @totals.open_shifts) %>
+          </span>
+        <% end %>
+      </div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <% [
+             [t("accounting.cash_drawer.shifts"), @totals.shifts, :plain],
+             [t("payment.methods.cash"), @totals.cash_cents, :money],
+             [t("payment.methods.instapay"), @totals.instapay_cents, :money],
+             [t("payment.methods.vodafone_cash"), @totals.vodafone_cash_cents, :money],
+             [t("accounting.cash_drawer.opening_float"), @totals.opening_float_cents, :money],
+             [t("accounting.cash_drawer.expected"), @totals.expected_cents, :money],
+             [t("accounting.cash_drawer.counted"), @totals.counted_cents, :money],
+             [t("accounting.cash_drawer.banked"), @totals.deposited_cents, :money]
+           ].each do |label, value, kind| %>
+          <div class="rounded-xl border border-gray-200 bg-gray-50/70 p-3">
+            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= label %></p>
+            <p class="text-lg font-bold text-gray-900 mt-0.5 tabular-nums">
+              <%= kind == :money ? format_money(value) : value %>
+            </p>
+          </div>
+        <% end %>
+      </div>
+
+      <div class="mt-4 flex flex-wrap gap-6 border-t border-gray-100 pt-4">
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.total_sales") %></p>
+          <p class="text-xl font-bold text-green-700 mt-0.5 tabular-nums"><%= format_money(@totals.total_sales_cents) %></p>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.variance") %></p>
+          <p class="text-xl font-bold mt-0.5 tabular-nums <%= @totals.variance_cents.negative? ? "text-red-700" : "text-gray-900" %>">
+            <%= format_money(@totals.variance_cents) %>
+          </p>
+        </div>
+      </div>
+    </section>
   <% end %>
 
   <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
@@ -64,23 +121,39 @@
           <th class="p-3 text-start"><%= t("accounting.shared.treasury") %></th>
           <th class="p-3 text-start"><%= t("accounting.cash_drawer.opened_at") %></th>
           <th class="p-3 text-start"><%= t("accounting.cash_drawer.status") %></th>
+          <th class="p-3 text-end"><%= t("payment.methods.cash") %></th>
+          <th class="p-3 text-end"><%= t("payment.methods.instapay") %></th>
+          <th class="p-3 text-end"><%= t("payment.methods.vodafone_cash") %></th>
           <th class="p-3 text-end"><%= t("accounting.cash_drawer.expected") %></th>
           <th class="p-3 text-end"><%= t("accounting.cash_drawer.counted") %></th>
           <th class="p-3 text-end"><%= t("accounting.cash_drawer.variance") %></th>
+          <th class="p-3 text-start"><%= t("accounting.cash_drawer.banked_to") %></th>
           <th class="p-3 pe-5 text-end"></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100 table-zebra">
-        <% @sessions.each do |session| %>
+        <% @rows.each do |row| %>
+          <% session = row.session %>
           <tr>
             <td class="p-3 ps-5"><%= session.user.name %></td>
             <td class="p-3 text-gray-600"><%= session.treasury.name %></td>
             <td class="p-3 tabular-nums"><%= l(session.created_at, format: :short_time) %></td>
             <td class="p-3"><%= accounting_drawer_status(session.status) %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(row.cash_cents) %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(row.instapay_cents) %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(row.vodafone_cash_cents) %></td>
             <td class="p-3 text-end tabular-nums"><%= session.expected_cash_cents ? format_money(session.expected_cash_cents) : t("accounting.shared.em_dash") %></td>
             <td class="p-3 text-end tabular-nums"><%= session.counted_cash_cents ? format_money(session.counted_cash_cents) : t("accounting.shared.em_dash") %></td>
             <td class="p-3 text-end tabular-nums <%= session.variance_cents.to_i.negative? ? 'text-red-700' : 'text-green-700' %>">
               <%= session.variance_cents ? format_money(session.variance_cents) : t("accounting.shared.em_dash") %>
+            </td>
+            <td class="p-3 text-gray-600">
+              <% if row.deposit_treasury && row.deposited_cents.positive? %>
+                <%= row.deposit_treasury.name %>
+                <span class="text-xs text-gray-400 tabular-nums">· <%= format_money(row.deposited_cents) %></span>
+              <% else %>
+                <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+              <% end %>
             </td>
             <td class="p-3 pe-5 text-end">
               <%= link_to t("actions.count"), count_admin_accounting_cash_drawer_path(session), class: "text-amber-700 text-xs font-semibold" %>

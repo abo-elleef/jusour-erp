@@ -1,4 +1,6 @@
-<div class="<%= pos_viewport_min_h_class %> bg-gray-100 flex flex-col">
+<%# Owns its own scroll container: the POS layout locks the page height, so a
+    long orders list would otherwise be clipped rather than scrolled. %>
+<div class="<%= pos_viewport_h_class %> bg-gray-100 flex flex-col overflow-hidden">
   <header class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white shrink-0">
     <div class="flex items-center gap-3">
       <span class="text-xl font-bold tracking-tight text-gray-900"><%= t("pos.shift.title") %></span>
@@ -17,7 +19,8 @@
     <%= render "pos/pos_nav" %>
   </header>
 
-  <div class="p-5 max-w-2xl mx-auto w-full flex-1">
+  <div class="flex-1 min-h-0 overflow-y-auto">
+    <div class="p-5 w-full">
     <nav class="mb-6 border-b border-gray-200" aria-label="<%= t("pos.shift.tabs.label") %>">
       <div class="flex flex-wrap gap-x-1 -mb-px">
         <%= link_to t("pos.shift.tabs.orders"), pos_shift_path(tab: "orders"),
@@ -34,5 +37,6 @@
       <p class="text-gray-600 text-sm mb-6"><%= t("pos.shift.description") %></p>
       <%= render "shift_hub" %>
     <% end %>
+    </div>
   </div>
 </div>

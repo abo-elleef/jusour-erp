@@ -2,12 +2,19 @@
 
 module Admin
   module Accounting
+    # Closing or switching a branch's own day is day-close work, gated by the
+    # section permission — it used to be owner-only, which left managers looking at
+    # a day they could not close and fetching the owner at midnight. Setting the
+    # company-wide default start hour is fiscal configuration and stays with the
+    # owner.
     class BusinessDaysController < BaseController
-      before_action :require_owner!, only: %i[update update_defaults]
+      before_action :require_owner!, only: :update_defaults
 
       def index
         @company_start_hour = BusinessDay.company_start_hour
-        @can_configure = current_user.owner?
+        # Everyone who can reach this page can act on it; the section gate is the
+        # authority, not the role name.
+        @can_configure = current_user.can?("accounting:day_close")
         @branches = Location.active.branches.ordered.includes(:location_operating_days)
         @rows = @branches.map { |location| row_for(location) }
         @any_manual = @rows.any? { |row| row[:manual?] }

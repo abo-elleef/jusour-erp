@@ -28,9 +28,9 @@ module AccountingNav
         { controller: "attendance",      label: "accounting.nav.attendance",  path: :admin_accounting_attendance_path,        permission: "attendance:log", feature: :attendance },
         { controller: "late_penalties",  label: "accounting.nav.late_penalties", path: :admin_accounting_late_penalties_path, permission: "attendance:penalties", feature: :attendance },
         { controller: "shift_logs",      label: "accounting.nav.shifts",      path: :admin_accounting_shift_logs_path,        permission: "attendance:view", feature: :attendance },
-        { controller: "cash_drawer",     label: "accounting.nav.cash_drawer", path: :admin_accounting_cash_drawer_index_path, permission: "accounting:transactions" },
-        { controller: "digital_wallet_day_closes", label: "accounting.nav.digital_wallets", path: :admin_accounting_digital_wallet_day_close_path, permission: "accounting:transactions" },
-        { controller: "business_days", label: "accounting.nav.business_days", path: :admin_accounting_business_days_path, permission: "accounting:transactions" }
+        { controller: "cash_drawer",     label: "accounting.nav.cash_drawer", path: :admin_accounting_cash_drawer_index_path, permission: "accounting:day_close" },
+        { controller: "digital_wallet_day_closes", label: "accounting.nav.digital_wallets", path: :admin_accounting_digital_wallet_day_close_path, permission: "accounting:day_close" },
+        { controller: "business_days", label: "accounting.nav.business_days", path: :admin_accounting_business_days_path, permission: "accounting:day_close" }
       ]
     },
     {

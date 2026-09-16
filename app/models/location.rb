@@ -6,6 +6,9 @@ class Location < ApplicationRecord
   TYPES = %w[central_kitchen branch].freeze
 
   belongs_to :company
+  # Where this branch's drawers are banked when a shift closes. Set by an admin,
+  # not chosen at the till — see #deposit_treasury_or_default.
+  belongs_to :deposit_treasury, class_name: "Treasury", optional: true
   has_many :ingredient_locations, dependent: :destroy
   has_many :ingredients, through: :ingredient_locations
   has_many :location_menu_items, dependent: :destroy
@@ -90,6 +93,17 @@ class Location < ApplicationRecord
     return if digits.blank?
 
     "https://wa.me/#{digits}"
+  end
+
+  # The branch's own treasury when an admin has named one, otherwise the company
+  # default so the cash still lands somewhere traceable. Callers should warn when
+  # they end up on the fallback — see #deposit_treasury_configured?.
+  def deposit_treasury_or_default
+    deposit_treasury || Treasury.default_treasury
+  end
+
+  def deposit_treasury_configured?
+    deposit_treasury_id.present?
   end
 
   private

@@ -1,12 +1,15 @@
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
-<div class="<%= pos_viewport_min_h_class %> bg-gray-100 flex flex-col">
+<%# The POS layout locks the page height, so every screen owns its own scroll
+    container. Without one, a long list is simply clipped. %>
+<div class="<%= pos_viewport_h_class %> bg-gray-100 flex flex-col overflow-hidden">
   <header class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white shrink-0">
     <span class="text-xl font-bold tracking-tight text-gray-900"><%= t("pos.collect_payment.title") %></span>
     <%= render "pos/pos_nav" %>
   </header>
 
-  <div class="p-5 max-w-6xl mx-auto w-full flex-1">
+  <div class="flex-1 min-h-0 overflow-y-auto">
+    <div class="p-5 max-w-6xl mx-auto w-full">
     <div class="mb-6">
       <p class="text-gray-600 text-sm"><%= t("pos.collect_payment.description") %></p>
     </div>
@@ -46,6 +49,25 @@
         <p class="text-xs text-gray-500 mt-1.5"><%= t("pos.collect_payment.across_orders") %></p>
       </div>
     </div>
+
+    <%# Settles exactly the orders listed below — the filters apply, so the total in
+        the confirmation is the total on screen. %>
+    <% if @orders.any? && policy(Order).collect_all_cash? %>
+      <% due_total = @orders.sum(&:amount_due_cents) %>
+      <div class="rounded-2xl border border-green-200 bg-green-50/70 p-4 mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="font-semibold text-green-900"><%= t("pos.collect_payment.collect_all_title") %></p>
+          <p class="text-sm text-green-800 mt-0.5"><%= t("pos.collect_payment.collect_all_hint") %></p>
+        </div>
+        <%= button_to t("pos.collect_payment.collect_all", amount: format_money(due_total)),
+              collect_all_cash_pos_orders_path(order_type: @filter_type, q: params[:q]&.to_unsafe_h),
+              method: :post,
+              form: { data: { turbo_confirm: t("pos.collect_payment.collect_all_confirm",
+                                               count: @orders.size,
+                                               amount: format_money(due_total)) } },
+              class: "inline-flex items-center bg-green-700 hover:bg-green-800 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0" %>
+      </div>
+    <% end %>
 
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
@@ -124,5 +146,6 @@
               class: "inline-flex mt-4 text-sm font-semibold text-amber-700 hover:text-amber-800 px-4 py-2 rounded-xl hover:bg-amber-50 transition-colors" %>
       </section>
     <% end %>
+    </div>
   </div>
 </div>

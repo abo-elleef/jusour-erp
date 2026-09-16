@@ -30,6 +30,8 @@ module Accounting
 
       ::Accounting::TreasuryLedgerService.sync_drawer_reconcile!(@session)
       ::Accounting::TreasuryLedgerService.sync_session_online_payments!(@session)
+      # Last, so the drawer is banked only after the takings are in it.
+      ::Accounting::TreasuryLedgerService.sync_drawer_deposit!(@session)
 
       AuditLogEntry.record!(
         action: "cash_drawer.reconciled",

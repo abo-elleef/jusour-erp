@@ -23,6 +23,7 @@ module Permission
     { key: "accounting:ledgers",      group: "accounting" },
     { key: "accounting:transactions", group: "accounting" },
     { key: "accounting:reports",      group: "accounting" },
+    { key: "accounting:day_close",    group: "accounting" },
     { key: "accounting:setup",        group: "accounting" },
     { key: "accounting:audit",        group: "accounting" },
 
@@ -66,16 +67,18 @@ module Permission
       name: "Manager",
       permissions: %w[
         dashboard:view orders:view orders:refund menu:manage customers:manage
-        inventory:view inventory:manage accounting:transactions accounting:reports
+        inventory:view inventory:manage accounting:transactions accounting:day_close accounting:reports
         attendance:log attendance:view attendance:penalties attendance:waive_penalties staff:view locations:manage printers:manage
         pos:access kitchen:access production:access
       ]
     },
     "sub_manager" => {
       name: "Sub-manager",
-      # can run the floor + log attendance, but NO accounting at all
+      # Runs the floor, logs attendance, and closes out the day's drawers — but no
+      # other accounting: recording spend stays with the roles above.
       permissions: %w[
         dashboard:view orders:view menu:manage customers:manage inventory:view
+        accounting:day_close
         attendance:log attendance:view pos:access kitchen:access
       ]
     },
@@ -83,7 +86,7 @@ module Permission
       name: "Accountant",
       permissions: %w[
         dashboard:view orders:view inventory:view inventory:finance
-        accounting:ledgers accounting:transactions accounting:reports accounting:setup
+        accounting:ledgers accounting:transactions accounting:day_close accounting:reports accounting:setup
         attendance:view attendance:penalties attendance:waive_penalties staff:view staff:manage payroll:view payroll:manage
         settings:general locations:manage printers:manage pos:access
       ]

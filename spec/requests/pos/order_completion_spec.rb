@@ -124,6 +124,45 @@ RSpec.describe "POS order completion", type: :request do
 
       expect(flash[:alert]).to eq(I18n.t("flash.pos.no_orders_to_complete"))
     end
+
+    # The bug this covers: two orders missing a table number reported as "no open
+    # orders", while the banner above counted them. The cashier had nowhere to go.
+    it "distinguishes orders it could not move from having none at all" do
+      order = open_order(status: "draft")
+      order.update!(order_type: "table", table_number: nil)
+
+      post complete_all_pos_orders_path
+
+      expect(flash[:alert]).to eq(I18n.t("flash.pos.orders_not_completable", count: 1))
+      expect(flash[:notice]).to be_nil
+    end
+
+    it "reports both halves when some close and some cannot" do
+      open_order
+      blocked = open_order(status: "draft")
+      blocked.update!(order_type: "table", table_number: nil)
+
+      post complete_all_pos_orders_path
+
+      expect(flash[:notice]).to eq(I18n.t("flash.pos.orders_completed", count: 1))
+      expect(flash[:alert]).to eq(I18n.t("flash.pos.orders_not_completable", count: 1))
+    end
+
+    it "gives both shift tabs the full width" do
+      %w[orders shift].each do |tab|
+        get pos_shift_path(tab: tab)
+        expect(response.body).not_to include("p-5 max-w-2xl mx-auto")
+      end
+    end
+
+    it "lists an unfinished order from an earlier shift, so it can be reached" do
+      stale = open_order(status: "draft")
+      stale.update!(order_type: "table", table_number: nil, created_at: 5.days.ago)
+
+      get pos_shift_path(tab: "orders")
+
+      expect(response.body).to include(resume_pos_order_path(stale))
+    end
   end
 
   describe "the receipt" do

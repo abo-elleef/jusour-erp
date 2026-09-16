@@ -9,10 +9,15 @@ module Admin
         @locations = Location.active.branches.ordered
         @location = @locations.find { |l| l.id == params[:location_id] } || @locations.first
         @date = params[:date]&.to_date || BusinessDay.today(location: @location)
-        sessions = CashDrawerSession.where(session_date: @date).includes(:user, :treasury, :location).order(:created_at)
-        sessions = sessions.where(location_id: @location.id) if @location
-        @sessions = sessions
         @drawer_treasuries = Treasury.active.cash_drawers.ordered
+        # Filtering by drawer answers "what did this till do today" across the
+        # cashiers who shared it, which is a different question from "what did this
+        # branch do" and the one a manager asks when a till is short.
+        @treasury = @drawer_treasuries.find { |t| t.id == params[:treasury_id] }
+        @rows, @totals = ::Accounting::DrawerDayReport.call(
+          date: @date, location: @location, treasury: @treasury
+        )
+        @sessions = @rows.map(&:session)
         @cashiers = User.active.includes(:assigned_treasury).order(:name)
         @default_user = current_user
         @default_treasury_id = current_user.assigned_treasury_id ||

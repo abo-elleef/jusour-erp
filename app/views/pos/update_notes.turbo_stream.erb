@@ -1,3 +1,6 @@
-<%= turbo_stream.replace "cart-meta-strip" do %>
-  <%= render "pos/cart_meta_strip", order: @order %>
+<%= turbo_stream.replace "cart-chips" do %>
+  <%= render "pos/cart_chips", order: @order %>
+<% end %>
+<%= turbo_stream.update "drawer-notes-body" do %>
+  <%= render "pos/order_notes_form", order: @order %>
 <% end %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_16_090000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_16_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -146,7 +146,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_16_090000) do
     t.uuid "location_id"
     t.uuid "company_id", null: false
     t.uuid "float_source_treasury_id"
+    t.uuid "deposit_treasury_id"
     t.index ["company_id"], name: "index_cash_drawer_sessions_on_company_id"
+    t.index ["deposit_treasury_id"], name: "index_cash_drawer_sessions_on_deposit_treasury_id"
     t.index ["float_source_treasury_id"], name: "index_cash_drawer_sessions_on_float_source_treasury_id"
     t.index ["location_id"], name: "index_cash_drawer_sessions_on_location_id"
     t.index ["treasury_id"], name: "index_cash_drawer_sessions_on_treasury_id"
@@ -357,6 +359,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_16_090000) do
     t.bigint "credit_warning_limit_cents"
     t.bigint "credit_hard_limit_cents"
     t.integer "credit_terms_days"
+    t.text "standing_note"
     t.index ["company_id", "email"], name: "index_customers_on_company_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["company_id", "legacy_code"], name: "index_customers_on_company_id_and_legacy_code", where: "((legacy_code IS NOT NULL) AND ((legacy_code)::text <> ''::text))"
     t.index ["company_id", "phone"], name: "index_customers_on_company_id_and_phone", unique: true, where: "((phone IS NOT NULL) AND ((phone)::text <> ''::text))"
@@ -727,10 +730,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_16_090000) do
     t.string "whatsapp_number"
     t.integer "business_day_start_hour"
     t.string "business_day_mode", default: "automatic", null: false
+    t.uuid "deposit_treasury_id"
     t.index ["active"], name: "index_locations_on_active"
     t.index ["company_id", "name"], name: "index_locations_on_company_id_and_name", unique: true
     t.index ["company_id", "slug"], name: "index_locations_on_company_id_and_slug", unique: true
     t.index ["company_id"], name: "index_locations_on_company_id"
+    t.index ["deposit_treasury_id"], name: "index_locations_on_deposit_treasury_id"
   end
 
   create_table "loyalty_transactions", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1777,6 +1782,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_16_090000) do
   add_foreign_key "cash_drawer_sessions", "companies"
   add_foreign_key "cash_drawer_sessions", "locations"
   add_foreign_key "cash_drawer_sessions", "treasuries"
+  add_foreign_key "cash_drawer_sessions", "treasuries", column: "deposit_treasury_id"
   add_foreign_key "cash_drawer_sessions", "treasuries", column: "float_source_treasury_id"
   add_foreign_key "cash_drawer_sessions", "users"
   add_foreign_key "categories", "companies"
@@ -1833,6 +1839,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_16_090000) do
   add_foreign_key "location_operating_days", "users", column: "closed_by_id"
   add_foreign_key "location_operating_days", "users", column: "opened_by_id"
   add_foreign_key "locations", "companies"
+  add_foreign_key "locations", "treasuries", column: "deposit_treasury_id"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"
   add_foreign_key "manufacturing_runs", "companies"

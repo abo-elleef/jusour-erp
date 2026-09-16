@@ -44,9 +44,24 @@
           <span class="block"><%= num %></span>
         <% end %>
       </p>
+      <%# The drawer has room for the addresses themselves, not just how many there
+          are — a cashier taking a delivery needs to read one, not count them. %>
       <% if order.customer.addresses.any? %>
-        <p class="text-xs text-gray-500 mt-1.5">
-          <%= t("pos.customer.addresses_count", count: order.customer.addresses.size) %>
+        <div class="mt-2 space-y-1">
+          <% order.customer.addresses.ordered.each do |addr| %>
+            <p class="text-xs text-gray-600 flex gap-1.5">
+              <span class="shrink-0 font-semibold text-gray-500">
+                <%= addr.label.presence || t("customers.addresses.address") %><%= " ★" if addr.is_default? %>
+              </span>
+              <span class="min-w-0"><%= addr.address %></span>
+            </p>
+          <% end %>
+        </div>
+      <% end %>
+      <% if order.customer.standing_note.present? %>
+        <p class="text-xs text-amber-900 bg-amber-100/70 rounded-lg px-2 py-1.5 mt-2">
+          <span class="font-semibold"><%= t("pos.customer.standing_note") %>:</span>
+          <%= order.customer.standing_note %>
         </p>
       <% end %>
       <% if order.customer.loyalty_points.positive? %>
@@ -109,6 +124,16 @@
                       autocomplete: "tel" %>
               </div>
             </div>
+          </div>
+
+          <%# Standing note — carried onto every order this customer is attached to %>
+          <div>
+            <%= f.label :standing_note, t("pos.customer.standing_note"), class: "block text-xs font-medium text-stone-500 mb-1" %>
+            <%= f.text_area :standing_note, value: order.customer.standing_note,
+                  rows: 2,
+                  placeholder: t("pos.customer.standing_note_placeholder"),
+                  class: "w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-400 resize-none" %>
+            <p class="text-xs text-stone-500 mt-1"><%= t("pos.customer.standing_note_hint") %></p>
           </div>
 
           <%# Addresses %>

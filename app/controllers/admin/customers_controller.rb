@@ -86,7 +86,7 @@ module Admin
     end
 
     def customer_params
-      permitted = %i[name email phone phone_secondary]
+      permitted = %i[name email phone phone_secondary standing_note]
       # Commercial / credit fields only when the company runs credit sales.
       if Current.company&.feature_enabled?(:ar_credit_sales)
         permitted += %i[customer_type price_tier_id discount_override_percent

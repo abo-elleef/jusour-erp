@@ -31,7 +31,7 @@ module Pos
 
     def customer_params
       params.require(:customer).permit(
-        :name, :phone, :phone_secondary,
+        :name, :phone, :phone_secondary, :standing_note,
         addresses_attributes: %i[id label address is_default _destroy]
       )
     end

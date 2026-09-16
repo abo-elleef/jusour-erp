@@ -141,14 +141,16 @@ class PosController < ApplicationController
     authorize @order, :update?
 
     if params[:clear].present?
+      previous = @order.customer
       @order.update!(customer: nil, delivery_address: nil)
+      drop_customer_standing_note!(previous)
       return respond_to_customer_attach
     end
 
     if params[:customer_id].present?
       customer = Customer.find(params[:customer_id])
       @order.update!(customer: customer)
-      apply_customer_default_delivery_address!(customer)
+      apply_customer_defaults!(customer)
       return respond_to_customer_attach
     end
 
@@ -160,7 +162,7 @@ class PosController < ApplicationController
     customer = find_or_create_customer(attrs)
     if customer.persisted? && customer.errors.empty?
       @order.update!(customer: customer)
-      apply_customer_default_delivery_address!(customer)
+      apply_customer_defaults!(customer)
       respond_to_customer_attach
     else
       @customer_form_errors = customer.errors
@@ -292,7 +294,7 @@ class PosController < ApplicationController
   def customer_params
     source = params[:customer].presence || params
     source.permit(
-      :name, :email, :phone, :phone_secondary,
+      :name, :email, :phone, :phone_secondary, :standing_note,
       addresses_attributes: %i[label address is_default]
     )
   end
@@ -320,6 +322,31 @@ class PosController < ApplicationController
 
   def customer_contact_blank?(attrs)
     attrs[:email].blank? && attrs[:phone].blank? && attrs[:phone_secondary].blank?
+  end
+
+  # Everything attaching a customer should carry onto the order.
+  def apply_customer_defaults!(customer)
+    apply_customer_default_delivery_address!(customer)
+    apply_customer_standing_note!(customer)
+  end
+
+  # Seeds the order's note from the customer's standing one. Never overwrites: if
+  # the cashier has already typed something, that is about this order and wins.
+  def apply_customer_standing_note!(customer)
+    return if customer.standing_note.blank?
+    return if @order.notes.present?
+
+    @order.update!(notes: customer.standing_note)
+  end
+
+  # Only removes the note if it is still verbatim that customer's. Once a cashier
+  # has edited it, it is theirs and detaching the customer must not eat it.
+  def drop_customer_standing_note!(previous_customer)
+    return if previous_customer.blank?
+    return if @order.notes.blank?
+    return unless @order.notes == previous_customer.standing_note
+
+    @order.update!(notes: nil)
   end
 
   def apply_customer_default_delivery_address!(customer)

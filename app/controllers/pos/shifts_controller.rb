@@ -82,6 +82,7 @@ module Pos
       service.compute_expected!
       @sales_summary = service.sales_summary
       @requires_manager_pin = false
+      load_deposit_destination
     end
 
     def reconcile
@@ -91,6 +92,8 @@ module Pos
       if counted_cents <= 0
         return redirect_to count_pos_shift_path, alert: t("flash.pos.shift.count_required")
       end
+
+      assign_deposit_treasury!
 
       service = ::Accounting::CashReconciliationService.new(@open_session)
       expected = service.compute_expected!
@@ -102,13 +105,20 @@ module Pos
         @variance_cents = variance
         @counted_cents = counted_cents
         @sales_summary = service.sales_summary
+        load_deposit_destination
         flash.now[:alert] = t("flash.pos.shift.manager_pin_required")
         return render :count, status: :unprocessable_entity
       end
 
       service.reconcile!(counted_cents)
-      redirect_to pos_shift_path, notice: t("flash.accounting.drawer_reconciled_to_treasury",
-            treasury: @open_session.treasury.name)
+
+      deposit = @open_session.reload.deposit_treasury
+      notice = if deposit
+        t("flash.accounting.drawer_banked_to_treasury", treasury: deposit.name)
+      else
+        t("flash.accounting.drawer_reconciled_to_treasury", treasury: @open_session.treasury.name)
+      end
+      redirect_to pos_shift_path, notice: notice
     end
 
     def clock_out
@@ -138,6 +148,19 @@ module Pos
       return if @open_session
 
       redirect_to pos_shift_path, alert: t("flash.pos.shift.no_open_drawer")
+    end
+
+    # The branch decides where its takings go, not whoever happens to be closing.
+    # The cashier is shown the destination; they do not choose it.
+    def load_deposit_destination
+      location = @open_session.location
+      @deposit_treasury = location&.deposit_treasury_or_default
+      @deposit_is_fallback = @deposit_treasury.present? && !location&.deposit_treasury_configured?
+    end
+
+    def assign_deposit_treasury!
+      load_deposit_destination
+      @open_session.update!(deposit_treasury: @deposit_treasury)
     end
 
     def block_unfinalized_orders!
@@ -172,17 +195,23 @@ module Pos
       # Counted over everything this cashier still has open, not just the current
       # shift window, so the button's number matches both what it will close and
       # what is holding their shift open.
-      @open_orders_count = unfinalized_orders_for(current_user).count
+      unfinalized = unfinalized_orders_for(current_user)
+      @open_orders_count = unfinalized.count
       @shift_time_range = current_user.shift_orders_time_range
-      @shift_orders = if @shift_time_range
+
+      # Unfinished orders always show, even when they were rung on an earlier
+      # shift. They are what is holding this shift open, and listing only the
+      # current window left the cashier told "2 still open" above a table of
+      # finished ones, with no way to reach them.
+      ids = unfinalized.pluck(:id)
+      if @shift_time_range
         start_time, end_time = @shift_time_range
-        Order.where(user: current_user)
-          .where(created_at: start_time..end_time)
-          .includes(:customer, :payments)
-          .order(created_at: :desc)
-      else
-        Order.none
+        ids |= Order.where(user: current_user, created_at: start_time..end_time).pluck(:id)
       end
+
+      @shift_orders = Order.where(id: ids)
+        .includes(:customer, :payments)
+        .order(created_at: :desc)
     end
 
     def manager_approved_reconcile?(drawer_session)
