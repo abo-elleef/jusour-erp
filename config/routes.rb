@@ -59,11 +59,15 @@ Rails.application.routes.draw do
     post "verify_manager_pin", to: "manager_pin#verify"
     get "modifier_form", to: "order_items#modifier_form", as: :modifier_form
     resources :orders, only: %i[index show] do
-      collection { post :sync_offline }
+      collection do
+        post :sync_offline
+        post :complete_all
+      end
       member do
         post :print_receipt
         post :print_all
         post :resume
+        post :complete
         patch :update_fulfillment
       end
     end

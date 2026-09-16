@@ -43,6 +43,19 @@ class OrderPolicy < ApplicationPolicy
     update?
   end
 
+  # Deliberately not conditional on payment: an order handed over now and settled
+  # later is exactly what this is for. It stays on Collect Payment either way.
+  def complete?
+    return false if record.cancelled? || record.completed?
+    return false if record.draft? && record.order_items.empty?
+
+    user.can_access_pos?
+  end
+
+  def complete_all?
+    user.can_access_pos?
+  end
+
   def apply_discount?
     user.can_access_pos?
   end

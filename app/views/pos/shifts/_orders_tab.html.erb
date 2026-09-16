@@ -1,3 +1,16 @@
+<% if @open_orders_count.to_i.positive? %>
+  <div class="rounded-2xl border border-green-200 bg-green-50/70 p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <p class="font-semibold text-green-900"><%= t("pos.shift.orders.open_count", count: @open_orders_count) %></p>
+      <p class="text-sm text-green-800 mt-0.5"><%= t("pos.shift.orders.complete_all_hint") %></p>
+    </div>
+    <%= button_to t("pos.shift.orders.complete_all"), complete_all_pos_orders_path,
+          method: :post,
+          form: { data: { turbo_confirm: t("pos.shift.orders.complete_all_confirm", count: @open_orders_count) } },
+          class: "inline-flex items-center bg-green-700 hover:bg-green-800 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0" %>
+  </div>
+<% end %>
+
 <% if @shift_time_range %>
   <% start_time, end_time = @shift_time_range %>
   <p class="text-sm text-gray-600 mb-4">

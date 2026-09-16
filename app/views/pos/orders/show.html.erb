@@ -18,6 +18,16 @@
           <%= print_icon %><%= t("printing.actions.print_all") %>
         <% end %>
       <% end %>
+      <% if policy(@order).complete? %>
+        <%= button_to complete_pos_order_path(@order, from: params[:from]), method: :post,
+              form: { data: { turbo_confirm: @order.fully_paid? ? nil : t("pos.orders.complete_unpaid_confirm") } },
+              class: "flex items-center gap-1.5 text-sm font-semibold text-white bg-green-700 hover:bg-green-800 px-3 py-1.5 rounded-xl transition-colors" do %>
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          <%= t("pos.orders.mark_completed") %>
+        <% end %>
+      <% end %>
       <% unless @order.cancelled? || @order.status == "voided" %>
         <button type="button"
                 onclick="document.getElementById('edit-fulfillment-dialog').showModal()"

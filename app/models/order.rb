@@ -5,6 +5,9 @@ class Order < ApplicationRecord
   include Tenantable
 
   STATUSES = %w[draft submitted in_progress ready completed cancelled].freeze
+  # The two states an order can be left in. Everything else is someone's unfinished
+  # business, and a cashier cannot close a shift while any of it is theirs.
+  FINAL_STATUSES = %w[completed cancelled].freeze
   ORDER_TYPES = %w[delivery pickup table].freeze
 
   # Advisory-lock namespace, so order numbering can never contend with another
@@ -80,10 +83,11 @@ class Order < ApplicationRecord
     event :complete do
       transitions from: %i[ready submitted in_progress], to: :completed
       after do
+        # No receipt here. The customer gets theirs when they pay, which is no
+        # longer the same moment as this one.
         Loyalty::AwardPointsJob.perform_later(id)
         Inventory::DeductStockService.new(self).call
         AuditLogEntry.record!(action: "order.complete", record: self, user: user)
-        Printing::PrintReceiptJob.perform_later(id)
       end
     end
 
@@ -96,6 +100,13 @@ class Order < ApplicationRecord
   end
 
   scope :open_drafts, -> { where(status: "draft") }
+  # Orders still owed an ending. Drafts count — a cart with food in it is a sale
+  # someone started — but an empty cart does not: there is nothing in it to finish.
+  scope :not_finalized, -> {
+    where.not(status: FINAL_STATUSES)
+      .where("EXISTS (SELECT 1 FROM order_items WHERE order_items.order_id = orders.id)")
+      .order(created_at: :asc)
+  }
   scope :kitchen_queue, -> { where(status: %w[submitted in_progress ready]) }
   scope :awaiting_payment, -> {
     where.not(status: %w[draft cancelled]).order(created_at: :desc)

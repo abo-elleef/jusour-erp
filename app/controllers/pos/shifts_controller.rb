@@ -8,6 +8,10 @@ module Pos
 
     before_action :require_pos_access!
     before_action :set_open_session, only: %i[count reconcile]
+    # Both of these end the shift, and neither may happen over an order that was
+    # never finished. Checked on the writes rather than on `count`, so a cashier can
+    # still see what the drawer should hold while they clear the backlog.
+    before_action :block_unfinalized_orders!, only: %i[reconcile clock_out]
 
     def show
       @open_session = current_user.open_cash_drawer_session(location: @pos_location)
@@ -16,6 +20,7 @@ module Pos
       @assigned_treasury = current_user.assigned_treasury
       @business_day = BusinessDay.today(location: @pos_location)
       @unpaid_orders_count = unpaid_orders_for(current_user).size
+      @unfinalized_orders_count = unfinalized_orders_for(current_user).count
       @has_draft_cart = draft_order_for(current_user).present?
       if @today_session
         @today_sales_summary = ::Accounting::SessionSalesSummary.for_session(@today_session)
@@ -135,6 +140,18 @@ module Pos
       redirect_to pos_shift_path, alert: t("flash.pos.shift.no_open_drawer")
     end
 
+    def block_unfinalized_orders!
+      count = unfinalized_orders_for(current_user).count
+      return if count.zero?
+
+      redirect_to pos_shift_path(tab: "orders"),
+                  alert: t("flash.pos.shift.finish_orders_first", count: count)
+    end
+
+    def unfinalized_orders_for(user)
+      Order.not_finalized.where(user: user)
+    end
+
     def unpaid_orders_for(user)
       # Same definition as Collect Payment, so the shift warning and the screen it
       # sends the cashier to can never disagree about what is still owed.
@@ -152,6 +169,10 @@ module Pos
     end
 
     def load_shift_orders
+      # Counted over everything this cashier still has open, not just the current
+      # shift window, so the button's number matches both what it will close and
+      # what is holding their shift open.
+      @open_orders_count = unfinalized_orders_for(current_user).count
       @shift_time_range = current_user.shift_orders_time_range
       @shift_orders = if @shift_time_range
         start_time, end_time = @shift_time_range

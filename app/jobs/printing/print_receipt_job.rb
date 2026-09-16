@@ -6,7 +6,9 @@ module Printing
 
     def perform(order_id)
       order = Order.unscoped.find_by(id: order_id)
-      return unless order&.completed?
+      # Queued when the order is paid off, which can happen before it is completed
+      # or long after. Anything but a cart or a void is receiptable.
+      return if order.nil? || order.draft? || order.cancelled?
 
       with_company(order.company) do
         PrintReceiptService.call(order: order)

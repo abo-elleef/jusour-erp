@@ -121,6 +121,9 @@ module Pos
       return unless @order.fully_paid?
 
       Orders::FinalizePaidService.call(@order)
+      # The receipt follows the money, not the order's status — a paid order is not
+      # closed until a cashier closes it, and the customer is not waiting for that.
+      Printing::PrintReceiptJob.perform_later(@order.id)
       clear_cart_sessions
       Receipts::SendReceiptJob.perform_later(@order.id, params[:receipt_method], params[:receipt_recipient]) if params[:receipt_method].present?
     end

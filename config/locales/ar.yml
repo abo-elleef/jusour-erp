@@ -2587,6 +2587,10 @@ ar:
       business_day_badge: "يوم العمل %{date} · %{branch}"
       back_to_shift: "العودة للوردية"
       back_to_register: "العودة للكاشير"
+      unfinalized_orders_warning:
+        one: "لديك طلب واحد لم يُنهَ بعد."
+        other: "لديك %{count} طلبات لم تُنهَ بعد."
+      unfinalized_orders_hint: "لا يمكن إغلاق الوردية قبل إنهاء أو إلغاء كل الطلبات."
       unpaid_orders_warning:
         one: "لديك %{count} طلب غير مدفوع — أنهِ الدفع قبل الإغلاق."
         other: "لديك %{count} طلبات غير مدفوعة — أنهِ الدفع قبل الإغلاق."
@@ -2620,8 +2624,18 @@ ar:
         no_shift: "لا توجد وردية نشطة لعرض الطلبات."
         no_shift_hint: "سجّل حضورك أو افتح الصندوق لعرض طلبات ورديتك."
         resume: "استئناف"
+        open_count:
+          one: "طلب واحد ما زال مفتوحًا"
+          other: "%{count} طلبات ما زالت مفتوحة"
+        complete_all: "إنهاء كل الطلبات المفتوحة"
+        complete_all_hint: "يُنهي كل طلب تركته مفتوحًا، مدفوعًا كان أو غير مدفوع. غير المدفوع يبقى في شاشة التحصيل."
+        complete_all_confirm:
+          one: "إنهاء الطلب المفتوح؟"
+          other: "إنهاء كل الطلبات المفتوحة وعددها %{count}؟"
     orders:
       edit_details: "تعديل التفاصيل"
+      mark_completed: "إنهاء الطلب"
+      complete_unpaid_confirm: "ما زال على هذا الطلب مبلغ مستحق. هل تريد إنهاءه؟ سيبقى في شاشة التحصيل حتى يتم سداده."
       change_payment_method: "تغيير طريقة الدفع"
 
   menu:
@@ -4621,6 +4635,12 @@ ar:
       payment_recorded: "تم تسجيل الدفع."
       print_queued: "تم إرسال الإيصال إلى الطابعة."
       order_resumed: "تم تحميل الطلب في السلة."
+      order_completed: "تم إنهاء الطلب."
+      order_not_completable: "تعذّر إنهاء هذا الطلب. تأكد من وجود أصناف به، ومن رقم الطاولة أو عنوان التوصيل إن كان مطلوبًا."
+      orders_completed:
+        one: "تم إنهاء طلب واحد."
+        other: "تم إنهاء %{count} طلبات."
+      no_orders_to_complete: "لا توجد طلبات مفتوحة لإنهائها."
       order_updated: "تم تحديث الطلب."
       payment_method_changed: "تم تحديث طريقة الدفع."
       invalid_payment_method: "طريقة دفع غير صالحة."
@@ -4631,6 +4651,9 @@ ar:
       shift:
         select_branch_first: "اختر فرعاً قبل فتح الصندوق."
         drawer_already_open: "صندوقك مفتوح بالفعل لهذا اليوم."
+        finish_orders_first:
+          one: "أنهِ طلبك المفتوح قبل إغلاق الوردية — ما زال طلب واحد في الانتظار."
+          other: "أنهِ طلباتك المفتوحة قبل إغلاق الوردية — ما زال %{count} طلبات في الانتظار."
         no_open_drawer: "لا توجد جلسة صندوق مفتوحة. افتح الصندوق أولاً."
         no_assigned_treasury: "لا توجد خزينة مخصصة لك. اطلب من المحاسب أو المالك تخصيص خزينة درج نقد قبل الفتح."
         count_required: "أدخل مبلغًا نقديًا محسوبًا أكبر من صفر."

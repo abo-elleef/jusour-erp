@@ -2574,6 +2574,10 @@ en:
       business_day_badge: "Business day %{date} · %{branch}"
       back_to_shift: "Back to shift"
       back_to_register: "Back to register"
+      unfinalized_orders_warning:
+        one: "You have %{count} order that is not finished yet."
+        other: "You have %{count} orders that are not finished yet."
+      unfinalized_orders_hint: "A shift cannot be closed until every order is completed or voided."
       unpaid_orders_warning:
         one: "You have %{count} unpaid order — finish payment before closing."
         other: "You have %{count} unpaid orders — finish payment before closing."
@@ -2607,8 +2611,18 @@ en:
         no_shift: "No active shift to show orders for."
         no_shift_hint: "Clock in or open your drawer to see orders for your shift."
         resume: "Resume"
+        open_count:
+          one: "%{count} order still open"
+          other: "%{count} orders still open"
+        complete_all: "Complete all open orders"
+        complete_all_hint: "Closes every order you have left open, paid or not. Unpaid ones stay on Collect Payment."
+        complete_all_confirm:
+          one: "Mark %{count} open order as completed?"
+          other: "Mark all %{count} open orders as completed?"
     orders:
       edit_details: "Edit details"
+      mark_completed: "Mark completed"
+      complete_unpaid_confirm: "This order still has a balance due. Complete it anyway? It stays on Collect Payment until it is settled."
       change_payment_method: "Change payment method"
 
   menu:
@@ -4596,6 +4610,12 @@ en:
       payment_recorded: "Payment recorded."
       print_queued: "Receipt sent to printer."
       order_resumed: "Order loaded in cart."
+      order_completed: "Order completed."
+      order_not_completable: "That order could not be completed. Check it has items, and a table number or delivery address if it needs one."
+      orders_completed:
+        one: "%{count} order completed."
+        other: "%{count} orders completed."
+      no_orders_to_complete: "No open orders to complete."
       order_updated: "Order updated."
       payment_method_changed: "Payment method updated."
       invalid_payment_method: "Invalid payment method."
@@ -4606,6 +4626,9 @@ en:
       shift:
         select_branch_first: "Select a branch before opening the drawer."
         drawer_already_open: "Your drawer is already open for today."
+        finish_orders_first:
+          one: "Finish your open order before closing the shift — %{count} is still waiting."
+          other: "Finish your open orders before closing the shift — %{count} are still waiting."
         no_open_drawer: "No open drawer session. Open your drawer first."
         no_assigned_treasury: "No treasury is assigned to you. Ask an accountant or owner to assign a cash drawer treasury before opening."
         count_required: "Enter a counted cash amount greater than zero."

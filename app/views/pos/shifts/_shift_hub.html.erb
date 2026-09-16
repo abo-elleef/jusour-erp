@@ -11,6 +11,16 @@
   </div>
 <% end %>
 
+<% if @unfinalized_orders_count.to_i.positive? %>
+  <div class="rounded-2xl border border-red-200 bg-red-50/70 px-4 py-3 mb-4 text-sm text-red-900" role="alert">
+    <p class="font-semibold"><%= t("pos.shift.unfinalized_orders_warning", count: @unfinalized_orders_count) %></p>
+    <p class="mt-0.5">
+      <%= t("pos.shift.unfinalized_orders_hint") %>
+      <%= link_to t("pos.shift.orders.title"), pos_shift_path(tab: "orders"), class: "font-semibold underline ms-1" %>
+    </p>
+  </div>
+<% end %>
+
 <% if @unpaid_orders_count.positive? %>
   <div class="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 mb-4 text-sm text-amber-900" role="alert">
     <%= t("pos.shift.unpaid_orders_warning", count: @unpaid_orders_count) %>

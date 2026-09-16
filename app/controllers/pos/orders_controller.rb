@@ -89,6 +89,33 @@ module Pos
       end
     end
 
+    def complete
+      @order = Order.find(params[:id])
+      authorize @order, :complete?
+
+      if Orders::CompleteService.call(@order)
+        redirect_to pos_order_path(@order, from: params[:from]), notice: t("flash.pos.order_completed")
+      else
+        redirect_to pos_order_path(@order, from: params[:from]), alert: t("flash.pos.order_not_completable")
+      end
+    end
+
+    # End of shift: close everything this cashier still has open. Scoped to their
+    # own orders — a cashier closing down must not sweep the next register's tickets
+    # off the pass.
+    def complete_all
+      authorize Order, :complete_all?
+
+      result = Orders::CompleteService.call_all(open_orders_for(current_user))
+
+      if result.any?
+        redirect_to pos_shift_path(tab: "orders"),
+                    notice: t("flash.pos.orders_completed", count: result.completed.size)
+      else
+        redirect_to pos_shift_path(tab: "orders"), alert: t("flash.pos.no_orders_to_complete")
+      end
+    end
+
     def print_receipt
       @order = Order.find(params[:id])
       authorize @order, :show?
@@ -105,6 +132,13 @@ module Pos
     end
 
     private
+
+    # The same set that blocks the shift from closing, so pressing the button
+    # always clears the blocker rather than leaving a remainder the cashier cannot
+    # see. Drafts are in it: a cart with food in it is an unfinished sale.
+    def open_orders_for(user)
+      Order.not_finalized.where(user: user).includes(:order_items)
+    end
 
     def require_pos_access!
       return if current_user&.can_access_pos?
