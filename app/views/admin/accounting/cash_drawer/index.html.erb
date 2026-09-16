@@ -11,7 +11,7 @@
       <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("admin.locations.type_branch") %></label>
       <%= select_tag :location_id,
             options_from_collection_for_select(@locations, :id, :name, @location&.id),
-            class: pos_input_class, include_blank: false %>
+            class: pos_input_class, include_blank: t("accounting.cash_drawer.all_locations") %>
     </div>
     <div>
       <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.cash_drawer.drawer_filter") %></label>
@@ -26,7 +26,14 @@
   <% if @totals.shifts.positive? %>
     <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
       <div class="flex flex-wrap items-baseline justify-between gap-2 mb-4">
-        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.cash_drawer.day_summary") %></h2>
+        <div>
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.cash_drawer.day_summary") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5">
+            <%= @location&.name || t("accounting.cash_drawer.all_locations") %>
+            · <%= l(@date, format: :long) %>
+            <%= "· #{@treasury.name}" if @treasury %>
+          </p>
+        </div>
         <% if @totals.fully_closed? %>
           <span class="text-xs font-semibold px-2.5 py-1 rounded-full border border-green-300 bg-green-50 text-green-800">
             <%= t("accounting.cash_drawer.all_closed") %>
@@ -117,7 +124,10 @@
     <table class="w-full text-sm">
       <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
         <tr>
-          <th class="p-3 ps-5 text-start"><%= t("accounting.cash_drawer.cashier") %></th>
+          <% if @location.nil? %>
+            <th class="p-3 ps-5 text-start"><%= t("admin.locations.type_branch") %></th>
+          <% end %>
+          <th class="p-3 <%= "ps-5" if @location %> text-start"><%= t("accounting.cash_drawer.cashier") %></th>
           <th class="p-3 text-start"><%= t("accounting.shared.treasury") %></th>
           <th class="p-3 text-start"><%= t("accounting.cash_drawer.opened_at") %></th>
           <th class="p-3 text-start"><%= t("accounting.cash_drawer.status") %></th>
@@ -135,7 +145,10 @@
         <% @rows.each do |row| %>
           <% session = row.session %>
           <tr>
-            <td class="p-3 ps-5"><%= session.user.name %></td>
+            <% if @location.nil? %>
+              <td class="p-3 ps-5 font-medium text-gray-900"><%= session.location&.name %></td>
+            <% end %>
+            <td class="p-3 <%= "ps-5" if @location %>"><%= session.user.name %></td>
             <td class="p-3 text-gray-600"><%= session.treasury.name %></td>
             <td class="p-3 tabular-nums"><%= l(session.created_at, format: :short_time) %></td>
             <td class="p-3"><%= accounting_drawer_status(session.status) %></td>

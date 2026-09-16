@@ -7,7 +7,9 @@ module Admin
 
       def index
         @locations = Location.active.branches.ordered
-        @location = @locations.find { |l| l.id == params[:location_id] } || @locations.first
+        # Blank means every branch — the whole business day in one view, which is
+        # the question asked at day close. A branch is a narrowing, not the default.
+        @location = @locations.find { |l| l.id == params[:location_id] }
         @date = params[:date]&.to_date || BusinessDay.today(location: @location)
         @drawer_treasuries = Treasury.active.cash_drawers.ordered
         # Filtering by drawer answers "what did this till do today" across the

@@ -586,6 +586,7 @@ ar:
       accounting:
         ledgers: "الدفاتر"
         transactions: "المعاملات"
+        day_close: "الأدراج وإغلاق اليوم"
         reports: "التقارير"
         setup: "الإعدادات"
         audit: "سجل التدقيق"
@@ -4417,6 +4418,7 @@ ar:
         reconciled: "مُسوّى"
       drawer_filter: "الدرج"
       all_drawers: "كل الأدراج"
+      all_locations: "كل الفروع"
       day_summary: "ملخص اليوم"
       all_closed: "كل الأدراج مغلقة"
       still_open:

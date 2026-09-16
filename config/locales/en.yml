@@ -588,6 +588,7 @@ en:
       accounting:
         ledgers: "Ledgers"
         transactions: "Transactions"
+        day_close: "Drawers & day close"
         reports: "Reports"
         setup: "Setup"
         audit: "Audit log"
@@ -4392,6 +4393,7 @@ en:
         reconciled: "Reconciled"
       drawer_filter: "Drawer"
       all_drawers: "All drawers"
+      all_locations: "All branches"
       day_summary: "Day summary"
       all_closed: "All drawers closed"
       still_open:

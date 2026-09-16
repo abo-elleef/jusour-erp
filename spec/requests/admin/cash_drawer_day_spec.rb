@@ -10,6 +10,7 @@ RSpec.describe "The admin drawer day view", type: :request do
 
   let(:company) { create(:company) }
   let!(:branch) { create(:location, company: company, name: "Branch A") }
+  let!(:other_branch) { create(:location, company: company, name: "Branch B") }
   let(:manager) { create(:user, :manager, company: company) }
   let!(:till_one) do
     Treasury.create!(company: company, name: "Till 1", treasury_type: "cash_drawer",
@@ -25,13 +26,13 @@ RSpec.describe "The admin drawer day view", type: :request do
     sign_in manager
   end
 
-  def shift(treasury:, cash: 0)
+  def shift(treasury:, cash: 0, location: branch)
     session = CashDrawerSession.create!(
       company: company, user: create(:user, company: company), treasury: treasury,
-      location: branch, session_date: Date.current, opening_float_cents: 10_000, status: "open"
+      location: location, session_date: Date.current, opening_float_cents: 10_000, status: "open"
     )
     if cash.positive?
-      order = create(:order, user: session.user, company: company, location: branch,
+      order = create(:order, user: session.user, company: company, location: location,
                              status: "completed", total_cents: cash)
       create(:payment, order: order, amount_cents: cash, status: "completed",
                        payment_method: "cash", cash_drawer_session: session)
@@ -74,5 +75,45 @@ RSpec.describe "The admin drawer day view", type: :request do
     get admin_accounting_cash_drawer_index_path(date: Date.current, location_id: branch.id, locale: :ar)
 
     expect(response.body).to include(I18n.t("accounting.cash_drawer.statuses.open", locale: :ar))
+  end
+
+  describe "across every branch" do
+    it "defaults to all branches rather than whichever comes first" do
+      shift(treasury: till_one, cash: 5_000)
+      shift(treasury: till_two, cash: 3_000, location: other_branch)
+
+      get admin_accounting_cash_drawer_index_path(date: Date.current)
+
+      expect(response.body).to include(I18n.t("accounting.cash_drawer.still_open", count: 2))
+      expect(response.body).to include("Branch A")
+      expect(response.body).to include("Branch B")
+    end
+
+    it "offers the all-branches option in the filter" do
+      get admin_accounting_cash_drawer_index_path(date: Date.current)
+
+      expect(response.body).to include(I18n.t("accounting.cash_drawer.all_locations"))
+    end
+
+    it "still narrows to one branch when one is chosen" do
+      shift(treasury: till_one, cash: 5_000)
+      shift(treasury: till_two, cash: 3_000, location: other_branch)
+
+      get admin_accounting_cash_drawer_index_path(date: Date.current, location_id: branch.id)
+
+      expect(response.body).to include(I18n.t("accounting.cash_drawer.still_open", count: 1))
+    end
+
+    it "combines a branch and a drawer filter" do
+      shift(treasury: till_one, cash: 5_000)
+      shift(treasury: till_two, cash: 3_000)
+      shift(treasury: till_one, cash: 9_000, location: other_branch)
+
+      get admin_accounting_cash_drawer_index_path(
+        date: Date.current, location_id: branch.id, treasury_id: till_one.id
+      )
+
+      expect(response.body).to include(I18n.t("accounting.cash_drawer.still_open", count: 1))
+    end
   end
 end
