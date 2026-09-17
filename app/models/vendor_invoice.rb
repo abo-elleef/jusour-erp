@@ -13,6 +13,7 @@ class VendorInvoice < ApplicationRecord
   belongs_to :historical_settled_by, class_name: "User", optional: true
   has_many :vendor_invoice_lines, -> { order(:position, :created_at) }, dependent: :destroy, inverse_of: :vendor_invoice
   has_many :vendor_invoice_payments, dependent: :destroy
+  has_many :payment_allocations, as: :settles, dependent: :destroy
   # Returns and rebates credited back against this invoice. They settle it exactly
   # as a payment does — the goods went back instead of the money going out.
   has_many :vendor_credit_notes, dependent: :nullify

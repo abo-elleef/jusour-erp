@@ -1021,6 +1021,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_19_120000) do
     t.index ["company_id"], name: "index_partners_on_company_id"
   end
 
+  create_table "payment_allocations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "payment_type", null: false
+    t.uuid "payment_id", null: false
+    t.string "settles_type", null: false
+    t.uuid "settles_id", null: false
+    t.bigint "amount_cents", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_payment_allocations_on_company_id"
+    t.index ["payment_type", "payment_id", "settles_type", "settles_id"], name: "index_payment_allocations_unique_pair", unique: true
+    t.index ["payment_type", "payment_id"], name: "index_payment_allocations_on_payment"
+    t.index ["settles_type", "settles_id"], name: "index_payment_allocations_on_settles"
+  end
+
   create_table "payment_method_treasuries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.string "payment_method", null: false
@@ -1887,6 +1902,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_19_120000) do
   add_foreign_key "orders", "workstations"
   add_foreign_key "overtime_rules", "companies"
   add_foreign_key "partners", "companies"
+  add_foreign_key "payment_allocations", "companies"
   add_foreign_key "payment_method_treasuries", "companies"
   add_foreign_key "payment_method_treasuries", "treasuries"
   add_foreign_key "payments", "cash_drawer_sessions"

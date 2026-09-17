@@ -15,5 +15,13 @@ class CustomerPayment < ApplicationRecord
   validates :amount_cents, numericality: { greater_than: 0 }
   validates :payment_date, presence: true
 
+  has_many :payment_allocations, as: :payment, dependent: :destroy
+
   scope :recent, -> { order(payment_date: :desc, created_at: :desc) }
+
+  # What is left after the invoices this payment was applied to — the part the
+  # customer is in credit for. Derived, never stored.
+  def unallocated_cents
+    amount_cents - payment_allocations.sum(:amount_cents)
+  end
 end

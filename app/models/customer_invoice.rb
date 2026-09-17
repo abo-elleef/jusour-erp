@@ -35,6 +35,8 @@ class CustomerInvoice < ApplicationRecord
   has_many :customer_invoice_lines, -> { order(:position, :created_at) },
     dependent: :destroy, inverse_of: :customer_invoice
 
+  has_many :payment_allocations, as: :settles, dependent: :destroy
+
   accepts_nested_attributes_for :customer_invoice_lines, allow_destroy: true,
     reject_if: proc { |attrs| attrs["ingredient_id"].blank? }
 

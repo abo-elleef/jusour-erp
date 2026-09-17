@@ -31,15 +31,17 @@ module Sales
           treasury: @treasury, amount_cents: @amount_cents, user: @user,
           occurred_on: @payment_date, source: payment
         )
-        allocate_fifo!
+        allocate_fifo!(payment)
       end
       payment
     end
 
     private
 
-    # Apply the payment to the oldest outstanding invoices first.
-    def allocate_fifo!
+    # Apply the payment to the oldest outstanding invoices first, writing down
+    # which invoice got what. Anything left over stays unallocated — that is the
+    # on-account credit, and it is read back as `payment.unallocated_cents`.
+    def allocate_fifo!(payment)
       remaining = @amount_cents
       @customer.customer_invoices.outstanding.order(:invoice_date, :created_at).each do |invoice|
         break if remaining <= 0
@@ -49,6 +51,8 @@ module Sales
 
         invoice.update!(amount_paid_cents: invoice.amount_paid_cents + applied)
         invoice.sync_payment_status!
+        PaymentAllocation.create!(company: @customer.company, payment: payment,
+                                  settles: invoice, amount_cents: applied)
         remaining -= applied
       end
     end

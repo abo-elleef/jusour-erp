@@ -44,6 +44,12 @@ module Accounting
         @invoice.update!(amount_paid_cents: @invoice.amount_paid_cents + @amount_cents)
         @invoice.sync_payment_status!
 
+        # A supplier payment always settles the one invoice it belongs to. The
+        # link was implicit in vendor_invoice_id; recording it here puts both
+        # sides of the business in the same place.
+        PaymentAllocation.create!(company: @invoice.company, payment: payment,
+                                  settles: @invoice, amount_cents: @amount_cents)
+
         Accounting::SupplierApLedgerService.record_payment!(payment: payment, user: @user)
 
         payment

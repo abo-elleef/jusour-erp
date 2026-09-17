@@ -7,6 +7,7 @@ class VendorInvoicePayment < ApplicationRecord
   belongs_to :user
   belongs_to :treasury
   has_one :expense, as: :source_record, dependent: :nullify
+  has_many :payment_allocations, as: :payment, dependent: :destroy
 
   monetize :amount_cents
 
