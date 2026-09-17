@@ -213,6 +213,26 @@
           </tr>
         <% end %>
 
+        <% if @coa.other_liability_lines.any? %>
+          <tr class="bg-red-50/20" data-collapsible-section-target="content">
+            <td colspan="4" class="px-8 py-1.5 text-xs font-semibold text-red-600 italic">
+              <%= t("accounting.chart_of_accounts.group_other_liabilities") %>
+            </td>
+          </tr>
+          <% @coa.other_liability_lines.each do |line| %>
+            <tr class="hover:bg-gray-50 transition-colors" data-collapsible-section-target="content">
+              <td class="p-3 ps-8 text-gray-400 tabular-nums font-mono text-xs"><%= line.code %></td>
+              <td class="p-3 font-medium text-gray-900"><%= line.name %></td>
+              <td class="p-3">
+                <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-red-100 text-red-800 border border-red-200">
+                  <%= t("accounting.chart_of_accounts.subtypes.other_payable") %>
+                </span>
+              </td>
+              <td class="p-3 pe-5 text-end font-semibold tabular-nums text-red-800"><%= format_money(line.balance_cents) %></td>
+            </tr>
+          <% end %>
+        <% end %>
+
         <tr class="bg-red-50/60 border-t border-red-100" data-collapsible-section-target="content">
           <td colspan="3" class="p-3 ps-5 text-xs font-bold text-red-800 text-end"><%= t("accounting.chart_of_accounts.total_liabilities") %></td>
           <td class="p-3 pe-5 text-end font-bold tabular-nums text-red-900"><%= format_money(@coa.total_liabilities_cents) %></td>

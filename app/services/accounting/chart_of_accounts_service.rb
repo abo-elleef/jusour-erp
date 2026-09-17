@@ -159,8 +159,44 @@ module Accounting
       end
     end
 
+    # ── Other liabilities (ledger-only: tax payable, equipment payable) ──
+
+    # Liabilities that exist only in the journal. Supplier AP has a treasury
+    # behind it and a loan has a model of its own, so both are read from there;
+    # these have neither, and were posted to all along while nothing read them
+    # back. Tax payable (2100) and equipment payable (2200) have been
+    # accumulating in the ledger and appearing on no statement, which means the
+    # balance sheet has been understating what the company owes.
+    #
+    # Read cumulatively rather than over the selected period: money owed last
+    # year is still owed today. That matches the treasury and loan balances
+    # beside it, which are as-of figures too.
+    def other_liability_lines
+      @other_liability_lines ||= begin
+        names = ledger_liability_lines.pluck(:account_code, :account_name).to_h
+
+        ledger_liability_lines
+          .group(:account_code)
+          .pluck(Arel.sql("account_code"), Arel.sql("SUM(credit_cents) - SUM(debit_cents)"))
+          .reject { |code, _| covered_liability_codes.include?(code) }
+          .filter_map { |code, cents|
+            balance = cents.to_i
+            next if balance.zero?
+
+            AccountLine.new(
+              code:           code,
+              name:           names[code],
+              account_type:   :liability,
+              subtype:        "other_payable",
+              balance_cents:  balance,
+              normal_balance: :credit
+            )
+          }.sort_by(&:code)
+      end
+    end
+
     def liability_lines
-      @liability_lines ||= ap_liability_lines + loan_liability_lines
+      @liability_lines ||= ap_liability_lines + loan_liability_lines + other_liability_lines
     end
 
     def total_liabilities_cents
@@ -357,6 +393,38 @@ module Accounting
         .active
         .where(treasury_type: "supplier_ap")
         .order(:name)
+    end
+
+    # Liability postings, cumulative up to the end of the period. Deliberately
+    # not floored by @start_date: a balance owed is a running total, not a
+    # period movement.
+    def ledger_liability_lines
+      @ledger_liability_lines ||= begin
+        scope = JournalEntryLine.joins(:journal_entry)
+          .where(journal_entries: { company_id: Current.company.id })
+          .where(account_type: "liability")
+        scope = scope.where(journal_entries: { date: ..@end_date }) if @end_date
+        scope
+      end
+    end
+
+    # Codes already reported from a source of their own, so the ledger copy of
+    # the same posting is not counted a second time.
+    #
+    # Supplier AP is counted across every AP treasury, active or not, because
+    # that is how the journal numbers them (JournalEntryService#account_for_treasury
+    # walks an unscoped list) while `ap_liability_lines` shows only the active
+    # ones. Taking the narrower list here would let a deactivated supplier's
+    # code leak into "other" and be double-counted.
+    def covered_liability_codes
+      @covered_liability_codes ||= begin
+        ap_base  = JournalEntryService::TREASURY_TYPE_BASE.fetch("supplier_ap")
+        ap_count = Treasury.unscoped
+          .where(company_id: Current.company.id, treasury_type: "supplier_ap").count
+        ap_codes = ap_count.times.map { |i| ap_base + i + 1 }
+
+        (ap_codes + Loan.ordered.pluck(:account_code)).to_set
+      end
     end
 
     # { account_code => [name, balance_cents] } for one side of the ledger, ordered

@@ -203,4 +203,102 @@ RSpec.describe Accounting::ChartOfAccountsService do
       expect(revenue_line.account_code).to eq(alpha.account_code)
     end
   end
+
+  # ── Ledger-only liabilities (tax payable, equipment payable) ────────
+  #
+  # These are posted by JournalEntryService but have no treasury and no model of
+  # their own, so before this they were written to the ledger and read by nothing.
+
+  describe "other (ledger-only) liabilities" do
+    def create_liability_je(code:, name:, amount_cents:, date:)
+      entry = JournalEntry.create!(
+        company: Current.company,
+        created_by: user,
+        entry_number: JournalEntry.next_entry_number(Current.company.id),
+        date: date,
+        description: "Liability JE #{code}",
+        entry_type: "auto"
+      )
+      entry.lines.create!(account_code: code, account_name: name,
+                          account_type: "liability", debit_cents: 0,
+                          credit_cents: amount_cents)
+      entry.lines.create!(account_code: 9999, account_name: "Offset",
+                          account_type: "expense", debit_cents: amount_cents,
+                          credit_cents: 0)
+      entry
+    end
+
+    it "reports tax payable on the balance sheet instead of dropping it" do
+      create_liability_je(code: Accounting::JournalEntryService::TAX_PAYABLE_CODE,
+                          name: "Tax payable", amount_cents: 7_500,
+                          date: Date.current)
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+
+      line = coa.other_liability_lines.find { |l| l.code == 2100 }
+      expect(line).to be_present
+      expect(line.balance_cents).to eq(7_500)
+      expect(coa.total_liabilities_cents).to eq(7_500)
+      expect(coa.liability_lines.map(&:code)).to include(2100)
+    end
+
+    it "carries a balance owed in an earlier period into the current one" do
+      create_liability_je(code: Accounting::JournalEntryService::EQUIPMENT_PAYABLE_CODE,
+                          name: "Equipment payable", amount_cents: 40_000,
+                          date: 2.years.ago.to_date)
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+
+      expect(coa.other_liability_lines.map(&:code)).to include(2200)
+      expect(coa.total_liabilities_cents).to eq(40_000)
+    end
+
+    it "nets payments against the balance and drops it once settled" do
+      code = Accounting::JournalEntryService::EQUIPMENT_PAYABLE_CODE
+      create_liability_je(code: code, name: "Equipment payable",
+                          amount_cents: 10_000, date: Date.current)
+
+      entry = JournalEntry.create!(
+        company: Current.company, created_by: user,
+        entry_number: JournalEntry.next_entry_number(Current.company.id),
+        date: Date.current, description: "Settle equipment payable", entry_type: "auto"
+      )
+      entry.lines.create!(account_code: code, account_name: "Equipment payable",
+                          account_type: "liability", debit_cents: 10_000, credit_cents: 0)
+      entry.lines.create!(account_code: 9999, account_name: "Offset",
+                          account_type: "asset", debit_cents: 0, credit_cents: 10_000)
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+      expect(coa.other_liability_lines.map(&:code)).not_to include(code)
+    end
+
+    it "does not double-count a loan, which is already reported from its own model" do
+      bank = Treasury.create!(name: "Bank", treasury_type: "bank",
+                              balance_cents: 100_000, opening_balance_cents: 100_000,
+                              company: Current.company)
+      loan = Loan.create!(name: "Term Loan", loan_type: "bank_loan",
+                          principal_cents: 50_000, company: Current.company)
+      Accounting::JournalEntryService.record_loan_disbursement!(
+        loan: loan, treasury: bank, amount_cents: 50_000,
+        date: Date.current, description: "Disbursed", user: user
+      )
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+
+      expect(coa.other_liability_lines.map(&:code)).not_to include(loan.account_code)
+      expect(coa.total_liabilities_cents).to eq(coa.loan_liability_lines.sum(&:balance_cents))
+    end
+
+    it "does not double-count supplier AP, which is already reported from its treasury" do
+      ap = Treasury.create!(name: "Supplier X", treasury_type: "supplier_ap",
+                            balance_cents: 0, opening_balance_cents: 0,
+                            company: Current.company)
+      ap_code = Accounting::JournalEntryService::TREASURY_TYPE_BASE.fetch("supplier_ap") + 1
+      create_liability_je(code: ap_code, name: ap.name, amount_cents: 25_000, date: Date.current)
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+
+      expect(coa.other_liability_lines.map(&:code)).not_to include(ap_code)
+    end
+  end
 end
