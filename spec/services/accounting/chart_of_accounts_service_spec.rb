@@ -301,4 +301,59 @@ RSpec.describe Accounting::ChartOfAccountsService do
       expect(coa.other_liability_lines.map(&:code)).not_to include(ap_code)
     end
   end
+
+  # ── Ledger-only current assets ─────────────────────────────────────
+  #
+  # The asset-side mirror of the liability gap above. 1170 is where income sits
+  # once it is booked and before a receipt voucher collects it; without a reader
+  # it would accumulate in the ledger and show on no statement.
+
+  describe "other receivables (1170)" do
+    def create_receivable_je(amount_cents:, date:, direction: :debit)
+      entry = JournalEntry.create!(
+        company: Current.company, created_by: user,
+        entry_number: JournalEntry.next_entry_number(Current.company.id),
+        date: date, description: "Accrued income", entry_type: "auto"
+      )
+      entry.lines.create!(
+        account_code: Accounting::JournalEntryService::OTHER_RECEIVABLES_CODE,
+        account_name: "Other receivables", account_type: "asset",
+        debit_cents:  direction == :debit ? amount_cents : 0,
+        credit_cents: direction == :debit ? 0 : amount_cents
+      )
+      entry.lines.create!(account_code: 9999, account_name: "Offset",
+                          account_type: "revenue",
+                          debit_cents:  direction == :debit ? 0 : amount_cents,
+                          credit_cents: direction == :debit ? amount_cents : 0)
+      entry
+    end
+
+    it "reports income booked but not yet collected as a current asset" do
+      create_receivable_je(amount_cents: 30_000, date: Date.current)
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+
+      line = coa.current_asset_lines.find { |l| l.code == 1170 }
+      expect(line).to be_present
+      expect(line.balance_cents).to eq(30_000)
+      expect(coa.total_current_assets_cents).to eq(30_000)
+    end
+
+    it "still shows a receivable raised in an earlier period" do
+      create_receivable_je(amount_cents: 30_000, date: 2.years.ago.to_date)
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+
+      expect(coa.current_asset_lines.map(&:code)).to include(1170)
+    end
+
+    it "drops off once collected" do
+      create_receivable_je(amount_cents: 30_000, date: Date.current)
+      create_receivable_je(amount_cents: 30_000, date: Date.current, direction: :credit)
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+
+      expect(coa.current_asset_lines.map(&:code)).not_to include(1170)
+    end
+  end
 end

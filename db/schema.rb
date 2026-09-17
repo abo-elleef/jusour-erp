@@ -1771,6 +1771,25 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_19_120000) do
     t.index ["user_id"], name: "index_vendor_invoices_on_user_id"
   end
 
+  create_table "vouchers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "direction", null: false
+    t.string "number", null: false
+    t.date "voucher_date", null: false
+    t.uuid "treasury_id", null: false
+    t.uuid "user_id", null: false
+    t.bigint "amount_cents", null: false
+    t.text "notes"
+    t.string "counterparty"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "number"], name: "index_vouchers_on_company_id_and_number", unique: true
+    t.index ["company_id"], name: "index_vouchers_on_company_id"
+    t.index ["direction"], name: "index_vouchers_on_direction"
+    t.index ["treasury_id"], name: "index_vouchers_on_treasury_id"
+    t.index ["voucher_date"], name: "index_vouchers_on_voucher_date"
+  end
+
   create_table "workstations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.uuid "location_id", null: false
@@ -2020,6 +2039,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_19_120000) do
   add_foreign_key "vendor_invoices", "suppliers"
   add_foreign_key "vendor_invoices", "users"
   add_foreign_key "vendor_invoices", "users", column: "historical_settled_by_id"
+  add_foreign_key "vouchers", "companies"
+  add_foreign_key "vouchers", "treasuries"
+  add_foreign_key "vouchers", "users"
   add_foreign_key "workstations", "companies"
   add_foreign_key "workstations", "locations"
   add_foreign_key "workstations", "printers", column: "receipt_printer_id"

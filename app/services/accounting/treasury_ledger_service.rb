@@ -16,6 +16,10 @@ module Accounting
       new.sync_income!(income)
     end
 
+    def self.sync_voucher!(voucher)
+      new.sync_voucher!(voucher)
+    end
+
     def self.sync_drawer_open!(session)
       new.sync_drawer_open!(session)
     end
@@ -96,6 +100,22 @@ module Accounting
         source: snapshot
       )
       JournalEntryService.record_payroll_salary!(snapshot)
+    end
+
+    # A voucher is the only thing that moves this cash: the income or expense it
+    # settles records the obligation and stays out of the treasury entirely.
+    def sync_voucher!(voucher)
+      remove_for_source(voucher)
+
+      record!(
+        treasury: voucher.treasury,
+        user: voucher.user,
+        amount_cents: voucher.signed_amount_cents,
+        kind: voucher.receipt? ? "voucher_receipt" : "voucher_payment",
+        description: voucher_description(voucher),
+        occurred_on: voucher.voucher_date,
+        source: voucher
+      )
     end
 
     def sync_income!(income)
@@ -305,6 +325,11 @@ module Accounting
         date: I18n.l(session.session_date, format: :long),
         default: "Drawer banked — #{session.treasury.name} → #{session.deposit_treasury.name}"
       )
+    end
+
+    def voucher_description(voucher)
+      [voucher.number, voucher.counterparty.presence, voucher.notes.presence]
+        .compact.join(" — ")
     end
 
     def payroll_advance_description(advance)

@@ -14,8 +14,14 @@ module Accounting
     # reached the statement while its cash silently fell into the unclassified line.
     #
     # Excluded: transfer/drawer_open (internal wash), ap_invoice (non-cash AP accrual).
+    #
+    # `voucher_receipt` / `voucher_payment` are cash moved by a سند قبض / سند صرف.
+    # They sit here rather than replacing `income`/`expense` because the older
+    # rows keep those kinds: an expense used to move its own cash, and the
+    # statement has to keep reading both for periods that straddle the change.
     OPERATING_KINDS = %w[income online_payment drawer_reconcile expense ap_payment
-                         payroll_salary payroll_advance staff_meal adjustment].freeze
+                         payroll_salary payroll_advance staff_meal adjustment
+                         voucher_receipt voucher_payment].freeze
 
     # Cash moved by a journal entry — a reversal, or an entry written by hand.
     # Reported separately rather than folded into a kind above, because the

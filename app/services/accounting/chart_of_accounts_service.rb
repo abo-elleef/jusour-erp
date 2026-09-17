@@ -62,8 +62,39 @@ module Accounting
             normal_balance: :debit
           )
         end
-        treasury_lines + [sales_clearing_line].compact
+        treasury_lines + [sales_clearing_line, other_receivables_line].compact
       end
+    end
+
+    # Income booked but not yet collected — what a receipt voucher will clear.
+    # Like sales clearing it has no treasury and lives only in the ledger, but
+    # unlike sales clearing it is read cumulatively: an invoice raised last year
+    # and still unpaid is still owed to us today. (Sales clearing is filtered to
+    # the selected period, which is its own inconsistency, left alone here
+    # because changing it moves a figure already on the statements.)
+    def other_receivables_line
+      return @other_receivables_line if defined?(@other_receivables_line)
+
+      scope = JournalEntryLine.joins(:journal_entry)
+        .where(journal_entries: { company_id: Current.company.id },
+               account_code: JournalEntryService::OTHER_RECEIVABLES_CODE)
+      scope = scope.where(journal_entries: { date: ..@end_date }) if @end_date
+      balance = scope.sum(:debit_cents).to_i - scope.sum(:credit_cents).to_i
+
+      @other_receivables_line =
+        if balance.zero?
+          nil
+        else
+          AccountLine.new(
+            code:           JournalEntryService::OTHER_RECEIVABLES_CODE,
+            name:           I18n.t("accounting.journal_entries.accounts.other_receivables",
+                                   default: "Other receivables"),
+            account_type:   :asset,
+            subtype:        "other_receivable",
+            balance_cents:  balance,
+            normal_balance: :debit
+          )
+        end
     end
 
     # Sales recognised but not yet banked. Unlike every other current asset this one

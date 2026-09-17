@@ -52,6 +52,17 @@ module Accounting
     # to fixed assets.
     SALES_CLEARING_CODE = 1160
 
+    # Money earned but not yet collected, and money owed but not yet paid —
+    # where an income or an expense sits between the date it is booked and the
+    # date a voucher settles it. Neither has a treasury behind it; both live
+    # only in the ledger, like sales clearing above.
+    #
+    # 1170 sits in the gap between sales clearing (1160) and the safe treasuries
+    # (1200+); 2300 above equipment payable (2200) and clear of the loan codes,
+    # which count up from 2101.
+    OTHER_RECEIVABLES_CODE = 1170
+    ACCRUED_EXPENSES_CODE  = 2300
+
     class << self
       # ── Expense ──────────────────────────────────────────────────────
       def record_expense!(expense)
@@ -79,6 +90,44 @@ module Accounting
           lines << debit(account_for_treasury(income.treasury), income.amount_cents, "asset")
           lines << credit(account_for_income_category(income.income_category),
                           income.amount_cents, "revenue")
+        end
+      end
+
+      # ── Voucher (سند قبض / سند صرف) ───────────────────────────────────
+      #
+      # The cash leg of an income or expense, carrying its own date. The other
+      # side is the accrual account the income or expense already posted to, so
+      # the pair nets to nothing once a booking is fully settled and whatever is
+      # left on 1170/2300 is exactly what is still owed either way.
+      #
+      # The counter-account is chosen by direction because in this phase a
+      # voucher settles only incomes and expenses. When vouchers absorb supplier
+      # and customer payments it will have to be resolved per allocation, from
+      # the AP or AR treasury of the invoice being settled.
+      def record_voucher!(voucher)
+        destroy_for_source!(voucher)
+
+        counter = if voucher.receipt?
+                    { code: OTHER_RECEIVABLES_CODE,
+                      name: I18n.t("accounting.journal_entries.accounts.other_receivables",
+                                   default: "Other receivables") }
+                  else
+                    { code: ACCRUED_EXPENSES_CODE,
+                      name: I18n.t("accounting.journal_entries.accounts.accrued_expenses",
+                                   default: "Accrued expenses") }
+                  end
+
+        create! source: voucher, date: voucher.voucher_date, user: voucher.user,
+                description: I18n.t("accounting.journal_entries.auto.voucher",
+                                    number: voucher.number,
+                                    default: "Voucher #{voucher.number}") do |lines|
+          if voucher.receipt?
+            lines << debit(account_for_treasury(voucher.treasury), voucher.amount_cents, "asset")
+            lines << credit(counter, voucher.amount_cents, "asset")
+          else
+            lines << debit(counter, voucher.amount_cents, "liability")
+            lines << credit(account_for_treasury(voucher.treasury), voucher.amount_cents, "asset")
+          end
         end
       end
 

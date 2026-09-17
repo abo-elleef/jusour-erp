@@ -17,6 +17,10 @@ class Income < ApplicationRecord
 
   has_one_attached :receipt_image
 
+  # The vouchers that have settled this, and for how much. What is left is what
+  # is still owed — the balance sitting on the accrual account.
+  has_many :payment_allocations, as: :settles, dependent: :destroy
+
   monetize :amount_cents
 
   validates :description, :income_date, :amount_cents, presence: true
@@ -39,6 +43,14 @@ class Income < ApplicationRecord
 
   def self.ransackable_associations(_auth_object = nil)
     %w[income_category user treasury]
+  end
+
+  def settled_cents
+    payment_allocations.sum(:amount_cents)
+  end
+
+  def outstanding_cents
+    amount_cents - settled_cents
   end
 
   private

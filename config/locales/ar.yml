@@ -3736,6 +3736,7 @@ ar:
         purchases: "مشتريات / مخزون"
         sales_revenue: "إيرادات المبيعات"
         sales_clearing: "مبيعات تحت التحصيل"
+        other_receivables: "أرصدة مدينة أخرى"
         tax_payable: "ضرائب مستحقة"
       auto:
         fixed_asset_purchase: "أصل ثابت — %{name}"

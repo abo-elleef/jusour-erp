@@ -3717,6 +3717,7 @@ en:
         purchases: "Purchases / Inventory"
         sales_revenue: "Sales revenue"
         sales_clearing: "Sales clearing"
+        other_receivables: "Other receivables"
         tax_payable: "Tax payable"
       auto:
         fixed_asset_purchase: "Fixed asset — %{name}"
