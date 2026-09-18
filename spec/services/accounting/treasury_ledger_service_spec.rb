@@ -20,7 +20,9 @@ RSpec.describe Accounting::TreasuryLedgerService do
     IncomeCategory.create!(name: "Catering", category_type: "catering", position: 1, company: Current.company)
   end
 
-  describe ".sync_expense!" do
+  # An expense no longer moves its own cash: naming a treasury raises a payment
+  # voucher, and the voucher is what the treasury sees.
+  describe "an expense paid from a treasury" do
     it "deducts from treasury balance" do
       expense = Expense.create!(
         expense_category: expense_category,
@@ -34,7 +36,7 @@ RSpec.describe Accounting::TreasuryLedgerService do
       treasury.reload
       expect(treasury.balance_cents).to eq(95_000)
       expect(treasury.treasury_transactions.last).to have_attributes(
-        kind: "expense",
+        kind: "voucher_payment",
         amount_cents: -5_000,
         balance_after_cents: 95_000
       )
@@ -63,7 +65,7 @@ RSpec.describe Accounting::TreasuryLedgerService do
     end
   end
 
-  describe ".sync_income!" do
+  describe "income collected into a treasury" do
     it "adds to treasury balance" do
       Income.create!(
         income_category: income_category,

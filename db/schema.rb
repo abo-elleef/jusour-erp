@@ -1783,6 +1783,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_19_120000) do
     t.string "counterparty"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "backfilled_at"
+    t.index ["backfilled_at"], name: "index_vouchers_on_backfilled_at"
     t.index ["company_id", "number"], name: "index_vouchers_on_company_id_and_number", unique: true
     t.index ["company_id"], name: "index_vouchers_on_company_id"
     t.index ["direction"], name: "index_vouchers_on_direction"

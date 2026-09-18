@@ -3,6 +3,7 @@
 class Income < ApplicationRecord
   include Tenantable
   include MoneyInputs
+  include VoucherSettleable
 
   audited associated_with: :company
 
@@ -17,16 +18,11 @@ class Income < ApplicationRecord
 
   has_one_attached :receipt_image
 
-  # The vouchers that have settled this, and for how much. What is left is what
-  # is still owed — the balance sitting on the accrual account.
-  has_many :payment_allocations, as: :settles, dependent: :destroy
-
   monetize :amount_cents
 
   validates :description, :income_date, :amount_cents, presence: true
   validates :recurrence, inclusion: { in: RECURRENCES }
   validates :amount_cents, numericality: { greater_than: 0 }
-  validates :treasury, presence: true, unless: :is_auto_generated?
 
   scope :manual, -> { where(is_auto_generated: false) }
   scope :auto_generated, -> { where(is_auto_generated: true) }
@@ -45,18 +41,15 @@ class Income < ApplicationRecord
     %w[income_category user treasury]
   end
 
-  def settled_cents
-    payment_allocations.sum(:amount_cents)
-  end
-
-  def outstanding_cents
-    amount_cents - settled_cents
-  end
-
   private
 
+  def voucher_direction = Voucher::RECEIPT
+  def settlement_date   = income_date
+  def settlement_date_changed? = saved_change_to_income_date?
+
+  # The income no longer brings cash in — a receipt voucher does. All this
+  # writes is the amount earned and owed to us.
   def sync_treasury_ledger
-    Accounting::TreasuryLedgerService.sync_income!(self)
     Accounting::JournalEntryService.record_income!(self)
   end
 

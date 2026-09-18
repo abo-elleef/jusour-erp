@@ -8,14 +8,6 @@ module Accounting
       new.remove_for_source(source, kinds: kinds)
     end
 
-    def self.sync_expense!(expense)
-      new.sync_expense!(expense)
-    end
-
-    def self.sync_income!(income)
-      new.sync_income!(income)
-    end
-
     def self.sync_voucher!(voucher)
       new.sync_voucher!(voucher)
     end
@@ -50,21 +42,6 @@ module Accounting
 
     def self.sync_drawer_deposit!(session)
       new.sync_drawer_deposit!(session)
-    end
-
-    def sync_expense!(expense)
-      remove_for_source(expense)
-      return if expense.treasury_id.blank?
-
-      record!(
-        treasury: expense.treasury,
-        user: expense.user,
-        amount_cents: -expense.amount_cents,
-        kind: "expense",
-        description: expense.description,
-        occurred_on: expense.expense_date,
-        source: expense
-      )
     end
 
     def sync_payroll_advance!(advance)
@@ -115,21 +92,6 @@ module Accounting
         description: voucher_description(voucher),
         occurred_on: voucher.voucher_date,
         source: voucher
-      )
-    end
-
-    def sync_income!(income)
-      remove_for_source(income)
-      return if income.treasury_id.blank?
-
-      record!(
-        treasury: income.treasury,
-        user: income.user,
-        amount_cents: income.amount_cents,
-        kind: "income",
-        description: income.description,
-        occurred_on: income.income_date,
-        source: income
       )
     end
 

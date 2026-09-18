@@ -37,11 +37,21 @@ class Voucher < ApplicationRecord
 
   before_validation :assign_number, on: :create
 
+  # A backfilled voucher documents cash that moved before vouchers existed. It
+  # carries a number, a date and its allocation, and posts nothing — the expense
+  # or income it describes already wrote the treasury row and the journal entry.
+  # Anything summing voucher cash must start from `posting`.
+  scope :posting,    -> { where(backfilled_at: nil) }
+  scope :backfilled, -> { where.not(backfilled_at: nil) }
+
   scope :receipts, -> { where(direction: RECEIPT) }
   scope :payments, -> { where(direction: PAYMENT) }
   scope :recent,   -> { order(voucher_date: :desc, created_at: :desc) }
   scope :on_date_range, ->(start_date, end_date) { where(voucher_date: start_date..end_date) }
 
+  after_destroy :remove_ledger
+
+  def backfilled? = backfilled_at.present?
   def receipt? = direction == RECEIPT
   def payment? = direction == PAYMENT
 
@@ -79,6 +89,16 @@ class Voucher < ApplicationRecord
   end
 
   private
+
+  # Destroying a voucher takes its cash back out of the treasury and removes the
+  # entry, the same way an expense has always undone itself. A backfilled voucher
+  # posted nothing, so there is nothing to undo.
+  def remove_ledger
+    return if backfilled?
+
+    Accounting::TreasuryLedgerService.remove_source!(self)
+    Accounting::JournalEntryService.destroy_for_source!(self)
+  end
 
   def assign_number
     return if number.present? || direction.blank?

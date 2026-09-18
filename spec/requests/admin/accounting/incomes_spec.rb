@@ -106,16 +106,18 @@ RSpec.describe "Admin::Accounting::Incomes", type: :request do
   # and reversal itself is gone: a deleted income takes its ledger with it, so
   # the P&L stops reporting money against a row nobody can open.
   describe "DELETE /admin/accounting/incomes/:id" do
-    it "deletes the income, its journal entry and its treasury movement" do
+    it "deletes the income, its journal entry and the voucher that collected it" do
       income = create_income(amount_cents: 20_000)
+      voucher = Voucher.sole
       expect(JournalEntry.for_source(income)).to exist
-      expect(TreasuryTransaction.where(source_record: income)).to exist
+      expect(TreasuryTransaction.where(source_record: voucher)).to exist
 
       expect { delete admin_accounting_income_path(income) }
         .to change(Income, :count).by(-1)
+        .and change(Voucher, :count).by(-1)
 
       expect(JournalEntry.where(source_record_type: "Income", source_record_id: income.id)).to be_empty
-      expect(TreasuryTransaction.where(source_record_type: "Income", source_record_id: income.id)).to be_empty
+      expect(TreasuryTransaction.where(source_record_type: "Voucher", source_record_id: voucher.id)).to be_empty
     end
 
     it "restores the treasury balance" do

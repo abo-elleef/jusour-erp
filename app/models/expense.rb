@@ -3,6 +3,7 @@
 class Expense < ApplicationRecord
   include Tenantable
   include MoneyInputs
+  include VoucherSettleable
 
   audited associated_with: :company
 
@@ -17,10 +18,6 @@ class Expense < ApplicationRecord
 
   has_one_attached :receipt_image
 
-  # The vouchers that have settled this, and for how much. What is left is what
-  # is still owed — the balance sitting on the accrual account.
-  has_many :payment_allocations, as: :settles, dependent: :destroy
-
   has_one :vendor_invoice_payment, as: :source_record
 
   monetize :amount_cents
@@ -28,7 +25,6 @@ class Expense < ApplicationRecord
   validates :description, :expense_date, :amount_cents, presence: true
   validates :recurrence, inclusion: { in: RECURRENCES }
   validates :amount_cents, numericality: { greater_than: 0 }
-  validates :treasury, presence: true, unless: :is_auto_generated?
 
   scope :manual, -> { where(is_auto_generated: false) }
   scope :auto_generated, -> { where(is_auto_generated: true) }
@@ -47,20 +43,16 @@ class Expense < ApplicationRecord
     %w[expense_category user treasury]
   end
 
-  def settled_cents
-    payment_allocations.sum(:amount_cents)
-  end
-
-  def outstanding_cents
-    amount_cents - settled_cents
-  end
-
   private
 
+  def voucher_direction = Voucher::PAYMENT
+  def settlement_date   = expense_date
+  def settlement_date_changed? = saved_change_to_expense_date?
+
+  # The expense no longer moves cash — a payment voucher does. All this writes
+  # is the obligation.
   def sync_treasury_ledger
-    Accounting::TreasuryLedgerService.sync_expense!(self)
-    # Auto-generated expenses (vendor payments, direct AP) get their own JE via their services
-    Accounting::JournalEntryService.record_expense!(self) unless is_auto_generated?
+    Accounting::JournalEntryService.record_expense!(self)
   end
 
   # Deleting takes the ledger with it. Keeping the journal entry after the record

@@ -73,16 +73,21 @@ RSpec.describe "Admin::Accounting::Expenses", type: :request do
   # and reversal itself is gone: a deleted expense takes its ledger with it, so
   # the P&L stops reporting money against a row nobody can open.
   describe "DELETE /admin/accounting/expenses/:id" do
-    it "deletes the expense, its journal entry and its treasury movement" do
+    # The cash now belongs to the payment voucher the expense raised, not to the
+    # expense, so deleting has to take the voucher with it or the money never
+    # comes back.
+    it "deletes the expense, its journal entry and the voucher that paid it" do
       expense = create_expense(amount_cents: 20_000)
+      voucher = Voucher.sole
       expect(JournalEntry.for_source(expense)).to exist
-      expect(TreasuryTransaction.where(source_record: expense)).to exist
+      expect(TreasuryTransaction.where(source_record: voucher)).to exist
 
       expect { delete admin_accounting_expense_path(expense) }
         .to change(Expense, :count).by(-1)
+        .and change(Voucher, :count).by(-1)
 
       expect(JournalEntry.where(source_record_type: "Expense", source_record_id: expense.id)).to be_empty
-      expect(TreasuryTransaction.where(source_record_type: "Expense", source_record_id: expense.id)).to be_empty
+      expect(TreasuryTransaction.where(source_record_type: "Voucher", source_record_id: voucher.id)).to be_empty
     end
 
     it "restores the treasury balance" do

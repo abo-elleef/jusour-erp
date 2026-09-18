@@ -31,15 +31,22 @@ class JournalEntry < ApplicationRecord
   def auto?               = entry_type == "auto"
   def manual?             = entry_type == "manual"
 
+  # Reads the highest sequence among *this year's* numbers, rather than trusting
+  # the lexical maximum to be one. Any entry number outside the pattern — an
+  # import, a fixture, anything hand-written — used to win the `maximum` and send
+  # the count back to 00001, colliding with the entry already holding it. That
+  # mattered little while one action wrote one entry; an expense and its voucher
+  # write two.
+  #
+  # Same shape as CustomerInvoice.next_invoice_number and Voucher.next_number.
   def self.next_entry_number(company_id)
-    last = where(company_id: company_id).maximum(:entry_number)
-    year = Date.current.year
-    if last&.start_with?("JE-#{year}-")
-      seq = last.split("-").last.to_i + 1
-    else
-      seq = 1
-    end
-    "JE-#{year}-#{seq.to_s.rjust(5, '0')}"
+    prefix = "JE-#{Date.current.year}-"
+
+    max_seq = where(company_id: company_id)
+      .where("entry_number ~ ?", "^#{prefix}[0-9]+$")
+      .maximum(Arel.sql("CAST(SUBSTRING(entry_number FROM #{prefix.length + 1}) AS INTEGER)"))
+
+    format("%s%05d", prefix, (max_seq || 0) + 1)
   end
 
   private

@@ -102,8 +102,10 @@ RSpec.describe Accounting::RecordVoucherService do
     let(:category) do
       ExpenseCategory.create!(name: "Rent", category_type: "rent", position: 1, company: company)
     end
+    # On account: no treasury, so nothing has been paid and the whole 30,000 is
+    # sitting on 2300 waiting for a voucher.
     let(:expense) do
-      Expense.create!(expense_category: category, user: user, treasury: cash,
+      Expense.create!(expense_category: category, user: user,
                       description: "September rent", amount_cents: 30_000,
                       expense_date: Date.new(2026, 9, 1), company: company)
     end

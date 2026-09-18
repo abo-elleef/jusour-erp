@@ -65,8 +65,24 @@ module Accounting
 
     class << self
       # ── Expense ──────────────────────────────────────────────────────
+      #
+      # The expense is the obligation, on the date it was incurred. It no longer
+      # credits a treasury — a payment voucher does that, on the date the money
+      # actually left — so what is credited here is the payable it creates. The
+      # two net to nothing once the expense is settled, and whatever is left on
+      # 2300 is what the company still owes.
+      #
+      # An expense paid on the spot raises its voucher in the same breath, so
+      # both entries land together and 2300 clears immediately. The cost of that
+      # is two journal entries where there was one; the gain is that cash is only
+      # ever moved by a voucher, with no exceptions to reason about.
       def record_expense!(expense)
-        return unless expense.treasury_id.present?
+        # Daily COGS: auto-generated, no treasury, and deliberately not a ledger
+        # fact — the app expenses stock when it is bought, so charging it again
+        # when it is sold would count the same cost twice. A manual expense left
+        # on account also has no treasury, and that one does belong here, which
+        # is why this tests both.
+        return if expense.is_auto_generated? && expense.treasury_id.blank?
 
         destroy_for_source!(expense)
         create! source: expense, date: expense.expense_date, user: expense.user,
@@ -75,19 +91,22 @@ module Accounting
                                     default: "Expense — #{expense.expense_category.name}") do |lines|
           lines << debit(account_for_expense_category(expense.expense_category),
                          expense.amount_cents, "expense")
-          lines << credit(account_for_treasury(expense.treasury),
-                          expense.amount_cents, "asset")
+          lines << credit(accrued_expenses_account, expense.amount_cents, "liability")
         end
       end
 
       # ── Income ───────────────────────────────────────────────────────
+      #
+      # Mirror of the expense above: the income is recognised on the date it was
+      # earned and debits a receivable, not a treasury. A receipt voucher brings
+      # the cash in later, on its own date, and clears 1170.
       def record_income!(income)
         destroy_for_source!(income)
         create! source: income, date: income.income_date, user: income.user,
                 description: I18n.t("accounting.journal_entries.auto.income",
                                     category: income.income_category.name,
                                     default: "Income — #{income.income_category.name}") do |lines|
-          lines << debit(account_for_treasury(income.treasury), income.amount_cents, "asset")
+          lines << debit(other_receivables_account, income.amount_cents, "asset")
           lines << credit(account_for_income_category(income.income_category),
                           income.amount_cents, "revenue")
         end
@@ -107,15 +126,7 @@ module Accounting
       def record_voucher!(voucher)
         destroy_for_source!(voucher)
 
-        counter = if voucher.receipt?
-                    { code: OTHER_RECEIVABLES_CODE,
-                      name: I18n.t("accounting.journal_entries.accounts.other_receivables",
-                                   default: "Other receivables") }
-                  else
-                    { code: ACCRUED_EXPENSES_CODE,
-                      name: I18n.t("accounting.journal_entries.accounts.accrued_expenses",
-                                   default: "Accrued expenses") }
-                  end
+        counter = voucher.receipt? ? other_receivables_account : accrued_expenses_account
 
         create! source: voucher, date: voucher.voucher_date, user: voucher.user,
                 description: I18n.t("accounting.journal_entries.auto.voucher",
@@ -667,6 +678,18 @@ module Accounting
         base = ChartOfAccountsService::FIXED_ASSET_BASE_CODES.fetch(asset.asset_type, 1980)
         { code: base, name: I18n.t("accounting.fixed_assets.asset_types.#{asset.asset_type}",
                                    default: asset.asset_type.to_s.humanize) }
+      end
+
+      def accrued_expenses_account
+        { code: ACCRUED_EXPENSES_CODE,
+          name: I18n.t("accounting.journal_entries.accounts.accrued_expenses",
+                       default: "Accrued expenses") }
+      end
+
+      def other_receivables_account
+        { code: OTHER_RECEIVABLES_CODE,
+          name: I18n.t("accounting.journal_entries.accounts.other_receivables",
+                       default: "Other receivables") }
       end
 
       def equipment_payable_account

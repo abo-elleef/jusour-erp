@@ -3467,6 +3467,8 @@ en:
       journal_entry: "Journal Entry"
       kinds:
         income: "Cash received from customers"
+        voucher_receipt: "Received on receipt vouchers"
+        voucher_payment: "Paid on payment vouchers"
         online_payment: "Online payments received"
         drawer_reconcile: "Cash sales collected from drawer"
         expense: "Cash paid for operating expenses"

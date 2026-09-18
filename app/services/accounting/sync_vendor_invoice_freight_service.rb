@@ -57,8 +57,9 @@ module Accounting
         )
       end
 
-      # Auto-generated expenses skip JE in Expense#sync_treasury_ledger; post explicitly.
-      # Treasury cash movement still comes from Expense after_commit → sync_expense!.
+      # Re-posted explicitly so an edited amount rewrites the entry; the call is
+      # idempotent. The cash itself moves through the payment voucher the expense
+      # raises on create, since freight is paid when the goods are received.
       JournalEntryService.record_expense!(expense)
       @invoice.association(:freight_expense).reset
       expense
