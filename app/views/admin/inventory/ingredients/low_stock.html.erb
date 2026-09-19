@@ -28,8 +28,10 @@
               <td class="p-3 font-medium text-red-700"><%= ingredient.quantity_on_hand %> <%= ingredient_unit_label(ingredient.unit) %></td>
               <td class="p-3 text-gray-600"><%= ingredient.reorder_threshold %> <%= ingredient_unit_label(ingredient.unit) %></td>
               <td class="p-3 text-right">
-                <%= link_to t("inventory.ingredients.low_stock.adjust_stock"), admin_inventory_ingredient_path(ingredient, anchor: "adjust"),
-                      class: "text-amber-600 hover:underline text-sm font-medium" %>
+                <% if can_manage_inventory_stock? %>
+                  <%= link_to t("inventory.ingredients.low_stock.adjust_stock"), admin_inventory_ingredient_path(ingredient, anchor: "adjust"),
+                        class: "text-amber-600 hover:underline text-sm font-medium" %>
+                <% end %>
               </td>
             </tr>
           <% end %>

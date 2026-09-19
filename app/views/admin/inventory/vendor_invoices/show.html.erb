@@ -111,7 +111,7 @@
           <%= t("inventory.vendor_invoices.errors.stock_consumed_blocked") %>
         </span>
       <% end %>
-      <% if !@vendor_invoice.void? %>
+      <% if !@vendor_invoice.void? && can_manage_inventory_stock? %>
         <%= button_to t("inventory.vendor_invoices.void"),
               void_admin_inventory_vendor_invoice_path(@vendor_invoice),
               method: :patch,

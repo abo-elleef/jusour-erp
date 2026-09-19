@@ -583,7 +583,7 @@ en:
         manage: "Manage customers"
       inventory:
         view: "View inventory"
-        manage: "Manage inventory"
+        manage: "Move stock (adjust, consolidate, transfer, void invoices)"
         settings: "Inventory setup (ingredients, vendors, categories, units)"
         finance: "Inventory finance"
         manufacturing: "Manufacturing (production)"

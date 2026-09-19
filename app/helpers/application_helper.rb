@@ -65,6 +65,14 @@ module ApplicationHelper
     current_user&.can?("inventory:settings")
   end
 
+  # Can this user move stock — adjustments, consolidations, voiding an invoice
+  # that already landed? The controllers gate these on inventory:manage; the
+  # buttons that reach them have to ask the same question, or they render for
+  # someone whose click only earns an "unauthorized" flash.
+  def can_manage_inventory_stock?
+    current_user&.can?("inventory:manage")
+  end
+
   def inventory_in_operations_group?
     INVENTORY_OPERATIONS_GROUP.include?(controller.controller_name)
   end

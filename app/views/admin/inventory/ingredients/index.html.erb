@@ -303,7 +303,9 @@
                   <% if can_manage_inventory_settings? %>
                     <%= link_to t("actions.edit"), edit_admin_inventory_ingredient_path(ingredient), class: "px-2 py-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-700" %>
                   <% end %>
-                  <%= link_to t("inventory.ingredients.index.adjust"), admin_inventory_ingredient_path(ingredient, anchor: "adjust"), class: "px-2 py-1 rounded bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100" %>
+                  <% if can_manage_inventory_stock? %>
+                    <%= link_to t("inventory.ingredients.index.adjust"), admin_inventory_ingredient_path(ingredient, anchor: "adjust"), class: "px-2 py-1 rounded bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100" %>
+                  <% end %>
                 </div>
               </td>
             </tr>

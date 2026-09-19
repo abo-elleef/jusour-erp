@@ -33,16 +33,20 @@
         <%= label %>
       </span>
       <%# Adjust stock opens a modal — rarely needed, shouldn't dominate the page layout %>
-      <button type="button" onclick="document.getElementById('adjust-stock-modal').showModal()"
-              class="inline-flex text-xs font-semibold text-amber-800 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-300 transition-colors">
-        <%= t("inventory.ingredients.show.adjust_stock") %>
-      </button>
+      <% if can_manage_inventory_stock? %>
+        <button type="button" onclick="document.getElementById('adjust-stock-modal').showModal()"
+                class="inline-flex text-xs font-semibold text-amber-800 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-300 transition-colors">
+          <%= t("inventory.ingredients.show.adjust_stock") %>
+        </button>
+      <% end %>
       <% if can_manage_inventory_settings? %>
         <%= link_to t("inventory.ingredients.show.edit"), edit_admin_inventory_ingredient_path(@ingredient),
               class: chip_secondary %>
       <% end %>
-      <%= link_to t("inventory.consolidations.action"), new_admin_inventory_ingredient_consolidation_path(@ingredient),
-            class: chip_secondary %>
+      <% if can_manage_inventory_stock? %>
+        <%= link_to t("inventory.consolidations.action"), new_admin_inventory_ingredient_consolidation_path(@ingredient),
+              class: chip_secondary %>
+      <% end %>
     </div>
   </header>
 
@@ -705,6 +709,7 @@
 </div>
 
 <%# ── Adjust stock modal ───────────────────────────────────────────────────── %>
+<% if can_manage_inventory_stock? %>
 <dialog id="adjust-stock-modal"
         class="m-auto rounded-[28px] shadow-2xl border-0 p-0 w-[480px] max-w-[95vw] backdrop:bg-black/50 backdrop:backdrop-blur-sm"
         onclick="if(event.target===this)this.close()">
@@ -767,3 +772,4 @@
     <% end %>
   </div>
 </dialog>
+<% end %>
