@@ -10,7 +10,14 @@
   </div>
   <div>
     <%= f.label :treasury_id, t("accounting.shared.treasury"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-    <%= f.collection_select :treasury_id, @treasuries, :id, :name, {}, class: pos_input_class, required: true %>
+    <%#
+      Leaving this blank is what "on account" means: nothing has moved yet, and
+      the expense waits for a voucher. Naming a treasury says the money moved
+      now, and raises the voucher for it.
+    %>
+    <%= f.collection_select :treasury_id, @treasuries, :id, :name,
+          { include_blank: t("accounting.expenses.on_account_option") }, class: pos_input_class %>
+    <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.expenses.treasury_hint") %></p>
   </div>
   <div>
     <%= f.label :description, t("accounting.shared.description"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>

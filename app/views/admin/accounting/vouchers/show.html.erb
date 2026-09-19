@@ -1,0 +1,161 @@
+<% receipt = @voucher.receipt? %>
+<% content_for :title, @voucher.number %>
+<div class="print:hidden">
+  <%= render "admin/accounting/nav" %>
+</div>
+
+<div class="max-w-3xl print:max-w-none">
+  <%# ── Screen header ───────────────────────────────────────────── %>
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6 print:hidden">
+    <div>
+      <div class="flex items-center gap-3 mb-1">
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900 font-mono"><%= @voucher.number %></h1>
+        <span class="text-xs px-2.5 py-1 rounded-full font-semibold <%= receipt ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-rose-100 text-rose-700 border border-rose-200" %>">
+          <%= t("accounting.vouchers.directions.#{@voucher.direction}") %>
+        </span>
+        <% if @voucher.backfilled? %>
+          <span class="text-xs px-2.5 py-1 rounded-full font-semibold bg-gray-100 text-gray-600 border border-gray-200">
+            <%= t("accounting.vouchers.backfilled_badge") %>
+          </span>
+        <% end %>
+      </div>
+      <p class="text-xs text-gray-400 mt-1">
+        <%= l(@voucher.voucher_date, format: :long) %> &middot;
+        <%= t("accounting.vouchers.issued_by", name: @voucher.user&.name) %>
+      </p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="window.print()"
+              class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-700 border border-gray-300 bg-white hover:bg-gray-50 px-4 py-2 rounded-xl transition-colors cursor-pointer">
+        <%= t("accounting.vouchers.actions.print") %>
+      </button>
+      <% if policy(@voucher).destroy? %>
+        <%= button_to t("accounting.vouchers.actions.void"), admin_accounting_voucher_path(@voucher),
+              method: :delete,
+              form: { data: { turbo_confirm: t("accounting.vouchers.void_confirm", number: @voucher.number) } },
+              class: "text-sm font-medium text-red-700 border border-red-200 bg-white hover:bg-red-50 px-4 py-2 rounded-xl cursor-pointer" %>
+      <% end %>
+      <%= link_to t("actions.back"), admin_accounting_vouchers_path,
+            class: "text-sm text-gray-500 hover:text-gray-800 border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50" %>
+    </div>
+  </div>
+
+  <%# ── The document itself ─────────────────────────────────────── %>
+  <section class="rounded-2xl border border-gray-200 bg-white p-8 mb-6 print:border-0 print:p-0">
+    <div class="text-center border-b border-gray-200 pb-5 mb-6">
+      <p class="text-lg font-bold text-gray-900"><%= Current.company.name %></p>
+      <p class="text-xl font-black text-gray-900 mt-2">
+        <%= t("accounting.vouchers.directions.#{@voucher.direction}") %>
+      </p>
+      <p class="font-mono text-sm text-gray-500 mt-1"><%= @voucher.number %></p>
+    </div>
+
+    <dl class="space-y-4 text-sm">
+      <div class="flex justify-between gap-4">
+        <dt class="text-gray-500"><%= t("accounting.shared.day") %></dt>
+        <dd class="font-semibold text-gray-900 tabular-nums"><%= l(@voucher.voucher_date, format: :long) %></dd>
+      </div>
+      <div class="flex justify-between gap-4">
+        <dt class="text-gray-500"><%= receipt ? t("accounting.vouchers.received_from") : t("accounting.vouchers.paid_to") %></dt>
+        <dd class="font-semibold text-gray-900"><%= @voucher.counterparty.presence || "—" %></dd>
+      </div>
+      <div class="flex justify-between gap-4">
+        <dt class="text-gray-500"><%= receipt ? t("accounting.vouchers.into_treasury") : t("accounting.vouchers.from_treasury") %></dt>
+        <dd class="font-semibold text-gray-900"><%= @voucher.treasury&.name %></dd>
+      </div>
+      <div class="flex justify-between gap-4 border-t border-gray-200 pt-4">
+        <dt class="text-gray-900 font-semibold"><%= t("accounting.shared.amount") %></dt>
+        <%# A printed document leaves no column header to name the currency. %>
+        <dd class="text-2xl font-black tabular-nums <%= receipt ? "text-emerald-700" : "text-rose-700" %>">
+          <%= format_money(@voucher.amount_cents) %>
+        </dd>
+      </div>
+      <% if @voucher.notes.present? %>
+        <div class="border-t border-gray-200 pt-4">
+          <dt class="text-gray-500 mb-1"><%= t("accounting.vouchers.notes") %></dt>
+          <dd class="text-gray-800"><%= @voucher.notes %></dd>
+        </div>
+      <% end %>
+    </dl>
+
+    <div class="grid grid-cols-2 gap-8 mt-12 pt-6 text-xs text-gray-500">
+      <div class="border-t border-gray-400 pt-2 text-center"><%= t("accounting.vouchers.signature_issuer") %></div>
+      <div class="border-t border-gray-400 pt-2 text-center">
+        <%= receipt ? t("accounting.vouchers.signature_payer") : t("accounting.vouchers.signature_recipient") %>
+      </div>
+    </div>
+  </section>
+
+  <%# ── What it settled ─────────────────────────────────────────── %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6 print:hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.vouchers.settles") %></h2>
+    </div>
+    <% if @allocations.any? %>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-gray-100">
+          <% @allocations.each do |allocation| %>
+            <% record = allocation.settles %>
+            <tr>
+              <td class="p-3 ps-5">
+                <% if record %>
+                  <%= link_to record.description, polymorphic_path([:admin, :accounting, record]),
+                        class: "font-medium text-gray-900 hover:underline" %>
+                  <p class="text-xs text-gray-400 mt-0.5">
+                    <%= t("accounting.vouchers.outstanding_after", amount: format_amount(record.outstanding_cents)) %>
+                  </p>
+                <% end %>
+              </td>
+              <td class="p-3 pe-5 text-end tabular-nums font-semibold text-gray-900">
+                <%= format_amount(allocation.amount_cents) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <% if @voucher.unallocated_cents.positive? %>
+        <div class="px-5 py-3 bg-amber-50 border-t border-amber-100 text-sm text-amber-800 flex justify-between">
+          <span><%= t("accounting.vouchers.on_account") %></span>
+          <span class="tabular-nums font-semibold"><%= format_amount(@voucher.unallocated_cents) %></span>
+        </div>
+      <% end %>
+    <% else %>
+      <p class="p-5 text-sm text-gray-500 italic"><%= t("accounting.vouchers.settles_nothing") %></p>
+    <% end %>
+  </section>
+
+  <%# ── The entry it wrote ──────────────────────────────────────── %>
+  <% if @journal_entry %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden print:hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex justify-between items-center">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.vouchers.journal_entry") %></h2>
+        <%= link_to @journal_entry.entry_number, admin_accounting_journal_entry_path(@journal_entry),
+              class: "font-mono text-xs text-gray-500 hover:underline" %>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start w-20"><%= t("accounting.journal_entries.col.code") %></th>
+            <th class="p-3 text-start"><%= t("accounting.journal_entries.col.account") %></th>
+            <th class="p-3 text-end"><%= t("accounting.journal_entries.col.debit") %></th>
+            <th class="p-3 pe-5 text-end"><%= t("accounting.journal_entries.col.credit") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @journal_entry.lines.each do |line| %>
+            <tr>
+              <td class="p-3 ps-5 font-mono text-xs text-gray-400"><%= line.account_code %></td>
+              <td class="p-3 text-gray-900"><%= line.account_name %></td>
+              <td class="p-3 text-end tabular-nums"><%= line.debit_cents.positive? ? format_amount(line.debit_cents) : "—" %></td>
+              <td class="p-3 pe-5 text-end tabular-nums"><%= line.credit_cents.positive? ? format_amount(line.credit_cents) : "—" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+  <% elsif @voucher.backfilled? %>
+    <div class="rounded-2xl border border-gray-200 bg-gray-50 p-5 text-sm text-gray-600 print:hidden">
+      <%= t("accounting.vouchers.backfilled_note") %>
+    </div>
+  <% end %>
+</div>

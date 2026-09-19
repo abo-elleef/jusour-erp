@@ -24,6 +24,7 @@ module AccountingNav
       tabs: [
         { controller: "expenses",        label: "accounting.nav.expenses",    path: :admin_accounting_expenses_path,          permission: "accounting:transactions" },
         { controller: "incomes",         label: "accounting.nav.incomes",     path: :admin_accounting_incomes_path,           permission: "accounting:transactions" },
+        { controller: "vouchers",        label: "accounting.nav.vouchers",    path: :admin_accounting_vouchers_path,          permission: "accounting:transactions" },
         { controller: "monthly_payroll", label: "accounting.nav.payroll",     path: :admin_accounting_monthly_payroll_path,   permission: "payroll:view" },
         { controller: "attendance",      label: "accounting.nav.attendance",  path: :admin_accounting_attendance_path,        permission: "attendance:log", feature: :attendance },
         { controller: "late_penalties",  label: "accounting.nav.late_penalties", path: :admin_accounting_late_penalties_path, permission: "attendance:penalties", feature: :attendance },

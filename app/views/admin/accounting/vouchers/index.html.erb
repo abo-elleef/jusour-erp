@@ -1,0 +1,103 @@
+<% content_for :title, t("accounting.vouchers.title") %>
+<%= render "admin/accounting/nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.vouchers.title") %></h1>
+      <p class="text-sm text-gray-500 mt-1"><%= t("accounting.vouchers.subtitle") %></p>
+    </div>
+    <div class="flex flex-wrap gap-2 shrink-0">
+      <%= link_to t("actions.export_csv"),
+            admin_accounting_vouchers_path(**request.query_parameters.symbolize_keys, format: :csv),
+            class: "border border-gray-200 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-50" %>
+      <%= link_to t("accounting.vouchers.new_receipt"),
+            new_admin_accounting_voucher_path(direction: Voucher::RECEIPT),
+            class: "bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+      <%= link_to t("accounting.vouchers.new_payment"),
+            new_admin_accounting_voucher_path(direction: Voucher::PAYMENT),
+            class: "bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+    </div>
+  </div>
+
+  <%= render "admin/accounting/date_range_form" %>
+
+  <%# Direction filter %>
+  <% base = { start_date: @start_date, end_date: @end_date }.compact_blank %>
+  <div class="flex gap-1 mb-6 border-b border-gray-200">
+    <% [[nil, t("accounting.vouchers.filters.all")],
+        [Voucher::RECEIPT, t("accounting.vouchers.directions.receipt")],
+        [Voucher::PAYMENT, t("accounting.vouchers.directions.payment")]].each do |value, label| %>
+      <% active = params[:direction].presence == value %>
+      <%= link_to label, admin_accounting_vouchers_path(base.merge(direction: value).compact_blank),
+            class: "px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors #{active ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}" %>
+    <% end %>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+      <p class="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1"><%= t("accounting.vouchers.stats_received") %></p>
+      <p class="text-2xl font-black tabular-nums text-emerald-900"><%= format_amount(@received_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-rose-200 bg-rose-50 p-4">
+      <p class="text-xs font-semibold text-rose-700 uppercase tracking-wide mb-1"><%= t("accounting.vouchers.stats_paid") %></p>
+      <p class="text-2xl font-black tabular-nums text-rose-900"><%= format_amount(@paid_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+      <p class="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1"><%= t("accounting.vouchers.stats_count") %></p>
+      <p class="text-2xl font-black tabular-nums text-gray-900"><%= @total_count %></p>
+    </div>
+  </div>
+
+  <% if @vouchers.any? %>
+    <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= t("accounting.vouchers.number") %></th>
+            <th class="p-3 text-start"><%= t("accounting.shared.day") %></th>
+            <th class="p-3 text-start"><%= t("accounting.vouchers.counterparty") %></th>
+            <th class="p-3 text-start"><%= t("accounting.vouchers.settles") %></th>
+            <th class="p-3 text-start"><%= t("accounting.shared.treasury") %></th>
+            <th class="p-3 pe-5 text-end"><%= t("accounting.shared.amount") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @vouchers.each do |voucher| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="p-3 ps-5">
+                <%= link_to voucher.number, admin_accounting_voucher_path(voucher),
+                      class: "font-mono font-semibold text-gray-900 hover:underline" %>
+                <% if voucher.backfilled? %>
+                  <span class="ms-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
+                    <%= t("accounting.vouchers.backfilled_badge") %>
+                  </span>
+                <% end %>
+              </td>
+              <td class="p-3 text-gray-600 tabular-nums"><%= l(voucher.voucher_date, format: :short) %></td>
+              <td class="p-3 text-gray-700"><%= voucher.counterparty.presence || "—" %></td>
+              <td class="p-3 text-gray-600">
+                <% settled = voucher.payment_allocations.map(&:settles).compact %>
+                <% if settled.any? %>
+                  <% settled.each do |record| %>
+                    <div><%= link_to record.description, polymorphic_path([:admin, :accounting, record]), class: "hover:underline" %></div>
+                  <% end %>
+                <% else %>
+                  <span class="italic text-gray-400"><%= t("accounting.vouchers.on_account") %></span>
+                <% end %>
+              </td>
+              <td class="p-3 text-gray-600"><%= voucher.treasury&.name %></td>
+              <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= voucher.receipt? ? "text-emerald-700" : "text-rose-700" %>">
+                <%= voucher.receipt? ? "+" : "−" %><%= format_amount(voucher.amount_cents) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%= render "admin/accounting/pagination", pagy: @pagy %>
+  <% else %>
+    <div class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-500 text-sm"><%= t("accounting.vouchers.empty") %></p>
+    </div>
+  <% end %>
+</div>

@@ -207,6 +207,9 @@ Rails.application.routes.draw do
         collection { patch :reorder }
       end
       resources :incomes
+      # A voucher is issued or voided, never edited — an amended one is a new
+      # document with its own number.
+      resources :vouchers, except: %i[edit update]
       resources :discount_rules, except: [:show]
       resources :treasuries do
         member { post :adjust }
