@@ -8,6 +8,6 @@
     <p class="text-gray-600 text-sm mt-1"><%= t("admin.combos.new_subtitle") %></p>
   </div>
 
-  <%= render "admin/menu_nav" %>
+  <%= render "admin/menu_nav", flush: false %>
   <%= render "form", combo: @combo %>
 </div>

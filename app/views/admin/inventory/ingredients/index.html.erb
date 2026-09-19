@@ -14,9 +14,11 @@
       <% end %>
       <%= link_to t("inventory.tools.ingredient_categories"), admin_inventory_ingredient_categories_path,
             class: "inline-flex items-center text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg border border-gray-200 transition-colors" %>
-      <%= link_to new_admin_inventory_ingredient_path,
-            class: "inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium" do %>
-        <span aria-hidden="true">+</span> <%= bt_t("inventory.ingredients.index.new_button") %>
+      <% if can_manage_inventory_settings? %>
+        <%= link_to new_admin_inventory_ingredient_path,
+              class: "inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium" do %>
+          <span aria-hidden="true">+</span> <%= bt_t("inventory.ingredients.index.new_button") %>
+        <% end %>
       <% end %>
     </div>
   </div>
@@ -220,7 +222,7 @@
                 </p>
                 <% if @filtered %>
                   <%= link_to t("inventory.ingredients.index.clear_filters"), admin_inventory_ingredients_path, class: "text-amber-600 hover:underline text-sm font-medium" %>
-                <% else %>
+                <% elsif can_manage_inventory_settings? %>
                   <%= link_to t("inventory.ingredients.index.new_button"), new_admin_inventory_ingredient_path,
                         class: "inline-block bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-sm font-medium" %>
                 <% end %>
@@ -250,6 +252,12 @@
                 </div>
                 <% if @stock_filter == "expiring" && (expiry_label = ingredient_expiring_label(ingredient)) %>
                   <p class="text-xs text-orange-600 font-medium mt-0.5"><%= expiry_label %></p>
+                <% elsif missing_reorder && !can_manage_inventory_settings? %>
+                  <span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 mt-0.5"
+                        title="<%= t("inventory.ingredients.index.reorder_missing_tooltip") %>">
+                    <%= render "admin/inventory/ingredients/missing_setting_icon" %>
+                    <%= t("inventory.ingredients.index.reorder_missing") %>
+                  </span>
                 <% elsif missing_reorder %>
                   <%= link_to edit_admin_inventory_ingredient_path(ingredient),
                         class: "inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 mt-0.5",
@@ -260,7 +268,13 @@
                 <% else %>
                   <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.ingredients.index.reorder_at", threshold: ingredient.reorder_threshold) %></p>
                 <% end %>
-                <% if missing_max %>
+                <% if missing_max && !can_manage_inventory_settings? %>
+                  <span class="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 mt-0.5"
+                        title="<%= t("inventory.ingredients.index.max_missing_tooltip") %>">
+                    <%= render "admin/inventory/ingredients/missing_setting_icon" %>
+                    <%= t("inventory.ingredients.index.max_missing") %>
+                  </span>
+                <% elsif missing_max %>
                   <%= link_to edit_admin_inventory_ingredient_path(ingredient),
                         class: "inline-flex items-center gap-1 text-xs font-semibold text-amber-700 hover:text-amber-800 mt-0.5",
                         title: t("inventory.ingredients.index.max_missing_tooltip") do %>
@@ -273,7 +287,7 @@
               </td>
               <td class="p-3 text-gray-600 max-w-[200px]">
                 <%= ingredient_suppliers_summary(ingredient) %>
-                <% if ingredient.suppliers.empty? %>
+                <% if ingredient.suppliers.empty? && can_manage_inventory_settings? %>
                   <%= link_to t("inventory.ingredients.index.assign_supplier"), edit_admin_inventory_ingredient_path(ingredient, anchor: "suppliers"),
                         class: "text-xs text-amber-600 hover:underline block mt-0.5" %>
                 <% end %>
@@ -286,7 +300,9 @@
               <td class="p-3 pr-4 text-right whitespace-nowrap">
                 <div class="inline-flex gap-1 text-xs">
                   <%= link_to t("actions.view"), admin_inventory_ingredient_path(ingredient), class: "px-2 py-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-700" %>
-                  <%= link_to t("actions.edit"), edit_admin_inventory_ingredient_path(ingredient), class: "px-2 py-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-700" %>
+                  <% if can_manage_inventory_settings? %>
+                    <%= link_to t("actions.edit"), edit_admin_inventory_ingredient_path(ingredient), class: "px-2 py-1 rounded border border-gray-200 hover:bg-gray-100 text-gray-700" %>
+                  <% end %>
                   <%= link_to t("inventory.ingredients.index.adjust"), admin_inventory_ingredient_path(ingredient, anchor: "adjust"), class: "px-2 py-1 rounded bg-amber-50 border border-amber-200 text-amber-800 hover:bg-amber-100" %>
                 </div>
               </td>

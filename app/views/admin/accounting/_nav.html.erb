@@ -1,6 +1,9 @@
 <% visible_groups = accounting_visible_groups %>
 <% current_group = accounting_current_group %>
 <% if visible_groups.any? %>
+  <%# Sits flush against the top of <main>, so the layout drops its top padding.
+    Pass flush: false where this nav renders below a page header. %>
+  <% content_for :flush_top, "1" unless local_assigns[:flush] == false %>
   <nav class="mb-6 border-b border-gray-200" aria-label="<%= t("accounting.nav_label") %>">
 
     <%# ── Primary group pills (only groups with an accessible tab) ── %>

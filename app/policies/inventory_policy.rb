@@ -25,6 +25,16 @@ class InventoryPolicy < ApplicationPolicy
     user&.can?("inventory:manage")
   end
 
+  # Writing to the inventory *catalog* — ingredients, vendors, categories, units
+  # and anything hanging off them (vendor links, recipes). Split out of
+  # inventory:manage so a role can move stock, take stock and record invoices
+  # against the catalog without being able to reshape it. Every setup screen —
+  # including ones added later — gates create/update/destroy on this, while
+  # reading stays on inventory:view.
+  def manage_settings?
+    user&.can?("inventory:settings")
+  end
+
   # Owner-only, deliberately not a permission key: copying a transfer reproduces
   # someone else's request wholesale, and we want that kept to the account owner
   # rather than delegable through the role editor.

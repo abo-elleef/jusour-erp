@@ -58,6 +58,13 @@ module ApplicationHelper
   INVENTORY_SETUP_GROUP      = %w[suppliers ingredients ingredient_categories units].freeze
   INVENTORY_REPORTS_GROUP    = %w[reports].freeze
 
+  # Can this user reshape the inventory catalog (ingredients, vendors,
+  # categories, units)? Reading those screens only needs inventory:view, so the
+  # add / edit / delete controls are hidden behind this instead.
+  def can_manage_inventory_settings?
+    current_user&.can?("inventory:settings")
+  end
+
   def inventory_in_operations_group?
     INVENTORY_OPERATIONS_GROUP.include?(controller.controller_name)
   end

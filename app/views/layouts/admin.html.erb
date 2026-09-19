@@ -70,7 +70,8 @@
         </button>
         <span class="font-semibold text-gray-900 truncate"><%= admin_brand_name %></span>
       </header>
-      <main class="flex-1 overflow-y-auto px-4 pb-4 lg:px-6 lg:pb-6">
+      <%# Pages with a section nav start flush; everything else needs breathing room up top. %>
+      <main class="flex-1 overflow-y-auto px-4 pb-4 lg:px-6 lg:pb-6 <%= content_for?(:flush_top) ? "" : "pt-4 lg:pt-6" %>">
         <%= yield %>
       </main>
     </div>

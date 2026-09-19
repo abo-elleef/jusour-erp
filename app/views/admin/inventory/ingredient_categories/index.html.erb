@@ -8,9 +8,11 @@
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("inventory.ingredient_categories.description") %></p>
     </div>
-    <%= link_to new_admin_inventory_ingredient_category_path,
-          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
-      <span aria-hidden="true">+</span> <%= t("inventory.ingredient_categories.new_button") %>
+    <% if can_manage_inventory_settings? %>
+      <%= link_to new_admin_inventory_ingredient_category_path,
+            class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
+        <span aria-hidden="true">+</span> <%= t("inventory.ingredient_categories.new_button") %>
+      <% end %>
     <% end %>
   </div>
 
@@ -106,9 +108,11 @@
                     count_sheet_admin_inventory_ingredient_category_path(cat),
                     title: t("inventory.ingredient_categories.count_sheet.action_hint"),
                     class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
-              <%= link_to t("actions.edit"), edit_admin_inventory_ingredient_category_path(cat),
-                    class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
-              <% if policy(cat).destroy? && cat.ingredients.none? %>
+              <% if can_manage_inventory_settings? %>
+                <%= link_to t("actions.edit"), edit_admin_inventory_ingredient_category_path(cat),
+                      class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+              <% end %>
+              <% if policy(cat).manage_settings? && cat.ingredients.none? %>
                 <%= button_to t("actions.delete"), admin_inventory_ingredient_category_path(cat), method: :delete,
                       form: { data: { turbo_confirm: t("inventory.ingredient_categories.confirm_delete", name: cat.name) }, class: "inline" },
                       class: "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
@@ -122,8 +126,10 @@
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
       <p class="text-gray-900 font-semibold mb-1"><%= t("inventory.ingredient_categories.empty_title") %></p>
       <p class="text-gray-500 text-sm mb-5"><%= t("inventory.ingredient_categories.empty_description") %></p>
-      <%= link_to t("inventory.ingredient_categories.new_button"), new_admin_inventory_ingredient_category_path,
-            class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+      <% if can_manage_inventory_settings? %>
+        <%= link_to t("inventory.ingredient_categories.new_button"), new_admin_inventory_ingredient_category_path,
+              class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+      <% end %>
     </section>
   <% end %>
 </div>

@@ -7,7 +7,7 @@ module Admin
       before_action :set_supplier_link, only: %i[update destroy]
 
       def create
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         @supplier_link = @ingredient.supplier_ingredients.build(supplier_ingredient_params)
         if @supplier_link.save
           redirect_to edit_admin_inventory_ingredient_path(@ingredient), notice: t("flash.supplier_ingredient.assigned")
@@ -18,7 +18,7 @@ module Admin
       end
 
       def update
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         if @supplier_link.update(supplier_ingredient_params)
           redirect_to edit_admin_inventory_ingredient_path(@ingredient), notice: t("flash.supplier_ingredient.updated")
         else
@@ -28,7 +28,7 @@ module Admin
       end
 
       def destroy
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         @supplier_link.destroy
         redirect_to edit_admin_inventory_ingredient_path(@ingredient), notice: t("flash.supplier_ingredient.removed")
       end

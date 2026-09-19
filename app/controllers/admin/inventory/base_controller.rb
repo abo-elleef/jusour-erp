@@ -16,6 +16,16 @@ module Admin
         redirect_to root_path
       end
 
+      # Tab-level gate for the manufacturing tab (templates, runs, lines).
+      # Separate from inventory:view so production stays hidden for roles that
+      # otherwise read inventory.
+      def authorize_manufacturing_access!
+        return if current_user.can?("inventory:manufacturing")
+
+        flash[:alert] = t("flash.manufacturing_access")
+        redirect_to admin_inventory_ingredients_path
+      end
+
       def inventory_policy
         InventoryPolicy.new(current_user, record_for_policy)
       end

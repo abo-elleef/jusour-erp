@@ -1,5 +1,8 @@
 <% visible_groups = inventory_sidebar_groups %>
 <% current_group = inventory_current_group %>
+<%# Sits flush against the top of <main>, so the layout drops its top padding.
+    Pass flush: false where this nav renders below a page header. %>
+<% content_for :flush_top, "1" unless local_assigns[:flush] == false %>
 <nav class="mb-6 border-b border-gray-200 print-hide" aria-label="<%= t("nav.inventory") %>">
 
   <%# ── Primary group pills ─────────────────────────────────────── %>

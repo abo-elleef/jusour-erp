@@ -584,7 +584,9 @@ en:
       inventory:
         view: "View inventory"
         manage: "Manage inventory"
+        settings: "Inventory setup (ingredients, vendors, categories, units)"
         finance: "Inventory finance"
+        manufacturing: "Manufacturing (production)"
       accounting:
         ledgers: "Ledgers"
         transactions: "Transactions"
@@ -4624,6 +4626,7 @@ en:
     admin_required: "Admin access required."
     feature_unavailable: "That feature isn't available for your business type."
     inventory_access: "Inventory access is limited to owners and managers."
+    manufacturing_access: "You don't have access to manufacturing."
     pos_access: "You do not have access to the POS screen."
     kitchen_access: "Kitchen display access only."
     production_access: "Production access only."

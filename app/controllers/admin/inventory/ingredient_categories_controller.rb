@@ -10,11 +10,13 @@ module Admin
         @q = IngredientCategory.ransack(params[:q])
         @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
         @categories = @q.result.includes(:ingredients).ordered
-        @sortable = !@filtered
+        # Drag-to-reorder writes positions, so it needs the same key the
+        # reorder action is gated on.
+        @sortable = !@filtered && current_user.can?("inventory:settings")
       end
 
       def reorder
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         positions = params[:positions].presence || JSON.parse(request.body.read).fetch("positions")
         positions.each do |id, position|
           IngredientCategory.where(id: id).update_all(position: position.to_i)
@@ -24,12 +26,12 @@ module Admin
 
       def new
         @category = IngredientCategory.new(active: true)
-        authorize_inventory!(:create)
+        authorize_inventory!(:manage_settings)
       end
 
       def create
         @category = IngredientCategory.new(category_params)
-        authorize_inventory!(:create)
+        authorize_inventory!(:manage_settings)
         if @category.save
           redirect_to admin_inventory_ingredient_categories_path, notice: t("flash.ingredient_category.created")
         else
@@ -38,12 +40,12 @@ module Admin
       end
 
       def edit
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         @audits = @category.audits.includes(:user).reorder(version: :desc)
       end
 
       def update
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         if @category.update(category_params)
           redirect_to admin_inventory_ingredient_categories_path, notice: t("flash.ingredient_category.updated")
         else
@@ -53,7 +55,7 @@ module Admin
       end
 
       def destroy
-        authorize_inventory!(:destroy)
+        authorize_inventory!(:manage_settings)
         if @category.ingredients.exists?
           redirect_to admin_inventory_ingredient_categories_path,
                       alert: t("flash.ingredient_category.cannot_delete_with_ingredients")

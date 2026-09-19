@@ -9,9 +9,11 @@
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("inventory.suppliers.index.description") %></p>
     </div>
-    <%= link_to new_admin_inventory_supplier_path,
-          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
-      <span aria-hidden="true">+</span> <%= t("inventory.suppliers.index.new_button") %>
+    <% if can_manage_inventory_settings? %>
+      <%= link_to new_admin_inventory_supplier_path,
+            class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
+        <span aria-hidden="true">+</span> <%= t("inventory.suppliers.index.new_button") %>
+      <% end %>
     <% end %>
   </div>
 
@@ -167,8 +169,10 @@
                   <div class="inline-flex gap-2">
                     <%= link_to t("actions.view"), admin_inventory_supplier_path(s),
                           class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
-                    <%= link_to t("actions.edit"), edit_admin_inventory_supplier_path(s),
-                          class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                    <% if can_manage_inventory_settings? %>
+                      <%= link_to t("actions.edit"), edit_admin_inventory_supplier_path(s),
+                            class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                    <% end %>
                   </div>
                 </td>
               </tr>
@@ -229,8 +233,10 @@
           <%= link_to t("inventory.suppliers.index.clear_search"), admin_inventory_suppliers_path,
                 class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
         <% end %>
-        <%= link_to t("inventory.suppliers.index.new_button"), new_admin_inventory_supplier_path,
-              class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+        <% if can_manage_inventory_settings? %>
+          <%= link_to t("inventory.suppliers.index.new_button"), new_admin_inventory_supplier_path,
+                class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl transition-colors" %>
+        <% end %>
       </div>
     </section>
   <% end %>

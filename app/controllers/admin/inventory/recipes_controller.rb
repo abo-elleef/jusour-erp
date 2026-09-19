@@ -6,7 +6,7 @@ module Admin
       before_action :set_ingredient
 
       def create
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         @recipe = @ingredient.recipes.build(recipe_params)
         if @recipe.save
           redirect_to admin_inventory_ingredient_path(@ingredient), notice: t("flash.recipe.added")
@@ -16,7 +16,7 @@ module Admin
       end
 
       def destroy
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         @ingredient.recipes.find(params[:id]).destroy
         redirect_to admin_inventory_ingredient_path(@ingredient), notice: t("flash.recipe.removed")
       end

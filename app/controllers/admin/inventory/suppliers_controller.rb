@@ -127,12 +127,12 @@ module Admin
 
       def new
         @supplier = Supplier.new
-        authorize_inventory!(:create)
+        authorize_inventory!(:manage_settings)
       end
 
       def create
         @supplier = Supplier.new(supplier_params)
-        authorize_inventory!(:create)
+        authorize_inventory!(:manage_settings)
         if @supplier.save
           redirect_to admin_inventory_supplier_path(@supplier), notice: t("flash.supplier.created")
         else
@@ -141,11 +141,11 @@ module Admin
       end
 
       def edit
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
       end
 
       def update
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         if @supplier.update(supplier_params)
           redirect_to admin_inventory_supplier_path(@supplier), notice: t("flash.supplier.updated")
         else
@@ -177,7 +177,7 @@ module Admin
       end
 
       def destroy
-        authorize_inventory!(:destroy)
+        authorize_inventory!(:manage_settings)
 
         unless @supplier.deletable?
           redirect_to admin_inventory_supplier_path(@supplier), alert: t("flash.supplier.cannot_delete")

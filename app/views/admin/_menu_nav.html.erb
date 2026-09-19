@@ -1,3 +1,6 @@
+<%# Sits flush against the top of <main>, so the layout drops its top padding.
+    Pass flush: false where this nav renders below a page header. %>
+<% content_for :flush_top, "1" unless local_assigns[:flush] == false %>
 <nav class="mb-6 border-b border-gray-200" aria-label="<%= t('nav.menu') %>">
   <div class="flex flex-wrap gap-x-1 -mb-px">
     <%= link_to t("admin.menu_nav.menu_items"), admin_menu_items_path,

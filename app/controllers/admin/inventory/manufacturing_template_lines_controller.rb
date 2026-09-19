@@ -4,6 +4,7 @@ module Admin
   module Inventory
     class ManufacturingTemplateLinesController < BaseController
       before_action { require_feature!(:manufacturing) }
+      before_action :authorize_manufacturing_access!
       before_action :set_template
 
       def create

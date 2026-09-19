@@ -18,7 +18,9 @@ module Permission
 
     { key: "inventory:view",          group: "inventory" },
     { key: "inventory:manage",        group: "inventory" },
+    { key: "inventory:settings",      group: "inventory" },
     { key: "inventory:finance",       group: "inventory" },
+    { key: "inventory:manufacturing", group: "inventory" },
 
     { key: "accounting:ledgers",      group: "accounting" },
     { key: "accounting:transactions", group: "accounting" },
@@ -67,7 +69,8 @@ module Permission
       name: "Manager",
       permissions: %w[
         dashboard:view orders:view orders:refund menu:manage customers:manage
-        inventory:view inventory:manage accounting:transactions accounting:day_close accounting:reports
+        inventory:view inventory:manage inventory:settings inventory:manufacturing
+        accounting:transactions accounting:day_close accounting:reports
         attendance:log attendance:view attendance:penalties attendance:waive_penalties staff:view locations:manage printers:manage
         pos:access kitchen:access production:access
       ]
@@ -85,7 +88,7 @@ module Permission
     "accountant" => {
       name: "Accountant",
       permissions: %w[
-        dashboard:view orders:view inventory:view inventory:finance
+        dashboard:view orders:view inventory:view inventory:finance inventory:manufacturing
         accounting:ledgers accounting:transactions accounting:day_close accounting:reports accounting:setup
         attendance:view attendance:penalties attendance:waive_penalties staff:view staff:manage payroll:view payroll:manage
         settings:general locations:manage printers:manage pos:access

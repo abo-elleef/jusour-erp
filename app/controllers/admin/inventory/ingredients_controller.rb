@@ -134,13 +134,13 @@ module Admin
 
       def new
         @ingredient = Ingredient.new
-        authorize_inventory!(:create)
+        authorize_inventory!(:manage_settings)
         load_form_data
       end
 
       def create
         @ingredient = Ingredient.new(ingredient_params)
-        authorize_inventory!(:create)
+        authorize_inventory!(:manage_settings)
         load_form_data
 
         if stock_location_required? && stock_location.blank?
@@ -160,13 +160,13 @@ module Admin
       end
 
       def edit
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         load_form_data
         load_supplier_links_data
       end
 
       def update
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         if @ingredient.update(ingredient_params)
           redirect_to admin_inventory_ingredient_path(@ingredient), notice: t("flash.ingredient.updated")
         else
@@ -177,7 +177,7 @@ module Admin
       end
 
       def destroy
-        authorize_inventory!(:destroy)
+        authorize_inventory!(:manage_settings)
         @ingredient.destroy
         redirect_to admin_inventory_ingredients_path, notice: t("flash.ingredient.removed")
       end
@@ -222,7 +222,7 @@ module Admin
       # updates that column automatically, so this is the manual catch-up — always
       # confirmed first, with the before/after spelled out in the view.
       def sync_cost_from_last_invoice
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         result = ::Inventory::IngredientLastInvoiceCost.new(@ingredient).call
         return_to = safe_return_to || admin_inventory_ingredient_path(@ingredient)
 
@@ -250,7 +250,7 @@ module Admin
       # for an item whose cost was taken over by hand: marking it derived again
       # puts the nightly sweep back in charge.
       def sync_cost_from_batches
-        authorize_inventory!(:update)
+        authorize_inventory!(:manage_settings)
         return_to = safe_return_to || admin_inventory_ingredient_path(@ingredient)
 
         unless @ingredient.output_manufacturing_templates.exists?

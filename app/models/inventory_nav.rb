@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 # Single source of truth for the Inventory section's sidebar + tools nav.
-# All tabs currently share inventory:view (section gate); keep permission on
-# each tab so finer-grained keys can land later without reshaping the nav.
+# Most tabs share inventory:view (section gate); the manufacturing tab carries
+# its own key. Keep permission on each tab so finer-grained keys can land later
+# without reshaping the nav.
 module InventoryNav
   GROUPS = [
     {
@@ -24,7 +25,7 @@ module InventoryNav
         { controller: "manufacturing_templates",
           controllers: %w[manufacturing_templates manufacturing_runs manufacturing_template_lines],
           label: "inventory.tools.manufacturing",
-          path: :admin_inventory_manufacturing_templates_path, permission: "inventory:view",
+          path: :admin_inventory_manufacturing_templates_path, permission: "inventory:manufacturing",
           feature: :manufacturing }
       ]
     },

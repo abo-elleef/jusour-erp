@@ -582,7 +582,9 @@ ar:
       inventory:
         view: "عرض المخزون"
         manage: "إدارة المخزون"
+        settings: "إعداد المخزون (الأصناف، المورّدون، الفئات، الوحدات)"
         finance: "مالية المخزون"
+        manufacturing: "التصنيع (الإنتاج)"
       accounting:
         ledgers: "الدفاتر"
         transactions: "المعاملات"
@@ -4649,6 +4651,7 @@ ar:
     admin_required: "يتطلب صلاحية الإدارة."
     feature_unavailable: "هذه الميزة غير متاحة لنوع نشاطك."
     inventory_access: "صلاحية المخزون للمالك والمدير فقط."
+    manufacturing_access: "ليس لديك صلاحية الوصول للتصنيع."
     pos_access: "نقطة البيع للكاشير فقط."
     kitchen_access: "شاشة المطبخ لموظفي المطبخ فقط."
     production_access: "صلاحية التصنيع فقط."

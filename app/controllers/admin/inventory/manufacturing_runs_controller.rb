@@ -4,6 +4,7 @@ module Admin
   module Inventory
     class ManufacturingRunsController < BaseController
       before_action { require_feature!(:manufacturing) }
+      before_action :authorize_manufacturing_access!
       include ManufacturingBulkRecording
 
       before_action :set_run, only: %i[show reverse]
