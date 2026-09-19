@@ -58,6 +58,8 @@ module Accounting
                  hint_values: { opening: opening_inventory_cents, closing: closing_inventory_cents }),
         Line.new(key: :unpaid_purchases, amount_cents: unpaid_purchases_cents,
                  hint_values: { purchases: coa.purchases_cents, paid: vendor_cash_paid_cents }),
+        Line.new(key: :unpaid_expenses, amount_cents: unpaid_expenses_cents),
+        Line.new(key: :uncollected_income, amount_cents: uncollected_income_cents),
         Line.new(key: :financing, amount_cents: cash_flow.financing.total_cents),
         Line.new(key: :investing, amount_cents: cash_flow.investing.total_cents),
         Line.new(key: :equity_adjustments, amount_cents: equity_adjustments_cents),
@@ -94,10 +96,52 @@ module Accounting
       @unpaid_purchases_cents ||= coa.purchases_cents - vendor_cash_paid_cents
     end
 
+    # Expenses charged to the period but not paid in it — the divergence the
+    # voucher split introduced. An expense recorded on account debits its
+    # category and credits 2300, so profit is down while no cash has moved; the
+    # payment voucher that settles it debits 2300 back, in whatever period the
+    # money actually leaves.
+    #
+    # So the period's movement on 2300 is exactly "charged to profit here but
+    # not paid here", which is what the bridge needs. An expense paid as it was
+    # recorded accrues and clears within the same period and nets to nothing,
+    # which is why this line stays at zero until someone uses the accrual.
+    #
+    # Deliberately read from the ledger rather than by comparing expense rows to
+    # vouchers: 2300 is the account the two statements are already built from,
+    # and a second way of counting the same thing would eventually disagree.
+    #
+    # Supplier invoices are not double-counted here — those credit supplier AP
+    # (2001+), not 2300, and have their own line above.
+    def unpaid_expenses_cents
+      @unpaid_expenses_cents ||= begin
+        scope = journal_lines.where(account_code: ::Accounting::JournalEntryService::ACCRUED_EXPENSES_CODE)
+        scope.sum(:credit_cents) - scope.sum(:debit_cents)
+      end
+    end
+
+    # The mirror on the revenue side: income recognised in the period and not
+    # yet collected sits as a debit on 1170 until a receipt voucher clears it.
+    # Revenue is up without the cash arriving, so it reduces cash against profit.
+    def uncollected_income_cents
+      @uncollected_income_cents ||= begin
+        scope = journal_lines.where(account_code: ::Accounting::JournalEntryService::OTHER_RECEIVABLES_CODE)
+        scope.sum(:credit_cents) - scope.sum(:debit_cents)
+      end
+    end
+
     # Both settlement paths — a payment against an invoice and a direct payment
     # against a supplier's standing balance — land in this one category.
+    #
+    # Only rows that named a treasury count: those are the ones whose money
+    # moved on the day they were recorded. One left on account is a charge, not
+    # a payment, and counting it here would report cash that never left — it is
+    # picked up by `unpaid_expenses` instead. Every expense written by the
+    # vendor-payment path names a treasury, so this changes nothing today; it
+    # stops a hand-entered one on account from being read as cash.
     def vendor_cash_paid_cents
       @vendor_cash_paid_cents ||= expense_records_in_period
+        .where.not(treasury_id: nil)
         .joins(:expense_category)
         .where(expense_categories: { name: VENDOR_PURCHASES_CATEGORY })
         .sum(:amount_cents)

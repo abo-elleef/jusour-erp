@@ -14,6 +14,10 @@
   alternate_labels = {
     inventory_build:      { positive: :inventory_release },
     unpaid_purchases:     { negative: :overpaid_purchases },
+    # Both directions are real: a period can charge more than it pays, or pay
+    # off what earlier periods charged.
+    unpaid_expenses:      { negative: :settled_prior_expenses },
+    uncollected_income:   { positive: :collected_prior_income },
     ledger_only_expenses: { negative: :ledger_only_expenses_reverse }
   }
 
@@ -37,6 +41,12 @@
       cash_flow_lines_admin_accounting_financial_statements_path(kind: "online_payment", **range)
     when :ledger_only_expenses
       admin_accounting_expenses_path(tab: "ledger", **range)
+    when :unpaid_expenses
+      admin_accounting_journal_entries_path(
+        account_code: ::Accounting::JournalEntryService::ACCRUED_EXPENSES_CODE, **range)
+    when :uncollected_income
+      admin_accounting_journal_entries_path(
+        account_code: ::Accounting::JournalEntryService::OTHER_RECEIVABLES_CODE, **range)
     end
   end
 

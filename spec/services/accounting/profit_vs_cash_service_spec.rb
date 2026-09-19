@@ -202,4 +202,91 @@ RSpec.describe Accounting::ProfitVsCashService do
       expect(bridge.residual_cents).to eq(90_00)
     end
   end
+
+  # ── The accrual split ───────────────────────────────────────────────
+  #
+  # An expense charged in one period and paid in another is exactly what the
+  # voucher change introduced, and exactly what used to fall into the residual:
+  # profit was down, cash had not moved, and no line named the difference.
+  describe "expenses charged in one period and paid in another" do
+    def line(key)
+      bridge.lines.find { |l| l.key == key }
+    end
+
+    let(:category) do
+      ExpenseCategory.create!(name: "Rent", category_type: "rent", position: 1, company: company)
+    end
+
+    # On account: no treasury, so nothing moved when it was recorded.
+    def accrue_expense!(amount_cents:, date:)
+      Expense.create!(expense_category: category, user: owner, company: company,
+                      description: "Rent", amount_cents: amount_cents, expense_date: date)
+    end
+
+    it "names the charge in the period it was charged, and still closes" do
+      accrue_expense!(amount_cents: 300_00, date: start_date + 2)
+
+      expect(line(:unpaid_expenses).amount_cents).to eq(300_00)
+      expect(bridge.residual_cents).to eq(0)
+      expect(bridge).to be_balanced
+    end
+
+    it "names the payment in the period it was paid, and still closes" do
+      expense = accrue_expense!(amount_cents: 300_00, date: start_date - 40)
+
+      Accounting::RecordVoucherService.new(
+        direction: Voucher::PAYMENT, treasury: cash, user: owner,
+        amount_cents: 300_00, voucher_date: start_date + 3,
+        allocations: [{ settles: expense, amount_cents: 300_00 }]
+      ).call
+
+      # Cash left this period against a charge made in an earlier one.
+      expect(line(:unpaid_expenses).amount_cents).to eq(-300_00)
+      expect(bridge.residual_cents).to eq(0)
+    end
+
+    it "nets to nothing when the expense is paid as it is recorded" do
+      Expense.create!(expense_category: category, user: owner, company: company,
+                      treasury: cash, description: "Rent paid now",
+                      amount_cents: 300_00, expense_date: start_date + 2)
+
+      expect(bridge.lines.map(&:key)).not_to include(:unpaid_expenses)
+      expect(bridge.residual_cents).to eq(0)
+    end
+  end
+
+  describe "income earned in one period and collected in another" do
+    def line(key)
+      bridge.lines.find { |l| l.key == key }
+    end
+
+    let(:income_category) do
+      IncomeCategory.create!(name: "Catering", category_type: "catering",
+                             position: 1, company: company)
+    end
+
+    it "names the uncollected revenue, and still closes" do
+      Income.create!(income_category: income_category, user: owner, company: company,
+                     description: "Catering", amount_cents: 400_00,
+                     income_date: start_date + 1)
+
+      expect(line(:uncollected_income).amount_cents).to eq(-400_00)
+      expect(bridge.residual_cents).to eq(0)
+    end
+
+    it "names the collection of revenue recognised earlier, and still closes" do
+      income = Income.create!(income_category: income_category, user: owner, company: company,
+                              description: "Catering", amount_cents: 400_00,
+                              income_date: start_date - 40)
+
+      Accounting::RecordVoucherService.new(
+        direction: Voucher::RECEIPT, treasury: cash, user: owner,
+        amount_cents: 400_00, voucher_date: start_date + 5,
+        allocations: [{ settles: income, amount_cents: 400_00 }]
+      ).call
+
+      expect(line(:uncollected_income).amount_cents).to eq(400_00)
+      expect(bridge.residual_cents).to eq(0)
+    end
+  end
 end
