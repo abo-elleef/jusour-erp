@@ -25,7 +25,7 @@ module Admin
         end
 
         def set_payment
-          @payment = @invoice.vendor_invoice_payments.find(params[:id])
+          @payment = @invoice.payment_vouchers.find(params[:id])
         end
       end
     end

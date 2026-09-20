@@ -14,6 +14,9 @@ class VendorInvoice < ApplicationRecord
   has_many :vendor_invoice_lines, -> { order(:position, :created_at) }, dependent: :destroy, inverse_of: :vendor_invoice
   has_many :vendor_invoice_payments, dependent: :destroy
   has_many :payment_allocations, as: :settles, dependent: :destroy
+  # The vouchers that have paid this invoice, newest first.
+  has_many :payment_vouchers, -> { distinct.order(voucher_date: :desc, created_at: :desc) },
+           through: :payment_allocations, source: :payment, source_type: "Voucher"
   # Returns and rebates credited back against this invoice. They settle it exactly
   # as a payment does — the goods went back instead of the money going out.
   has_many :vendor_credit_notes, dependent: :nullify

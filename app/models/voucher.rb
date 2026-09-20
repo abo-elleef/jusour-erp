@@ -49,6 +49,9 @@ class Voucher < ApplicationRecord
   scope :recent,   -> { order(voucher_date: :desc, created_at: :desc) }
   scope :on_date_range, ->(start_date, end_date) { where(voucher_date: start_date..end_date) }
 
+  # Prepended so it runs before `dependent: :destroy` clears the allocations —
+  # they are the only route back to what this voucher paid off.
+  before_destroy :unapply_from_invoices, prepend: true
   after_destroy :remove_ledger
 
   def backfilled? = backfilled_at.present?
@@ -93,6 +96,22 @@ class Voucher < ApplicationRecord
   # Destroying a voucher takes its cash back out of the treasury and removes the
   # entry, the same way an expense has always undone itself. A backfilled voucher
   # posted nothing, so there is nothing to undo.
+  # The mirror of Accounting::RecordVoucherService#apply_to_invoices!. An
+  # invoice carries its own paid-to-date, so voiding the voucher that paid it
+  # has to give that back; an expense or income derives its outstanding amount
+  # from the allocations, which go on their own.
+  def unapply_from_invoices
+    return if backfilled?
+
+    payment_allocations.each do |allocation|
+      invoice = allocation.settles
+      next unless invoice.is_a?(VendorInvoice) || invoice.is_a?(CustomerInvoice)
+
+      invoice.update!(amount_paid_cents: [invoice.amount_paid_cents - allocation.amount_cents, 0].max)
+      invoice.sync_payment_status!
+    end
+  end
+
   def remove_ledger
     return if backfilled?
 

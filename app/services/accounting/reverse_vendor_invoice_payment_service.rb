@@ -1,38 +1,27 @@
 # frozen_string_literal: true
 
 module Accounting
-  # Reverses a single vendor invoice payment:
-  #   1. Destroys the auto-generated Expense → Expense#remove_treasury_ledger
-  #      credits cash back to the paying treasury.
-  #   2. Reverses the supplier AP ledger entry for this payment.
-  #   3. Reduces invoice.amount_paid_cents and re-syncs payment status
-  #      (paid → partial/unpaid as appropriate).
-  #   4. Destroys the VendorInvoicePayment record.
+  # Reverses one supplier payment by voiding the voucher that made it.
+  #
+  # Everything the payment did hangs off that voucher, so voiding it undoes the
+  # lot: the cash goes back to the treasury it left, the supplier's payable is
+  # restored, the invoice's paid-to-date is given back and its status re-synced,
+  # and the journal entry is removed. This used to unwind four records by hand.
   class ReverseVendorInvoicePaymentService
     class Error < StandardError; end
 
     def initialize(payment:, user:)
-      @payment = payment
-      @invoice = payment.vendor_invoice
+      @voucher = payment
+      @invoice = payment.payment_allocations.map(&:settles).compact.find { |s| s.is_a?(VendorInvoice) }
       @user = user
     end
 
     def call
-      raise Error, I18n.t("flash.vendor_invoice.already_void") if @invoice.void?
+      raise Error, I18n.t("flash.vendor_invoice.already_void") if @invoice&.void?
 
-      ActiveRecord::Base.transaction do
-        @payment.expense&.destroy!
+      ActiveRecord::Base.transaction { @voucher.destroy! }
 
-        ::Accounting::SupplierApLedgerService.reverse_payment!(payment: @payment, user: @user)
-
-        new_paid = [@invoice.amount_paid_cents - @payment.amount_cents, 0].max
-        @invoice.update!(amount_paid_cents: new_paid)
-        @invoice.sync_payment_status!
-
-        @payment.destroy!
-      end
-
-      @invoice
+      @invoice&.reload
     end
   end
 end

@@ -132,11 +132,13 @@ RSpec.describe "payment_allocations:backfill" do
       inv.vendor_invoice_lines.build(ingredient: ingredient, quantity: 10, line_total_cents: 5_000)
       inv.save!
 
-      payment = Accounting::RecordVendorInvoicePaymentService.new(
+      # A VendorInvoicePayment as it exists in production from before payments
+      # became vouchers. Built directly: the service writes a voucher now, and
+      # these old rows are exactly what the backfill is for.
+      payment = VendorInvoicePayment.create!(
         vendor_invoice: inv, user: user, treasury: safe,
-        amount_cents: 3_000, payment_date: Date.current
-      ).call
-      payment.payment_allocations.delete_all
+        amount_cents: 3_000, payment_date: Date.current, company: company
+      )
 
       task.invoke("commit")
 

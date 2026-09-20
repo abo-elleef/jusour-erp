@@ -20,9 +20,7 @@ module Accounting
       raise Error, I18n.t("flash.vendor_invoice.already_void") if @invoice.void?
 
       ActiveRecord::Base.transaction do
-        @invoice.vendor_invoice_payments.includes(:expense).order(created_at: :desc).each do |payment|
-          reverse_payment!(payment)
-        end
+        @invoice.payment_vouchers.to_a.each { |voucher| voucher.destroy! }
 
         clear_freight_expense!
 
@@ -43,13 +41,5 @@ module Accounting
       expense.destroy!
     end
 
-    def reverse_payment!(payment)
-      # Destroying the auto-generated expense restores the payment treasury
-      # balance via Expense#remove_treasury_ledger.
-      payment.expense&.destroy!
-
-      SupplierApLedgerService.reverse_payment!(payment: payment, user: @user)
-      payment.destroy!
-    end
   end
 end

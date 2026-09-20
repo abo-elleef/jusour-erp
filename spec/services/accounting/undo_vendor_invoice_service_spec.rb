@@ -81,8 +81,7 @@ RSpec.describe Accounting::UndoVendorInvoiceService do
       ap = supplier.reload.ap_treasury
       expect(ap.balance_cents).to eq(5_000)
 
-      payment = record_payment!(invoice, amount_cents: 5_000)
-      expense = payment.expense
+      voucher = record_payment!(invoice, amount_cents: 5_000)
 
       invoice.reload
       payment_treasury.reload
@@ -100,14 +99,14 @@ RSpec.describe Accounting::UndoVendorInvoiceService do
 
       expect(invoice).to be_void
       expect(invoice.amount_paid_cents).to eq(0)
-      expect(invoice.vendor_invoice_payments).to be_empty
-      expect(Expense.exists?(expense.id)).to be(false)
+      expect(invoice.payment_vouchers).to be_empty
+      expect(Voucher.exists?(voucher.id)).to be(false)
       expect(payment_treasury.balance_cents).to eq(100_000)
       expect(ap.balance_cents).to eq(0)
       expect(TreasuryTransaction.where(source_record: invoice)).to be_empty
-      expect(TreasuryTransaction.where(source_record_type: "VendorInvoicePayment")).to be_empty
+      expect(TreasuryTransaction.where(source_record_type: "Voucher")).to be_empty
       expect(JournalEntry.where(source_record_type: "VendorInvoice", source_record_id: invoice.id)).to be_empty
-      expect(JournalEntry.where(source_record_type: "VendorInvoicePayment")).to be_empty
+      expect(JournalEntry.where(source_record_type: "Voucher")).to be_empty
     end
   end
 

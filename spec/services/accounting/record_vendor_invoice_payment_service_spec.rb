@@ -57,12 +57,14 @@ RSpec.describe Accounting::RecordVendorInvoicePaymentService do
     expect(invoice).to be_paid
     expect(invoice.amount_paid_cents).to eq(5_000)
     expect(invoice.balance_due_cents).to eq(0)
-    expect(payment.expense).to have_attributes(
-      amount_cents: 5_000,
-      is_auto_generated: true,
-      treasury: treasury
-    )
-    expect(payment.expense.expense_category.name).to eq("Vendor purchases")
+    # The payment is a voucher — a document with a number the accountant can
+    # print — rather than three records standing in for one event.
+    expect(payment).to be_a(Voucher)
+    expect(payment).to be_payment
+    expect(payment.amount_cents).to eq(5_000)
+    expect(payment.treasury).to eq(treasury)
+    expect(payment.counterparty).to eq(supplier.name)
+    expect(payment.payment_allocations.sole.settles).to eq(invoice)
     expect(treasury.balance_cents).to eq(95_000)
   end
 
@@ -82,7 +84,7 @@ RSpec.describe Accounting::RecordVendorInvoicePaymentService do
     expect(invoice.amount_paid_cents).to eq(2_000)
     expect(invoice.balance_due_cents).to eq(3_000)
     expect(treasury.balance_cents).to eq(98_000)
-    expect(invoice.vendor_invoice_payments.count).to eq(1)
+    expect(invoice.payment_vouchers.count).to eq(1)
 
     described_class.new(
       vendor_invoice: invoice,
@@ -97,7 +99,7 @@ RSpec.describe Accounting::RecordVendorInvoicePaymentService do
 
     expect(invoice).to be_paid
     expect(invoice.amount_paid_cents).to eq(5_000)
-    expect(invoice.vendor_invoice_payments.count).to eq(2)
+    expect(invoice.payment_vouchers.count).to eq(2)
     expect(treasury.balance_cents).to eq(95_000)
   end
 
@@ -166,8 +168,13 @@ RSpec.describe Accounting::RecordVendorInvoicePaymentService do
       expect(expense_charges).to eq(0)
     end
 
-    it "raises no voucher, since the payment is already its own document" do
-      expect { pay!(5_000) }.not_to change(Voucher, :count)
+    it "is itself the document, and raises exactly one" do
+      expect { pay!(5_000) }.to change(Voucher, :count).by(1)
+      expect(Voucher.sole.payment_allocations.sole.settles).to eq(invoice)
+    end
+
+    it "writes no Expense — a settlement is not a cost" do
+      expect { pay!(5_000) }.not_to change(Expense, :count)
     end
 
     it "leaves nothing on the accrued-expenses account" do
@@ -181,12 +188,18 @@ RSpec.describe Accounting::RecordVendorInvoicePaymentService do
       expect(accrued).to eq(0)
     end
 
-    it "still moves the cash out of the treasury" do
+    it "moves the cash out of the treasury, and the payable down with it" do
       pay!(5_000)
+      voucher = Voucher.sole
 
-      txn = TreasuryTransaction.find_by(source_record: Expense.last)
-      expect(txn.amount_cents).to eq(-5_000)
-      expect(txn.treasury_id).to eq(treasury.id)
+      cash_txn = TreasuryTransaction.find_by(source_record: voucher, treasury: treasury)
+      expect(cash_txn.amount_cents).to eq(-5_000)
+      expect(cash_txn.kind).to eq("voucher_payment")
+
+      ap_txn = TreasuryTransaction.find_by(source_record: voucher,
+                                           treasury: supplier.ap_treasury)
+      expect(ap_txn.amount_cents).to eq(-5_000)
+      expect(ap_txn.kind).to eq("ap_payment")
     end
   end
 end

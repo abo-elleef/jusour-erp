@@ -348,7 +348,7 @@ module Admin
 
       def prepare_show
         @lines = @vendor_invoice.vendor_invoice_lines.includes(:ingredient, :stock_batch)
-        @payments = @vendor_invoice.vendor_invoice_payments.includes(:user, :treasury).order(payment_date: :desc, created_at: :desc)
+        @payments = @vendor_invoice.payment_vouchers.includes(:user, :treasury)
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
         @freight_expense = @vendor_invoice.freight_expense
         @prev_invoice = @vendor_invoice.newer
@@ -356,7 +356,7 @@ module Admin
 
         @invoice_je = JournalEntry.for_source(@vendor_invoice).includes(:lines).first
         payment_jes = JournalEntry.includes(:lines).where(
-          source_record_type: "VendorInvoicePayment",
+          source_record_type: "Voucher",
           source_record_id: @payments.map(&:id)
         )
         @payment_jes = payment_jes.index_by(&:source_record_id)
