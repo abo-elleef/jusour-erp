@@ -124,4 +124,69 @@ RSpec.describe Accounting::RecordVendorInvoicePaymentService do
       ).call
     end.to raise_error(Accounting::RecordVendorInvoicePaymentService::Error, "Payment amount exceeds balance due")
   end
+
+  # A supplier payment's entry belongs to record_vendor_invoice_payment!, which
+  # posts the whole double entry on its own. The Expense it also writes exists so
+  # the payment shows up as one — it must post nothing, or cash is credited twice
+  # and goods already expensed to Purchases (5100) at receipt are charged again.
+  describe "what the ledger ends up holding" do
+    before do
+      ExpenseCategory.find_or_create_by!(name: "Vendor purchases", company: Current.company) do |c|
+        c.category_type = "other"
+        c.system_managed = true
+        c.position = 0
+      end
+    end
+
+    def pay!(amount_cents)
+      described_class.new(vendor_invoice: invoice, user: user, treasury: treasury,
+                          amount_cents: amount_cents, payment_date: Date.current).call
+    end
+
+    it "credits cash exactly once, for exactly what left the treasury" do
+      pay!(5_000)
+
+      cash_moved = JournalEntryLine.joins(:journal_entry)
+        .where(journal_entries: { company_id: Current.company.id })
+        .where(treasury_id: treasury.id)
+        .sum("debit_cents - credit_cents")
+
+      expect(cash_moved).to eq(-5_000)
+      expect(treasury.reload.balance_cents).to eq(95_000)
+    end
+
+    it "charges no expense account — the goods were expensed when the invoice arrived" do
+      pay!(5_000)
+
+      expense_charges = JournalEntryLine.joins(:journal_entry)
+        .where(journal_entries: { company_id: Current.company.id })
+        .where(account_type: "expense")
+        .sum("debit_cents - credit_cents")
+
+      expect(expense_charges).to eq(0)
+    end
+
+    it "raises no voucher, since the payment is already its own document" do
+      expect { pay!(5_000) }.not_to change(Voucher, :count)
+    end
+
+    it "leaves nothing on the accrued-expenses account" do
+      pay!(5_000)
+
+      accrued = JournalEntryLine.joins(:journal_entry)
+        .where(journal_entries: { company_id: Current.company.id })
+        .where(account_code: ::Accounting::JournalEntryService::ACCRUED_EXPENSES_CODE)
+        .sum("credit_cents - debit_cents")
+
+      expect(accrued).to eq(0)
+    end
+
+    it "still moves the cash out of the treasury" do
+      pay!(5_000)
+
+      txn = TreasuryTransaction.find_by(source_record: Expense.last)
+      expect(txn.amount_cents).to eq(-5_000)
+      expect(txn.treasury_id).to eq(treasury.id)
+    end
+  end
 end

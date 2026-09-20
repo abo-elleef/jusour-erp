@@ -45,6 +45,18 @@ class Expense < ApplicationRecord
 
   private
 
+  # A supplier payment writes an Expense so the payment shows up as one, but the
+  # entry for it belongs to Accounting::JournalEntryService.record_vendor_invoice_payment!,
+  # which posts DR Accounts Payable / CR cash — the whole double entry, on its own.
+  #
+  # So this one posts neither an entry nor a voucher: doing either would credit
+  # cash a second time and charge an expense account for goods already expensed
+  # to Purchases (5100) when the invoice was received. It still moves the cash,
+  # because nothing else does.
+  def ledger_owned_elsewhere?
+    source_record_type == "VendorInvoicePayment"
+  end
+
   def voucher_direction = Voucher::PAYMENT
   def settlement_date   = expense_date
   def settlement_date_changed? = saved_change_to_expense_date?
@@ -52,6 +64,8 @@ class Expense < ApplicationRecord
   # The expense no longer moves cash — a payment voucher does. All this writes
   # is the obligation.
   def sync_treasury_ledger
+    return Accounting::TreasuryLedgerService.sync_expense_cash!(self) if ledger_owned_elsewhere?
+
     Accounting::JournalEntryService.record_expense!(self)
   end
 

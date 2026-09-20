@@ -8,6 +8,13 @@ module Accounting
       new.remove_for_source(source, kinds: kinds)
     end
 
+    # Only for an expense whose journal entry belongs to another service — see
+    # Expense#ledger_owned_elsewhere?. Everything else moves its cash through a
+    # voucher.
+    def self.sync_expense_cash!(expense)
+      new.sync_expense_cash!(expense)
+    end
+
     def self.sync_voucher!(voucher)
       new.sync_voucher!(voucher)
     end
@@ -77,6 +84,21 @@ module Accounting
         source: snapshot
       )
       JournalEntryService.record_payroll_salary!(snapshot)
+    end
+
+    def sync_expense_cash!(expense)
+      remove_for_source(expense)
+      return if expense.treasury_id.blank?
+
+      record!(
+        treasury: expense.treasury,
+        user: expense.user,
+        amount_cents: -expense.amount_cents,
+        kind: "expense",
+        description: expense.description,
+        occurred_on: expense.expense_date,
+        source: expense
+      )
     end
 
     # A voucher is the only thing that moves this cash: the income or expense it

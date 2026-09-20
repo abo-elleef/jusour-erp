@@ -50,6 +50,7 @@ module VoucherSettleable
 
   def create_settling_voucher
     return unless settled_on_issue?
+    return if ledger_owned_elsewhere?
     return if payment_allocations.any?
 
     raise_voucher!
@@ -59,7 +60,12 @@ module VoucherSettleable
   # a treasury or a date that is no longer true. The old one is destroyed, which
   # returns its cash, and a fresh one issued — so the voucher number changes with
   # the document, which is what an accountant would expect of a reissued سند.
+  # Records whose entry belongs to another service never had a voucher to keep
+  # in step. Overridden where that is possible; false everywhere else.
+  def ledger_owned_elsewhere? = false
+
   def resync_settling_voucher
+    return if ledger_owned_elsewhere?
     return unless saved_change_to_amount_cents? ||
                   saved_change_to_treasury_id? ||
                   settlement_date_changed?
