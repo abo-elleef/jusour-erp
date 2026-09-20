@@ -72,8 +72,17 @@ class Voucher < ApplicationRecord
   # was missing, not a reclassification of the money.
   def treasury_kind
     return "adjustment" if equity_adjustment?
+    return "payroll_advance" if settles_only?(::PayrollAdvance)
 
     receipt? ? "voucher_receipt" : "voucher_payment"
+  end
+
+  # True when the voucher settles at least one thing and everything it settles
+  # is of the given type — the kind describes the whole movement, so a mixed
+  # voucher stays a plain voucher.
+  def settles_only?(klass)
+    targets = payment_allocations.map(&:settles)
+    targets.any? && targets.all? { |t| t.is_a?(klass) }
   end
   def receipt? = direction == RECEIPT
   def payment? = direction == PAYMENT

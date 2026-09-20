@@ -212,6 +212,7 @@ module Accounting
         when ::CustomerInvoice then [account_for_treasury(settles.customer.ar_treasury), "asset"]
         when ::Customer        then [account_for_treasury(settles.ar_treasury), "asset"]
         when ::Supplier        then [account_for_treasury(settles.ap_treasury), "liability"]
+        when ::PayrollAdvance  then [payroll_advances_account, "expense"]
         else default_counter_for(voucher)
         end
       end
@@ -220,6 +221,12 @@ module Accounting
         return [retained_earnings_account, "equity"] if voucher.equity_adjustment?
 
         voucher.receipt? ? [other_receivables_account, "asset"] : [accrued_expenses_account, "liability"]
+      end
+
+      def payroll_advances_account
+        { code: ADVANCE_CODE,
+          name: I18n.t("accounting.journal_entries.accounts.payroll_advances",
+                       default: "Payroll — Advances") }
       end
 
       def retained_earnings_account

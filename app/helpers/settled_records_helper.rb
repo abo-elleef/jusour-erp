@@ -17,6 +17,9 @@ module SettledRecordsHelper
     when VendorInvoice, CustomerInvoice then record.invoice_number
     when Customer                      then record.display_name
     when Supplier                      then record.name
+    when PayrollAdvance                then t("accounting.vouchers.advance_for",
+                                              name: record.user&.name,
+                                              default: "Advance — #{record.user&.name}")
     else record&.to_s
     end
   end
@@ -29,6 +32,7 @@ module SettledRecordsHelper
     when CustomerInvoice then admin_sales_customer_invoice_path(record)
     when Customer        then admin_sales_customer_statement_path(record)
     when Supplier        then admin_inventory_supplier_path(record)
+    when PayrollAdvance  then admin_user_path(record.user)
     end
   end
 

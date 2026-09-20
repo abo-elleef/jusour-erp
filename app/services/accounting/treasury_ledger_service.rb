@@ -51,21 +51,31 @@ module Accounting
       new.sync_drawer_deposit!(session)
     end
 
+    # An advance is money handed to an employee against next month's pay. It
+    # happens daily here, and it left no document — the same gap the expense and
+    # the supplier payment had. It is a voucher now, settling the advance, with
+    # the advances account (5500) as its far side, which is exactly the entry it
+    # posted before.
+    #
+    # The movement keeps the `payroll_advance` kind: the cash flow statement
+    # counts it as operating and the profit-to-cash bridge compares it against
+    # what 5500 was charged. Nothing about the money is reclassified.
     def sync_payroll_advance!(advance)
       remove_for_source(advance)
       JournalEntryService.destroy_for_source!(advance)
       return if advance.treasury_id.blank?
 
-      record!(
+      RecordVoucherService.new(
+        direction: Voucher::PAYMENT,
         treasury: advance.treasury,
         user: advance.paid_by,
-        amount_cents: -advance.amount_cents,
-        kind: "payroll_advance",
-        description: payroll_advance_description(advance),
-        occurred_on: advance.paid_on,
-        source: advance
-      )
-      JournalEntryService.record_payroll_advance!(advance)
+        amount_cents: advance.amount_cents,
+        voucher_date: advance.paid_on,
+        counterparty: advance.user.name,
+        notes: payroll_advance_description(advance),
+        company: advance.company,
+        allocations: [{ settles: advance, amount_cents: advance.amount_cents }]
+      ).call
     end
 
     def sync_payroll_salary!(snapshot)

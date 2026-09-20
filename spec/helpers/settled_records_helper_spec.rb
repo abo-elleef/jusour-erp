@@ -60,6 +60,13 @@ RSpec.describe SettledRecordsHelper, type: :helper do
       CustomerInvoice.create!(company: company, customer: create(:customer, company: company),
                               user: user, location: create(:location, company: company),
                               invoice_date: Date.current)
+    when "PayrollAdvance"
+      staff = create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000)
+      PayrollAdvance.create!(company: company, user: staff, paid_by: user,
+                             treasury: Treasury.create!(company: company, name: "Adv Safe #{SecureRandom.hex(3)}",
+                                                        treasury_type: "safe", opening_balance_cents: 100_000,
+                                                        balance_cents: 100_000),
+                             amount_cents: 10_000, paid_on: Date.current)
     when "Customer" then create(:customer, company: company)
     when "Supplier" then Supplier.create!(name: "Farms #{SecureRandom.hex(3)}", lead_time_days: 2, company: company)
     else raise "no fixture for settleable type #{type}"

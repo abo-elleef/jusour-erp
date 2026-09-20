@@ -2233,6 +2233,7 @@ ar:
         void: "ملغاة"
       payment_methods:
         on_account: "على الحساب"
+        advance_for: "سلفة — %{name}"
         cash: "نقدًا"
         instapay: "إنستاباي"
         vodafone_cash: "فودافون كاش"

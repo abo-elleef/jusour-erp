@@ -17,7 +17,8 @@ class PaymentAllocation < ApplicationRecord
   #
   # The specs walk this list, so a type added here without those fails rather
   # than raising NoMethodError on a page nobody tested.
-  SETTLEABLE_TYPES = %w[Expense Income VendorInvoice CustomerInvoice Customer Supplier].freeze
+  SETTLEABLE_TYPES = %w[Expense Income VendorInvoice CustomerInvoice Customer Supplier
+                        PayrollAdvance].freeze
 
   belongs_to :payment, polymorphic: true
   belongs_to :settles, polymorphic: true

@@ -33,13 +33,13 @@ module Admin
         month = @advance.payroll_month
 
         ApplicationRecord.transaction do
+          # Legacy rows only. An advance paid before it became a voucher owns its
+          # own treasury movement and entry, and deleting it has to clear both —
+          # leaving an entry behind for a payment that no longer exists had the
+          # P&L counting deleted advances. An advance paid since is settled by a
+          # voucher, which owns the cash and the entry and is voided by
+          # PayrollAdvance#destroy_paying_voucher; for those these two are no-ops.
           ::Accounting::TreasuryLedgerService.remove_source!(@advance)
-          # Has to run while the advance still exists — it is addressed by class and
-          # id — and cannot be left to the model's `dependent: :destroy`, which only
-          # reaches treasury transactions. Editing an advance already clears its
-          # entry through `sync_payroll_advance!`; deleting one did not, so every
-          # deletion left an entry behind for a payment that no longer existed and
-          # the P&L went on counting it.
           ::Accounting::JournalEntryService.destroy_for_source!(@advance)
           @advance.destroy!
         end

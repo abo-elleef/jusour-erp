@@ -2231,6 +2231,7 @@ en:
         paid: "Paid"
       payment_methods:
         on_account: "On account"
+        advance_for: "Advance — %{name}"
         cash: "Cash"
         instapay: "InstaPay"
         vodafone_cash: "Vodafone Cash"

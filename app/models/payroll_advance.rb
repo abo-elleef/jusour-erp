@@ -10,6 +10,11 @@ class PayrollAdvance < ApplicationRecord
   belongs_to :treasury
   belongs_to :paid_by, class_name: "User"
   has_many :treasury_transactions, as: :source_record, dependent: :destroy
+  has_many :payment_allocations, as: :settles, dependent: :destroy
+
+  # Prepended so it runs before `dependent: :destroy` clears the allocations,
+  # which are the only route back to the voucher that paid this.
+  before_destroy :destroy_paying_voucher, prepend: true
 
   monetize :amount_cents
 
@@ -34,6 +39,15 @@ class PayrollAdvance < ApplicationRecord
   end
 
   private
+
+  # The voucher owns the cash and the entry, so voiding it is what gives the
+  # money back.
+  def destroy_paying_voucher
+    voucher_ids = payment_allocations.where(payment_type: "Voucher").select(:payment_id)
+    Voucher.where(id: voucher_ids).find_each do |voucher|
+      voucher.destroy! if voucher.payment_allocations.where.not(settles: self).none?
+    end
+  end
 
   def derive_payroll_month_from_paid_on
     return if paid_on.blank?
