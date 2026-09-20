@@ -30,6 +30,11 @@ class Voucher < ApplicationRecord
 
   belongs_to :treasury
   belongs_to :user
+  belongs_to :voided_by, class_name: "User", optional: true
+  # The voucher issued in this one's place, when it was voided because the
+  # record it settled changed.
+  belongs_to :replaced_by, class_name: "Voucher", optional: true
+  has_one :replaces, class_name: "Voucher", foreign_key: :replaced_by_id, dependent: :nullify
 
   has_many :payment_allocations, as: :payment, dependent: :destroy
 
@@ -50,6 +55,11 @@ class Voucher < ApplicationRecord
   # carries a number, a date and its allocation, and posts nothing — the expense
   # or income it describes already wrote the treasury row and the journal entry.
   # Anything summing voucher cash must start from `posting`.
+  # Voided vouchers stay in the book — they are why a number is missing from the
+  # sequence — but they have settled nothing and moved no money since.
+  scope :active, -> { where(voided_at: nil) }
+  scope :voided, -> { where.not(voided_at: nil) }
+
   scope :posting,    -> { where(backfilled_at: nil) }
   scope :backfilled, -> { where.not(backfilled_at: nil) }
 
@@ -63,7 +73,29 @@ class Voucher < ApplicationRecord
   before_destroy :unapply_from_invoices, prepend: true
   after_destroy :remove_ledger
 
+  # Voiding is how a voucher is undone. The money goes back, the entry is
+  # removed, what it settled is released — and the document stays in the book,
+  # marked, so the number it used is never handed out again and the hole it
+  # leaves in the sequence has something in it.
+  #
+  # Destroying one is still possible and still cleans up after itself, but
+  # nothing in the app does it any more: a document that was issued and printed
+  # should not be able to vanish.
+  def void!(user: nil, reason: nil, replaced_by: nil)
+    return self if voided?
+
+    transaction do
+      unapply_from_invoices
+      remove_ledger
+      payment_allocations.destroy_all
+      update!(voided_at: Time.current, voided_by: user,
+              voided_reason: reason, replaced_by: replaced_by)
+    end
+
+    self
+  end
   def backfilled?          = backfilled_at.present?
+  def voided?              = voided_at.present?
   def equity_adjustment?   = purpose == EQUITY_ADJUSTMENT
 
   # An adjustment keeps the `adjustment` treasury kind it has always had. The

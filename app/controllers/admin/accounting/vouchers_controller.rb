@@ -21,10 +21,11 @@ module Admin
         scope = scope.where(direction: params[:direction]) if Voucher::DIRECTIONS.include?(params[:direction])
         scope = scope.where(treasury_id: params[:treasury_id]) if params[:treasury_id].present?
 
-        totals = scope.unscope(:includes)
+        totals = scope.unscope(:includes).active
         @received_cents = totals.receipts.sum(:amount_cents)
         @paid_cents     = totals.payments.sum(:amount_cents)
         @total_count    = totals.count
+        @voided_count   = scope.unscope(:includes).voided.count
 
         ordered = scope.order(voucher_date: :desc, created_at: :desc)
 
@@ -91,7 +92,7 @@ module Admin
           settles:      @voucher.payment_allocations.map { |a| helpers.settled_label(a.settles) }.compact
         }
 
-        @voucher.destroy!
+        @voucher.void!(user: current_user, reason: :voided_by_user)
         AuditLogEntry.record!(action: "voucher.destroy", record: @voucher, user: current_user,
                               changes_snapshot: snapshot)
 
@@ -160,7 +161,8 @@ module Admin
             t("accounting.vouchers.number"), t("accounting.shared.day"),
             t("accounting.vouchers.direction"), t("accounting.shared.amount"),
             t("accounting.shared.treasury"), t("accounting.vouchers.counterparty"),
-            t("accounting.vouchers.settles"), t("accounting.shared.recorded_by")
+            t("accounting.vouchers.settles"), t("accounting.shared.recorded_by"),
+            t("accounting.vouchers.status")
           ]
           scope.find_each do |voucher|
             csv << [
@@ -171,7 +173,8 @@ module Admin
               voucher.treasury&.name,
               voucher.counterparty,
               voucher.payment_allocations.map { |a| helpers.settled_label(a.settles) }.compact.join(" · "),
-              voucher.user&.name
+              voucher.user&.name,
+              voucher.voided? ? t("accounting.vouchers.voided") : t("accounting.vouchers.live")
             ]
           end
         end

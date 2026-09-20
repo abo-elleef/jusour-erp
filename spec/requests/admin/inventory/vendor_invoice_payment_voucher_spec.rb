@@ -67,7 +67,7 @@ RSpec.describe "Paying a supplier invoice", type: :request do
 
     delete admin_inventory_vendor_invoice_vendor_invoice_payment_path(invoice, voucher)
 
-    expect(Voucher.exists?(voucher.id)).to be(false)
+    expect(voucher.reload).to be_voided
     expect(treasury.reload.balance_cents).to eq(100_000)
     expect(invoice.reload.amount_paid_cents).to eq(0)
     expect(invoice.payment_status).to eq("unpaid")

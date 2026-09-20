@@ -79,7 +79,7 @@ RSpec.describe "Paying a payroll advance" do
 
     advance.destroy!
 
-    expect(Voucher.exists?(voucher.id)).to be(false)
+    expect(voucher.reload).to be_voided
     expect(safe.reload.balance_cents).to eq(500_000)
     expect(JournalEntry.where(source_record_type: "Voucher", source_record_id: voucher.id)).to be_empty
   end

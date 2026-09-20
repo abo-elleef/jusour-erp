@@ -20,7 +20,7 @@ module Accounting
       raise Error, I18n.t("flash.vendor_invoice.already_void") if @invoice.void?
 
       ActiveRecord::Base.transaction do
-        @invoice.payment_vouchers.to_a.each { |voucher| voucher.destroy! }
+        @invoice.payment_vouchers.to_a.each { |voucher| voucher.void!(user: @user, reason: :invoice_undone) }
 
         clear_freight_expense!
 

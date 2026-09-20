@@ -100,7 +100,7 @@ RSpec.describe Accounting::UndoVendorInvoiceService do
       expect(invoice).to be_void
       expect(invoice.amount_paid_cents).to eq(0)
       expect(invoice.payment_vouchers).to be_empty
-      expect(Voucher.exists?(voucher.id)).to be(false)
+      expect(voucher.reload).to be_voided
       expect(payment_treasury.balance_cents).to eq(100_000)
       expect(ap.balance_cents).to eq(0)
       expect(TreasuryTransaction.where(source_record: invoice)).to be_empty

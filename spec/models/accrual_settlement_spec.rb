@@ -108,12 +108,21 @@ RSpec.describe "Accrual and settlement" do
       expect(expense.outstanding_cents).to eq(0)
     end
 
-    it "reissues the voucher when the amount is edited" do
+    it "voids the voucher and issues a replacement when the amount is edited" do
+      original = Voucher.sole
+
       expense.update!(amount_cents: 8_000)
 
       expect(cash.reload.balance_cents).to eq(92_000)
-      expect(Voucher.sole.amount_cents).to eq(8_000)
       expect(balance_of(ACCRUED)).to eq(0)
+
+      # The old document stays in the book, marked, pointing at its replacement,
+      # so the number it used is never handed out again.
+      expect(original.reload).to be_voided
+      replacement = Voucher.active.sole
+      expect(replacement.amount_cents).to eq(8_000)
+      expect(original.replaced_by).to eq(replacement)
+      expect(Voucher.count).to eq(2)
     end
 
     it "moves the cash to the other treasury when the treasury is changed" do
@@ -130,7 +139,8 @@ RSpec.describe "Accrual and settlement" do
       expense.update!(treasury: nil)
 
       expect(cash.reload.balance_cents).to eq(100_000)
-      expect(Voucher.count).to eq(0)
+      expect(Voucher.active).to be_empty
+      expect(Voucher.voided.sole).to be_present
       expect(balance_of(ACCRUED)).to eq(5_000)
       expect(expense.reload.outstanding_cents).to eq(5_000)
     end
@@ -139,7 +149,7 @@ RSpec.describe "Accrual and settlement" do
       expense.destroy!
 
       expect(cash.reload.balance_cents).to eq(100_000)
-      expect(Voucher.count).to eq(0)
+      expect(Voucher.active).to be_empty
       expect(balance_of(ACCRUED)).to eq(0)
     end
   end

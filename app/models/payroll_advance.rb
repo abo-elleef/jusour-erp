@@ -45,7 +45,7 @@ class PayrollAdvance < ApplicationRecord
   def destroy_paying_voucher
     voucher_ids = payment_allocations.where(payment_type: "Voucher").select(:payment_id)
     Voucher.where(id: voucher_ids).find_each do |voucher|
-      voucher.destroy! if voucher.payment_allocations.where.not(settles: self).none?
+      voucher.void!(reason: :source_removed) if voucher.payment_allocations.where.not(settles: self).none?
     end
   end
 

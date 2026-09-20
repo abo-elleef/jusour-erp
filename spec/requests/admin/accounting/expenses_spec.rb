@@ -84,7 +84,7 @@ RSpec.describe "Admin::Accounting::Expenses", type: :request do
 
       expect { delete admin_accounting_expense_path(expense) }
         .to change(Expense, :count).by(-1)
-        .and change(Voucher, :count).by(-1)
+        .and change { Voucher.active.count }.by(-1)
 
       expect(JournalEntry.where(source_record_type: "Expense", source_record_id: expense.id)).to be_empty
       expect(TreasuryTransaction.where(source_record_type: "Voucher", source_record_id: voucher.id)).to be_empty

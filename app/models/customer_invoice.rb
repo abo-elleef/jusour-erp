@@ -36,7 +36,7 @@ class CustomerInvoice < ApplicationRecord
     dependent: :destroy, inverse_of: :customer_invoice
 
   has_many :payment_allocations, as: :settles, dependent: :destroy
-  has_many :payment_vouchers, -> { distinct.order(voucher_date: :desc, created_at: :desc) },
+  has_many :payment_vouchers, -> { distinct.active.order(voucher_date: :desc, created_at: :desc) },
            through: :payment_allocations, source: :payment, source_type: "Voucher"
 
   accepts_nested_attributes_for :customer_invoice_lines, allow_destroy: true,

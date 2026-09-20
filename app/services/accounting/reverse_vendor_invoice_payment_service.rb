@@ -19,7 +19,7 @@ module Accounting
     def call
       raise Error, I18n.t("flash.vendor_invoice.already_void") if @invoice&.void?
 
-      ActiveRecord::Base.transaction { @voucher.destroy! }
+      ActiveRecord::Base.transaction { @voucher.void!(user: @user, reason: :reversed) }
 
       @invoice&.reload
     end

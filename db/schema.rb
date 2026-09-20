@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_20_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_20_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1785,12 +1785,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_20_120000) do
     t.datetime "updated_at", null: false
     t.datetime "backfilled_at"
     t.string "purpose", default: "settlement", null: false
+    t.datetime "voided_at"
+    t.string "voided_reason"
+    t.uuid "voided_by_id"
+    t.uuid "replaced_by_id"
     t.index ["backfilled_at"], name: "index_vouchers_on_backfilled_at"
     t.index ["company_id", "number"], name: "index_vouchers_on_company_id_and_number", unique: true
     t.index ["company_id"], name: "index_vouchers_on_company_id"
     t.index ["direction"], name: "index_vouchers_on_direction"
     t.index ["purpose"], name: "index_vouchers_on_purpose"
+    t.index ["replaced_by_id"], name: "index_vouchers_on_replaced_by_id"
     t.index ["treasury_id"], name: "index_vouchers_on_treasury_id"
+    t.index ["voided_at"], name: "index_vouchers_on_voided_at"
     t.index ["voucher_date"], name: "index_vouchers_on_voucher_date"
   end
 
@@ -2046,6 +2052,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_20_120000) do
   add_foreign_key "vouchers", "companies"
   add_foreign_key "vouchers", "treasuries"
   add_foreign_key "vouchers", "users"
+  add_foreign_key "vouchers", "users", column: "voided_by_id"
+  add_foreign_key "vouchers", "vouchers", column: "replaced_by_id"
   add_foreign_key "workstations", "companies"
   add_foreign_key "workstations", "locations"
   add_foreign_key "workstations", "printers", column: "receipt_printer_id"

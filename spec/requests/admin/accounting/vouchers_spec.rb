@@ -193,8 +193,11 @@ RSpec.describe "Admin::Accounting::Vouchers", type: :request do
       ).call
       expect(cash.reload.balance_cents).to eq(70_000)
 
+      # Voided, not destroyed — the document stays in the book.
       expect { delete admin_accounting_voucher_path(voucher) }
-        .to change(Voucher, :count).by(-1)
+        .to change { Voucher.active.count }.by(-1)
+        .and change { Voucher.count }.by(0)
+      expect(voucher.reload).to be_voided
 
       expect(cash.reload.balance_cents).to eq(100_000)
       expect(expense.reload.outstanding_cents).to eq(30_000)

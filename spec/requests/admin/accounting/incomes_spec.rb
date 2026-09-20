@@ -114,7 +114,7 @@ RSpec.describe "Admin::Accounting::Incomes", type: :request do
 
       expect { delete admin_accounting_income_path(income) }
         .to change(Income, :count).by(-1)
-        .and change(Voucher, :count).by(-1)
+        .and change { Voucher.active.count }.by(-1)
 
       expect(JournalEntry.where(source_record_type: "Income", source_record_id: income.id)).to be_empty
       expect(TreasuryTransaction.where(source_record_type: "Voucher", source_record_id: voucher.id)).to be_empty

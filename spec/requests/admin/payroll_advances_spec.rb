@@ -114,7 +114,7 @@ RSpec.describe "Admin payroll advances", type: :request do
 
         delete admin_user_payroll_advance_path(staff, advance)
 
-        expect(Voucher.exists?(voucher.id)).to be(false)
+        expect(voucher.reload).to be_voided
         expect(JournalEntry.where(source_record_type: "Voucher",
                                   source_record_id: voucher.id)).to be_empty
         expect(TreasuryTransaction.where(source_record_type: "Voucher",

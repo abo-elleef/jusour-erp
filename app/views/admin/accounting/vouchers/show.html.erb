@@ -40,6 +40,29 @@
     </div>
   </div>
 
+  <% if @voucher.voided? %>
+    <div class="rounded-2xl border border-gray-300 bg-gray-50 p-5 mb-6 print:border-gray-400">
+      <p class="text-sm font-bold text-gray-800"><%= t("accounting.vouchers.voided_banner") %></p>
+      <p class="text-xs text-gray-600 mt-1">
+        <%= t("accounting.vouchers.voided_on", date: l(@voucher.voided_at.to_date, format: :long)) %>
+        <% if @voucher.voided_reason.present? %>
+          · <%= t("accounting.vouchers.void_reasons.#{@voucher.voided_reason}", default: @voucher.voided_reason) %>
+        <% end %>
+      </p>
+      <% if @voucher.replaced_by %>
+        <p class="text-xs text-gray-600 mt-1.5 print:hidden">
+          <%= t("accounting.vouchers.replaced_by") %>
+          <%= voucher_number_link(@voucher.replaced_by) %>
+        </p>
+      <% end %>
+    </div>
+  <% elsif @voucher.replaces %>
+    <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 mb-6 text-xs text-gray-600 print:hidden">
+      <%= t("accounting.vouchers.replaces") %>
+      <%= voucher_number_link(@voucher.replaces) %>
+    </div>
+  <% end %>
+
   <%# ── The document itself ─────────────────────────────────────── %>
   <section class="rounded-2xl border border-gray-200 bg-white p-8 mb-6 print:border-0 print:p-0">
     <div class="text-center border-b border-gray-200 pb-5 mb-6">

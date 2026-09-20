@@ -110,4 +110,67 @@ RSpec.describe "Voucher pages render whatever was settled", type: :request do
     else raise "no fixture for settleable type #{type}"
     end
   end
+
+  describe "a voided voucher" do
+    let(:category) do
+      ExpenseCategory.create!(name: "Rent", category_type: "rent", position: 1, company: company)
+    end
+
+    # Editing the expense voids the voucher that paid it and issues a
+    # replacement, so both states exist to render.
+    def superseded_pair
+      expense = Expense.create!(company: company, user: owner, treasury: cash,
+                                expense_category: category, description: "Rent",
+                                amount_cents: 20_000, expense_date: Date.current)
+      original = Voucher.sole
+      expense.update!(amount_cents: 25_000)
+      [original.reload, Voucher.active.sole]
+    end
+
+    it "renders the voided document, saying so and naming its replacement" do
+      original, replacement = superseded_pair
+
+      get admin_accounting_voucher_path(original)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("accounting.vouchers.voided_banner"))
+      expect(response.body).to include(replacement.number)
+    end
+
+    it "renders the replacement, pointing back at what it replaced" do
+      original, replacement = superseded_pair
+
+      get admin_accounting_voucher_path(replacement)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("accounting.vouchers.replaces"))
+      expect(response.body).to include(original.number)
+    end
+
+    it "lists it, marked, and leaves it out of the totals" do
+      original, replacement = superseded_pair
+
+      get admin_accounting_vouchers_path(start_date: Date.current.beginning_of_year,
+                                         end_date: Date.current)
+
+      expect(response.body).to include(original.number)
+      expect(response.body).to include(I18n.t("accounting.vouchers.voided"))
+      # Only the live document counts toward what was paid — asserted on the
+      # scope rather than the rendered figure, which is formatted per locale.
+      expect(Voucher.active.payments.sum(:amount_cents)).to eq(replacement.amount_cents)
+      expect(Voucher.sum(:amount_cents)).to eq(original.amount_cents + replacement.amount_cents)
+    end
+
+    it "exports both to CSV" do
+      superseded_pair
+
+      get admin_accounting_vouchers_path(format: :csv,
+                                         start_date: Date.current.beginning_of_year,
+                                         end_date: Date.current)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("accounting.vouchers.voided"))
+      expect(response.body).to include(I18n.t("accounting.vouchers.live"))
+    end
+  end
 end

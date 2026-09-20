@@ -10,10 +10,11 @@
 # naming a safe it was never paid from would be a state nobody could read.
 #
 # Editing keeps the voucher honest rather than letting it drift: changing the
-# amount, the treasury or the date rewrites the voucher that settled it, adding
-# a treasury raises one, and clearing the treasury takes it away. A voucher that
-# also settled something else is left alone — it is a real document about more
-# than this record, and rewriting it from here would corrupt the rest.
+# amount, the treasury or the date voids the voucher that settled it and issues
+# a replacement, adding a treasury raises one, and clearing the treasury voids
+# what was there. Nothing is ever destroyed — a voided document stays in the
+# book so its number is never reused. A voucher that also settled something else
+# is left alone; it is a real document about more than this record.
 module VoucherSettleable
   extend ActiveSupport::Concern
 
@@ -56,10 +57,6 @@ module VoucherSettleable
     raise_voucher!
   end
 
-  # An edit rewrites the voucher rather than leaving it describing an amount,
-  # a treasury or a date that is no longer true. The old one is destroyed, which
-  # returns its cash, and a fresh one issued — so the voucher number changes with
-  # the document, which is what an accountant would expect of a reissued سند.
   # Records whose entry belongs to another service never had a voucher to keep
   # in step. Overridden where that is possible; false everywhere else.
   def ledger_owned_elsewhere? = false
@@ -70,8 +67,15 @@ module VoucherSettleable
                   saved_change_to_treasury_id? ||
                   settlement_date_changed?
 
-    sole_settling_voucher&.destroy!
-    raise_voucher! if settled_on_issue?
+    # Void and reissue, rather than destroy and reissue. The voided document
+    # stays in the book, marked, pointing at the one that replaced it: the
+    # number it used is never handed out again, and the hole it leaves in the
+    # sequence is explained by something a person can open.
+    superseded = sole_settling_voucher
+    superseded&.void!(reason: :superseded)
+
+    issued = (raise_voucher! if settled_on_issue?)
+    superseded&.update!(replaced_by: issued) if issued
   end
 
   def raise_voucher!
@@ -92,12 +96,13 @@ module VoucherSettleable
     end
   end
 
-  # Deleting takes back the money paid for it. A voucher that exists only to
-  # settle this goes with it; one that also settled something else stays.
+  # Deleting takes back the money paid for it, by voiding the voucher that paid
+  # it — the document stays in the book. A voucher that also settled something
+  # else is left alone; it is a real document about more than this record.
   def destroy_settling_vouchers
     voucher_ids = payment_allocations.where(payment_type: "Voucher").select(:payment_id)
     Voucher.where(id: voucher_ids).find_each do |voucher|
-      voucher.destroy! if voucher.payment_allocations.where.not(settles: self).none?
+      voucher.void!(reason: :source_removed) if voucher.payment_allocations.where.not(settles: self).none?
     end
   end
 end
