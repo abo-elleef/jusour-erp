@@ -1,10 +1,15 @@
 # frozen_string_literal: true
 
 module Sales
-  # Records a customer payment: settles the AR ledger (cash into the treasury,
-  # Dr treasury / Cr AR) and allocates the amount FIFO across the customer's
-  # outstanding invoices (oldest first), updating each invoice's paid amount and
-  # status. Any leftover reduces the AR balance anyway (an on-account credit).
+  # Takes a payment from a customer by issuing a receipt voucher: cash into the
+  # treasury, the customer's receivable drawn down, and the amount applied to
+  # their outstanding invoices oldest first.
+  #
+  # The split is written down rather than inferred. Each invoice the payment
+  # touches gets its own allocation, and anything left over is allocated to the
+  # customer instead of to an invoice — which is what paying on account means,
+  # and keeps the credit on their own receivable where their statement can
+  # find it, rather than in a pooled account nobody can trace back to them.
   class RecordCustomerPaymentService
     class Error < StandardError; end
 
@@ -21,40 +26,38 @@ module Sales
       raise Error, I18n.t("sales.customer_payments.errors.invalid_amount", default: "Payment amount must be positive.") if @amount_cents <= 0
       raise Error, I18n.t("sales.customer_payments.errors.treasury_required", default: "A treasury is required.") if @treasury.blank?
 
-      payment = nil
-      ActiveRecord::Base.transaction do
-        payment = CustomerPayment.create!(
-          company: @customer.company, customer: @customer, user: @user,
-          treasury: @treasury, amount_cents: @amount_cents, payment_date: @payment_date, notes: @notes
-        )
-        Accounting::CustomerArLedgerService.new(@customer).settle!(
-          treasury: @treasury, amount_cents: @amount_cents, user: @user,
-          occurred_on: @payment_date, source: payment
-        )
-        allocate_fifo!(payment)
-      end
-      payment
+      Accounting::RecordVoucherService.new(
+        direction: Voucher::RECEIPT,
+        treasury: @treasury,
+        user: @user,
+        amount_cents: @amount_cents,
+        voucher_date: @payment_date,
+        counterparty: @customer.display_name,
+        notes: @notes,
+        company: @customer.company,
+        allocations: fifo_allocations
+      ).call
     end
 
     private
 
-    # Apply the payment to the oldest outstanding invoices first, writing down
-    # which invoice got what. Anything left over stays unallocated — that is the
-    # on-account credit, and it is read back as `payment.unallocated_cents`.
-    def allocate_fifo!(payment)
+    # Oldest invoice first, then whatever is left to the customer's account.
+    def fifo_allocations
       remaining = @amount_cents
+      allocations = []
+
       @customer.customer_invoices.outstanding.order(:invoice_date, :created_at).each do |invoice|
         break if remaining <= 0
 
         applied = [invoice.balance_due_cents, remaining].min
         next if applied <= 0
 
-        invoice.update!(amount_paid_cents: invoice.amount_paid_cents + applied)
-        invoice.sync_payment_status!
-        PaymentAllocation.create!(company: @customer.company, payment: payment,
-                                  settles: invoice, amount_cents: applied)
+        allocations << { settles: invoice, amount_cents: applied }
         remaining -= applied
       end
+
+      allocations << { settles: @customer, amount_cents: remaining } if remaining.positive?
+      allocations
     end
   end
 end

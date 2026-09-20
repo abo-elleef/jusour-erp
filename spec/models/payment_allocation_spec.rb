@@ -69,15 +69,21 @@ RSpec.describe PaymentAllocation, type: :model do
       end
     end
 
-    it "leaves an overpayment unallocated rather than inventing an invoice for it" do
-      confirm_invoice!(total_cents: 100_000)
+    it "puts an overpayment on the customer's account, not on an invoice" do
+      invoice = confirm_invoice!(total_cents: 100_000)
 
       payment = Sales::RecordCustomerPaymentService.new(
         customer: customer, treasury: cash, amount_cents: 130_000, user: user
       ).call
 
-      expect(payment.payment_allocations.sum(:amount_cents)).to eq(100_000)
-      expect(payment.unallocated_cents).to eq(30_000)
+      by_target = payment.payment_allocations.group_by { |a| a.settles_type }
+      expect(by_target["CustomerInvoice"].sole.amount_cents).to eq(100_000)
+      expect(by_target["CustomerInvoice"].sole.settles).to eq(invoice)
+
+      # The 30,000 they are in credit for stays on their own receivable, where
+      # their statement can find it — not in a pooled account.
+      expect(by_target["Customer"].sole.amount_cents).to eq(30_000)
+      expect(customer.reload.ar_balance_cents).to eq(-30_000)
     end
 
     it "builds a trail across several payments, so an invoice names every receipt" do

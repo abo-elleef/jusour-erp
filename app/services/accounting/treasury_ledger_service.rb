@@ -136,6 +136,10 @@ module Accounting
                            [allocation.settles.supplier.ap_treasury, "ap_payment"]
                          when ::CustomerInvoice
                            [allocation.settles.customer.ar_treasury, "ar_payment"]
+                         when ::Supplier
+                           [allocation.settles.ap_treasury, "ap_payment"]
+                         when ::Customer
+                           [allocation.settles.ar_treasury, "ar_payment"]
                          end
         next if treasury.blank?
 

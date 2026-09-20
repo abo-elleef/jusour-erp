@@ -44,13 +44,33 @@ RSpec.describe "payment_allocations:backfill" do
     inv.reload
   end
 
-  # A payment taken the way it was before allocations existed.
+  # A payment as production holds it from before allocations existed: a
+  # CustomerPayment row, the AR ledger settled, each invoice's amount_paid_cents
+  # bumped FIFO — and no record anywhere of which invoice got what. Built
+  # directly, because the service writes a voucher now and these old rows are
+  # exactly what the backfill is for.
   def legacy_payment!(amount_cents:, date: Date.current)
-    payment = Sales::RecordCustomerPaymentService.new(
-      customer: customer, treasury: cash, amount_cents: amount_cents,
-      user: user, payment_date: date
-    ).call
-    payment.payment_allocations.delete_all
+    payment = CustomerPayment.create!(
+      company: company, customer: customer, user: user, treasury: cash,
+      amount_cents: amount_cents, payment_date: date
+    )
+    Accounting::CustomerArLedgerService.new(customer).settle!(
+      treasury: cash, amount_cents: amount_cents, user: user,
+      occurred_on: date, source: payment
+    )
+
+    remaining = amount_cents
+    customer.customer_invoices.outstanding.order(:invoice_date, :created_at).each do |invoice|
+      break if remaining <= 0
+
+      applied = [invoice.balance_due_cents, remaining].min
+      next if applied <= 0
+
+      invoice.update!(amount_paid_cents: invoice.amount_paid_cents + applied)
+      invoice.sync_payment_status!
+      remaining -= applied
+    end
+
     payment
   end
 

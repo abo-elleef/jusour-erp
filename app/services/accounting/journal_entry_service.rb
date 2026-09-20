@@ -199,12 +199,19 @@ module Accounting
         legs.map { |(acct, type), cents| [acct, type, cents] }
       end
 
+      # A voucher settles a document — an invoice, an expense, an income — or a
+      # party. Settling a party is money on account: a customer who pays more
+      # than they owe is in credit with us, and that credit belongs on their own
+      # receivable rather than in a pooled "other receivables" nobody can trace
+      # back to them.
       def counter_account_for(settles, voucher)
         case settles
-        when ::Expense        then [accrued_expenses_account, "liability"]
-        when ::Income         then [other_receivables_account, "asset"]
-        when ::VendorInvoice  then [account_for_treasury(settles.supplier.ap_treasury), "liability"]
+        when ::Expense         then [accrued_expenses_account, "liability"]
+        when ::Income          then [other_receivables_account, "asset"]
+        when ::VendorInvoice   then [account_for_treasury(settles.supplier.ap_treasury), "liability"]
         when ::CustomerInvoice then [account_for_treasury(settles.customer.ar_treasury), "asset"]
+        when ::Customer        then [account_for_treasury(settles.ar_treasury), "asset"]
+        when ::Supplier        then [account_for_treasury(settles.ap_treasury), "liability"]
         else default_counter_for(voucher)
         end
       end

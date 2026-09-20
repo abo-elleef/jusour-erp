@@ -15,7 +15,6 @@ module Admin
       def show
         @statement = ::Sales::CustomerAgingService.new(@customer).call
         @invoices = @customer.customer_invoices.recent.limit(50)
-        @payments = @customer.customer_payments.recent.limit(20)
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       end
 
