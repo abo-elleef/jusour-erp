@@ -45,14 +45,18 @@ class Expense < ApplicationRecord
 
   private
 
-  # A supplier payment writes an Expense so the payment shows up as one, but the
-  # entry for it belongs to Accounting::JournalEntryService.record_vendor_invoice_payment!,
-  # which posts DR Accounts Payable / CR cash — the whole double entry, on its own.
+  # Legacy only. A supplier payment used to write an Expense so that it showed
+  # up as one, while the entry for it belonged to
+  # JournalEntryService.record_vendor_invoice_payment! — which posts
+  # DR Accounts Payable / CR cash, the whole double entry on its own. Such an
+  # expense must post neither an entry nor a voucher: either would credit cash
+  # twice and charge an expense account for goods already expensed to Purchases
+  # (5100) when the invoice was received.
   #
-  # So this one posts neither an entry nor a voucher: doing either would credit
-  # cash a second time and charge an expense account for goods already expensed
-  # to Purchases (5100) when the invoice was received. It still moves the cash,
-  # because nothing else does.
+  # Nothing writes one any more — a supplier payment is a voucher. But rows
+  # written before that change are still in the books, and editing one has to
+  # keep behaving. This goes when VendorInvoicePayment is dropped and those rows
+  # are migrated.
   def ledger_owned_elsewhere?
     source_record_type == "VendorInvoicePayment"
   end

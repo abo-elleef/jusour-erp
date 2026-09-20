@@ -8,13 +8,14 @@ module Accounting
   # balance without touching a single invoice. That left the invoice list and
   # the AP ledger telling two different stories — by 2026-09 they disagreed by
   # 868,924.29 across 11 suppliers, and every invoice involved still read as
-  # unpaid. Routing every payment through real VendorInvoicePayment rows means
-  # the two can no longer drift: the ledger balance IS the sum of what the open
-  # invoices still owe.
+  # unpaid. Routing every payment against the invoices themselves means the two
+  # can no longer drift: the ledger balance IS the sum of what the open invoices
+  # still owe.
   #
   # Nothing here posts money itself. Each allocation goes through
-  # RecordVendorInvoicePaymentService, which already writes the expense, the AP
-  # ledger entry, the journal entry and the invoice's payment status.
+  # RecordVendorInvoicePaymentService, which issues a payment voucher against
+  # the invoice — the cash, the supplier's payable, the journal entry and the
+  # invoice's payment status all follow from that one document.
   class PaySupplierService
     class Error < StandardError; end
 
