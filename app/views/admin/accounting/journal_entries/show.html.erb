@@ -69,7 +69,7 @@
           <tr class="<%= line.debit_cents.positive? ? 'bg-white' : 'table-zebra-alt' %>">
             <td class="p-3 ps-5 font-mono text-xs text-gray-400"><%= line.account_code %></td>
             <td class="p-3 font-medium text-gray-900 <%= line.credit_cents.positive? ? 'ps-10' : '' %>">
-              <%= line.account_name %>
+              <%= ledger_line_account_name(line) %>
             </td>
             <td class="p-3">
               <span class="text-xs px-2 py-0.5 rounded-full <%= account_type_classes(line.account_type) %>">

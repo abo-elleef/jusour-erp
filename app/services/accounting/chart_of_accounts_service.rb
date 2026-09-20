@@ -216,7 +216,7 @@ module Accounting
 
             AccountLine.new(
               code:           code,
-              name:           names[code],
+              name:           JournalEntryService.account_display_name(code, names[code]),
               account_type:   :liability,
               subtype:        "other_payable",
               balance_cents:  balance,

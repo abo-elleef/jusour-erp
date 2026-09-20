@@ -3729,6 +3729,7 @@ en:
         sales_revenue: "Sales revenue"
         sales_clearing: "Sales clearing"
         other_receivables: "Other receivables"
+        accrued_expenses: "Accrued expenses"
         tax_payable: "Tax payable"
       auto:
         fixed_asset_purchase: "Fixed asset — %{name}"

@@ -161,15 +161,24 @@ module Admin
         base = base.where(journal_entries: { date: start_date.. })  if start_date
         base = base.where(journal_entries: { date: ..end_date })    if end_date
 
-        # net debit per account code (debit - credit = expense amount)
-        totals = base.group(:account_code, :account_name)
+        # Net debit per account code (debit - credit = expense amount). Grouped
+        # on the code alone: `account_name` is a snapshot taken when each line
+        # was written, so grouping on it too would split one account into two
+        # rows the moment the same code was posted under two locales — or after
+        # a treasury was renamed.
+        totals = base.group(:account_code)
                      .sum("debit_cents - credit_cents")
                      .reject { |_, v| v <= 0 }
+        names = base.pluck(:account_code, :account_name).to_h
 
-        purchases_cents = totals.select { |(code, _), _| PURCHASES_CODES.include?(code) }.values.sum
-        payroll_cents   = totals.select { |(code, _), _| PAYROLL_CODES.include?(code) }.values.sum
-        operations_lines = totals.reject { |(code, _), _| (PURCHASES_CODES + PAYROLL_CODES).include?(code) }
-                                 .map { |(code, name), cents| { code: code, name: name, cents: cents } }
+        purchases_cents = totals.select { |code, _| PURCHASES_CODES.include?(code) }.values.sum
+        payroll_cents   = totals.select { |code, _| PAYROLL_CODES.include?(code) }.values.sum
+        operations_lines = totals.reject { |code, _| (PURCHASES_CODES + PAYROLL_CODES).include?(code) }
+                                 .map { |code, cents|
+                                   { code: code,
+                                     name: helpers.ledger_account_name(code, names[code]),
+                                     cents: cents }
+                                 }
                                  .sort_by { |l| l[:code] }
         operations_cents = operations_lines.sum { |l| l[:cents] }
 

@@ -63,7 +63,41 @@ module Accounting
     OTHER_RECEIVABLES_CODE = 1170
     ACCRUED_EXPENSES_CODE  = 2300
 
+    # The accounts the app owns the names of, as opposed to the ones named by
+    # the user — treasuries, expense categories, loans, partners.
+    #
+    # `account_name` on a journal line is a snapshot taken when the entry was
+    # written, in whatever locale the person writing it happened to be using.
+    # That is right for a treasury, whose name is data and should not shift
+    # under the reader, and wrong for these, whose name is a translation: a
+    # line posted from the English UI would otherwise read "Accrued expenses"
+    # to an Arabic reader for ever. Rendering resolves these by code instead
+    # (see LedgerAccountNames), so the stored name is only ever a fallback.
+    SYSTEM_ACCOUNT_NAME_KEYS = {
+      SALES_CLEARING_CODE    => "accounting.journal_entries.accounts.sales_clearing",
+      OTHER_RECEIVABLES_CODE => "accounting.journal_entries.accounts.other_receivables",
+      TAX_PAYABLE_CODE       => "accounting.journal_entries.accounts.tax_payable",
+      EQUIPMENT_PAYABLE_CODE => "accounting.journal_entries.accounts.equipment_payable",
+      ACCRUED_EXPENSES_CODE  => "accounting.journal_entries.accounts.accrued_expenses",
+      EQUITY_CODE            => "accounting.chart_of_accounts.retained_earnings",
+      SALES_REVENUE_CODE     => "accounting.journal_entries.accounts.sales_revenue",
+      ADVANCE_CODE           => "accounting.journal_entries.accounts.payroll_advances",
+      SALARY_CODE            => "accounting.journal_entries.accounts.salaries",
+      STAFF_MEAL_CODE        => "accounting.journal_entries.accounts.staff_meals",
+      COGS_CODE              => "accounting.journal_entries.accounts.purchases",
+      INTEREST_CODE          => "accounting.loans.interest_expense_account"
+    }.freeze
+
     class << self
+      # The reader's name for an account, given the code and whatever name was
+      # stored alongside it. System accounts resolve to the current locale;
+      # everything else keeps the stored name, which is user data.
+      def account_display_name(code, fallback = nil)
+        key = SYSTEM_ACCOUNT_NAME_KEYS[code.to_i]
+        return fallback.presence || code.to_s if key.nil?
+
+        I18n.t(key, default: fallback.presence || code.to_s)
+      end
       # ── Expense ──────────────────────────────────────────────────────
       #
       # The expense is the obligation, on the date it was incurred. It no longer

@@ -75,7 +75,7 @@ module Admin
               date: @journal_entry.date.to_s,
               description: @journal_entry.description,
               lines: @journal_entry.lines.map { |l|
-                { account: l.account_name, debit_cents: l.debit_cents, credit_cents: l.credit_cents, notes: l.notes }
+                { account: helpers.ledger_line_account_name(l), debit_cents: l.debit_cents, credit_cents: l.credit_cents, notes: l.notes }
               }
             }
           )
@@ -132,7 +132,7 @@ module Admin
                 entry.date.iso8601,
                 entry.description,
                 line.account_code,
-                line.account_name,
+                helpers.ledger_line_account_name(line),
                 line.debit_cents.to_i.zero? ? nil : (line.debit_cents.to_d / 100).round(2),
                 line.credit_cents.to_i.zero? ? nil : (line.credit_cents.to_d / 100).round(2),
                 entry.entry_type,

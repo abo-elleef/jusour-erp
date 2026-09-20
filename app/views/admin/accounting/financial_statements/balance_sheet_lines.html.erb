@@ -6,12 +6,12 @@
     <%= link_to t("accounting.financial_statements.balance_sheet_title"),
           balance_sheet_admin_accounting_financial_statements_path(as_of: @as_of),
           class: "hover:underline" %> /
-    <span class="text-gray-700 font-medium"><%= @account_name %></span>
+    <span class="text-gray-700 font-medium"><%= ledger_account_name(@account_code, @account_name) %></span>
   </p>
 
   <div class="flex flex-wrap items-start justify-between gap-4 mb-6">
     <div>
-      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @account_name %></h1>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= ledger_account_name(@account_code, @account_name) %></h1>
       <p class="text-sm text-gray-500 mt-0.5">
         <%= t("accounting.financial_statements.as_of") %> <%= l(@as_of, format: :long) %>
         · <%= t("accounting.financial_statements.account_code", default: "Account") %> <%= @account_code %>
