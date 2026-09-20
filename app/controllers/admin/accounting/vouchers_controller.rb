@@ -88,7 +88,7 @@ module Admin
           amount_cents: @voucher.amount_cents,
           date:         @voucher.voucher_date,
           treasury:     @voucher.treasury&.name,
-          settles:      @voucher.payment_allocations.map { |a| a.settles&.description }.compact
+          settles:      @voucher.payment_allocations.map { |a| helpers.settled_label(a.settles) }.compact
         }
 
         @voucher.destroy!
@@ -170,7 +170,7 @@ module Admin
               helpers.format_amount(voucher.amount_cents),
               voucher.treasury&.name,
               voucher.counterparty,
-              voucher.payment_allocations.map { |a| a.settles&.description }.compact.join(" · "),
+              voucher.payment_allocations.map { |a| helpers.settled_label(a.settles) }.compact.join(" · "),
               voucher.user&.name
             ]
           end

@@ -9,8 +9,20 @@
 class PaymentAllocation < ApplicationRecord
   include Tenantable
 
+  # Everything a voucher can settle. Named here rather than left implicit so
+  # that adding one is a decision with a checklist: the journal entry needs a
+  # counter-account for it (JournalEntryService#counter_account_for), the
+  # treasury side may need a counterparty leg, and every screen showing what a
+  # voucher settled needs a label and a path (SettledRecordsHelper).
+  #
+  # The specs walk this list, so a type added here without those fails rather
+  # than raising NoMethodError on a page nobody tested.
+  SETTLEABLE_TYPES = %w[Expense Income VendorInvoice CustomerInvoice Customer Supplier].freeze
+
   belongs_to :payment, polymorphic: true
   belongs_to :settles, polymorphic: true
+
+  validates :settles_type, inclusion: { in: SETTLEABLE_TYPES }
 
   monetize :amount_cents
 

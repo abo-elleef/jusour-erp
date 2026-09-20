@@ -99,11 +99,13 @@
             <tr>
               <td class="p-3 ps-5">
                 <% if record %>
-                  <%= link_to record.description, polymorphic_path([:admin, :accounting, record]),
-                        class: "font-medium text-gray-900 hover:underline" %>
-                  <p class="text-xs text-gray-400 mt-0.5">
-                    <%= t("accounting.vouchers.outstanding_after", amount: format_amount(record.outstanding_cents)) %>
-                  </p>
+                  <%= settled_link(record, class: "font-medium text-gray-900 hover:underline") %>
+                  <% outstanding = settled_outstanding_cents(record) %>
+                  <% if outstanding %>
+                    <p class="text-xs text-gray-400 mt-0.5">
+                      <%= t("accounting.vouchers.outstanding_after", amount: format_amount(outstanding)) %>
+                    </p>
+                  <% end %>
                 <% end %>
               </td>
               <td class="p-3 pe-5 text-end tabular-nums font-semibold text-gray-900">

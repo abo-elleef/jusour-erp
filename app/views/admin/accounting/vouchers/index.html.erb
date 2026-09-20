@@ -79,7 +79,7 @@
                 <% settled = voucher.payment_allocations.map(&:settles).compact %>
                 <% if settled.any? %>
                   <% settled.each do |record| %>
-                    <div><%= link_to record.description, polymorphic_path([:admin, :accounting, record]), class: "hover:underline" %></div>
+                    <div><%= settled_link(record, class: "hover:underline") %></div>
                   <% end %>
                 <% else %>
                   <span class="italic text-gray-400"><%= t("accounting.vouchers.on_account") %></span>
