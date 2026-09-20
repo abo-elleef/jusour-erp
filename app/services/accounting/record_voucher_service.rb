@@ -47,6 +47,8 @@ module Accounting
           )
         end
 
+        apply_to_invoices!(voucher)
+
         TreasuryLedgerService.sync_voucher!(voucher)
         JournalEntryService.record_voucher!(voucher)
       end
@@ -55,6 +57,21 @@ module Accounting
     end
 
     private
+
+    # An invoice carries its own paid-to-date and status, unlike an expense or an
+    # income, whose outstanding amount is derived from the allocations alone.
+    # Done here rather than in a PaymentAllocation callback on purpose: the
+    # backfill writes allocations for payments whose invoices were already
+    # marked paid years ago, and a callback would count those a second time.
+    def apply_to_invoices!(voucher)
+      voucher.payment_allocations.each do |allocation|
+        invoice = allocation.settles
+        next unless invoice.is_a?(::VendorInvoice) || invoice.is_a?(::CustomerInvoice)
+
+        invoice.update!(amount_paid_cents: invoice.amount_paid_cents + allocation.amount_cents)
+        invoice.sync_payment_status!
+      end
+    end
 
     def validate!
       unless Voucher::DIRECTIONS.include?(@direction)

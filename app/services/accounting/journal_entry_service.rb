@@ -160,20 +160,57 @@ module Accounting
       def record_voucher!(voucher)
         destroy_for_source!(voucher)
 
-        counter = voucher.receipt? ? other_receivables_account : accrued_expenses_account
-
         create! source: voucher, date: voucher.voucher_date, user: voucher.user,
                 description: I18n.t("accounting.journal_entries.auto.voucher",
                                     number: voucher.number,
                                     default: "Voucher #{voucher.number}") do |lines|
+          treasury_line = account_for_treasury(voucher.treasury)
+
           if voucher.receipt?
-            lines << debit(account_for_treasury(voucher.treasury), voucher.amount_cents, "asset")
-            lines << credit(counter, voucher.amount_cents, "asset")
+            lines << debit(treasury_line, voucher.amount_cents, "asset")
+            voucher_counter_legs(voucher).each { |acct, type, cents| lines << credit(acct, cents, type) }
           else
-            lines << debit(counter, voucher.amount_cents, "liability")
-            lines << credit(account_for_treasury(voucher.treasury), voucher.amount_cents, "asset")
+            voucher_counter_legs(voucher).each { |acct, type, cents| lines << debit(acct, cents, type) }
+            lines << credit(treasury_line, voucher.amount_cents, "asset")
           end
         end
+      end
+
+      # What the far side of a voucher is, resolved per allocation rather than
+      # per voucher. Settling an expense clears the accrued payable; settling a
+      # supplier invoice clears that supplier's payable, which is a treasury of
+      # its own. One voucher can do both, so the legs are grouped by account and
+      # the whole set has to add up to the voucher.
+      #
+      # Whatever is not allocated is money moved on account, and falls to the
+      # accrual account for the direction — which is what the voucher did for
+      # every case before it could settle an invoice.
+      def voucher_counter_legs(voucher)
+        legs = Hash.new(0)
+
+        voucher.payment_allocations.each do |allocation|
+          key = counter_account_for(allocation.settles, voucher)
+          legs[key] += allocation.amount_cents
+        end
+
+        remainder = voucher.amount_cents - voucher.payment_allocations.sum(&:amount_cents)
+        legs[default_counter_for(voucher)] += remainder if remainder.positive?
+
+        legs.map { |(acct, type), cents| [acct, type, cents] }
+      end
+
+      def counter_account_for(settles, voucher)
+        case settles
+        when ::Expense        then [accrued_expenses_account, "liability"]
+        when ::Income         then [other_receivables_account, "asset"]
+        when ::VendorInvoice  then [account_for_treasury(settles.supplier.ap_treasury), "liability"]
+        when ::CustomerInvoice then [account_for_treasury(settles.customer.ar_treasury), "asset"]
+        else default_counter_for(voucher)
+        end
+      end
+
+      def default_counter_for(voucher)
+        voucher.receipt? ? [other_receivables_account, "asset"] : [accrued_expenses_account, "liability"]
       end
 
       # ── Treasury Transfer ─────────────────────────────────────────────

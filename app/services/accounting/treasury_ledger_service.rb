@@ -115,6 +115,40 @@ module Accounting
         occurred_on: voucher.voucher_date,
         source: voucher
       )
+
+      sync_voucher_counterparties!(voucher)
+    end
+
+    # A supplier's payable and a customer's receivable are each held as a
+    # treasury of their own, so settling an invoice has to draw that balance
+    # down as well as move the cash. Only invoices have one — an expense or an
+    # income is settled against an accrual account, which is ledger-only.
+    #
+    # These carry the ap_payment / ar_payment kinds the AP and AR ledgers
+    # already use, so the supplier and customer statements keep reading them.
+    # Neither is counted again as operating cash: the AP treasury is excluded
+    # from the cash flow outright, and ar_payment is not an operating kind —
+    # the cash itself is already counted once, on the voucher's own leg.
+    def sync_voucher_counterparties!(voucher)
+      voucher.payment_allocations.each do |allocation|
+        treasury, kind = case allocation.settles
+                         when ::VendorInvoice
+                           [allocation.settles.supplier.ap_treasury, "ap_payment"]
+                         when ::CustomerInvoice
+                           [allocation.settles.customer.ar_treasury, "ar_payment"]
+                         end
+        next if treasury.blank?
+
+        record!(
+          treasury: treasury,
+          user: voucher.user,
+          amount_cents: -allocation.amount_cents,
+          kind: kind,
+          description: voucher_description(voucher),
+          occurred_on: voucher.voucher_date,
+          source: voucher
+        )
+      end
     end
 
     # The float is carried into the drawer from a safe: it leaves one treasury and
