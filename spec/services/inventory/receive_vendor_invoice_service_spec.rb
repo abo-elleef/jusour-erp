@@ -145,6 +145,45 @@ RSpec.describe Inventory::ReceiveVendorInvoiceService do
     end
   end
 
+  describe "supplier catalogue links" do
+    it "links the supplier to every received ingredient at the received price" do
+      invoice = build_invoice(lines: [{ quantity: 4, unit_price_cents: 250 }])
+
+      described_class.new(invoice, user).call
+
+      link = SupplierIngredient.find_by(supplier: supplier, ingredient: ingredient)
+      expect(link).to have_attributes(price_cents: 250, preferred: true)
+    end
+
+    it "leaves an existing link exactly as it was" do
+      SupplierIngredient.create!(
+        supplier: supplier, ingredient: ingredient,
+        price_cents: 199, preferred: false, vendor_product_name: "Roma crate"
+      )
+
+      invoice = build_invoice(lines: [{ quantity: 4, unit_price_cents: 250 }])
+
+      expect { described_class.new(invoice, user).call }
+        .not_to change(SupplierIngredient, :count)
+
+      link = SupplierIngredient.find_by(supplier: supplier, ingredient: ingredient)
+      expect(link).to have_attributes(price_cents: 199, preferred: false, vendor_product_name: "Roma crate")
+    end
+
+    it "does not make a later vendor preferred over the one already chosen" do
+      other_supplier = Supplier.create!(name: "Other Farms", lead_time_days: 1, company: Current.company)
+      SupplierIngredient.create!(
+        supplier: other_supplier, ingredient: ingredient, price_cents: 240, preferred: true
+      )
+
+      invoice = build_invoice(lines: [{ quantity: 4, unit_price_cents: 250 }])
+      described_class.new(invoice, user).call
+
+      expect(SupplierIngredient.find_by(supplier: supplier, ingredient: ingredient).preferred).to be(false)
+      expect(SupplierIngredient.find_by(supplier: other_supplier, ingredient: ingredient).preferred).to be(true)
+    end
+  end
+
   it "applies a percentage discount to the invoice total" do
     invoice = build_invoice(lines: [{ quantity: 4, unit_price_cents: 250 }])
     invoice.discount_type = "percentage"

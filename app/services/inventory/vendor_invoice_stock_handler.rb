@@ -45,6 +45,7 @@ module Inventory
       )
 
       record_price_history(line)
+      link_supplier_to_ingredient(line)
     end
 
     def reverse_line(line)
@@ -88,6 +89,26 @@ module Inventory
         il.reorder_threshold = ingredient.reorder_threshold
         il.max_quantity = ingredient.max_quantity
         il.quantity_on_hand = 0
+      end
+    end
+
+    # A received line is proof this vendor actually supplies this ingredient, so
+    # the supplier's catalogue learns it here instead of waiting for someone to
+    # type the link by hand. An existing link is left exactly as it is: its
+    # price, vendor product name and preferred flag are maintained on the
+    # ingredient page, and a receipt is no reason to overwrite that.
+    def link_supplier_to_ingredient(line)
+      # The first vendor to deliver an ingredient becomes its preferred source.
+      # Once any link exists the choice belongs to whoever set it, so later
+      # vendors link without touching it.
+      first_supplier = line.ingredient.supplier_ingredients.none?
+
+      SupplierIngredient.find_or_create_by!(
+        supplier_id: @invoice.supplier_id,
+        ingredient_id: line.ingredient_id
+      ) do |link|
+        link.price_cents = line.base_unit_price_cents
+        link.preferred = first_supplier
       end
     end
 
