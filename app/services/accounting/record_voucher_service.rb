@@ -49,6 +49,7 @@ module Accounting
           )
         end
 
+        ensure_counterparty_treasuries!
         apply_to_invoices!(voucher)
 
         TreasuryLedgerService.sync_voucher!(voucher)
@@ -59,6 +60,22 @@ module Accounting
     end
 
     private
+
+    # A customer's receivable and a supplier's payable are treasuries created on
+    # demand — an ordinary POS customer who never buys on credit never gets one.
+    # The ledger services this replaced ensured them before posting; reading the
+    # association directly meant the first payment from a customer with no credit
+    # history took the page down instead.
+    def ensure_counterparty_treasuries!
+      @allocations.each do |allocation|
+        case (target = allocation.fetch(:settles))
+        when ::Customer        then CustomerArLedgerService.new(target).ensure_treasury!
+        when ::CustomerInvoice then CustomerArLedgerService.new(target.customer).ensure_treasury!
+        when ::Supplier        then target.ensure_ap_treasury!
+        when ::VendorInvoice   then target.supplier.ensure_ap_treasury!
+        end
+      end
+    end
 
     # An invoice carries its own paid-to-date and status, unlike an expense or an
     # income, whose outstanding amount is derived from the allocations alone.
