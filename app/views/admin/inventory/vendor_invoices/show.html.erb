@@ -382,8 +382,7 @@
                   <td class="p-3 ps-5 tabular-nums">
                     <%= l(payment.voucher_date) %>
                     <%# The payment is a voucher now — link to the document so it can be printed. %>
-                    <%= link_to payment.number, admin_accounting_voucher_path(payment),
-                          class: "block font-mono text-xs text-gray-400 hover:text-gray-700 hover:underline" %>
+                    <%= voucher_number_link(payment, extra_class: "block text-xs") %>
                   </td>
                   <td class="p-3 text-end tabular-nums font-semibold"><%= format_money(payment.amount_cents) %></td>
                   <td class="p-3 text-gray-700"><%= payment.treasury.name %></td>

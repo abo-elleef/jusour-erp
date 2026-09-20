@@ -58,11 +58,11 @@
       <div class="px-5 py-4">
         <p class="text-xs text-gray-400 mb-1"><%= t("accounting.journal_entries.source_record") %></p>
         <% src_path = expense_source_path(@expense) %>
+        <% label = source_record_label(@expense.source_record_type, @expense.source_record_id, @expense.source_record) %>
         <% if src_path %>
-          <%= link_to @expense.source_record&.then { |r| r.try(:invoice_number) || r.to_s } || "#{@expense.source_record_type} ##{@expense.source_record_id}",
-                src_path, class: "text-sm font-semibold text-amber-700 hover:underline" %>
+          <%= link_to label, src_path, class: "text-sm font-semibold text-amber-700 hover:text-amber-800 hover:underline" %>
         <% else %>
-          <p class="text-sm font-semibold text-gray-900"><%= @expense.source_record_type %> #<%= @expense.source_record_id %></p>
+          <p class="text-sm font-semibold text-gray-900"><%= label %></p>
         <% end %>
       </div>
     <% end %>
@@ -89,6 +89,8 @@
       </div>
     </div>
   <% end %>
+
+  <%= render "shared/settling_vouchers", record: @expense %>
 
   <%= render "shared/audit_history", audits: @audits %>
 </div>

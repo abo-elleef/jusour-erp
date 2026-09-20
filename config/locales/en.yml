@@ -4143,6 +4143,8 @@ en:
       settles: "Settles"
       settles_hint: "What this voucher pays off. Leave it unset to record money moved on account."
       settles_nothing: "Nothing — recorded on account."
+      settled_by: "Settled by"
+      not_settled_yet: "No voucher has settled this yet."
       unpaid_expense: "Unpaid expense"
       uncollected_income: "Uncollected income"
       on_account_option: "On account — settles nothing"

@@ -160,6 +160,37 @@ module ApplicationHelper
     "≈ #{parts.join(" · ")}"
   end
 
+  # A name a person can read for whatever a record came from.
+  #
+  # Views used to fall back to `record.to_s`, which on an ActiveRecord object is
+  # its Ruby inspect — "#<VendorInvoicePayment:0x000077818411e4c8>" turned up on
+  # the expense page in production. Nothing is worse than that, so anything
+  # unrecognised falls back to the model name and its id instead.
+  def source_record_label(type, id, record = nil)
+    case type
+    when "VendorInvoice"
+      record&.invoice_number ? "#{t('activerecord.models.vendor_invoice', count: 1)} #{record.invoice_number}" : generic_source_label(type, id)
+    when "VendorInvoicePayment"
+      invoice = record&.vendor_invoice
+      invoice ? "#{t('activerecord.models.vendor_invoice', count: 1)} #{invoice.invoice_number} — #{t('accounting.journal_entries.payment_label')}" : generic_source_label(type, id)
+    when "Voucher"
+      record&.number || generic_source_label(type, id)
+    when "Order"
+      record&.order_number ? "#{t('activerecord.models.order', count: 1)} ##{record.order_number}" : generic_source_label(type, id)
+    when "Expense", "Income"
+      record&.description.presence || generic_source_label(type, id)
+    when "Location"
+      record&.name.presence || generic_source_label(type, id)
+    else
+      generic_source_label(type, id)
+    end
+  end
+
+  # Never an object inspect, and never a bare uuid on its own line.
+  def generic_source_label(type, id)
+    "#{type&.underscore&.humanize || t("shared.unknown", default: "Unknown")} ##{id.to_s.first(8)}"
+  end
+
   # Returns the vendor invoice URL for an expense linked via VendorInvoicePayment, or nil.
   def expense_source_path(expense)
     return unless expense.source_record_type == "VendorInvoicePayment"
@@ -1392,7 +1423,6 @@ module ApplicationHelper
   private
 
   def fallback_je_source_label(je)
-    type_label = je.source_record_type&.underscore&.humanize || "Unknown"
-    "#{type_label} ##{je.source_record_id}"
+    generic_source_label(je.source_record_type, je.source_record_id)
   end
 end

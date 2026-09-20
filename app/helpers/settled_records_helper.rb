@@ -46,6 +46,14 @@ module SettledRecordsHelper
     end
   end
 
+  # A voucher number is always a link to its document, and always looks like
+  # one — the amber the rest of the accounting section uses for record links.
+  def voucher_number_link(voucher, extra_class: nil)
+    link_to voucher.number, admin_accounting_voucher_path(voucher),
+            class: ["font-mono font-semibold text-amber-700 hover:text-amber-800 hover:underline",
+                    extra_class].compact.join(" ")
+  end
+
   # Link when there is somewhere to go, plain text otherwise.
   def settled_link(record, **options)
     label = settled_label(record)

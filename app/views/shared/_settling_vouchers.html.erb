@@ -1,0 +1,44 @@
+<%#
+  The vouchers that have settled this record, and what is still owed on it.
+
+  A record and the document that paid it were only findable from the voucher's
+  side; this closes the loop from the expense, income or invoice you happen to
+  be looking at.
+
+  locals: record
+%>
+<% allocations = record.payment_allocations.includes(:payment).select { |a| a.payment.is_a?(Voucher) } %>
+<% outstanding = settled_outstanding_cents(record) %>
+
+<% if allocations.any? || outstanding.to_i.positive? %>
+  <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-4">
+    <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80 flex items-center justify-between">
+      <p class="text-sm font-semibold text-gray-700"><%= t("accounting.vouchers.settled_by") %></p>
+      <% if outstanding.to_i.positive? %>
+        <span class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1">
+          <%= t("accounting.vouchers.outstanding_of", amount: format_amount(outstanding)) %>
+        </span>
+      <% end %>
+    </div>
+
+    <% if allocations.any? %>
+      <table class="w-full text-sm">
+        <tbody class="divide-y divide-gray-100">
+          <% allocations.each do |allocation| %>
+            <% voucher = allocation.payment %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="p-3 ps-5"><%= voucher_number_link(voucher) %></td>
+              <td class="p-3 text-gray-600 tabular-nums"><%= l(voucher.voucher_date, format: :short) %></td>
+              <td class="p-3 text-gray-600"><%= voucher.treasury&.name %></td>
+              <td class="p-3 pe-5 text-end tabular-nums font-semibold text-gray-900">
+                <%= format_amount(allocation.amount_cents) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="p-5 text-sm text-gray-500 italic"><%= t("accounting.vouchers.not_settled_yet") %></p>
+    <% end %>
+  </div>
+<% end %>

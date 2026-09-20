@@ -65,8 +65,7 @@
           <% @vouchers.each do |voucher| %>
             <tr class="hover:bg-gray-50 transition-colors">
               <td class="p-3 ps-5">
-                <%= link_to voucher.number, admin_accounting_voucher_path(voucher),
-                      class: "font-mono font-semibold text-gray-900 hover:underline" %>
+                <%= voucher_number_link(voucher) %>
                 <% if voucher.backfilled? %>
                   <span class="ms-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
                     <%= t("accounting.vouchers.backfilled_badge") %>

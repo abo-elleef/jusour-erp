@@ -4162,6 +4162,8 @@ ar:
       settles: "يسدد"
       settles_hint: "ما يسدده هذا السند. اتركه فارغًا لتسجيل المبلغ تحت الحساب."
       settles_nothing: "لا شيء — مسجل تحت الحساب."
+      settled_by: "سُدِّد بـ"
+      not_settled_yet: "لم يُسدَّد بأي سند بعد."
       unpaid_expense: "مصروف غير مسدد"
       uncollected_income: "إيراد غير محصَّل"
       on_account_option: "تحت الحساب — لا يسدد شيئًا"
