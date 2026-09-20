@@ -356,4 +356,93 @@ RSpec.describe Accounting::ChartOfAccountsService do
       expect(coa.current_asset_lines.map(&:code)).not_to include(1170)
     end
   end
+
+  # ── Sales clearing (1160) ──────────────────────────────────────────
+  #
+  # Takings recognised at day close and not yet in any treasury. It used to be
+  # read over the selected period, so anything still unbanked at a year end
+  # vanished from the next year's balance sheet while every treasury beside it
+  # was an as-of figure.
+
+  describe "sales clearing" do
+    def recognise_sales!(amount_cents:, date:)
+      entry = JournalEntry.create!(
+        company: Current.company, created_by: user,
+        entry_number: JournalEntry.next_entry_number(Current.company.id),
+        date: date, description: "Day close", entry_type: "auto"
+      )
+      entry.lines.create!(account_code: Accounting::JournalEntryService::SALES_CLEARING_CODE,
+                          account_name: "Sales clearing", account_type: "asset",
+                          debit_cents: amount_cents, credit_cents: 0)
+      entry.lines.create!(account_code: 4001, account_name: "Sales revenue",
+                          account_type: "revenue", debit_cents: 0, credit_cents: amount_cents)
+      entry
+    end
+
+    def bank!(amount_cents:, date:)
+      entry = JournalEntry.create!(
+        company: Current.company, created_by: user,
+        entry_number: JournalEntry.next_entry_number(Current.company.id),
+        date: date, description: "Banked", entry_type: "auto"
+      )
+      entry.lines.create!(account_code: Accounting::JournalEntryService::SALES_CLEARING_CODE,
+                          account_name: "Sales clearing", account_type: "asset",
+                          debit_cents: 0, credit_cents: amount_cents)
+      entry.lines.create!(account_code: 9999, account_name: "Offset", account_type: "asset",
+                          debit_cents: amount_cents, credit_cents: 0)
+      entry
+    end
+
+    it "still holds takings recognised before the period and never banked" do
+      recognise_sales!(amount_cents: 25_000, date: 2.years.ago.to_date)
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+
+      line = coa.current_asset_lines.find { |l| l.code == 1160 }
+      expect(line).to be_present
+      expect(line.balance_cents).to eq(25_000)
+    end
+
+    it "drops off once the money is banked, whichever period that happened in" do
+      recognise_sales!(amount_cents: 25_000, date: 2.years.ago.to_date)
+      bank!(amount_cents: 25_000, date: Date.current)
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+
+      expect(coa.current_asset_lines.map(&:code)).not_to include(1160)
+    end
+
+    it "reads as of the end date, so a later banking does not erase an earlier balance" do
+      recognise_sales!(amount_cents: 25_000, date: Date.new(2026, 1, 10))
+      bank!(amount_cents: 25_000, date: Date.new(2026, 6, 1))
+
+      as_of_march = described_class.new(start_date: Date.new(2026, 1, 1), end_date: Date.new(2026, 3, 31))
+      as_of_july  = described_class.new(start_date: Date.new(2026, 1, 1), end_date: Date.new(2026, 7, 31))
+
+      expect(as_of_march.current_asset_lines.find { |l| l.code == 1160 }.balance_cents).to eq(25_000)
+      expect(as_of_july.current_asset_lines.map(&:code)).not_to include(1160)
+    end
+
+    it "is read the same way as the other two ledger-only accounts" do
+      # All three are as-of balances with no treasury behind them; a reader
+      # should not have to know which is which.
+      recognise_sales!(amount_cents: 10_000, date: 2.years.ago.to_date)
+
+      accrual = JournalEntry.create!(
+        company: Current.company, created_by: user,
+        entry_number: JournalEntry.next_entry_number(Current.company.id),
+        date: 2.years.ago.to_date, description: "Accrued income", entry_type: "auto"
+      )
+      accrual.lines.create!(account_code: Accounting::JournalEntryService::OTHER_RECEIVABLES_CODE,
+                            account_name: "Other receivables", account_type: "asset",
+                            debit_cents: 10_000, credit_cents: 0)
+      accrual.lines.create!(account_code: 4002, account_name: "Other income",
+                            account_type: "revenue", debit_cents: 0, credit_cents: 10_000)
+
+      coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)
+      codes = coa.current_asset_lines.map(&:code)
+
+      expect(codes).to include(1160, 1170)
+    end
+  end
 end

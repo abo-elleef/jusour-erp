@@ -67,11 +67,9 @@ module Accounting
     end
 
     # Income booked but not yet collected — what a receipt voucher will clear.
-    # Like sales clearing it has no treasury and lives only in the ledger, but
-    # unlike sales clearing it is read cumulatively: an invoice raised last year
-    # and still unpaid is still owed to us today. (Sales clearing is filtered to
-    # the selected period, which is its own inconsistency, left alone here
-    # because changing it moves a figure already on the statements.)
+    # Like sales clearing it has no treasury and lives only in the ledger, and
+    # like it is read cumulatively: income recognised last year and still
+    # uncollected is still owed to us today.
     def other_receivables_line
       return @other_receivables_line if defined?(@other_receivables_line)
 
@@ -97,16 +95,28 @@ module Accounting
         end
     end
 
-    # Sales recognised but not yet banked. Unlike every other current asset this one
-    # has no treasury behind it — it lives only in the ledger — so its balance is
-    # read straight from the journal (debits less credits on 1160).
+    # Sales recognised but not yet banked: a day's takings are recognised against
+    # this account at day close, and each treasury clears its share as the money
+    # lands — cash counted into the drawer, a wallet settled, a card payout
+    # received. What is left is takings still in transit plus cash over/short.
+    #
+    # Unlike every other current asset this one has no treasury behind it — it
+    # lives only in the ledger — so its balance is read straight from the journal
+    # (debits less credits on 1160).
+    #
+    # Read cumulatively, never floored by @start_date. Money recognised in
+    # December and still not banked is still owed to us in January, and the
+    # balance sheet asks "what do we hold", not "what moved this year". It used
+    # to take the period, which quietly dropped anything carried across a year
+    # boundary while the treasury balances beside it — and 1170 and 2300 below —
+    # were all as-of figures.
     def sales_clearing_line
       return @sales_clearing_line if defined?(@sales_clearing_line)
 
       scope = JournalEntryLine.joins(:journal_entry)
         .where(journal_entries: { company_id: Current.company.id },
                account_code: JournalEntryService::SALES_CLEARING_CODE)
-      scope = scope.where(journal_entries: { date: @start_date..@end_date }) if @start_date && @end_date
+      scope = scope.where(journal_entries: { date: ..@end_date }) if @end_date
       balance = scope.sum(:debit_cents).to_i - scope.sum(:credit_cents).to_i
 
       @sales_clearing_line =
