@@ -16,7 +16,8 @@ module Accounting
     class Error < StandardError; end
 
     def initialize(direction:, treasury:, user:, amount_cents:, voucher_date: Date.current,
-                   allocations: [], notes: nil, counterparty: nil, company: nil)
+                   allocations: [], notes: nil, counterparty: nil, company: nil,
+                   purpose: Voucher::SETTLEMENT)
       @direction = direction
       @treasury = treasury
       @user = user
@@ -26,6 +27,7 @@ module Accounting
       @notes = notes
       @counterparty = counterparty
       @company = company || Current.company
+      @purpose = purpose
     end
 
     def call
@@ -36,7 +38,7 @@ module Accounting
         voucher = Voucher.create!(
           company: @company, direction: @direction, treasury: @treasury, user: @user,
           amount_cents: @amount_cents, voucher_date: @voucher_date,
-          notes: @notes, counterparty: @counterparty
+          notes: @notes, counterparty: @counterparty, purpose: @purpose
         )
 
         @allocations.each do |allocation|

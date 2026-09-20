@@ -217,7 +217,15 @@ module Accounting
       end
 
       def default_counter_for(voucher)
+        return [retained_earnings_account, "equity"] if voucher.equity_adjustment?
+
         voucher.receipt? ? [other_receivables_account, "asset"] : [accrued_expenses_account, "liability"]
+      end
+
+      def retained_earnings_account
+        { code: EQUITY_CODE,
+          name: I18n.t("accounting.chart_of_accounts.retained_earnings",
+                       default: "Retained Earnings") }
       end
 
       # ── Treasury Transfer ─────────────────────────────────────────────
@@ -230,27 +238,6 @@ module Accounting
                                     default: "Transfer: #{transfer.from_treasury.name} → #{transfer.to_treasury.name}") do |lines|
           lines << debit(account_for_treasury(transfer.to_treasury),   transfer.amount_cents, "asset")
           lines << credit(account_for_treasury(transfer.from_treasury), transfer.amount_cents, "asset")
-        end
-      end
-
-      # ── Manual Treasury Adjustment ────────────────────────────────────
-      def record_adjustment!(treasury:, amount_cents:, user:, description:)
-        # amount_cents is signed: positive = deposit, negative = withdrawal
-        if amount_cents.positive?
-          # Cash in → DR Treasury, CR Equity
-          create! source: nil, date: Date.current, user: user, description: description do |lines|
-            lines << debit(account_for_treasury(treasury), amount_cents, "asset")
-            lines << credit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings", default: "Retained Earnings") },
-                            amount_cents, "equity")
-          end
-        else
-          # Cash out → DR Equity, CR Treasury
-          abs = amount_cents.abs
-          create! source: nil, date: Date.current, user: user, description: description do |lines|
-            lines << debit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings", default: "Retained Earnings") },
-                           abs, "equity")
-            lines << credit(account_for_treasury(treasury), abs, "asset")
-          end
         end
       end
 

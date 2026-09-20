@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_19_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_20_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1784,10 +1784,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_19_120000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.datetime "backfilled_at"
+    t.string "purpose", default: "settlement", null: false
     t.index ["backfilled_at"], name: "index_vouchers_on_backfilled_at"
     t.index ["company_id", "number"], name: "index_vouchers_on_company_id_and_number", unique: true
     t.index ["company_id"], name: "index_vouchers_on_company_id"
     t.index ["direction"], name: "index_vouchers_on_direction"
+    t.index ["purpose"], name: "index_vouchers_on_purpose"
     t.index ["treasury_id"], name: "index_vouchers_on_treasury_id"
     t.index ["voucher_date"], name: "index_vouchers_on_voucher_date"
   end

@@ -110,7 +110,7 @@ module Accounting
         treasury: voucher.treasury,
         user: voucher.user,
         amount_cents: voucher.signed_amount_cents,
-        kind: voucher.receipt? ? "voucher_receipt" : "voucher_payment",
+        kind: voucher.treasury_kind,
         description: voucher_description(voucher),
         occurred_on: voucher.voucher_date,
         source: voucher
@@ -286,18 +286,28 @@ module Accounting
       JournalEntryService.record_staff_meal!(order: payment.order, treasury: treasury, user: user)
     end
 
+    # Adjusting a treasury moves real money — 1.7m of it across this company's
+    # history — and used to leave no document: no number, no counterparty, and a
+    # journal entry with no source, so nothing could be traced back to why the
+    # balance changed. It also dated the entry today while dating the cash
+    # movement `occurred_on`, so a back-dated adjustment put the two in
+    # different months.
+    #
+    # It is a voucher now. One record carries one date, the entry points back at
+    # it, and it prints like any other سند. The treasury kind stays `adjustment`
+    # — the cash flow statement and the profit-to-cash bridge both read it, and
+    # nothing about the money has been reclassified.
     def record_adjustment!(treasury:, user:, amount_cents:, description:, occurred_on: Date.current)
-      record!(
+      RecordVoucherService.new(
+        direction: amount_cents.positive? ? Voucher::RECEIPT : Voucher::PAYMENT,
+        purpose: Voucher::EQUITY_ADJUSTMENT,
         treasury: treasury,
         user: user,
-        amount_cents: amount_cents,
-        kind: "adjustment",
-        description: description,
-        occurred_on: occurred_on,
-        source: nil
-      )
-      JournalEntryService.record_adjustment!(treasury: treasury, amount_cents: amount_cents,
-                                             user: user, description: description)
+        amount_cents: amount_cents.abs,
+        voucher_date: occurred_on,
+        notes: description,
+        company: treasury.company
+      ).call
     end
 
     def create_transfer!(transfer)

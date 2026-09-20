@@ -113,6 +113,10 @@ RSpec.describe Accounting::TreasuryLedgerService do
     end
   end
 
+  # An adjustment is a voucher now — see
+  # spec/services/accounting/treasury_adjustment_voucher_spec.rb for the
+  # document, the equity posting and the dates. This keeps the one thing this
+  # file is about: that the balance moves.
   describe "#record_adjustment!" do
     it "updates balance for manual adjustments" do
       described_class.new.record_adjustment!(
@@ -123,6 +127,16 @@ RSpec.describe Accounting::TreasuryLedgerService do
       )
 
       expect(treasury.reload.balance_cents).to eq(98_000)
+    end
+
+    it "leaves a voucher behind for it" do
+      voucher = described_class.new.record_adjustment!(
+        treasury: treasury, user: user, amount_cents: -2_000, description: "Bank deposit"
+      )
+
+      expect(voucher).to be_a(Voucher)
+      expect(voucher).to be_equity_adjustment
+      expect(voucher.notes).to eq("Bank deposit")
     end
   end
 

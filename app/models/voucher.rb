@@ -20,6 +20,14 @@ class Voucher < ApplicationRecord
   # Separate books, as سند قبض and سند صرف are kept separately on paper.
   PREFIXES = { RECEIPT => "RV", PAYMENT => "PV" }.freeze
 
+  # A settlement clears what it settles. An adjustment has nothing to settle by
+  # definition — cash appearing in or leaving a treasury with no counterparty
+  # document — so its far side is equity, which is where "adjust balance"
+  # always posted it.
+  SETTLEMENT        = "settlement"
+  EQUITY_ADJUSTMENT = "equity_adjustment"
+  PURPOSES = [SETTLEMENT, EQUITY_ADJUSTMENT].freeze
+
   belongs_to :treasury
   belongs_to :user
 
@@ -30,6 +38,7 @@ class Voucher < ApplicationRecord
   monetize :amount_cents
 
   validates :direction, inclusion: { in: DIRECTIONS }
+  validates :purpose, inclusion: { in: PURPOSES }
   validates :voucher_date, presence: true
   validates :amount_cents, numericality: { greater_than: 0 }
   validates :number, presence: true,
@@ -54,7 +63,18 @@ class Voucher < ApplicationRecord
   before_destroy :unapply_from_invoices, prepend: true
   after_destroy :remove_ledger
 
-  def backfilled? = backfilled_at.present?
+  def backfilled?          = backfilled_at.present?
+  def equity_adjustment?   = purpose == EQUITY_ADJUSTMENT
+
+  # An adjustment keeps the `adjustment` treasury kind it has always had. The
+  # kind says what sort of movement this was, and the cash flow statement and
+  # the profit-to-cash bridge both read it; the voucher is the paperwork that
+  # was missing, not a reclassification of the money.
+  def treasury_kind
+    return "adjustment" if equity_adjustment?
+
+    receipt? ? "voucher_receipt" : "voucher_payment"
+  end
   def receipt? = direction == RECEIPT
   def payment? = direction == PAYMENT
 
