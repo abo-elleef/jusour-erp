@@ -54,7 +54,9 @@ module InventoryNav
         { controller: "ingredient_categories", label: "inventory.tools.ingredient_categories",
           path: :admin_inventory_ingredient_categories_path, permission: "inventory:view" },
         { controller: "units", label: "inventory.tools.units",
-          path: :admin_inventory_units_path, permission: "inventory:view" }
+          path: :admin_inventory_units_path, permission: "inventory:view" },
+        { controller: "unit_conversions", label: "inventory.tools.unit_conversions",
+          path: :admin_inventory_unit_conversions_path, permission: "inventory:view" }
       ]
     }
   ].freeze

@@ -20,7 +20,10 @@ module Admin
         @sort = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : "name"
         @direction = params[:dir].to_s == "desc" ? "desc" : "asc"
         @q = Ingredient.ransack(params[:q])
-        scope = @q.result.includes(:ingredient_category, :suppliers, :unit_ref)
+        # The alternate units are listed under each base unit, so they are
+        # eager-loaded with their own unit records — two extra queries for the
+        # whole page rather than two per row.
+        scope = @q.result.includes(:ingredient_category, :suppliers, :unit_ref, ingredient_units: :unit_ref)
         scope = scope.active if @status == "active"
         scope = scope.where(active: false) if @status == "inactive"
         scope = apply_supplier_filter(scope)

@@ -1,0 +1,26 @@
+<div id="conversion_summary">
+  <%# Review status chips — each one narrows the list below. They sit outside
+      the table's frame, so they navigate the whole page; a save refreshes them
+      through the stream response instead. %>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+    <% [["all", @total, "text-gray-900"],
+        ["check", @counts[:check].to_i, "text-red-700"],
+        ["unverified", @counts[:unverified].to_i, "text-gray-700"],
+        ["ok", @counts[:ok].to_i, "text-emerald-700"]].each do |flag, count, tone| %>
+      <%= link_to admin_inventory_unit_conversions_path(filter_params.merge(flag: flag, view: "conversions")),
+            class: "rounded-2xl border bg-white px-4 py-3 transition-colors #{@flag == flag && @view == 'conversions' ? 'border-amber-400 ring-1 ring-amber-200' : 'border-gray-200 hover:border-gray-300'}" do %>
+        <div class="text-2xl font-bold <%= tone %>"><%= count %></div>
+        <div class="text-xs font-semibold text-gray-500 mt-0.5"><%= t("inventory.unit_conversions.flag.#{flag}") %></div>
+        <div class="text-xs text-gray-400 mt-0.5"><%= t("inventory.unit_conversions.flag_hint.#{flag}") %></div>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# Coverage: ingredients that have no alternate unit at all. %>
+  <%= link_to admin_inventory_unit_conversions_path(filter_params.merge(view: "missing").except(:flag)),
+        class: "flex items-center gap-3 rounded-2xl border px-4 py-3 mb-5 bg-white transition-colors #{@view == 'missing' ? 'border-amber-400 ring-1 ring-amber-200' : 'border-gray-200 hover:border-gray-300'}" do %>
+    <span class="text-lg font-bold text-gray-900"><%= @missing_count %></span>
+    <span class="text-xs font-semibold text-gray-600"><%= t("inventory.unit_conversions.missing.chip") %></span>
+    <span class="text-xs text-gray-400"><%= t("inventory.unit_conversions.missing.chip_hint") %></span>
+  <% end %>
+</div>

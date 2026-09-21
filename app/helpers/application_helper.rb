@@ -17,12 +17,15 @@ module ApplicationHelper
 
   # Clickable table header that toggles sort on `key`, preserving all other
   # query params (search, filters). Shows an arrow on the active column.
-  def sort_header_link(label, key, sort:, direction:)
+  # `path` and `base_params` default to the request's own, which is right for a
+  # table rendered by a GET. Pass them explicitly where the table also re-renders
+  # in response to a POST or PATCH — there the request carries neither.
+  def sort_header_link(label, key, sort:, direction:, path: request.path, base_params: request.query_parameters)
     active = sort.to_s == key.to_s
     next_dir = (active && direction == "asc") ? "desc" : "asc"
     indicator = active ? (direction == "asc" ? "↑" : "↓") : ""
-    query = request.query_parameters.merge("sort" => key.to_s, "dir" => next_dir)
-    link_to "#{request.path}?#{query.to_query}",
+    query = base_params.stringify_keys.merge("sort" => key.to_s, "dir" => next_dir)
+    link_to "#{path}?#{query.to_query}",
       class: "inline-flex items-center gap-1 hover:text-gray-900 #{'text-gray-900' if active}" do
       safe_join([label, tag.span(indicator, class: "text-amber-600")])
     end
@@ -55,7 +58,7 @@ module ApplicationHelper
   ACCOUNTING_LEDGERS_GROUP       = %w[treasuries journal_entries chart_of_accounts fixed_assets partners loans].freeze
 
   INVENTORY_OPERATIONS_GROUP = %w[vendor_invoices vendor_credit_notes stock_transfers stock_transfer_templates stock_takes manufacturing_templates manufacturing_runs manufacturing_template_lines].freeze
-  INVENTORY_SETUP_GROUP      = %w[suppliers ingredients ingredient_categories units].freeze
+  INVENTORY_SETUP_GROUP      = %w[suppliers ingredients ingredient_categories units unit_conversions].freeze
   INVENTORY_REPORTS_GROUP    = %w[reports].freeze
 
   # Can this user reshape the inventory catalog (ingredients, vendors,

@@ -1,0 +1,9 @@
+<%# Saving re-reviews everything: the corrected rows change the counts above the
+    table as well as the rows themselves, so both are swapped. The page itself
+    never reloads, which is what keeps the reviewer on the row they just fixed. %>
+<%= turbo_stream.replace "conversion_summary" do %>
+  <%= render "summary" %>
+<% end %>
+<%= turbo_stream.replace "unit_conversions" do %>
+  <%= render "frame" %>
+<% end %>

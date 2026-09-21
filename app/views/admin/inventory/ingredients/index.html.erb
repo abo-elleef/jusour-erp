@@ -240,7 +240,24 @@
                       class: "font-medium text-blue-600 hover:underline" %>
                 <p class="text-xs text-gray-500 mt-0.5"><%= ingredient.ingredient_category.name %></p>
               </td>
-              <td class="p-3 text-gray-700 whitespace-nowrap"><%= ingredient_unit_label(ingredient.unit) %></td>
+              <td class="p-3 text-gray-700 whitespace-nowrap">
+                <%= unit_name_tag(ingredient.unit) %>
+                <%# The alternate units and what they convert to, so the rate can be
+                    read off the list instead of opening each ingredient. %>
+                <% ingredient.ingredient_units.each do |iu| %>
+                  <div class="text-xs text-gray-500 mt-0.5"
+                       title="<%= t("inventory.ingredients.show.units.conversion_eq",
+                                    unit: Ingredient.unit_display_label(iu.unit),
+                                    qty: number_with_precision(iu.base_units_per_unit, precision: 4, strip_insignificant_zeros: true),
+                                    base: Ingredient.unit_display_label(ingredient.unit)) %>">
+                    1 <%= unit_name_tag(iu.unit) %> =
+                    <span class="tabular-nums text-gray-700"><%= number_with_precision(iu.base_units_per_unit, precision: 4, strip_insignificant_zeros: true) %></span>
+                    <% if iu.purchase_unit? %>
+                      <span class="ms-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700"><%= t("inventory.ingredients.show.units.purchase") %></span>
+                    <% end %>
+                  </div>
+                <% end %>
+              </td>
               <td class="p-3 min-w-[140px]">
                 <% missing_reorder = !ingredient.reorder_threshold.to_d.positive? %>
                 <% missing_max = !ingredient.max_quantity.to_d.positive? %>

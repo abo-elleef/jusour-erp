@@ -18,6 +18,7 @@ class IngredientUnit < ApplicationRecord
   before_save  :clear_other_purchase_units, if: :purchase_unit?
   after_create  :audit_unit_added
   after_update  :audit_unit_changed, if: :saved_change_to_purchase_unit?
+  after_update  :audit_rate_changed, if: :saved_change_to_base_units_per_unit?
   after_destroy :audit_unit_removed
 
   private
@@ -30,6 +31,16 @@ class IngredientUnit < ApplicationRecord
     _was, now = saved_change_to_purchase_unit
     action = now ? "unit_marked_purchase" : "unit_unmarked_purchase"
     write_unit_audit(action, "unit" => unit_ref&.name)
+  end
+
+  # The rate reinterprets every quantity ever entered in this unit, so a change
+  # to it belongs in the ingredient's history alongside the unit being added or
+  # dropped — particularly now that it can be corrected in bulk from the
+  # conversion review rather than one ingredient form at a time.
+  def audit_rate_changed
+    write_unit_audit("unit_rate_changed",
+      "unit" => unit_ref&.name,
+      "base_units_per_unit" => saved_change_to_base_units_per_unit)
   end
 
   def audit_unit_removed

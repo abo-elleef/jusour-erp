@@ -1,0 +1,26 @@
+<%# Sorting and saving both swap this frame, so the reviewer stays on the row
+    they were looking at instead of being thrown back to the top. %>
+<%= turbo_frame_tag "unit_conversions", data: { turbo_action: "advance" } do %>
+  <% if @updated.present? %>
+    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 mb-4" role="status">
+      <%= t("inventory.unit_conversions.saved", count: @updated.to_i) %>
+    </div>
+  <% end %>
+
+  <% if @failures.present? %>
+    <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 mb-4" role="alert">
+      <p class="font-semibold mb-1"><%= t("inventory.unit_conversions.save_failed") %></p>
+      <ul class="list-disc ps-5 space-y-0.5">
+        <% @failures.each do |failure| %>
+          <li><%= failure.ingredient.name %> · <%= unit_name_tag(failure.unit) %> — <%= failure.errors.full_messages.to_sentence %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <% if @view == "missing" %>
+    <%= render "missing" %>
+  <% else %>
+    <%= render "table" %>
+  <% end %>
+<% end %>

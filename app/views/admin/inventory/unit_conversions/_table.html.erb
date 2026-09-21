@@ -1,0 +1,110 @@
+<% editable = can_manage_inventory_settings? %>
+<%# The table re-renders on save too, where the request is a PATCH to another
+    path — so the sort links are built from the filter state, not the request. %>
+<% sort_opts = { sort: @sort, direction: @direction,
+                 path: admin_inventory_unit_conversions_path, base_params: filter_params } %>
+
+<% if @rows.empty? %>
+  <div class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+    <p class="text-gray-400 text-sm"><%= t("inventory.unit_conversions.empty") %></p>
+  </div>
+<% else %>
+  <%= form_with url: bulk_update_admin_inventory_unit_conversions_path, method: :patch,
+        data: { controller: "conversion-review" } do |f| %>
+    <%# The save keeps the reviewer's filters and sort, so the rows that come
+        back are the ones they were working through. %>
+    <% filter_params.each do |key, value| %>
+      <%= hidden_field_tag key, value, id: nil %>
+    <% end %>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= sort_header_link(t("inventory.unit_conversions.col.ingredient"), :ingredient, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("inventory.unit_conversions.col.base_unit"), :base, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("inventory.unit_conversions.col.alt_unit"), :alt, **sort_opts) %></th>
+              <th class="p-3 text-start w-72"><%= sort_header_link(t("inventory.unit_conversions.col.conversion"), :factor, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("inventory.unit_conversions.col.review"), :status, **sort_opts) %></th>
+              <th class="p-3 text-center"><%= t("inventory.unit_conversions.col.purchase_unit") %></th>
+              <th class="p-3 text-end"><%= t("inventory.unit_conversions.col.cost_per_unit") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("inventory.unit_conversions.col.on_hand") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% @rows.each do |row| %>
+              <% base_label = unit_name_tag(row.base_unit) %>
+              <tr class="hover:bg-gray-100 <%= "bg-red-50/40" if row.check? %>">
+                <td class="p-3 ps-5">
+                  <%= link_to row.ingredient.name, admin_inventory_ingredient_path(row.ingredient),
+                        class: "font-semibold text-gray-900 hover:text-amber-700" %>
+                  <div class="text-xs text-gray-400 mt-0.5">
+                    <%= row.ingredient.code %><%= " · #{row.ingredient.ingredient_category.name}" if row.ingredient.ingredient_category %>
+                  </div>
+                </td>
+                <td class="p-3 text-gray-600 whitespace-nowrap"><%= base_label %></td>
+                <td class="p-3 font-medium text-gray-900 whitespace-nowrap"><%= unit_name_tag(row.alt_unit) %></td>
+                <td class="p-3">
+                  <div class="flex items-center gap-1.5 whitespace-nowrap">
+                    <span class="text-xs text-gray-500">1 <%= unit_name_tag(row.alt_unit) %> =</span>
+                    <% if editable %>
+                      <%= number_field_tag "conversions[#{row.id}][base_units_per_unit]",
+                            format_conversion_factor(row.factor),
+                            step: "any", min: 0, required: true,
+                            id: "factor_#{row.id}",
+                            data: { conversion_review_target: "factor", action: "input->conversion-review#touch" },
+                            class: "w-28 border rounded-lg px-2 py-1.5 text-sm text-end #{row.check? ? 'border-red-300 bg-white' : 'border-gray-300'}" %>
+                    <% else %>
+                      <span class="font-semibold text-gray-900"><%= format_conversion_factor(row.factor) %></span>
+                    <% end %>
+                    <span class="text-xs text-gray-500"><%= base_label %></span>
+                  </div>
+                </td>
+                <td class="p-3 align-top">
+                  <span class="inline-flex items-center rounded-lg border px-2 py-0.5 text-xs font-semibold <%= unit_conversion_status_class(row.status) %>">
+                    <%= t("inventory.unit_conversions.status.#{row.status}") %>
+                  </span>
+                  <% reason = unit_conversion_reason(row) %>
+                  <% if reason %>
+                    <p class="text-xs text-gray-500 mt-1 max-w-xs"><%= reason %></p>
+                  <% end %>
+                  <% if editable && row.check? && row.expected.present? %>
+                    <button type="button"
+                            data-action="conversion-review#apply"
+                            data-field="factor_<%= row.id %>"
+                            data-value="<%= format_conversion_factor(row.expected) %>"
+                            class="mt-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                      <%= t("inventory.unit_conversions.use_expected", value: format_conversion_factor(row.expected)) %>
+                    </button>
+                  <% end %>
+                </td>
+                <td class="p-3 text-center">
+                  <% if editable %>
+                    <%= hidden_field_tag "conversions[#{row.id}][purchase_unit]", "0", id: nil %>
+                    <%= check_box_tag "conversions[#{row.id}][purchase_unit]", "1", row.ingredient_unit.purchase_unit?,
+                          id: "purchase_#{row.id}",
+                          data: { action: "change->conversion-review#touch" },
+                          class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500" %>
+                  <% else %>
+                    <span class="text-xs text-gray-500"><%= row.ingredient_unit.purchase_unit? ? t("inventory.unit_conversions.purchase_yes") : "—" %></span>
+                  <% end %>
+                </td>
+                <td class="p-3 text-end text-gray-700 whitespace-nowrap"><%= unit_conversion_cost(row) %></td>
+                <td class="p-3 pe-5 text-end text-gray-700 whitespace-nowrap"><%= unit_conversion_on_hand(row) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if editable %>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 bg-gray-50/80 px-5 py-4">
+          <p class="text-xs text-gray-500 max-w-xl"><%= t("inventory.unit_conversions.save_hint") %></p>
+          <%= f.submit t("inventory.unit_conversions.save"),
+                class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl cursor-pointer" %>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+<% end %>

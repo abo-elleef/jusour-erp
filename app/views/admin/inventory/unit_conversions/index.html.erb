@@ -1,0 +1,61 @@
+<% content_for :title, t("inventory.unit_conversions.title") %>
+<%= render "admin/inventory/tools_nav" %>
+<%
+  input_class = "w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm bg-white"
+  # A company can run to dozens of units; a plain select of them is unusable.
+  unit_options_json = @units.map { |u| { value: u.id, label: ingredient_unit_label(u.name) } }.to_json
+  category_options_json = @categories.map { |c| { value: c.id, label: c.name } }.to_json
+%>
+
+<div class="max-w-full">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.unit_conversions.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1 max-w-3xl"><%= t("inventory.unit_conversions.description") %></p>
+    </div>
+    <%= link_to t("inventory.unit_conversions.export_csv"),
+          admin_inventory_unit_conversions_path(filter_params.merge(format: :csv)),
+          class: "inline-flex items-center gap-1.5 text-sm font-semibold text-gray-700 border border-gray-300 bg-white hover:bg-gray-50 px-4 py-2.5 rounded-xl transition-colors" %>
+  </div>
+
+  <%= render "summary" %>
+
+  <%# ── Filters. Outside the frame: they change every count above. ──── %>
+  <%= form_with url: admin_inventory_unit_conversions_path, method: :get,
+        class: "rounded-2xl border border-gray-200 bg-white p-4 mb-5 grid grid-cols-1 md:grid-cols-5 gap-3 items-end",
+        data: { searchable_select_options: unit_options_json } do |f| %>
+    <%= f.hidden_field :flag, value: @flag %>
+    <%= f.hidden_field :view, value: @view %>
+    <div>
+      <%= f.label :q, t("inventory.unit_conversions.filter.search"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+      <%= f.text_field :q, value: @query, placeholder: t("inventory.unit_conversions.filter.search_placeholder"), class: input_class %>
+    </div>
+    <div>
+      <%= f.label :base_unit_id, t("inventory.unit_conversions.col.base_unit"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+      <%= render "shared/searchable_select", form: f, field: :base_unit_id, selected: @base_unit_id,
+            placeholder: t("inventory.unit_conversions.filter.any_unit"), input_class: input_class %>
+    </div>
+    <div>
+      <%= f.label :unit_id, t("inventory.unit_conversions.col.alt_unit"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+      <%= render "shared/searchable_select", form: f, field: :unit_id, selected: @unit_id,
+            placeholder: t("inventory.unit_conversions.filter.any_unit"), input_class: input_class %>
+    </div>
+    <div data-searchable-select-options="<%= category_options_json %>">
+      <%= f.label :category_id, t("inventory.unit_conversions.filter.category"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+      <%= render "shared/searchable_select", form: f, field: :category_id, selected: @category_id,
+            placeholder: t("inventory.unit_conversions.filter.all_categories"), input_class: input_class %>
+    </div>
+    <div class="flex gap-2">
+      <div class="flex-1">
+        <%= f.label :status, t("inventory.unit_conversions.filter.status"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= f.select :status, options_for_select(
+              Admin::Inventory::UnitConversionsController::STATUSES.map { |s| [t("inventory.unit_conversions.filter.status_#{s}"), s] }, @status
+            ), {}, class: input_class %>
+      </div>
+      <%= f.submit t("inventory.unit_conversions.filter.apply"),
+            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl cursor-pointer self-end" %>
+    </div>
+  <% end %>
+
+  <%= render "frame" %>
+</div>

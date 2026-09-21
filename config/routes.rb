@@ -315,6 +315,9 @@ Rails.application.routes.draw do
 
     namespace :inventory do
       resources :units, except: %i[show]
+      resources :unit_conversions, only: %i[index] do
+        collection { patch :bulk_update }
+      end
       resources :ingredient_categories do
         member { get :count_sheet }
         collection { patch :reorder }
