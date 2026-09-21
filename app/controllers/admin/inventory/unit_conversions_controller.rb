@@ -71,7 +71,7 @@ module Admin
         # The "other ingredients convert this pair differently" check has to see
         # the whole company, not just the filtered page, or narrowing the list
         # would quietly silence it.
-        peers = IngredientUnit.includes(ingredient: :unit_ref).to_a
+        peers = IngredientUnit.includes(:unit_ref, ingredient: :unit_ref).to_a
         @review = ::Inventory::UnitConversionReview.new(filtered_conversions, peers: peers)
         @rows = sort_rows(apply_flag(@review.rows))
         @counts = @review.rows.group_by(&:status).transform_values(&:size)

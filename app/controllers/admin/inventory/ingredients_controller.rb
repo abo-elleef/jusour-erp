@@ -39,6 +39,7 @@ module Admin
             @total_ingredients = Ingredient.active.count
             @accessible_locations = Location.active.ordered
               .where(id: current_user.accessible_location_ids)
+            @conversion_check_count = conversion_check_count
           end
           format.csv do
             send_data stock_by_location_csv(@ingredients),
@@ -294,6 +295,21 @@ module Admin
         url
       rescue URI::InvalidURIError
         nil
+      end
+
+      # How many alternate-unit rates the conversion review disagrees with, for
+      # the pointer to that page. The rows are filtered in Ruby off one load
+      # rather than queried per status, and every row in the company is passed
+      # as peers so the "other ingredients convert this pair differently" check
+      # still sees them all.
+      def conversion_check_count
+        peers = IngredientUnit.includes(:unit_ref, ingredient: :unit_ref).to_a
+        rows = case @status
+        when "active" then peers.select { |iu| iu.ingredient&.active? }
+        when "inactive" then peers.reject { |iu| iu.ingredient&.active? }
+        else peers
+        end
+        ::Inventory::UnitConversionReview.new(rows, peers: peers).checks.size
       end
 
       def set_ingredient

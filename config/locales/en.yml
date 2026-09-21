@@ -845,6 +845,11 @@ en:
           other: "Showing %{count} ingredients"
         remove_low_stock_filter: "Remove low stock filter"
         remove_out_of_stock_filter: "Remove out of stock filter"
+        conversion_checks:
+          one: "1 unit rate needs a look"
+          other: "%{count} unit rates need a look"
+        conversion_checks_hint: "A conversion disagrees with the units it converts between."
+        conversion_checks_action: "Review conversions →"
         remove_expiring_filter: "Remove expiring soon filter"
         expiring_within_days: "Expiring within %{days} days"
         branch_stock:

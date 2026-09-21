@@ -67,6 +67,22 @@
     <% end %>
   </div>
 
+  <%# A pointer to the conversion review when it disagrees with a rate. The list
+      shows what each rate is; only the review can say whether it is right. %>
+  <% if @conversion_check_count.to_i.positive? %>
+    <%= link_to admin_inventory_unit_conversions_path(flag: "check", status: (@status unless @status == "active")),
+          class: "flex flex-wrap items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 mb-4 text-sm hover:bg-amber-100 transition-colors" do %>
+      <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+      </svg>
+      <span class="font-semibold text-amber-900">
+        <%= t("inventory.ingredients.index.conversion_checks", count: @conversion_check_count) %>
+      </span>
+      <span class="text-amber-800"><%= t("inventory.ingredients.index.conversion_checks_hint") %></span>
+      <span class="ms-auto font-semibold text-amber-700"><%= t("inventory.ingredients.index.conversion_checks_action") %></span>
+    <% end %>
+  <% end %>
+
   <div class="flex items-center gap-1.5 mb-4 text-sm">
     <span class="text-gray-500 me-1"><%= t("inventory.ingredients.index.status_filter") %>:</span>
     <% [["active", "status_active"], ["inactive", "status_inactive"], ["all", "status_all"]].each do |val, key| %>

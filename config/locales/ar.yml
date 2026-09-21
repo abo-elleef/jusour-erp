@@ -843,6 +843,11 @@ ar:
           other: "عرض %{count} مكونات"
         remove_low_stock_filter: "إزالة تصفية المخزون المنخفض"
         remove_out_of_stock_filter: "إزالة تصفية نفاد المخزون"
+        conversion_checks:
+          one: "معامل تحويل واحد يحتاج مراجعة"
+          other: "%{count} معاملات تحويل تحتاج مراجعة"
+        conversion_checks_hint: "التحويل لا يتفق مع الوحدتين اللتين يحوّل بينهما."
+        conversion_checks_action: "مراجعة التحويلات ←"
         remove_expiring_filter: "إزالة تصفية قرب انتهاء الصلاحية"
         expiring_within_days: "ينتهي خلال %{days} أيام"
         branch_stock:

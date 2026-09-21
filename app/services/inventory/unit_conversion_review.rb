@@ -47,6 +47,21 @@ module Inventory
     # its measure word ("½ kilo bag") must not be read as a plain 1 kg.
     FRACTION_WORDS = %w[half quarter نص نصف ربع].freeze
 
+    # Every measure word with the matcher that finds it, built once at load.
+    # A Latin word must stand alone ("l" cannot fire inside "lux"); Arabic has no
+    # case and takes clitics freely, so those words match anywhere.
+    WORD_MATCHERS = WORDS.flat_map { |unit, words|
+      words.map do |word|
+        pattern = word.match?(/\A[a-z]+\z/) ? /(?<![a-z])#{Regexp.escape(word)}(?![a-z])/ : /#{Regexp.escape(word)}/
+        [word, pattern, unit]
+      end
+    }.freeze
+
+    PACK_COUNT = /[*×]\s*(\d+(?:[.,]\d+)?)/
+    TRAILING_QUANTITY = /(\d+(?:[.,]\d+)?)\s*\z/
+    TOKEN_SPLIT = /[\s*×x()]+/
+    BARE_NUMBER = /\A[\d.,]+\z/
+
     Row = Struct.new(
       :ingredient_unit, :ingredient, :base_unit, :alt_unit, :factor,
       :expected, :basis, :peer_count, :status,
@@ -101,19 +116,29 @@ module Inventory
     # The strongest available expectation wins: arithmetic on the units beats a
     # reading of their names, and both beat "everyone else does it differently".
     def expectation(base, alt, factor, ingredient_unit)
-      from_pack = pack_expectation(base, alt)
-      return [from_pack, :pack] if from_pack
-
-      from_physical, exact = physical_expectation(base, alt)
-      return [from_physical, exact ? :physical : :pack] if from_physical
-
-      from_name = name_size_expectation(base, alt)
-      return [from_name, :pack] if from_name
+      derived, basis = derived_expectation(base, alt)
+      return [derived, basis] if derived
 
       peer, count = peer_tally(ingredient_unit)
       return [peer, :peer] if peer && count >= 2 && !within?(factor, peer, EXACT_TOLERANCE)
 
       [nil, nil]
+    end
+
+    # Everything that follows from the two unit names alone. A catalog reuses the
+    # same pair over and over ("carton * 1000" against "column * 50" on every
+    # cup), so the reading is done once per pair rather than once per row.
+    def derived_expectation(base, alt)
+      @derived_expectations ||= {}
+      @derived_expectations[[base, alt]] ||= begin
+        physical, exact = physical_expectation(base, alt)
+
+        if (pack = pack_expectation(base, alt)) then [pack, :pack]
+        elsif physical then [physical, exact ? :physical : :pack]
+        elsif (named = name_size_expectation(base, alt)) then [named, :pack]
+        else [nil, nil]
+        end
+      end
     end
 
     # "carton * 12" over "carton * 1000" is 12/1000; over a base that carries no
@@ -155,20 +180,34 @@ module Inventory
     def counted_in(name, unit)
       normalized = normalize(name)
       unit_tokens(unit).each do |token|
-        match = normalized.match(/(\d+(?:[.,]\d+)?)\s*#{Regexp.escape(token)}/)
+        match = normalized.match(counted_pattern(token))
         return to_decimal(match[1]) if match
       end
       nil
     end
 
+    def counted_pattern(token)
+      @counted_patterns ||= {}
+      @counted_patterns[token] ||= /(\d+(?:[.,]\d+)?)\s*#{Regexp.escape(token)}/
+    end
+
     # Significant words of a unit's name — what to look for inside another name.
     def unit_tokens(unit)
-      normalize(unit).split(/[\s*×x()]+/).reject { |t| t.length < 2 || t.match?(/\A[\d.,]+\z/) }
+      @unit_tokens ||= {}
+      @unit_tokens[unit] ||=
+        normalize(unit).split(TOKEN_SPLIT).reject { |t| t.length < 2 || t.match?(BARE_NUMBER) }
     end
 
     # The "* 12" / "×12" / "x 50" a packaging unit is named after.
     def pack_count(name)
-      match = normalize(name).match(/[*×]\s*(\d+(?:[.,]\d+)?)/)
+      @pack_counts ||= {}
+      return @pack_counts[name] if @pack_counts.key?(name)
+
+      @pack_counts[name] = compute_pack_count(name)
+    end
+
+    def compute_pack_count(name)
+      match = normalize(name).match(PACK_COUNT)
       return nil unless match
 
       count = to_decimal(match[1])
@@ -179,6 +218,13 @@ module Inventory
     # states one ("10 kilo sack", "430g net tin"). Returns nil when the name is
     # a bare container ("carton", "bottle 2200") with nothing to measure it by.
     def physical_size(name)
+      @physical_sizes ||= {}
+      return @physical_sizes[name] if @physical_sizes.key?(name)
+
+      @physical_sizes[name] = compute_physical_size(name)
+    end
+
+    def compute_physical_size(name)
       normalized = normalize(name)
       return nil if FRACTION_WORDS.any? { |w| normalized.include?(w) }
 
@@ -196,7 +242,7 @@ module Inventory
       best = nil
       each_measure_word(normalized) do |word, index, unit|
         prefix = normalized[0...index]
-        quantity = prefix[/(\d+(?:[.,]\d+)?)\s*\z/, 1]
+        quantity = prefix[TRAILING_QUANTITY, 1]
         next if quantity.blank?
 
         amount = to_decimal(quantity)
@@ -220,25 +266,12 @@ module Inventory
     # given position (so "كيلو جرام" reads as kilograms, not grams).
     def each_measure_word(normalized)
       hits = []
-      WORDS.each do |unit, words|
-        words.each do |word|
-          index = word_index(normalized, word)
-          hits << [word, index, unit] if index
-        end
+      WORD_MATCHERS.each do |word, pattern, unit|
+        index = normalized.index(pattern)
+        hits << [word, index, unit] if index
       end
       hits.sort_by { |word, index, _unit| [index, -word.length] }
         .each { |word, index, unit| yield(word, index, unit) }
-    end
-
-    # Matches a word on its own, not as a fragment of a longer Latin word
-    # ("l" must not fire inside "lux"). Arabic has no case and clitics attach
-    # freely, so non-Latin words match anywhere.
-    def word_index(normalized, word)
-      if word.match?(/\A[a-z]+\z/)
-        normalized.index(/(?<![a-z])#{Regexp.escape(word)}(?![a-z])/)
-      else
-        normalized.index(word)
-      end
     end
 
     def dimension_of(unit)
@@ -284,7 +317,8 @@ module Inventory
     ARABIC_DIGITS = ("٠".."٩").zip("0".."9").to_h.merge(("۰".."۹").zip("0".."9").to_h).freeze
 
     def normalize(name)
-      name.to_s.downcase.tr(ARABIC_DIGITS.keys.join, ARABIC_DIGITS.values.join).squeeze(" ").strip
+      @normalized ||= {}
+      @normalized[name] ||= name.to_s.downcase.tr(ARABIC_DIGITS.keys.join, ARABIC_DIGITS.values.join).squeeze(" ").strip
     end
 
     def to_decimal(string)

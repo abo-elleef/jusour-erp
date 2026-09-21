@@ -30,19 +30,55 @@ RSpec.describe "Alternate units on the ingredients list", type: :request do
     expect(response.body).to include(I18n.t("inventory.ingredients.show.units.purchase"))
   end
 
+  it "says nothing about the review while every rate adds up" do
+    get admin_inventory_ingredients_path
+
+    expect(response.body).not_to include(I18n.t("inventory.ingredients.index.conversion_checks_action"))
+  end
+
+  describe "when a rate disagrees with the units it converts between" do
+    let!(:mushrooms) do
+      ingredient = create(:ingredient, company: company, ingredient_category: category, name: "Mushrooms", unit: "kg")
+      ingredient.ingredient_units.create!(unit: "g", base_units_per_unit: 430, company: company)
+      ingredient
+    end
+
+    it "points at the review, filtered to the rates that need one" do
+      get admin_inventory_ingredients_path
+
+      expect(response.body).to include(I18n.t("inventory.ingredients.index.conversion_checks", count: 1))
+      expect(response.body).to include(admin_inventory_unit_conversions_path(flag: "check"))
+    end
+
+    it "counts the inactive ones too when the list is showing them" do
+      mushrooms.update!(active: false)
+
+      get admin_inventory_ingredients_path
+      expect(response.body).not_to include(I18n.t("inventory.ingredients.index.conversion_checks_action"))
+
+      get admin_inventory_ingredients_path(status: "all")
+      expect(response.body).to include(I18n.t("inventory.ingredients.index.conversion_checks", count: 1))
+    end
+  end
+
   it "loads the units for the whole page rather than per row" do
     Array.new(3) do |i|
       other = create(:ingredient, company: company, ingredient_category: category, name: "Spice #{i}", unit: "kg")
       other.ingredient_units.create!(unit: "g", base_units_per_unit: 0.001, company: company)
     end
 
-    queries = []
+    queries = Hash.new { |h, k| h[k] = [] }
     subscriber = ActiveSupport::Notifications.subscribe("sql.active_record") do |*, payload|
-      queries << payload[:sql] if payload[:sql].include?("ingredient_units")
+      sql = payload[:sql]
+      queries[:conversions] << sql if sql.include?("ingredient_units")
+      queries[:units] << sql if sql.match?(/FROM "units"/)
     end
     get admin_inventory_ingredients_path
     ActiveSupport::Notifications.unsubscribe(subscriber)
 
-    expect(queries.size).to eq(1)
+    # One load for the rows on the page, one for the review behind the banner.
+    expect(queries[:conversions].size).to eq(2)
+    # The units they convert to are preloaded, not fetched one conversion at a time.
+    expect(queries[:units].size).to be <= 4
   end
 end
