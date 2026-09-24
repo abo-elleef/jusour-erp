@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_20_140000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_24_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -568,6 +568,15 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_20_140000) do
     t.index ["company_id"], name: "index_ingredient_categories_on_company_id"
   end
 
+  create_table "ingredient_location_accesses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "ingredient_id", null: false
+    t.uuid "location_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ingredient_id", "location_id"], name: "index_ingredient_location_accesses_on_ingredient_and_location", unique: true
+    t.index ["location_id"], name: "index_ingredient_location_accesses_on_location_id"
+  end
+
   create_table "ingredient_locations", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "ingredient_id", null: false
     t.uuid "location_id", null: false
@@ -612,6 +621,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_20_140000) do
     t.bigint "selling_price_cents", default: 0, null: false
     t.string "cost_source", default: "manual", null: false
     t.datetime "cost_synced_at"
+    t.boolean "all_locations", default: true, null: false
     t.index "company_id, lower((code)::text)", name: "index_ingredients_on_company_and_lower_code", unique: true
     t.index ["active"], name: "index_ingredients_on_active"
     t.index ["company_id", "name"], name: "index_ingredients_on_company_id_and_name", unique: true
@@ -1861,6 +1871,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_20_140000) do
   add_foreign_key "incomes", "treasuries"
   add_foreign_key "incomes", "users"
   add_foreign_key "ingredient_categories", "companies"
+  add_foreign_key "ingredient_location_accesses", "ingredients"
+  add_foreign_key "ingredient_location_accesses", "locations"
   add_foreign_key "ingredient_locations", "ingredients"
   add_foreign_key "ingredient_locations", "locations"
   add_foreign_key "ingredient_units", "companies"

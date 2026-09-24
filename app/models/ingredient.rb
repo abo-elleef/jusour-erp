@@ -25,6 +25,13 @@ class Ingredient < ApplicationRecord
     reject_if: ->(attrs) { attrs["unit_id"].blank? && attrs["base_units_per_unit"].blank? }
   has_many :ingredient_locations, dependent: :destroy
   has_many :locations, through: :ingredient_locations
+
+  # Location scope — the "where" axis, separate from `ingredient_locations`
+  # above (the per-location stock ledger). `all_locations` ingredients are
+  # usable everywhere; otherwise they're limited to their assigned locations.
+  # Mirrors User/UserLocation.
+  has_many :ingredient_location_accesses, dependent: :destroy
+  has_many :restricted_locations, through: :ingredient_location_accesses, source: :location
   has_many :recipes, dependent: :destroy
   has_many :menu_items, through: :recipes
   has_many :stock_adjustments, dependent: :nullify
@@ -184,6 +191,19 @@ class Ingredient < ApplicationRecord
 
   def self.unit_display_label(name)
     I18n.t("inventory.unit_labels.#{name}", default: name.to_s)
+  end
+
+  # The location ids this ingredient may be used at — every active company
+  # location when global, otherwise just its assigned set.
+  def accessible_location_ids
+    all_locations? ? Location.active.ids : restricted_location_ids
+  end
+
+  def can_access_location?(location)
+    return true if all_locations?
+
+    location_id = location.respond_to?(:id) ? location.id : location
+    restricted_location_ids.include?(location_id)
   end
 
   private

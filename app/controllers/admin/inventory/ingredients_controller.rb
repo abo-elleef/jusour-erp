@@ -196,6 +196,11 @@ module Admin
             alert: t("inventory.ingredients.show.location_required")
           return
         end
+        unless @ingredient.can_access_location?(location)
+          redirect_to admin_inventory_ingredient_path(@ingredient),
+            alert: t("inventory.ingredients.show.location_not_allowed")
+          return
+        end
 
         # The delta may be entered in an alternate unit; store it in the base unit
         # and keep the entered unit for display.
@@ -525,7 +530,10 @@ module Admin
       def load_branch_stock
         central_kitchens = Location.active.central_kitchens.ordered.to_a
         branches = Location.active.branches.ordered.to_a
-        @stock_locations = central_kitchens + branches
+        # Scoped to the locations this ingredient is actually allowed at — an
+        # ingredient restricted away from a branch has nothing to adjust,
+        # count, or view stock for there.
+        @stock_locations = (central_kitchens + branches).select { |loc| @ingredient.can_access_location?(loc) }
         @ingredient_locations_by_location_id = @ingredient.ingredient_locations
           .where(location_id: @stock_locations.map(&:id))
           .index_by(&:location_id)
@@ -556,8 +564,10 @@ module Admin
         permitted = params.require(:ingredient).permit(
           :name, :code, :ingredient_category_id, :unit_id, :reorder_threshold, :max_quantity,
           :quantity_on_hand, :cost_per_unit_dollars, :selling_price_pounds, :active, :shelf_life_days,
+          :all_locations, restricted_location_ids: [],
           ingredient_units_attributes: %i[id unit_id base_units_per_unit purchase_unit _destroy]
         )
+        permitted[:restricted_location_ids] = Array(permitted[:restricted_location_ids]).reject(&:blank?) if permitted.key?(:restricted_location_ids)
         # Only touch the cost when the request actually carried the field. Coercing
         # an absent key to 0 would silently wipe a maintained cost — and that value
         # drives the valuation report, menu recipe costing, and the price stamped on

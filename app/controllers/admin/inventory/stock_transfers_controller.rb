@@ -400,7 +400,7 @@ module Admin
 
       def load_form_data
         @locations = Location.active.ordered
-        @ingredients = Ingredient.active.includes(:ingredient_category, :ingredient_units).order(:name)
+        @ingredients = location_scoped_ingredients
         @ingredient_available_units = @ingredients.to_h do |i|
           [i.id, i.available_units.map { |u| [helpers.ingredient_unit_label(u), u] }]
         end
@@ -410,6 +410,27 @@ module Admin
           records: @stock_transfer.stock_transfer_lines.select(&:ingredient_id),
           associations: { ingredient: :ingredient_category }
         ).call
+      end
+
+      # Once both ends of the transfer are picked, the ingredient picker only
+      # offers ingredients allowed at both — an ingredient restricted away from
+      # either location has nothing to send or receive there. Locations are
+      # still blank on a brand new transfer, so the full catalog shows until
+      # one is chosen. Lines already on the transfer keep their ingredient
+      # available regardless (never yanked out from under an existing row by a
+      # later restriction), and the model validation is what actually blocks
+      # saving a genuinely disallowed ingredient.
+      def location_scoped_ingredients
+        scope = Ingredient.active.includes(:ingredient_category, :ingredient_units).order(:name)
+        from = @stock_transfer.from_location
+        to = @stock_transfer.to_location
+        return scope if from.blank? || to.blank?
+
+        existing_ids = @stock_transfer.stock_transfer_lines.map(&:ingredient_id).compact.to_set
+        scope.select do |ingredient|
+          existing_ids.include?(ingredient.id) ||
+            (ingredient.can_access_location?(from) && ingredient.can_access_location?(to))
+        end
       end
 
       def preload_source_ingredient_locations

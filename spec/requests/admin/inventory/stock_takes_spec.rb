@@ -40,6 +40,18 @@ RSpec.describe "Admin::Inventory::StockTakes", type: :request do
       expect(take.stock_take_items.first.expected_quantity.to_d).to eq(12.0)
     end
 
+    it "keeps an all_locations ingredient but excludes one restricted away from this location" do
+      create(:ingredient_location, location: kitchen, ingredient: ingredient, quantity_on_hand: 12.0)
+      restricted = create(:ingredient, company: company, ingredient_category: category,
+        all_locations: false, restricted_location_ids: [branch.id])
+      create(:ingredient_location, location: kitchen, ingredient: restricted, quantity_on_hand: 3.0)
+
+      post admin_inventory_stock_takes_path, params: { location_id: kitchen.id }
+
+      take = StockTake.last
+      expect(take.stock_take_items.map(&:ingredient)).to eq([ingredient])
+    end
+
     it "optionally limits items to ingredients linked to the chosen vendor" do
       supplier = Supplier.create!(company: company, name: "Metro Foods")
       other_supplier = Supplier.create!(company: company, name: "Other Vendor")

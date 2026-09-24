@@ -909,6 +909,10 @@ ar:
         shelf_life_days: "مدة الصلاحية المعتادة (أيام)"
         shelf_life_days_placeholder: "مثال: 7"
         shelf_life_days_hint: "تُستخدم لتعبئة تاريخ الانتهاء عند استلام فواتير الموردين. اتركه فارغاً إن لم ينطبق."
+        locations_label: "نطاق المواقع"
+        all_locations: "كل المواقع"
+        all_locations_hint: "مفعّل افتراضياً ليكون المكون متاحاً في كل مكان. أوقفه لتقييده بمواقع محددة."
+        locations_hint: "يُستخدم فقط عند إيقاف «كل المواقع» — المواقع التي يُقيَّد بها هذا المكون."
       edit:
         title: "تعديل %{name}"
         details: "التفاصيل"
@@ -1002,6 +1006,7 @@ ar:
         select_location: "اختر الموقع…"
         location_hint: "يُتتبّع المخزون لكل موقع؛ تصبح الكمية المضافة قابلة للتحويل من هذا الموقع."
         location_required: "اختر موقعاً للتعديل."
+        location_not_allowed: "هذا المكون غير متاح في هذا الموقع."
         quantity_delta: "تغيير الكمية (+ إضافة / − خصم)"
         adjustment_type: "النوع"
         notes_placeholder: "ملاحظات"
@@ -5148,6 +5153,10 @@ ar:
               same_as_source: "يجب أن يختلف عن موقع المصدر"
             transferred_on:
               in_the_future: "لا يمكن أن يكون في المستقبل"
+        stock_transfer_line:
+          attributes:
+            ingredient_id:
+              not_available_at_location: "غير متاح في موقع المصدر أو الوجهة"
         location_operating_day:
           attributes:
             location:

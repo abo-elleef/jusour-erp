@@ -911,6 +911,10 @@ en:
         shelf_life_days: "Typical shelf life (days)"
         shelf_life_days_placeholder: "e.g. 7"
         shelf_life_days_hint: "Used to prefill expiry dates when receiving vendor invoices. Leave blank if not applicable."
+        locations_label: "Location access"
+        all_locations: "All locations"
+        all_locations_hint: "On by default so the ingredient is usable everywhere. Turn off to limit it to specific locations."
+        locations_hint: "Used only when “All locations” is off — the locations this ingredient is scoped to."
       edit:
         title: "Edit %{name}"
         details: "Details"
@@ -1002,6 +1006,7 @@ en:
         select_location: "Select location…"
         location_hint: "Stock is tracked per location; added stock becomes transferable from here."
         location_required: "Select a location for the adjustment."
+        location_not_allowed: "This ingredient is not available at that location."
         quantity_delta: "Quantity change (+ add / − remove)"
         adjustment_type: "Type"
         notes_placeholder: "Notes"
@@ -5123,6 +5128,10 @@ en:
               same_as_source: "must be different from the source location"
             transferred_on:
               in_the_future: "cannot be in the future"
+        stock_transfer_line:
+          attributes:
+            ingredient_id:
+              not_available_at_location: "is not available at the source or destination location"
         location_operating_day:
           attributes:
             location:

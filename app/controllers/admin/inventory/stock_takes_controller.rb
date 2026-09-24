@@ -206,6 +206,9 @@ module Admin
         count = 0
         scope.find_each do |il|
           next unless il.ingredient.active?
+          # An ingredient scoped away from this location (all_locations off,
+          # this location not in its list) has nothing to count here.
+          next unless il.ingredient.can_access_location?(location)
 
           stock_take.stock_take_items.create!(
             ingredient: il.ingredient,

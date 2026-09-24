@@ -35,6 +35,7 @@ class StockTransferLine < ApplicationRecord
   validates :counted_quantity, numericality: { greater_than_or_equal_to: 0 }, allow_nil: true
   validates :position, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validate :unit_valid_for_ingredient
+  validate :ingredient_available_at_transfer_locations
 
   before_validation :convert_requested_input
 
@@ -154,5 +155,16 @@ class StockTransferLine < ApplicationRecord
     return if ingredient.available_units.include?(unit)
 
     errors.add(:unit, :invalid)
+  end
+
+  def ingredient_available_at_transfer_locations
+    return if ingredient.blank? || stock_transfer.blank?
+
+    from = stock_transfer.from_location
+    to = stock_transfer.to_location
+    return if from.blank? || to.blank?
+    return if ingredient.can_access_location?(from) && ingredient.can_access_location?(to)
+
+    errors.add(:ingredient_id, :not_available_at_location)
   end
 end
