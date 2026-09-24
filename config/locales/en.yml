@@ -1045,6 +1045,10 @@ en:
           manage: "Manage stock"
           assign: "Assign"
           empty: "No active branches or central kitchens configured. Add locations to track stock per site."
+        disallowed_stock:
+          title: "Stock outside this ingredient's allowed locations"
+          hint: "This ingredient isn't scoped to these locations, but they still show a balance — clear it out, transfer it, or re-allow the location."
+          quantity: "%{quantity} %{unit} on hand"
         balance_history:
           title: "Balance history"
           hint: "Track how this ingredient's total on-hand changed over time."

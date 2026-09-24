@@ -54,6 +54,38 @@ RSpec.describe "Ingredient location restrictions apply to stock movement", type:
     end
   end
 
+  describe "stock stranded outside allowed locations" do
+    let!(:ingredient) do
+      Ingredient.create!(name: "Tomatoes", ingredient_category: category, unit: "kg",
+        reorder_threshold: 1, company: company, all_locations: false, restricted_location_ids: [branch_a.id])
+    end
+
+    it "flags a nonzero balance left at a location the ingredient isn't allowed at" do
+      create(:ingredient_location, ingredient: ingredient, location: branch_b, quantity_on_hand: 6.0)
+
+      get admin_inventory_ingredient_path(ingredient)
+
+      expect(response.body).to include(I18n.t("inventory.ingredients.show.disallowed_stock.title"))
+      expect(response.body).to include(branch_b.name)
+    end
+
+    it "does not flag a zero balance at a disallowed location" do
+      create(:ingredient_location, ingredient: ingredient, location: branch_b, quantity_on_hand: 0)
+
+      get admin_inventory_ingredient_path(ingredient)
+
+      expect(response.body).not_to include(I18n.t("inventory.ingredients.show.disallowed_stock.title"))
+    end
+
+    it "does not flag a balance at an allowed location" do
+      create(:ingredient_location, ingredient: ingredient, location: branch_a, quantity_on_hand: 6.0)
+
+      get admin_inventory_ingredient_path(ingredient)
+
+      expect(response.body).not_to include(I18n.t("inventory.ingredients.show.disallowed_stock.title"))
+    end
+  end
+
   describe "stock transfers" do
     let!(:restricted) do
       Ingredient.create!(name: "Tomatoes", ingredient_category: category, unit: "kg",

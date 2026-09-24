@@ -537,6 +537,22 @@ module Admin
         @ingredient_locations_by_location_id = @ingredient.ingredient_locations
           .where(location_id: @stock_locations.map(&:id))
           .index_by(&:location_id)
+        load_disallowed_location_balances
+      end
+
+      # Stock sitting at a location this ingredient isn't (or is no longer)
+      # scoped to — typically left behind after someone restricted the
+      # ingredient's locations post-hoc, while stock had already moved
+      # somewhere else. The number is real, it's just parked somewhere the
+      # ingredient isn't supposed to be used, so it's flagged rather than
+      # hidden: only a human can decide whether to transfer it out, adjust it
+      # away, or re-allow the location.
+      def load_disallowed_location_balances
+        @disallowed_location_balances = @ingredient.ingredient_locations
+          .includes(:location)
+          .where.not(location_id: @stock_locations.map(&:id))
+          .where.not(quantity_on_hand: 0)
+          .to_a
       end
 
       def load_balance_history_chart

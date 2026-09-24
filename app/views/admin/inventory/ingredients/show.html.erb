@@ -151,6 +151,38 @@
     </div>
   </div>
 
+  <%# ── Stock stranded outside the ingredient's allowed locations ──────────── %>
+  <% if @disallowed_location_balances.present? %>
+    <section class="rounded-2xl border border-red-200 bg-red-50 overflow-hidden mb-6">
+      <div class="px-5 py-4 border-b border-red-100">
+        <h2 class="text-sm font-semibold text-red-900">
+          <%= t("inventory.ingredients.show.disallowed_stock.title") %>
+        </h2>
+        <p class="text-xs text-red-800 mt-0.5"><%= t("inventory.ingredients.show.disallowed_stock.hint") %></p>
+      </div>
+      <ul class="divide-y divide-red-100">
+        <% @disallowed_location_balances.each do |il| %>
+          <li class="p-3 ps-5 pe-5 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <%= link_to il.location.name, admin_location_path(il.location),
+                    class: "font-semibold text-red-900 hover:text-red-950 underline" %>
+              <span class="text-sm text-red-800 tabular-nums">
+                <%= t("inventory.ingredients.show.disallowed_stock.quantity",
+                      quantity: number_with_precision(il.quantity_on_hand, precision: 3),
+                      unit: ingredient_unit_label(@ingredient.unit)) %>
+              </span>
+            </div>
+            <% if policy(il.location).show? %>
+              <%= link_to t("inventory.ingredients.show.branch_stock.manage"),
+                    admin_location_ingredients_path(il.location),
+                    class: chip_secondary %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
   <%# ── Branch stock ─────────────────────────────────────────────────────── %>
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="<%= section_head %>">
