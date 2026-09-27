@@ -43,6 +43,7 @@ RSpec.describe Sales::ConfirmCreditNoteService do
 
     expect(cn.reload.status).to eq("confirmed")
     expect(customer.reload.ar_balance_cents).to eq(60_000)
+    expect(customer.total_spent_cents).to eq(60_000) # 100,000 invoice less the 40,000 return
 
     entry = JournalEntry.where(company: company).order(:created_at).last
     expect(entry.lines.sum(&:debit_cents)).to eq(entry.lines.sum(&:credit_cents))

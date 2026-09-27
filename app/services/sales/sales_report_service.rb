@@ -14,11 +14,16 @@ module Sales
       def net_cents = revenue_cents - returns_cents
     end
 
-    def initialize(start_date, end_date)
+    def initialize(start_date, end_date, customer_type: nil)
       @start_date = start_date
       @end_date = end_date
+      @customer_type = customer_type if Customer::CUSTOMER_TYPES.include?(customer_type)
     end
 
+    # Computes every breakdown at once. Prefer calling the individual methods
+    # below directly when only one is needed (e.g. one report tab lazy-loaded on
+    # its own) — by_product/by_customer can run into thousands of rows, so
+    # computing all of them on every request doesn't scale.
     def call
       {
         summary: summary,
@@ -29,19 +34,6 @@ module Sales
         daily: daily
       }
     end
-
-    private
-
-    def invoices
-      @invoices ||= CustomerInvoice.realized.where(invoice_date: @start_date..@end_date)
-    end
-
-    def credit_notes
-      @credit_notes ||= CreditNote.realized.where(credit_note_date: @start_date..@end_date)
-    end
-
-    def gross_cents  = @gross_cents  ||= invoices.sum(:total_cents).to_i
-    def returns_cents = @returns_cents ||= credit_notes.sum(:total_cents).to_i
 
     def summary
       count = invoices.count
@@ -143,5 +135,34 @@ module Sales
         { date: date, gross_cents: gross, returns_cents: returned, net_cents: gross - returned }
       end
     end
+
+    # A cheap check for whether "by payment method" is worth its own tab — just
+    # how many distinct methods appear, not the full breakdown.
+    def payment_method_variety
+      invoices.distinct.count(:payment_method)
+    end
+
+    private
+
+    def invoices
+      @invoices ||= scoped_to_customer_type(CustomerInvoice.realized.where(invoice_date: @start_date..@end_date))
+    end
+
+    def credit_notes
+      @credit_notes ||= scoped_to_customer_type(CreditNote.realized.where(credit_note_date: @start_date..@end_date))
+    end
+
+    # Lets the owner read the same report as three different audiences: everyone,
+    # commercial (credit) buyers only, or regular (cash) customers only — a
+    # commercial account's bulk orders otherwise bury a doctor's own top spot in
+    # every breakdown.
+    def scoped_to_customer_type(relation)
+      return relation unless @customer_type
+
+      relation.joins(:customer).where(customers: { customer_type: @customer_type })
+    end
+
+    def gross_cents  = @gross_cents  ||= invoices.sum(:total_cents).to_i
+    def returns_cents = @returns_cents ||= credit_notes.sum(:total_cents).to_i
   end
 end

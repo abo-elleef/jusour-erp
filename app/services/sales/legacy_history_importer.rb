@@ -24,6 +24,15 @@ module Sales
     DEFAULT_CATEGORY = "Imported products"
     CENT = BigDecimal("0.01")
 
+    # A new customer defaults to "regular" (an individual doctor) unless their
+    # name itself says otherwise — a plain personal name is never a wholesale
+    # account. Keep this in sync with any one-off reclassification scripts.
+    BUSINESS_NAME_KEYWORDS = %w[
+      شركة مجموعة جروب مصنع معمل مستشفى جامعة كلية كورس ابحاث ورشة سبلايرز
+      دنتال دنت توث هورايزونز
+      workshop group solutions ltd dental company co. center centre clinic lab horizons
+    ].freeze
+
     Result = Struct.new(:location_name, :customers_created, :customers_backdated,
                         :customers_without_contact, :products_created,
                         :invoices_created, :credit_notes_created, :lines_created,
@@ -125,7 +134,7 @@ module Sales
     def build_customer(code, name)
       customer = Customer.new(
         company: @company, name: name, legacy_code: code,
-        customer_type: "commercial", phone: @fallback_phone
+        customer_type: business_name?(name) ? "commercial" : "regular", phone: @fallback_phone
       )
 
       if customer.save
@@ -143,6 +152,11 @@ module Sales
       end
 
       customer
+    end
+
+    def business_name?(name)
+      n = name.to_s.downcase
+      BUSINESS_NAME_KEYWORDS.any? { |kw| n.include?(kw.downcase) }
     end
 
     # --- products -----------------------------------------------------------
@@ -218,6 +232,7 @@ module Sales
 
       settle_total(invoice, invoice.customer_invoice_lines)
       backdate(invoice, doc[:date])
+      customer.increment!(:total_spent_cents, invoice.total_cents)
       @result.invoices_created += 1
     end
 
@@ -237,6 +252,7 @@ module Sales
 
       settle_total(note, note.credit_note_lines)
       backdate(note, doc[:date])
+      customer.increment!(:total_spent_cents, -note.total_cents)
       @result.credit_notes_created += 1
     end
 

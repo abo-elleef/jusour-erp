@@ -48,6 +48,7 @@ RSpec.describe Sales::ConfirmCustomerInvoiceService do
 
     # AR raised on the customer's ledger.
     expect(customer.reload.ar_balance_cents).to eq(100_000)
+    expect(customer.total_spent_cents).to eq(100_000)
 
     # Stock physically deducted at the selling location.
     expect(ingredient.stock_batches.where(location: location).sum(:quantity_remaining).to_d).to eq(95)

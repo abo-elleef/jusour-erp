@@ -50,6 +50,7 @@ module Sales
           source: @invoice
         )
         @invoice.update!(status: "confirmed", payment_status: "unpaid", confirmed_at: Time.current)
+        customer.increment!(:total_spent_cents, @invoice.total_cents)
       end
 
       Result.new(invoice: @invoice, credit_warning: status == :warning)
@@ -90,6 +91,7 @@ module Sales
         @invoice.update!(status: "confirmed", payment_status: "paid",
                          amount_paid_cents: amount_cents, treasury: treasury,
                          confirmed_at: Time.current)
+        @invoice.customer.increment!(:total_spent_cents, amount_cents)
       end
 
       Result.new(invoice: @invoice, credit_warning: false)

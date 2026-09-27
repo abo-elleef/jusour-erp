@@ -49,12 +49,21 @@ RSpec.describe "Admin::Sales::Reports", type: :request do
   end
 
   describe "the page" do
-    it "renders" do
+    it "renders, with each tab's table as its own lazy Turbo Frame" do
       historical_invoice(ingredient: bond, quantity: 10, price_cents: 2_000)
 
       get admin_sales_reports_path(locale: "en")
       expect(response).to have_http_status(:ok)
+      # The tables aren't computed on this request — only the lazy frame shells are.
+      expect(response.body).to include('id="report-product"')
+      expect(response.body).to include('id="report-customer"')
+      expect(response.body).not_to include("Bond Flipro")
+      expect(response.body).not_to include("Dream Clinic")
+
+      get admin_sales_reports_path(locale: "en", section: "product")
       expect(response.body).to include("Bond Flipro")
+
+      get admin_sales_reports_path(locale: "en", section: "customer")
       expect(response.body).to include("Dream Clinic")
     end
 

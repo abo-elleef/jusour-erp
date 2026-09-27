@@ -30,7 +30,7 @@
             <tr class="hover:bg-gray-100 transition-colors">
               <td class="p-3 ps-5"><%= link_to cn.credit_note_number, admin_sales_credit_note_path(cn), class: "font-semibold text-amber-700 hover:text-amber-800 tabular-nums" %></td>
               <td class="p-3 text-gray-700"><%= cn.customer.display_name %></td>
-              <td class="p-3 text-gray-600 tabular-nums"><%= l(cn.credit_note_date, format: :short) %></td>
+              <td class="p-3 text-gray-600 tabular-nums"><%= l(cn.credit_note_date, format: :long) %></td>
               <td class="p-3">
                 <% if cn.historical? %>
                   <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-300"><%= t("sales.customer_invoices.statuses.historical") %></span>

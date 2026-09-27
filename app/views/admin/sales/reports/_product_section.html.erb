@@ -1,0 +1,47 @@
+<%= turbo_frame_tag "report-product" do %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <p class="text-xs text-gray-500"><%= t("sales.reports.by_product_hint") %></p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm min-w-[36rem]" data-controller="sortable-table"
+             data-sortable-table-storage-key-value="sales-reports-product">
+        <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start w-10">#</th>
+            <%= sortable_report_th t("sales.reports.product"), "name", align: :start %>
+            <%= sortable_report_th t("sales.reports.units"), "units", type: :number %>
+            <%= sortable_report_th t("sales.reports.gross"), "revenue", type: :number %>
+            <%= sortable_report_th t("sales.reports.returns"), "returns", type: :number %>
+            <%= sortable_report_th t("sales.reports.net"), "net", type: :number, pe: true %>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100" data-sortable-table-target="body">
+          <% rows.each_with_index do |row, i| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="p-3 ps-5 text-gray-400" data-index-cell><%= i + 1 %></td>
+              <td class="p-3" data-sort-key="name">
+                <%= link_to row.name, admin_inventory_ingredient_path(row.key),
+                      class: "text-gray-800 hover:text-amber-700 hover:underline" %>
+              </td>
+              <td class="p-3 text-end tabular-nums text-gray-700" data-sort-key="units" data-sort-value="<%= row.units %>">
+                <%= number_with_precision(row.units, precision: 2, strip_insignificant_zeros: true) %>
+              </td>
+              <td class="p-3 text-end tabular-nums text-gray-600" data-sort-key="revenue" data-sort-value="<%= row.revenue_cents %>">
+                <%= format_money(row.revenue_cents) %>
+              </td>
+              <td class="p-3 text-end tabular-nums <%= row.returns_cents.positive? ? 'text-red-600' : 'text-gray-300' %>"
+                  data-sort-key="returns" data-sort-value="<%= row.returns_cents %>">
+                <%= row.returns_cents.positive? ? "-#{format_money(row.returns_cents)}" : "—" %>
+              </td>
+              <td class="p-3 text-end pe-5 tabular-nums font-semibold text-gray-900"
+                  data-sort-key="net" data-sort-value="<%= row.net_cents %>">
+                <%= format_money(row.net_cents) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% end %>

@@ -2416,6 +2416,8 @@ en:
       gross: "Gross"
       returns: "Returns"
       net: "Net"
+      date: "Date"
+      trend: "Trend"
       unattributed: "Unattributed"
       empty_title: "No sales in this period"
       empty_hint: "Pick a wider date range, or confirm a sale to see it here."

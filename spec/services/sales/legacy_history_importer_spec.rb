@@ -36,8 +36,15 @@ RSpec.describe Sales::LegacyHistoryImporter do
     customer = Customer.find_by(legacy_code: "205")
     expect(result.customers_created).to eq(1)
     expect(customer.name).to eq("ماي دريم")
-    expect(customer.customer_type).to eq("commercial")
+    expect(customer.customer_type).to eq("regular")
     expect(customer.created_at.to_date).to eq(Date.new(2026, 1, 3))
+  end
+
+  it "classifies a new customer as commercial only when their name says so" do
+    import([row("customer_code" => "9", "customer_name" => "شركة الفيروز للتوريدات")],
+      fallback_phone: "01000000001")
+
+    expect(Customer.find_by(legacy_code: "9").customer_type).to eq("commercial")
   end
 
   it "creates a contactless customer rather than dropping their history" do
@@ -61,17 +68,20 @@ RSpec.describe Sales::LegacyHistoryImporter do
     expect(invoice.notes).to include("Legacy invoice #2052")
     expect(StockAdjustment.count).to eq(0)
     expect(JournalEntry.count).to eq(0)
+    expect(invoice.customer.total_spent_cents).to eq(100_000)
   end
 
-  it "imports a return as a historical credit note" do
+  it "imports a return as a historical credit note, netting it off the customer's lifetime spend" do
+    import([row], fallback_phone: "01000000001") # a 100,000-cent invoice first
     result = import([row("doc_type" => "return", "doc_number" => "139")],
-      fallback_phone: "01000000001")
+      fallback_phone: "01000000001") # an identical 100,000-cent return
 
     note = CreditNote.sole
     expect(result.credit_notes_created).to eq(1)
     expect(note).to be_historical
     expect(note.legacy_number).to eq("139")
     expect(note.total_cents).to eq(100_000)
+    expect(note.customer.total_spent_cents).to eq(0) # invoice and return cancel out
   end
 
   it "keeps a free-of-charge line at zero instead of backfilling the selling price" do

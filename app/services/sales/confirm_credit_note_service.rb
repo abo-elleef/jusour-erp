@@ -24,6 +24,7 @@ module Sales
         )
         apply_to_invoice!
         @credit_note.update!(status: "confirmed", confirmed_at: Time.current)
+        customer.increment!(:total_spent_cents, -@credit_note.total_cents)
       end
       @credit_note
     end

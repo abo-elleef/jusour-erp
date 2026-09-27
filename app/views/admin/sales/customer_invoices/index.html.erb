@@ -58,7 +58,7 @@
                   <%= link_to inv.customer.display_name, admin_customer_path(inv.customer),
                         class: "text-gray-700 hover:text-amber-700 hover:underline" %>
                 </td>
-                <td class="p-3 text-gray-600 tabular-nums"><%= l(inv.invoice_date, format: :short) %></td>
+                <td class="p-3 text-gray-600 tabular-nums"><%= l(inv.invoice_date, format: :long) %></td>
                 <td class="p-3"><%= render "status_badge", invoice: inv %></td>
                 <td class="p-3 text-end tabular-nums text-gray-700"><%= format_money(inv.total_cents) %></td>
                 <td class="p-3 text-end pe-5 tabular-nums font-semibold <%= inv.balance_due_cents.positive? && !inv.historical? ? 'text-amber-700' : 'text-gray-400' %>">

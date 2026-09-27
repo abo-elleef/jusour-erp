@@ -119,4 +119,48 @@ namespace :customers do
     puts "\nTip: only #{with_phone} of #{result.candidates.size} named customers have a usable phone in this export."
     puts "     Use NAME_ONLY=1 to also create the rest with synthetic emails, or supply a richer customer dump."
   end
+
+  desc "Recompute total_spent_cents (Lifetime spend) from realized invoices/credit notes"
+  task backfill_lifetime_spend: :environment do
+    # total_spent_cents used to only track POS orders (see Loyalty::AwardPointsService);
+    # invoice/credit-note confirmation and historical import now keep it in sync
+    # going forward (2026-09-27), but every invoice/credit note created before that
+    # left it at 0. Recomputes it as SUM(invoices) - SUM(credit notes) for exactly
+    # the customers who have that kind of activity — a POS-only customer never
+    # shows up here, so their existing (correctly-tracked) value is untouched.
+    company_key = ENV["COMPANY"].presence || ENV["COMPANY_ID"].presence || ENV["COMPANY_SLUG"].presence
+    company = nil
+    if company_key.present?
+      company = Company.find_by(id: company_key) if company_key.match?(/\A[0-9a-f-]{36}\z/i)
+      company ||= Company.find_by(slug: company_key)
+      company ||= Company.find_by(name: company_key)
+      abort "Company not found: #{company_key.inspect}" unless company
+    end
+
+    apply = ENV["APPLY"].to_s == "1"
+    invoice_scope = CustomerInvoice.realized
+    credit_scope = CreditNote.realized
+    invoice_scope = invoice_scope.where(company: company) if company
+    credit_scope = credit_scope.where(company: company) if company
+
+    invoice_totals = invoice_scope.group(:customer_id).sum(:total_cents)
+    credit_totals = credit_scope.group(:customer_id).sum(:total_cents)
+    customer_ids = (invoice_totals.keys + credit_totals.keys).uniq
+
+    puts "Scope: #{company ? company.name : 'all companies'}"
+    puts "Mode:  #{apply ? "APPLY" : "DRY-RUN (set APPLY=1 to write)"}"
+    puts "Customers with invoice/credit-note activity: #{customer_ids.size}"
+
+    changed = 0
+    customer_ids.each do |id|
+      net = invoice_totals[id].to_i - credit_totals[id].to_i
+      current = Customer.where(id: id).pick(:total_spent_cents)
+      next if current == net
+
+      changed += 1
+      Customer.where(id: id).update_all(total_spent_cents: net) if apply
+    end
+
+    puts "#{apply ? 'Updated' : 'Would update'} #{changed} customer(s) (#{customer_ids.size - changed} already correct)."
+  end
 end

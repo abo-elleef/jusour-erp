@@ -31,6 +31,9 @@
 
 /public/assets
 
+# Real customer data dropped locally for one-off imports — never committed.
+/public/bazzar_sales_data/
+
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 # /config/gcs-credentials.json

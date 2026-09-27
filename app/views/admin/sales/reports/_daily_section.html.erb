@@ -1,0 +1,46 @@
+<%= turbo_frame_tag "report-daily" do %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <% peak = rows.map { |d| d[:net_cents] }.max.to_i %>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm" data-controller="sortable-table"
+             data-sortable-table-storage-key-value="sales-reports-daily">
+        <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start w-10">#</th>
+            <%= sortable_report_th t("sales.reports.date"), "date", align: :start %>
+            <%= sortable_report_th t("sales.reports.gross"), "gross", type: :number %>
+            <%= sortable_report_th t("sales.reports.returns"), "returns", type: :number %>
+            <%= sortable_report_th t("sales.reports.net"), "net", type: :number %>
+            <th class="p-3 text-start pe-5"><%= t("sales.reports.trend") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100" data-sortable-table-target="body">
+          <% rows.reverse_each.with_index do |day, i| %>
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="p-3 ps-5 text-gray-400" data-index-cell><%= i + 1 %></td>
+              <td class="p-3 text-gray-800 tabular-nums" data-sort-key="date" data-sort-value="<%= day[:date].iso8601 %>">
+                <%= l(day[:date], format: :long) %>
+              </td>
+              <td class="p-3 text-end tabular-nums text-gray-600" data-sort-key="gross" data-sort-value="<%= day[:gross_cents] %>">
+                <%= format_money(day[:gross_cents]) %>
+              </td>
+              <td class="p-3 text-end tabular-nums <%= day[:returns_cents].positive? ? 'text-red-600' : 'text-gray-300' %>"
+                  data-sort-key="returns" data-sort-value="<%= day[:returns_cents] %>">
+                <%= day[:returns_cents].positive? ? "-#{format_money(day[:returns_cents])}" : "—" %>
+              </td>
+              <td class="p-3 text-end tabular-nums font-semibold text-gray-900" data-sort-key="net" data-sort-value="<%= day[:net_cents] %>">
+                <%= format_money(day[:net_cents]) %>
+              </td>
+              <td class="p-3 pe-5">
+                <div class="w-24 bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div class="bg-amber-500 h-full rounded-full"
+                       style="width: <%= peak.positive? ? ((day[:net_cents].to_f / peak) * 100).clamp(0, 100).round(1) : 0 %>%"></div>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+<% end %>
