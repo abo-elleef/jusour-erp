@@ -3,7 +3,7 @@
 module Admin
   module Sales
     class CreditNotesController < BaseController
-      before_action :set_credit_note, only: %i[show confirm]
+      before_action :set_credit_note, only: %i[show confirm void]
 
       def index
         @pagy, @credit_notes = pagy(:offset, CreditNote.recent.includes(:customer), limit: 50)
@@ -38,6 +38,17 @@ module Admin
 
       def confirm
         confirm_now(@credit_note)
+      end
+
+      # A draft posts nothing yet, so voiding it is just marking it dead — never
+      # a confirmed one, which already reduced the customer's balance.
+      def void
+        unless @credit_note.draft?
+          return redirect_to admin_sales_credit_note_path(@credit_note),
+            alert: t("sales.credit_notes.flash.cannot_void")
+        end
+        @credit_note.update!(status: "void")
+        redirect_to admin_sales_credit_notes_path, notice: t("sales.credit_notes.flash.voided")
       end
 
       private

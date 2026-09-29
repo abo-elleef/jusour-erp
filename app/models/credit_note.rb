@@ -50,6 +50,7 @@ class CreditNote < ApplicationRecord
   def draft?      = status == "draft"
   def confirmed?  = status == "confirmed"
   def historical? = status == "historical"
+  def void?       = status == "void"
 
   def subtotal_cents
     credit_note_lines.reject(&:marked_for_destruction?).sum(&:line_total_cents)

@@ -77,14 +77,32 @@ module Admin
         load_form_data
       end
 
+      # Price, date, treasury and credit terms all feed the purchase's treasury
+      # transaction and journal entry — changing one without resyncing those
+      # would leave the ledger reporting the old figures forever, so any of
+      # them re-books the purchase in the same breath as the save.
       def update
-        if @fixed_asset.update(fixed_asset_params)
-          redirect_to admin_accounting_fixed_asset_path(@fixed_asset),
-            notice: t("accounting.fixed_assets.flash.updated")
-        else
-          load_form_data
-          render :edit, status: :unprocessable_entity
+        @fixed_asset.assign_attributes(fixed_asset_params)
+        resync_needed = ::Accounting::FixedAssetLedgerService::FINANCIAL_FIELDS.any? do |field|
+          @fixed_asset.public_send(:"#{field}_changed?")
         end
+
+        unless @fixed_asset.valid?
+          load_form_data
+          return render :edit, status: :unprocessable_entity
+        end
+
+        ActiveRecord::Base.transaction do
+          @fixed_asset.save!
+          ::Accounting::FixedAssetLedgerService.resync_purchase!(asset: @fixed_asset, user: current_user) if resync_needed
+        end
+
+        redirect_to admin_accounting_fixed_asset_path(@fixed_asset),
+          notice: t("accounting.fixed_assets.flash.updated")
+      rescue ::Accounting::FixedAssetLedgerService::Error => e
+        @fixed_asset.errors.add(:base, e.message)
+        load_form_data
+        render :edit, status: :unprocessable_entity
       end
 
       def dispose

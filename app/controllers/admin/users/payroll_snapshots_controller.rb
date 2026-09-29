@@ -29,6 +29,7 @@ module Admin
 
         ApplicationRecord.transaction do
           ::Accounting::TreasuryLedgerService.remove_source!(snapshot)
+          ::Accounting::JournalEntryService.destroy_for_source!(snapshot)
           snapshot.destroy!
         end
 

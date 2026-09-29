@@ -136,6 +136,22 @@ RSpec.describe "Admin payroll snapshots", type: :request do
       expect(PayrollSnapshot.find_by(user: staff, payroll_month: payroll_month)).to be_nil
     end
 
+    it "also removes the journal entry, not just the treasury transaction" do
+      post admin_user_payroll_snapshot_path(staff, payroll_month: payroll_month.strftime("%Y-%m")),
+        params: {
+          payroll_snapshot: {
+            treasury_id: treasury.id,
+            paid_on: payroll_month.end_of_month
+          }
+        }
+      snapshot = PayrollSnapshot.last
+      expect(JournalEntry.for_source(snapshot)).to be_present
+
+      expect do
+        delete admin_user_payroll_snapshot_path(staff, payroll_month: payroll_month.strftime("%Y-%m"))
+      end.to change { JournalEntry.unscoped.where(source_record_type: "PayrollSnapshot", source_record_id: snapshot.id).count }.to(0)
+    end
+
     it "returns to monthly payroll when requested" do
       post admin_user_payroll_snapshot_path(staff, payroll_month: payroll_month.strftime("%Y-%m")),
         params: {

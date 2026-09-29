@@ -15,8 +15,17 @@ module Accounting
   class FixedAssetLedgerService
     class Error < StandardError; end
 
+    # Editing any of these re-books the purchase: the treasury transaction and
+    # journal entry line, notes and disposal state don't move money and can be
+    # changed freely.
+    FINANCIAL_FIELDS = %w[purchase_price_cents purchase_date paid_from_treasury_id on_credit].freeze
+
     def self.record_purchase!(asset:, user:)
       new.record_purchase!(asset, user)
+    end
+
+    def self.resync_purchase!(asset:, user:)
+      new.resync_purchase!(asset, user)
     end
 
     def self.record_payment!(payment:, user:)
@@ -101,6 +110,24 @@ module Accounting
       end
 
       ActiveRecord::Base.transaction { reverse_purchase_internal!(asset) }
+      asset
+    end
+
+    # Re-books the purchase after an edit changed price, date, treasury or credit
+    # terms: the old treasury transaction and journal entry are reversed and a
+    # fresh pair written from the asset's current attributes — same shape as
+    # record_purchase!, just preceded by undoing what was there before. Refuses
+    # once installments exist, same as reverse_purchase! — an asset already being
+    # paid off can't have its purchase silently rewritten under those payments.
+    def resync_purchase!(asset, user)
+      if asset.fixed_asset_payments.exists?
+        raise Error, I18n.t("accounting.fixed_assets.errors.has_payments")
+      end
+
+      ActiveRecord::Base.transaction do
+        reverse_purchase_internal!(asset)
+        record_purchase!(asset, user)
+      end
       asset
     end
 

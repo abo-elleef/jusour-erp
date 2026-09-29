@@ -9,6 +9,8 @@
           <span class="text-xs font-semibold uppercase px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-300"><%= t("sales.customer_invoices.statuses.historical") %></span>
         <% elsif @credit_note.confirmed? %>
           <span class="text-xs font-semibold uppercase px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-200"><%= t("sales.customer_invoices.statuses.confirmed") %></span>
+        <% elsif @credit_note.void? %>
+          <span class="text-xs font-semibold uppercase px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200"><%= t("sales.customer_invoices.statuses.void") %></span>
         <% else %>
           <span class="text-xs font-semibold uppercase px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200"><%= t("sales.customer_invoices.statuses.draft") %></span>
         <% end %>
@@ -31,10 +33,16 @@
       <p class="text-sm text-amber-900">
         <%= @credit_note.restock? ? t("sales.credit_notes.show.draft_hint_restock") : t("sales.credit_notes.show.draft_hint") %>
       </p>
-      <%= button_to t("sales.credit_notes.show.confirm"), confirm_admin_sales_credit_note_path(@credit_note),
-            method: :post,
-            class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm",
-            form: { data: { turbo_confirm: t("sales.credit_notes.show.confirm_prompt") } } %>
+      <div class="flex items-center gap-2">
+        <%= button_to t("actions.void"), void_admin_sales_credit_note_path(@credit_note),
+              method: :patch,
+              class: "text-sm font-semibold text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors",
+              form: { data: { turbo_confirm: t("sales.credit_notes.show.void_prompt") } } %>
+        <%= button_to t("sales.credit_notes.show.confirm"), confirm_admin_sales_credit_note_path(@credit_note),
+              method: :post,
+              class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm",
+              form: { data: { turbo_confirm: t("sales.credit_notes.show.confirm_prompt") } } %>
+      </div>
     </div>
   <% end %>
 

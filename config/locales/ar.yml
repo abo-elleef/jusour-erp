@@ -2499,9 +2499,12 @@ ar:
         draft_hint_restock: "هذه مسودة. التأكيد يخفض رصيد العميل ويعيد البضاعة للمخزون."
         confirm: "تأكيد الإشعار"
         confirm_prompt: "تأكيد هذا الإشعار الدائن؟"
+        void_prompt: "إلغاء هذه المسودة؟"
       flash:
         saved: "تم حفظ المسودة."
         confirmed: "تم تأكيد الإشعار الدائن."
+        voided: "تم إلغاء الإشعار الدائن."
+        cannot_void: "يمكن إلغاء المسودات فقط."
   notifications:
     types:
       inventory: "المخزون"
@@ -5220,6 +5223,10 @@ ar:
               payroll_finalized: "لا يمكن التعديل بعد تسجيل الراتب لهذا الشهر"
             amount_cents:
               exceeds_limit: "يتجاوز الحد الأقصى المتاح لذلك الشهر (%{limit} سنت)"
+        payroll_adjustment:
+          attributes:
+            base:
+              payroll_finalized: "لا يمكن الإضافة بعد تسجيل الراتب لهذا الشهر"
         payroll_snapshot:
           attributes:
             treasury:

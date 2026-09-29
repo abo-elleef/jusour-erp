@@ -27,6 +27,7 @@ class PayrollAdjustment < ApplicationRecord
   validate :overtime_hours_required
   validate :overtime_bonus_only
   validate :salary_required_for_computed_amount
+  validate :payroll_not_finalized
 
   before_validation :normalize_payroll_month
   before_validation :set_default_happened_at, on: :create
@@ -160,5 +161,15 @@ class PayrollAdjustment < ApplicationRecord
     return if user&.monthly_salary_cents.to_i.positive?
 
     errors.add(:base, :salary_required)
+  end
+
+  # The month's salary is already paid once a PayrollSnapshot exists for it —
+  # adding a bonus or penalty after that would change pay nobody is going to
+  # recalculate or repay.
+  def payroll_not_finalized
+    return if user.blank? || payroll_month.blank?
+    return unless PayrollSnapshot.exists?(user: user, payroll_month: payroll_month)
+
+    errors.add(:base, :payroll_finalized)
   end
 end

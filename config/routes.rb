@@ -125,7 +125,10 @@ Rails.application.routes.draw do
         end
       end
       resources :credit_notes, only: %i[index new create show] do
-        member { post :confirm }
+        member do
+          post :confirm
+          patch :void
+        end
       end
       resources :price_tiers, except: %i[show]
       resources :customer_statements, only: %i[index show] do

@@ -2490,9 +2490,12 @@ en:
         draft_hint_restock: "This is a draft. Confirming reduces the customer's balance and returns the goods to stock."
         confirm: "Confirm credit note"
         confirm_prompt: "Confirm this credit note?"
+        void_prompt: "Void this draft credit note?"
       flash:
         saved: "Draft saved."
         confirmed: "Credit note confirmed."
+        voided: "Credit note voided."
+        cannot_void: "Only draft credit notes can be voided."
   notifications:
     types:
       inventory: "Inventory"
@@ -5195,6 +5198,10 @@ en:
               payroll_finalized: "cannot be changed after payroll is recorded for this month"
             amount_cents:
               exceeds_limit: "exceeds the maximum available for that month (%{limit} cents)"
+        payroll_adjustment:
+          attributes:
+            base:
+              payroll_finalized: "cannot be added after payroll is recorded for this month"
         payroll_snapshot:
           attributes:
             treasury:

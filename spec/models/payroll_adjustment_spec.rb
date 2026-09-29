@@ -115,6 +115,27 @@ RSpec.describe PayrollAdjustment, type: :model do
     expect(described_class.new(unit_type: "half_day").day_units).to eq(0.5)
     expect(described_class.new(unit_type: "full_day").day_units).to eq(1)
   end
+
+  it "refuses a new adjustment once the month's payroll is finalized" do
+    month = Date.current.beginning_of_month
+    treasury = Treasury.create!(name: "Payroll Safe", treasury_type: "safe",
+      opening_balance_cents: 1_000_000, balance_cents: 1_000_000)
+
+    PayrollSnapshot.create!(
+      user: staff, payroll_month: month, finalized_by: owner, treasury: treasury,
+      base_salary_cents: 300_000, daily_rate_cents: 0, penalties_cents: 0, bonuses_cents: 0,
+      advances_cents: 0, net_pay_cents: 300_000, remaining_pay_cents: 300_000,
+      finalized_at: Time.current, paid_on: month.end_of_month
+    )
+
+    adjustment = described_class.new(
+      user: staff, recorded_by: owner, kind: "bonus", unit_type: "fixed",
+      amount_cents: 5_000, payroll_month: month
+    )
+
+    expect(adjustment).not_to be_valid
+    expect(adjustment.errors[:base]).to include(I18n.t("activerecord.errors.models.payroll_adjustment.attributes.base.payroll_finalized"))
+  end
 end
 
 RSpec.describe Accounting::MonthlyPayrollService do

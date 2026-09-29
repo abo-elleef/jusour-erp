@@ -159,6 +159,64 @@ RSpec.describe "Fixed asset purchase accounting", type: :request do
     end
   end
 
+  describe "editing" do
+    it "resyncs the treasury transaction and journal entry when the price changes" do
+      asset = buy(on_credit: false, price: "2000.00")
+
+      patch admin_accounting_fixed_asset_path(asset), params: {
+        fixed_asset: { purchase_price_pounds: "3000.00", current_value_pounds: "3000.00" }
+      }
+      asset.reload
+
+      expect(safe.reload.balance_cents).to eq(1_000_000 - 300_000)
+      txn = TreasuryTransaction.find_by!(source_record: asset)
+      expect(txn.amount_cents).to eq(-300_000)
+
+      je = JournalEntry.for_source(asset).includes(:lines).first
+      debit = je.lines.find { |l| l.debit_cents.to_i.positive? }
+      expect(debit.debit_cents).to eq(300_000)
+    end
+
+    it "moves the cash to a different treasury when it changes" do
+      other = Treasury.create!(name: "Bank", treasury_type: "bank", balance_cents: 500_000,
+        opening_balance_cents: 500_000, company: company)
+      asset = buy(on_credit: false, price: "2000.00")
+
+      patch admin_accounting_fixed_asset_path(asset), params: {
+        fixed_asset: { paid_from_treasury_id: other.id }
+      }
+
+      expect(safe.reload.balance_cents).to eq(1_000_000)
+      expect(other.reload.balance_cents).to eq(300_000)
+      expect(TreasuryTransaction.find_by!(source_record: asset.reload).treasury).to eq(other)
+    end
+
+    it "does not touch the ledger when only a non-financial field changes" do
+      asset = buy(on_credit: false, price: "2000.00")
+      txn = TreasuryTransaction.find_by!(source_record: asset)
+      je = JournalEntry.for_source(asset).first
+
+      patch admin_accounting_fixed_asset_path(asset), params: { fixed_asset: { notes: "Serviced" } }
+
+      expect(TreasuryTransaction.find_by!(source_record: asset.reload)).to eq(txn)
+      expect(JournalEntry.for_source(asset).first).to eq(je)
+    end
+
+    it "refuses to change price/date/treasury/credit terms once installments exist" do
+      asset = buy(on_credit: true)
+      post record_payment_admin_accounting_fixed_asset_path(asset), params: {
+        fixed_asset_payment: { amount_pounds: "500.00", payment_date: Date.current, treasury_id: safe.id }
+      }
+
+      patch admin_accounting_fixed_asset_path(asset), params: {
+        fixed_asset: { purchase_price_pounds: "2500.00" }
+      }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(asset.reload.purchase_price_cents).to eq(200_000)
+    end
+  end
+
   describe "cash flow classification" do
     def cash_flow
       # Current.company is per-request; re-establish it to call the service directly.
