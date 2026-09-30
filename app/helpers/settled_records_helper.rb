@@ -36,6 +36,22 @@ module SettledRecordsHelper
     end
   end
 
+  # The party behind what a voucher settled, when that's knowable — an invoice
+  # already names its supplier or customer, an advance its employee, and an
+  # expense or income now carries its own party. Nil for anything else
+  # (an equity adjustment, or on-account money settling nothing), which is the
+  # caller's cue to fall back to the voucher's own party or its free-text
+  # counterparty.
+  def settled_party(record)
+    case record
+    when Expense, Income   then record.party
+    when VendorInvoice     then record.supplier
+    when CustomerInvoice   then record.customer
+    when PayrollAdvance    then record.user
+    when Customer, Supplier then record
+    end
+  end
+
   # What is still owed on it, where that means anything. A party has no single
   # outstanding amount in this context — money on account is not "against" one
   # thing — so it returns nil and the caller shows nothing.

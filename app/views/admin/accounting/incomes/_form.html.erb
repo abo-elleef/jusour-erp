@@ -19,6 +19,15 @@
           { include_blank: t("accounting.incomes.on_account_option") }, class: pos_input_class %>
     <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.incomes.treasury_hint") %></p>
   </div>
+  <div data-searchable-select-options="<%= @party_options.to_json %>">
+    <%= f.label :party_selection, t("accounting.shared.party"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <%= render "shared/searchable_select",
+          form: f, field: :party_selection, selected: income.party_selection,
+          placeholder: t("accounting.shared.party_placeholder"),
+          input_class: pos_input_class %>
+    <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.shared.party_hint") %></p>
+  </div>
+
   <div>
     <%= f.label :description, t("accounting.shared.description"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
     <%= f.text_field :description, class: pos_input_class %>

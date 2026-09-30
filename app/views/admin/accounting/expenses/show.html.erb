@@ -54,6 +54,12 @@
         <p class="text-sm font-semibold text-gray-900"><%= @expense.user.name %></p>
       </div>
     </div>
+    <% if @expense.party %>
+      <div class="px-5 py-4">
+        <p class="text-xs text-gray-400 mb-1"><%= t("accounting.shared.party") %></p>
+        <p class="text-sm font-semibold text-gray-900"><%= party_link(@expense.party, class: "hover:underline") %></p>
+      </div>
+    <% end %>
     <% if @expense.source_record_type.present? %>
       <div class="px-5 py-4">
         <p class="text-xs text-gray-400 mb-1"><%= t("accounting.journal_entries.source_record") %></p>

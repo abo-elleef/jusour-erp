@@ -8,6 +8,7 @@
 class Voucher < ApplicationRecord
   include Tenantable
   include MoneyInputs
+  include Partyable
 
   audited associated_with: :company
 

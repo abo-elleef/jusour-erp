@@ -65,7 +65,9 @@ module Admin
           voucher_date: voucher_params[:voucher_date].presence || Date.current,
           counterparty: voucher_params[:counterparty],
           notes:        voucher_params[:notes],
-          allocations:  requested_allocations
+          allocations:  requested_allocations,
+          party_type:   @voucher.party_type,
+          party_id:     @voucher.party_id
         ).call
 
         redirect_to admin_accounting_voucher_path(result),
@@ -135,6 +137,7 @@ module Admin
       def load_form_collections
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
         @outstanding = outstanding_targets
+        @party_options = ::Accounting::PartyOptions.for_select
       end
 
       # Everything still owed, or still owed to us, with what is left on each.
@@ -151,7 +154,8 @@ module Admin
 
       def voucher_params
         params.require(:voucher).permit(
-          :direction, :treasury_id, :voucher_date, :amount_pounds, :counterparty, :notes
+          :direction, :treasury_id, :voucher_date, :amount_pounds, :counterparty, :notes,
+          :party_selection
         )
       end
 
@@ -171,7 +175,7 @@ module Admin
               t("accounting.vouchers.directions.#{voucher.direction}"),
               helpers.format_amount(voucher.amount_cents),
               voucher.treasury&.name,
-              voucher.counterparty,
+              helpers.voucher_party_label(voucher),
               voucher.payment_allocations.map { |a| helpers.settled_label(a.settles) }.compact.join(" · "),
               voucher.user&.name,
               voucher.voided? ? t("accounting.vouchers.voided") : t("accounting.vouchers.live")

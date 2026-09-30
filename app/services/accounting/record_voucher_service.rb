@@ -17,7 +17,7 @@ module Accounting
 
     def initialize(direction:, treasury:, user:, amount_cents:, voucher_date: Date.current,
                    allocations: [], notes: nil, counterparty: nil, company: nil,
-                   purpose: Voucher::SETTLEMENT)
+                   purpose: Voucher::SETTLEMENT, party_type: nil, party_id: nil)
       @direction = direction
       @treasury = treasury
       @user = user
@@ -28,6 +28,8 @@ module Accounting
       @counterparty = counterparty
       @company = company || Current.company
       @purpose = purpose
+      @party_type = party_type
+      @party_id = party_id
     end
 
     def call
@@ -38,7 +40,8 @@ module Accounting
         voucher = Voucher.create!(
           company: @company, direction: @direction, treasury: @treasury, user: @user,
           amount_cents: @amount_cents, voucher_date: @voucher_date,
-          notes: @notes, counterparty: @counterparty, purpose: @purpose
+          notes: @notes, counterparty: @counterparty, purpose: @purpose,
+          party_type: @party_type, party_id: @party_id
         )
 
         @allocations.each do |allocation|

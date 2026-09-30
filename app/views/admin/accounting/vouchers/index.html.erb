@@ -81,7 +81,7 @@
                 <% end %>
               </td>
               <td class="p-3 text-gray-600 tabular-nums"><%= l(voucher.voucher_date, format: :short) %></td>
-              <td class="p-3 text-gray-700"><%= voucher.counterparty.presence || "—" %></td>
+              <td class="p-3 text-gray-700"><%= voucher_party_link(voucher) || "—" %></td>
               <td class="p-3 text-gray-600">
                 <% settled = voucher.payment_allocations.map(&:settles).compact %>
                 <% if settled.any? %>

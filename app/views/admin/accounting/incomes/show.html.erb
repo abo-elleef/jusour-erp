@@ -54,6 +54,12 @@
         <p class="text-sm font-semibold text-gray-900"><%= @income.user.name %></p>
       </div>
     </div>
+    <% if @income.party %>
+      <div class="px-5 py-4">
+        <p class="text-xs text-gray-400 mb-1"><%= t("accounting.shared.party") %></p>
+        <p class="text-sm font-semibold text-gray-900"><%= party_link(@income.party, class: "hover:underline") %></p>
+      </div>
+    <% end %>
   </div>
 
   <%# Journal entry %>

@@ -53,6 +53,7 @@ module Admin
         authorize @income
         @categories = IncomeCategory.manual.ordered
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+        @party_options = ::Accounting::PartyOptions.for_select
       end
 
       def create
@@ -64,6 +65,7 @@ module Admin
         else
           @categories = IncomeCategory.manual.ordered
           @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+          @party_options = ::Accounting::PartyOptions.for_select
           render :new, status: :unprocessable_entity
         end
       end
@@ -72,6 +74,7 @@ module Admin
         authorize @income
         @categories = IncomeCategory.manual.ordered
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+        @party_options = ::Accounting::PartyOptions.for_select
       end
 
       def update
@@ -81,6 +84,7 @@ module Admin
         else
           @categories = IncomeCategory.manual.ordered
           @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+          @party_options = ::Accounting::PartyOptions.for_select
           render :edit, status: :unprocessable_entity
         end
       end
@@ -147,7 +151,7 @@ module Admin
       def income_params
         params.require(:income).permit(
           :income_category_id, :treasury_id, :description, :amount_pounds, :income_date,
-          :recurrence, :reference_number, :receipt_image
+          :recurrence, :reference_number, :receipt_image, :party_selection
         )
       end
     end

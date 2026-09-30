@@ -4,6 +4,7 @@ class Income < ApplicationRecord
   include Tenantable
   include MoneyInputs
   include VoucherSettleable
+  include Partyable
 
   audited associated_with: :company
 
