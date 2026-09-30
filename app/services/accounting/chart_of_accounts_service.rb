@@ -173,9 +173,9 @@ module Accounting
     # ── Accounts Payable (supplier AP, 2001+) ─────────────────────────
 
     def ap_liability_lines
-      @ap_liability_lines ||= ap_treasuries.each_with_index.map do |t, i|
+      @ap_liability_lines ||= ap_treasuries.map do |t|
         AccountLine.new(
-          code:           2001 + i,
+          code:           t.account_code,
           name:           t.name,
           account_type:   :liability,
           subtype:        "accounts_payable",
@@ -453,16 +453,14 @@ module Accounting
     # the same posting is not counted a second time.
     #
     # Supplier AP is counted across every AP treasury, active or not, because
-    # that is how the journal numbers them (JournalEntryService#account_for_treasury
-    # walks an unscoped list) while `ap_liability_lines` shows only the active
-    # ones. Taking the narrower list here would let a deactivated supplier's
-    # code leak into "other" and be double-counted.
+    # `ap_liability_lines` shows only the active ones — taking the narrower
+    # list here would let a deactivated supplier's code leak into "other" and
+    # be double-counted.
     def covered_liability_codes
       @covered_liability_codes ||= begin
-        ap_base  = JournalEntryService::TREASURY_TYPE_BASE.fetch("supplier_ap")
-        ap_count = Treasury.unscoped
-          .where(company_id: Current.company.id, treasury_type: "supplier_ap").count
-        ap_codes = ap_count.times.map { |i| ap_base + i + 1 }
+        ap_codes = Treasury.unscoped
+          .where(company_id: Current.company.id, treasury_type: "supplier_ap")
+          .pluck(:account_code)
 
         (ap_codes + Loan.ordered.pluck(:account_code)).to_set
       end

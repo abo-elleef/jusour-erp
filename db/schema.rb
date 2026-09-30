@@ -1582,7 +1582,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_02_174241) do
     t.uuid "supplier_id"
     t.boolean "restricted", default: false, null: false
     t.uuid "customer_id"
+    t.integer "account_code", null: false
     t.index ["active"], name: "index_treasuries_on_active"
+    t.index ["company_id", "account_code"], name: "index_treasuries_on_company_id_and_account_code", unique: true
     t.index ["company_id", "name"], name: "index_treasuries_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_treasuries_on_company_id"
     t.index ["customer_id"], name: "index_treasuries_on_customer_id"

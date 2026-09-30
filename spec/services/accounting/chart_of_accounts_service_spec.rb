@@ -293,7 +293,7 @@ RSpec.describe Accounting::ChartOfAccountsService do
       ap = Treasury.create!(name: "Supplier X", treasury_type: "supplier_ap",
                             balance_cents: 0, opening_balance_cents: 0,
                             company: Current.company)
-      ap_code = Accounting::JournalEntryService::TREASURY_TYPE_BASE.fetch("supplier_ap") + 1
+      ap_code = ap.account_code
       create_liability_je(code: ap_code, name: ap.name, amount_cents: 25_000, date: Date.current)
 
       coa = described_class.new(start_date: Date.current.beginning_of_year, end_date: Date.current)

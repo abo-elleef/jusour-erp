@@ -9,6 +9,20 @@ class Treasury < ApplicationRecord
   # System-managed ledger treasuries that must not be picked as normal cash sources.
   LEDGER_TYPES = %w[supplier_ap customer_ar].freeze
 
+  # Where each treasury_type's account codes start. Also read by
+  # AccountListService, JournalEntriesController and ChartOfAccountsService —
+  # though now that account_code is persisted, they mostly don't need to.
+  TREASURY_TYPE_BASE = {
+    "cash_drawer"   => 1000,
+    "bank"          => 1100,
+    "safe"          => 1200,
+    "petty_cash"    => 1300,
+    "mobile_wallet" => 1400,
+    "other"         => 1500,
+    "customer_ar"   => 1150,
+    "supplier_ap"   => 2000
+  }.freeze
+
   has_many :treasury_transactions, dependent: :destroy
   has_many :expenses, dependent: :restrict_with_error
   has_many :incomes, dependent: :restrict_with_error
@@ -31,6 +45,9 @@ class Treasury < ApplicationRecord
 
   validates :name, presence: true, uniqueness: { scope: :company_id }
   validates :treasury_type, presence: true, inclusion: { in: TYPES }
+  validates :account_code, presence: true, uniqueness: { scope: :company_id }
+
+  before_validation :assign_account_code, on: :create
 
   # Supplier AP ledgers are system-managed; never let their type be reassigned.
   before_update :lock_supplier_ap_type
@@ -96,15 +113,11 @@ class Treasury < ApplicationRecord
     update!(balance_cents: balance_cents + delta_cents)
   end
 
-  # Accountable — unlike Loan/Partner/*Category, this is computed rather than
-  # persisted: base + this treasury's ordinal among same-type siblings. That
-  # makes it the one Accountable whose code can drift if a sibling is created
-  # or reordered ahead of it; persisting it properly is tracked separately.
-  def account_code
-    base = ::Accounting::JournalEntryService::TREASURY_TYPE_BASE.fetch(treasury_type, 1500)
-    base + treasury_account_ordinal
-  end
-
+  # Accountable — account_code is a real, persisted column (like Loan/Partner/
+  # *Category's), assigned once at creation and never recomputed. It used to be
+  # derived live from base + sibling ordinal, which could silently shift for an
+  # existing treasury if a new sibling was created ahead of it in sort order;
+  # persisting it the same way the other Accountables already did removes that.
   def account_name = name
 
   def account_type
@@ -119,10 +132,15 @@ class Treasury < ApplicationRecord
 
   private
 
-  def treasury_account_ordinal
-    scope = self.class.unscoped.where(company_id: company_id, treasury_type: treasury_type)
-    scope = treasury_type == "supplier_ap" ? scope.order(:name) : scope.order(:position, :name)
-    scope.pluck(:id).index(id).to_i + 1
+  # Stable per-company-per-type account code, assigned once at creation and
+  # never changed — same pattern as Loan/Partner/ExpenseCategory/IncomeCategory.
+  def assign_account_code
+    return if account_code.present?
+
+    base = TREASURY_TYPE_BASE.fetch(treasury_type, 1500)
+    last = self.class.unscoped.where(company_id: company_id, treasury_type: treasury_type)
+                     .maximum(:account_code)
+    self.account_code = (last || base) + 1
   end
 
   def lock_supplier_ap_type

@@ -176,12 +176,7 @@ module Admin
       def resolve_code(kind, id, account_type, name)
         case kind
         when "treasury"
-          t = Treasury.find_by(id: id)
-          return 1500 unless t
-          base = ::Accounting::JournalEntryService::TREASURY_TYPE_BASE.fetch(t.treasury_type, 1500)
-          siblings = Treasury.unscoped.where(company_id: t.company_id,
-                                             treasury_type: t.treasury_type).order(:position, :name)
-          base + siblings.pluck(:id).index(t.id).to_i + 1
+          Treasury.find_by(id: id)&.account_code || 1500
         when "equity"
           3001
         when "income_category"

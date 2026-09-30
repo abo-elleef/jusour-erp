@@ -30,17 +30,6 @@ module Accounting
     COGS_CODE        = SystemAccount::COGS.code
     INTEREST_CODE    = SystemAccount::INTEREST_EXPENSE.code
 
-    TREASURY_TYPE_BASE = {
-      "cash_drawer"   => 1000,
-      "bank"          => 1100,
-      "safe"          => 1200,
-      "petty_cash"    => 1300,
-      "mobile_wallet" => 1400,
-      "other"         => 1500,
-      "customer_ar"   => 1150,
-      "supplier_ap"   => 2000
-    }.freeze
-
     # SPIKE (AR): sales revenue account for credit sales. Distribution sales post
     # DR Accounts Receivable / CR Sales Revenue — the genuine revenue recognition
     # the POS/drawer flow never introduced.

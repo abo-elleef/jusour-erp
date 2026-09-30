@@ -80,13 +80,7 @@ module Accounting
     end
 
     def treasury_label(treasury)
-      base = JournalEntryService::TREASURY_TYPE_BASE.fetch(treasury.treasury_type, 1500)
-      siblings = Treasury.unscoped.where(company_id: treasury.company_id,
-                                         treasury_type: treasury.treasury_type)
-                         .order(:position, :name)
-      idx = siblings.pluck(:id).index(treasury.id).to_i
-      code = base + idx + 1
-      "#{code}  #{treasury.name}"
+      "#{treasury.account_code}  #{treasury.name}"
     end
   end
 end
