@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_09_24_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_09_29_092724) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -691,6 +691,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_09_24_120000) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "installments_total"
     t.index ["company_id", "account_code"], name: "index_loans_on_company_id_and_account_code", unique: true
     t.index ["company_id"], name: "index_loans_on_company_id"
   end

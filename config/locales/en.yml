@@ -3667,15 +3667,21 @@ en:
       liability: "Liability"
       outstanding_balance: "Outstanding Balance"
       no_movements: "No movements recorded yet."
-      no_movements_hint: "Record a disbursement to register money received from the lender."
+      no_movements_hint: "Record a disbursement for money received from the lender today, or an opening balance for a debt that already exists."
       ledger_heading: "Loan Ledger"
       je_preview: "Journal entry preview:"
       treasury_account: "Treasury (selected)"
       interest_expense_account: "Interest Expense"
       create_button: "Create Loan"
       record_disbursement: "Record Disbursement"
+      record_opening_balance: "Record Opening Balance"
       record_repayment: "Record Repayment"
       record_interest: "Record Interest Payment"
+      payments_progress: "Payments"
+      payments_made: "All scheduled payments recorded"
+      payments_remaining:
+        one: "%{count} payment remaining"
+        other: "%{count} payments remaining"
       types:
         bank_loan: "Bank Loan"
         investor_loan: "Investor Loan"
@@ -3698,6 +3704,8 @@ en:
         interest_rate: "Annual interest rate"
         disbursement_date: "Disbursement date"
         due_date: "Due date (optional)"
+        installments_total: "Total number of installments (optional)"
+        installments_total_hint: "How many monthly payments this loan is scheduled over — lets the loan page show how many are left."
         notes: "Notes (optional)"
         active: "Active loan"
         date: "Date"
@@ -3711,6 +3719,13 @@ en:
         money_in: "cash received"
         liability_increases: "loan liability rises"
         submit: "Record disbursement"
+      opening_balance:
+        title: "Record Opening Balance — %{name}"
+        subtitle: "The debt already exists and its cash is already in your treasury balance — this only records what's still owed, without moving any money."
+        default_description: "Opening balance — %{name}"
+        equity_reduced: "retained earnings absorb the pre-existing debt"
+        no_treasury_note: "No treasury is touched or changed by this entry — use Record Disbursement instead if this is new money actually arriving today."
+        submit: "Record opening balance"
       repayment:
         title: "Record Repayment — %{name}"
         subtitle: "Principal payment made to the lender. Reduces the outstanding loan balance."
@@ -3729,10 +3744,12 @@ en:
         submit: "Record interest payment"
       errors:
         amount_required: "Amount must be greater than zero."
+        opening_balance_blocked: "An opening balance can only be recorded before any disbursement, repayment, or other opening balance exists for this loan."
       flash:
         created: "Loan created successfully."
         updated: "Loan updated."
         disbursement_recorded: "Disbursement recorded."
+        opening_balance_recorded: "Opening balance recorded — no treasury was affected."
         repayment_recorded: "Repayment recorded."
         interest_recorded: "Interest payment recorded."
     journal_entries:

@@ -245,6 +245,8 @@ Rails.application.routes.draw do
         member do
           get  :new_disbursement,   path: "disbursement/new"
           post :create_disbursement, path: "disbursement"
+          get  :new_opening_balance,   path: "opening_balance/new"
+          post :create_opening_balance, path: "opening_balance"
           get  :new_repayment,      path: "repayment/new"
           post :create_repayment,   path: "repayment"
           get  :new_interest,       path: "interest/new"

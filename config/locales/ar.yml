@@ -3686,15 +3686,21 @@ ar:
       liability: "التزام"
       outstanding_balance: "الرصيد المستحق"
       no_movements: "لم يتم تسجيل أي حركات بعد."
-      no_movements_hint: "سجّل صرف القرض لتسجيل الأموال المستلمة من الجهة المُقرضة."
+      no_movements_hint: "سجّل صرف القرض لأموال وصلت اليوم من الجهة المُقرضة، أو سجّل رصيداً افتتاحياً لدين موجود بالفعل."
       ledger_heading: "كشف حساب القرض"
       je_preview: "القيد المحاسبي:"
       treasury_account: "الخزينة (المختارة)"
       interest_expense_account: "مصروف الفوائد"
       create_button: "إنشاء القرض"
       record_disbursement: "تسجيل صرف القرض"
+      record_opening_balance: "تسجيل رصيد افتتاحي"
       record_repayment: "تسجيل سداد"
       record_interest: "تسجيل دفع فوائد"
+      payments_progress: "الدفعات"
+      payments_made: "تم تسجيل جميع الدفعات المجدولة"
+      payments_remaining:
+        one: "دفعة واحدة متبقية"
+        other: "%{count} دفعات متبقية"
       types:
         bank_loan: "قرض بنكي"
         investor_loan: "قرض مستثمر"
@@ -3717,6 +3723,8 @@ ar:
         interest_rate: "معدل الفائدة السنوي"
         disbursement_date: "تاريخ الصرف"
         due_date: "تاريخ الاستحقاق (اختياري)"
+        installments_total: "إجمالي عدد الأقساط (اختياري)"
+        installments_total_hint: "عدد الدفعات الشهرية المجدولة لهذا القرض — يتيح لصفحة القرض إظهار عدد الدفعات المتبقية."
         notes: "ملاحظات (اختياري)"
         active: "قرض نشط"
         date: "التاريخ"
@@ -3730,6 +3738,13 @@ ar:
         money_in: "نقد مُستلَم"
         liability_increases: "الالتزام يرتفع"
         submit: "تسجيل صرف القرض"
+      opening_balance:
+        title: "تسجيل رصيد افتتاحي — %{name}"
+        subtitle: "الدين موجود بالفعل وأمواله مُدرجة أصلاً ضمن رصيد الخزينة الحالي — هذا يسجّل فقط ما تبقى مستحقاً، دون تحريك أي أموال."
+        default_description: "رصيد افتتاحي — %{name}"
+        equity_reduced: "الأرباح المرحّلة تستوعب الدين القائم مسبقاً"
+        no_treasury_note: "لا تتأثر أي خزينة بهذا القيد — استخدم تسجيل صرف القرض بدلاً من ذلك إذا كانت هذه أموالاً جديدة تصل اليوم فعلاً."
+        submit: "تسجيل الرصيد الافتتاحي"
       repayment:
         title: "تسجيل سداد — %{name}"
         subtitle: "دفعة أصل تُسدَّد للجهة المُقرضة. تقلل الرصيد المستحق للقرض."
@@ -3748,10 +3763,12 @@ ar:
         submit: "تسجيل دفع الفوائد"
       errors:
         amount_required: "يجب أن يكون المبلغ أكبر من صفر."
+        opening_balance_blocked: "لا يمكن تسجيل رصيد افتتاحي إلا قبل وجود أي صرف أو سداد أو رصيد افتتاحي آخر لهذا القرض."
       flash:
         created: "تم إنشاء القرض بنجاح."
         updated: "تم تحديث بيانات القرض."
         disbursement_recorded: "تم تسجيل صرف القرض."
+        opening_balance_recorded: "تم تسجيل الرصيد الافتتاحي — لم تتأثر أي خزينة."
         repayment_recorded: "تم تسجيل السداد."
         interest_recorded: "تم تسجيل دفع الفوائد."
     journal_entries:

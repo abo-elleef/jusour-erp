@@ -640,6 +640,25 @@ module Accounting
         end
       end
 
+      # ── Loan Opening Balance (a debt that already existed, no cash moving) ──
+      # For a loan whose cash was received long before it was ever put in the
+      # books — the money is already sitting in the treasury's current balance,
+      # so a disbursement here would count it a second time. Mirrors
+      # record_customer_opening_balance!, on the liability side: the loan is
+      # raised against Retained Earnings instead of an asset or a treasury,
+      # since nothing new was received today and the balance sheet still has
+      # to hold (assets unchanged ⇒ equity absorbs the newly-recognized debt).
+      def record_loan_opening_balance!(loan:, amount_cents:, date:, user:, description: nil)
+        create! source: nil, date: date, user: user,
+                description: description.presence || I18n.t("accounting.journal_entries.auto.loan_opening_balance",
+                                                             name: loan.name,
+                                                             default: "Opening balance — #{loan.name}") do |lines|
+          lines << debit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings",
+                                                            default: "Retained Earnings") }, amount_cents, "equity")
+          lines << credit(account_for_loan(loan), amount_cents, "liability")
+        end
+      end
+
       # ── Loan Repayment (paying back principal) ────────────────────────
       # DR Loan account → CR Treasury
       def record_loan_repayment!(loan:, treasury:, amount_cents:, date:, description:, user:)

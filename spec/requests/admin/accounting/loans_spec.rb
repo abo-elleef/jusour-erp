@@ -192,6 +192,102 @@ RSpec.describe "Admin::Accounting::Loans", type: :request do
     end
   end
 
+  # ── Opening balance ───────────────────────────────────────────────────────────
+
+  describe "POST /admin/accounting/loans/:id/opening_balance (seed a pre-existing debt)" do
+    def post_opening_balance(amount:, date: Date.current)
+      post create_opening_balance_admin_accounting_loan_path(loan), params: {
+        amount:      amount.to_s,
+        date:        date.to_s,
+        description: "Opening balance"
+      }
+    end
+
+    it "creates a journal entry" do
+      expect { post_opening_balance(amount: 1_000) }.to change(JournalEntry, :count).by(1)
+    end
+
+    it "does not touch any treasury balance" do
+      expect { post_opening_balance(amount: 1_000) }.not_to change { cash.reload.balance_cents }
+    end
+
+    it "does not create a TreasuryTransaction" do
+      expect { post_opening_balance(amount: 1_000) }.not_to change(TreasuryTransaction, :count)
+    end
+
+    it "raises the loan's outstanding balance" do
+      post_opening_balance(amount: 1_000)
+      expect(loan.outstanding_balance_cents).to eq(100_000)
+    end
+
+    it "debits Retained Earnings and credits the loan account" do
+      post_opening_balance(amount: 1_000)
+      je = JournalEntry.last
+      expect(je.lines.find { |l| l.debit_cents.to_i.positive? }.account_code).to eq(::Accounting::JournalEntryService::EQUITY_CODE)
+      expect(je.lines.find { |l| l.credit_cents.to_i.positive? }.account_code).to eq(loan.account_code)
+    end
+
+    it "redirects to the loan page on success" do
+      post_opening_balance(amount: 100)
+      expect(response).to redirect_to(admin_accounting_loan_path(loan))
+    end
+
+    it "does not create records when amount is zero" do
+      je_before = JournalEntry.count
+      post_opening_balance(amount: 0)
+      expect(JournalEntry.count).to eq(je_before)
+    end
+
+    it "refuses once a disbursement already exists" do
+      post create_disbursement_admin_accounting_loan_path(loan), params: {
+        treasury_id: cash.id, amount: "1000", date: Date.current.to_s
+      }
+
+      expect { post_opening_balance(amount: 500) }.not_to change(JournalEntry, :count)
+      expect(response).to redirect_to(admin_accounting_loan_path(loan))
+      expect(flash[:alert]).to eq(I18n.t("accounting.loans.errors.opening_balance_blocked"))
+    end
+
+    it "refuses a second opening balance" do
+      post_opening_balance(amount: 500)
+
+      expect { post_opening_balance(amount: 200) }.not_to change(JournalEntry, :count)
+      expect(flash[:alert]).to eq(I18n.t("accounting.loans.errors.opening_balance_blocked"))
+    end
+  end
+
+  # ── Payment tracking ──────────────────────────────────────────────────────────
+
+  describe "installment tracking" do
+    let!(:loan) do
+      Loan.create!(
+        name: "Bank Loan", loan_type: "bank_loan",
+        principal_cents: 500_000, interest_rate: 5.0, installments_total: 5,
+        company: company
+      )
+    end
+
+    it "counts repayments toward payments made, ignoring disbursement and interest" do
+      post create_disbursement_admin_accounting_loan_path(loan), params: {
+        treasury_id: cash.id, amount: "5000", date: Date.current.to_s
+      }
+      post create_interest_admin_accounting_loan_path(loan), params: {
+        treasury_id: cash.id, amount: "50", date: Date.current.to_s
+      }
+      post create_repayment_admin_accounting_loan_path(loan), params: {
+        treasury_id: cash.id, amount: "1000", date: Date.current.to_s
+      }
+
+      expect(loan.payments_made_count).to eq(1)
+      expect(loan.payments_remaining_count).to eq(4)
+    end
+
+    it "has no remaining count when installments_total is not set" do
+      loan.update!(installments_total: nil)
+      expect(loan.payments_remaining_count).to be_nil
+    end
+  end
+
   # ── Access control ────────────────────────────────────────────────────────────
 
   describe "access control" do
