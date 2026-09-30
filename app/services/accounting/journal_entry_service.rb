@@ -104,7 +104,7 @@ module Accounting
                                     category: expense.expense_category.name,
                                     default: "Expense — #{expense.expense_category.name}") do |lines|
           lines << debit(expense.expense_category, expense.amount_cents)
-          lines << credit(SystemAccount::ACCRUED_EXPENSES, expense.amount_cents)
+          lines << credit(accrual_account_for(expense, SystemAccount::ACCRUED_EXPENSES), expense.amount_cents)
         end
       end
 
@@ -119,7 +119,7 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.income",
                                     category: income.income_category.name,
                                     default: "Income — #{income.income_category.name}") do |lines|
-          lines << debit(SystemAccount::OTHER_RECEIVABLES, income.amount_cents)
+          lines << debit(accrual_account_for(income, SystemAccount::OTHER_RECEIVABLES), income.amount_cents)
           lines << credit(income.income_category, income.amount_cents)
         end
       end
@@ -182,22 +182,35 @@ module Accounting
       # receivable rather than in a pooled "other receivables" nobody can trace
       # back to them.
       def counter_account_for(settles, voucher)
-        account = case settles
-                  when ::Expense              then SystemAccount::ACCRUED_EXPENSES
-                  when ::Income                then SystemAccount::OTHER_RECEIVABLES
-                  when ::VendorInvoice         then settles.supplier
-                  when ::CustomerInvoice       then settles.customer
-                  when ::Customer, ::Supplier  then settles
-                  when ::PayrollAdvance        then SystemAccount::PAYROLL_ADVANCES
-                  else default_counter_for(voucher)
-                  end
-        account.to_account
+        case settles
+        when ::Expense               then accrual_account_for(settles, SystemAccount::ACCRUED_EXPENSES)
+        when ::Income                 then accrual_account_for(settles, SystemAccount::OTHER_RECEIVABLES)
+        when ::VendorInvoice          then settles.supplier.to_account
+        when ::CustomerInvoice        then settles.customer.to_account
+        when ::Customer, ::Supplier   then settles.to_account
+        when ::PayrollAdvance         then SystemAccount::PAYROLL_ADVANCES.to_account
+        else default_counter_for(voucher).to_account
+        end
       end
 
       def default_counter_for(voucher)
         return SystemAccount::EQUITY if voucher.equity_adjustment?
 
         voucher.receipt? ? SystemAccount::OTHER_RECEIVABLES : SystemAccount::ACCRUED_EXPENSES
+      end
+
+      # The account an expense or income actually clears against: whatever its
+      # own party represents, if it has one that's Accountable — a Supplier's
+      # AP, a Partner's equity account, a Loan's own account — otherwise the
+      # pooled accrual account, same as before a party ever existed. `party`
+      # can be a User (Partyable allows it; Accountable deliberately doesn't —
+      # see project_unify_account_and_party), so this checks rather than
+      # assumes every party answers #to_account.
+      def accrual_account_for(record, pooled)
+        party = record.party
+        return pooled.to_account unless party.respond_to?(:to_account)
+
+        party.to_account || pooled.to_account
       end
 
       # ── Treasury Transfer ─────────────────────────────────────────────
