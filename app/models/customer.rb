@@ -3,6 +3,7 @@
 class Customer < ApplicationRecord
   include Tenantable
   include MoneyInputs
+  include Accountable
 
   INDEX_SORTABLE_COLUMNS = %w[name phone loyalty_points total_spent_cents created_at].freeze
   INDEX_DEFAULT_SORT = "created_at"
@@ -59,6 +60,12 @@ class Customer < ApplicationRecord
   # Amount this customer currently owes us (0 when they have no AR ledger).
   def ar_balance_cents
     ar_treasury&.balance_cents || 0
+  end
+
+  # Accountable — see Supplier#to_account: a customer's account is its AR
+  # treasury's, not its own.
+  def to_account
+    ar_treasury&.to_account
   end
 
   def commercial?

@@ -2,6 +2,7 @@
 
 class Supplier < ApplicationRecord
   include Tenantable
+  include Accountable
 
   has_many :supplier_ingredients, dependent: :destroy
   has_many :ingredients, through: :supplier_ingredients
@@ -22,6 +23,13 @@ class Supplier < ApplicationRecord
 
   def ap_balance_cents
     ap_treasury&.balance_cents || 0
+  end
+
+  # Accountable — a supplier has nothing of its own to post against; its
+  # account *is* its AP treasury's. Overrides the default template entirely
+  # rather than defining account_code/account_name/etc. individually.
+  def to_account
+    ap_treasury&.to_account
   end
 
   # A supplier can be permanently deleted only when it carries no financial or

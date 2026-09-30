@@ -2,6 +2,7 @@
 
 class Loan < ApplicationRecord
   include Tenantable
+  include Accountable
 
   ACCOUNT_CODE_BASE    = 2100
   INTEREST_EXPENSE_CODE = 5600
@@ -47,6 +48,9 @@ class Loan < ApplicationRecord
 
     [installments_total - payments_made_count, 0].max
   end
+
+  def account_type = "liability"
+  def normal_balance = :credit
 
   private
 

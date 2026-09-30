@@ -12,7 +12,7 @@
 module Partyable
   extend ActiveSupport::Concern
 
-  PARTY_TYPES = %w[Supplier Customer Partner User].freeze
+  PARTY_TYPES = %w[Supplier Customer Partner User Loan].freeze
 
   included do
     belongs_to :party, polymorphic: true, optional: true

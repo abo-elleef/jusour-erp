@@ -33,10 +33,10 @@ RSpec.describe LedgerAccountNamesHelper, type: :helper do
     end
 
     it "has a translation for every system account, in both locales" do
-      Accounting::JournalEntryService::SYSTEM_ACCOUNT_NAME_KEYS.each do |code, key|
+      Accounting::SystemAccount::REGISTRY.each do |code, account|
         %i[en ar].each do |locale|
           name = I18n.with_locale(locale) { helper.ledger_account_name(code, nil) }
-          expect(name).not_to eq(code.to_s), "#{key} is missing in #{locale}"
+          expect(name).not_to eq(code.to_s), "#{account.name_key} is missing in #{locale}"
           expect(name).to be_present
         end
       end

@@ -2,7 +2,7 @@
 
 module Accounting
   # Options for the party searchable-select: every Supplier, commercial
-  # Customer, Partner and active staff User, tagged with keywords so the
+  # Customer, Partner, Loan and active staff User, tagged with keywords so the
   # picker can be found by kind ("supplier", "staff") as well as by name.
   class PartyOptions
     def self.for_select
@@ -10,7 +10,7 @@ module Accounting
     end
 
     def to_a
-      suppliers + customers + partners + staff
+      suppliers + customers + partners + loans + staff
     end
 
     private
@@ -28,6 +28,10 @@ module Accounting
 
     def partners
       Partner.active.order(:name).map { |p| option(p, p.name, "partner") }
+    end
+
+    def loans
+      Loan.active.ordered.map { |l| option(l, l.name, "loan") }
     end
 
     def staff

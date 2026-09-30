@@ -9,7 +9,7 @@ module PartyHelper
 
     case party
     when Customer then party.display_name
-    when Supplier, Partner, User then party.name
+    when Supplier, Partner, User, Loan then party.name
     end
   end
 
@@ -18,6 +18,7 @@ module PartyHelper
     when Customer then admin_customer_path(party)
     when Supplier  then admin_inventory_supplier_path(party)
     when Partner   then admin_accounting_partner_path(party)
+    when Loan      then admin_accounting_loan_path(party)
     when User      then admin_user_path(party)
     end
   end

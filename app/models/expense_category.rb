@@ -2,6 +2,7 @@
 
 class ExpenseCategory < ApplicationRecord
   include Tenantable
+  include Accountable
 
   audited associated_with: :company
 
@@ -31,6 +32,10 @@ class ExpenseCategory < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     []
   end
+
+  def account_name = name
+  def account_type = "expense"
+  def normal_balance = :debit
 
   before_destroy :prevent_system_managed_destroy
 

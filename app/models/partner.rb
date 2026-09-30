@@ -1,5 +1,6 @@
 class Partner < ApplicationRecord
   include Tenantable
+  include Accountable
 
   ACCOUNT_CODE_BASE = 3100
 
@@ -23,6 +24,9 @@ class Partner < ApplicationRecord
                             .where(account_code: account_code)
     lines.sum(:credit_cents) - lines.sum(:debit_cents)
   end
+
+  def account_type = "equity"
+  def normal_balance = :credit
 
   private
 

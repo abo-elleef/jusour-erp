@@ -2,6 +2,7 @@
 
 class IncomeCategory < ApplicationRecord
   include Tenantable
+  include Accountable
 
   audited associated_with: :company
 
@@ -27,6 +28,10 @@ class IncomeCategory < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     []
   end
+
+  def account_name = name
+  def account_type = "revenue"
+  def normal_balance = :credit
 
   before_destroy :prevent_system_managed_destroy
 

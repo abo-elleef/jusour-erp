@@ -15,15 +15,20 @@ module Accounting
   #     5502       Staff Meals
   #     5503       Cost of Goods Sold (COGS, no treasury)
   class JournalEntryService
-    EQUITY_CODE      = 3001
-    ADVANCE_CODE     = 5500
+    # Kept as aliases of SystemAccount's codes rather than removed: three other
+    # files (AccountListService, ChartOfAccountsService, JournalEntriesController)
+    # still reference these constants directly and haven't been moved onto
+    # Accountable yet. Defining them from SystemAccount means the two can never
+    # drift apart while that migration is still in progress.
+    EQUITY_CODE      = SystemAccount::EQUITY.code
+    ADVANCE_CODE     = SystemAccount::PAYROLL_ADVANCES.code
     # Amounts still owed on machines bought on credit. A liability, deliberately
     # separate from trade payables (supplier AP) — equipment debt is not a goods debt.
-    EQUIPMENT_PAYABLE_CODE = 2200
-    SALARY_CODE      = 5501
-    STAFF_MEAL_CODE  = 5502
-    COGS_CODE        = 5503
-    INTEREST_CODE    = 5600
+    EQUIPMENT_PAYABLE_CODE = SystemAccount::EQUIPMENT_PAYABLE.code
+    SALARY_CODE      = SystemAccount::SALARIES.code
+    STAFF_MEAL_CODE  = SystemAccount::STAFF_MEALS.code
+    COGS_CODE        = SystemAccount::COGS.code
+    INTEREST_CODE    = SystemAccount::INTEREST_EXPENSE.code
 
     TREASURY_TYPE_BASE = {
       "cash_drawer"   => 1000,
@@ -39,8 +44,8 @@ module Accounting
     # SPIKE (AR): sales revenue account for credit sales. Distribution sales post
     # DR Accounts Receivable / CR Sales Revenue — the genuine revenue recognition
     # the POS/drawer flow never introduced.
-    SALES_REVENUE_CODE = 4001
-    TAX_PAYABLE_CODE   = 2100
+    SALES_REVENUE_CODE = SystemAccount::SALES_REVENUE.code
+    TAX_PAYABLE_CODE   = SystemAccount::TAX_PAYABLE.code
 
     # Sales made but not yet sitting in a treasury. A day's takings are recognised
     # against this account, and each treasury clears its share as the money lands
@@ -50,7 +55,7 @@ module Accounting
     # Numbered like customer_ar (1150): carved into the 1100 block, because the
     # 1000-1599 range is handed out to treasuries as base + index and 1600+ belongs
     # to fixed assets.
-    SALES_CLEARING_CODE = 1160
+    SALES_CLEARING_CODE = SystemAccount::SALES_CLEARING.code
 
     # Money earned but not yet collected, and money owed but not yet paid —
     # where an income or an expense sits between the date it is booked and the
@@ -60,40 +65,15 @@ module Accounting
     # 1170 sits in the gap between sales clearing (1160) and the safe treasuries
     # (1200+); 2300 above equipment payable (2200) and clear of the loan codes,
     # which count up from 2101.
-    OTHER_RECEIVABLES_CODE = 1170
-    ACCRUED_EXPENSES_CODE  = 2300
-
-    # The accounts the app owns the names of, as opposed to the ones named by
-    # the user — treasuries, expense categories, loans, partners.
-    #
-    # `account_name` on a journal line is a snapshot taken when the entry was
-    # written, in whatever locale the person writing it happened to be using.
-    # That is right for a treasury, whose name is data and should not shift
-    # under the reader, and wrong for these, whose name is a translation: a
-    # line posted from the English UI would otherwise read "Accrued expenses"
-    # to an Arabic reader for ever. Rendering resolves these by code instead
-    # (see LedgerAccountNames), so the stored name is only ever a fallback.
-    SYSTEM_ACCOUNT_NAME_KEYS = {
-      SALES_CLEARING_CODE    => "accounting.journal_entries.accounts.sales_clearing",
-      OTHER_RECEIVABLES_CODE => "accounting.journal_entries.accounts.other_receivables",
-      TAX_PAYABLE_CODE       => "accounting.journal_entries.accounts.tax_payable",
-      EQUIPMENT_PAYABLE_CODE => "accounting.journal_entries.accounts.equipment_payable",
-      ACCRUED_EXPENSES_CODE  => "accounting.journal_entries.accounts.accrued_expenses",
-      EQUITY_CODE            => "accounting.chart_of_accounts.retained_earnings",
-      SALES_REVENUE_CODE     => "accounting.journal_entries.accounts.sales_revenue",
-      ADVANCE_CODE           => "accounting.journal_entries.accounts.payroll_advances",
-      SALARY_CODE            => "accounting.journal_entries.accounts.salaries",
-      STAFF_MEAL_CODE        => "accounting.journal_entries.accounts.staff_meals",
-      COGS_CODE              => "accounting.journal_entries.accounts.purchases",
-      INTEREST_CODE          => "accounting.loans.interest_expense_account"
-    }.freeze
+    OTHER_RECEIVABLES_CODE = SystemAccount::OTHER_RECEIVABLES.code
+    ACCRUED_EXPENSES_CODE  = SystemAccount::ACCRUED_EXPENSES.code
 
     class << self
       # The reader's name for an account, given the code and whatever name was
       # stored alongside it. System accounts resolve to the current locale;
       # everything else keeps the stored name, which is user data.
       def account_display_name(code, fallback = nil)
-        key = SYSTEM_ACCOUNT_NAME_KEYS[code.to_i]
+        key = SystemAccount::REGISTRY[code.to_i]&.name_key
         return fallback.presence || code.to_s if key.nil?
 
         I18n.t(key, default: fallback.presence || code.to_s)
@@ -123,9 +103,8 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.expense",
                                     category: expense.expense_category.name,
                                     default: "Expense — #{expense.expense_category.name}") do |lines|
-          lines << debit(account_for_expense_category(expense.expense_category),
-                         expense.amount_cents, "expense")
-          lines << credit(accrued_expenses_account, expense.amount_cents, "liability")
+          lines << debit(expense.expense_category, expense.amount_cents)
+          lines << credit(SystemAccount::ACCRUED_EXPENSES, expense.amount_cents)
         end
       end
 
@@ -140,9 +119,8 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.income",
                                     category: income.income_category.name,
                                     default: "Income — #{income.income_category.name}") do |lines|
-          lines << debit(other_receivables_account, income.amount_cents, "asset")
-          lines << credit(account_for_income_category(income.income_category),
-                          income.amount_cents, "revenue")
+          lines << debit(SystemAccount::OTHER_RECEIVABLES, income.amount_cents)
+          lines << credit(income.income_category, income.amount_cents)
         end
       end
 
@@ -152,11 +130,6 @@ module Accounting
       # side is the accrual account the income or expense already posted to, so
       # the pair nets to nothing once a booking is fully settled and whatever is
       # left on 1170/2300 is exactly what is still owed either way.
-      #
-      # The counter-account is chosen by direction because in this phase a
-      # voucher settles only incomes and expenses. When vouchers absorb supplier
-      # and customer payments it will have to be resolved per allocation, from
-      # the AP or AR treasury of the invoice being settled.
       def record_voucher!(voucher)
         destroy_for_source!(voucher)
 
@@ -164,14 +137,12 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.voucher",
                                     number: voucher.number,
                                     default: "Voucher #{voucher.number}") do |lines|
-          treasury_line = account_for_treasury(voucher.treasury)
-
           if voucher.receipt?
-            lines << debit(treasury_line, voucher.amount_cents, "asset")
-            voucher_counter_legs(voucher).each { |acct, type, cents| lines << credit(acct, cents, type) }
+            lines << debit(voucher.treasury, voucher.amount_cents)
+            voucher_counter_legs(voucher).each { |account, cents| lines << credit(account, cents) }
           else
-            voucher_counter_legs(voucher).each { |acct, type, cents| lines << debit(acct, cents, type) }
-            lines << credit(treasury_line, voucher.amount_cents, "asset")
+            voucher_counter_legs(voucher).each { |account, cents| lines << debit(account, cents) }
+            lines << credit(voucher.treasury, voucher.amount_cents)
           end
         end
       end
@@ -185,18 +156,24 @@ module Accounting
       # Whatever is not allocated is money moved on account, and falls to the
       # accrual account for the direction — which is what the voucher did for
       # every case before it could settle an invoice.
+      #
+      # Grouped by AccountRef rather than by the settled record itself: two
+      # allocations can resolve to the same account through different model
+      # types (a VendorInvoice and a direct on-account Supplier settlement both
+      # land on that supplier's AP treasury), and AccountRef is a Struct, so two
+      # structurally-equal refs group under one key regardless of which path
+      # produced them.
       def voucher_counter_legs(voucher)
         legs = Hash.new(0)
 
         voucher.payment_allocations.each do |allocation|
-          key = counter_account_for(allocation.settles, voucher)
-          legs[key] += allocation.amount_cents
+          legs[counter_account_for(allocation.settles, voucher)] += allocation.amount_cents
         end
 
         remainder = voucher.amount_cents - voucher.payment_allocations.sum(&:amount_cents)
-        legs[default_counter_for(voucher)] += remainder if remainder.positive?
+        legs[default_counter_for(voucher).to_account] += remainder if remainder.positive?
 
-        legs.map { |(acct, type), cents| [acct, type, cents] }
+        legs.to_a
       end
 
       # A voucher settles a document — an invoice, an expense, an income — or a
@@ -205,34 +182,22 @@ module Accounting
       # receivable rather than in a pooled "other receivables" nobody can trace
       # back to them.
       def counter_account_for(settles, voucher)
-        case settles
-        when ::Expense         then [accrued_expenses_account, "liability"]
-        when ::Income          then [other_receivables_account, "asset"]
-        when ::VendorInvoice   then [account_for_treasury(settles.supplier.ap_treasury), "liability"]
-        when ::CustomerInvoice then [account_for_treasury(settles.customer.ar_treasury), "asset"]
-        when ::Customer        then [account_for_treasury(settles.ar_treasury), "asset"]
-        when ::Supplier        then [account_for_treasury(settles.ap_treasury), "liability"]
-        when ::PayrollAdvance  then [payroll_advances_account, "expense"]
-        else default_counter_for(voucher)
-        end
+        account = case settles
+                  when ::Expense              then SystemAccount::ACCRUED_EXPENSES
+                  when ::Income                then SystemAccount::OTHER_RECEIVABLES
+                  when ::VendorInvoice         then settles.supplier
+                  when ::CustomerInvoice       then settles.customer
+                  when ::Customer, ::Supplier  then settles
+                  when ::PayrollAdvance        then SystemAccount::PAYROLL_ADVANCES
+                  else default_counter_for(voucher)
+                  end
+        account.to_account
       end
 
       def default_counter_for(voucher)
-        return [retained_earnings_account, "equity"] if voucher.equity_adjustment?
+        return SystemAccount::EQUITY if voucher.equity_adjustment?
 
-        voucher.receipt? ? [other_receivables_account, "asset"] : [accrued_expenses_account, "liability"]
-      end
-
-      def payroll_advances_account
-        { code: ADVANCE_CODE,
-          name: I18n.t("accounting.journal_entries.accounts.payroll_advances",
-                       default: "Payroll — Advances") }
-      end
-
-      def retained_earnings_account
-        { code: EQUITY_CODE,
-          name: I18n.t("accounting.chart_of_accounts.retained_earnings",
-                       default: "Retained Earnings") }
+        voucher.receipt? ? SystemAccount::OTHER_RECEIVABLES : SystemAccount::ACCRUED_EXPENSES
       end
 
       # ── Treasury Transfer ─────────────────────────────────────────────
@@ -243,8 +208,8 @@ module Accounting
                                     from: transfer.from_treasury.name,
                                     to: transfer.to_treasury.name,
                                     default: "Transfer: #{transfer.from_treasury.name} → #{transfer.to_treasury.name}") do |lines|
-          lines << debit(account_for_treasury(transfer.to_treasury),   transfer.amount_cents, "asset")
-          lines << credit(account_for_treasury(transfer.from_treasury), transfer.amount_cents, "asset")
+          lines << debit(transfer.to_treasury, transfer.amount_cents)
+          lines << credit(transfer.from_treasury, transfer.amount_cents)
         end
       end
 
@@ -262,10 +227,8 @@ module Accounting
                                     treasury: session.treasury.name,
                                     default: "Cash Drawer Opened — #{session.treasury.name}"),
                 source_tag: :open do |lines|
-          lines << debit(account_for_treasury(session.treasury),
-                         session.opening_float_cents, "asset")
-          lines << credit(account_for_treasury(session.float_source_treasury),
-                          session.opening_float_cents, "asset")
+          lines << debit(session.treasury, session.opening_float_cents)
+          lines << credit(session.float_source_treasury, session.opening_float_cents)
         end
       end
 
@@ -284,8 +247,8 @@ module Accounting
                                     treasury: session.treasury.name,
                                     default: "Cash Drawer Reconciled — #{session.treasury.name}"),
                 source_tag: :reconcile do |lines|
-          lines << debit(account_for_treasury(session.treasury), collected, "asset")
-          lines << credit(sales_clearing_account, collected, "asset")
+          lines << debit(session.treasury, collected)
+          lines << credit(SystemAccount::SALES_CLEARING, collected)
         end
       end
 
@@ -304,8 +267,8 @@ module Accounting
                                     to: session.deposit_treasury.name,
                                     default: "Drawer banked — #{session.treasury.name} → #{session.deposit_treasury.name}"),
                 source_tag: :deposit do |lines|
-          lines << debit(account_for_treasury(session.deposit_treasury), amount, "asset")
-          lines << credit(account_for_treasury(session.treasury), amount, "asset")
+          lines << debit(session.deposit_treasury, amount)
+          lines << credit(session.treasury, amount)
         end
       end
 
@@ -318,8 +281,8 @@ module Accounting
                                     treasury: treasury.name,
                                     default: "Digital Payment Received — #{treasury.name}"),
                 source_tag: :online do |lines|
-          lines << debit(account_for_treasury(treasury), amount_cents, "asset")
-          lines << credit(sales_clearing_account, amount_cents, "asset")
+          lines << debit(treasury, amount_cents)
+          lines << credit(SystemAccount::SALES_CLEARING, amount_cents)
         end
       end
 
@@ -353,15 +316,9 @@ module Accounting
                                     location: location.name, date: business_date,
                                     default: "Sales — #{location.name} #{business_date}"),
                 source_tag: :daily_sales do |lines|
-          lines << debit(sales_clearing_account, total_cents, "asset")
-          lines << credit({ code: SALES_REVENUE_CODE,
-                            name: I18n.t("accounting.journal_entries.accounts.sales_revenue", default: "Sales revenue") },
-                          net_sales_cents + tip_cents, "revenue")
-          if tax_cents.positive?
-            lines << credit({ code: TAX_PAYABLE_CODE,
-                              name: I18n.t("accounting.journal_entries.accounts.tax_payable", default: "Tax payable") },
-                            tax_cents, "liability")
-          end
+          lines << debit(SystemAccount::SALES_CLEARING, total_cents)
+          lines << credit(SystemAccount::SALES_REVENUE, net_sales_cents + tip_cents)
+          lines << credit(SystemAccount::TAX_PAYABLE, tax_cents) if tax_cents.positive?
         end
       end
 
@@ -382,10 +339,8 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.cash_sale",
                                     number: source.try(:invoice_number),
                                     default: "Cash sale — #{source.try(:invoice_number)}") do |lines|
-          lines << debit(account_for_treasury(treasury), amount_cents, "asset")
-          lines << credit({ code: SALES_REVENUE_CODE,
-                            name: I18n.t("accounting.journal_entries.accounts.sales_revenue", default: "Sales revenue") },
-                          amount_cents, "revenue")
+          lines << debit(treasury, amount_cents)
+          lines << credit(SystemAccount::SALES_REVENUE, amount_cents)
         end
       end
 
@@ -396,10 +351,8 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.payroll_advance",
                                     employee: advance.user.name,
                                     default: "Payroll Advance — #{advance.user.name}") do |lines|
-          lines << debit({ code: ADVANCE_CODE,
-                           name: I18n.t("accounting.journal_entries.accounts.payroll_advances", default: "Payroll — Advances") },
-                         advance.amount_cents, "expense")
-          lines << credit(account_for_treasury(advance.treasury), advance.amount_cents, "asset")
+          lines << debit(SystemAccount::PAYROLL_ADVANCES, advance.amount_cents)
+          lines << credit(advance.treasury, advance.amount_cents)
         end
       end
 
@@ -413,10 +366,8 @@ module Accounting
                                     employee: snapshot.user.name,
                                     month: I18n.l(snapshot.payroll_month, format: "%B %Y"),
                                     default: "Payroll Salary — #{snapshot.user.name}") do |lines|
-          lines << debit({ code: SALARY_CODE,
-                           name: I18n.t("accounting.journal_entries.accounts.salaries", default: "Payroll — Salaries") },
-                         snapshot.remaining_pay_cents, "expense")
-          lines << credit(account_for_treasury(snapshot.treasury), snapshot.remaining_pay_cents, "asset")
+          lines << debit(SystemAccount::SALARIES, snapshot.remaining_pay_cents)
+          lines << credit(snapshot.treasury, snapshot.remaining_pay_cents)
         end
       end
 
@@ -425,10 +376,8 @@ module Accounting
         create! source: order, date: Date.current, user: user,
                 description: I18n.t("accounting.journal_entries.auto.staff_meal",
                                     default: "Staff Meal Deduction") do |lines|
-          lines << debit({ code: STAFF_MEAL_CODE,
-                           name: I18n.t("accounting.journal_entries.accounts.staff_meals", default: "Staff Meals") },
-                         order.total_cents, "expense")
-          lines << credit(account_for_treasury(treasury), order.total_cents, "asset")
+          lines << debit(SystemAccount::STAFF_MEALS, order.total_cents)
+          lines << credit(treasury, order.total_cents)
         end
       end
 
@@ -447,12 +396,8 @@ module Accounting
           # own Expense and never reaches AP, so nothing splits off here. Derived
           # from total_cents (rather than recomputed from lines) so the entry always
           # balances against the stored total.
-          if invoice.total_cents.positive?
-            lines << debit({ code: 5100,
-                             name: I18n.t("accounting.journal_entries.accounts.purchases", default: "Purchases / Inventory") },
-                           invoice.total_cents, "expense")
-          end
-          lines << credit(account_for_treasury(ap_treasury), invoice.total_cents, "liability")
+          lines << debit(SystemAccount::PURCHASES, invoice.total_cents) if invoice.total_cents.positive?
+          lines << credit(ap_treasury, invoice.total_cents)
         end
       end
 
@@ -469,10 +414,8 @@ module Accounting
                                     supplier: credit_note.supplier.name,
                                     ref: credit_note.credit_note_number,
                                     default: "Purchase Return — #{credit_note.supplier.name}") do |lines|
-          lines << debit(account_for_treasury(ap_treasury), credit_note.total_cents, "liability")
-          lines << credit({ code: 5100,
-                            name: I18n.t("accounting.journal_entries.accounts.purchases", default: "Purchases / Inventory") },
-                          credit_note.total_cents, "expense")
+          lines << debit(ap_treasury, credit_note.total_cents)
+          lines << credit(SystemAccount::PURCHASES, credit_note.total_cents)
         end
       end
 
@@ -488,11 +431,11 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.fixed_asset_purchase",
                                     name: asset.name,
                                     default: "Fixed asset — #{asset.name}") do |lines|
-          lines << debit(account_for_fixed_asset(asset), asset.purchase_price_cents, "asset")
+          lines << debit(account_for_fixed_asset(asset), asset.purchase_price_cents)
           lines << if asset.on_credit?
-                     credit(equipment_payable_account, asset.purchase_price_cents, "liability")
+                     credit(SystemAccount::EQUIPMENT_PAYABLE, asset.purchase_price_cents)
                    else
-                     credit(account_for_treasury(asset.paid_from_treasury), asset.purchase_price_cents, "asset")
+                     credit(asset.paid_from_treasury, asset.purchase_price_cents)
                    end
         end
       end
@@ -505,8 +448,8 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.fixed_asset_payment",
                                     name: payment.fixed_asset.name,
                                     default: "Fixed asset payment — #{payment.fixed_asset.name}") do |lines|
-          lines << debit(equipment_payable_account, payment.amount_cents, "liability")
-          lines << credit(account_for_treasury(payment.treasury), payment.amount_cents, "asset")
+          lines << debit(SystemAccount::EQUIPMENT_PAYABLE, payment.amount_cents)
+          lines << credit(payment.treasury, payment.amount_cents)
         end
       end
 
@@ -520,8 +463,8 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.vendor_invoice_payment",
                                     supplier: payment.vendor_invoice.supplier.name,
                                     default: "Supplier Payment — #{payment.vendor_invoice.supplier.name}") do |lines|
-          lines << debit(account_for_treasury(ap_treasury), payment.amount_cents, "liability")
-          lines << credit(account_for_treasury(payment.treasury), payment.amount_cents, "asset")
+          lines << debit(ap_treasury, payment.amount_cents)
+          lines << credit(payment.treasury, payment.amount_cents)
         end
       end
 
@@ -538,14 +481,9 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.customer_charge",
                                     customer: customer.display_name,
                                     default: "Credit sale — #{customer.display_name}") do |lines|
-          lines << debit(account_for_treasury(ar_treasury), amount_cents, "asset")
-          lines << credit({ code: SALES_REVENUE_CODE,
-                            name: I18n.t("accounting.journal_entries.accounts.sales_revenue", default: "Sales revenue") },
-                          revenue_cents, "revenue")
-          if tax_cents.positive?
-            lines << credit({ code: 2100, name: I18n.t("accounting.journal_entries.accounts.tax_payable", default: "Tax payable") },
-                            tax_cents, "liability")
-          end
+          lines << debit(ar_treasury, amount_cents)
+          lines << credit(SystemAccount::SALES_REVENUE, revenue_cents)
+          lines << credit(SystemAccount::TAX_PAYABLE, tax_cents) if tax_cents.positive?
         end
       end
 
@@ -561,14 +499,9 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.customer_credit_note",
                                     customer: customer.display_name,
                                     default: "Credit note — #{customer.display_name}") do |lines|
-          lines << debit({ code: SALES_REVENUE_CODE,
-                           name: I18n.t("accounting.journal_entries.accounts.sales_revenue", default: "Sales revenue") },
-                         revenue_cents, "revenue")
-          if tax_cents.positive?
-            lines << debit({ code: 2100, name: I18n.t("accounting.journal_entries.accounts.tax_payable", default: "Tax payable") },
-                           tax_cents, "liability")
-          end
-          lines << credit(account_for_treasury(ar_treasury), amount_cents, "asset")
+          lines << debit(SystemAccount::SALES_REVENUE, revenue_cents)
+          lines << debit(SystemAccount::TAX_PAYABLE, tax_cents) if tax_cents.positive?
+          lines << credit(ar_treasury, amount_cents)
         end
       end
 
@@ -584,9 +517,8 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.customer_opening_balance",
                                     customer: customer.display_name,
                                     default: "Opening balance — #{customer.display_name}") do |lines|
-          lines << debit(account_for_treasury(ar_treasury), amount_cents, "asset")
-          lines << credit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings", default: "Retained Earnings") },
-                          amount_cents, "equity")
+          lines << debit(ar_treasury, amount_cents)
+          lines << credit(SystemAccount::EQUITY, amount_cents)
         end
       end
 
@@ -601,16 +533,16 @@ module Accounting
                 description: I18n.t("accounting.journal_entries.auto.customer_receipt",
                                     customer: customer.display_name,
                                     default: "Customer payment — #{customer.display_name}") do |lines|
-          lines << debit(account_for_treasury(treasury), amount_cents, "asset")
-          lines << credit(account_for_treasury(ar_treasury), amount_cents, "asset")
+          lines << debit(treasury, amount_cents)
+          lines << credit(ar_treasury, amount_cents)
         end
       end
 
       # ── Partner Advance / Drawing ─────────────────────────────────────
       def record_partner_advance!(partner:, treasury:, amount_cents:, date:, description:, user:)
         create! source: nil, date: date, user: user, description: description do |lines|
-          lines << debit(account_for_partner(partner), amount_cents, "equity")
-          lines << credit(account_for_treasury(treasury), amount_cents, "asset")
+          lines << debit(partner, amount_cents)
+          lines << credit(treasury, amount_cents)
         end
       end
 
@@ -622,12 +554,10 @@ module Accounting
             share = (total_cents * partner.ownership_percentage / 100.0).round
             next if share == 0
 
-            lines << credit(account_for_partner(partner), share, "equity",
-                            notes: "#{partner.ownership_percentage}%")
+            lines << credit(partner, share, notes: "#{partner.ownership_percentage}%")
           end
           # Single debit to retained earnings for the full amount
-          lines << debit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings") },
-                         total_cents, "equity")
+          lines << debit(SystemAccount::EQUITY, total_cents)
         end
       end
 
@@ -635,8 +565,8 @@ module Accounting
       # DR Treasury → CR Loan account
       def record_loan_disbursement!(loan:, treasury:, amount_cents:, date:, description:, user:)
         create! source: nil, date: date, user: user, description: description do |lines|
-          lines << debit(account_for_treasury(treasury), amount_cents, "asset")
-          lines << credit(account_for_loan(loan), amount_cents, "liability")
+          lines << debit(treasury, amount_cents)
+          lines << credit(loan, amount_cents)
         end
       end
 
@@ -653,9 +583,8 @@ module Accounting
                 description: description.presence || I18n.t("accounting.journal_entries.auto.loan_opening_balance",
                                                              name: loan.name,
                                                              default: "Opening balance — #{loan.name}") do |lines|
-          lines << debit({ code: EQUITY_CODE, name: I18n.t("accounting.chart_of_accounts.retained_earnings",
-                                                            default: "Retained Earnings") }, amount_cents, "equity")
-          lines << credit(account_for_loan(loan), amount_cents, "liability")
+          lines << debit(SystemAccount::EQUITY, amount_cents)
+          lines << credit(loan, amount_cents)
         end
       end
 
@@ -663,8 +592,8 @@ module Accounting
       # DR Loan account → CR Treasury
       def record_loan_repayment!(loan:, treasury:, amount_cents:, date:, description:, user:)
         create! source: nil, date: date, user: user, description: description do |lines|
-          lines << debit(account_for_loan(loan), amount_cents, "liability")
-          lines << credit(account_for_treasury(treasury), amount_cents, "asset")
+          lines << debit(loan, amount_cents)
+          lines << credit(treasury, amount_cents)
         end
       end
 
@@ -672,11 +601,8 @@ module Accounting
       # DR Interest Expense → CR Treasury
       def record_loan_interest!(loan:, treasury:, amount_cents:, date:, description:, user:)
         create! source: nil, date: date, user: user, description: description do |lines|
-          lines << debit(
-            { code: INTEREST_CODE, name: I18n.t("accounting.loans.interest_expense_account") },
-            amount_cents, "expense"
-          )
-          lines << credit(account_for_treasury(treasury), amount_cents, "asset")
+          lines << debit(SystemAccount::INTEREST_EXPENSE, amount_cents)
+          lines << credit(treasury, amount_cents)
         end
       end
 
@@ -721,18 +647,23 @@ module Accounting
         )
       end
 
-      # Build a debit line hash
-      def debit(account, amount_cents, account_type, notes: nil)
-        { account_code: account[:code], account_name: account[:name],
-          account_type: account_type, debit_cents: amount_cents, credit_cents: 0,
-          treasury_id: account[:treasury_id], notes: notes }
+      # Build a debit line hash. `account` is anything Accountable (a model
+      # instance, a SystemAccount, or an already-resolved AccountRef) — it says
+      # its own code/name/type, so no call site hand-types "asset"/"liability"
+      # next to it and risks the two not matching.
+      def debit(account, amount_cents, notes: nil)
+        line_for(account, notes: notes).merge(debit_cents: amount_cents, credit_cents: 0)
       end
 
-      # Build a credit line hash
-      def credit(account, amount_cents, account_type, notes: nil)
-        { account_code: account[:code], account_name: account[:name],
-          account_type: account_type, debit_cents: 0, credit_cents: amount_cents,
-          treasury_id: account[:treasury_id], notes: notes }
+      # Build a credit line hash.
+      def credit(account, amount_cents, notes: nil)
+        line_for(account, notes: notes).merge(debit_cents: 0, credit_cents: amount_cents)
+      end
+
+      def line_for(account, notes:)
+        ref = account.to_account
+        { account_code: ref.code, account_name: ref.name, account_type: ref.account_type,
+          treasury_id: ref.treasury_id, notes: notes }
       end
 
       # A day's entry is keyed by location *and* date, so the generic source cleanup
@@ -744,65 +675,17 @@ module Accounting
         ).where("journal_entries.description LIKE ?", "%[daily_sales]%").destroy_all
       end
 
-      def sales_clearing_account
-        { code: SALES_CLEARING_CODE,
-          name: I18n.t("accounting.journal_entries.accounts.sales_clearing", default: "Sales clearing") }
-      end
-
-      def account_for_treasury(treasury)
-        base = TREASURY_TYPE_BASE.fetch(treasury.treasury_type, 1500)
-        if treasury.treasury_type == "supplier_ap"
-          siblings = Treasury.unscoped.where(company_id: treasury.company_id,
-                                             treasury_type: "supplier_ap").order(:name)
-        else
-          siblings = Treasury.unscoped.where(company_id: treasury.company_id,
-                                             treasury_type: treasury.treasury_type)
-                             .order(:position, :name)
-        end
-        idx = siblings.pluck(:id).index(treasury.id).to_i
-        { code: base + idx + 1, name: treasury.name, treasury_id: treasury.id }
-      end
-
       # Mirrors ChartOfAccountsService's asset-account numbering so the entry lands in
-      # the same account the balance sheet shows for this asset class.
+      # the same account the balance sheet shows for this asset class. FixedAsset
+      # isn't Accountable (yet) — it has no code of its own to persist, unlike
+      # everything else debit/credit now takes — so this builds the AccountRef by
+      # hand rather than through the concern.
       def account_for_fixed_asset(asset)
         base = ChartOfAccountsService::FIXED_ASSET_BASE_CODES.fetch(asset.asset_type, 1980)
-        { code: base, name: I18n.t("accounting.fixed_assets.asset_types.#{asset.asset_type}",
-                                   default: asset.asset_type.to_s.humanize) }
-      end
-
-      def accrued_expenses_account
-        { code: ACCRUED_EXPENSES_CODE,
-          name: I18n.t("accounting.journal_entries.accounts.accrued_expenses",
-                       default: "Accrued expenses") }
-      end
-
-      def other_receivables_account
-        { code: OTHER_RECEIVABLES_CODE,
-          name: I18n.t("accounting.journal_entries.accounts.other_receivables",
-                       default: "Other receivables") }
-      end
-
-      def equipment_payable_account
-        { code: EQUIPMENT_PAYABLE_CODE,
-          name: I18n.t("accounting.journal_entries.accounts.equipment_payable",
-                       default: "Equipment payable") }
-      end
-
-      def account_for_expense_category(category)
-        { code: category.account_code, name: category.name }
-      end
-
-      def account_for_income_category(category)
-        { code: category.account_code, name: category.name }
-      end
-
-      def account_for_partner(partner)
-        { code: partner.account_code, name: partner.account_name }
-      end
-
-      def account_for_loan(loan)
-        { code: loan.account_code, name: loan.account_name }
+        AccountRef.new(code: base,
+                       name: I18n.t("accounting.fixed_assets.asset_types.#{asset.asset_type}",
+                                    default: asset.asset_type.to_s.humanize),
+                       account_type: "asset", normal_balance: :debit, treasury_id: nil)
       end
     end
   end

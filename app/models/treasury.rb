@@ -2,6 +2,7 @@
 
 class Treasury < ApplicationRecord
   include Tenantable
+  include Accountable
 
   TYPES = %w[cash_drawer bank safe petty_cash mobile_wallet other supplier_ap customer_ar].freeze
 
@@ -95,7 +96,34 @@ class Treasury < ApplicationRecord
     update!(balance_cents: balance_cents + delta_cents)
   end
 
+  # Accountable — unlike Loan/Partner/*Category, this is computed rather than
+  # persisted: base + this treasury's ordinal among same-type siblings. That
+  # makes it the one Accountable whose code can drift if a sibling is created
+  # or reordered ahead of it; persisting it properly is tracked separately.
+  def account_code
+    base = ::Accounting::JournalEntryService::TREASURY_TYPE_BASE.fetch(treasury_type, 1500)
+    base + treasury_account_ordinal
+  end
+
+  def account_name = name
+
+  def account_type
+    treasury_type == "supplier_ap" ? "liability" : "asset"
+  end
+
+  def normal_balance
+    account_type == "liability" ? :credit : :debit
+  end
+
+  def account_treasury_id = id
+
   private
+
+  def treasury_account_ordinal
+    scope = self.class.unscoped.where(company_id: company_id, treasury_type: treasury_type)
+    scope = treasury_type == "supplier_ap" ? scope.order(:name) : scope.order(:position, :name)
+    scope.pluck(:id).index(id).to_i + 1
+  end
 
   def lock_supplier_ap_type
     self.treasury_type = treasury_type_was if treasury_type_changed? && treasury_type_was == "supplier_ap"
