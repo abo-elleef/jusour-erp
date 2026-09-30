@@ -160,7 +160,7 @@ module Accounting
         end
 
         remainder = voucher.amount_cents - voucher.payment_allocations.sum(&:amount_cents)
-        legs[default_counter_for(voucher).to_account] += remainder if remainder.positive?
+        legs[default_counter_for(voucher)] += remainder if remainder.positive?
 
         legs.to_a
       end
@@ -178,23 +178,34 @@ module Accounting
         when ::CustomerInvoice        then settles.customer.to_account
         when ::Customer, ::Supplier   then settles.to_account
         when ::PayrollAdvance         then SystemAccount::PAYROLL_ADVANCES.to_account
-        else default_counter_for(voucher).to_account
+        else default_counter_for(voucher)
         end
       end
 
+      # What an unallocated (or wholly unsettled) voucher clears against. An
+      # equity adjustment is never "with" anyone in the AP/AR sense — cash
+      # appearing or leaving with no counterparty document — so its own party,
+      # if it has one, is a label only and never redirects this leg. Everything
+      # else is the same accrual resolution as an Expense or Income: the
+      # voucher's own party's account when it has one, the pooled account
+      # otherwise. This is what makes "receipt on account, from this customer,
+      # settling nothing yet" land on that customer's AR instead of a pooled
+      # figure nobody can trace back to them.
       def default_counter_for(voucher)
-        return SystemAccount::EQUITY if voucher.equity_adjustment?
+        return SystemAccount::EQUITY.to_account if voucher.equity_adjustment?
 
-        voucher.receipt? ? SystemAccount::OTHER_RECEIVABLES : SystemAccount::ACCRUED_EXPENSES
+        pooled = voucher.receipt? ? SystemAccount::OTHER_RECEIVABLES : SystemAccount::ACCRUED_EXPENSES
+        accrual_account_for(voucher, pooled)
       end
 
-      # The account an expense or income actually clears against: whatever its
-      # own party represents, if it has one that's Accountable — a Supplier's
-      # AP, a Partner's equity account, a Loan's own account — otherwise the
-      # pooled accrual account, same as before a party ever existed. `party`
-      # can be a User (Partyable allows it; Accountable deliberately doesn't —
-      # see project_unify_account_and_party), so this checks rather than
-      # assumes every party answers #to_account.
+      # The account a party-bearing record actually clears against: whatever
+      # its own party represents, if it has one that's Accountable — a
+      # Supplier's AP, a Customer's AR, a Partner's or Loan's own account —
+      # otherwise the pooled account, same as before a party ever existed.
+      # Used for Expense, Income, and a Voucher's own unallocated remainder.
+      # `party` can be a User (Partyable allows it; Accountable deliberately
+      # doesn't — see project_unify_account_and_party), so this checks rather
+      # than assumes every party answers #to_account.
       def accrual_account_for(record, pooled)
         party = record.party
         return pooled.to_account unless party.respond_to?(:to_account)
