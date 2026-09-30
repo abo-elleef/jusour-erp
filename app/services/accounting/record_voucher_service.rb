@@ -52,7 +52,7 @@ module Accounting
           )
         end
 
-        ensure_counterparty_treasuries!
+        ensure_counterparty_treasuries!(voucher)
         apply_to_invoices!(voucher)
 
         TreasuryLedgerService.sync_voucher!(voucher)
@@ -69,7 +69,14 @@ module Accounting
     # The ledger services this replaced ensured them before posting; reading the
     # association directly meant the first payment from a customer with no credit
     # history took the page down instead.
-    def ensure_counterparty_treasuries!
+    #
+    # Also covers the voucher's own party, not just what it settles: naming a
+    # Customer as an on-account voucher's party is meant to credit their AR the
+    # same way settling them directly would (JournalEntryService#accrual_account_for
+    # reads Customer#to_account for exactly this), which needs their treasury to
+    # exist first. A Supplier never needs this — it gets its AP treasury at
+    # creation, before it can ever be picked as a party.
+    def ensure_counterparty_treasuries!(voucher)
       @allocations.each do |allocation|
         case (target = allocation.fetch(:settles))
         when ::Customer        then CustomerArLedgerService.new(target).ensure_treasury!
@@ -78,6 +85,8 @@ module Accounting
         when ::VendorInvoice   then target.supplier.ensure_ap_treasury!
         end
       end
+
+      CustomerArLedgerService.new(voucher.party).ensure_treasury! if voucher.party.is_a?(::Customer)
     end
 
     # An invoice carries its own paid-to-date and status, unlike an expense or an
