@@ -130,6 +130,7 @@ en:
     notes: "Notes"
     amount: "Amount"
     total: "Total"
+    more_info: "More info"
     searchable_select:
       no_results: "No matches"
 
@@ -1127,6 +1128,7 @@ en:
       variance: "Variance"
       transfer_trends: "Transfer trends"
       vendor_basket: "Purchase prices"
+      vendor_purchases_summary: "Purchases summary"
       manufacturing: "Manufacturing"
     import_shipments:
       title: "Import shipments"
@@ -2178,6 +2180,35 @@ en:
         price_now: "Price now"
         change: "Change"
         price_impact: "Price impact"
+      vendor_purchases_summary:
+        description: "Three separate figures for vendor spend in a date range — what you bought, what you returned, and what cash actually left — so none of them have to be guessed from the Suppliers list."
+        filters: "Filters"
+        vendor: "Vendor"
+        all_vendors: "All vendors"
+        stats:
+          bought: "Goods bought"
+          bought_hint: "Posted vendor invoices dated in this range, any payment status"
+          bought_tooltip: "The sum of posted vendor invoice totals (VendorInvoice.total_cents) whose invoice date falls in this range, regardless of whether the invoice has since been paid, partially paid, or is still unpaid. Draft invoices are excluded — a draft has not bought anything yet."
+          credit_notes: "Credit notes"
+          credit_notes_hint: "Confirmed credit notes dated in this range, any payment status"
+          credit_notes_tooltip: "The sum of confirmed vendor credit note totals (VendorCreditNote.total_cents) whose credit note date falls in this range, regardless of whether the credit has been used to settle an invoice or still sits against the vendor's balance. Draft and voided credit notes are excluded."
+          net: "Net purchases"
+          net_hint: "Goods bought minus credit notes"
+          net_tooltip: "Goods bought minus credit notes for the same range — what was bought after returns, independent of payment status. This is not shown anywhere on the Suppliers list, where the \"Invoice total\" column is gross and never nets against credit notes."
+          paid: "Actually paid"
+          paid_hint: "Cash paid to vendors, dated by the payment"
+          paid_tooltip: "The cash that left a treasury against a vendor's payable in this range, dated by the payment (voucher) itself, not by the invoice it settles. One payment can be spread across several invoices for the same vendor; this figure counts the cash once. Not included: payments recorded before this system tracked per-invoice payments (marked \"historical settlement\" on an invoice) moved no new cash and are not repeated here, to avoid double counting money that already left under an old record."
+        table_heading: "By vendor"
+        table_hint: "Only vendors with activity in this range are listed. Sorted alphabetically."
+        table:
+          vendor: "Vendor"
+          bought: "Goods bought"
+          credit_notes: "Credit notes"
+          net: "Net purchases"
+          paid: "Actually paid"
+        grand_total: "Grand total"
+        empty: "No vendor activity in this range"
+        empty_hint: "Widen the dates, or clear the vendor filter."
     manufacturing:
       adjustment_consumption: "Production %{template} — consumed %{ingredient} (×%{runs} runs, run %{run_id})"
       adjustment_output: "Production %{template} — produced %{output} (×%{runs} runs, run %{run_id})"
@@ -3302,6 +3333,7 @@ en:
         variance_title: "Usage variance"
         transfer_trends_title: "Transfer trends"
         vendor_basket_title: "Purchase price drift"
+        vendor_purchases_summary_title: "Vendor purchases summary"
 
   customers:
     description: "Loyalty accounts, contact info, and order history."

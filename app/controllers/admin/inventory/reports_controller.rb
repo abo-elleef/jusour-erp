@@ -163,6 +163,58 @@ module Admin
         end
       end
 
+      # The three figures accountants actually ask for about vendor spend, side by
+      # side instead of folded into one invoice-total column (where credit notes
+      # and actual cash paid are both invisible — see the Suppliers list):
+      #   - goods bought:   gross VendorInvoice totals, any payment status
+      #   - credit notes:   confirmed VendorCreditNote totals given back
+      #   - actually paid:  cash that left via a payment voucher (AP ledger "ap_payment" leg)
+      # Net purchases (goods bought minus credit notes) is derived, not stored.
+      def vendor_purchases_summary
+        authorize_inventory_index!
+        parse_date_range(default_start: Date.current.beginning_of_month)
+
+        @supplier = Supplier.find_by(id: params[:supplier_id])
+        @suppliers = Supplier.active.order(:name)
+        supplier_ids = @supplier ? [@supplier.id] : Supplier.pluck(:id)
+
+        @purchases_cents_by_supplier = VendorInvoice.posted
+          .where(supplier_id: supplier_ids, invoice_date: @start_date..@end_date)
+          .group(:supplier_id).sum(:total_cents)
+
+        @credit_notes_cents_by_supplier = VendorCreditNote.confirmed
+          .where(supplier_id: supplier_ids, credit_note_date: @start_date..@end_date)
+          .group(:supplier_id).sum(:total_cents)
+
+        # ap_payment legs are always negative (cash leaving); supplier_ap is the
+        # system-managed ledger treasury type, one per supplier — see Treasury#supplier_ap.
+        paid_by_supplier = TreasuryTransaction.where(kind: "ap_payment")
+          .joins(:treasury).merge(Treasury.supplier_ap)
+          .where(treasuries: { supplier_id: supplier_ids })
+          .where(occurred_on: @start_date..@end_date)
+          .group("treasuries.supplier_id").sum(:amount_cents)
+        @paid_cents_by_supplier = paid_by_supplier.transform_values { |cents| -cents }
+
+        active_ids = (@purchases_cents_by_supplier.keys +
+                      @credit_notes_cents_by_supplier.keys +
+                      @paid_cents_by_supplier.keys).uniq
+        @rows = Supplier.where(id: active_ids).order(:name)
+
+        @total_purchases_cents = @purchases_cents_by_supplier.values.sum
+        @total_credit_notes_cents = @credit_notes_cents_by_supplier.values.sum
+        @total_paid_cents = @paid_cents_by_supplier.values.sum
+        @total_net_purchases_cents = @total_purchases_cents - @total_credit_notes_cents
+
+        respond_to do |format|
+          format.html
+          format.csv do
+            send_data vendor_purchases_summary_csv,
+              filename: "vendor-purchases-summary-#{@start_date}-#{@end_date}.csv",
+              type: "text/csv; charset=utf-8"
+          end
+        end
+      end
+
       private
 
       def movements_scope
@@ -349,6 +401,27 @@ module Admin
           ]
         end
         "\ufeff#{build_csv(rows)}"
+      end
+
+      def vendor_purchases_summary_csv
+        money = ->(cents) { helpers.format_money(cents) }
+        build_csv(
+          [
+            ["Vendor purchases summary", "#{@start_date} to #{@end_date}"],
+            ["Vendor", "Goods bought", "Credit notes", "Net purchases", "Actually paid"],
+            *@rows.map do |supplier|
+              bought = @purchases_cents_by_supplier[supplier.id] || 0
+              credits = @credit_notes_cents_by_supplier[supplier.id] || 0
+              paid = @paid_cents_by_supplier[supplier.id] || 0
+              [supplier.name, money.(bought), money.(credits), money.(bought - credits), money.(paid)]
+            end,
+            [],
+            ["Total goods bought", money.(@total_purchases_cents)],
+            ["Total credit notes", money.(@total_credit_notes_cents)],
+            ["Total net purchases", money.(@total_net_purchases_cents)],
+            ["Total actually paid", money.(@total_paid_cents)]
+          ]
+        )
       end
 
       def build_csv(rows)

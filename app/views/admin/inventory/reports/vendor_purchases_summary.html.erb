@@ -1,0 +1,141 @@
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% cell = "p-3 whitespace-nowrap" %>
+
+<%= render "admin/inventory/tools_nav" %>
+<div class="max-w-7xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("inventory.reports.vendor_purchases_summary.description") %></p>
+    </div>
+    <% if @rows.any? %>
+      <%= link_to t("actions.export_csv"),
+            admin_inventory_reports_vendor_purchases_summary_path(format: :csv, start_date: @start_date,
+              end_date: @end_date, supplier_id: @supplier&.id),
+            class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors shrink-0" %>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.vendor_purchases_summary.filters") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5">
+        <%= t("accounting.shared.date_range_value", start: l(@start_date, format: :long), end: l(@end_date, format: :long)) %>
+      </p>
+    </div>
+    <div class="p-5">
+      <%= form_with url: admin_inventory_reports_vendor_purchases_summary_path, method: :get,
+            class: "flex flex-wrap items-end gap-4", data: { turbo: false } do %>
+        <div class="min-w-[10rem]">
+          <%= label_tag :start_date, t("accounting.shared.start"), class: label_class %>
+          <%= date_field_tag :start_date, @start_date, class: input_class %>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= label_tag :end_date, t("accounting.shared.end"), class: label_class %>
+          <%= date_field_tag :end_date, @end_date, class: input_class %>
+        </div>
+        <div class="min-w-[12rem]">
+          <%= label_tag :supplier_id, t("inventory.reports.vendor_purchases_summary.vendor"), class: label_class %>
+          <%= select_tag :supplier_id,
+                options_from_collection_for_select(@suppliers, :id, :name, @supplier&.id),
+                include_blank: t("inventory.reports.vendor_purchases_summary.all_vendors"),
+                class: "#{input_class} appearance-none" %>
+        </div>
+        <%= submit_tag t("actions.apply_range"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors cursor-pointer" %>
+      <% end %>
+    </div>
+  </section>
+
+  <%# Each tile's title carries an info icon with the full methodology text,
+      instead of a standing panel that pushed the table below the fold. %>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <%= t("inventory.reports.vendor_purchases_summary.stats.bought") %>
+        <%= info_tooltip_icon(t("inventory.reports.vendor_purchases_summary.stats.bought_tooltip")) %>
+      </p>
+      <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@total_purchases_cents) %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("inventory.reports.vendor_purchases_summary.stats.bought_hint") %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <%= t("inventory.reports.vendor_purchases_summary.stats.credit_notes") %>
+        <%= info_tooltip_icon(t("inventory.reports.vendor_purchases_summary.stats.credit_notes_tooltip")) %>
+      </p>
+      <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@total_credit_notes_cents) %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("inventory.reports.vendor_purchases_summary.stats.credit_notes_hint") %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <%= t("inventory.reports.vendor_purchases_summary.stats.net") %>
+        <%= info_tooltip_icon(t("inventory.reports.vendor_purchases_summary.stats.net_tooltip")) %>
+      </p>
+      <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@total_net_purchases_cents) %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("inventory.reports.vendor_purchases_summary.stats.net_hint") %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <%= t("inventory.reports.vendor_purchases_summary.stats.paid") %>
+        <%= info_tooltip_icon(t("inventory.reports.vendor_purchases_summary.stats.paid_tooltip")) %>
+      </p>
+      <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@total_paid_cents) %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("inventory.reports.vendor_purchases_summary.stats.paid_hint") %></p>
+    </div>
+  </div>
+
+  <% if @rows.empty? %>
+    <section class="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("inventory.reports.vendor_purchases_summary.empty") %></p>
+      <p class="text-gray-500 text-sm"><%= t("inventory.reports.vendor_purchases_summary.empty_hint") %></p>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.vendor_purchases_summary.table_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.vendor_purchases_summary.table_hint") %></p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm" data-controller="sortable-table"
+               data-sortable-table-storage-key-value="vendor-purchases-summary">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <%= sortable_report_th t("inventory.reports.vendor_purchases_summary.table.vendor"), "vendor", align: :start %>
+              <%= sortable_report_th t("inventory.reports.vendor_purchases_summary.table.bought"), "bought", type: :number %>
+              <%= sortable_report_th t("inventory.reports.vendor_purchases_summary.table.credit_notes"), "credit_notes", type: :number %>
+              <%= sortable_report_th t("inventory.reports.vendor_purchases_summary.table.net"), "net", type: :number %>
+              <%= sortable_report_th t("inventory.reports.vendor_purchases_summary.table.paid"), "paid", type: :number, pe: true %>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100" data-sortable-table-target="body">
+            <% @rows.each do |supplier| %>
+              <% bought = @purchases_cents_by_supplier[supplier.id] || 0 %>
+              <% credits = @credit_notes_cents_by_supplier[supplier.id] || 0 %>
+              <% net = bought - credits %>
+              <% paid = @paid_cents_by_supplier[supplier.id] || 0 %>
+              <tr>
+                <td class="<%= cell %> ps-5 font-medium text-gray-900" data-sort-key="vendor">
+                  <%= link_to supplier.name, admin_inventory_supplier_path(supplier), class: "hover:text-amber-700 hover:underline" %>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-700" data-sort-key="bought" data-sort-value="<%= bought %>"><%= format_amount(bought) %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-700" data-sort-key="credit_notes" data-sort-value="<%= credits %>"><%= format_amount(credits) %></td>
+                <td class="<%= cell %> text-end tabular-nums font-bold text-gray-900" data-sort-key="net" data-sort-value="<%= net %>"><%= format_amount(net) %></td>
+                <td class="<%= cell %> text-end pe-5 tabular-nums text-gray-700" data-sort-key="paid" data-sort-value="<%= paid %>"><%= format_amount(paid) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t-2 border-gray-200 font-bold text-gray-900">
+            <tr>
+              <td class="<%= cell %> ps-5"><%= t("inventory.reports.vendor_purchases_summary.grand_total") %></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@total_purchases_cents) %></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@total_credit_notes_cents) %></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@total_net_purchases_cents) %></td>
+              <td class="<%= cell %> text-end pe-5 tabular-nums"><%= format_amount(@total_paid_cents) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  <% end %>
+</div>

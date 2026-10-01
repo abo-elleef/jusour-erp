@@ -416,6 +416,38 @@ module ApplicationHelper
     Money.new(cents || 0).format(locale: I18n.locale, symbol: MONEY_SYMBOL)
   end
 
+  # A small "i" icon that reveals explanatory text next to a label — on hover
+  # where the device supports it, on tap where it doesn't (see tooltip_controller.js).
+  # For a short line of methodology text that would otherwise need its own
+  # always-visible panel, e.g. beside a stat tile's title.
+  def info_tooltip_icon(text)
+    tag.span class: "relative inline-flex align-middle ms-1", data: { controller: "tooltip" } do
+      button = tag.button type: "button",
+        class: "text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600",
+        aria: { label: t("shared.more_info") },
+        data: {
+          tooltip_target: "trigger",
+          action: "mouseenter->tooltip#onMouseEnter mouseleave->tooltip#onMouseLeave " \
+                   "focus->tooltip#onFocus blur->tooltip#onBlur click->tooltip#toggle"
+        } do
+        tag.svg class: "w-3.5 h-3.5", fill: "none", viewBox: "0 0 24 24", stroke: "currentColor", "stroke-width": 2 do
+          tag.path "stroke-linecap": "round", "stroke-linejoin": "round",
+            d: "M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 " \
+               "9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
+        end
+      end
+      # A <span>, not a <div>: this icon sits inside a <p> title, and a <div>
+      # there would implicitly close the <p> per the HTML5 parsing rules,
+      # hoisting the panel out of this wrapper and breaking the target lookup.
+      panel = tag.span text,
+        role: "tooltip",
+        class: "hidden absolute z-20 top-full mt-2 start-0 w-64 max-w-[80vw] rounded-xl border " \
+               "border-gray-200 bg-white p-3 text-xs leading-relaxed text-gray-600 shadow-lg normal-case font-normal",
+        data: { tooltip_target: "panel" }
+      button + panel
+    end
+  end
+
   AUDIT_HISTORY_HIDDEN_FIELDS = %w[
     company_id source_record_id source_record_type
   ].freeze
