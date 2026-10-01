@@ -178,7 +178,11 @@ module Admin
         @suppliers = Supplier.active.order(:name)
         supplier_ids = @supplier ? [@supplier.id] : Supplier.pluck(:id)
 
+        # Voiding leaves payment_status: "void" but never flips draft back to
+        # true, so .posted alone still counts it — excluded here to match the
+        # P&L (voiding deletes the invoice's journal entry outright).
         @purchases_cents_by_supplier = VendorInvoice.posted
+          .where.not(payment_status: "void")
           .where(supplier_id: supplier_ids, invoice_date: @start_date..@end_date)
           .group(:supplier_id).sum(:total_cents)
 
