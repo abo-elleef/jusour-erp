@@ -195,8 +195,14 @@
                     <%= format_money(expected_value_cents) %>
                   </td>
                   <td class="p-3 text-right">
-                    <%= number_field_tag "stock_take_items[#{item.id}][counted_quantity]",
-                          item.counted_quantity, step: 0.001, class: "#{input_class} ml-auto" %>
+                    <%# type="text", not "number": a native number input silently rejects
+                        Arabic-Indic digits, forcing a keyboard-language switch just to
+                        type a count while searching in Arabic. The controller below
+                        converts those digits to ASCII as the user types. %>
+                    <%= text_field_tag "stock_take_items[#{item.id}][counted_quantity]",
+                          item.counted_quantity, inputmode: "decimal", autocomplete: "off",
+                          data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" },
+                          class: "#{input_class} ml-auto" %>
                   </td>
                   <td class="p-3 text-left">
                     <% if available_units.size > 1 %>
