@@ -124,7 +124,10 @@
                   <td class="<%= cell %> text-gray-700"><%= ingredient_unit_label(row.ingredient.purchase_unit) %></td>
                   <% if show_balance %>
                     <td class="<%= cell %> text-end tabular-nums text-gray-700">
-                      <%= number_with_precision(row.expected_quantity, precision: 3, strip_insignificant_zeros: true) %>
+                      <%# The unit column prints the purchase unit, so the number next to it
+                          has to be converted into that same unit — otherwise a base-unit
+                          count gets misread as if it were already in cartons/boxes/etc. %>
+                      <%= number_with_precision(row.ingredient.from_base(row.expected_quantity, row.ingredient.purchase_unit), precision: 3, strip_insignificant_zeros: true) %>
                     </td>
                   <% end %>
                   <%# The write-in box: height, not content. This is what the pen fills. %>
