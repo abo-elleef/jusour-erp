@@ -122,5 +122,9 @@
           payroll_direction: @payroll_direction %>
   <% end %>
 
+  <% if @attendance_audits %>
+    <%= render "shared/audit_history", audits: @attendance_audits, title: t("accounting.attendance.staff_history_title") %>
+  <% end %>
+
   <%= render "shared/audit_history", audits: @audits %>
 </div>

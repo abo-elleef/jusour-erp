@@ -21,8 +21,8 @@ default: &default
 
 development:
   <<: *default
-  # database: saqr_pos_development
-  database: saqr_pos_prod_copy
+  database: saqr_pos_development
+  # database: saqr_pos_prod_copy
   
 
   # The specified database role being used to connect to PostgreSQL.

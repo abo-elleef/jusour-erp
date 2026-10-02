@@ -3,10 +3,15 @@ import { Controller } from "@hotwired/stimulus"
 // Spreadsheet-style attendance grid: click a cell and type P/O/A/X, arrow-key
 // navigate, shift-click a range then type to fill, and autosave in batches.
 export default class extends Controller {
-  static targets = ["cell", "summary", "count", "status", "popover", "popoverTitle", "otInput", "penaltyGroup", "table"]
+  static targets = [
+    "cell", "summary", "count", "status", "popover", "popoverTitle", "otInput", "penaltyGroup", "table",
+    "historyPopover"
+  ]
   static values = {
     url: String,
     adjustmentUrl: String,
+    historyUrl: String,
+    historyLoadError: String,
     symbols: Array,
     colors: Object,
     saving: String,
@@ -429,10 +434,14 @@ export default class extends Controller {
   }
 
   handleDocPointerDown(event) {
-    if (!this.hasPopoverTarget || this.popoverTarget.classList.contains("hidden")) return
-    if (this.popoverTarget.contains(event.target)) return
-    if (event.target.closest(".attendance-cell")) return
-    this.closePopover()
+    if (this.hasPopoverTarget && !this.popoverTarget.classList.contains("hidden") &&
+        !this.popoverTarget.contains(event.target) && !event.target.closest(".attendance-cell")) {
+      this.closePopover()
+    }
+    if (this.hasHistoryPopoverTarget && !this.historyPopoverTarget.classList.contains("hidden") &&
+        !this.historyPopoverTarget.contains(event.target) && !event.target.closest(".attendance-cell")) {
+      this.closeHistoryPopover()
+    }
   }
 
   openPopover(cell) {
@@ -446,6 +455,42 @@ export default class extends Controller {
     this.highlightPenalty(this.activePenalty)
 
     pop.classList.remove("hidden")
+    this.positionPopover(pop, cell)
+    if (this.hasOtInputTarget) this.otInputTarget.focus()
+  }
+
+  closePopover() {
+    if (this.hasPopoverTarget) this.popoverTarget.classList.add("hidden")
+    this.activeCell = null
+  }
+
+  // ── read-only change history (opened from the adjustments popover) ─────
+  showHistory() {
+    const cell = this.activeCell
+    if (!cell || !this.hasHistoryPopoverTarget || !this.historyUrlValue) return
+
+    this.closePopover()
+    const pop = this.historyPopoverTarget
+    pop.innerHTML = ""
+    pop.classList.remove("hidden")
+    this.positionPopover(pop, cell)
+
+    const url = `${this.historyUrlValue}?user_id=${encodeURIComponent(cell.dataset.userId)}&date=${encodeURIComponent(cell.dataset.date)}`
+    fetch(url, { headers: { Accept: "application/json" } })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.ok) throw new Error("not ok")
+        pop.innerHTML = data.html
+        this.positionPopover(pop, cell)
+      })
+      .catch(() => { pop.textContent = this.historyLoadErrorValue })
+  }
+
+  closeHistoryPopover() {
+    if (this.hasHistoryPopoverTarget) this.historyPopoverTarget.classList.add("hidden")
+  }
+
+  positionPopover(pop, cell) {
     const rect = cell.getBoundingClientRect()
     let left = rect.left
     let top = rect.bottom + 6
@@ -453,12 +498,6 @@ export default class extends Controller {
     if (top + pop.offsetHeight > window.innerHeight - 8) top = rect.top - pop.offsetHeight - 6
     pop.style.left = `${Math.max(8, left)}px`
     pop.style.top = `${Math.max(8, top)}px`
-    if (this.hasOtInputTarget) this.otInputTarget.focus()
-  }
-
-  closePopover() {
-    if (this.hasPopoverTarget) this.popoverTarget.classList.add("hidden")
-    this.activeCell = null
   }
 
   selectPenalty(event) {

@@ -16,7 +16,17 @@ class AuditLogEntry < ApplicationRecord
     record_type.constantize.find_by(id: record_id)
   end
 
-  def self.record!(action:, record:, user: nil, changes_snapshot: {}, ip_address: nil)
+  # Duck-types as an Audited::Audit so callers (e.g. audit_history_rows, the
+  # shared/audit_history partial) can render either kind of audit trail the
+  # same way.
+  def audited_changes
+    changes_snapshot
+  end
+
+  # created_at only needs overriding for a backfill (e.g. rake
+  # attendance:backfill_audit_history), to log a past event at the time it
+  # actually happened rather than when the backfill ran.
+  def self.record!(action:, record:, user: nil, changes_snapshot: {}, ip_address: nil, created_at: Time.current)
     company = record.try(:company) || user&.company || Current.company
     create!(
       action: action,
@@ -25,7 +35,8 @@ class AuditLogEntry < ApplicationRecord
       user: user,
       company: company,
       changes_snapshot: changes_snapshot,
-      ip_address: ip_address
+      ip_address: ip_address,
+      created_at: created_at
     )
   end
 

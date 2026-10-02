@@ -31,7 +31,9 @@ module Accounting
     end
 
     def call
-      records = @user.staff_attendances.for_month(@payroll_month).includes(:attendance_status).to_a
+      # .recorded excludes cleared rows (nil status, kept only for their audit
+      # trail) — a cleared day counts the same as no row at all.
+      records = @user.staff_attendances.for_month(@payroll_month).recorded.includes(:attendance_status).to_a
 
       payable  = records.sum { |r| r.attendance_status.paid_fraction.to_d }
       bonus    = records.sum { |r| r.attendance_status.bonus_days.to_d }

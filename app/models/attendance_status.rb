@@ -45,4 +45,11 @@ class AttendanceStatus < ApplicationRecord
   def paid?
     paid_fraction.to_d.positive?
   end
+
+  # For plain-text contexts (the generic audit-history table) that can't show
+  # the grid's colored letter badge — still names the letter code, not just
+  # the long label.
+  def label_with_symbol
+    "#{symbol} · #{label}"
+  end
 end

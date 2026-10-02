@@ -461,7 +461,8 @@ module ApplicationHelper
     "assigned_treasury_id" => [Treasury, :name],
     "category_id" => [Category, :name],
     "ingredient_category_id" => [IngredientCategory, :name],
-    "unit_id" => [Unit, :name]
+    "unit_id" => [Unit, :name],
+    "attendance_status_id" => [AttendanceStatus, :label_with_symbol]
   }.freeze
 
   def audit_history_rows(audit)
@@ -1118,6 +1119,18 @@ module ApplicationHelper
 
   def attendance_color_classes(color)
     ATTENDANCE_COLOR_CLASSES[color.to_s] || ATTENDANCE_COLOR_CLASSES["gray"]
+  end
+
+  # A status's letter code in its grid color, plus its label — e.g. for the
+  # attendance change-history popover, so "P → A" reads the same letters the
+  # grid itself uses, not just the long label.
+  def attendance_status_chip(status)
+    return tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") if status.nil?
+
+    tag.span(class: "inline-flex items-center gap-1.5") do
+      concat tag.span(status.symbol, class: "inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold shrink-0 #{attendance_color_classes(status.color)}")
+      concat status.label
+    end
   end
 
   def admin_nav_link_class(active = false)

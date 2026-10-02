@@ -112,6 +112,18 @@ module Admin
       @payroll_summary = @user.monthly_payroll(@payroll_month, sort: @payroll_sort, direction: @payroll_direction)
       @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       @default_treasury = Treasury.default_treasury
+      load_attendance_audits
+    end
+
+    # Every change (create/clear/re-set) to this staff member's attendance for
+    # the selected month — same ledger the grid's per-day "View history" reads,
+    # just scoped to a whole month in one place. Same trust level as that.
+    def load_attendance_audits
+      return unless Current.company&.feature_enabled?(:attendance) && current_user.can?("attendance:audit")
+
+      record_ids = @user.staff_attendances.for_month(@payroll_month).pluck(:id)
+      @attendance_audits = AuditLogEntry.where(record_type: "StaffAttendance", record_id: record_ids)
+        .includes(:user).order(created_at: :desc)
     end
 
     def parse_index_sort_param

@@ -150,6 +150,23 @@ RSpec.describe "Admin::Users", type: :request do
       end
     end
 
+    describe "GET /admin/users/:id attendance history" do
+      it "shows every change to this staff member's attendance for the month" do
+        staff = create(:user, company: company, monthly_salary_cents: 300_000)
+        status = company.attendance_statuses.find_by!(code: "present")
+        record = StaffAttendance.create!(company: company, user: staff, attendance_status: status,
+          date: Date.new(2026, 4, 1), recorded_by: owner)
+        AuditLogEntry.record!(action: "create", record: record, user: owner,
+          changes_snapshot: { "attendance_status_id" => [nil, status.id] })
+
+        get admin_user_path(staff, payroll_month: "2026-04")
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(I18n.t("accounting.attendance.staff_history_title"))
+        expect(response.body).to include(status.label)
+      end
+    end
+
     describe "DELETE /admin/users/:id" do
       it "deactivates a staff member" do
         staff = create(:user, company: company)

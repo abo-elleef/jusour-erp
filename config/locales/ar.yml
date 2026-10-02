@@ -4213,8 +4213,13 @@ ar:
       late_note: "تأخير"
       overtime_note: "وقت إضافي"
       adjustment_hint: "انقر بزر الفأرة الأيمن على يوم لإضافة ساعات إضافية أو جزاء تأخير. يُحتسب في راتب ذلك اليوم."
-      recorded_by_tooltip: "سجّله %{name} · %{time}"
+      recorded_by_tooltip: "آخر تعديل بواسطة %{name} · %{time}"
       unknown_recorder: "غير معروف"
+      history_hint: "انقر بزر الفأرة الأيمن (أو اضغط مطولاً) على يوم، ثم \"عرض السجل\"، لمشاهدة كل تغيير طرأ على ذلك اليوم."
+      history_empty: "لا توجد تغييرات مسجّلة لهذا اليوم."
+      history_load_error: "تعذّر تحميل السجل"
+      view_history: "عرض السجل"
+      staff_history_title: "سجل الحضور"
     late_penalties:
       title: "جزاءات التأخير"
       hint: "جزاءات التأخير المسجّلة من الحضور، مجمّعة حسب الموظف. احذف ما تريد الإعفاء عنه قبل تسجيل الراتب."
@@ -4801,6 +4806,7 @@ ar:
         reorder_threshold: "حد إعادة الطلب"
         max_quantity: "الحد الأقصى"
         shelf_life_days: "مدة الصلاحية (أيام)"
+        attendance_status_id: "الحالة"
       values:
         recurrence:
           one_time: "مرة واحدة"

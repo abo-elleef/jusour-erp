@@ -19,7 +19,9 @@ module Admin
         rows = StaffAttendance.for_month(@payroll_month)
           .where(user_id: @staff.map(&:id))
           .includes(:attendance_status, :recorded_by)
-        @cells = rows.each_with_object({}) { |r, h| h[[r.user_id, r.date]] = r.attendance_status }
+        # A cleared day keeps its row (nil status, for a stable audit trail) —
+        # render it the same as no row at all.
+        @cells = rows.each_with_object({}) { |r, h| h[[r.user_id, r.date]] = r.attendance_status if r.attendance_status }
 
         # Who recorded/last edited a cell, and when — only for roles trusted to
         # see that (owners/managers/super managers), not every role that can
@@ -60,6 +62,30 @@ module Admin
         render json: { ok: false, error: "invalid" }, status: :unprocessable_entity
       end
 
+      # Full change history for one staff member's one day (double-click on a
+      # cell). Same trust level as the tooltip — owners/managers/super managers.
+      def cell_history
+        return render(json: { ok: false }, status: :forbidden) unless current_user.can?("attendance:audit")
+
+        user = scoped_staff.find_by(id: params[:user_id])
+        return render(json: { ok: false }, status: :not_found) if user.blank?
+
+        date = params[:date].to_date
+        record = user.staff_attendances.find_by(date: date)
+        entries = record ? AuditLogEntry.where(record_type: "StaffAttendance", record_id: record.id)
+          .includes(:user).order(created_at: :desc) : AuditLogEntry.none
+
+        html = render_to_string(
+          partial: "admin/accounting/attendance/cell_history",
+          formats: [:html],
+          locals: { entries: entries, title: "#{user.name} · #{l(date, format: :long)}" },
+          layout: false
+        )
+        render json: { ok: true, html: html }
+      rescue Date::Error, ArgumentError
+        render json: { ok: false, error: "invalid" }, status: :unprocessable_entity
+      end
+
       def update
         month = nil
         affected = []
@@ -90,22 +116,37 @@ module Admin
 
       private
 
-      # Returns the saved record (for the audit tooltip), or nil when the cell
-      # was cleared / the symbol didn't match an active status.
+      # Returns the saved record (for the audit tooltip), or nil when there was
+      # nothing to do (clearing an already-blank day) or the symbol didn't
+      # match an active status.
+      #
+      # Clearing a day nils attendance_status on the SAME row rather than
+      # destroying it — so the row's id (and its AuditLogEntry trail) stays
+      # stable across set → clear → set again, instead of churning a new row
+      # (and starting a fresh trail) every time.
       def apply_cell(user, date, symbol)
-        if symbol.blank?
-          user.staff_attendances.where(date: date).destroy_all
-          return nil
-        end
-
-        status = AttendanceStatus.active.find_by(symbol: symbol)
-        return nil if status.nil?
+        new_status_id = symbol.present? ? AttendanceStatus.active.find_by(symbol: symbol)&.id : nil
+        return nil if symbol.present? && new_status_id.nil? # unknown symbol — ignore
 
         record = user.staff_attendances.find_or_initialize_by(date: date)
-        record.attendance_status = status
+        return nil if record.new_record? && new_status_id.nil? # nothing to clear
+
+        was_new = record.new_record?
+        record.attendance_status_id = new_status_id
         record.recorded_by = current_user
         record.save!
+
+        log_attendance_change!(record, created: was_new) if was_new || record.saved_change_to_attendance_status_id?
         record
+      end
+
+      def log_attendance_change!(record, created:)
+        AuditLogEntry.record!(
+          action: created ? "create" : "update",
+          record: record,
+          user: current_user,
+          changes_snapshot: { "attendance_status_id" => record.saved_change_to_attendance_status_id }
+        )
       end
 
       def audit_tooltip(record)

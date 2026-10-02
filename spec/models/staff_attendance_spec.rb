@@ -39,4 +39,19 @@ RSpec.describe StaffAttendance do
     build_record(date: Date.new(2026, 5, 10)).save!
     expect(described_class.for_month(Date.new(2026, 4, 1)).count).to eq(1)
   end
+
+  it "allows a nil status — a day cleared after being set, kept for its audit trail" do
+    expect(build_record(attendance_status: nil)).to be_valid
+  end
+
+  describe ".recorded" do
+    it "excludes cleared (nil-status) rows but includes set ones" do
+      cleared = build_record(attendance_status: nil, user: staff)
+      cleared.save!
+      set = build_record(user: create(:user, company: company))
+      set.save!
+
+      expect(described_class.recorded).to contain_exactly(set)
+    end
+  end
 end

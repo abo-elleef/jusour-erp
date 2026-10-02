@@ -4,6 +4,8 @@
      data-controller="attendance-grid"
      data-attendance-grid-url-value="<%= admin_accounting_attendance_path %>"
      data-attendance-grid-adjustment-url-value="<%= admin_accounting_attendance_adjustment_path %>"
+     data-attendance-grid-history-url-value="<%= @can_view_attendance_audit ? admin_accounting_attendance_cell_history_path : '' %>"
+     data-attendance-grid-history-load-error-value="<%= t('accounting.attendance.history_load_error') %>"
      data-attendance-grid-symbols-value="<%= @statuses.map(&:symbol).to_json %>"
      data-attendance-grid-colors-value="<%= @statuses.to_h { |s| [s.symbol, attendance_color_classes(s.color)] }.to_json %>"
      data-attendance-grid-saving-value="<%= t('accounting.attendance.saving') %>"
@@ -146,6 +148,9 @@
     </div>
     <p class="text-xs text-gray-400 mt-3"><%= t("accounting.attendance.keyboard_hint") %></p>
     <p class="text-xs text-gray-400 mt-1"><%= t("accounting.attendance.crosshair_hint") %></p>
+    <% if @can_view_attendance_audit %>
+      <p class="text-xs text-gray-400 mt-1"><%= t("accounting.attendance.history_hint") %></p>
+    <% end %>
   <% else %>
     <p class="rounded-2xl border border-gray-200 bg-white px-5 py-10 text-center text-sm text-gray-500"><%= t("accounting.attendance.no_staff") %></p>
   <% end %>
@@ -174,6 +179,19 @@
       <button type="button" data-action="attendance-grid#closePopover"
               class="text-sm font-medium text-gray-600 hover:bg-gray-100 px-3 py-2 rounded-lg"><%= t("actions.cancel") %></button>
     </div>
+    <% if @can_view_attendance_audit %>
+      <button type="button" data-action="attendance-grid#showHistory"
+              class="w-full text-xs font-semibold text-gray-600 hover:bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 mt-2">
+        <%= t("accounting.attendance.view_history") %>
+      </button>
+    <% end %>
     <p class="text-[11px] text-gray-400 mt-2"><%= t("accounting.attendance.adjustment_hint") %></p>
   </div>
+
+  <%# "View history" (above) → read-only change history for that day (who/when, every edit). %>
+  <% if @can_view_attendance_audit %>
+    <div data-attendance-grid-target="historyPopover"
+         class="hidden fixed z-50 rounded-xl border border-gray-200 bg-white shadow-lg text-sm">
+    </div>
+  <% end %>
 </div>

@@ -273,6 +273,7 @@ Rails.application.routes.draw do
       get "attendance", to: "attendance#index"
       patch "attendance", to: "attendance#update"
       post "attendance/adjustment", to: "attendance#adjustment", as: :attendance_adjustment
+      get "attendance/cell_history", to: "attendance#cell_history", as: :attendance_cell_history
       resources :late_penalties, only: %i[index destroy]
 
       get "payroll", to: "payroll#index"

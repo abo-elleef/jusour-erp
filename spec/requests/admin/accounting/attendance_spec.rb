@@ -112,16 +112,27 @@ RSpec.describe "Admin::Accounting::Attendance", type: :request do
       expect(response.parsed_body["summaries"][staff.id]["payable"]).to eq("1")
     end
 
-    it "clears the cell when the symbol is blank" do
+    it "clears the cell when the symbol is blank, keeping the row (nil status) for its audit trail" do
       status = company.attendance_statuses.find_by!(code: "present")
-      StaffAttendance.create!(company: company, user: staff, attendance_status: status,
+      record = StaffAttendance.create!(company: company, user: staff, attendance_status: status,
                               date: Date.new(2026, 4, 1), recorded_by: owner)
 
       patch admin_accounting_attendance_path,
         params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "" }] }, as: :json
 
       expect(response).to have_http_status(:ok)
+      expect(StaffAttendance.where(user: staff).count).to eq(1)
+      expect(record.reload.id).to eq(record.id)
+      expect(record.attendance_status_id).to be_nil
+    end
+
+    it "is a no-op when clearing an already-blank day — no row, no log entry" do
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "" }] }, as: :json
+
+      expect(response).to have_http_status(:ok)
       expect(StaffAttendance.where(user: staff).count).to eq(0)
+      expect(AuditLogEntry.where(record_type: "StaffAttendance")).to be_empty
     end
 
     it "ignores a user that belongs to another company" do
@@ -132,6 +143,102 @@ RSpec.describe "Admin::Accounting::Attendance", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(StaffAttendance.unscoped.where(user_id: other.id).count).to eq(0)
+    end
+  end
+
+  describe "attendance change log" do
+    let(:present) { company.attendance_statuses.find_by!(code: "present") }
+    let(:absent)  { company.attendance_statuses.find_by!(code: "unexcused") }
+
+    it "logs a create the first time a day is set" do
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "P" }] }, as: :json
+
+      record = StaffAttendance.find_by!(user: staff, date: Date.new(2026, 4, 1))
+      entry = AuditLogEntry.find_by!(record_type: "StaffAttendance", record_id: record.id)
+      expect(entry.action).to eq("create")
+      expect(entry.user).to eq(owner)
+      expect(entry.changes_snapshot).to eq({ "attendance_status_id" => [nil, present.id] })
+    end
+
+    it "logs an update when the status changes, reusing the same row" do
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "P" }] }, as: :json
+      record = StaffAttendance.find_by!(user: staff, date: Date.new(2026, 4, 1))
+
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "X" }] }, as: :json
+
+      expect(StaffAttendance.where(user: staff).count).to eq(1)
+      expect(record.reload.attendance_status_id).to eq(absent.id)
+      entries = AuditLogEntry.where(record_type: "StaffAttendance", record_id: record.id).order(:created_at)
+      expect(entries.map(&:action)).to eq(%w[create update])
+      expect(entries.last.changes_snapshot).to eq({ "attendance_status_id" => [present.id, absent.id] })
+    end
+
+    it "logs a clear as an update to nil, then logs a new update when set again — same row throughout" do
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "P" }] }, as: :json
+      record = StaffAttendance.find_by!(user: staff, date: Date.new(2026, 4, 1))
+
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "" }] }, as: :json
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "P" }] }, as: :json
+
+      expect(StaffAttendance.where(user: staff).count).to eq(1)
+      entries = AuditLogEntry.where(record_type: "StaffAttendance", record_id: record.id).order(:created_at)
+      expect(entries.map(&:action)).to eq(%w[create update update])
+      expect(entries[1].changes_snapshot).to eq({ "attendance_status_id" => [present.id, nil] })
+      expect(entries[2].changes_snapshot).to eq({ "attendance_status_id" => [nil, present.id] })
+    end
+
+    it "does not log when resaving the same symbol (no actual change)" do
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "P" }] }, as: :json
+      record = StaffAttendance.find_by!(user: staff, date: Date.new(2026, 4, 1))
+
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "P" }] }, as: :json
+
+      expect(AuditLogEntry.where(record_type: "StaffAttendance", record_id: record.id).count).to eq(1)
+    end
+  end
+
+  describe "GET cell_history" do
+    let(:present) { company.attendance_statuses.find_by!(code: "present") }
+
+    before do
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "P" }] }, as: :json
+    end
+
+    it "returns the day's change history for an owner" do
+      get admin_accounting_attendance_cell_history_path(user_id: staff.id, date: "2026-04-01"),
+        headers: { "Accept" => "application/json" }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["ok"]).to be(true)
+      expect(response.parsed_body["html"]).to include(owner.name)
+      expect(response.parsed_body["html"]).to include(present.label)
+    end
+
+    it "refuses a sub-manager, who can reach the grid but not the audit trail" do
+      sign_out owner
+      sign_in create(:user, company: company, role: "sub_manager")
+
+      get admin_accounting_attendance_cell_history_path(user_id: staff.id, date: "2026-04-01"),
+        headers: { "Accept" => "application/json" }
+
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "returns an empty-state for a day with no history" do
+      get admin_accounting_attendance_cell_history_path(user_id: staff.id, date: "2026-04-02"),
+        headers: { "Accept" => "application/json" }
+
+      expect(response.parsed_body["ok"]).to be(true)
+      expect(response.parsed_body["html"]).to include(I18n.t("accounting.attendance.history_empty"))
     end
   end
 
