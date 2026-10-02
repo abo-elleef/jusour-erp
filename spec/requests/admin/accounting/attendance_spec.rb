@@ -44,6 +44,63 @@ RSpec.describe "Admin::Accounting::Attendance", type: :request do
     end
   end
 
+  describe "recorded-by audit tooltip" do
+    let!(:attendance) do
+      StaffAttendance.create!(company: company, user: staff,
+        attendance_status: company.attendance_statuses.find_by!(code: "present"),
+        date: Date.new(2026, 4, 1), recorded_by: owner)
+    end
+
+    def tooltip_for(record)
+      I18n.t("accounting.attendance.recorded_by_tooltip",
+        name: record.recorded_by.name,
+        time: I18n.l(record.updated_at, format: :long_with_time))
+    end
+
+    it "shows who recorded the cell and when to an owner" do
+      get admin_accounting_attendance_path(payroll_month: "2026-04")
+      expect(response.body).to include(tooltip_for(attendance))
+    end
+
+    it "shows it to a manager" do
+      sign_out owner
+      sign_in create(:user, :manager, company: company)
+      get admin_accounting_attendance_path(payroll_month: "2026-04")
+      expect(response.body).to include(tooltip_for(attendance))
+    end
+
+    it "hides it from a sub-manager, who can still reach the grid" do
+      sign_out owner
+      sign_in create(:user, company: company, role: "sub_manager")
+      get admin_accounting_attendance_path(payroll_month: "2026-04")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(tooltip_for(attendance))
+    end
+
+    it "includes the refreshed tooltip in the autosave response for a manager" do
+      sign_out owner
+      manager = create(:user, :manager, company: company)
+      sign_in manager
+
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "P" }] }, as: :json
+
+      record = StaffAttendance.find_by!(user: staff, date: Date.new(2026, 4, 1))
+      expect(record.recorded_by).to eq(manager)
+      expect(response.parsed_body["audits"]["#{staff.id}|2026-04-01"]).to eq(tooltip_for(record))
+    end
+
+    it "omits the audits payload for a sub-manager" do
+      sign_out owner
+      sign_in create(:user, company: company, role: "sub_manager")
+
+      patch admin_accounting_attendance_path,
+        params: { cells: [{ user_id: staff.id, date: "2026-04-01", symbol: "P" }] }, as: :json
+
+      expect(response.parsed_body["audits"]).to eq({})
+    end
+  end
+
   describe "PATCH update" do
     it "upserts a cell and returns the recomputed summary" do
       patch admin_accounting_attendance_path,

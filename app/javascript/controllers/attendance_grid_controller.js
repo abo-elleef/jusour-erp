@@ -25,6 +25,7 @@ export default class extends Controller {
     this.hoverCol = null
     this.buildGrid()
     this.cellTargets.forEach((cell) => this.renderDots(cell))
+    this.cellByKey = new Map(this.cellTargets.map((cell) => [`${cell.dataset.userId}|${cell.dataset.date}`, cell]))
 
     this.onClick = this.handleClick.bind(this)
     this.onKeydown = this.handleKeydown.bind(this)
@@ -359,12 +360,28 @@ export default class extends Controller {
       .then((data) => {
         if (data.ok) {
           this.applySummaries(data.summaries || {})
+          this.applyAudits(data.audits || {})
           this.setStatus(this.savedValue)
         } else {
           this.setStatus(this.errorValue)
         }
       })
       .catch(() => this.setStatus(this.errorValue))
+  }
+
+  // Keeps each cell's "recorded by / when" tooltip in sync after an autosave,
+  // without a full page reload. Absent entirely (not just empty) for viewers
+  // who can't see it — the server only includes it for permitted roles.
+  applyAudits(audits) {
+    Object.entries(audits).forEach(([key, tooltip]) => {
+      const cell = this.cellByKey.get(key)
+      if (!cell) return
+      if (tooltip) {
+        cell.title = tooltip
+      } else {
+        cell.removeAttribute("title")
+      }
+    })
   }
 
   applySummaries(summaries) {

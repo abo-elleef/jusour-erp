@@ -18,8 +18,14 @@ module Admin
 
         rows = StaffAttendance.for_month(@payroll_month)
           .where(user_id: @staff.map(&:id))
-          .includes(:attendance_status)
+          .includes(:attendance_status, :recorded_by)
         @cells = rows.each_with_object({}) { |r, h| h[[r.user_id, r.date]] = r.attendance_status }
+
+        # Who recorded/last edited a cell, and when — only for roles trusted to
+        # see that (owners/managers/super managers), not every role that can
+        # merely view or log attendance.
+        @can_view_attendance_audit = current_user.can?("attendance:audit")
+        @cell_audit = @can_view_attendance_audit ? rows.index_by { |r| [r.user_id, r.date] } : {}
 
         @summaries = @staff.index_with do |user|
           ::Accounting::AttendanceMonthService.new(user, @payroll_month).call
@@ -57,6 +63,8 @@ module Admin
       def update
         month = nil
         affected = []
+        can_audit = current_user.can?("attendance:audit")
+        audits = {}
 
         (params[:cells] || []).each do |cell|
           user = scoped_staff.find_by(id: cell[:user_id])
@@ -65,7 +73,8 @@ module Admin
           date = cell[:date].to_date
           month ||= date.beginning_of_month
           affected << user
-          apply_cell(user, date, cell[:symbol].to_s.strip)
+          record = apply_cell(user, date, cell[:symbol].to_s.strip)
+          audits["#{user.id}|#{date.iso8601}"] = audit_tooltip(record) if can_audit
         end
 
         month ||= parse_payroll_month
@@ -74,26 +83,37 @@ module Admin
             .merge(counts: symbol_counts_for(user, month))
         end.transform_keys(&:id)
 
-        render json: { ok: true, summaries: summaries }
+        render json: { ok: true, summaries: summaries, audits: audits }
       rescue ActiveRecord::RecordInvalid, Date::Error, ArgumentError => e
         render json: { ok: false, error: e.message }, status: :unprocessable_entity
       end
 
       private
 
+      # Returns the saved record (for the audit tooltip), or nil when the cell
+      # was cleared / the symbol didn't match an active status.
       def apply_cell(user, date, symbol)
         if symbol.blank?
           user.staff_attendances.where(date: date).destroy_all
-          return
+          return nil
         end
 
         status = AttendanceStatus.active.find_by(symbol: symbol)
-        return if status.nil?
+        return nil if status.nil?
 
         record = user.staff_attendances.find_or_initialize_by(date: date)
         record.attendance_status = status
         record.recorded_by = current_user
         record.save!
+        record
+      end
+
+      def audit_tooltip(record)
+        return nil if record.nil?
+
+        t("accounting.attendance.recorded_by_tooltip",
+          name: record.recorded_by&.name || t("accounting.attendance.unknown_recorder"),
+          time: l(record.updated_at, format: :long_with_time))
       end
 
       def staff_scope

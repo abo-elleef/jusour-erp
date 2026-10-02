@@ -112,6 +112,10 @@
                 <% status = @cells[[user.id, day]] %>
                 <% adj = @day_adjustments[[user.id, day]] || {} %>
                 <% weekend = day.friday? || day.saturday? %>
+                <% audit = @cell_audit[[user.id, day]] %>
+                <% audit_tooltip = audit && t("accounting.attendance.recorded_by_tooltip",
+                                              name: audit.recorded_by&.name || t("accounting.attendance.unknown_recorder"),
+                                              time: l(audit.updated_at, format: :long_with_time)) %>
                 <td class="p-0.5 text-center border-e border-gray-200 <%= 'bg-gray-50/50' if weekend %>"
                     data-attendance-col="<%= day.iso8601 %>">
                   <div tabindex="0"
@@ -121,6 +125,7 @@
                        data-symbol="<%= status&.symbol %>"
                        data-ot-hours="<%= adj[:overtime_hours] %>"
                        data-penalty-unit="<%= adj[:penalty_unit] %>"
+                       <% if audit_tooltip %>title="<%= audit_tooltip %>"<% end %>
                        class="attendance-cell relative w-8 h-8 mx-auto flex items-center justify-center rounded cursor-pointer select-none font-semibold text-gray-800 hover:ring-1 hover:ring-gray-300 focus:outline-none focus:ring-2 focus:ring-amber-500 <%= attendance_color_classes(status.color) if status %>"><%= status&.symbol %></div>
                 </td>
               <% end %>

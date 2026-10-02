@@ -600,6 +600,7 @@ en:
         view: "View attendance & shifts"
         penalties: "Review late penalties"
         waive_penalties: "Waive late penalties"
+        audit: "See who recorded/edited attendance"
       staff:
         view: "View staff"
         manage: "Manage staff"
@@ -4193,6 +4194,8 @@ en:
       late_note: "Late"
       overtime_note: "Overtime"
       adjustment_hint: "Right-click a day to add extra hours or a late penalty. Applied to payroll for that day."
+      recorded_by_tooltip: "Recorded by %{name} · %{time}"
+      unknown_recorder: "Unknown"
     late_penalties:
       title: "Late penalties"
       hint: "Late penalties logged from attendance, grouped by staff. Remove any you want to waive before recording payroll."
