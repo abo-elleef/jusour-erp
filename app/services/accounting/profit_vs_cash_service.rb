@@ -242,11 +242,13 @@ module Accounting
       @snapshots_loaded = true
     end
 
+    # Excludes both AP and AR ledger treasuries — neither is real cash, so
+    # their invoice/payment/credit-note legs must not count as cash movement.
     def asset_treasury_transactions
       ::TreasuryTransaction
         .joins(:treasury)
         .where(treasuries: { company_id: Current.company.id })
-        .where.not(treasuries: { treasury_type: "supplier_ap" })
+        .where.not(treasuries: { treasury_type: ::Treasury::LEDGER_TYPES })
         .where(occurred_on: @start_date..@end_date)
     end
 

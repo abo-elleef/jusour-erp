@@ -198,7 +198,7 @@ module Accounting
     def operating_treasuries
       @operating_treasuries ||= Treasury
         .where(company_id: Current.company.id)
-        .where.not(treasury_type: "supplier_ap")
+        .where.not(treasury_type: Treasury::LEDGER_TYPES)
     end
 
     def opening_float_cents
@@ -217,11 +217,14 @@ module Accounting
       non_ap_transactions.where(occurred_on: @start_date..@end_date)
     end
 
+    # Excludes both AP and AR ledger treasuries: neither one is real cash, only
+    # a running balance of what's owed — their own invoice/payment/credit-note
+    # legs would otherwise leak into the cash totals as unclassified noise.
     def non_ap_transactions
       TreasuryTransaction
         .joins(:treasury)
         .where(treasuries: { company_id: Current.company.id })
-        .where.not(treasuries: { treasury_type: "supplier_ap" })
+        .where.not(treasuries: { treasury_type: Treasury::LEDGER_TYPES })
     end
 
     # Entries the financing section already reports by reading the journal, so
@@ -238,12 +241,12 @@ module Accounting
       end
     end
 
-    # Asset-treasury transactions in the date range (excludes supplier_ap).
+    # Asset-treasury transactions in the date range (excludes AP/AR ledgers).
     def asset_transactions
       TreasuryTransaction
         .joins(:treasury)
         .where(treasuries: { company_id: Current.company.id })
-        .where.not(treasuries: { treasury_type: "supplier_ap" })
+        .where.not(treasuries: { treasury_type: Treasury::LEDGER_TYPES })
         .where(occurred_on: @start_date..@end_date)
     end
 

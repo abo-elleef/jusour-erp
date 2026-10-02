@@ -365,7 +365,7 @@ Rails.application.routes.draw do
           patch :void
         end
       end
-      resources :stock_takes, only: %i[index show create update] do
+      resources :stock_takes, only: %i[index show new create update] do
         member do
           post :complete
           post :cancel

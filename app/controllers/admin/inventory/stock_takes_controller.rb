@@ -13,6 +13,10 @@ module Admin
         @in_progress_count = StockTake.active.count
         @completed_count = StockTake.where(status: "completed").count
         @stock_takes = StockTake.includes(:user, :location, :supplier, :stock_take_items).recent.limit(30)
+      end
+
+      def new
+        authorize_inventory!(:create)
         @stock_locations = Location.active.central_kitchens.ordered.to_a + Location.active.branches.ordered.to_a
         @locations_in_progress = StockTake.active.pluck(:location_id)
         @suppliers = Supplier.active.order(:name)
@@ -55,11 +59,11 @@ module Admin
 
         location = Location.find_by(id: params[:location_id])
         if location.blank?
-          redirect_to admin_inventory_stock_takes_path, alert: t("inventory.stock_takes.index.location_required")
+          redirect_to new_admin_inventory_stock_take_path, alert: t("inventory.stock_takes.index.location_required")
           return
         end
         if StockTake.active.where(location: location).exists?
-          redirect_to admin_inventory_stock_takes_path, alert: t("inventory.stock_takes.index.already_in_progress")
+          redirect_to new_admin_inventory_stock_take_path, alert: t("inventory.stock_takes.index.already_in_progress")
           return
         end
 

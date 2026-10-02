@@ -1,6 +1,4 @@
 <% content_for :title, admin_page_title %>
-<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow resize-y min-h-[4rem]" %>
-<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
 <%= render "admin/inventory/tools_nav" %>
 <div class="max-w-6xl">
@@ -9,6 +7,10 @@
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("inventory.stock_takes.index.description") %></p>
     </div>
+    <%= link_to new_admin_inventory_stock_take_path,
+          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
+      <span aria-hidden="true">+</span> <%= t("inventory.stock_takes.index.new_button") %>
+    <% end %>
   </div>
 
   <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
@@ -28,53 +30,6 @@
       <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= @completed_count %></p>
     </div>
   </div>
-
-  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
-    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.stock_takes.index.start_heading") %></h2>
-      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.stock_takes.index.start_hint") %></p>
-    </div>
-    <div class="p-5">
-      <% if @stock_locations.empty? %>
-        <p class="text-sm text-gray-600"><%= t("inventory.stock_takes.index.no_locations") %></p>
-      <% else %>
-        <%= form_with url: admin_inventory_stock_takes_path, method: :post, class: "space-y-4 max-w-xl" do %>
-          <div>
-            <%= label_tag :location_id, t("inventory.stock_takes.index.location"), class: label_class %>
-            <%= select_tag :location_id,
-                  options_for_select(
-                    @stock_locations.map { |loc| [stock_location_option_label(loc), loc.id] },
-                    disabled: @locations_in_progress
-                  ),
-                  include_blank: t("inventory.stock_takes.index.select_location"),
-                  required: true,
-                  class: "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
-            <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.stock_takes.index.location_hint") %></p>
-          </div>
-          <div>
-            <%= label_tag :supplier_id, t("inventory.stock_takes.index.supplier"), class: label_class %>
-            <%= select_tag :supplier_id,
-                  options_from_collection_for_select(@suppliers, :id, :name),
-                  include_blank: t("inventory.stock_takes.index.all_suppliers"),
-                  class: "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
-            <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.stock_takes.index.supplier_hint") %></p>
-          </div>
-          <div>
-            <%= label_tag :count_date, t("inventory.stock_takes.index.count_date"), class: label_class %>
-            <%= date_field_tag :count_date, Date.current, max: Date.current,
-                  class: "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
-            <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.stock_takes.index.count_date_hint") %></p>
-          </div>
-          <div>
-            <%= label_tag :notes, t("inventory.stock_takes.index.notes"), class: label_class %>
-            <%= text_area_tag :notes, nil, rows: 2, class: input_class, placeholder: t("inventory.stock_takes.index.notes_placeholder") %>
-          </div>
-          <%= submit_tag t("inventory.stock_takes.index.start_button"),
-                class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
-        <% end %>
-      <% end %>
-    </div>
-  </section>
 
   <% if @stock_takes.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">

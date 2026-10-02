@@ -1720,6 +1720,7 @@ en:
           in_progress: "In progress"
           in_progress_hint: "Finish before starting another"
           completed: "Completed"
+        new_button: "New stock take"
         start_heading: "Start stock take"
         start_hint: "Snapshots expected quantities for ingredients stocked at the chosen location. Optionally limit to one vendor."
         location: "Location"
@@ -2155,7 +2156,7 @@ en:
         category: "Category"
         all_categories: "All categories"
         empty: "No posted invoices in this range"
-        empty_hint: "Widen the dates, or clear the vendor filter. Draft invoices are not counted — a draft is a save point, not a purchase."
+        empty_hint: "Widen the dates, or clear the vendor filter. Draft and voided invoices are not counted — a draft is a save point, not a purchase, and a voided invoice never happened."
         stats:
           spend: "Spend now"
           prior_spend: "Spend before"

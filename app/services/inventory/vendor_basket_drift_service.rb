@@ -126,9 +126,11 @@ module Inventory
     private
 
     # invoice_date, not received_on: this is about what the priced document said,
-    # and that is the date the price was agreed on.
+    # and that is the date the price was agreed on. Voiding leaves draft: false,
+    # so .posted alone isn't enough — a voided invoice never happened as far as
+    # the ledger (and prices someone would want to compare against) is concerned.
     def invoice_scope(from, to)
-      scope = VendorInvoice.posted.where(invoice_date: from..to)
+      scope = VendorInvoice.posted.where.not(payment_status: "void").where(invoice_date: from..to)
       scope = scope.where(supplier_id: @supplier.id) if @supplier
       scope
     end
