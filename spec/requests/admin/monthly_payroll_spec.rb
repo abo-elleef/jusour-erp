@@ -88,6 +88,32 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body.index("Higher Paid")).to be < response.body.index("Lower Paid")
     end
+
+    it "shows the real negative remaining pay when penalties exceed salary" do
+      payroll_month = Date.current.beginning_of_month
+      staff = create(:user, company: company, name: "Over Penalized", role: "cashier",
+                     monthly_salary_cents: 300_000)
+      PayrollAdjustment.create!(
+        user: staff,
+        recorded_by: owner,
+        kind: "penalty",
+        unit_type: "fixed",
+        amount_cents: 350_000,
+        payroll_month: payroll_month,
+        happened_at: Date.current
+      )
+
+      get admin_accounting_monthly_payroll_path, params: { payroll_month: payroll_month.strftime("%Y-%m") }
+
+      expect(response).to have_http_status(:ok)
+      row_doc = Nokogiri::HTML(response.body).at_css("td.font-medium", text: "Over Penalized").parent
+      remaining_pay_cell = row_doc.css("td")[7]
+      expect(remaining_pay_cell.text).to include("-500.00")
+
+      total_row = Nokogiri::HTML(response.body).at_css("tfoot tr")
+      totals_remaining_cell = total_row.css("td")[7]
+      expect(totals_remaining_cell.text).to include("-500.00")
+    end
   end
 
   describe "GET /admin/accounting/monthly_payroll/export" do
@@ -102,6 +128,31 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       expect(response.headers["Content-Disposition"]).to include("monthly-payroll-2026-07.csv")
       expect(response.body).to include(I18n.t("accounting.monthly_payroll.base_salary"))
       expect(response.body).to include(I18n.t("accounting.monthly_payroll.attendance_pay"))
+    end
+
+    it "exports the real negative remaining pay when penalties exceed salary" do
+      payroll_month = Date.current.beginning_of_month
+      staff = create(:user, company: company, name: "Over Penalized", role: "cashier",
+                     monthly_salary_cents: 300_000)
+      PayrollAdjustment.create!(
+        user: staff,
+        recorded_by: owner,
+        kind: "penalty",
+        unit_type: "fixed",
+        amount_cents: 350_000,
+        payroll_month: payroll_month,
+        happened_at: Date.current
+      )
+
+      get admin_accounting_monthly_payroll_export_path, params: { payroll_month: payroll_month.strftime("%Y-%m") }
+
+      expect(response).to have_http_status(:ok)
+      rows = CSV.parse(response.body)
+      row = rows.find { |r| r[0] == "Over Penalized" }
+      totals_row = rows.last
+
+      expect(row[8]).to eq("-500.00")
+      expect(totals_row[8]).to eq("-500.00")
     end
 
     it "includes the location slug in the filename when filtered" do

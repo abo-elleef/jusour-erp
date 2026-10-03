@@ -23,10 +23,14 @@ module Accounting
         daily_rate_cents: summary.daily_rate_cents,
         penalties_cents: summary.penalties_cents,
         bonuses_cents: summary.bonuses_cents,
-        net_pay_cents: summary.net_pay_cents,
+        # Advances and penalties can together exceed computed pay. We never
+        # collect the shortfall back from staff through payroll, and the
+        # snapshot can't store a negative amount anyway (it drives a real
+        # treasury payout), so floor at zero here.
+        net_pay_cents: [summary.net_pay_cents, 0].max,
         advances_cents: summary.advances_cents,
         staff_meals_cents: summary.staff_meals_cents,
-        remaining_pay_cents: summary.remaining_pay_cents,
+        remaining_pay_cents: [summary.remaining_pay_cents, 0].max,
         treasury: summary.remaining_pay_cents.positive? ? @treasury : nil,
         paid_on: summary.remaining_pay_cents.positive? ? resolve_paid_on : nil,
         finalized_by: @finalized_by,
