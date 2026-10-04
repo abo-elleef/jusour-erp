@@ -7,12 +7,14 @@ module Admin
         only: %i[show edit update destroy dispose record_payment]
 
       def index
+        parse_date_range(default_start: Date.current.beginning_of_month)
         @fixed_assets = FixedAsset.ordered.includes(:location, :recorded_by)
+        @show_disposed = params[:show_disposed] == "1"
+        @fixed_assets = @show_disposed ? @fixed_assets : @fixed_assets.active
+        @fixed_assets = @fixed_assets.where(purchase_date: @start_date..@end_date)
         @total_purchase_cents = @fixed_assets.sum(:purchase_price_cents)
         @total_current_value_cents = @fixed_assets.sum(:current_value_cents)
         @by_type = @fixed_assets.active.group_by(&:asset_type)
-        @show_disposed = params[:show_disposed] == "1"
-        @fixed_assets = @show_disposed ? @fixed_assets : @fixed_assets.active
       end
 
       def show
