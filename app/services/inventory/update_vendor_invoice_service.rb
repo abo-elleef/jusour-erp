@@ -34,6 +34,14 @@ module Inventory
           amount_cents: @freight_amount_cents,
           treasury: @freight_treasury
         )
+
+        # Cash already paid (amount_paid_cents) is untouched by the reverse/record
+        # above — only the ap_invoice leg moves to the new total. So if the
+        # corrected total lands below what was already paid, the AP treasury and
+        # this invoice's own balance_due_cents both land on the right negative
+        # number on their own; sync_payment_status! just has to catch up to it
+        # (e.g. a "paid" invoice becoming "partially_paid" when the total rises).
+        @invoice.sync_payment_status!
       end
 
       @invoice

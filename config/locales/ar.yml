@@ -1700,11 +1700,12 @@ ar:
       freight_none: "لا يوجد شحن مندوب مسجّل"
       freight_expense_description: "توصيل بضائع — %{invoice_number} — %{supplier}"
       view_freight_expense: "عرض المصروف"
+      overpaid_hint: "تم دفع أكثر من قيمة هذه الفاتورة — رصيد المورد يعكس هذا الفرق كدائن له."
       errors:
         not_a_draft: "تم استلام هذه الفاتورة بالفعل."
         draft_lines_incomplete: "أدخل كمية لـ %{ingredients}، أو احذف هذه البنود قبل الاستلام."
         lines_required: "أضف بنداً واحداً على الأقل مع مكوّن."
-        not_editable: "لا يمكن تعديل هذه الفاتورة بعد تسجيل مدفوعات أو إلغائها."
+        not_editable: "لا يمكن تعديل هذه الفاتورة بعد تسويتها بإشعار دائن أو كدفعة سابقة، أو بعد إلغائها."
         freight_treasury_required: "اختر خزينة لدفع شحن المندوب."
         freight_treasury_invalid: "اختر خزينة نقد أو بنك صالحة لشحن المندوب."
 

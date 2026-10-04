@@ -20,6 +20,16 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
     )
   end
 
+  let(:treasury) do
+    Treasury.create!(
+      name: "Main Safe",
+      treasury_type: "safe",
+      opening_balance_cents: 1_000_000,
+      balance_cents: 1_000_000,
+      company: Current.company
+    )
+  end
+
   def receive_invoice!(quantity: 4)
     invoice = VendorInvoice.new(
       supplier: supplier,
@@ -151,5 +161,66 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
     expect(line.quantity.to_f).to eq(3.0)
     expect(line.stock_batch.quantity_remaining.to_f).to eq(3.0)
     expect(ingredient.reload.quantity_on_hand.to_f).to eq(3.0)
+  end
+
+  it "allows editing a fully paid invoice and re-syncs payment status when the total rises" do
+    invoice = receive_invoice!(quantity: 4) # total 1,000
+    Accounting::RecordVendorInvoicePaymentService.new(
+      vendor_invoice: invoice, user: user, treasury: treasury, amount_cents: 1_000
+    ).call
+    expect(invoice.reload).to be_paid
+
+    line = invoice.vendor_invoice_lines.first
+    described_class.new(
+      invoice, user,
+      {
+        supplier_id: supplier.id, location_id: location.id,
+        invoice_number: invoice.invoice_number,
+        invoice_date: invoice.invoice_date, received_on: invoice.received_on,
+        vendor_invoice_lines_attributes: {
+          "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "6", line_total_cents: 1_800 }
+        }
+      }
+    ).call
+
+    invoice.reload
+    expect(invoice.total_cents).to eq(1_800)
+    expect(invoice.amount_paid_cents).to eq(1_000)
+    expect(invoice).to be_partially_paid
+    expect(invoice.balance_due_cents).to eq(800)
+  end
+
+  it "leaves a negative balance when editing a paid invoice down, with no extra ledger entry" do
+    invoice = receive_invoice!(quantity: 4) # total 1,000
+    Accounting::RecordVendorInvoicePaymentService.new(
+      vendor_invoice: invoice, user: user, treasury: treasury, amount_cents: 1_000
+    ).call
+    ap_treasury = supplier.reload.ap_treasury
+    expect(ap_treasury.balance_cents).to eq(0)
+
+    line = invoice.vendor_invoice_lines.first
+    described_class.new(
+      invoice, user,
+      {
+        supplier_id: supplier.id, location_id: location.id,
+        invoice_number: invoice.invoice_number,
+        invoice_date: invoice.invoice_date, received_on: invoice.received_on,
+        vendor_invoice_lines_attributes: {
+          "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "3", line_total_cents: 750 }
+        }
+      }
+    ).call
+
+    invoice.reload
+    expect(invoice.total_cents).to eq(750)
+    expect(invoice.amount_paid_cents).to eq(1_000)
+    expect(invoice.credit_applied_cents).to eq(0)
+    expect(invoice).to be_paid
+    expect(invoice.balance_due_cents).to eq(-250)
+
+    # The ap_invoice leg moved from +1,000 to +750; the ap_payment leg (-1,000)
+    # was never touched — the treasury nets to -250 with no separate entry.
+    expect(VendorCreditNote.where(supplier: supplier).count).to eq(0)
+    expect(ap_treasury.reload.balance_cents).to eq(-250)
   end
 end

@@ -1699,11 +1699,12 @@ en:
       freight_none: "No courier freight recorded"
       freight_expense_description: "Goods delivery — %{invoice_number} — %{supplier}"
       view_freight_expense: "View expense"
+      overpaid_hint: "This invoice has been overpaid — the supplier's balance reflects the credit."
       errors:
         not_a_draft: "This invoice has already been received."
         draft_lines_incomplete: "Enter a quantity for %{ingredients}, or remove those lines before receiving."
         lines_required: "Add at least one line item with an ingredient."
-        not_editable: "This invoice cannot be edited after payments have been recorded or once voided."
+        not_editable: "This invoice cannot be edited once settled by a credit note or historical payment, or once voided."
         freight_treasury_required: "Select a treasury to pay courier freight."
         freight_treasury_invalid: "Choose a valid cash or bank treasury for courier freight."
     clear_location_stock:

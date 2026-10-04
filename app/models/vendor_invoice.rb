@@ -116,10 +116,19 @@ class VendorInvoice < ApplicationRecord
 
   # A draft posted nothing, so there is nothing to unwind — it is always editable,
   # and editing skips the reverse-and-re-receive a posted invoice needs.
+  #
+  # Cash paid against this invoice (amount_paid_cents) is deliberately not part
+  # of this gate: UpdateVendorInvoiceService can edit a cash-paid invoice, and if
+  # the corrected total lands below what was already paid, balance_due_cents
+  # just goes negative (the untouched original payment already accounts for the
+  # excess — see settled_cents). A credit note or a historical settlement is a
+  # deliberate, owner-level call about how this invoice was settled — editing is
+  # blocked once either applies, so that settlement isn't quietly reopened by an
+  # ordinary edit.
   def editable?
     return true if draft?
 
-    unpaid? && amount_paid_cents.zero? && !void?
+    !void? && credit_applied_cents.zero? && historical_settled_cents.zero?
   end
 
   def postable?
@@ -228,9 +237,14 @@ class VendorInvoice < ApplicationRecord
     errors.add(:discount_value, :inclusion, message: "must be between 0 and 100 for percentage discounts")
   end
 
+  # Cash paid (amount_paid_cents) may legitimately exceed the total once an
+  # invoice has been edited down after payment — see editable?. Credit notes and
+  # historical settlements are different: each is already capped at the balance
+  # due by its own service, so either one exceeding the total on its own would
+  # mean something upstream is broken.
   def amount_paid_not_above_total
-    return if settled_cents.to_i <= total_cents.to_i
+    return if (credit_applied_cents.to_i + historical_settled_cents.to_i) <= total_cents.to_i
 
-    errors.add(:amount_paid_cents, "cannot exceed invoice total")
+    errors.add(:base, "credit and historical settlement cannot exceed invoice total")
   end
 end
