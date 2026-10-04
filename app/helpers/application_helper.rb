@@ -1121,6 +1121,15 @@ module ApplicationHelper
     ATTENDANCE_COLOR_CLASSES[color.to_s] || ATTENDANCE_COLOR_CLASSES["gray"]
   end
 
+  # status.label is the raw string stored on the row (seeded in English). Translate
+  # it for the known seeded codes; a company-renamed or future custom status falls
+  # back to whatever was typed in, since that text can't be machine-translated.
+  def attendance_status_label(status)
+    return "" if status.nil?
+
+    t("accounting.attendance_statuses.#{status.code}", default: status.label)
+  end
+
   # A status's letter code in its grid color, plus its label — e.g. for the
   # attendance change-history popover, so "P → A" reads the same letters the
   # grid itself uses, not just the long label.
@@ -1129,7 +1138,7 @@ module ApplicationHelper
 
     tag.span(class: "inline-flex items-center gap-1.5") do
       concat tag.span(status.symbol, class: "inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-bold shrink-0 #{attendance_color_classes(status.color)}")
-      concat status.label
+      concat attendance_status_label(status)
     end
   end
 

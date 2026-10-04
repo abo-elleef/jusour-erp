@@ -4178,7 +4178,8 @@ en:
       pay: "Pay"
       blank_hint: "Blank = not a paid day"
       mark_present: "Mark whole row present"
-      keyboard_hint: "Click a cell and type its letter — press P twice for PP · arrow keys to move · shift-click a range then type to fill · Delete to clear. Saves automatically."
+      clear_status: "Clear"
+      keyboard_hint: "Click a cell to select it, click again to pick a status from the list — or type its letter directly (press P twice for PP) · arrow keys to move · shift-click a range then type to fill · Delete to clear. Saves automatically."
       crosshair_hint: "Click a day number to highlight that column, or the staff row (not the name link) to highlight the month. Hover or select a cell to follow the row and column. Click again to clear."
       highlight_day: "Highlight this day across all staff"
       highlight_staff: "Highlight this staff member across the month"
@@ -4199,6 +4200,13 @@ en:
       history_load_error: "Couldn't load history"
       view_history: "View history"
       staff_history_title: "Attendance history"
+    attendance_statuses:
+      present: "Present"
+      present_bonus: "Present + bonus"
+      "off": "Planned off"
+      half_day: "Half day"
+      excused: "Excused absence"
+      unexcused: "Unexcused absence"
     late_penalties:
       title: "Late penalties"
       hint: "Late penalties logged from attendance, grouped by staff. Remove any you want to waive before recording payroll."

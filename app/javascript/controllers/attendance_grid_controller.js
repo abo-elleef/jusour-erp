@@ -5,7 +5,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "cell", "summary", "count", "status", "popover", "popoverTitle", "otInput", "penaltyGroup", "table",
-    "historyPopover"
+    "historyPopover", "statusPopover"
   ]
   static values = {
     url: String,
@@ -85,25 +85,15 @@ export default class extends Controller {
     if (event.shiftKey && this.anchor) {
       this.selectRange(this.anchor, cell)
     } else {
-      // First click just selects; clicking an already-selected cell cycles it.
+      // First click just selects; clicking an already-selected cell opens the
+      // status picker so the exact status is chosen explicitly, not cycled to.
       const alreadySelected = this.selected.length === 1 && this.selected[0] === cell
       this.anchor = cell
       this.selectOnly(cell)
-      if (alreadySelected) this.cycleCell(cell)
+      if (alreadySelected) this.openStatusPicker(cell)
     }
     this.resetBuffer()
     cell.focus()
-  }
-
-  // Cycle a cell through the status symbols, then blank, and autosave —
-  // shift-click still selects a range (for type-to-fill), keyboard is unchanged.
-  cycleCell(cell) {
-    const sequence = [...this.symbolsValue, ""]
-    const current = cell.dataset.symbol || ""
-    const index = sequence.indexOf(current)
-    const next = sequence[(index + 1) % sequence.length]
-    this.setCellSymbol(cell, next)
-    this.scheduleSave()
   }
 
   handleKeydown(event) {
@@ -125,6 +115,7 @@ export default class extends Controller {
 
     if (event.key === "Escape") {
       event.preventDefault()
+      this.closeStatusPicker()
       this.pinnedRow = null
       this.pinnedCol = null
       this.hoverRow = null
@@ -213,6 +204,7 @@ export default class extends Controller {
   }
 
   setSelection(cells) {
+    this.closeStatusPicker()
     this.selected.forEach((c) => c.classList.remove("ring-2", "ring-amber-400", "ring-inset"))
     this.selected = cells
     cells.forEach((c) => c.classList.add("ring-2", "ring-amber-400", "ring-inset"))
@@ -442,6 +434,35 @@ export default class extends Controller {
         !this.historyPopoverTarget.contains(event.target) && !event.target.closest(".attendance-cell")) {
       this.closeHistoryPopover()
     }
+    if (this.hasStatusPopoverTarget && !this.statusPopoverTarget.classList.contains("hidden") &&
+        !this.statusPopoverTarget.contains(event.target) && !event.target.closest(".attendance-cell")) {
+      this.closeStatusPicker()
+    }
+  }
+
+  // ── status picker (click an already-selected cell) ─────────
+  openStatusPicker(cell) {
+    this.activeCell = cell
+    const pop = this.statusPopoverTarget
+    pop.querySelectorAll(".attendance-status-option").forEach((btn) => {
+      const on = (btn.dataset.symbol || "") === (cell.dataset.symbol || "")
+      btn.classList.toggle("bg-gray-50", on)
+      btn.classList.toggle("font-semibold", on)
+    })
+    pop.classList.remove("hidden")
+    this.positionPopover(pop, cell)
+  }
+
+  closeStatusPicker() {
+    if (this.hasStatusPopoverTarget) this.statusPopoverTarget.classList.add("hidden")
+  }
+
+  pickStatus(event) {
+    const cell = this.activeCell
+    if (!cell) return
+    this.ensureSelected(cell)
+    this.applyToSelection(event.currentTarget.dataset.symbol || "")
+    this.closeStatusPicker()
   }
 
   openPopover(cell) {
