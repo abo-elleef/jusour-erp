@@ -2,8 +2,6 @@
 
 module Inventory
   class VendorInvoiceStockHandler
-    class StockConsumedError < StandardError; end
-
     # Fire a price-change alert when a received price moves more than ±5% from
     # the ingredient's most recent recorded price (across any vendor).
     PRICE_CHANGE_THRESHOLD = 0.05
@@ -60,11 +58,10 @@ module Inventory
       return unless batch
 
       qty = line.base_quantity
-      if batch.quantity_remaining.to_d < qty
-        raise StockConsumedError,
-          I18n.t("inventory.vendor_invoices.errors.stock_consumed", ingredient: line.ingredient.name)
-      end
-
+      # The batch may already be partially (or fully) drawn down by production,
+      # sales, or other consumption. Reversing still removes the full received
+      # quantity — quantity_remaining can go negative here, mirroring how
+      # ingredient/location on-hand is already allowed to go negative.
       location = batch.location || @invoice.location
 
       StockAdjustment.create!(

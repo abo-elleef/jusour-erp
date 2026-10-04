@@ -14,7 +14,7 @@ module Inventory
     end
 
     def call
-      raise Error, I18n.t("inventory.vendor_invoices.errors.not_editable") unless @invoice.fully_editable?
+      raise Error, I18n.t("inventory.vendor_invoices.errors.not_editable") unless @invoice.editable?
 
       ActiveRecord::Base.transaction do
         lines_to_reverse = @invoice.vendor_invoice_lines.includes(:stock_batch, :ingredient).to_a
@@ -37,8 +37,6 @@ module Inventory
       end
 
       @invoice
-    rescue VendorInvoiceStockHandler::StockConsumedError => e
-      raise Error, e.message
     end
   end
 end

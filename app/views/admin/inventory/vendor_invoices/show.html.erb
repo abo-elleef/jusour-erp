@@ -103,13 +103,9 @@
         </svg>
         <%= t("inventory.vendor_invoices.export") %>
       <% end %>
-      <% if @vendor_invoice.fully_editable? %>
+      <% if @vendor_invoice.editable? %>
         <%= link_to t("actions.edit"), edit_admin_inventory_vendor_invoice_path(@vendor_invoice),
               class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" %>
-      <% elsif @vendor_invoice.editable? && !@vendor_invoice.stock_intact_for_edit? %>
-        <span class="inline-flex text-xs text-amber-800 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl">
-          <%= t("inventory.vendor_invoices.errors.stock_consumed_blocked") %>
-        </span>
       <% end %>
       <% if !@vendor_invoice.void? && can_manage_inventory_stock? %>
         <%= button_to t("inventory.vendor_invoices.void"),

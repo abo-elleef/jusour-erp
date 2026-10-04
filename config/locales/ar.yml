@@ -1705,8 +1705,6 @@ ar:
         draft_lines_incomplete: "أدخل كمية لـ %{ingredients}، أو احذف هذه البنود قبل الاستلام."
         lines_required: "أضف بنداً واحداً على الأقل مع مكوّن."
         not_editable: "لا يمكن تعديل هذه الفاتورة بعد تسجيل مدفوعات أو إلغائها."
-        stock_consumed: "تعذّر التعديل: تم استخدام مخزون %{ingredient} من هذه الفاتورة."
-        stock_consumed_blocked: "تعذّر التعديل — تم استخدام جزء من المخزون المستلم."
         freight_treasury_required: "اختر خزينة لدفع شحن المندوب."
         freight_treasury_invalid: "اختر خزينة نقد أو بنك صالحة لشحن المندوب."
 

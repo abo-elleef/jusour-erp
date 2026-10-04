@@ -122,21 +122,8 @@ class VendorInvoice < ApplicationRecord
     unpaid? && amount_paid_cents.zero? && !void?
   end
 
-  def fully_editable?
-    return true if draft?
-
-    editable? && stock_intact_for_edit?
-  end
-
   def postable?
     draft? && vendor_invoice_lines.any?
-  end
-
-  def stock_intact_for_edit?
-    vendor_invoice_lines.all? do |line|
-      batch = line.stock_batch
-      batch.nil? || batch.quantity_remaining.to_d >= line.quantity.to_d
-    end
   end
 
   def subtotal_cents

@@ -115,31 +115,41 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
     end.not_to raise_error
   end
 
-  it "raises when stock from the invoice has been consumed" do
+  it "still allows editing when stock from the invoice has already been consumed" do
     invoice = receive_invoice!(quantity: 4)
     line = invoice.vendor_invoice_lines.first
-    line.stock_batch.update!(quantity_remaining: 1)
+    original_batch = line.stock_batch
+    original_batch.update!(quantity_remaining: 1)
 
-    expect do
-      described_class.new(
-        invoice,
-        user,
-        {
-          supplier_id: supplier.id,
-          location_id: location.id,
-          invoice_number: invoice.invoice_number,
-          invoice_date: invoice.invoice_date,
-          received_on: invoice.received_on,
-          vendor_invoice_lines_attributes: {
-            "0" => {
-              id: line.id,
-              ingredient_id: ingredient.id,
-              quantity: "3",
-              line_total_cents: 750
-            }
+    described_class.new(
+      invoice,
+      user,
+      {
+        supplier_id: supplier.id,
+        location_id: location.id,
+        invoice_number: invoice.invoice_number,
+        invoice_date: invoice.invoice_date,
+        received_on: invoice.received_on,
+        vendor_invoice_lines_attributes: {
+          "0" => {
+            id: line.id,
+            ingredient_id: ingredient.id,
+            quantity: "3",
+            line_total_cents: 750
           }
         }
-      ).call
-    end.to raise_error(Inventory::UpdateVendorInvoiceService::Error)
+      }
+    ).call
+
+    # The already-consumed portion is reflected as a negative remainder on the
+    # old (now unlinked) batch, mirroring how on-hand is already allowed to go
+    # negative elsewhere; a fresh batch carries the newly edited quantity.
+    expect(original_batch.reload.quantity_remaining.to_f).to eq(-3.0)
+    expect(original_batch.vendor_invoice_line_id).to be_nil
+
+    line.reload
+    expect(line.quantity.to_f).to eq(3.0)
+    expect(line.stock_batch.quantity_remaining.to_f).to eq(3.0)
+    expect(ingredient.reload.quantity_on_hand.to_f).to eq(3.0)
   end
 end

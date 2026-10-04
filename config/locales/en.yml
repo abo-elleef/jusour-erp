@@ -1704,8 +1704,6 @@ en:
         draft_lines_incomplete: "Enter a quantity for %{ingredients}, or remove those lines before receiving."
         lines_required: "Add at least one line item with an ingredient."
         not_editable: "This invoice cannot be edited after payments have been recorded or once voided."
-        stock_consumed: "Cannot edit: %{ingredient} stock from this invoice has already been used."
-        stock_consumed_blocked: "Cannot edit — some received stock has already been used."
         freight_treasury_required: "Select a treasury to pay courier freight."
         freight_treasury_invalid: "Choose a valid cash or bank treasury for courier freight."
     clear_location_stock:

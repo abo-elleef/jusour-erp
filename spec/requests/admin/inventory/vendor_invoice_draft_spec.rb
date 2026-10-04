@@ -84,7 +84,7 @@ RSpec.describe "Vendor invoice drafts", type: :request do
     end
 
     it "is always editable — there is nothing to unwind" do
-      expect(draft).to be_fully_editable
+      expect(draft).to be_editable
     end
 
     it "saves again without receiving anything" do

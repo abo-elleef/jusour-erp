@@ -134,9 +134,9 @@ module Admin
 
       def edit
         authorize_inventory!(:update)
-        unless @vendor_invoice.fully_editable?
+        unless @vendor_invoice.editable?
           redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
-            alert: edit_blocked_message
+            alert: t("inventory.vendor_invoices.errors.not_editable")
           return
         end
         build_line_items
@@ -145,9 +145,9 @@ module Admin
 
       def update
         authorize_inventory!(:update)
-        unless @vendor_invoice.fully_editable?
+        unless @vendor_invoice.editable?
           redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice),
-            alert: edit_blocked_message
+            alert: t("inventory.vendor_invoices.errors.not_editable")
           return
         end
 
@@ -458,14 +458,6 @@ module Admin
       def invoice_lines_present?(attrs = vendor_invoice_params)
         attrs[:vendor_invoice_lines_attributes]&.values&.any? do |line_attrs|
           line_attrs[:_destroy] != "1" && line_attrs[:ingredient_id].present?
-        end
-      end
-
-      def edit_blocked_message
-        if !@vendor_invoice.editable?
-          t("inventory.vendor_invoices.errors.not_editable")
-        else
-          t("inventory.vendor_invoices.errors.stock_consumed_blocked")
         end
       end
     end
