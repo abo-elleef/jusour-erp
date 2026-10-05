@@ -2,11 +2,10 @@
 
 module Accounting
   # Options for the party searchable-select: every Supplier, commercial
-  # Customer, Partner, Loan and active staff User. Each option carries its kind
-  # twice over: as a keyword (so typing "supplier" or "مورد" filters to just
-  # those) and as an alias (the searchable-select JS already renders aliases as
-  # a muted line under the name) — without it, a bare list of names gives no
-  # hint whether "محمود طه" is a supplier or a staff member.
+  # Customer, Partner, Loan and active staff User. The type select above this
+  # field (shared/_party_picker) already tells the reader what kind they're
+  # searching within, so an option doesn't repeat it — the value's own prefix
+  # ("Supplier:<id>", "Customer:<id>", ...) is what party-picker filters on.
   class PartyOptions
     def self.for_select
       new.to_a
@@ -19,35 +18,29 @@ module Accounting
     private
 
     def suppliers
-      kind = I18n.t("accounting.shared.party_kinds.supplier")
-      Supplier.active.order(:name).map { |s| option(s, s.name, "supplier #{kind}", kind) }
+      Supplier.active.order(:name).map { |s| option(s, s.name) }
     end
 
     # Regular POS customers are walk-ins by the hundred; only commercial
     # (credit) customers are ever the "who" behind a manual expense or income.
     def customers
-      kind = I18n.t("accounting.shared.party_kinds.customer")
-      Customer.where(customer_type: "commercial").order(:name)
-        .map { |c| option(c, c.display_name, "customer #{kind}", kind) }
+      Customer.where(customer_type: "commercial").order(:name).map { |c| option(c, c.display_name) }
     end
 
     def partners
-      kind = I18n.t("accounting.shared.party_kinds.partner")
-      Partner.active.order(:name).map { |p| option(p, p.name, "partner #{kind}", kind) }
+      Partner.active.order(:name).map { |p| option(p, p.name) }
     end
 
     def loans
-      kind = I18n.t("accounting.shared.party_kinds.loan")
-      Loan.active.ordered.map { |l| option(l, l.name, "loan #{kind}", kind) }
+      Loan.active.ordered.map { |l| option(l, l.name) }
     end
 
     def staff
-      kind = I18n.t("accounting.shared.party_kinds.staff")
-      User.active.order(:name).map { |u| option(u, u.name, "staff employee #{kind}", kind) }
+      User.active.order(:name).map { |u| option(u, u.name) }
     end
 
-    def option(record, label, keywords, kind)
-      { value: "#{record.class.name}:#{record.id}", label: label, keywords: keywords, aliases: [kind] }
+    def option(record, label)
+      { value: "#{record.class.name}:#{record.id}", label: label }
     end
   end
 end
