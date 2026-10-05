@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe Inventory::UpdateVendorInvoiceService do
+  include ActiveJob::TestHelper
+
   let(:user) { create(:user) }
   let(:category) { IngredientCategory.create!(name: "Produce", position: 1, company: Current.company) }
   let(:supplier) { Supplier.create!(name: "Fresh Farms", lead_time_days: 2, company: Current.company) }
@@ -199,17 +201,23 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
     expect(ap_treasury.balance_cents).to eq(0)
 
     line = invoice.vendor_invoice_lines.first
-    described_class.new(
-      invoice, user,
-      {
-        supplier_id: supplier.id, location_id: location.id,
-        invoice_number: invoice.invoice_number,
-        invoice_date: invoice.invoice_date, received_on: invoice.received_on,
-        vendor_invoice_lines_attributes: {
-          "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "3", line_total_cents: 750 }
+    edit = lambda do
+      described_class.new(
+        invoice, user,
+        {
+          supplier_id: supplier.id, location_id: location.id,
+          invoice_number: invoice.invoice_number,
+          invoice_date: invoice.invoice_date, received_on: invoice.received_on,
+          vendor_invoice_lines_attributes: {
+            "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "3", line_total_cents: 750 }
+          }
         }
-      }
-    ).call
+      ).call
+    end
+
+    expect { edit.call }
+      .to have_enqueued_job(Accounting::NotifyVendorBalanceNegativeJob)
+      .with(supplier.id, invoice.id, -250)
 
     invoice.reload
     expect(invoice.total_cents).to eq(750)
@@ -222,5 +230,67 @@ RSpec.describe Inventory::UpdateVendorInvoiceService do
     # was never touched — the treasury nets to -250 with no separate entry.
     expect(VendorCreditNote.where(supplier: supplier).count).to eq(0)
     expect(ap_treasury.reload.balance_cents).to eq(-250)
+  end
+
+  describe "vendor-balance-negative alert" do
+    it "does not alert when the edit leaves the balance at zero or positive" do
+      invoice = receive_invoice!(quantity: 4) # total 1,000
+      Accounting::RecordVendorInvoicePaymentService.new(
+        vendor_invoice: invoice, user: user, treasury: treasury, amount_cents: 1_000
+      ).call
+      line = invoice.vendor_invoice_lines.first
+
+      # Price goes up: still fully paid, balance due goes positive, not negative.
+      expect {
+        described_class.new(
+          invoice, user,
+          {
+            supplier_id: supplier.id, location_id: location.id,
+            invoice_number: invoice.invoice_number,
+            invoice_date: invoice.invoice_date, received_on: invoice.received_on,
+            vendor_invoice_lines_attributes: {
+              "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "4", line_total_cents: 1_200 }
+            }
+          }
+        ).call
+      }.not_to have_enqueued_job(Accounting::NotifyVendorBalanceNegativeJob)
+    end
+
+    it "does not re-alert when the balance was already negative before this edit" do
+      invoice = receive_invoice!(quantity: 4) # total 1,000
+      Accounting::RecordVendorInvoicePaymentService.new(
+        vendor_invoice: invoice, user: user, treasury: treasury, amount_cents: 1_000
+      ).call
+      line = invoice.vendor_invoice_lines.first
+
+      # First edit: crosses zero, -250. Drain the queue before the second edit.
+      described_class.new(
+        invoice, user,
+        {
+          supplier_id: supplier.id, location_id: location.id,
+          invoice_number: invoice.invoice_number,
+          invoice_date: invoice.invoice_date, received_on: invoice.received_on,
+          vendor_invoice_lines_attributes: {
+            "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "3", line_total_cents: 750 }
+          }
+        }
+      ).call
+      clear_enqueued_jobs
+
+      # Second edit: still negative throughout, no fresh crossing to report.
+      expect {
+        described_class.new(
+          invoice, user,
+          {
+            supplier_id: supplier.id, location_id: location.id,
+            invoice_number: invoice.invoice_number,
+            invoice_date: invoice.invoice_date, received_on: invoice.received_on,
+            vendor_invoice_lines_attributes: {
+              "0" => { id: line.id, ingredient_id: ingredient.id, quantity: "2", line_total_cents: 500 }
+            }
+          }
+        ).call
+      }.not_to have_enqueued_job(Accounting::NotifyVendorBalanceNegativeJob)
+    end
   end
 end

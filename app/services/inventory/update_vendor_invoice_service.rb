@@ -16,6 +16,8 @@ module Inventory
     def call
       raise Error, I18n.t("inventory.vendor_invoices.errors.not_editable") unless @invoice.editable?
 
+      old_ap_balance_cents = current_ap_balance_cents
+
       ActiveRecord::Base.transaction do
         lines_to_reverse = @invoice.vendor_invoice_lines.includes(:stock_batch, :ingredient).to_a
 
@@ -44,7 +46,29 @@ module Inventory
         @invoice.sync_payment_status!
       end
 
+      # Checked after the transaction commits, so a rolled-back edit never
+      # fires a false alert. Only the crossing (was >= 0, now negative) notifies
+      # — once the supplier is already in credit, further edits don't re-alert.
+      notify_if_balance_turned_negative!(old_ap_balance_cents)
+
       @invoice
+    end
+
+    private
+
+    def current_ap_balance_cents
+      @invoice.supplier.reload.ap_balance_cents
+    end
+
+    def notify_if_balance_turned_negative!(old_balance_cents)
+      return unless old_balance_cents >= 0
+
+      new_balance_cents = current_ap_balance_cents
+      return unless new_balance_cents.negative?
+
+      Accounting::NotifyVendorBalanceNegativeJob.perform_later(
+        @invoice.supplier_id, @invoice.id, new_balance_cents
+      )
     end
   end
 end

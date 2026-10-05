@@ -2549,6 +2549,7 @@ ar:
       overtime_weekly: "ساعات إضافية أسبوعية"
       overtime_shift: "ساعات إضافية بالوردية"
       cash_variance: "فرق نقدي"
+      vendor_balance_negative: "رصيد المورد سالب"
       unknown: "تنبيه"
     index:
       description: "تنبيهات المخزون والمحاسبة للمالكين والمديرين."
@@ -2600,6 +2601,7 @@ ar:
       overtime_weekly: "تجاوز %{name} %{hours} ساعة هذا الأسبوع (حد الساعات الإضافية: %{threshold} س)."
       overtime_shift: "دخل %{name} في وقت إضافي هذا الأسبوع."
       cash_variance: "فرق درج نقدي بقيمة %{variance} لـ %{name} بتاريخ %{date}."
+      vendor_balance_negative: "أصبح رصيد %{supplier} سالباً (%{balance}) بعد تعديل فاتورة %{invoice_number} — أصبح المورد مديناً لك."
 
   pos:
     title: "صقر POS"

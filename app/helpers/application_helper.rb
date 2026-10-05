@@ -1420,6 +1420,9 @@ module ApplicationHelper
     if raw[:variance_cents].present?
       raw[:variance] = format_money(raw[:variance_cents].to_i)
     end
+    if raw[:balance_cents].present?
+      raw[:balance] = format_money(raw[:balance_cents].to_i)
+    end
     if raw[:unit].present?
       raw[:unit] = ingredient_unit_label(raw[:unit])
     end

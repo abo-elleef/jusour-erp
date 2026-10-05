@@ -2540,6 +2540,7 @@ en:
       overtime_weekly: "Weekly overtime"
       overtime_shift: "Shift overtime"
       cash_variance: "Cash variance"
+      vendor_balance_negative: "Vendor balance negative"
       unknown: "Alert"
     index:
       description: "Inventory and accounting alerts for owners and managers."
@@ -2591,6 +2592,7 @@ en:
       overtime_weekly: "%{name} has exceeded %{hours} hours this week (OT threshold: %{threshold}h)."
       overtime_shift: "%{name} has gone into overtime this week."
       cash_variance: "Cash drawer variance of %{variance} detected for %{name} on %{date}."
+      vendor_balance_negative: "%{supplier}'s balance has gone negative (%{balance}) after editing invoice %{invoice_number} — they now owe you money back."
 
   pos:
     title: "Saqr POS"
