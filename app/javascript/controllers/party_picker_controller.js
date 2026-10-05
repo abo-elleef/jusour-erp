@@ -27,15 +27,29 @@ export default class extends Controller {
     if (this.hasOtherWrapTarget) this.otherWrapTarget.hidden = !showOther
     this.searchWrapTarget.hidden = !showSearch
 
+    if (!showSearch) this.closeSearchMenu()
+
     if (showSearch) {
       const filtered = this.optionsValue.filter((option) => option.value.startsWith(`${type}:`))
       this.searchWrapTarget.dataset.searchableSelectOptions = JSON.stringify(filtered)
     }
 
-    if (resetSelection) {
-      this.clearSearchSelection()
-      if (showSearch) this.focusSearch()
-    }
+    if (!resetSelection) return
+
+    this.clearSearchSelection()
+    if (!showSearch) return
+
+    // Deferred on purpose: unhiding searchWrap and swapping its options
+    // attribute can trigger a disconnect/reconnect of the nested
+    // searchable-select controller (it warns about exactly this in its own
+    // connect() — a parent's DOM mutation tearing down and rebuilding its
+    // listeners). Focusing in the same tick can fire before the new instance's
+    // "focus->searchable-select#open" listener is attached, leaving the field
+    // focused but the dropdown never opening until some later event (like
+    // typing) hits a since-reconnected instance. A macrotask delay — after any
+    // pending MutationObserver callback has run — makes focus() land on a
+    // listener that's actually there.
+    setTimeout(() => this.focusSearch(), 0)
   }
 
   clearSearchSelection() {
@@ -50,5 +64,17 @@ export default class extends Controller {
 
   focusSearch() {
     this.searchWrapTarget.querySelector("[data-searchable-select-target='input']")?.focus()
+  }
+
+  // searchable-select moves its own menu out to <body> on connect (see its
+  // own comment on why), so it's no longer a descendant of searchWrap by the
+  // time we hide that — hiding searchWrap alone leaves an open menu stranded
+  // and visible. Nothing else in this form has a reason to have one open at
+  // the same time, so closing every visible one is safe.
+  closeSearchMenu() {
+    document.querySelectorAll('[data-searchable-select-target="menu"]:not(.hidden)')
+      .forEach((menu) => menu.classList.add("hidden"))
+    const input = this.searchWrapTarget.querySelector("[data-searchable-select-target='input']")
+    input?.setAttribute("aria-expanded", "false")
   }
 }
