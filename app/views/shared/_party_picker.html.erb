@@ -1,0 +1,43 @@
+<%# locals: form, field, options:, selected: nil, other_field: nil, other_selected: nil %>
+<%
+  other_field = local_assigns[:other_field]
+  other_selected = local_assigns[:other_selected]
+
+  selected_type = selected.to_s.split(":", 2).first
+  initial_type = if selected_type.present?
+                   selected_type
+                 elsif other_field && other_selected.present?
+                   "__other__"
+                 else
+                   ""
+                 end
+
+  type_options = [
+    [t("accounting.shared.party_kinds.choose"), ""],
+    [t("accounting.shared.party_kinds.supplier"), "Supplier"],
+    [t("accounting.shared.party_kinds.customer"), "Customer"],
+    [t("accounting.shared.party_kinds.partner"), "Partner"],
+    [t("accounting.shared.party_kinds.loan"), "Loan"],
+    [t("accounting.shared.party_kinds.staff"), "User"]
+  ]
+  type_options << [t("accounting.vouchers.counterparty_other"), "__other__"] if other_field
+%>
+<div data-controller="party-picker" data-party-picker-options-value="<%= options.to_json %>">
+  <%= select_tag "party_kind", options_for_select(type_options, initial_type),
+        data: { party_picker_target: "typeSelect", action: "change->party-picker#selectType" },
+        class: "#{pos_input_class} mb-2" %>
+
+  <div data-party-picker-target="searchWrap" data-searchable-select-options="[]" hidden>
+    <%= render "shared/searchable_select",
+          form: form, field: field, selected: selected,
+          placeholder: t("accounting.shared.party_placeholder"),
+          input_class: pos_input_class %>
+  </div>
+
+  <% if other_field %>
+    <div data-party-picker-target="otherWrap" hidden>
+      <%= form.text_field other_field, class: pos_input_class, value: other_selected,
+            placeholder: t("accounting.vouchers.counterparty_other_placeholder") %>
+    </div>
+  <% end %>
+</div>

@@ -41,21 +41,13 @@
             input_class: pos_input_class %>
     </div>
 
-    <div data-searchable-select-options="<%= @party_options.to_json %>">
+    <div>
       <%= f.label :party_selection, receipt ? t("accounting.vouchers.received_from") : t("accounting.vouchers.paid_to"),
             class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-      <%= render "shared/searchable_select",
-            form: f, field: :party_selection, selected: voucher.party_selection,
-            placeholder: t("accounting.shared.party_placeholder"),
-            input_class: pos_input_class %>
+      <%= render "shared/party_picker", form: f, field: :party_selection,
+            options: @party_options, selected: voucher.party_selection,
+            other_field: :counterparty, other_selected: voucher.counterparty %>
       <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.vouchers.party_hint") %></p>
-    </div>
-
-    <div>
-      <%= f.label :counterparty, t("accounting.vouchers.counterparty_other"),
-            class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-      <%= f.text_field :counterparty, class: pos_input_class,
-            placeholder: t("accounting.vouchers.counterparty_other_placeholder") %>
     </div>
 
     <div>

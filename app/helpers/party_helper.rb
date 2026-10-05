@@ -4,13 +4,36 @@
 # Supplier#name, Customer#display_name and User#name, so — like
 # SettledRecordsHelper for #settles — this has to ask rather than assume.
 module PartyHelper
-  def party_label(party)
-    return nil if party.nil?
-
+  # A bare name is ambiguous on its own — "محمود طه" gives no hint whether
+  # that's a supplier, a staff member, or a partner. party_label always
+  # appends the kind for that reason; call party_bare_name directly only
+  # where the kind is already obvious from context (e.g. next to a column
+  # header that already says "Supplier").
+  def party_bare_name(party)
     case party
     when Customer then party.display_name
     when Supplier, Partner, User, Loan then party.name
     end
+  end
+
+  def party_kind_label(party)
+    case party
+    when Supplier then t("accounting.shared.party_kinds.supplier")
+    when Customer then t("accounting.shared.party_kinds.customer")
+    when Partner  then t("accounting.shared.party_kinds.partner")
+    when Loan     then t("accounting.shared.party_kinds.loan")
+    when User     then t("accounting.shared.party_kinds.staff")
+    end
+  end
+
+  def party_label(party)
+    return nil if party.nil?
+
+    name = party_bare_name(party)
+    return nil if name.nil?
+
+    kind = party_kind_label(party)
+    kind ? "#{name} — #{kind}" : name
   end
 
   def party_path(party)
