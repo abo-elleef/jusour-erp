@@ -4829,6 +4829,8 @@ ar:
         max_quantity: "الحد الأقصى"
         shelf_life_days: "مدة الصلاحية (أيام)"
         attendance_status_id: "الحالة"
+        quantity_on_hand: "الكمية المتوفرة"
+        location_id: "الموقع"
       values:
         recurrence:
           one_time: "مرة واحدة"

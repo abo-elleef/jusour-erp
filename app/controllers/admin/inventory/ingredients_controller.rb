@@ -67,8 +67,12 @@ module Admin
         # batches actually say.
         @manufactured = @ingredient.output_manufacturing_templates.exists?
         @batch_cost_cents = ::Inventory::SyncManufacturedCostService.preview(ingredient: @ingredient) if @manufactured
-        @audits = @ingredient.audits.includes(:user).reorder(version: :desc).limit(50)
-        @audits_total = @ingredient.audits.count
+        # Own field edits plus any IngredientLocation audit associated with this
+        # ingredient (per-location stock changes) — one merged timeline, newest
+        # first. Mixing two models means their independent `version` counters
+        # aren't comparable, so this sorts by created_at instead.
+        @audits = @ingredient.own_and_associated_audits.includes(:user, :auditable).limit(50)
+        @audits_total = @ingredient.own_and_associated_audits.count
       end
 
       # Full, paginated adjustment ledger for one ingredient, filterable by

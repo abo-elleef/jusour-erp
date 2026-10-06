@@ -706,6 +706,11 @@
                         end %>">
                     <%= t("accounting.audit_history.actions.#{audit.action}", default: audit.action.to_s) %>
                   </span>
+                  <% if audit.auditable_type == "IngredientLocation" %>
+                    <span class="block text-[11px] text-gray-500 mt-1">
+                      <%= audit.auditable&.location&.name || t("accounting.shared.em_dash") %>
+                    </span>
+                  <% end %>
                 </td>
                 <td class="p-3 pe-5 text-sm text-gray-700">
                   <% if rows.empty? %>

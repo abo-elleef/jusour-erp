@@ -105,4 +105,25 @@ RSpec.describe "Catalog audited change history", type: :request do
       expect(response.body).to include("Chicken Thigh")
     end
   end
+
+  describe "IngredientLocation" do
+    it "merges per-location stock audits into the ingredient's own history" do
+      ingredient = create(:ingredient, company: company, name: "Water")
+      location = create(:location, company: company, name: "Central Warehouse")
+      il = create(:ingredient_location, ingredient: ingredient, location: location, quantity_on_hand: 87.0)
+      expect(il.audits.where(action: "create")).to exist
+
+      il.update!(quantity_on_hand: 83.0)
+      update_audit = il.audits.find_by!(action: "update")
+      expect(update_audit.audited_changes.keys).to include("quantity_on_hand")
+      expect(update_audit.audited_changes.keys).not_to include("ingredient_id")
+      expect(update_audit.associated).to eq(ingredient)
+
+      get admin_inventory_ingredient_path(ingredient)
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("accounting.audit_history.title"))
+      expect(response.body).to include(I18n.t("accounting.audit_history.fields.quantity_on_hand"))
+      expect(response.body).to include("Central Warehouse")
+    end
+  end
 end

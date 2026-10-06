@@ -4804,6 +4804,8 @@ en:
         max_quantity: "Max quantity"
         shelf_life_days: "Shelf life (days)"
         attendance_status_id: "Status"
+        quantity_on_hand: "Quantity on hand"
+        location_id: "Location"
       values:
         recurrence:
           one_time: "One time"

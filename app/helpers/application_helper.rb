@@ -449,7 +449,7 @@ module ApplicationHelper
   end
 
   AUDIT_HISTORY_HIDDEN_FIELDS = %w[
-    company_id source_record_id source_record_type
+    company_id source_record_id source_record_type ingredient_id
   ].freeze
 
   AUDIT_HISTORY_ASSOCIATIONS = {
@@ -462,7 +462,8 @@ module ApplicationHelper
     "category_id" => [Category, :name],
     "ingredient_category_id" => [IngredientCategory, :name],
     "unit_id" => [Unit, :name],
-    "attendance_status_id" => [AttendanceStatus, :label_with_symbol]
+    "attendance_status_id" => [AttendanceStatus, :label_with_symbol],
+    "location_id" => [Location, :name]
   }.freeze
 
   def audit_history_rows(audit)

@@ -11,6 +11,21 @@
       "autoPort": true
     },
     {
+      "name": "Rails (dev db)",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "DATABASE_URL=postgres:///saqr_pos_development",
+        "bin/rails",
+        "server",
+        "-p",
+        "3002",
+        "--pid",
+        "tmp/pids/server-dev-db.pid"
+      ],
+      "port": 3002,
+      "autoPort": false
+    },
+    {
       "name": "Rails (prod copy)",
       "runtimeExecutable": "env",
       "runtimeArgs": [

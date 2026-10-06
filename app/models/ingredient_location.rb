@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
 class IngredientLocation < ApplicationRecord
+  # Unlike Ingredient (which excludes quantity_on_hand as too noisy for its own
+  # audit), this is the one place we want every quantity_on_hand write on
+  # record — it's the only way to catch a write that bypasses the
+  # StockAdjustment ledger and silently desyncs balance_after from reality.
+  audited associated_with: :ingredient
+
   belongs_to :ingredient
   belongs_to :location
 
