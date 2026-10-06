@@ -32,7 +32,11 @@
   </div>
   <div>
     <%= f.label :amount_pounds, t("accounting.shared.amount"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-    <%= f.number_field :amount_pounds, min: 0.01, step: "0.01", class: pos_input_class %>
+    <%# type="text", not "number": a native number input silently rejects Arabic-Indic
+        digits. arabic-numerals converts them to ASCII as the user types. %>
+    <%= f.text_field :amount_pounds, inputmode: "decimal", autocomplete: "off",
+          data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" },
+          class: pos_input_class %>
   </div>
   <div>
     <%= f.label :income_date, t("accounting.shared.day"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>

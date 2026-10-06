@@ -81,6 +81,7 @@
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden"
            data-controller="stock-transfer-lines nested-line-sortable"
+           data-action="keydown->stock-transfer-lines#keydown"
            data-searchable-select-options="<%= ingredient_search_options(@ingredients) %>"
            data-stock-transfer-lines-available-units-value="<%= @ingredient_available_units.to_json %>"
            data-stock-transfer-lines-ingredient-categories-value="<%= ingredient_categories_json(@ingredients) %>"

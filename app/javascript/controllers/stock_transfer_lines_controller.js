@@ -80,6 +80,10 @@ export default class extends Controller {
 
   add(event) {
     event.preventDefault()
+    this.addRow()
+  }
+
+  addRow() {
     const content = this.templateTarget.innerHTML.replace(/NEW_RECORD/g, Date.now())
     this.listTarget.insertAdjacentHTML("beforeend", content)
     const row = this.rowTargets[this.rowTargets.length - 1]
@@ -87,6 +91,46 @@ export default class extends Controller {
     this.refreshRowIndices()
     this.refreshLineCount()
     this.refreshDuplicateHighlights()
+    return row
+  }
+
+  // Excel-like Enter behavior: move to the next field instead of submitting the
+  // form. Skipped if an inner control (e.g. the searchable-select dropdown)
+  // already handled the key itself (it calls preventDefault when it does).
+  keydown(event) {
+    if (event.key !== "Enter" || event.defaultPrevented) return
+
+    const row = event.target.closest("[data-stock-transfer-lines-target='row']")
+    if (!row) return
+
+    const fields = this.navigableFieldsIn(row)
+    const index = fields.indexOf(event.target)
+    if (index === -1) return
+
+    event.preventDefault()
+
+    const next = fields[index + 1]
+    if (next) {
+      this.focusField(next)
+    } else {
+      this.focusFirstFieldOfNextRow(row)
+    }
+  }
+
+  navigableFieldsIn(row) {
+    return Array.from(row.querySelectorAll('input:not([type="hidden"]), select'))
+  }
+
+  focusField(field) {
+    field.focus()
+    if (typeof field.select === "function") field.select()
+  }
+
+  focusFirstFieldOfNextRow(row) {
+    const rows = this.visibleRows()
+    const nextRow = rows[rows.indexOf(row) + 1] || this.addRow()
+    const [firstField] = this.navigableFieldsIn(nextRow)
+    if (firstField) this.focusField(firstField)
   }
 
   recommendRequested(event) {
@@ -127,6 +171,20 @@ export default class extends Controller {
     }
 
     this.refreshDuplicateHighlights()
+
+    // The dropdown swallows its own Enter keypress (to pick the highlighted
+    // option) before it ever reaches our row-level keydown handler, so without
+    // this the Excel-like "Enter moves to the next field" flow would stall on
+    // the ingredient cell. Advance here instead, for both a mouse pick and an
+    // Enter pick.
+    this.focusFieldAfterIngredient(row)
+  }
+
+  focusFieldAfterIngredient(row) {
+    const ingredientField = row.querySelector("[data-searchable-select-target='input']")
+    const fields = this.navigableFieldsIn(row)
+    const next = fields[fields.indexOf(ingredientField) + 1]
+    if (next) this.focusField(next)
   }
 
   remove(event) {
