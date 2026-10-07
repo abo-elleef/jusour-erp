@@ -1,0 +1,54 @@
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
+    <div>
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.wages_ledger.title") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("staff.wages_ledger.balance_hint") %></p>
+    </div>
+    <div class="text-end">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.wages_ledger.balance") %></p>
+      <p class="text-lg font-bold tabular-nums text-gray-900"><%= format_amount(wages_balance_cents) %></p>
+    </div>
+  </div>
+
+  <% if wages_lines.empty? %>
+    <p class="p-8 text-center text-sm text-gray-400"><%= t("staff.wages_ledger.no_movements") %></p>
+  <% else %>
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <tr>
+          <th class="p-3 ps-5 text-start w-28"><%= t("staff.wages_ledger.date") %></th>
+          <th class="p-3 text-start w-32"><%= t("staff.wages_ledger.number") %></th>
+          <th class="p-3 text-start"><%= t("staff.wages_ledger.description") %></th>
+          <th class="p-3 text-end w-32"><%= t("staff.wages_ledger.debit") %></th>
+          <th class="p-3 pe-5 text-end w-32"><%= t("staff.wages_ledger.credit") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 table-zebra">
+        <% wages_lines.each do |line| %>
+          <% voucher_path = journal_entry_source_path(line.journal_entry) if line.journal_entry.source_record_type == "Voucher" %>
+          <tr class="hover:bg-blue-50/30 transition-colors cursor-pointer"
+              onclick="window.location='<%= admin_accounting_journal_entry_path(line.journal_entry) %>'">
+            <td class="p-3 ps-5 text-gray-500 tabular-nums"><%= l(line.journal_entry.date, format: :short) %></td>
+            <td class="p-3 font-mono text-xs text-blue-700 font-semibold"><%= line.journal_entry.entry_number %></td>
+            <td class="p-3 text-gray-900">
+              <% if voucher_path %>
+                <%# Breaks out of the row's own click-through to the journal entry. %>
+                <%= link_to line.journal_entry.description, voucher_path,
+                      onclick: "event.stopPropagation()",
+                      class: "text-amber-700 hover:text-amber-900 hover:underline underline-offset-2" %>
+              <% else %>
+                <%= line.journal_entry.description %>
+              <% end %>
+            </td>
+            <td class="p-3 text-end tabular-nums <%= line.debit_cents > 0 ? 'text-red-700 font-semibold' : 'text-gray-300' %>">
+              <%= line.debit_cents > 0 ? format_amount(line.debit_cents) : "—" %>
+            </td>
+            <td class="p-3 pe-5 text-end tabular-nums <%= line.credit_cents > 0 ? 'text-green-700 font-semibold' : 'text-gray-300' %>">
+              <%= line.credit_cents > 0 ? format_amount(line.credit_cents) : "—" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</section>

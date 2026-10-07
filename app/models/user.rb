@@ -5,6 +5,7 @@ require "bcrypt"
 class User < ApplicationRecord
   include Tenantable
   include MoneyInputs
+  include Accountable
 
   audited associated_with: :company,
     except: %i[
@@ -22,6 +23,14 @@ class User < ApplicationRecord
   WORK_DAYS_PER_MONTH = 30
   WORK_HOURS_PER_MONTH = 300
 
+  # Accountable — every employee's own payroll sub-account (salary, advances,
+  # staff meals all land here), rolling up into one company-wide "Wages and
+  # salaries" line on the chart of accounts (ChartOfAccountsService#wages_expense_line).
+  # A fresh, otherwise-unused block: ExpenseCategory grows upward from 5000
+  # and the fixed payroll/purchases/interest codes already live in that
+  # decade (5100/5500-5503/5600), so per-employee codes get their own space.
+  WAGES_ACCOUNT_CODE_BASE = 6000
+
   devise :database_authenticatable, :recoverable, :rememberable
 
   validates :name, presence: true
@@ -34,8 +43,10 @@ class User < ApplicationRecord
   validates :password, confirmation: true, if: :password_required?
   validates :password, length: { within: 6..128 }, allow_blank: true
   validates :payroll_access_token, presence: true, uniqueness: true
+  validates :wages_account_code, presence: true, uniqueness: { scope: :company_id }
 
   before_validation :assign_payroll_access_token, on: :create
+  before_validation :assign_wages_account_code, on: :create
   before_validation :sync_hourly_rate_from_monthly_salary
 
   scope :active, -> { where(active: true) }
@@ -306,7 +317,31 @@ class User < ApplicationRecord
     Accounting::MonthlyPayrollService.new(self, payroll_month, sort: sort, direction: direction).call
   end
 
+  # Accountable — salary, advances and staff meals all post here once they're
+  # attributed to this specific employee (see JournalEntryService). Expense
+  # accounts read debit-less-credit, the mirror of Loan/Partner's
+  # credit-less-debit, since this one carries a debit normal balance.
+  def account_code = wages_account_code
+  def account_name = "#{name} — رواتب وأجور"
+  def account_type = "expense"
+  def normal_balance = :debit
+
+  def wages_balance_cents
+    wages_account_lines.sum(:debit_cents) - wages_account_lines.sum(:credit_cents)
+  end
+
   private
+
+  def wages_account_lines
+    JournalEntryLine.joins(:journal_entry)
+                    .where(journal_entries: { company_id: company_id })
+                    .where(account_code: wages_account_code)
+  end
+
+  def assign_wages_account_code
+    last = self.class.where(company_id: company_id).maximum(:wages_account_code) || WAGES_ACCOUNT_CODE_BASE
+    self.wages_account_code = last + 1
+  end
 
   def ensure_assigned_treasury
     return if assigned_treasury_id.present? || assigned_treasury.present?

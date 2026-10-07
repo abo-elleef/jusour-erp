@@ -38,12 +38,20 @@ module Accounting
     }.freeze
 
     FIXED_EXPENSE_ACCOUNTS = [
-      { code: JournalEntryService::ADVANCE_CODE,   name_key: "accounting.journal_entries.accounts.payroll_advances" },
-      { code: JournalEntryService::SALARY_CODE,    name_key: "accounting.journal_entries.accounts.salaries" },
-      { code: JournalEntryService::STAFF_MEAL_CODE, name_key: "accounting.journal_entries.accounts.staff_meals" },
       { code: JournalEntryService::COGS_CODE,      name_key: "accounting.journal_entries.accounts.purchases" },
       { code: JournalEntryService::INTEREST_CODE,  name_key: "accounting.loans.interest_expense_account" }
     ].freeze
+
+    # Codes salary/advance/staff-meal entries posted to before every employee
+    # had their own account (see User#account_code). Kept here so history
+    # written against the pool still reaches the "Wages and salaries" total —
+    # see wages_expense_line.
+    POOLED_WAGES_CODES = [
+      JournalEntryService::ADVANCE_CODE,
+      JournalEntryService::SALARY_CODE,
+      JournalEntryService::STAFF_MEAL_CODE
+    ].freeze
+    WAGES_SUMMARY_CODE = User::WAGES_ACCOUNT_CODE_BASE
 
     # ── Current assets ────────────────────────────────────────────────
 
@@ -321,7 +329,7 @@ module Accounting
     # so charging it again when it is sold would count the same cost twice.
     def dynamic_expense_lines
       @dynamic_expense_lines ||= ledger_totals(:expense)
-        .except(*FIXED_EXPENSE_ACCOUNTS.map { |a| a[:code] })
+        .except(*FIXED_EXPENSE_ACCOUNTS.map { |a| a[:code] }, *POOLED_WAGES_CODES, *wages_employee_codes)
         .map do |code, (name, cents)|
         AccountLine.new(
           code:           code,
@@ -343,7 +351,7 @@ module Accounting
         if @start_date && @end_date
           je_scope = je_scope.where(journal_entries: { date: @start_date..@end_date })
         end
-        FIXED_EXPENSE_ACCOUNTS.filter_map do |acct|
+        lines = FIXED_EXPENSE_ACCOUNTS.filter_map do |acct|
           total = je_scope.where(account_code: acct[:code]).sum(:debit_cents)
           next if total == 0
 
@@ -356,7 +364,31 @@ module Accounting
             normal_balance: :debit
           )
         end
+        wages_line = wages_expense_line(je_scope)
+        lines << wages_line if wages_line
+        lines
       end
+    end
+
+    # One line for every employee's own payroll account plus whatever still
+    # sits in the pooled codes from before each employee had one (see
+    # User#account_code and POOLED_WAGES_CODES) — salary, advances, and staff
+    # meals all collapse into the single "Wages and salaries" figure an owner
+    # actually wants on the P&L, while still letting Staff#show drill into one
+    # person's own account.
+    def wages_expense_line(je_scope)
+      codes = POOLED_WAGES_CODES + wages_employee_codes
+      total = je_scope.where(account_code: codes).sum(:debit_cents)
+      return nil if total.zero?
+
+      AccountLine.new(
+        code:           WAGES_SUMMARY_CODE,
+        name:           I18n.t("accounting.journal_entries.accounts.wages_and_salaries"),
+        account_type:   :expense,
+        subtype:        "fixed_expense",
+        balance_cents:  total,
+        normal_balance: :debit
+      )
     end
 
     def expense_lines
@@ -389,11 +421,7 @@ module Accounting
       total_revenue_cents - cogs
     end
 
-    PAYROLL_CODES = [
-      JournalEntryService::ADVANCE_CODE,
-      JournalEntryService::SALARY_CODE,
-      JournalEntryService::STAFF_MEAL_CODE
-    ].freeze
+    PAYROLL_CODES = [WAGES_SUMMARY_CODE].freeze
 
     # Expenses excluding purchases (5100), for display below Gross Profit.
     def operating_expense_lines
@@ -434,6 +462,10 @@ module Accounting
         .active
         .where(treasury_type: "supplier_ap")
         .order(:name)
+    end
+
+    def wages_employee_codes
+      @wages_employee_codes ||= User.where(company_id: Current.company.id).pluck(:wages_account_code)
     end
 
     # Liability postings, cumulative up to the end of the period. Deliberately

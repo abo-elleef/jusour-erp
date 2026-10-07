@@ -3,8 +3,8 @@
 require "rails_helper"
 
 # Advances happen daily here — 226 of them, 228,966 — and left no document.
-# They are vouchers now, settling the advance against the advances account
-# (5500), which is exactly the entry they posted before.
+# They are vouchers now, settling the advance against the employee's own
+# payroll account (see User#account_code) rather than the old pooled 5500.
 RSpec.describe "Paying a payroll advance" do
   include ActiveSupport::Testing::TimeHelpers
 
@@ -36,7 +36,7 @@ RSpec.describe "Paying a payroll advance" do
     expect(voucher.amount_cents).to eq(100_000)
   end
 
-  it "posts the same entry it always did — DR advances, CR the treasury" do
+  it "posts DR the employee's own payroll account, CR the treasury" do
     advance = pay!
     voucher = advance.payment_allocations.sole.payment
 
@@ -45,7 +45,7 @@ RSpec.describe "Paying a payroll advance" do
 
     debit  = entry.lines.find { |l| l.debit_cents.positive? }
     credit = entry.lines.find { |l| l.credit_cents.positive? }
-    expect(debit.account_code).to eq(Accounting::JournalEntryService::ADVANCE_CODE)
+    expect(debit.account_code).to eq(staff.account_code)
     expect(credit.treasury_id).to eq(safe.id)
     expect(safe.reload.balance_cents).to eq(400_000)
   end

@@ -70,7 +70,10 @@ module Accounting
         name = I18n.t(acct[:name_key])
         [ "#{acct[:code]}  #{name}", encode(:fixed_expense, acct[:code], name, "expense") ]
       end
-      [ I18n.t("accounting.journal_entries.account_types.expense"), dynamic + fixed ]
+      staff = User.active.order(:name).map do |u|
+        [ "#{u.account_code}  #{u.account_name}", encode(:user, u.id, u.account_name, "expense") ]
+      end
+      [ I18n.t("accounting.journal_entries.account_types.expense"), dynamic + fixed + staff ]
     end
 
     # Encode all account info into the option value so the controller can decode it

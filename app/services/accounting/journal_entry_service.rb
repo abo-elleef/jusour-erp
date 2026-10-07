@@ -179,7 +179,7 @@ module Accounting
         when ::VendorInvoice          then settles.supplier.to_account
         when ::CustomerInvoice        then settles.customer.to_account
         when ::Customer, ::Supplier   then settles.to_account
-        when ::PayrollAdvance         then SystemAccount::PAYROLL_ADVANCES.to_account
+        when ::PayrollAdvance         then settles.user.to_account
         else default_counter_for(voucher)
         end
       end
@@ -381,7 +381,7 @@ module Accounting
                                     employee: snapshot.user.name,
                                     month: I18n.l(snapshot.payroll_month, format: "%B %Y"),
                                     default: "Payroll Salary — #{snapshot.user.name}") do |lines|
-          lines << debit(SystemAccount::SALARIES, snapshot.remaining_pay_cents)
+          lines << debit(snapshot.user, snapshot.remaining_pay_cents)
           lines << credit(snapshot.treasury, snapshot.remaining_pay_cents)
         end
       end
@@ -391,7 +391,7 @@ module Accounting
         create! source: order, date: Date.current, user: user,
                 description: I18n.t("accounting.journal_entries.auto.staff_meal",
                                     default: "Staff Meal Deduction") do |lines|
-          lines << debit(SystemAccount::STAFF_MEALS, order.total_cents)
+          lines << debit(order.staff_meal_user, order.total_cents)
           lines << credit(treasury, order.total_cents)
         end
       end

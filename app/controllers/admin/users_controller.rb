@@ -112,7 +112,20 @@ module Admin
       @payroll_summary = @user.monthly_payroll(@payroll_month, sort: @payroll_sort, direction: @payroll_direction)
       @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       @default_treasury = Treasury.default_treasury
+      load_wages_ledger
       load_attendance_audits
+    end
+
+    # This employee's own payroll account (see User#account_code) — salary,
+    # advances and staff meals all land here, same ledger shape as the
+    # Loan/Partner show pages.
+    def load_wages_ledger
+      @wages_balance_cents = @user.wages_balance_cents
+      @wages_lines = JournalEntryLine.joins(:journal_entry)
+        .where(journal_entries: { company_id: Current.company.id })
+        .where(account_code: @user.account_code)
+        .includes(:journal_entry)
+        .order("journal_entries.date DESC, journal_entries.entry_number DESC")
     end
 
     # Every change (create/clear/re-set) to this staff member's attendance for

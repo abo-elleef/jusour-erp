@@ -79,6 +79,7 @@ RSpec.describe Accounting::ChartOfAccountsService do
   describe "#fixed_expense_lines date filtering" do
     let(:salary_code) { Accounting::JournalEntryService::SALARY_CODE }
     let(:advance_code) { Accounting::JournalEntryService::ADVANCE_CODE }
+    let(:wages_code) { Accounting::ChartOfAccountsService::WAGES_SUMMARY_CODE }
 
     before do
       create_expense_je(code: salary_code, amount_cents: 30_000, date: Date.new(2025, 1, 15))
@@ -86,21 +87,23 @@ RSpec.describe Accounting::ChartOfAccountsService do
       create_expense_je(code: advance_code, amount_cents: 5_000,  date: Date.new(2025, 2, 1))
     end
 
+    # Salary and advances posted to the old pooled codes (history, from before
+    # every employee had their own account) collapse into one "Wages and
+    # salaries" line alongside anything posted to an employee's own account —
+    # see ChartOfAccountsService#wages_expense_line and POOLED_WAGES_CODES.
     it "returns only entries within the date range" do
       coa = described_class.new(start_date: Date.new(2025, 1, 1), end_date: Date.new(2025, 1, 31))
-      salary_line = coa.fixed_expense_lines.find { |l| l.code == salary_code }
+      wages_line = coa.fixed_expense_lines.find { |l| l.code == wages_code }
 
-      expect(salary_line).not_to be_nil
-      expect(salary_line.balance_cents).to eq(30_000)
+      expect(wages_line).not_to be_nil
+      expect(wages_line.balance_cents).to eq(30_000)
     end
 
     it "sums entries across a wider range" do
       coa = described_class.new(start_date: Date.new(2025, 1, 1), end_date: Date.new(2025, 12, 31))
-      salary_line = coa.fixed_expense_lines.find { |l| l.code == salary_code }
-      advance_line = coa.fixed_expense_lines.find { |l| l.code == advance_code }
+      wages_line = coa.fixed_expense_lines.find { |l| l.code == wages_code }
 
-      expect(salary_line.balance_cents).to eq(60_000)
-      expect(advance_line.balance_cents).to eq(5_000)
+      expect(wages_line.balance_cents).to eq(65_000)
     end
 
     it "omits accounts with zero total for the period" do
@@ -113,11 +116,11 @@ RSpec.describe Accounting::ChartOfAccountsService do
       jan_coa = described_class.new(start_date: Date.new(2025, 1, 1), end_date: Date.new(2025, 1, 31))
       mar_coa = described_class.new(start_date: Date.new(2025, 3, 1), end_date: Date.new(2025, 3, 31))
 
-      jan_salary = jan_coa.fixed_expense_lines.find { |l| l.code == salary_code }
-      mar_salary = mar_coa.fixed_expense_lines.find { |l| l.code == salary_code }
+      jan_wages = jan_coa.fixed_expense_lines.find { |l| l.code == wages_code }
+      mar_wages = mar_coa.fixed_expense_lines.find { |l| l.code == wages_code }
 
-      expect(jan_salary.balance_cents).to eq(30_000)
-      expect(mar_salary.balance_cents).to eq(30_000)
+      expect(jan_wages.balance_cents).to eq(30_000)
+      expect(mar_wages.balance_cents).to eq(30_000)
     end
 
     it "feeds into net_income correctly" do

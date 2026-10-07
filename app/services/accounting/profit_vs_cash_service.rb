@@ -163,10 +163,14 @@ module Accounting
       @advances_paid_cents ||= asset_treasury_transactions.where(kind: "payroll_advance").sum(:amount_cents).abs
     end
 
+    # Reads PayrollAdvance directly rather than a ledger account code: each
+    # advance now posts to its own employee's account (see User#account_code),
+    # which also carries that employee's salary and staff meals, so the
+    # ledger alone can no longer isolate "just advances". The advance row
+    # itself still can — same amount, same paid_on, voided or deleted drops
+    # out on its own.
     def advances_expensed_cents
-      @advances_expensed_cents ||= journal_lines
-        .where(account_code: ::Accounting::JournalEntryService::ADVANCE_CODE)
-        .sum("debit_cents - credit_cents")
+      @advances_expensed_cents ||= PayrollAdvance.where(paid_on: @start_date..@end_date).sum(:amount_cents)
     end
 
     # Card and wallet takings clear Sales clearing (1160) rather than crediting

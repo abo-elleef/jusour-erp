@@ -189,6 +189,8 @@ module Admin
           Partner.find_by(id: id)&.account_code || 3199
         when "loan"
           Loan.find_by(id: id)&.account_code || 2199
+        when "user"
+          User.find_by(id: id)&.account_code || 5999
         else
           5999
         end

@@ -167,6 +167,33 @@ RSpec.describe "Admin::Users", type: :request do
       end
     end
 
+    describe "GET /admin/users/:id payroll account ledger" do
+      it "shows the balance and links a voucher-sourced row to the voucher" do
+        staff = create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000)
+        treasury = Treasury.create!(company: company, name: "Safe", treasury_type: "safe",
+                                    opening_balance_cents: 100_000, balance_cents: 100_000)
+        advance = Accounting::PayPayrollAdvanceService.new(
+          user: staff, amount_cents: 20_000, treasury: treasury, paid_by: owner, paid_on: Date.current
+        ).call
+        voucher = advance.payment_allocations.sole.payment
+
+        get admin_user_path(staff)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(I18n.t("staff.wages_ledger.title"))
+        expect(response.body).to include(admin_accounting_voucher_path(voucher))
+      end
+
+      it "shows no movements for a staff member with no payroll activity" do
+        staff = create(:user, company: company, role: "cashier")
+
+        get admin_user_path(staff)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(I18n.t("staff.wages_ledger.no_movements"))
+      end
+    end
+
     describe "DELETE /admin/users/:id" do
       it "deactivates a staff member" do
         staff = create(:user, company: company)
