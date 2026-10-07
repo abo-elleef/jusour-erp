@@ -22,15 +22,18 @@
   <%= render "admin/accounting/date_range_form" %>
 
   <%# Direction filter %>
-  <% base = { start_date: @start_date, end_date: @end_date }.compact_blank %>
-  <div class="flex gap-1 mb-6 border-b border-gray-200">
-    <% [[nil, t("accounting.vouchers.filters.all")],
-        [Voucher::RECEIPT, t("accounting.vouchers.directions.receipt")],
-        [Voucher::PAYMENT, t("accounting.vouchers.directions.payment")]].each do |value, label| %>
-      <% active = params[:direction].presence == value %>
-      <%= link_to label, admin_accounting_vouchers_path(base.merge(direction: value).compact_blank),
-            class: "px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors #{active ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}" %>
-    <% end %>
+  <% base = { start_date: @start_date, end_date: @end_date, treasury_id: params[:treasury_id] }.compact_blank %>
+  <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+    <div class="flex gap-1 border-b border-gray-200">
+      <% [[nil, t("accounting.vouchers.filters.all")],
+          [Voucher::RECEIPT, t("accounting.vouchers.directions.receipt")],
+          [Voucher::PAYMENT, t("accounting.vouchers.directions.payment")]].each do |value, label| %>
+        <% active = params[:direction].presence == value %>
+        <%= link_to label, admin_accounting_vouchers_path(base.merge(direction: value).compact_blank),
+              class: "px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors #{active ? 'border-gray-900 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700'}" %>
+      <% end %>
+    </div>
+    <%= render "admin/accounting/treasury_filter" %>
   </div>
 
   <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">

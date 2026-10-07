@@ -15,6 +15,10 @@
   </div>
   <%= render "admin/accounting/date_range_form" %>
 
+  <div class="mb-4">
+    <%= render "admin/accounting/treasury_filter" %>
+  </div>
+
   <%# Search bar %>
   <%= search_form_for @q, url: admin_accounting_expenses_path, method: :get,
         html: { class: "mb-4" } do |f| %>
@@ -40,7 +44,7 @@
   <% end %>
 
   <%# Tab switcher %>
-  <% base_params = { start_date: @start_date, end_date: @end_date, category_id: params[:category_id] }.compact_blank %>
+  <% base_params = { start_date: @start_date, end_date: @end_date, category_id: params[:category_id], treasury_id: params[:treasury_id] }.compact_blank %>
   <div class="flex gap-1 mb-6 border-b border-gray-200">
     <%= link_to t("accounting.expenses.tabs.transactions"),
           admin_accounting_expenses_path(base_params.merge(tab: "transactions")),
@@ -134,7 +138,7 @@
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3">
         <% @totals_by_category.each do |(category_id, category_name), cents| %>
           <% active = @active_category_id == category_id.to_s %>
-          <% filter_params = { start_date: @start_date, end_date: @end_date } %>
+          <% filter_params = { start_date: @start_date, end_date: @end_date, treasury_id: params[:treasury_id] }.compact_blank %>
           <% filter_params[:category_id] = category_id unless active %>
           <%= link_to admin_accounting_expenses_path(filter_params),
                 class: "rounded-2xl border p-3 transition-colors #{active ? 'border-amber-400 bg-amber-50 ring-1 ring-amber-400' : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/50'}" do %>

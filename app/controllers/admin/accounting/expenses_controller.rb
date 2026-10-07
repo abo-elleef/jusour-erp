@@ -20,6 +20,7 @@ module Admin
         scope = scope.on_date_range(@start_date, @end_date)
         scope = scope.where(is_auto_generated: false) if params[:manual_only] == "1"
         scope = scope.where(expense_category_id: params[:category_id]) if params[:category_id].present?
+        scope = scope.where(treasury_id: params[:treasury_id]) if params[:treasury_id].present?
         @total_count = scope.count
         totals_scope = scope.unscope(:includes)
         @total_active_cents  = totals_scope.sum(:amount_cents)
@@ -48,11 +49,13 @@ module Admin
 
         @pagy, @expenses = pagy(:offset, ordered, limit: 50)
         @active_category_id = params[:category_id].presence
-        @totals_by_category = Expense.joins(:expense_category)
-          .on_date_range(@start_date, @end_date)
+        totals_by_category_scope = Expense.joins(:expense_category).on_date_range(@start_date, @end_date)
+        totals_by_category_scope = totals_by_category_scope.where(treasury_id: params[:treasury_id]) if params[:treasury_id].present?
+        @totals_by_category = totals_by_category_scope
           .group("expense_categories.id", "expense_categories.name")
           .sum(:amount_cents)
         @categories = ExpenseCategory.ordered
+        @treasuries = Treasury.active.visible_to(current_user).ordered
       end
 
       def new

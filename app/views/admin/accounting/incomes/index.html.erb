@@ -16,6 +16,10 @@
   </div>
   <%= render "admin/accounting/date_range_form" %>
 
+  <div class="mb-4">
+    <%= render "admin/accounting/treasury_filter" %>
+  </div>
+
   <%# Search bar %>
   <%= search_form_for @q, url: admin_accounting_incomes_path, method: :get,
         html: { class: "mb-4" } do |f| %>

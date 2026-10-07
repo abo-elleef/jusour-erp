@@ -1,0 +1,20 @@
+<%# Treasury filter — carries forward whatever else narrowed the page (date
+    range, category, search, direction) so picking a treasury doesn't reset it,
+    and auto-submits on change like the cash drawer filter. %>
+<%= form_with url: request.path, method: :get, data: { controller: "auto-submit" }, class: "min-w-[10rem]" do %>
+  <% params.to_unsafe_h.except("treasury_id", "page", "controller", "action", "format").each do |key, value| %>
+    <% if value.is_a?(Hash) %>
+      <% value.each do |k, v| %>
+        <%= hidden_field_tag "#{key}[#{k}]", v %>
+      <% end %>
+    <% else %>
+      <%= hidden_field_tag key, value %>
+    <% end %>
+  <% end %>
+  <%= label_tag :treasury_id, t("accounting.shared.treasury"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+  <%= select_tag :treasury_id,
+        options_from_collection_for_select(@treasuries, :id, :name, params[:treasury_id]),
+        include_blank: t("accounting.shared.all_treasuries"),
+        class: pos_input_class,
+        data: { action: "change->auto-submit#submit" } %>
+<% end %>

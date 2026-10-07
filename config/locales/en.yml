@@ -4096,6 +4096,7 @@ en:
       week_starting: "Week starting"
       category: "Category"
       treasury: "Treasury"
+      all_treasuries: "All treasuries"
       party: "Party"
       party_placeholder: "Search by name…"
       party_hint: "Optional — leave blank and describe who in the description if they're not in the system yet."

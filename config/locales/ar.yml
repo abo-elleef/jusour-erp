@@ -4115,6 +4115,7 @@ ar:
       week_starting: "بداية الأسبوع"
       category: "التصنيف"
       treasury: "الخزينة"
+      all_treasuries: "كل الخزائن"
       party: "الطرف"
       party_placeholder: "ابحث بالاسم…"
       party_hint: "اختياري — اتركه فارغًا واذكر الطرف في الوصف إذا لم يكن مسجلاً في النظام بعد."

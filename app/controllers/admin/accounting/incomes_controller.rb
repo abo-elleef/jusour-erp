@@ -20,6 +20,7 @@ module Admin
         scope = scope.on_date_range(@start_date, @end_date)
         scope = scope.where(is_auto_generated: false) if params[:manual_only] == "1"
         scope = scope.where(income_category_id: params[:category_id]) if params[:category_id].present?
+        scope = scope.where(treasury_id: params[:treasury_id]) if params[:treasury_id].present?
 
         @total_count = scope.count
         @range_sums = [
@@ -41,11 +42,13 @@ module Admin
 
         @pagy, @incomes = pagy(:offset, ordered, limit: 50)
         @active_category_id = params[:category_id].presence
-        @totals_by_category = Income.joins(:income_category)
-          .on_date_range(@start_date, @end_date)
+        totals_by_category_scope = Income.joins(:income_category).on_date_range(@start_date, @end_date)
+        totals_by_category_scope = totals_by_category_scope.where(treasury_id: params[:treasury_id]) if params[:treasury_id].present?
+        @totals_by_category = totals_by_category_scope
           .group("income_categories.id", "income_categories.name")
           .sum(:amount_cents)
         @categories = IncomeCategory.ordered
+        @treasuries = Treasury.active.visible_to(current_user).ordered
       end
 
       def new
