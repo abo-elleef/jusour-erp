@@ -288,6 +288,37 @@ RSpec.describe "Admin::Accounting::Loans", type: :request do
     end
   end
 
+  # ── Ledger links ──────────────────────────────────────────────────────────────
+
+  describe "GET /admin/accounting/loans/:id (ledger)" do
+    # A payment voucher can also name a Loan as its own party (money moved on
+    # account, nothing settled) rather than going through the dedicated
+    # repayment/interest/disbursement actions — that journal entry's source is
+    # the Voucher itself, so the ledger row needs its own link back to it.
+    it "links a voucher-sourced row's description to the voucher" do
+      voucher = Accounting::RecordVoucherService.new(
+        direction: Voucher::PAYMENT, treasury: cash, user: owner, amount_cents: 1_000,
+        party_type: "Loan", party_id: loan.id
+      ).call
+
+      get admin_accounting_loan_path(loan)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(admin_accounting_voucher_path(voucher))
+    end
+
+    it "does not link a dedicated repayment row (it has no source record at all)" do
+      post create_repayment_admin_accounting_loan_path(loan), params: {
+        treasury_id: cash.id, amount: "500", date: Date.current.to_s
+      }
+
+      get admin_accounting_loan_path(loan)
+
+      expect(JournalEntry.last.source_record).to be_nil
+      expect(response.body).not_to match(%r{/admin/accounting/vouchers/})
+    end
+  end
+
   # ── Access control ────────────────────────────────────────────────────────────
 
   describe "access control" do

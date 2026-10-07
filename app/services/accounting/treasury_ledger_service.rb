@@ -163,6 +163,52 @@ module Accounting
           source: voucher
         )
       end
+
+      sync_voucher_remainder_counterparty!(voucher)
+    end
+
+    # Mirrors JournalEntryService#default_counter_for: whatever a voucher
+    # doesn't allocate to an invoice is money moved on account against the
+    # voucher's own party, and that leg already redirects to the party's own
+    # account in the journal entry. When the party keeps a treasury of its
+    # own (a Supplier's AP, a Customer's AR), that treasury has to move the
+    # same amount, or its cached balance drifts from the journal that already
+    # posted there — the bug where a payment voucher naming a vendor leaves
+    # the vendor's AP balance untouched.
+    #
+    # The party picker lets either side be picked on either direction — a
+    # payment voucher can be "paid to" a commercial customer (refunding a
+    # credit balance) just as a receipt voucher could be "received from" a
+    # supplier (a rebate). The journal entry handles this uniformly: it always
+    # posts to the party's own account, and lets receipt-credits/payment-debits
+    # decide whether that grows or shrinks it. AP is a liability (credit grows
+    # it), AR is an asset (debit grows it) — so the direction that shrinks a
+    # vendor's payable is exactly the one that grows a customer's receivable.
+    # `credit_grows` below is the per-account-type half of that; `voucher.receipt?`
+    # is the per-voucher half; matching means the leg grows the balance.
+    def sync_voucher_remainder_counterparty!(voucher)
+      return if voucher.equity_adjustment?
+
+      remainder = voucher.amount_cents - voucher.payment_allocations.sum(&:amount_cents)
+      return unless remainder.positive?
+
+      treasury, kind, credit_grows = case voucher.party
+                                      when ::Supplier then [voucher.party.ap_treasury, "ap_payment", true]
+                                      when ::Customer then [voucher.party.ar_treasury, "ar_payment", false]
+                                      end
+      return if treasury.blank?
+
+      signed_remainder = (voucher.receipt? == credit_grows) ? remainder : -remainder
+
+      record!(
+        treasury: treasury,
+        user: voucher.user,
+        amount_cents: signed_remainder,
+        kind: kind,
+        description: voucher_description(voucher),
+        occurred_on: voucher.voucher_date,
+        source: voucher
+      )
     end
 
     # The float is carried into the drawer from a safe: it leaves one treasury and

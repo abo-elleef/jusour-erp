@@ -207,6 +207,8 @@ module ApplicationHelper
     case je.source_record_type
     when "VendorInvoice"
       admin_inventory_vendor_invoice_path(je.source_record_id)
+    when "Voucher"
+      admin_accounting_voucher_path(je.source_record_id)
     when "VendorInvoicePayment"
       payment = je.source_record
       invoice = payment&.vendor_invoice
@@ -226,6 +228,9 @@ module ApplicationHelper
     when "VendorInvoice"
       record = je.source_record
       record ? "#{t('activerecord.models.vendor_invoice', count: 1)} #{record.invoice_number}" : fallback_je_source_label(je)
+    when "Voucher"
+      record = je.source_record
+      record ? record.number : fallback_je_source_label(je)
     when "VendorInvoicePayment"
       payment = je.source_record
       invoice = payment&.vendor_invoice
@@ -249,6 +254,8 @@ module ApplicationHelper
     case transaction.source_record_type
     when "VendorInvoice"
       admin_inventory_vendor_invoice_path(transaction.source_record_id)
+    when "Voucher"
+      admin_accounting_voucher_path(transaction.source_record_id)
     when "VendorInvoicePayment"
       payment = transaction.source_record
       invoice = payment.vendor_invoice if payment

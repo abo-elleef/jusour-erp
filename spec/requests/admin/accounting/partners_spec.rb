@@ -85,6 +85,33 @@ RSpec.describe "Admin::Accounting::Partners", type: :request do
     end
   end
 
+  describe "GET /admin/accounting/partners/:id (ledger)" do
+    # A payment voucher can also name a Partner as its own party (money moved
+    # on account, nothing settled) rather than going through "record advance" —
+    # that journal entry's source is the Voucher itself, not a bare JournalEntry,
+    # so the ledger row needs its own link to find its way back to it.
+    it "links a voucher-sourced row's description to the voucher" do
+      voucher = Accounting::RecordVoucherService.new(
+        direction: Voucher::PAYMENT, treasury: cash, user: owner, amount_cents: 1_000,
+        party_type: "Partner", party_id: partner.id
+      ).call
+
+      get admin_accounting_partner_path(partner)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(admin_accounting_voucher_path(voucher))
+    end
+
+    it "does not link a plain advance row (it has no source record at all)" do
+      post_advance(amount: 500)
+
+      get admin_accounting_partner_path(partner)
+
+      expect(JournalEntry.last.source_record).to be_nil
+      expect(response.body).not_to match(%r{/admin/accounting/vouchers/})
+    end
+  end
+
   describe "access control" do
     before { sign_out owner }
 
