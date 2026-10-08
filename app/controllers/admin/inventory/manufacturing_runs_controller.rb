@@ -29,13 +29,15 @@ module Admin
 
       def create
         authorize :production, :create?, policy_class: ProductionPolicy
+        location = bulk_location
         runs = ::Inventory::BulkRunManufacturingService.new(
           user: current_user,
-          location: bulk_location,
+          location: location,
           occurred_on: bulk_occurred_on,
           default_shelf_life_days: bulk_param(:default_shelf_life_days),
           rows: bulk_row_params
         ).call
+        remember_batch_for_transfer(runs, location)
         redirect_to admin_inventory_manufacturing_runs_path,
           notice: t("production.success_bulk", count: runs.size, numbers: runs.map(&:run_number).join(", "))
       rescue ::Inventory::BulkRunManufacturingService::Error, ::Inventory::RunManufacturingService::Error => e

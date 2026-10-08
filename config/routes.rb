@@ -96,6 +96,9 @@ Rails.application.routes.draw do
 
   get "production", to: "production#index"
   post "production/bulk", to: "production#bulk_create", as: :production_bulk
+  # Must come before the :manufacturing_template_id catch-all below, or a POST
+  # here would be routed as create with "transfer_batch" as the template id.
+  post "production/transfer_batch", to: "production#transfer_batch", as: :production_transfer_batch
   post "production/:manufacturing_template_id", to: "production#create", as: :production_run
 
   namespace :customers do

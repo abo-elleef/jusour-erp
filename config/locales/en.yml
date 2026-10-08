@@ -4892,6 +4892,17 @@ en:
       confirm_warning: "This is a bulk action. Stock will move for every row listed below. Double-check the quantities. Undo later is per run, not for the whole sheet."
       none_filled: "Enter a quantity on at least one row before recording."
     low_stock_warning: "Some inputs are below required quantity; stock may go negative."
+    batch_transfer:
+      banner_title: "Transfer what you just recorded?"
+      daily_banner_title: "Transfer everything made on this day?"
+      to_location_label: "Send to"
+      submit: "Create draft transfer"
+      created_notice: "Draft transfer %{number} created. A manager can review and send it from Stock Transfers."
+      mixed_locations_hint: "Production this day came from more than one location, so it can't become a single transfer. Use the per-batch offer right after recording instead, or build separate transfers from Stock Transfers."
+      errors:
+        no_runs: "Those production runs could not be found. They may have been reversed already."
+        location_required: "Select a location to send the batch to."
+        mixed_locations: "This batch spans more than one location, so it can't become a single transfer."
 
   flash:
     unauthorized: "You are not authorized to perform this action."
@@ -5058,6 +5069,7 @@ en:
       requested: "Transfer request submitted."
       updated: "Transfer request updated."
       draft_saved: "Draft saved. You can finish it later."
+      draft_saved_from_batch: "Draft transfer created from the batch. Review the quantities and send when ready."
       draft_discarded: "Draft discarded."
       sent: "Transfer marked as sent."
       received: "Receipt confirmed. Stock has been updated at both locations."

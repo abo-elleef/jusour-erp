@@ -1,0 +1,52 @@
+<%# locals: theme (:admin or :kitchen), optional, defaults to :admin.
+    Shown once, right after a bulk production batch is recorded — flash is
+    gone again on the next request, which is the point: it's an offer tied to
+    what was just submitted, not a standing fixture of the page.
+
+    Only the kitchen sheet gets `dark:` variants — see the same gate in
+    shared/_manufacturing_bulk_sheet.html.erb for why the admin page must
+    never carry them. %>
+<% admin = local_assigns.fetch(:theme, :admin).to_sym == :admin %>
+<% dk = ->(classes) { admin ? "" : " #{classes}" } %>
+<% if flash[:batch_run_ids].present? && can_transfer_manufacturing_batch? %>
+  <% batch_runs = ManufacturingRun.where(id: flash[:batch_run_ids], reversed_at: nil)
+       .includes(manufacturing_template: :output_ingredient) %>
+  <% if batch_runs.any? %>
+    <% batch_rows = batch_runs.group_by { |run| run.manufacturing_template.output_ingredient }
+         .map { |ingredient, group| [ingredient, group.sum { |run| run.runs_count.to_d * run.manufacturing_template.base_yield_quantity }] } %>
+    <div class="<%= "rounded-xl border border-emerald-200 bg-emerald-50 p-4 mb-4 print:hidden" +
+          dk.call("dark:border-emerald-700/60 dark:bg-emerald-950/40") %>">
+      <p class="<%= "text-sm font-semibold text-emerald-900 mb-2" + dk.call("dark:text-emerald-200") %>">
+        <%= t("production.batch_transfer.banner_title") %>
+      </p>
+      <ul class="<%= "text-sm text-emerald-800 mb-3 list-disc list-inside space-y-0.5" + dk.call("dark:text-emerald-100/80") %>">
+        <% batch_rows.each do |ingredient, quantity| %>
+          <li>
+            <%= ingredient.name %> —
+            <%= number_with_precision(quantity, precision: 3, strip_insignificant_zeros: true) %>
+            <%= ingredient_unit_label(ingredient.unit) %>
+          </li>
+        <% end %>
+      </ul>
+      <%= form_with url: production_transfer_batch_path, method: :post,
+            class: "flex flex-wrap items-end gap-3" do %>
+        <% flash[:batch_run_ids].each do |run_id| %>
+          <%= hidden_field_tag "run_ids[]", run_id, id: nil %>
+        <% end %>
+        <%= hidden_field_tag :return_to, admin ? "admin_runs" : "production" %>
+        <div>
+          <%= label_tag :to_location_id, t("production.batch_transfer.to_location_label"),
+                class: "#{"block text-xs font-semibold text-emerald-900 mb-1" + dk.call("dark:text-emerald-200")}" %>
+          <%= select_tag :to_location_id,
+                options_for_select(Location.active.ordered.where.not(id: flash[:batch_location_id]).map { |l| [l.name, l.id] }),
+                include_blank: t("production.select_location"),
+                required: true,
+                class: "min-h-11 bg-white border border-emerald-300 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500" +
+                  dk.call("dark:bg-gray-900 dark:border-emerald-700 dark:text-white") %>
+        </div>
+        <%= submit_tag t("production.batch_transfer.submit"),
+              class: "bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors cursor-pointer" %>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

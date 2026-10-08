@@ -6,7 +6,7 @@ module ManufacturingBulkRecording
   extend ActiveSupport::Concern
 
   included do
-    helper_method :bulk_row_value
+    helper_method :bulk_row_value, :can_transfer_manufacturing_batch?
   end
 
   private
@@ -51,5 +51,19 @@ module ManufacturingBulkRecording
 
   def bulk_row_value(template, key, default = nil)
     params.dig(:bulk, :rows, template.id.to_s, key.to_s).presence || default
+  end
+
+  # Remembers the batch just recorded (as a one-shot flash) so the next page
+  # load can offer to transfer it out in one step instead of line by line.
+  def remember_batch_for_transfer(runs, location)
+    flash[:batch_run_ids] = runs.map(&:id)
+    flash[:batch_location_id] = location&.id
+  end
+
+  # Mirrors exactly what ProductionController#transfer_batch requires: anyone
+  # who can record production can also transfer what they just made — kitchen
+  # staff included, not just owners/managers with full inventory access.
+  def can_transfer_manufacturing_batch?
+    current_user&.can_access_production? || false
   end
 end
