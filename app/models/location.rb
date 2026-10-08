@@ -45,12 +45,21 @@ class Location < ApplicationRecord
   scope :central_kitchens, -> { where(location_type: "central_kitchen") }
   scope :public_menu_enabled, -> { where(public_menu_enabled: true) }
   scope :publicly_accessible, -> { active.branches.public_menu_enabled }
+  scope :default_production, -> { where(default_production_location: true) }
 
   before_validation :clear_public_menu_for_non_branches
   before_validation :clear_business_day_settings_for_non_branches
+  before_validation :clear_default_production_for_non_central_kitchens
+  before_save :unset_other_default_production_locations, if: -> { default_production_location? && active? }
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[name location_type active]
+  end
+
+  # The central kitchen production forms should default to. Falls back to the
+  # first active central kitchen (by display order) when none is flagged.
+  def self.default_production_location
+    active.central_kitchens.default_production.ordered.first || active.central_kitchens.ordered.first
   end
 
   def central_kitchen?
@@ -117,6 +126,16 @@ class Location < ApplicationRecord
 
     self.business_day_start_hour = nil
     self.business_day_mode = BusinessDay::DEFAULT_MODE
+  end
+
+  def clear_default_production_for_non_central_kitchens
+    self.default_production_location = false unless central_kitchen?
+  end
+
+  def unset_other_default_production_locations
+    Location.where(default_production_location: true)
+      .where.not(id: id)
+      .update_all(default_production_location: false)
   end
 
   def normalize_business_day_start_hour

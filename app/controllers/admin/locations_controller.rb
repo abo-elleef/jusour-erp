@@ -69,7 +69,8 @@ module Admin
     def location_params
       params.require(:location).permit(
         :name, :slug, :location_type, :address, :phone, :whatsapp_number,
-        :active, :position, :public_menu_enabled, :deposit_treasury_id
+        :active, :position, :public_menu_enabled, :deposit_treasury_id,
+        :default_production_location
       )
     end
   end

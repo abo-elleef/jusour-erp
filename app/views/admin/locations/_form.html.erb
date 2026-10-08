@@ -71,6 +71,16 @@
     </div>
   <% end %>
 
+  <% if location.central_kitchen? %>
+    <div class="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/80 p-4">
+      <%= f.check_box :default_production_location, class: "w-4 h-4 mt-0.5 text-amber-600 border-gray-300 rounded" %>
+      <div>
+        <%= f.label :default_production_location, t("admin.locations.fields.default_production_location"), class: "text-sm font-semibold text-gray-700" %>
+        <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.fields.default_production_location_hint") %></p>
+      </div>
+    </div>
+  <% end %>
+
   <div class="flex gap-3 pt-2">
     <%= f.submit class: "inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors cursor-pointer" %>
     <%= link_to t("actions.cancel"), admin_locations_path,

@@ -17,7 +17,10 @@ module ManufacturingBulkRecording
       .ordered
       .select { |template| template.manufacturing_template_lines.any? }
     @production_locations = bulk_production_locations
-    @default_production_location_id = @production_locations.find(&:central_kitchen?)&.id
+    @default_production_location_id = (
+      @production_locations.find { |location| location.central_kitchen? && location.default_production_location? } ||
+      @production_locations.find(&:central_kitchen?)
+    )&.id
     @bulk = params[:bulk] || ActionController::Parameters.new
   end
 

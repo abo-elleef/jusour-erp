@@ -2973,6 +2973,8 @@ en:
         slug_hint: "Used in the customer menu link. Auto-generated from the name if left blank."
         public_menu_enabled: "Public menu"
         public_menu_enabled_hint: "When enabled, customers can browse this branch's menu at the public link."
+        default_production_location: "Default production location"
+        default_production_location_hint: "Production forms (Production and New Manufacturing Run) preselect this central kitchen. Only one central kitchen can be the default; setting this one clears any other. If none is set, the first central kitchen is used."
         location_type: "Type"
         address: "Address"
         phone: "Phone"
