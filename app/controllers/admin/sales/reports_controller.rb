@@ -60,7 +60,7 @@ module Admin
           render partial: "leads_funnel_section", locals: {
             rows: @leads_service.funnel, conversion_rate: @leads_service.conversion_rate,
             average_days_to_convert: @leads_service.average_days_to_convert,
-            total_created: @leads_service.total_created
+            total_created: @leads_service.total_created, trend: @leads_service.trend
           }
         when "leads_drop_reasons"
           render partial: "leads_drop_reasons_section", locals: { rows: @leads_service.drop_reasons }

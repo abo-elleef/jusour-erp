@@ -19,7 +19,7 @@
     </div>
   </div>
 
-  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
       <p class="text-xs text-gray-500"><%= t("sales.reports.leads.funnel_hint") %></p>
     </div>
@@ -28,6 +28,19 @@
     <% else %>
       <div class="p-5">
         <%= bar_chart rows.to_h { |r| [t("sales.leads.stages.#{r.stage}"), r.count] }, height: "220px", id: "leads-funnel-chart" %>
+      </div>
+    <% end %>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <p class="text-xs text-gray-500"><%= t("sales.reports.leads.trend_hint") %></p>
+    </div>
+    <% if total_created.zero? %>
+      <p class="p-8 text-center text-sm text-gray-500"><%= t("sales.reports.leads.empty") %></p>
+    <% else %>
+      <div class="p-5">
+        <%= line_chart trend.map { |row| [row.label, row.count] }, height: "220px", id: "leads-trend-chart" %>
       </div>
     <% end %>
   </section>

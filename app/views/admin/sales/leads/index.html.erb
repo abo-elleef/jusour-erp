@@ -1,14 +1,13 @@
 <% content_for :title, t("sales.leads.title") %>
-<% tab_params = { assigned_user_id: @assigned_user_id } %>
-<% all_active = @stage.nil? && @scope.nil? %>
+<% tab_params = { assigned_user_id: @assigned_user_id, due_only: (1 if @due_only) } %>
+<% all_active = @stage.nil? %>
 
 <div class="max-w-7xl">
   <%= render "admin/sales/nav" %>
   <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
-    <div>
-      <h1 class="text-xl font-bold tracking-tight text-gray-900"><%= t("sales.leads.title") %></h1>
-      <p class="text-gray-500 text-sm"><%= t("sales.leads.description") %></p>
-    </div>
+    <h1 class="text-xl font-bold tracking-tight text-gray-900" title="<%= t("sales.leads.description") %>">
+      <%= t("sales.leads.title") %>
+    </h1>
     <% if current_user.can?("leads:manage") %>
       <%= link_to new_admin_sales_lead_path,
             class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
@@ -17,36 +16,33 @@
     <% end %>
   </div>
 
-  <div class="flex flex-wrap items-end justify-between gap-3 mb-4 border-b border-gray-200">
-    <div class="flex flex-wrap gap-1">
-      <%= link_to admin_sales_leads_path(**tab_params), class: admin_section_tab_class(all_active) do %>
-        <%= t("actions.all") %><%= admin_tab_count(@all_count, active: all_active) %>
+  <div class="flex flex-wrap gap-1 mb-2 border-b border-gray-200">
+    <%= link_to admin_sales_leads_path(**tab_params), class: admin_section_tab_class(all_active) do %>
+      <%= t("actions.all") %><%= admin_tab_count(@all_count, active: all_active) %>
+    <% end %>
+    <% Lead::STAGES.each do |stage| %>
+      <%= link_to admin_sales_leads_path(**tab_params, stage: stage), class: admin_section_tab_class(@stage == stage) do %>
+        <%= t("sales.leads.stages.#{stage}") %><%= admin_tab_count(@stage_counts[stage], active: @stage == stage) %>
       <% end %>
-      <%= link_to admin_sales_leads_path(**tab_params, scope: "open"), class: admin_section_tab_class(@scope == "open") do %>
-        <%= t("sales.leads.stats.open") %><%= admin_tab_count(@open_count, active: @scope == "open") %>
-      <% end %>
-      <%= link_to admin_sales_leads_path(**tab_params, scope: "due_today"), class: admin_section_tab_class(@scope == "due_today") do %>
-        <%= t("sales.leads.stats.due_today") %><%= admin_tab_count(@due_today_count, active: @scope == "due_today") %>
-      <% end %>
-      <% Lead::STAGES.each do |stage| %>
-        <%= link_to admin_sales_leads_path(**tab_params, stage: stage), class: admin_section_tab_class(@stage == stage) do %>
-          <%= t("sales.leads.stages.#{stage}") %><%= admin_tab_count(@stage_counts[stage], active: @stage == stage) %>
-        <% end %>
-      <% end %>
-    </div>
-
-    <%= form_with url: admin_sales_leads_path, method: :get, class: "pb-2" do %>
-      <%= hidden_field_tag :stage, @stage if @stage %>
-      <%= hidden_field_tag :scope, @scope if @scope %>
-      <select name="assigned_user_id" onchange="this.form.submit()"
-              class="text-sm border border-gray-200 rounded-lg px-3 py-1.5">
-        <option value=""><%= t("sales.leads.all_reps") %></option>
-        <% @assignable_users.each do |user| %>
-          <option value="<%= user.id %>" <%= "selected" if @assigned_user_id == user.id %>><%= user.name %></option>
-        <% end %>
-      </select>
     <% end %>
   </div>
+
+  <%= form_with url: admin_sales_leads_path, method: :get, class: "flex flex-wrap items-center justify-between gap-3 mb-4" do %>
+    <%= hidden_field_tag :stage, @stage if @stage %>
+    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+      <%= check_box_tag :due_only, "1", @due_only, onchange: "this.form.submit()",
+            class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500" %>
+      <%= t("sales.leads.due_only_label") %>
+      <%= admin_tab_count(@due_today_count, active: @due_only) %>
+    </label>
+    <select name="assigned_user_id" onchange="this.form.submit()"
+            class="text-sm border border-gray-200 rounded-lg px-3 py-1.5">
+      <option value=""><%= t("sales.leads.all_reps") %></option>
+      <% @assignable_users.each do |user| %>
+        <option value="<%= user.id %>" <%= "selected" if @assigned_user_id == user.id %>><%= user.name %></option>
+      <% end %>
+    </select>
+  <% end %>
 
   <% if @leads.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">

@@ -15,7 +15,7 @@ module Admin
 
       def index
         @stage = params[:stage].presence_in(Lead::STAGES)
-        @scope = params[:scope].presence_in(%w[open due_today]) unless @stage
+        @due_only = ActiveModel::Type::Boolean.new.cast(params[:due_only])
         @assigned_user_id = params[:assigned_user_id].presence
         @sort = params[:sort].presence_in(Lead::INDEX_SORTABLE_COLUMNS) || Lead::INDEX_DEFAULT_SORT
         @direction = params[:dir].presence_in(%w[asc desc]) || Lead::INDEX_DEFAULT_SORT_DIRECTION
@@ -24,23 +24,18 @@ module Admin
         base = base.where(location_id: current_user.accessible_location_ids) unless current_user.all_locations?
         base = base.where(assigned_user_id: @assigned_user_id) if @assigned_user_id
 
-        # Tab counts always reflect the location/assignee filter but not the
-        # tab selection itself, so switching tabs doesn't look like data vanished.
+        # Tab/checkbox counts always reflect the location/assignee filter but not
+        # the stage/due-only selection itself, so switching them doesn't look like
+        # data vanished.
         @all_count = base.count
-        @open_count = base.open_leads.count
         @due_today_count = base.due_for_follow_up.count
         @stage_counts = base.group(:stage).count
 
         scope = base.includes(:assigned_user, :location)
-        scope = if @stage
-          scope.where(stage: @stage)
-        elsif @scope == "open"
-          scope.open_leads
-        elsif @scope == "due_today"
-          scope.due_for_follow_up
-        else
-          scope
-        end
+        scope = scope.where(stage: @stage) if @stage
+        # Independent of stage — "due for follow-up" is a date condition, not a
+        # pipeline status, so it can narrow whichever stage (or "All") is active.
+        scope = scope.where(next_follow_up_at: ..Date.current) if @due_only
         scope = apply_sort(scope)
 
         @pagy, @leads = pagy(:offset, scope, limit: 50)

@@ -6,8 +6,11 @@ module Sales
   # closing. Scoped to leads *created* in the period — a lead opened before the
   # window but converted/lost inside it would otherwise double-count across runs.
   class LeadsReportService
+    GRANULARITIES = %w[day week month].freeze
+
     FunnelRow = Struct.new(:stage, :count, keyword_init: true)
     DropReasonRow = Struct.new(:reason, :count, :percent, keyword_init: true)
+    TrendRow = Struct.new(:period, :label, :count, keyword_init: true)
     PerformanceRow = Struct.new(:user_id, :name, :assigned, :converted, :lost, keyword_init: true) do
       def conversion_rate
         decided = converted + lost
@@ -60,6 +63,21 @@ module Sales
       end.sort_by { |r| -r.count }
     end
 
+    # New leads per day/week/month — "how many leads came in every month" reads
+    # off this directly, bucket chosen to fit the range unless asked for one.
+    # Weeks run Saturday–Friday (config.beginning_of_week), not Postgres'
+    # Monday-based date_trunc, so bucketing happens in Ruby via Date#beginning_of_week
+    # — same approach as Accounting::CategoryAnalysisService/Inventory::TransferTrendsService.
+    def trend(granularity: nil)
+      granularity = GRANULARITIES.include?(granularity.to_s) ? granularity.to_s : default_granularity
+
+      daily_counts = leads.group(Arel.sql("DATE(created_at)")).count
+      buckets = Hash.new(0)
+      daily_counts.each { |date, count| buckets[period_for(date.to_date, granularity)] += count }
+
+      buckets.sort.map { |period, count| TrendRow.new(period: period, label: period_label(period, granularity), count: count) }
+    end
+
     def by_performance
       assigned = leads.group(:assigned_user_id).count
       converted = leads.where(stage: "converted").group(:assigned_user_id).count
@@ -78,6 +96,38 @@ module Sales
 
     def leads
       @leads ||= Lead.where(created_at: @start_date.beginning_of_day..@end_date.end_of_day)
+    end
+
+    def period_for(date, granularity)
+      case granularity
+      when "week" then date.beginning_of_week
+      when "month" then date.beginning_of_month
+      else date
+      end
+    end
+
+    def period_label(period, granularity)
+      case granularity
+      when "month" then I18n.l(period, format: "%B %Y")
+      when "week" then week_label(period)
+      else I18n.l(period, format: "%a %d %b")
+      end
+    end
+
+    # Weeks run Saturday to Friday app-wide (config.beginning_of_week) — spell
+    # out both ends so the reader isn't left guessing where a week stops.
+    def week_label(period)
+      finish = period.end_of_week
+      start_format = period.month == finish.month ? "%d" : "%d %b"
+      "#{I18n.l(period, format: start_format)} – #{I18n.l(finish, format: "%d %b")}"
+    end
+
+    def default_granularity
+      days = (@end_date - @start_date).to_i
+      return "day" if days <= 45
+      return "week" if days <= 400
+
+      "month"
     end
   end
 end
