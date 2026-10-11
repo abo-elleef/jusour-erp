@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_08_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_11_130200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -360,11 +360,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_08_120000) do
     t.bigint "credit_hard_limit_cents"
     t.integer "credit_terms_days"
     t.text "standing_note"
+    t.uuid "originating_lead_id"
     t.index ["company_id", "email"], name: "index_customers_on_company_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["company_id", "legacy_code"], name: "index_customers_on_company_id_and_legacy_code", where: "((legacy_code IS NOT NULL) AND ((legacy_code)::text <> ''::text))"
     t.index ["company_id", "phone"], name: "index_customers_on_company_id_and_phone", unique: true, where: "((phone IS NOT NULL) AND ((phone)::text <> ''::text))"
     t.index ["company_id", "phone_secondary"], name: "index_customers_on_company_id_and_phone_secondary", unique: true, where: "(phone_secondary IS NOT NULL)"
     t.index ["company_id"], name: "index_customers_on_company_id"
+    t.index ["originating_lead_id"], name: "index_customers_on_originating_lead_id"
     t.index ["price_tier_id"], name: "index_customers_on_price_tier_id"
     t.index ["treasury_id"], name: "index_customers_on_treasury_id"
   end
@@ -682,6 +684,46 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_08_120000) do
     t.index ["journal_entry_id", "account_code"], name: "index_journal_entry_lines_on_journal_entry_id_and_account_code"
     t.index ["journal_entry_id"], name: "index_journal_entry_lines_on_journal_entry_id"
     t.index ["treasury_id"], name: "index_journal_entry_lines_on_treasury_id"
+  end
+
+  create_table "lead_activities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "lead_id", null: false
+    t.uuid "user_id"
+    t.string "activity_type", null: false
+    t.text "note"
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["lead_id"], name: "index_lead_activities_on_lead_id"
+    t.index ["user_id"], name: "index_lead_activities_on_user_id"
+  end
+
+  create_table "leads", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "location_id"
+    t.uuid "assigned_user_id", null: false
+    t.uuid "created_by_id", null: false
+    t.uuid "customer_id"
+    t.string "name", null: false
+    t.string "phone"
+    t.string "phone_secondary"
+    t.string "email"
+    t.string "source"
+    t.string "stage", default: "new", null: false
+    t.string "lost_reason"
+    t.text "lost_reason_note"
+    t.date "next_follow_up_at"
+    t.datetime "converted_at"
+    t.datetime "lost_at"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_user_id"], name: "index_leads_on_assigned_user_id"
+    t.index ["company_id", "stage"], name: "index_leads_on_company_id_and_stage"
+    t.index ["company_id"], name: "index_leads_on_company_id"
+    t.index ["created_by_id"], name: "index_leads_on_created_by_id"
+    t.index ["customer_id"], name: "index_leads_on_customer_id"
+    t.index ["location_id"], name: "index_leads_on_location_id"
   end
 
   create_table "loans", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

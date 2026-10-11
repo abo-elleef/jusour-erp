@@ -137,6 +137,15 @@ Rails.application.routes.draw do
       resources :customer_statements, only: %i[index show] do
         member { post :record_payment }
       end
+      resources :leads do
+        member do
+          post :convert
+          post :mark_lost
+          post :reassign
+          post :change_stage
+        end
+        resources :lead_activities, only: %i[create]
+      end
       resources :reports, only: %i[index]
     end
 

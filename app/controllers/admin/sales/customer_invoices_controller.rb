@@ -15,7 +15,8 @@ module Admin
       end
 
       def new
-        @invoice = CustomerInvoice.new(invoice_date: Date.current, location_id: default_location&.id)
+        @invoice = CustomerInvoice.new(invoice_date: Date.current, location_id: default_location&.id,
+          customer_id: params[:customer_id].presence)
         @invoice.customer_invoice_lines.build
         load_form_data
       end

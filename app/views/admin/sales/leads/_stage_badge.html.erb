@@ -1,0 +1,12 @@
+<%# locals: lead %>
+<% chip = "text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border" %>
+<% classes = {
+     "new" => "bg-gray-100 text-gray-700 border-gray-200",
+     "contacted" => "bg-blue-50 text-blue-700 border-blue-200",
+     "qualified" => "bg-indigo-50 text-indigo-700 border-indigo-200",
+     "proposal_sent" => "bg-purple-50 text-purple-700 border-purple-200",
+     "negotiation" => "bg-amber-50 text-amber-800 border-amber-200",
+     "converted" => "bg-green-100 text-green-800 border-green-200",
+     "lost" => "bg-red-50 text-red-700 border-red-200"
+   } %>
+<span class="<%= chip %> <%= classes[lead.stage] %>"><%= t("sales.leads.stages.#{lead.stage}") %></span>

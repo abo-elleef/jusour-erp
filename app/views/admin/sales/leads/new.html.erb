@@ -1,0 +1,9 @@
+<% content_for :title, t("sales.leads.new_title") %>
+
+<div class="max-w-3xl">
+  <%= link_to t("sales.leads.back"), admin_sales_leads_path, class: "text-sm text-gray-500 hover:text-gray-800 mb-4 inline-block" %>
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-1"><%= t("sales.leads.new_title") %></h1>
+  <p class="text-gray-600 text-sm mb-6"><%= t("sales.leads.new_hint") %></p>
+
+  <%= render "form", lead: @lead %>
+</div>

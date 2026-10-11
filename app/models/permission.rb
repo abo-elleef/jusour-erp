@@ -47,7 +47,11 @@ module Permission
 
     { key: "pos:access",              group: "apps" },
     { key: "kitchen:access",          group: "apps" },
-    { key: "production:access",       group: "apps" }
+    { key: "production:access",       group: "apps" },
+
+    { key: "leads:view",              group: "sales" },
+    { key: "leads:manage",            group: "sales" },
+    { key: "leads:reports",           group: "sales" }
   ].freeze
 
   KEYS = CATALOG.map { |p| p[:key] }.freeze
@@ -74,6 +78,7 @@ module Permission
         accounting:transactions accounting:day_close accounting:reports
         attendance:log attendance:view attendance:penalties attendance:waive_penalties attendance:audit staff:view locations:manage printers:manage
         pos:access kitchen:access production:access
+        leads:view leads:manage leads:reports
       ]
     },
     "sub_manager" => {
@@ -84,6 +89,7 @@ module Permission
         dashboard:view orders:view menu:manage customers:manage inventory:view
         accounting:day_close
         attendance:log attendance:view pos:access kitchen:access
+        leads:view leads:manage
       ]
     },
     "accountant" => {

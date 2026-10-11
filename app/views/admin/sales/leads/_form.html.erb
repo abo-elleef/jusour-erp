@@ -1,0 +1,64 @@
+<%# locals: lead %>
+<% input_class = "w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm focus:border-amber-500 focus:ring-amber-500" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+
+<%= form_with model: lead, url: lead.persisted? ? admin_sales_lead_path(lead) : admin_sales_leads_path, class: "space-y-6" do |f| %>
+  <% if lead.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <%= lead.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.leads.form.details") %></h2>
+    </div>
+    <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div>
+        <%= f.label :name, t("sales.leads.form.name"), class: label_class %>
+        <%= f.text_field :name, class: input_class, required: true %>
+      </div>
+      <div>
+        <%= f.label :source, t("sales.leads.form.source"), class: label_class %>
+        <%= f.select :source, Lead::SOURCES.map { |s| [t("sales.leads.sources.#{s}"), s] },
+              { include_blank: t("sales.leads.form.select_source") }, class: "#{input_class} appearance-none" %>
+      </div>
+      <div>
+        <%= f.label :phone, t("sales.leads.form.phone"), class: label_class %>
+        <%= f.text_field :phone, class: input_class %>
+      </div>
+      <div>
+        <%= f.label :phone_secondary, t("sales.leads.form.phone_secondary"), class: label_class %>
+        <%= f.text_field :phone_secondary, class: input_class %>
+      </div>
+      <div>
+        <%= f.label :email, t("sales.leads.form.email"), class: label_class %>
+        <%= f.email_field :email, class: input_class %>
+      </div>
+      <div>
+        <%= f.label :location_id, t("sales.leads.form.location"), class: label_class %>
+        <%= f.collection_select :location_id, @locations, :id, :name,
+              { include_blank: t("sales.leads.form.select_location") }, class: "#{input_class} appearance-none" %>
+      </div>
+      <div>
+        <%= f.label :assigned_user_id, t("sales.leads.form.assigned_to"), class: label_class %>
+        <%= f.collection_select :assigned_user_id, @assignable_users, :id, :name, {}, class: "#{input_class} appearance-none" %>
+      </div>
+      <div>
+        <%= f.label :next_follow_up_at, t("sales.leads.form.next_follow_up"), class: label_class %>
+        <%= f.date_field :next_follow_up_at, class: input_class %>
+      </div>
+      <div class="sm:col-span-2">
+        <%= f.label :notes, t("sales.leads.form.notes"), class: label_class %>
+        <%= f.text_area :notes, rows: 3, class: input_class %>
+      </div>
+    </div>
+  </section>
+
+  <div class="flex justify-end gap-3">
+    <%= link_to t("actions.cancel"), lead.persisted? ? admin_sales_lead_path(lead) : admin_sales_leads_path,
+          class: "px-5 py-2.5 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors" %>
+    <%= f.submit t("actions.save"),
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors cursor-pointer" %>
+  </div>
+<% end %>

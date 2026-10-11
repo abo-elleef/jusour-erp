@@ -1,0 +1,152 @@
+<% content_for :title, @lead.name %>
+
+<div class="max-w-4xl">
+  <%= link_to t("sales.leads.back"), admin_sales_leads_path, class: "text-sm text-gray-500 hover:text-gray-800 mb-4 inline-block" %>
+
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @lead.name %></h1>
+        <%= render "stage_badge", lead: @lead %>
+      </div>
+      <p class="text-gray-500 text-sm mt-1">
+        <%= [@lead.phone, @lead.email].compact_blank.join(" · ").presence || t("sales.leads.no_contact_info") %>
+      </p>
+    </div>
+    <% if current_user.can?("leads:manage") %>
+      <div class="flex gap-2">
+        <%= link_to t("actions.edit"), edit_admin_sales_lead_path(@lead),
+              class: "px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors" %>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @lead.converted? %>
+    <section class="rounded-2xl border border-green-200 bg-green-50 p-5 mb-6">
+      <p class="text-sm font-semibold text-green-800"><%= t("sales.leads.show.converted_banner", date: l(@lead.converted_at.to_date, format: :long)) %></p>
+      <%= link_to t("sales.leads.show.view_customer"), admin_customer_path(@lead.customer),
+            class: "text-sm font-semibold text-green-700 hover:text-green-900 underline" %>
+    </section>
+  <% elsif @lead.lost? %>
+    <section class="rounded-2xl border border-red-200 bg-red-50 p-5 mb-6">
+      <p class="text-sm font-semibold text-red-800">
+        <%= t("sales.leads.show.lost_banner", reason: t("sales.leads.lost_reasons.#{@lead.lost_reason}")) %>
+      </p>
+      <% if @lead.lost_reason_note.present? %>
+        <p class="text-sm text-red-700 mt-1"><%= @lead.lost_reason_note %></p>
+      <% end %>
+    </section>
+  <% end %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 lg:col-span-1">
+      <h2 class="text-sm font-semibold text-gray-900 mb-4"><%= t("sales.leads.show.details") %></h2>
+      <dl class="space-y-3 text-sm">
+        <div>
+          <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.leads.form.assigned_to") %></dt>
+          <dd class="text-gray-900 mt-0.5"><%= @lead.assigned_user.name %></dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.leads.form.source") %></dt>
+          <dd class="text-gray-900 mt-0.5"><%= @lead.source.present? ? t("sales.leads.sources.#{@lead.source}") : t("sales.shared.em_dash") %></dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.leads.form.location") %></dt>
+          <dd class="text-gray-900 mt-0.5"><%= @lead.location&.name || t("sales.shared.em_dash") %></dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.leads.form.next_follow_up") %></dt>
+          <dd class="text-gray-900 mt-0.5"><%= @lead.next_follow_up_at ? l(@lead.next_follow_up_at, format: :long) : t("sales.shared.em_dash") %></dd>
+        </div>
+        <div>
+          <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.leads.table.created") %></dt>
+          <dd class="text-gray-900 mt-0.5"><%= l(@lead.created_at.to_date, format: :long) %> · <%= @lead.created_by.name %></dd>
+        </div>
+        <% if @lead.notes.present? %>
+          <div>
+            <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.leads.form.notes") %></dt>
+            <dd class="text-gray-700 mt-0.5 whitespace-pre-line"><%= @lead.notes %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </section>
+
+    <% if current_user.can?("leads:manage") && @lead.open? %>
+      <section class="rounded-2xl border border-gray-200 bg-white p-5 lg:col-span-2">
+        <h2 class="text-sm font-semibold text-gray-900 mb-4"><%= t("sales.leads.show.actions") %></h2>
+
+        <div class="flex flex-wrap gap-2 mb-5">
+          <% (Lead::STAGES - Lead::TERMINAL_STAGES - [@lead.stage]).each do |stage| %>
+            <%= button_to t("sales.leads.show.move_to", stage: t("sales.leads.stages.#{stage}")),
+                  change_stage_admin_sales_lead_path(@lead), params: { stage: stage }, method: :post,
+                  class: "px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors" %>
+          <% end %>
+        </div>
+
+        <div class="flex flex-wrap items-end gap-3 mb-5 pt-4 border-t border-gray-100">
+          <%= form_with url: reassign_admin_sales_lead_path(@lead), method: :post, class: "flex items-end gap-2" do %>
+            <div>
+              <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("sales.leads.show.reassign_to") %></label>
+              <select name="assigned_user_id" class="rounded-xl border border-gray-200 px-3 py-2 text-sm">
+                <% @assignable_users.each do |user| %>
+                  <option value="<%= user.id %>" <%= "selected" if user.id == @lead.assigned_user_id %>><%= user.name %></option>
+                <% end %>
+              </select>
+            </div>
+            <%= submit_tag t("sales.leads.show.reassign"),
+                  class: "px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer" %>
+          <% end %>
+        </div>
+
+        <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+          <%= button_to t("sales.leads.show.convert"), convert_admin_sales_lead_path(@lead), method: :post,
+                form: { data: { turbo_confirm: t("sales.leads.show.convert_confirm") } },
+                class: "px-4 py-2 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-colors" %>
+          <%= render "mark_lost_form", lead: @lead %>
+        </div>
+      </section>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.leads.show.timeline") %></h2>
+    </div>
+
+    <% if current_user.can?("leads:manage") %>
+      <div class="p-5 border-b border-gray-100 bg-gray-50/40">
+        <%= form_with model: @activity, url: admin_sales_lead_lead_activities_path(@lead), class: "flex flex-wrap items-start gap-2" do |f| %>
+          <%= f.select :activity_type, LeadActivity::LOGGABLE_TYPES.map { |t_| [t("sales.leads.activity_types.#{t_}"), t_] },
+                {}, class: "rounded-xl border border-gray-200 px-3 py-2 text-sm" %>
+          <%= f.text_field :note, placeholder: t("sales.leads.show.log_placeholder"),
+                class: "flex-1 min-w-[12rem] rounded-xl border border-gray-200 px-3.5 py-2 text-sm" %>
+          <%= f.submit t("sales.leads.show.log"),
+                class: "px-4 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors cursor-pointer" %>
+        <% end %>
+      </div>
+    <% end %>
+
+    <ul class="divide-y divide-gray-100">
+      <% if @lead.lead_activities.empty? %>
+        <li class="p-8 text-center text-sm text-gray-500"><%= t("sales.leads.show.no_activity") %></li>
+      <% else %>
+        <% @lead.lead_activities.each do |activity| %>
+          <li class="p-4 px-5 flex items-start gap-3">
+            <span class="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border bg-gray-50 text-gray-600 border-gray-200 shrink-0">
+              <%= t("sales.leads.activity_types.#{activity.activity_type}") %>
+            </span>
+            <div class="flex-1 text-sm">
+              <p class="text-gray-800"><%= activity.note %></p>
+              <p class="text-xs text-gray-400 mt-0.5">
+                <%= l(activity.occurred_at, format: :short) %> · <%= activity.user&.name || t("sales.shared.em_dash") %>
+              </p>
+            </div>
+          </li>
+        <% end %>
+      <% end %>
+    </ul>
+  </section>
+
+  <%= render "shared/audit_history", audits: @lead.audits.includes(:user).reorder(version: :desc),
+        title: t("sales.leads.show.change_history") %>
+</div>

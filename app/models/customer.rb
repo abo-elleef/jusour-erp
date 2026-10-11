@@ -20,6 +20,8 @@ class Customer < ApplicationRecord
   # (mirrors Supplier#ap_treasury), so ordinary POS customers never get one.
   belongs_to :ar_treasury, class_name: "Treasury", foreign_key: :treasury_id, optional: true
   belongs_to :price_tier, optional: true
+  # The lead this customer was converted from, if any — see Lead#convert!.
+  belongs_to :originating_lead, class_name: "Lead", optional: true
   has_many :customer_invoices, dependent: :restrict_with_error
   has_many :customer_payments, dependent: :restrict_with_error
   has_many :addresses, class_name: "CustomerAddress", dependent: :destroy, inverse_of: :customer

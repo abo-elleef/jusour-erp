@@ -2,9 +2,12 @@
      [t("sales.nav.invoices"),     admin_sales_customer_invoices_path,   %w[customer_invoices]],
      [t("sales.nav.statements"),   admin_sales_customer_statements_path, %w[customer_statements]],
      [t("sales.nav.credit_notes"), admin_sales_credit_notes_path,        %w[credit_notes]],
-     [t("sales.nav.price_tiers"),  admin_sales_price_tiers_path,         %w[price_tiers]],
-     [t("sales.nav.reports"),      admin_sales_reports_path,             %w[reports]]
+     [t("sales.nav.price_tiers"),  admin_sales_price_tiers_path,         %w[price_tiers]]
    ] %>
+<% if Current.company.feature_enabled?(:leads) && current_user.can?("leads:view") %>
+  <% tabs << [t("sales.nav.leads"), admin_sales_leads_path, %w[leads]] %>
+<% end %>
+<% tabs << [t("sales.nav.reports"), admin_sales_reports_path, %w[reports]] %>
 <div class="flex flex-wrap gap-1 mb-6 border-b border-gray-200">
   <% tabs.each do |label, path, controllers| %>
     <% active = controllers.include?(controller_name) %>

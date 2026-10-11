@@ -461,7 +461,10 @@ module ApplicationHelper
     "ingredient_category_id" => [IngredientCategory, :name],
     "unit_id" => [Unit, :name],
     "attendance_status_id" => [AttendanceStatus, :label_with_symbol],
-    "location_id" => [Location, :name]
+    "location_id" => [Location, :name],
+    "assigned_user_id" => [User, :name],
+    "created_by_id" => [User, :name],
+    "customer_id" => [Customer, :name]
   }.freeze
 
   def audit_history_rows(audit)

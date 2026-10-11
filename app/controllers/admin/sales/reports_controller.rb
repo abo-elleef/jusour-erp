@@ -16,9 +16,19 @@ module Admin
       include SessionDateRange
 
       SECTIONS = %w[product customer salesperson payment_method daily].freeze
+      LEAD_SECTIONS = %w[leads_funnel leads_drop_reasons leads_performance].freeze
+
+      before_action :require_leads_reports_access, if: -> { LEAD_SECTIONS.include?(params[:section]) }
 
       def index
         parse_date_range(default_start: 30.days.ago.to_date)
+
+        if LEAD_SECTIONS.include?(params[:section])
+          @leads_service = ::Sales::LeadsReportService.new(@start_date, @end_date)
+          render_lead_section(params[:section])
+          return
+        end
+
         @customer_type = params[:customer_type] if Customer::CUSTOMER_TYPES.include?(params[:customer_type])
         @service = ::Sales::SalesReportService.new(@start_date, @end_date, customer_type: @customer_type)
 
@@ -27,6 +37,8 @@ module Admin
         else
           @summary = @service.summary
           @show_payment_method = @service.payment_method_variety > 1
+          @show_leads = Current.company.feature_enabled?(:leads) && current_user.can?("leads:reports")
+          @any_leads = @show_leads && Lead.exists?
         end
       end
 
@@ -40,6 +52,28 @@ module Admin
         when "payment_method" then render partial: "payment_method_section", locals: { rows: @service.by_payment_method }
         when "daily"         then render partial: "daily_section", locals: { rows: @service.daily }
         end
+      end
+
+      def render_lead_section(section)
+        case section
+        when "leads_funnel"
+          render partial: "leads_funnel_section", locals: {
+            rows: @leads_service.funnel, conversion_rate: @leads_service.conversion_rate,
+            average_days_to_convert: @leads_service.average_days_to_convert,
+            total_created: @leads_service.total_created
+          }
+        when "leads_drop_reasons"
+          render partial: "leads_drop_reasons_section", locals: { rows: @leads_service.drop_reasons }
+        when "leads_performance"
+          render partial: "leads_performance_section", locals: { rows: @leads_service.by_performance }
+        end
+      end
+
+      def require_leads_reports_access
+        return if Current.company.feature_enabled?(:leads) && current_user.can?("leads:reports")
+
+        flash[:alert] = t("flash.access_denied")
+        redirect_to admin_sales_reports_path
       end
     end
   end

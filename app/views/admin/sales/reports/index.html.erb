@@ -49,7 +49,7 @@
     </div>
   </div>
 
-  <% if s[:invoice_count].zero? && s[:credit_note_count].zero? %>
+  <% if s[:invoice_count].zero? && s[:credit_note_count].zero? && !@any_leads %>
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
       <p class="text-gray-900 font-semibold mb-1"><%= t("sales.reports.empty_title") %></p>
       <p class="text-gray-500 text-sm"><%= t("sales.reports.empty_hint") %></p>
@@ -85,9 +85,25 @@
                 class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
           <%= t("sales.reports.daily") %>
         </button>
+        <% if @show_leads %>
+          <button type="button" data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="leads_funnel"
+                  class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+            <%= t("sales.reports.leads.funnel") %>
+          </button>
+          <button type="button" data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="leads_drop_reasons"
+                  class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+            <%= t("sales.reports.leads.drop_reasons") %>
+          </button>
+          <button type="button" data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="leads_performance"
+                  class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+            <%= t("sales.reports.leads.performance") %>
+          </button>
+        <% end %>
       </div>
 
-      <% %w[product customer salesperson payment_method daily].each do |section| %>
+      <% sections = %w[product customer salesperson payment_method daily]
+         sections += %w[leads_funnel leads_drop_reasons leads_performance] if @show_leads %>
+      <% sections.each do |section| %>
         <% next if section == "payment_method" && !@show_payment_method %>
         <div data-tabs-target="panel" data-tab-panel="<%= section %>" <%= "hidden" unless section == "product" %>>
           <%= turbo_frame_tag "report-#{section}",
