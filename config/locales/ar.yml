@@ -304,6 +304,7 @@ ar:
     locations: "المواقع"
     notifications: "الإشعارات"
     accounting: "المحاسبة"
+    reports: "التقارير"
     pos: "نقطة البيع"
     register: "الكاشير"
     collect_payment: "تحصيل الدفع"
@@ -329,6 +330,10 @@ ar:
       reset: "إعادة الافتراضي"
       show: "ألوان القائمة"
       hide: "إخفاء الألوان"
+
+  reports_hub:
+    title: "التقارير"
+    subtitle: "كل تقارير النظام في مكان واحد."
 
   order:
     types:
@@ -4162,6 +4167,7 @@ ar:
       pagination_showing: "عرض %{from}–%{to} من %{count}"
     dashboard:
       title: "المحاسبة"
+      description: "المبيعات وتكلفة الطعام والربح، لليوم ولغاية تاريخه هذا الشهر."
       net_sales_today: "صافي مبيعات اليوم"
       net_sales_mtd: "صافي مبيعات الشهر"
       food_cost_mtd: "تكلفة الطعام % للشهر"
@@ -4200,6 +4206,7 @@ ar:
       export_pdf: "تصدير PDF"
     food_costs:
       title: "تكلفة الطعام %"
+      description: "تكلفة الطعام كنسبة من الإيراد، لكل صنف في القائمة."
       overall: "تكلفة الطعام الإجمالية"
       cost_on_revenue: "تكلفة %{cost} على إيراد %{revenue}"
       item: "الصنف"
@@ -4688,6 +4695,7 @@ ar:
       recorded_summary: "%{recorded} / %{total} مُسجّل"
     tax_reports:
       title: "تقرير ضريبة المبيعات"
+      description: "الضريبة المحصّلة على المبيعات، موزعة حسب النسبة والتصنيف."
       total_collected: "إجمالي الضريبة المحصّلة"
       rate: "النسبة"
       taxable_revenue: "الإيراد الخاضع للضريبة"

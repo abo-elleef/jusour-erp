@@ -165,6 +165,7 @@ Rails.application.routes.draw do
     end
     get "settings", to: "settings#index", as: :settings
     patch "settings", to: "settings#update"
+    get "reports", to: "reports#index", as: :reports
     resources :roles, except: %i[show]
     resources :tax_rates, only: %i[new create edit update destroy]
     resources :printers do

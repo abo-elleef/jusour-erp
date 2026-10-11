@@ -13,52 +13,53 @@ module InventoryNav
           path: :admin_inventory_vendor_invoices_path, permission: "inventory:view" },
         { controller: "vendor_credit_notes", label: "inventory.tools.vendor_credit_notes",
           path: :admin_inventory_vendor_credit_notes_path, permission: "inventory:view" },
-        { controller: "import_shipments", label: "inventory.tools.import_shipments",
-          path: :admin_inventory_import_shipments_path, permission: "inventory:view",
-          feature: :landed_cost },
         { controller: "stock_transfers",
           controllers: %w[stock_transfers stock_transfer_templates],
           label: "inventory.tools.stock_transfers",
           path: :admin_inventory_stock_transfers_path, permission: "inventory:view" },
-        { controller: "stock_takes", label: "inventory.tools.stock_takes",
-          path: :admin_inventory_stock_takes_path, permission: "inventory:view" },
-        { controller: "manufacturing_templates",
-          controllers: %w[manufacturing_templates manufacturing_runs manufacturing_template_lines],
-          label: "inventory.tools.manufacturing",
-          path: :admin_inventory_manufacturing_templates_path, permission: "inventory:manufacturing",
-          feature: :manufacturing }
-      ]
-    },
-    {
-      key: :reports, icon: :reports, label: "inventory.tools.groups.reports",
-      tabs: [
-        { controller: "reports", action: "movements", label: "inventory.tools.movements",
-          path: :admin_inventory_reports_movements_path, permission: "inventory:view" },
-        { controller: "reports", action: "valuation", label: "inventory.tools.valuation",
-          path: :admin_inventory_reports_valuation_path, permission: "inventory:view" },
-        { controller: "reports", action: "variance", label: "inventory.tools.variance",
-          path: :admin_inventory_reports_variance_path, permission: "inventory:view" },
-        { controller: "reports", action: "transfer_trends", label: "inventory.tools.transfer_trends",
-          path: :admin_inventory_reports_transfer_trends_path, permission: "inventory:view" },
-        { controller: "reports", action: "vendor_basket", label: "inventory.tools.vendor_basket",
-          path: :admin_inventory_reports_vendor_basket_path, permission: "inventory:view" },
-        { controller: "reports", action: "vendor_purchases_summary", label: "inventory.tools.vendor_purchases_summary",
-          path: :admin_inventory_reports_vendor_purchases_summary_path, permission: "inventory:view" }
-      ]
-    },
-    {
-      key: :setup, icon: :gear, label: "inventory.tools.groups.setup",
-      tabs: [
         { controller: "suppliers", label: "inventory.tools.suppliers",
           path: :admin_inventory_suppliers_path, permission: "inventory:view" },
         { controller: "ingredients", label: "inventory.tools.ingredients",
           path: :admin_inventory_ingredients_path, permission: "inventory:view" },
+        { controller: "import_shipments", label: "inventory.tools.import_shipments",
+          path: :admin_inventory_import_shipments_path, permission: "inventory:view",
+          feature: :landed_cost },
+        { controller: "manufacturing_templates",
+          controllers: %w[manufacturing_templates manufacturing_runs manufacturing_template_lines],
+          label: "inventory.tools.manufacturing",
+          path: :admin_inventory_manufacturing_templates_path, permission: "inventory:manufacturing",
+          feature: :manufacturing },
+        { controller: "stock_takes", label: "inventory.tools.stock_takes",
+          path: :admin_inventory_stock_takes_path, permission: "inventory:view" },
         { controller: "ingredient_categories", label: "inventory.tools.ingredient_categories",
           path: :admin_inventory_ingredient_categories_path, permission: "inventory:view" },
         { controller: "units", label: "inventory.tools.units",
           path: :admin_inventory_units_path, permission: "inventory:view" },
         { controller: "unit_conversions", label: "inventory.tools.unit_conversions",
           path: :admin_inventory_unit_conversions_path, permission: "inventory:view" }
+      ]
+    },
+    {
+      key: :reports, icon: :reports, label: "inventory.tools.groups.reports",
+      tabs: [
+        { controller: "reports", action: "movements", label: "inventory.tools.movements",
+          path: :admin_inventory_reports_movements_path, permission: "inventory:view",
+          description: "inventory.reports.movements.description" },
+        { controller: "reports", action: "valuation", label: "inventory.tools.valuation",
+          path: :admin_inventory_reports_valuation_path, permission: "inventory:view",
+          description: "inventory.reports.valuation.description" },
+        { controller: "reports", action: "variance", label: "inventory.tools.variance",
+          path: :admin_inventory_reports_variance_path, permission: "inventory:view",
+          description: "inventory.reports.variance.description" },
+        { controller: "reports", action: "transfer_trends", label: "inventory.tools.transfer_trends",
+          path: :admin_inventory_reports_transfer_trends_path, permission: "inventory:view",
+          description: "inventory.reports.transfer_trends.description" },
+        { controller: "reports", action: "vendor_basket", label: "inventory.tools.vendor_basket",
+          path: :admin_inventory_reports_vendor_basket_path, permission: "inventory:view",
+          description: "inventory.reports.vendor_basket.description" },
+        { controller: "reports", action: "vendor_purchases_summary", label: "inventory.tools.vendor_purchases_summary",
+          path: :admin_inventory_reports_vendor_purchases_summary_path, permission: "inventory:view",
+          description: "inventory.reports.vendor_purchases_summary.description" }
       ]
     }
   ].freeze

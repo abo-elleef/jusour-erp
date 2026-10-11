@@ -1213,37 +1213,31 @@ module ApplicationHelper
     AccountingNav::GROUPS.select { |group| accounting_visible_tabs(group).any? }
   end
 
-  def accounting_group_landing_path(group)
-    tab = accounting_visible_tabs(group).first
-    tab && public_send(tab[:path])
+  def accounting_sidebar_groups
+    accounting_visible_groups.map { |group| group.merge(tabs: accounting_visible_tabs(group)) }
   end
 
-  def accounting_landing_path
-    accounting_visible_groups.each do |group|
-      path = accounting_group_landing_path(group)
-      return path if path
-    end
-    nil
+  # Sidebar list: every non-report tab, flattened — Ledgers, Transactions and
+  # Setup no longer get their own sub-headers now that Reports has its own
+  # dedicated hub page. The dashboard tab lives in the :reports group and
+  # moves to the hub with the rest of them.
+  def accounting_sidebar_items
+    accounting_sidebar_groups.reject { |g| g[:key] == :reports }.flat_map { |g| g[:tabs] }
+  end
+
+  def accounting_report_items
+    group = accounting_sidebar_groups.find { |g| g[:key] == :reports }
+    group ? group[:tabs] : []
   end
 
   def accounting_any_access?
-    accounting_landing_path.present?
-  end
-
-  def accounting_current_group
-    AccountingNav::GROUPS.find do |group|
-      group[:tabs].any? { |tab| tab[:controller] == controller.controller_name }
-    end
+    accounting_sidebar_items.any?
   end
 
   def accounting_tab_active?(tab)
     return false unless controller.controller_name == tab[:controller]
 
     tab[:action].nil? || params[:action] == tab[:action]
-  end
-
-  def accounting_sidebar_groups
-    accounting_visible_groups.map { |group| group.merge(tabs: accounting_visible_tabs(group)) }
   end
 
   # ── Permission-driven inventory nav ──────────────────────────────
@@ -1259,16 +1253,20 @@ module ApplicationHelper
     inventory_visible_groups.map { |group| group.merge(tabs: inventory_visible_tabs(group)) }
   end
 
-  def inventory_any_access?
-    inventory_sidebar_groups.any?
+  # Sidebar list: every non-report tab, flattened — Operations and Setup no
+  # longer get their own sub-headers now that Reports has its own dedicated
+  # hub page.
+  def inventory_sidebar_items
+    inventory_sidebar_groups.reject { |g| g[:key] == :reports }.flat_map { |g| g[:tabs] }
   end
 
-  def inventory_current_group
-    return nil unless controller.controller_path.start_with?("admin/inventory")
+  def inventory_report_items
+    group = inventory_sidebar_groups.find { |g| g[:key] == :reports }
+    group ? group[:tabs] : []
+  end
 
-    InventoryNav::GROUPS.find do |group|
-      inventory_visible_tabs(group).any? { |tab| inventory_tab_matches?(tab) }
-    end
+  def inventory_any_access?
+    inventory_sidebar_items.any?
   end
 
   def inventory_tab_active?(tab)
@@ -1282,6 +1280,44 @@ module ApplicationHelper
     return false unless names.include?(controller.controller_name)
 
     tab[:action].nil? || params[:action] == tab[:action]
+  end
+
+  # ── Reports hub — one page for every report across modules ───────
+  # Inventory/Accounting expose their own report tabs (see *_report_items
+  # above, sourced from the same Nav modules the sidebar uses); Sales
+  # (distribution) only has the one page, defined inline here since it isn't
+  # modeled as a Nav module like the other two.
+  def sales_report_items
+    return [] unless Current.company&.feature_enabled?(:ar_credit_sales) && current_user.can?("customers:manage")
+
+    [{ label: t("sales.nav.reports"), path: admin_sales_reports_path, description: t("sales.reports.description") }]
+  end
+
+  def reports_hub_sections
+    sections = []
+
+    inv = inventory_report_items
+    if inv.any?
+      sections << { key: :inventory, label: t("nav.inventory"), icon: :inventory,
+                     items: inv.map { |tab| { label: bt_t(tab[:label]), path: public_send(tab[:path]),
+                                               description: tab[:description] && t(tab[:description]) } } }
+    end
+
+    acc = accounting_report_items
+    if acc.any?
+      sections << { key: :accounting, label: t("nav.accounting"), icon: :accounting,
+                     items: acc.map { |tab| { label: t(tab[:label]), path: public_send(tab[:path]),
+                                               description: tab[:description] && t(tab[:description]) } } }
+    end
+
+    sales = sales_report_items
+    sections << { key: :sales, label: t("nav.sales"), icon: :orders, items: sales } if sales.any?
+
+    sections
+  end
+
+  def reports_any_access?
+    reports_hub_sections.any?
   end
 
   # ── Settings nav — flat, no natural sub-groups ───────────────────
@@ -1338,6 +1374,10 @@ module ApplicationHelper
       if Current.company&.feature_enabled?(:ar_credit_sales)
         items << { label: t("nav.sales"), path: admin_sales_customer_invoices_path, group: t("nav.groups.sell_serve") }
       end
+    end
+
+    if reports_any_access?
+      items << { label: t("nav.reports"), path: admin_reports_path, group: t("nav.reports") }
     end
 
     inventory_sidebar_groups.each do |group|

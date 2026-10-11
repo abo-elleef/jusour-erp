@@ -306,6 +306,7 @@ en:
     locations: "Locations"
     notifications: "Notifications"
     accounting: "Accounting"
+    reports: "Reports"
     pos: "POS"
     register: "Register"
     collect_payment: "Collect Payment"
@@ -331,6 +332,10 @@ en:
       reset: "Reset to default"
       show: "Sidebar colors"
       hide: "Hide colors"
+
+  reports_hub:
+    title: "Reports"
+    subtitle: "Every report in the app, in one place."
 
   order:
     types:
@@ -4143,6 +4148,7 @@ en:
       pagination_showing: "Showing %{from}–%{to} of %{count}"
     dashboard:
       title: "Accounting"
+      description: "Today and month-to-date sales, food cost and profit at a glance."
       net_sales_today: "Net sales today"
       net_sales_mtd: "Net sales MTD"
       food_cost_mtd: "Food cost % MTD"
@@ -4181,6 +4187,7 @@ en:
       export_pdf: "Export PDF"
     food_costs:
       title: "Food cost %"
+      description: "Food cost as a percentage of revenue, by menu item."
       overall: "Overall food cost"
       cost_on_revenue: "%{cost} cost on %{revenue} revenue"
       item: "Item"
@@ -4663,6 +4670,7 @@ en:
       recorded_summary: "%{recorded} / %{total} recorded"
     tax_reports:
       title: "Sales tax report"
+      description: "Tax collected on sales, broken down by rate and category."
       total_collected: "Total tax collected"
       rate: "Rate"
       taxable_revenue: "Taxable revenue"

@@ -38,34 +38,49 @@
 <% end %>
 
 <%# ── Stock & finance ──────────────────────────────────────── %>
-<% if inventory_any_access? || accounting_any_access? %>
+<% if inventory_any_access? || accounting_any_access? || reports_any_access? %>
   <span class="<%= section %>"><%= t("nav.groups.stock_finance") %></span>
   <% if inventory_any_access? %>
-    <%= render "admin/nested_module_nav",
+    <%= render "admin/flat_module_nav",
           module_key: "inventory",
           label: t("nav.inventory"),
           icon: :inventory,
           active: admin_nav_active?("admin/inventory"),
-          groups: inventory_sidebar_groups,
-          current_group: inventory_current_group,
-          tab_active_proc: ->(tab) { inventory_tab_active?(tab) } %>
+          items: inventory_sidebar_items,
+          item_active_proc: ->(tab) { inventory_tab_active?(tab) },
+          item_label_proc: ->(tab) { bt_t(tab[:label]) },
+          item_path_proc: ->(tab) { public_send(tab[:path]) } %>
   <% end %>
   <% if accounting_any_access? %>
-    <%= render "admin/nested_module_nav",
+    <%= render "admin/flat_module_nav",
           module_key: "accounting",
           label: t("nav.accounting"),
           icon: :accounting,
           active: admin_nav_active?("admin/accounting") && !in_settings,
-          groups: accounting_sidebar_groups,
-          current_group: accounting_current_group,
-          tab_active_proc: ->(tab) { accounting_tab_active?(tab) } %>
+          items: accounting_sidebar_items,
+          item_active_proc: ->(tab) { accounting_tab_active?(tab) },
+          item_label_proc: ->(tab) { t(tab[:label]) },
+          item_path_proc: ->(tab) { public_send(tab[:path]) } %>
+  <% end %>
+  <% if reports_any_access? %>
+    <%= link_to admin_reports_path, class: admin_nav_link_class(admin_nav_active?("admin/reports")) do %>
+      <%= admin_nav_icon(:reports) %><span><%= t("nav.reports") %></span>
+    <% end %>
   <% end %>
 <% end %>
 
 <%# ── Settings (folds in Staff, Locations, Printers, Roles, Integrations, Online payments) %>
 <% if settings_any_access? %>
   <div class="my-2 border-t border-gray-800"></div>
-  <%= render "admin/settings_module_nav" %>
+  <%= render "admin/flat_module_nav",
+        module_key: "settings",
+        label: t("nav.settings"),
+        icon: :settings,
+        active: in_settings_section?,
+        items: settings_nav_items,
+        item_active_proc: ->(item) { settings_nav_item_active?(item) },
+        item_label_proc: ->(item) { item[:label] },
+        item_path_proc: ->(item) { item[:path] } %>
 <% end %>
 
 <%# ── Launch (operational apps — switch into a different workspace) %>

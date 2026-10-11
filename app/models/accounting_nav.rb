@@ -12,11 +12,6 @@ module AccountingNav
       key: :ledgers, icon: :ledgers, label: "accounting.nav.groups.ledgers",
       tabs: [
         { controller: "treasuries",        label: "accounting.nav.treasuries",        path: :admin_accounting_treasuries_path,        permission: "accounting:ledgers" },
-        { controller: "journal_entries",   label: "accounting.nav.journal_entries",   path: :admin_accounting_journal_entries_path,   permission: "accounting:ledgers" },
-        { controller: "chart_of_accounts", label: "accounting.nav.chart_of_accounts", path: :admin_accounting_chart_of_accounts_path, permission: "accounting:ledgers" },
-        { controller: "fixed_assets",      label: "accounting.nav.fixed_assets",      path: :admin_accounting_fixed_assets_path,      permission: "accounting:ledgers" },
-        { controller: "partners",          label: "accounting.nav.partners",          path: :admin_accounting_partners_path,          permission: "accounting:ledgers" },
-        { controller: "loans",             label: "accounting.nav.loans",             path: :admin_accounting_loans_path,             permission: "accounting:ledgers" }
       ]
     },
     {
@@ -37,17 +32,28 @@ module AccountingNav
     {
       key: :reports, icon: :reports, label: "accounting.nav.groups.reports",
       tabs: [
-        { controller: "dashboard",            label: "accounting.nav.dashboard",     path: :admin_accounting_root_path,                                permission: "accounting:reports" },
-        { controller: "sales_reports",        label: "accounting.nav.sales",         path: :admin_accounting_sales_reports_path,                       permission: "accounting:reports", feature: :menu },
-        { controller: "food_costs",           label: "accounting.nav.food_cost",     path: :admin_accounting_food_costs_path,                          permission: "accounting:reports", feature: :menu },
-        { controller: "usage_reports",        label: "accounting.nav.usage",         path: :admin_accounting_usage_reports_path,                       permission: "accounting:reports", feature: :menu },
-        { controller: "tax_reports",          label: "accounting.nav.tax",           path: :admin_accounting_tax_reports_path,                         permission: "accounting:reports", feature: :menu },
-        { controller: "category_analysis",    label: "accounting.nav.category_analysis", path: :admin_accounting_category_analysis_index_path,         permission: "accounting:reports" },
-        { controller: "budgets",              label: "accounting.nav.budgets",       path: :admin_accounting_budgets_path,                             permission: "accounting:reports" },
-        { controller: "financial_statements", action: "balance_sheet", label: "accounting.nav.balance_sheet", path: :balance_sheet_admin_accounting_financial_statements_path, permission: "accounting:reports" },
-        { controller: "financial_statements", action: "profit_loss",   label: "accounting.nav.profit_loss",   path: :profit_loss_admin_accounting_financial_statements_path,   permission: "accounting:reports" },        
-        { controller: "financial_statements", action: "cash_flow",     label: "accounting.nav.cash_flow",     path: :cash_flow_admin_accounting_financial_statements_path,     permission: "accounting:reports" },
-        { controller: "financial_statements", action: "profit_vs_cash", label: "accounting.nav.profit_vs_cash", path: :profit_vs_cash_admin_accounting_financial_statements_path, permission: "accounting:reports" }
+        { controller: "dashboard",            label: "accounting.nav.dashboard",     path: :admin_accounting_root_path,                                permission: "accounting:reports",
+          description: "accounting.dashboard.description" },
+        { controller: "sales_reports",        label: "accounting.nav.sales",         path: :admin_accounting_sales_reports_path,                       permission: "accounting:reports", feature: :menu,
+          description: "accounting.sales_reports.description" },
+        { controller: "food_costs",           label: "accounting.nav.food_cost",     path: :admin_accounting_food_costs_path,                          permission: "accounting:reports", feature: :menu,
+          description: "accounting.food_costs.description" },
+        { controller: "usage_reports",        label: "accounting.nav.usage",         path: :admin_accounting_usage_reports_path,                       permission: "accounting:reports", feature: :menu,
+          description: "accounting.usage_reports.description" },
+        { controller: "tax_reports",          label: "accounting.nav.tax",           path: :admin_accounting_tax_reports_path,                         permission: "accounting:reports", feature: :menu,
+          description: "accounting.tax_reports.description" },
+        { controller: "category_analysis",    label: "accounting.nav.category_analysis", path: :admin_accounting_category_analysis_index_path,         permission: "accounting:reports",
+          description: "accounting.category_analysis.description" },
+        { controller: "budgets",              label: "accounting.nav.budgets",       path: :admin_accounting_budgets_path,                             permission: "accounting:reports",
+          description: "accounting.budgets.description" },
+        { controller: "financial_statements", action: "balance_sheet", label: "accounting.nav.balance_sheet", path: :balance_sheet_admin_accounting_financial_statements_path, permission: "accounting:reports",
+          description: "accounting.financial_statements.balance_sheet_description" },
+        { controller: "financial_statements", action: "profit_loss",   label: "accounting.nav.profit_loss",   path: :profit_loss_admin_accounting_financial_statements_path,   permission: "accounting:reports",
+          description: "accounting.financial_statements.profit_loss_description" },
+        { controller: "financial_statements", action: "cash_flow",     label: "accounting.nav.cash_flow",     path: :cash_flow_admin_accounting_financial_statements_path,     permission: "accounting:reports",
+          description: "accounting.cash_flow.description" },
+        { controller: "financial_statements", action: "profit_vs_cash", label: "accounting.nav.profit_vs_cash", path: :profit_vs_cash_admin_accounting_financial_statements_path, permission: "accounting:reports",
+          description: "accounting.profit_vs_cash.description" }
       ]
     },
     {
@@ -56,6 +62,11 @@ module AccountingNav
         { controller: "expense_categories", label: "accounting.nav.expense_categories", path: :admin_accounting_expense_categories_path, permission: "accounting:setup" },
         { controller: "income_categories",  label: "accounting.nav.income_categories",  path: :admin_accounting_income_categories_path,  permission: "accounting:setup" },
         { controller: "discount_rules",      label: "accounting.nav.discounts",          path: :admin_accounting_discount_rules_path,     permission: "accounting:setup" },
+        { controller: "journal_entries",   label: "accounting.nav.journal_entries",   path: :admin_accounting_journal_entries_path,   permission: "accounting:ledgers" },
+        { controller: "chart_of_accounts", label: "accounting.nav.chart_of_accounts", path: :admin_accounting_chart_of_accounts_path, permission: "accounting:ledgers" },
+        { controller: "fixed_assets",      label: "accounting.nav.fixed_assets",      path: :admin_accounting_fixed_assets_path,      permission: "accounting:ledgers" },
+        { controller: "partners",          label: "accounting.nav.partners",          path: :admin_accounting_partners_path,          permission: "accounting:ledgers" },
+        { controller: "loans",             label: "accounting.nav.loans",             path: :admin_accounting_loans_path,             permission: "accounting:ledgers" },
         { controller: "audit_log",           label: "accounting.nav.audit_log",          path: :admin_accounting_audit_log_index_path,    permission: "accounting:audit" }
       ]
     }
