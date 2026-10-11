@@ -1,6 +1,5 @@
 <% started_at = @stock_take.started_at || @stock_take.created_at %>
 <% content_for :title, t("inventory.stock_takes.count_sheet.title", date: l(started_at.to_date, format: :long)) %>
-<%= render "admin/inventory/tools_nav" %>
 
 <div class="max-w-7xl print:max-w-none">
   <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-1">

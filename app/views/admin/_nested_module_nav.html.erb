@@ -30,7 +30,7 @@
                 data-group-key="<%= group[:key] %>"
                 aria-expanded="<%= group_open %>"
                 aria-controls="<%= group_dom_id %>"
-                class="flex items-center gap-2 w-full text-start py-1.5 px-2 rounded-lg text-xs uppercase tracking-wide text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
+                class="flex items-center gap-2 w-full text-start py-1.5 px-2 rounded-lg text-[11px] font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors">
           <%= admin_nav_icon(group[:icon], css: "w-3.5 h-3.5 shrink-0 opacity-70") %>
           <span class="flex-1"><%= t(group[:label]) %></span>
           <svg data-nested-nav-target="groupChevron"
@@ -44,7 +44,7 @@
         <div id="<%= group_dom_id %>"
              data-nested-nav-target="groupPanel"
              data-group-key="<%= group[:key] %>"
-             class="<%= "hidden" unless group_open %> flex flex-col gap-0.5 pb-1">
+             class="<%= "hidden" unless group_open %> flex flex-col gap-0.5 rounded-lg bg-black/35 ring-1 ring-black/20 p-1 mb-1">
           <% group[:tabs].each do |tab| %>
             <% tab_active = tab_active_proc.call(tab) %>
             <%= link_to bt_t(tab[:label]), public_send(tab[:path]),

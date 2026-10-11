@@ -1,4 +1,3 @@
-<%= render "admin/accounting/nav" %>
 <div class="max-w-3xl">
   <% treasury_options_json = @treasuries.map { |t| { value: t.id, label: t.name } }.to_json %>
   <div class="mb-6">

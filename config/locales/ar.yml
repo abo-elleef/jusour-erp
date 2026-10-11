@@ -315,6 +315,13 @@ ar:
       sell_serve: "البيع والخدمة"
       stock_finance: "المخزون والمالية"
       launch: "التطبيقات"
+    command_palette:
+      open: "بحث"
+      placeholder: "ابحث عن صفحة…"
+      no_results: "لا توجد نتائج مطابقة"
+      hint_navigate: "للتنقل"
+      hint_select: "للاختيار"
+      hint_close: "للإغلاق"
     sidebar_theme:
       title: "ألوان القائمة"
       background: "الخلفية"

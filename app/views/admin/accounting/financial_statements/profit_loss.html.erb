@@ -1,5 +1,4 @@
 <% content_for :title, t("accounting.financial_statements.profit_loss_title") %>
-<%= render "admin/accounting/nav" %>
 
 <% cogs_cents = @opening_cents + @coa.purchases_cents - @closing_cents %>
 <% gross_profit_cents = @coa.total_revenue_cents - cogs_cents %>

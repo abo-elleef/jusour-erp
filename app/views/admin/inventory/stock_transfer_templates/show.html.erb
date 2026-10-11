@@ -1,4 +1,3 @@
-<%= render "admin/inventory/tools_nav" %>
 
 <% sort_opts = { sort: @sort, direction: @direction } %>
 <% display_lines = @grouped_view ? group_preserving_line_order_by_ingredient_category(@lines) : [[nil, @lines]] %>

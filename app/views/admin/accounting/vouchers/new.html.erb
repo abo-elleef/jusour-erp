@@ -1,6 +1,5 @@
 <% receipt = @voucher.direction == Voucher::RECEIPT %>
 <% content_for :title, receipt ? t("accounting.vouchers.new_receipt") : t("accounting.vouchers.new_payment") %>
-<%= render "admin/accounting/nav" %>
 <div class="max-w-3xl">
   <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-1">
     <%= receipt ? t("accounting.vouchers.new_receipt") : t("accounting.vouchers.new_payment") %>

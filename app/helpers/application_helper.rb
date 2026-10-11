@@ -105,15 +105,6 @@ module ApplicationHelper
     ACCOUNTING_LEDGERS_GROUP.include?(controller.controller_name)
   end
 
-  def accounting_group_pill_class(active)
-    base = "inline-flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap"
-    if active
-      "#{base} border-amber-600 text-amber-800 bg-amber-50/60"
-    else
-      "#{base} border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300"
-    end
-  end
-
   def accounting_drawer_status(status)
     t("accounting.cash_drawer.statuses.#{status}", default: status.to_s.humanize)
   end
@@ -1173,7 +1164,8 @@ module ApplicationHelper
     transactions: '<path d="M7 5v12M7 5L4 8M7 5l3 3"/><path d="M17 19V7M17 19l3-3M17 19l-3-3"/>',
     reports: '<path d="M4 20h16"/><rect x="6" y="12" width="3" height="5"/><rect x="10.5" y="8" width="3" height="9"/><rect x="15" y="14" width="3" height="3"/>',
     gear: '<path d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.11v1.093c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.11v-1.094c0-.55.398-1.019.94-1.11l.894-.148c.424-.071.765-.384.93-.781.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"/><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>',
-    operations: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3.5A.5.5 0 0 1 9.5 3h5a.5.5 0 0 1 .5.5V4"/><path d="M9 10h6M9 13.5h6M9 17h4"/>'
+    operations: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3.5A.5.5 0 0 1 9.5 3h5a.5.5 0 0 1 .5.5V4"/><path d="M9 10h6M9 13.5h6M9 17h4"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'
   }.freeze
 
   def admin_nav_icon(name, css: "w-5 h-5 shrink-0")
@@ -1194,23 +1186,12 @@ module ApplicationHelper
   # Controllers surfaced under the Settings section (some live in other
   # namespaces but are presented as Settings tabs).
   SETTINGS_SECTION_CONTROLLERS = %w[
-    admin/settings admin/users admin/locations admin/printers
+    admin/settings admin/users admin/locations admin/printers admin/workstations admin/roles
     admin/accounting/integrations admin/accounting/payment_method_treasuries
   ].freeze
 
   def in_settings_section?
     admin_nav_active?(*SETTINGS_SECTION_CONTROLLERS)
-  end
-
-  # Where the sidebar "Settings" link points, per role — the first tab the
-  # current user can actually open. Managers can't see General/Staff, so they
-  # land on Locations.
-  def settings_landing_path
-    if current_user.owner? || current_user.accountant?
-      admin_settings_path
-    else
-      admin_locations_path
-    end
   end
 
   # ── Permission-driven accounting nav ─────────────────────────────
@@ -1303,14 +1284,85 @@ module ApplicationHelper
     tab[:action].nil? || params[:action] == tab[:action]
   end
 
-  # Sidebar "Settings" visibility — any settings/staff tab the user can reach.
-  SETTINGS_SECTION_PERMISSIONS = %w[
-    settings:general staff:view staff:manage locations:manage
-    printers:manage integrations:manage payments:manage
-  ].freeze
+  # ── Settings nav — flat, no natural sub-groups ───────────────────
+  # Single source of truth for both the sidebar accordion and the command
+  # palette; mirrors the exact visibility rules the old in-page settings nav
+  # used (role-based, not permission-key based, unlike Inventory/Accounting).
+  def settings_nav_items
+    items = []
+    if current_user.owner? || current_user.accountant?
+      items << { label: t("settings.nav.general"), path: admin_settings_path, controller: "settings" }
+      items << { label: t("nav.staff"), path: admin_users_path, controller: "users" }
+    end
+    if current_user.can_access_admin?
+      items << { label: t("nav.locations"), path: admin_locations_path, controller: "locations" }
+      items << { label: t("nav.printers"), path: admin_printers_path, controller: "printers" }
+      items << { label: t("nav.workstations"), path: admin_workstations_path, controller: "workstations" }
+    end
+    if current_user.owner?
+      items << { label: t("settings.nav.roles"), path: admin_roles_path, controller: "roles" }
+      items << { label: t("settings.nav.integrations"), path: admin_accounting_integrations_path, controller: "integrations" }
+      items << { label: t("settings.nav.online_payments"), path: admin_accounting_payment_method_treasuries_path, controller: "payment_method_treasuries" }
+    end
+    items
+  end
+
+  def settings_nav_item_active?(item)
+    controller.controller_name == item[:controller]
+  end
 
   def settings_any_access?
-    SETTINGS_SECTION_PERMISSIONS.any? { |perm| current_user.can?(perm) }
+    settings_nav_items.any?
+  end
+
+  # ── Command palette (Cmd/Ctrl+K) ─────────────────────────────────
+  # Flat, permission-gated list of every destination the sidebar can reach,
+  # regardless of how many accordion levels it sits behind — lets a user jump
+  # straight to "Ingredients" without expanding Inventory then its Setup group.
+  def command_palette_items
+    items = []
+
+    if current_user.can?("dashboard:view")
+      items << { label: t("nav.dashboard"), path: admin_root_path, group: t("nav.dashboard") }
+    end
+
+    menu_selling = tab_feature_enabled?(feature: :menu)
+    if menu_selling && current_user.can?("orders:view")
+      items << { label: t("nav.orders"), path: admin_orders_path, group: t("nav.groups.sell_serve") }
+    end
+    if menu_selling && current_user.can?("menu:manage")
+      items << { label: t("nav.menu"), path: admin_menu_items_path, group: t("nav.groups.sell_serve") }
+    end
+    if current_user.can?("customers:manage")
+      items << { label: t("nav.customers"), path: admin_customers_path, group: t("nav.groups.sell_serve") }
+      if Current.company&.feature_enabled?(:ar_credit_sales)
+        items << { label: t("nav.sales"), path: admin_sales_customer_invoices_path, group: t("nav.groups.sell_serve") }
+      end
+    end
+
+    inventory_sidebar_groups.each do |group|
+      group[:tabs].each do |tab|
+        items << { label: bt_t(tab[:label]), path: public_send(tab[:path]), group: "#{t('nav.inventory')} · #{t(group[:label])}" }
+      end
+    end
+
+    accounting_sidebar_groups.each do |group|
+      group[:tabs].each do |tab|
+        items << { label: t(tab[:label]), path: public_send(tab[:path]), group: "#{t('nav.accounting')} · #{t(group[:label])}" }
+      end
+    end
+
+    settings_nav_items.each do |item|
+      items << { label: item[:label], path: item[:path], group: t("nav.settings") }
+    end
+
+    if Current.company.restaurant?
+      items << { label: t("nav.pos"), path: pos_path, group: t("nav.groups.launch") } if current_user.can?("pos:access")
+      items << { label: t("nav.kitchen"), path: kitchen_path, group: t("nav.groups.launch") } if current_user.can?("kitchen:access")
+      items << { label: t("nav.production"), path: production_path, group: t("nav.groups.launch") } if current_user.can?("production:access")
+    end
+
+    items
   end
 
   def permission_label(key)

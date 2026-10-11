@@ -317,6 +317,13 @@ en:
       sell_serve: "Sell & serve"
       stock_finance: "Stock & finance"
       launch: "Launch"
+    command_palette:
+      open: "Search"
+      placeholder: "Search for a page…"
+      no_results: "No matching pages"
+      hint_navigate: "to navigate"
+      hint_select: "to select"
+      hint_close: "to close"
     sidebar_theme:
       title: "Sidebar colors"
       background: "Background"

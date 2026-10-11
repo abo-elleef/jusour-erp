@@ -5,8 +5,6 @@
   <h1 class="text-2xl font-bold mb-1"><%= admin_page_title("low_stock") %></h1>
   <p class="text-gray-600 text-sm mb-6"><%= t("inventory.ingredients.low_stock.description") %></p>
 
-  <%= render "admin/inventory/tools_nav", flush: false %>
-
   <div class="bg-white rounded-lg shadow overflow-hidden">
     <% if @ingredients.any? %>
       <table class="w-full text-sm">

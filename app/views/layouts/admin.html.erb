@@ -22,7 +22,10 @@
       })();
     </script>
   </head>
-  <body class="bg-gray-50 flex h-screen overflow-hidden" data-controller="sidebar">
+  <body class="bg-gray-50 flex h-screen overflow-hidden"
+        data-controller="sidebar command-palette"
+        data-command-palette-items-value="<%= command_palette_items.to_json %>"
+        data-command-palette-no-results-value="<%= t("nav.command_palette.no_results") %>">
     <aside class="admin-sidebar fixed inset-y-0 start-0 z-30 w-60 flex flex-col transition-transform duration-200 ease-in-out shrink-0 sidebar-panel--closed lg:relative"
            data-sidebar-target="panel">
       <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between gap-2">
@@ -41,7 +44,16 @@
           <% end %>
         <% end %>
       </div>
-      <nav class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-0.5 text-sm text-white">
+      <div class="px-4 pt-3">
+        <button type="button" data-action="command-palette#open"
+                class="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-gray-700 text-gray-400 hover:text-white hover:border-gray-600 text-sm transition-colors">
+          <%= admin_nav_icon(:search, css: "w-4 h-4 shrink-0") %>
+          <span class="flex-1 text-start truncate"><%= t("nav.command_palette.placeholder") %></span>
+          <kbd class="hidden sm:inline-flex text-[10px] font-mono text-gray-500 border border-gray-700 rounded px-1 py-0.5">⌘K</kbd>
+        </button>
+      </div>
+      <nav class="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-0.5 text-sm text-white"
+           data-controller="sidebar-scroll">
         <%= render "admin/nav" %>
       </nav>
       <div class="px-4 py-4 border-t border-gray-800">
@@ -68,7 +80,12 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
           </svg>
         </button>
-        <span class="font-semibold text-gray-900 truncate"><%= admin_brand_name %></span>
+        <span class="font-semibold text-gray-900 truncate flex-1"><%= admin_brand_name %></span>
+        <button type="button" data-action="command-palette#open"
+                class="p-2 rounded-lg hover:bg-gray-100 min-h-11 min-w-11"
+                aria-label="<%= t("nav.command_palette.open") %>">
+          <%= admin_nav_icon(:search, css: "w-5 h-5 text-gray-700") %>
+        </button>
       </header>
       <%# Pages with a section nav start flush; everything else needs breathing room up top. %>
       <main class="flex-1 overflow-y-auto px-4 pb-4 lg:px-6 lg:pb-6 <%= content_for?(:flush_top) ? "" : "pt-4 lg:pt-6" %>">
@@ -78,5 +95,30 @@
 
     <%= turbo_stream_from "admin_#{current_user.company_id}" if current_user&.company_id %>
     <%= render "shared/toasts" %>
+
+    <%# Global Cmd/Ctrl+K search — see ApplicationHelper#command_palette_items %>
+    <div data-command-palette-target="backdrop"
+         data-action="click->command-palette#closeOnBackdrop keydown->command-palette#keydown"
+         class="hidden fixed inset-0 z-50 bg-black/40 flex items-start justify-center px-4 pt-20 sm:pt-28">
+      <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div class="flex items-center gap-2 px-4 border-b border-gray-100">
+          <%= admin_nav_icon(:search, css: "w-4 h-4 shrink-0 text-gray-400") %>
+          <input type="text"
+                 data-command-palette-target="input"
+                 data-action="input->command-palette#filter"
+                 class="flex-1 py-3 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent"
+                 placeholder="<%= t("nav.command_palette.placeholder") %>"
+                 autocomplete="off" aria-label="<%= t("nav.command_palette.open") %>">
+          <kbd class="text-[10px] font-mono text-gray-400 border border-gray-200 rounded px-1 py-0.5 shrink-0">Esc</kbd>
+        </div>
+        <ul data-command-palette-target="list" data-action="click->command-palette#click" role="listbox"
+            class="max-h-80 overflow-y-auto p-2"></ul>
+        <div class="hidden sm:flex items-center gap-4 px-4 py-2 border-t border-gray-100 text-xs text-gray-400">
+          <span>↑↓ <%= t("nav.command_palette.hint_navigate") %></span>
+          <span>↵ <%= t("nav.command_palette.hint_select") %></span>
+          <span>Esc <%= t("nav.command_palette.hint_close") %></span>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
