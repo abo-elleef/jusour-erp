@@ -21,7 +21,6 @@ class Customer < ApplicationRecord
   belongs_to :ar_treasury, class_name: "Treasury", foreign_key: :treasury_id, optional: true
   belongs_to :price_tier, optional: true
   has_many :customer_invoices, dependent: :restrict_with_error
-  has_many :customer_payments, dependent: :restrict_with_error
   has_many :addresses, class_name: "CustomerAddress", dependent: :destroy, inverse_of: :customer
 
   accepts_nested_attributes_for :addresses, allow_destroy: true,
