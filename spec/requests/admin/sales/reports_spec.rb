@@ -151,32 +151,4 @@ RSpec.describe "Admin::Sales::Reports", type: :request do
       expect(report[:daily].sum { |d| d[:net_cents] }).to eq(10_000)
     end
   end
-
-  # NOTE: blocked by a pre-existing, unrelated bug — see spec/models/lead_spec.rb's
-  # header comment. Remove this skip once users.wages_account_code is fixed.
-  describe "the leads tabs",
-    skip: "blocked by pre-existing users.wages_account_code NOT NULL bug (no migration/code sets it)" do
-    it "are hidden from a user without leads:reports" do
-      sub_manager = create(:user, company: company, role: "sub_manager")
-      sub_manager.effective_role.update!(permissions: sub_manager.effective_role.permissions - ["leads:reports"])
-      sign_in sub_manager
-
-      get admin_sales_reports_path(locale: "en", section: "leads_funnel")
-      expect(response).to redirect_to(admin_sales_reports_path)
-    end
-
-    it "renders the funnel, drop-reasons and performance sections" do
-      create(:lead, created_by: owner, stage: "new")
-      create(:lead, created_by: owner, stage: "lost", lost_reason: "price")
-
-      get admin_sales_reports_path(locale: "en", section: "leads_funnel")
-      expect(response).to have_http_status(:ok)
-
-      get admin_sales_reports_path(locale: "en", section: "leads_drop_reasons")
-      expect(response.body).to include(I18n.t("sales.leads.lost_reasons.price", locale: "en"))
-
-      get admin_sales_reports_path(locale: "en", section: "leads_performance")
-      expect(response.body).to include(owner.name)
-    end
-  end
 end

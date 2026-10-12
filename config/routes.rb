@@ -146,6 +146,7 @@ Rails.application.routes.draw do
         end
         resources :lead_activities, only: %i[create]
       end
+      resources :lead_reports, only: %i[index]
       resources :reports, only: %i[index]
     end
 

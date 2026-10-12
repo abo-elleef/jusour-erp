@@ -1,0 +1,41 @@
+<% content_for :title, t("sales.lead_reports.title") %>
+
+<div class="max-w-7xl">
+  <%= render "admin/sales/nav" %>
+
+  <div class="mb-2">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("sales.lead_reports.title") %></h1>
+    <p class="text-gray-600 text-sm mt-1"><%= t("sales.lead_reports.description") %></p>
+  </div>
+
+  <%= render "admin/accounting/date_range_form" %>
+
+  <div data-controller="tabs" data-tabs-storage-key-value="lead-reports">
+    <div class="flex flex-wrap gap-1 mb-6 border-b border-gray-200">
+      <button type="button" data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="funnel"
+              class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+        <%= t("sales.reports.leads.funnel") %>
+      </button>
+      <button type="button" data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="drop_reasons"
+              class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+        <%= t("sales.reports.leads.drop_reasons") %>
+      </button>
+      <button type="button" data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="performance"
+              class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+        <%= t("sales.reports.leads.performance") %>
+      </button>
+    </div>
+
+    <div data-tabs-target="panel" data-tab-panel="funnel">
+      <%= render "funnel_section", rows: @service.funnel, conversion_rate: @service.conversion_rate,
+            average_days_to_convert: @service.average_days_to_convert, total_created: @service.total_created,
+            trend: @service.trend %>
+    </div>
+    <div data-tabs-target="panel" data-tab-panel="drop_reasons" hidden>
+      <%= render "drop_reasons_section", rows: @service.drop_reasons %>
+    </div>
+    <div data-tabs-target="panel" data-tab-panel="performance" hidden>
+      <%= render "performance_section", rows: @service.by_performance %>
+    </div>
+  </div>
+</div>

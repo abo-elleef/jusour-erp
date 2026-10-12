@@ -35,4 +35,34 @@ namespace :roles do
 
     puts "Granted #{key} to #{granted} role(s); #{skipped} already had it."
   end
+
+  # Mirrors Permission::BUILTIN_ROLES' leads:* entries (added alongside the Lead
+  # model) — see that file for which role gets which key.
+  LEADS_FULL_ROLE_KEYS = %w[owner super_manager manager].freeze
+  LEADS_BASIC_ROLE_KEYS = %w[sub_manager].freeze
+
+  desc "Give existing built-in roles the new leads:view/manage/reports permissions"
+  task grant_leads_permissions: :environment do
+    granted = 0
+    skipped = 0
+
+    grant = lambda do |role_keys, keys|
+      Role.unscoped.where(key: role_keys).find_each do |role|
+        missing = keys - role.permission_keys
+        if missing.empty?
+          skipped += 1
+          next
+        end
+
+        role.permissions = role.permission_keys + missing
+        role.save!
+        granted += 1
+      end
+    end
+
+    grant.call(LEADS_FULL_ROLE_KEYS, %w[leads:view leads:manage leads:reports])
+    grant.call(LEADS_BASIC_ROLE_KEYS, %w[leads:view leads:manage])
+
+    puts "Updated #{granted} role(s); #{skipped} already had their leads permissions."
+  end
 end

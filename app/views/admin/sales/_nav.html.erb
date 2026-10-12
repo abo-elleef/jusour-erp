@@ -7,6 +7,9 @@
 <% if Current.company.feature_enabled?(:leads) && current_user.can?("leads:view") %>
   <% tabs << [t("sales.nav.leads"), admin_sales_leads_path, %w[leads]] %>
 <% end %>
+<% if Current.company.feature_enabled?(:leads) && current_user.can?("leads:reports") %>
+  <% tabs << [t("sales.nav.lead_reports"), admin_sales_lead_reports_path, %w[lead_reports]] %>
+<% end %>
 <% tabs << [t("sales.nav.reports"), admin_sales_reports_path, %w[reports]] %>
 <div class="flex flex-wrap gap-1 mb-6 border-b border-gray-200">
   <% tabs.each do |label, path, controllers| %>

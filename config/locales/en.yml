@@ -2539,7 +2539,11 @@ en:
       credit_notes: "Credit notes"
       price_tiers: "Price tiers"
       leads: "Leads"
+      lead_reports: "Leads reports"
       reports: "Reports"
+    lead_reports:
+      title: "Leads reports"
+      description: "How your pipeline is moving: funnel, drop-off reasons, and rep performance."
     reports:
       title: "Sales reports"
       description: "What you sold over a period, by product, customer and salesperson."
