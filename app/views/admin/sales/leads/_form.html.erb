@@ -44,6 +44,13 @@
         <%= f.label :assigned_user_id, t("sales.leads.form.assigned_to"), class: label_class %>
         <%= f.collection_select :assigned_user_id, @assignable_users, :id, :name, {}, class: "#{input_class} appearance-none" %>
       </div>
+      <% if lead.persisted? && lead.open? %>
+        <div>
+          <%= f.label :stage, t("sales.leads.table.stage"), class: label_class %>
+          <%= f.select :stage, (Lead::STAGES - Lead::TERMINAL_STAGES).map { |s| [t("sales.leads.stages.#{s}"), s] },
+                {}, class: "#{input_class} appearance-none" %>
+        </div>
+      <% end %>
       <div>
         <%= f.label :next_follow_up_at, t("sales.leads.form.next_follow_up"), class: label_class %>
         <%= f.date_field :next_follow_up_at, class: input_class %>

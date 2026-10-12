@@ -1285,15 +1285,59 @@ module ApplicationHelper
     tab[:action].nil? || params[:action] == tab[:action]
   end
 
+  # ── Permission-driven sales nav ───────────────────────────────────
+  # No natural sub-groups (unlike Inventory/Accounting) — one flat list,
+  # same as Settings. Sales reports and Leads reports are dedicated pages
+  # reachable only from the Reports hub (see sales_report_items above), not
+  # listed here.
+  def sales_sidebar_items
+    items = []
+
+    if current_user.can?("customers:manage") && Current.company&.feature_enabled?(:ar_credit_sales)
+      items << { controller: "customer_invoices", label: "sales.nav.invoices", path: :admin_sales_customer_invoices_path }
+      items << { controller: "customer_statements", label: "sales.nav.statements", path: :admin_sales_customer_statements_path }
+      items << { controller: "credit_notes", label: "sales.nav.credit_notes", path: :admin_sales_credit_notes_path }
+      items << { controller: "price_tiers", label: "sales.nav.price_tiers", path: :admin_sales_price_tiers_path }
+    end
+
+    if Current.company&.feature_enabled?(:leads) && current_user.can?("leads:view")
+      items << { controller: "leads", label: "sales.nav.leads", path: :admin_sales_leads_path }
+    end
+
+    items
+  end
+
+  def sales_any_access?
+    sales_sidebar_items.any?
+  end
+
+  def sales_tab_active?(tab)
+    return false unless controller.controller_path.start_with?("admin/sales")
+
+    controller.controller_name == tab[:controller]
+  end
+
   # ── Reports hub — one page for every report across modules ───────
   # Inventory/Accounting expose their own report tabs (see *_report_items
   # above, sourced from the same Nav modules the sidebar uses); Sales
-  # (distribution) only has the one page, defined inline here since it isn't
-  # modeled as a Nav module like the other two.
+  # (distribution) only has these pages, defined inline here since it isn't
+  # modeled as a Nav module like the other two. Each entry is gated on its own
+  # feature+permission — ar_credit_sales and leads are independent (a company
+  # can have a lead pipeline without full AR credit sales), so this builds the
+  # list item-by-item rather than all-or-nothing.
   def sales_report_items
-    return [] unless Current.company&.feature_enabled?(:ar_credit_sales) && current_user.can?("customers:manage")
+    items = []
 
-    [{ label: t("sales.nav.reports"), path: admin_sales_reports_path, description: t("sales.reports.description") }]
+    if Current.company&.feature_enabled?(:ar_credit_sales) && current_user.can?("customers:manage")
+      items << { label: t("sales.nav.reports"), path: admin_sales_reports_path, description: t("sales.reports.description") }
+    end
+
+    if Current.company&.feature_enabled?(:leads) && current_user.can?("leads:reports")
+      items << { label: t("sales.nav.lead_reports"), path: admin_sales_lead_reports_path,
+                 description: t("sales.lead_reports.description") }
+    end
+
+    items
   end
 
   def reports_hub_sections
@@ -1374,9 +1418,10 @@ module ApplicationHelper
     end
     if current_user.can?("customers:manage")
       items << { label: t("nav.customers"), path: admin_customers_path, group: t("nav.groups.sell_serve") }
-      if Current.company&.feature_enabled?(:ar_credit_sales)
-        items << { label: t("nav.sales"), path: admin_sales_customer_invoices_path, group: t("nav.groups.sell_serve") }
-      end
+    end
+
+    sales_sidebar_items.each do |tab|
+      items << { label: t(tab[:label]), path: public_send(tab[:path]), group: t("nav.sales") }
     end
 
     if reports_any_access?

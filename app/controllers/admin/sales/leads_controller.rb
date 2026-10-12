@@ -10,8 +10,8 @@ module Admin
     class LeadsController < Admin::BaseController
       before_action { require_feature!(:leads) }
       before_action :require_leads_view
-      before_action :require_leads_manage, only: %i[new create edit update destroy convert mark_lost reassign change_stage]
-      before_action :set_lead, only: %i[show edit update destroy convert mark_lost reassign change_stage]
+      before_action :require_leads_manage, only: %i[new create edit update destroy convert mark_lost]
+      before_action :set_lead, only: %i[show edit update destroy convert mark_lost]
 
       def index
         @stage = params[:stage].presence_in(Lead::STAGES)
@@ -72,8 +72,25 @@ module Admin
         load_form_data
       end
 
+      # Stage and assignment are plain fields on this same form (not separate
+      # actions) for a simpler single-form edit experience, but still go through
+      # Lead#change_stage!/#reassign! rather than a bare attribute write, so the
+      # friendly timeline entry (see LeadActivity) keeps happening either way.
       def update
-        if @lead.update(lead_params)
+        attrs = lead_params
+        new_stage = attrs.delete(:stage)
+        new_assigned_user_id = attrs.delete(:assigned_user_id)
+
+        Lead.transaction do
+          if @lead.update(attrs)
+            apply_stage_change!(new_stage)
+            apply_reassignment!(new_assigned_user_id)
+          else
+            raise ActiveRecord::Rollback
+          end
+        end
+
+        if @lead.errors.empty?
           redirect_to admin_sales_lead_path(@lead), notice: t("sales.leads.flash.updated")
         else
           load_form_data
@@ -94,13 +111,6 @@ module Admin
         redirect_to admin_sales_lead_path(@lead), alert: t("sales.leads.flash.convert_failed", error: e.message)
       end
 
-      def change_stage
-        @lead.change_stage!(params[:stage], by: current_user)
-        redirect_to admin_sales_lead_path(@lead), notice: t("sales.leads.flash.stage_changed")
-      rescue ArgumentError, ActiveRecord::RecordInvalid => e
-        redirect_to admin_sales_lead_path(@lead), alert: e.message
-      end
-
       def mark_lost
         @lead.mark_lost!(by: current_user, lost_reason: params[:lost_reason], lost_reason_note: params[:lost_reason_note])
         redirect_to admin_sales_lead_path(@lead), notice: t("sales.leads.flash.marked_lost")
@@ -108,17 +118,21 @@ module Admin
         redirect_to admin_sales_lead_path(@lead), alert: e.message
       end
 
-      def reassign
-        new_assignee = assignable_users.find_by(id: params[:assigned_user_id])
-        if new_assignee
-          @lead.reassign!(to: new_assignee, by: current_user)
-          redirect_to admin_sales_lead_path(@lead), notice: t("sales.leads.flash.reassigned")
-        else
-          redirect_to admin_sales_lead_path(@lead), alert: t("sales.leads.flash.reassign_failed")
-        end
+      private
+
+      def apply_stage_change!(new_stage)
+        return if new_stage.blank? || new_stage == @lead.stage
+        return unless Lead::STAGES.include?(new_stage) && Lead::TERMINAL_STAGES.exclude?(new_stage)
+
+        @lead.change_stage!(new_stage, by: current_user)
       end
 
-      private
+      def apply_reassignment!(new_assigned_user_id)
+        return if new_assigned_user_id.blank? || new_assigned_user_id == @lead.assigned_user_id
+
+        new_user = assignable_users.find_by(id: new_assigned_user_id)
+        @lead.reassign!(to: new_user, by: current_user) if new_user
+      end
 
       def set_lead
         @lead = Lead.find(params[:id])
@@ -158,7 +172,7 @@ module Admin
       def lead_params
         params.require(:lead).permit(
           :name, :phone, :phone_secondary, :email, :source, :location_id,
-          :assigned_user_id, :next_follow_up_at, :notes
+          :assigned_user_id, :stage, :next_follow_up_at, :notes
         )
       end
     end

@@ -141,8 +141,6 @@ Rails.application.routes.draw do
         member do
           post :convert
           post :mark_lost
-          post :reassign
-          post :change_stage
         end
         resources :lead_activities, only: %i[create]
       end

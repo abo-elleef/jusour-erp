@@ -33,13 +33,30 @@ RSpec.describe "Admin::Sales::Leads", type: :request,
     expect(response).to redirect_to(admin_root_path)
   end
 
-  it "reassigns a lead to another teammate" do
+  it "reassigns a lead to another teammate via the edit form" do
     lead = create(:lead, created_by: owner, assigned_user: owner)
 
-    post reassign_admin_sales_lead_path(lead), params: { assigned_user_id: rep.id }
+    patch admin_sales_lead_path(lead), params: { lead: { assigned_user_id: rep.id } }
 
     expect(lead.reload.assigned_user).to eq(rep)
     expect(lead.lead_activities.last.activity_type).to eq("assignment_change")
+  end
+
+  it "moves a lead's stage via the edit form" do
+    lead = create(:lead, created_by: owner, stage: "new")
+
+    patch admin_sales_lead_path(lead), params: { lead: { stage: "contacted" } }
+
+    expect(lead.reload.stage).to eq("contacted")
+    expect(lead.lead_activities.last.activity_type).to eq("stage_change")
+  end
+
+  it "ignores an attempt to jump straight to a terminal stage through the edit form" do
+    lead = create(:lead, created_by: owner, stage: "new")
+
+    patch admin_sales_lead_path(lead), params: { lead: { stage: "converted" } }
+
+    expect(lead.reload.stage).to eq("new")
   end
 
   it "converts a lead into a real customer and redirects to a new invoice for them" do

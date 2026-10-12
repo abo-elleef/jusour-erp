@@ -30,10 +30,16 @@
       <%= admin_nav_icon(:customers) %><span><%= t("nav.customers") %></span>
     <% end %>
   <% end %>
-  <% if current_user.can?("customers:manage") && Current.company&.feature_enabled?(:ar_credit_sales) %>
-    <%= link_to admin_sales_customer_invoices_path, class: admin_nav_link_class(admin_nav_active?("admin/sales")) do %>
-      <%= admin_nav_icon(:orders) %><span><%= t("nav.sales") %></span>
-    <% end %>
+  <% if sales_any_access? %>
+    <%= render "admin/flat_module_nav",
+          module_key: "sales",
+          label: t("nav.sales"),
+          icon: :orders,
+          active: admin_nav_active?("admin/sales"),
+          items: sales_sidebar_items,
+          item_active_proc: ->(tab) { sales_tab_active?(tab) },
+          item_label_proc: ->(tab) { t(tab[:label]) },
+          item_path_proc: ->(tab) { public_send(tab[:path]) } %>
   <% end %>
 <% end %>
 
