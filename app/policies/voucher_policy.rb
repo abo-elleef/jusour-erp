@@ -6,7 +6,7 @@
 # accountants, as deleting an expense does.
 class VoucherPolicy < AccountingPolicy
   def destroy?
-    return false if record.is_a?(Voucher) && record.backfilled?
+    return false if record.is_a?(Voucher) && (record.backfilled? || record.voided?)
 
     user.owner? || user.accountant?
   end

@@ -23,7 +23,6 @@ class Customer < ApplicationRecord
   # The lead this customer was converted from, if any — see Lead#convert!.
   belongs_to :originating_lead, class_name: "Lead", optional: true
   has_many :customer_invoices, dependent: :restrict_with_error
-  has_many :customer_payments, dependent: :restrict_with_error
   has_many :addresses, class_name: "CustomerAddress", dependent: :destroy, inverse_of: :customer
 
   accepts_nested_attributes_for :addresses, allow_destroy: true,
