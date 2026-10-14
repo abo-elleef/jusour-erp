@@ -121,7 +121,7 @@ Rails.application.routes.draw do
 
     # Distribution sales (AR / credit sales) — gated behind the ar_credit_sales feature.
     namespace :sales do
-      resources :customer_invoices, only: %i[index new create show] do
+      resources :customer_invoices, only: %i[index new create show edit update] do
         member do
           post :confirm
           post :record_payment

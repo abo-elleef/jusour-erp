@@ -2379,6 +2379,7 @@ en:
         already_dispatched: "This invoice was already dispatched."
         not_pending: "This invoice is not awaiting payment confirmation."
         cannot_void: "Only a draft or a payment still awaiting confirmation can be voided."
+        not_draft_for_edit: "Only a draft invoice can be edited."
       table:
         number: "Number"
         customer: "Customer"

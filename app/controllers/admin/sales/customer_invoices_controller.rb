@@ -3,7 +3,8 @@
 module Admin
   module Sales
     class CustomerInvoicesController < BaseController
-      before_action :set_invoice, only: %i[show confirm record_payment approve_payment reject_payment mark_dispatched void attach_payment_proof_image]
+      before_action :set_invoice, only: %i[show edit update confirm record_payment approve_payment reject_payment mark_dispatched void attach_payment_proof_image]
+      before_action :require_draft_for_edit, only: %i[edit update]
       before_action :require_confirm_payments_access, only: %i[approve_payment reject_payment]
 
       def index
@@ -39,6 +40,28 @@ module Admin
         else
           load_form_data
           render :new, status: :unprocessable_entity
+        end
+      end
+
+      # A draft hasn't posted anything yet (no stock deducted, no AR/treasury
+      # entry) — nothing to reverse, so it's the only state this edits in
+      # place. A confirmed invoice is a settled document, same reasoning as
+      # Voucher/CreditNote: move it through states, don't rewrite it.
+      def edit
+        load_form_data
+      end
+
+      def update
+        if @invoice.update(invoice_params)
+          if params[:commit_action] == "confirm"
+            confirm_now
+          else
+            redirect_to admin_sales_customer_invoice_path(@invoice),
+              notice: t("sales.customer_invoices.flash.saved")
+          end
+        else
+          load_form_data
+          render :edit, status: :unprocessable_entity
         end
       end
 
@@ -161,6 +184,12 @@ module Admin
 
       def set_invoice
         @invoice = CustomerInvoice.find(params[:id])
+      end
+
+      def require_draft_for_edit
+        return if @invoice.draft?
+
+        redirect_to admin_sales_customer_invoice_path(@invoice), alert: t("sales.customer_invoices.errors.not_draft_for_edit")
       end
 
       def require_confirm_payments_access

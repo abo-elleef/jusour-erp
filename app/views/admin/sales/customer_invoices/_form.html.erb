@@ -4,7 +4,9 @@
 <% available_units = @ingredients.to_h { |i| [i.id, i.available_units.map { |u| [ingredient_unit_label(u), u] }] } %>
 <% selling_prices = @ingredients.to_h { |i| [i.id, (i.selling_price_cents.to_i / 100.0).round(2)] } %>
 
-<%= form_with model: invoice, url: admin_sales_customer_invoices_path, method: :post,
+<%= form_with model: invoice,
+      url: invoice.persisted? ? admin_sales_customer_invoice_path(invoice) : admin_sales_customer_invoices_path,
+      method: invoice.persisted? ? :patch : :post,
       class: "space-y-6",
       data: {
         controller: "customer-invoice-lines sale-fulfillment",
@@ -128,7 +130,8 @@
           class: "bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-6 py-2.5 rounded-xl border border-gray-300 transition-colors" %>
     <%= button_tag t("sales.customer_invoices.form.save_and_confirm"), type: "submit", name: "commit_action", value: "confirm",
           class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm transition-colors" %>
-    <%= link_to t("actions.cancel"), admin_sales_customer_invoices_path,
+    <%= link_to t("actions.cancel"),
+          invoice.persisted? ? admin_sales_customer_invoice_path(invoice) : admin_sales_customer_invoices_path,
           class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
   </div>
 <% end %>

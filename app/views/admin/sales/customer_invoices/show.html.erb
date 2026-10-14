@@ -44,6 +44,8 @@
         <% end %>
       </p>
       <div class="flex items-center gap-2">
+        <%= link_to t("actions.edit"), edit_admin_sales_customer_invoice_path(@invoice),
+              class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-300 transition-colors" %>
         <%= button_to t("actions.void"), void_admin_sales_customer_invoice_path(@invoice),
               method: :patch,
               class: "text-sm font-semibold text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors",
@@ -110,7 +112,10 @@
       <tbody class="divide-y divide-gray-100">
         <% @invoice.customer_invoice_lines.each do |line| %>
           <tr>
-            <td class="p-3 ps-5 text-gray-800"><%= line.ingredient.name %></td>
+            <td class="p-3 ps-5 text-gray-800">
+              <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient),
+                    class: "font-semibold text-amber-700 hover:text-amber-800" %>
+            </td>
             <td class="p-3 text-end tabular-nums text-gray-700"><%= line.quantity %> <%= ingredient_unit_label(line.unit.presence || line.ingredient.unit) %></td>
             <td class="p-3 text-end tabular-nums text-gray-700"><%= format_money(line.unit_price_cents) %></td>
             <td class="p-3 text-end pe-5 tabular-nums font-medium text-gray-900"><%= format_money(line.line_total_cents) %></td>
