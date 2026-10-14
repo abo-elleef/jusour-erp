@@ -257,6 +257,8 @@ module ApplicationHelper
       payment = expense.source_record
       invoice = payment.vendor_invoice if payment
       admin_inventory_vendor_invoice_path(invoice) if invoice
+    when "CustomerInvoice"
+      admin_sales_customer_invoice_path(transaction.source_record_id)
     end
   end
 

@@ -25,7 +25,23 @@ module Admin
         @pagy, @shipping_companies = pagy(:offset, scope, limit: 25)
       end
 
-      def show; end
+      def show
+        treasury = @shipping_company.ar_treasury
+        base = treasury ? treasury.treasury_transactions.includes(:user, :source_record) : TreasuryTransaction.none
+        @pagy, @transactions = pagy(:offset, base.recent, limit: 50)
+
+        respond_to do |format|
+          format.html
+          format.csv do
+            # Statement order: oldest first, ending at today's balance — the
+            # order a printed/shared statement is read in, not the on-screen
+            # most-recent-first list above.
+            csv_data = build_statement_csv(base.order(occurred_on: :asc, created_at: :asc))
+            filename = "#{@shipping_company.name.parameterize}-statement.csv"
+            send_data csv_data, filename: filename, type: "text/csv; charset=utf-8", disposition: "attachment"
+          end
+        end
+      end
 
       def new
         @shipping_company = ShippingCompany.new(active: true)
@@ -83,6 +99,32 @@ module Admin
 
       def parse_index_sort_direction_param
         params[:dir].to_s == "desc" ? "desc" : ShippingCompany::INDEX_DEFAULT_SORT_DIRECTION
+      end
+
+      # Evidence the shipping company's balance can be handed to them directly —
+      # every transaction that built it, with the originating invoice visible.
+      def build_statement_csv(transactions)
+        require "csv"
+        headers = [
+          t("accounting.shared.day"),
+          t("accounting.treasuries.transaction_kind"),
+          t("accounting.shared.description"),
+          t("accounting.treasuries.amount"),
+          t("accounting.treasuries.balance_after")
+        ]
+        CSV.generate(headers: true, encoding: "UTF-8") do |csv|
+          csv << headers
+          transactions.each do |tx|
+            sign = tx.inflow? ? "+" : ""
+            csv << [
+              tx.occurred_on.iso8601,
+              helpers.accounting_treasury_transaction_kind(tx.kind),
+              helpers.treasury_transaction_description(tx, current_user),
+              "#{sign}#{tx.amount_cents / 100.0}",
+              (tx.balance_after_cents / 100.0).to_s
+            ]
+          end
+        end
       end
     end
   end

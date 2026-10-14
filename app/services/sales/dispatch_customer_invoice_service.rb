@@ -35,14 +35,20 @@ module Sales
         if @invoice.standard_delivery_fee_cents.positive?
           ledger_service.accrue_delivery_fee!(
             amount_cents: @invoice.standard_delivery_fee_cents, user: @user,
-            occurred_on: Date.current, source: @invoice
+            occurred_on: Date.current, source: @invoice,
+            description: I18n.t("accounting.shipping_company_ledger.fee_payable_for_invoice",
+                                invoice_number: @invoice.invoice_number,
+                                default: "Delivery fee payable — invoice #{@invoice.invoice_number}")
           )
         end
 
         if @invoice.cash_on_delivery?
           ledger_service.charge!(
             amount_cents: @invoice.total_cents, user: @user,
-            occurred_on: Date.current, source: @invoice
+            occurred_on: Date.current, source: @invoice,
+            description: I18n.t("accounting.shipping_company_ledger.dispatch_charge_for_invoice",
+                                invoice_number: @invoice.invoice_number,
+                                default: "COD dispatch — invoice #{@invoice.invoice_number}")
           )
           @invoice.update!(dispatched_at: Time.current, payment_status: "paid",
                            amount_paid_cents: @invoice.total_cents)

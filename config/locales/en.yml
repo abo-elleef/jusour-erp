@@ -2689,6 +2689,12 @@ en:
       delete_confirm: "Remove this shipping company?"
       empty_title: "No shipping companies yet"
       empty_hint: "Add a courier to use them on delivery invoices."
+      tabs:
+        details: "Details"
+        statement: "Statement"
+      statement:
+        description: "Every transaction behind this balance, most recent first — export it to CSV (oldest first) to share with the courier as evidence."
+        no_treasury_yet: "No transactions yet — the balance moves the first time an invoice is dispatched through this company."
       search:
         label: "Search"
         placeholder: "Name or phone…"
@@ -3969,6 +3975,9 @@ en:
         updated: "Partner updated."
         advance_recorded: "Advance recorded."
         profit_distributed: "Profit distributed to all partners."
+    shipping_company_ledger:
+      dispatch_charge_for_invoice: "COD dispatch — invoice %{invoice_number}"
+      fee_payable_for_invoice: "Delivery fee payable — invoice %{invoice_number}"
     loans:
       title: "Loans & Financing"
       description: "Track bank loans, investor financing, and other liabilities in the 2100+ account range."
@@ -4790,6 +4799,8 @@ en:
         ap_credit_note: "AP — Credit note"
         staff_meal: "Staff meal"
         online_payment: "Online payment"
+        shipping_company_charge: "Cash-on-delivery collected"
+        shipping_company_fee_payable: "Delivery fee payable"
       transactions:
         drawer_open: "Opening float — %{cashier} (%{date})"
         drawer_reconcile: "Drawer reconcile — %{cashier} (%{date})"

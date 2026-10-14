@@ -2698,6 +2698,12 @@ ar:
       delete_confirm: "إزالة شركة الشحن هذه؟"
       empty_title: "لا توجد شركات شحن بعد"
       empty_hint: "أضف شركة شحن لاستخدامها في فواتير التوصيل."
+      tabs:
+        details: "التفاصيل"
+        statement: "كشف الحساب"
+      statement:
+        description: "كل حركة ساهمت في هذا الرصيد، الأحدث أولاً — صدّرها كملف CSV (الأقدم أولاً) لمشاركتها مع شركة الشحن كإثبات."
+        no_treasury_yet: "لا توجد حركات بعد — يتحرك الرصيد أول مرة تُشحن فيها فاتورة عبر شركة الشحن هذه."
       search:
         label: "بحث"
         placeholder: "الاسم أو الهاتف…"
@@ -3996,6 +4002,9 @@ ar:
         updated: "تم تحديث بيانات الشريك."
         advance_recorded: "تم تسجيل السلفة."
         profit_distributed: "تم توزيع الأرباح على جميع الشركاء."
+    shipping_company_ledger:
+      dispatch_charge_for_invoice: "شحن الدفع عند الاستلام — فاتورة %{invoice_number}"
+      fee_payable_for_invoice: "رسوم توصيل مستحقة — فاتورة %{invoice_number}"
     loans:
       title: "القروض والتمويل"
       description: "تتبع القروض البنكية وتمويل المستثمرين والالتزامات الأخرى في نطاق الحسابات 2100+."
@@ -4819,6 +4828,8 @@ ar:
         ap_credit_note: "ذمم — إشعار دائن"
         staff_meal: "وجبة موظف"
         online_payment: "دفع إلكتروني"
+        shipping_company_charge: "تحصيل الدفع عند الاستلام"
+        shipping_company_fee_payable: "رسوم توصيل مستحقة"
       transactions:
         drawer_open: "رصيد افتتاح — %{cashier} (%{date})"
         drawer_reconcile: "تسوية صندوق — %{cashier} (%{date})"

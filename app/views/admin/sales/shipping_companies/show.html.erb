@@ -1,6 +1,6 @@
 <% content_for :title, @shipping_company.name %>
 
-<div class="max-w-2xl">
+<div class="max-w-4xl">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @shipping_company.name %></h1>
@@ -15,10 +15,78 @@
     <p class="text-2xl font-bold tabular-nums text-gray-900"><%= format_amount(@shipping_company.balance_cents) %></p>
   </section>
 
-  <% if @shipping_company.notes.present? %>
-    <section class="rounded-2xl border border-gray-200 bg-white p-5">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"><%= t("sales.shipping_companies.form.notes") %></p>
-      <p class="text-sm text-gray-700 whitespace-pre-line"><%= @shipping_company.notes %></p>
-    </section>
-  <% end %>
+  <div data-controller="tabs" data-tabs-storage-key-value="shipping-company-show">
+    <div class="flex flex-wrap gap-1 mb-6 border-b border-gray-200">
+      <button type="button" data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="details"
+              class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+        <%= t("sales.shipping_companies.tabs.details") %>
+      </button>
+      <button type="button" data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="statement"
+              class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors">
+        <%= t("sales.shipping_companies.tabs.statement") %>
+      </button>
+    </div>
+
+    <div data-tabs-target="panel" data-tab-panel="details">
+      <% if @shipping_company.notes.present? %>
+        <section class="rounded-2xl border border-gray-200 bg-white p-5">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"><%= t("sales.shipping_companies.form.notes") %></p>
+          <p class="text-sm text-gray-700 whitespace-pre-line"><%= @shipping_company.notes %></p>
+        </section>
+      <% else %>
+        <p class="text-sm text-gray-500"><%= t("sales.shipping_companies.form.notes") %>: —</p>
+      <% end %>
+    </div>
+
+    <div data-tabs-target="panel" data-tab-panel="statement" hidden>
+      <p class="text-sm text-gray-600 mb-4"><%= t("sales.shipping_companies.statement.description") %></p>
+
+      <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.treasuries.transactions_title") %></h2>
+          <%= link_to t("accounting.treasuries.export_csv"),
+                admin_sales_shipping_company_path(@shipping_company, format: :csv),
+                class: "text-xs font-semibold text-gray-600 hover:text-gray-900 border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition-colors" %>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
+              <tr>
+                <th class="p-3 ps-5 text-start"><%= t("accounting.shared.day") %></th>
+                <th class="p-3 text-start"><%= t("accounting.treasuries.transaction_kind") %></th>
+                <th class="p-3 text-start"><%= t("accounting.shared.description") %></th>
+                <th class="p-3 text-end"><%= t("accounting.treasuries.amount") %></th>
+                <th class="p-3 pe-5 text-end"><%= t("accounting.treasuries.balance_after") %></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 table-zebra">
+              <% @transactions.each do |tx| %>
+                <tr>
+                  <td class="p-3 ps-5 whitespace-nowrap text-gray-600"><%= l(tx.occurred_on, format: :long) %></td>
+                  <td class="p-3 text-gray-600"><%= accounting_treasury_transaction_kind(tx.kind) %></td>
+                  <td class="p-3">
+                    <% source_path = treasury_transaction_source_path(tx) %>
+                    <% if source_path %>
+                      <%= link_to treasury_transaction_description(tx, current_user), source_path,
+                            class: "text-amber-700 hover:text-amber-900 hover:underline underline-offset-2" %>
+                    <% else %>
+                      <%= treasury_transaction_description(tx, current_user) %>
+                    <% end %>
+                  </td>
+                  <td class="p-3 text-end font-semibold tabular-nums <%= tx.inflow? ? 'text-emerald-700' : 'text-red-700' %>">
+                    <%= tx.inflow? ? "+" : "" %><%= format_money(tx.amount_cents) %>
+                  </td>
+                  <td class="p-3 pe-5 text-end tabular-nums"><%= format_money(tx.balance_after_cents) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <% if @transactions.empty? %>
+          <p class="p-8 text-center text-sm text-gray-500"><%= t("sales.shipping_companies.statement.no_treasury_yet") %></p>
+        <% end %>
+        <%= render "admin/accounting/pagination", pagy: @pagy %>
+      </section>
+    </div>
+  </div>
 </div>
