@@ -67,5 +67,10 @@ module Accounting
              name_key: "accounting.journal_entries.accounts.purchases"
     register :INTEREST_EXPENSE, code: 5600, account_type: "expense", normal_balance: :debit,
              name_key: "accounting.loans.interest_expense_account"
+    # What Bazzar owes the courier for their standard delivery-fee cut,
+    # accrued at dispatch regardless of payment method or promo — see
+    # Accounting::ShippingCompanyLedgerService#accrue_delivery_fee!.
+    register :DELIVERY_FEE_EXPENSE, code: 5700, account_type: "expense", normal_balance: :debit,
+             name_key: "accounting.journal_entries.accounts.delivery_fee_expense"
   end
 end

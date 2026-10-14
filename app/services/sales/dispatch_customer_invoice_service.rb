@@ -10,6 +10,12 @@ module Sales
   # already settled online, dispatch is a pure fulfillment stamp — the money
   # reached a treasury straight from the customer at approval time, and the
   # shipping company never touches it.
+  #
+  # Separately, and regardless of payment method, dispatch is also where
+  # Bazzar accrues the courier's standard delivery-fee cut (see
+  # Accounting::ShippingCompanyLedgerService#accrue_delivery_fee!) — the
+  # courier is always paid the standard fee, even when a promo waived it for
+  # the customer.
   class DispatchCustomerInvoiceService
     class Error < StandardError; end
 
@@ -22,8 +28,19 @@ module Sales
       validate!
 
       ActiveRecord::Base.transaction do
+        ledger_service = Accounting::ShippingCompanyLedgerService.new(@invoice.shipping_company)
+
+        # Bazzar owes the courier their standard cut regardless of payment
+        # method or promo — unconditional, separate from the COD charge below.
+        if @invoice.standard_delivery_fee_cents.positive?
+          ledger_service.accrue_delivery_fee!(
+            amount_cents: @invoice.standard_delivery_fee_cents, user: @user,
+            occurred_on: Date.current, source: @invoice
+          )
+        end
+
         if @invoice.cash_on_delivery?
-          Accounting::ShippingCompanyLedgerService.new(@invoice.shipping_company).charge!(
+          ledger_service.charge!(
             amount_cents: @invoice.total_cents, user: @user,
             occurred_on: Date.current, source: @invoice
           )

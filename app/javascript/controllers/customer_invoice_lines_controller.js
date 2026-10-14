@@ -4,7 +4,7 @@ import { Controller } from "@hotwired/stimulus"
 // the unit options when an ingredient is picked, and keep per-line and running
 // totals live from quantity × unit price.
 export default class extends Controller {
-  static targets = ["list", "template", "row", "runningTotal"]
+  static targets = ["list", "template", "row", "runningTotal", "deliveryFeeInput"]
   static values = { availableUnits: Object, sellingPrices: Object }
 
   add(event) {
@@ -96,6 +96,7 @@ export default class extends Controller {
       // A row has more than one line-total element (mobile + desktop) — update all.
       row.querySelectorAll("[data-role='line-total']").forEach((el) => { el.textContent = this.format(line) })
     })
+    if (this.hasDeliveryFeeInputTarget) total += parseFloat(this.deliveryFeeInputTarget.value) || 0
     if (this.hasRunningTotalTarget) this.runningTotalTarget.textContent = this.format(total)
   }
 

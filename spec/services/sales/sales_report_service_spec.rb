@@ -11,6 +11,7 @@ RSpec.describe Sales::SalesReportService do
 
   let(:doctor) { create(:customer, company: company, name: "Dr. Amr", customer_type: "regular") }
   let(:clinic) { create(:customer, company: company, name: "Bazzar Clinic", customer_type: "commercial") }
+  let(:shipping_company) { create(:shipping_company, company: company) }
 
   before { Current.company = company }
 
@@ -59,5 +60,16 @@ RSpec.describe Sales::SalesReportService do
 
     result = report(customer_type: "bogus")
     expect(result[:by_customer].map(&:name)).to eq(["Dr. Amr"])
+  end
+
+  it "totals the delivery fee waived by free-delivery promos, across delivery invoices only" do
+    inv = CustomerInvoice.new(company: company, customer: doctor, user: user, location: location,
+      invoice_date: Date.current, status: "historical", fulfillment_method: "delivery",
+      shipping_company: shipping_company, standard_delivery_fee_cents: 10_000, delivery_fee_cents: 0)
+    inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 1, unit: ingredient.unit, unit_price_cents: 5_000)
+    inv.save!
+    invoice_for(clinic, total_cents: 50_000) # pickup — never contributes
+
+    expect(report[:summary][:forgone_delivery_fee_cents]).to eq(10_000)
   end
 end

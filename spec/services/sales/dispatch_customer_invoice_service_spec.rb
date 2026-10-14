@@ -58,6 +58,42 @@ RSpec.describe Sales::DispatchCustomerInvoiceService do
     expect(shipping_company.reload.balance_cents).to eq(0)
   end
 
+  it "accrues the courier's standard delivery fee on top of the COD charge, netting to goods revenue only" do
+    inv = CustomerInvoice.new(company: company, customer: customer, user: user, location: location,
+      invoice_date: Date.current, payment_method: "cash_on_delivery", fulfillment_method: "delivery",
+      shipping_company: shipping_company, standard_delivery_fee_cents: 10_000, delivery_fee_cents: 0)
+    inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 5, unit: ingredient.unit, unit_price_cents: 20_000)
+    inv.save!
+    Sales::ConfirmCustomerInvoiceService.new(inv, user).call
+
+    described_class.new(inv, user).call
+
+    # total_cents = subtotal (100_000) + delivery_fee_cents (0, waived) = 100_000
+    expect(inv.reload.total_cents).to eq(100_000)
+    expect(inv.amount_paid_cents).to eq(100_000)
+    # courier collected 100_000 on delivery, but is owed 10_000 for their standard
+    # fee cut — net balance is goods revenue only.
+    expect(shipping_company.reload.balance_cents).to eq(90_000)
+  end
+
+  it "accrues the courier's standard delivery fee for an online sale even though the shipping company never touches the cash" do
+    treasury = Treasury.create!(name: "Bank", treasury_type: "bank", balance_cents: 0, opening_balance_cents: 0, company: company)
+    payment_method = create(:sales_payment_method, company: company, treasury: treasury)
+    inv = CustomerInvoice.new(company: company, customer: customer, user: user, location: location,
+      invoice_date: Date.current, payment_method: "online", fulfillment_method: "delivery",
+      shipping_company: shipping_company, sales_payment_method: payment_method,
+      standard_delivery_fee_cents: 10_000, delivery_fee_cents: 10_000)
+    inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 5, unit: ingredient.unit, unit_price_cents: 20_000)
+    inv.save!
+    Sales::ConfirmCustomerInvoiceService.new(inv, user).call # pending
+    Sales::ConfirmCustomerInvoiceService.new(inv, user).call # approve/settle
+
+    described_class.new(inv, user).call
+
+    # Nothing was collected on delivery, but the courier is still owed their fee outright.
+    expect(shipping_company.reload.balance_cents).to eq(-10_000)
+  end
+
   it "refuses to dispatch a draft, a pickup invoice, one with no shipping company, or an already-dispatched one" do
     draft = cod_invoice(confirmed: false)
     expect { described_class.new(draft, user).call }.to raise_error(described_class::Error)

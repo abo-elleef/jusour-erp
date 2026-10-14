@@ -228,6 +228,7 @@ module Admin
         params.require(:customer_invoice).permit(
           :customer_id, :location_id, :invoice_date, :notes, :salesperson_id, :payment_method,
           :fulfillment_method, :shipping_company_id, :sales_payment_method_id,
+          :delivery_fee_pounds, :standard_delivery_fee_pounds,
           customer_invoice_lines_attributes: %i[id ingredient_id quantity unit unit_price_pounds _destroy]
         )
       end

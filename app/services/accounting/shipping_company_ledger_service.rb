@@ -33,6 +33,29 @@ module Accounting
       )
     end
 
+    # Bazzar owes the courier their standard delivery-fee cut — accrued at
+    # dispatch for every delivery invoice, unconditional on payment method or
+    # whether a promo waived the fee for the customer. This is separate from
+    # charge! above: a COD shipment is still charged its full collected
+    # amount there, and the two entries net correctly against the courier's
+    # shared signed balance (see the delivery-fee design doc).
+    def accrue_delivery_fee!(amount_cents:, user:, occurred_on:, source: nil, description: nil)
+      treasury = ensure_treasury!
+      treasury.with_lock do
+        treasury.apply_balance_delta!(-amount_cents)
+        TreasuryTransaction.create!(
+          treasury: treasury, user: user, amount_cents: -amount_cents, kind: "shipping_company_fee_payable",
+          description: description || default_fee_payable_description,
+          occurred_on: occurred_on, source_record: source,
+          balance_after_cents: treasury.balance_cents
+        )
+      end
+      JournalEntryService.record_shipping_company_fee_payable!(
+        source: source, shipping_company: @shipping_company, date: occurred_on, user: user,
+        amount_cents: amount_cents
+      )
+    end
+
     # Creates the ledger treasury on demand, so a shipping company nobody has
     # dispatched a COD order through yet never gets one.
     def ensure_treasury!
@@ -62,6 +85,11 @@ module Accounting
     def default_charge_description
       I18n.t("accounting.shipping_company_ledger.dispatch_charge", name: @shipping_company.name,
              default: "COD dispatch — #{@shipping_company.name}")
+    end
+
+    def default_fee_payable_description
+      I18n.t("accounting.shipping_company_ledger.fee_payable", name: @shipping_company.name,
+             default: "Delivery fee payable — #{@shipping_company.name}")
     end
   end
 end

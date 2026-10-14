@@ -39,6 +39,29 @@ RSpec.describe Accounting::ShippingCompanyLedgerService do
     expect(shipping_company.balance_cents).to eq(0)
   end
 
+  it "accrues the delivery-fee payable, lowering the shipping company's balance, DR Delivery Fee Expense / CR their ledger" do
+    described_class.new(shipping_company).accrue_delivery_fee!(amount_cents: 10_000, user: user, occurred_on: Date.current)
+
+    expect(shipping_company.reload.balance_cents).to eq(-10_000)
+
+    entry = JournalEntry.where(company: company).order(:created_at).last
+    expect(balanced?(entry)).to be(true)
+    dr_line = entry.lines.find { |l| l.debit_cents.positive? }
+    cr_line = entry.lines.find { |l| l.credit_cents.positive? }
+    expect(dr_line.account_code).to eq(5700) # Delivery Fee Expense
+    expect(cr_line.credit_cents).to eq(10_000)
+  end
+
+  it "nets a charge and an accrual to leave only the actual goods revenue owed" do
+    # COD, goods=1000, standard delivery fee=100, waived for the customer (free-delivery promo):
+    # the courier still collects the full invoice total (goods only, since the fee was waived)
+    # but is still owed their standard fee cut — net balance is goods minus the fee.
+    described_class.new(shipping_company).charge!(amount_cents: 100_000, user: user, occurred_on: Date.current)
+    described_class.new(shipping_company).accrue_delivery_fee!(amount_cents: 10_000, user: user, occurred_on: Date.current)
+
+    expect(shipping_company.reload.balance_cents).to eq(90_000)
+  end
+
   it "a voucher with the shipping company as its party reduces their balance and the ledger stays balanced" do
     described_class.new(shipping_company).charge!(amount_cents: 50_000, user: user, occurred_on: Date.current)
 

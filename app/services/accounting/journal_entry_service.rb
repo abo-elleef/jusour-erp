@@ -14,6 +14,8 @@ module Accounting
   #     5501       Payroll — Salaries
   #     5502       Staff Meals
   #     5503       Cost of Goods Sold (COGS, no treasury)
+  #     5600       Interest Expense
+  #     5700       Delivery Fee Expense
   class JournalEntryService
     # Kept as aliases of SystemAccount's codes rather than removed: three other
     # files (AccountListService, ChartOfAccountsService, JournalEntriesController)
@@ -516,6 +518,27 @@ module Accounting
                                     default: "COD dispatch — #{shipping_company.name}") do |lines|
           lines << debit(ar_treasury, amount_cents)
           lines << credit(SystemAccount::SALES_REVENUE, amount_cents)
+        end
+      end
+
+      # ── Shipping company delivery-fee payable (dispatch) ──────────────
+      # What Bazzar owes the courier for their standard delivery-fee cut —
+      # posted at dispatch for every delivery invoice, regardless of payment
+      # method or whether a promo waived the fee for the customer (see
+      # Accounting::ShippingCompanyLedgerService#accrue_delivery_fee! and the
+      # delivery-fee design doc for why this is unconditional):
+      #   DR Delivery Fee Expense (5700)
+      #   CR shipping company's ledger treasury (asset)
+      def record_shipping_company_fee_payable!(source:, shipping_company:, date:, user:, amount_cents:)
+        ar_treasury = shipping_company.ar_treasury
+        return unless ar_treasury.present?
+
+        create! source: source, date: date, user: user,
+                description: I18n.t("accounting.journal_entries.auto.shipping_company_fee_payable",
+                                    name: shipping_company.name,
+                                    default: "Delivery fee payable — #{shipping_company.name}") do |lines|
+          lines << debit(SystemAccount::DELIVERY_FEE_EXPENSE, amount_cents)
+          lines << credit(ar_treasury, amount_cents)
         end
       end
 

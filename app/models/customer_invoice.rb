@@ -5,6 +5,8 @@
 # AR and deducts stock. Prices are firm at sale.
 class CustomerInvoice < ApplicationRecord
   include Tenantable
+  include MoneyInputs
+  money_input :delivery_fee_cents, :standard_delivery_fee_cents
 
   # historical = a sale that really happened before this system, imported from the
   # previous one. It counts as a sale in the operational sales reports, but it
@@ -65,6 +67,8 @@ class CustomerInvoice < ApplicationRecord
 
   monetize :total_cents
   monetize :amount_paid_cents
+  monetize :delivery_fee_cents
+  monetize :standard_delivery_fee_cents
 
   validates :invoice_date, presence: true
   validates :status, inclusion: { in: STATUSES }
@@ -73,10 +77,15 @@ class CustomerInvoice < ApplicationRecord
   validates :fulfillment_method, inclusion: { in: FULFILLMENT_METHODS }
   validates :invoice_number, presence: true,
     uniqueness: { scope: :company_id, case_sensitive: false }
+  validates :delivery_fee_cents, numericality: { greater_than_or_equal_to: 0 }
+  validates :standard_delivery_fee_cents, numericality: { greater_than_or_equal_to: 0 }
   validate :shipping_company_required_for_delivery
   validate :sales_payment_method_required_for_online
+  validate :delivery_fee_within_standard
 
   before_validation :assign_invoice_number, on: :create
+  before_validation :default_blank_delivery_fees
+  before_validation :zero_delivery_fees_for_pickup
   before_save :recalculate_total
 
   scope :draft, -> { where(status: "draft") }
@@ -133,6 +142,13 @@ class CustomerInvoice < ApplicationRecord
     customer_invoice_lines.reject(&:marked_for_destruction?).sum(&:line_total_cents)
   end
 
+  # Delivery fee actually waived by a promo on this invoice — what the
+  # courier is still owed (see Accounting::ShippingCompanyLedgerService#accrue_delivery_fee!)
+  # but Bazzar chose not to bill the customer for.
+  def waived_delivery_fee_cents
+    standard_delivery_fee_cents - delivery_fee_cents
+  end
+
   def balance_due_cents
     total_cents - amount_paid_cents
   end
@@ -165,7 +181,7 @@ class CustomerInvoice < ApplicationRecord
   end
 
   def recalculate_total
-    self.total_cents = subtotal_cents
+    self.total_cents = subtotal_cents + delivery_fee_cents
   end
 
   def assign_invoice_number
@@ -184,5 +200,28 @@ class CustomerInvoice < ApplicationRecord
     return unless online?
 
     errors.add(:sales_payment_method, :blank) if sales_payment_method.blank?
+  end
+
+  def delivery_fee_within_standard
+    return if delivery_fee_cents.to_i <= standard_delivery_fee_cents.to_i
+
+    errors.add(:delivery_fee_cents, :greater_than_standard, message: "can't exceed the standard delivery fee")
+  end
+
+  # A blank delivery-fee input (the form's money_input setter turns "" into
+  # nil) means "leave it at 0", not "no value" — nil would fail the
+  # numericality validation and the DB's NOT NULL constraint.
+  def default_blank_delivery_fees
+    self.delivery_fee_cents ||= 0
+    self.standard_delivery_fee_cents ||= 0
+  end
+
+  # Pickup orders never carry a delivery fee — a fulfillment-method switch
+  # (pickup → delivery → pickup) must not leave a stale fee behind.
+  def zero_delivery_fees_for_pickup
+    return unless pickup?
+
+    self.delivery_fee_cents = 0
+    self.standard_delivery_fee_cents = 0
   end
 end

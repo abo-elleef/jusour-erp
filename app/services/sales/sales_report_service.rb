@@ -44,8 +44,19 @@ module Sales
         returns_cents: returns_cents,
         net_sales_cents: gross_cents - returns_cents,
         customer_count: invoices.distinct.count(:customer_id),
-        average_invoice_cents: count.positive? ? (gross_cents / count) : 0
+        average_invoice_cents: count.positive? ? (gross_cents / count) : 0,
+        forgone_delivery_fee_cents: forgone_delivery_fee_cents
       }
+    end
+
+    # Delivery-fee revenue given up to the free-delivery promo: the courier is
+    # still paid their standard cut in full (see
+    # Accounting::ShippingCompanyLedgerService#accrue_delivery_fee!) — this is
+    # purely what Bazzar chose not to bill the customer for.
+    def forgone_delivery_fee_cents
+      @forgone_delivery_fee_cents ||=
+        invoices.where(fulfillment_method: "delivery")
+          .sum("standard_delivery_fee_cents - delivery_fee_cents").to_i
     end
 
     # Units and money per product, with returned units and money subtracted so a

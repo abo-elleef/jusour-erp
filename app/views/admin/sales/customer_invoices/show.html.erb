@@ -123,6 +123,21 @@
         <% end %>
       </tbody>
       <tfoot class="border-t border-gray-100 bg-gray-50/60">
+        <% if @invoice.delivery? && @invoice.standard_delivery_fee_cents.positive? %>
+          <tr>
+            <td class="p-3 ps-5 text-gray-600" colspan="3"><%= t("sales.customer_invoices.form.subtotal") %></td>
+            <td class="p-3 pe-5 text-end text-gray-700 tabular-nums"><%= format_money(@invoice.subtotal_cents) %></td>
+          </tr>
+          <tr>
+            <td class="p-3 ps-5 text-gray-600" colspan="3">
+              <%= t("sales.customer_invoices.form.delivery_fee") %>
+              <% if @invoice.waived_delivery_fee_cents.positive? %>
+                <span class="text-xs text-amber-700 font-medium">(<%= t("sales.customer_invoices.show.delivery_fee_waived", amount: format_money(@invoice.waived_delivery_fee_cents)) %>)</span>
+              <% end %>
+            </td>
+            <td class="p-3 pe-5 text-end text-gray-700 tabular-nums"><%= format_money(@invoice.delivery_fee_cents) %></td>
+          </tr>
+        <% end %>
         <tr>
           <td class="p-3 ps-5 font-semibold text-gray-900" colspan="3"><%= t("sales.customer_invoices.form.total") %></td>
           <td class="p-3 pe-5 text-end font-bold text-gray-900 tabular-nums"><%= format_money(@invoice.total_cents) %></td>
@@ -139,6 +154,12 @@
                 amount: format_money(@invoice.total_cents),
                 shipping_company: @invoice.shipping_company.name) %>
         </p>
+        <% if @invoice.standard_delivery_fee_cents.positive? %>
+          <p class="text-xs text-green-800 mt-1">
+            <%= t("sales.customer_invoices.show.settled_hint_cod_fee_netted",
+                  fee: format_money(@invoice.standard_delivery_fee_cents)) %>
+          </p>
+        <% end %>
       </div>
     <% end %>
     <%# Not yet dispatched: the amber banner above already covers it — nothing

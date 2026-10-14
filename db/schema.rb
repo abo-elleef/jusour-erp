@@ -10,9 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_14_090300) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_14_120000) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
 
@@ -316,6 +315,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_14_090300) do
     t.uuid "shipping_company_id"
     t.datetime "dispatched_at"
     t.uuid "sales_payment_method_id"
+    t.integer "delivery_fee_cents", default: 0, null: false
+    t.integer "standard_delivery_fee_cents", default: 0, null: false
     t.index ["company_id", "fulfillment_method"], name: "index_customer_invoices_on_company_id_and_fulfillment_method"
     t.index ["company_id", "invoice_number"], name: "index_customer_invoices_on_company_id_and_invoice_number", unique: true
     t.index ["company_id", "legacy_number"], name: "index_customer_invoices_on_company_id_and_legacy_number", unique: true, where: "(legacy_number IS NOT NULL)"
@@ -1732,11 +1733,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_14_090300) do
     t.uuid "role_id"
     t.boolean "all_locations", default: true, null: false
     t.uuid "assigned_treasury_id"
-    t.integer "wages_account_code", null: false
     t.index ["active"], name: "index_users_on_active"
     t.index ["assigned_treasury_id"], name: "index_users_on_assigned_treasury_id"
     t.index ["company_id", "email"], name: "index_users_on_company_id_and_email", unique: true
-    t.index ["company_id", "wages_account_code"], name: "index_users_on_company_id_and_wages_account_code", unique: true
     t.index ["company_id"], name: "index_users_on_company_id"
     t.index ["payroll_access_token"], name: "index_users_on_payroll_access_token", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
