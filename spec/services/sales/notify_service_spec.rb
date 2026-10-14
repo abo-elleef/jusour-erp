@@ -25,12 +25,15 @@ RSpec.describe Sales::NotifyService do
     end
 
     it "follows a company's own customized role permissions, not the built-in defaults" do
+      # A genuinely custom (non-built-in) role is assigned via role_id — User#role
+      # (the plain string column) is literally "custom" for every user on one,
+      # decoupled from the role's own key (User#reconcile_role).
       custom_role = Role.create!(company: company, key: "custom_sales_rep", name: "Custom Sales Rep",
         permissions: %w[sales:confirm_payments])
-      user = create(:user, company: company, role: "custom", role_id: custom_role.id)
+      user = create(:user, company: company, assigned_role: custom_role)
 
+      expect(user.role).to eq("custom") # sanity-check the premise this test exists to cover
       expect(described_class.recipients_for("sales:confirm_payments")).to include(user)
-      expect(custom_role).to be_present
     end
   end
 

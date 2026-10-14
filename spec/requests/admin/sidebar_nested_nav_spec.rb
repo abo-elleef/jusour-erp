@@ -54,6 +54,10 @@ RSpec.describe "Admin sidebar nested module nav", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('data-nested-nav-key-value="accounting"')
       expect(response.body).to include('data-nested-nav-open-value="true"')
+      # No per-group open-state: app/views/admin/_flat_module_nav.html.erb
+      # deliberately flattened Accounting's sub-groups into one list (its own
+      # comment: "whose groups have been merged on purpose") — there is no
+      # "transactions" sub-group left to mark open.
     end
   end
 end

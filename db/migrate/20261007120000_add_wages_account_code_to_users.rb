@@ -10,7 +10,7 @@ class AddWagesAccountCodeToUsers < ActiveRecord::Migration[7.1]
   # (5100/5500-5503/5600) already live in that decade, so per-employee codes
   # get their own space instead of racing that growth.
   def up
-    add_column :users, :wages_account_code, :integer
+    add_column :users, :wages_account_code, :integer, if_not_exists: true
 
     execute <<~SQL.squish
       WITH ordered AS (

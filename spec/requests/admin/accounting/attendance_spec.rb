@@ -221,7 +221,8 @@ RSpec.describe "Admin::Accounting::Attendance", type: :request do
       expect(response.parsed_body["ok"]).to be(true)
       expect(response.parsed_body["html"]).to include(owner.name)
       # The popover shows the translated label for a seeded status, not the
-      # English text stored on the row.
+      # English text stored on the row. Default locale is Arabic, so present.label
+      # (the English seed) is not what the page renders.
       expect(response.parsed_body["html"]).to include(ApplicationController.helpers.attendance_status_label(present))
     end
 
