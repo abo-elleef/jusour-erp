@@ -25,7 +25,8 @@
 
   <div class="flex flex-wrap items-center gap-2 text-sm mb-4">
     <span class="text-gray-500 me-1"><%= t("sales.customer_invoices.filter") %>:</span>
-    <% [[nil, "all"], ["draft", "draft"], ["confirmed", "confirmed"], ["historical", "historical"]].each do |val, key| %>
+    <% [[nil, "all"], ["draft", "draft"], ["pending_payment_confirmation", "pending_payment_confirmation"],
+        ["confirmed", "confirmed"], ["historical", "historical"], ["void", "void"]].each do |val, key| %>
       <%= link_to t("sales.customer_invoices.statuses.#{key}"),
             admin_sales_customer_invoices_path(status: val),
             class: "px-3 py-1.5 rounded-lg font-medium border transition-colors #{@status == val ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" %>

@@ -12,7 +12,7 @@ module PartyHelper
   def party_bare_name(party)
     case party
     when Customer then party.display_name
-    when Supplier, Partner, User, Loan then party.name
+    when Supplier, Partner, User, Loan, ShippingCompany then party.name
     end
   end
 
@@ -23,6 +23,7 @@ module PartyHelper
     when Partner  then t("accounting.shared.party_kinds.partner")
     when Loan     then t("accounting.shared.party_kinds.loan")
     when User     then t("accounting.shared.party_kinds.staff")
+    when ShippingCompany then t("accounting.shared.party_kinds.shipping_company")
     end
   end
 
@@ -43,6 +44,7 @@ module PartyHelper
     when Partner   then admin_accounting_partner_path(party)
     when Loan      then admin_accounting_loan_path(party)
     when User      then admin_user_path(party)
+    when ShippingCompany then admin_sales_shipping_company_path(party)
     end
   end
 

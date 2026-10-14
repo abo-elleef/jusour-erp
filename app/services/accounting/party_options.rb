@@ -12,7 +12,7 @@ module Accounting
     end
 
     def to_a
-      suppliers + customers + partners + loans + staff
+      suppliers + customers + partners + loans + shipping_companies + staff
     end
 
     private
@@ -33,6 +33,10 @@ module Accounting
 
     def loans
       Loan.active.ordered.map { |l| option(l, l.name) }
+    end
+
+    def shipping_companies
+      ShippingCompany.active.ordered.map { |s| option(s, s.name) }
     end
 
     def staff

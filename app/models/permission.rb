@@ -51,7 +51,8 @@ module Permission
 
     { key: "leads:view",              group: "sales" },
     { key: "leads:manage",            group: "sales" },
-    { key: "leads:reports",           group: "sales" }
+    { key: "leads:reports",           group: "sales" },
+    { key: "sales:confirm_payments",  group: "sales" }
   ].freeze
 
   KEYS = CATALOG.map { |p| p[:key] }.freeze
@@ -78,7 +79,7 @@ module Permission
         accounting:transactions accounting:day_close accounting:reports
         attendance:log attendance:view attendance:penalties attendance:waive_penalties attendance:audit staff:view locations:manage printers:manage
         pos:access kitchen:access production:access
-        leads:view leads:manage leads:reports
+        leads:view leads:manage leads:reports sales:confirm_payments
       ]
     },
     "sub_manager" => {
@@ -89,7 +90,7 @@ module Permission
         dashboard:view orders:view menu:manage customers:manage inventory:view
         accounting:day_close
         attendance:log attendance:view pos:access kitchen:access
-        leads:view leads:manage
+        leads:view leads:manage sales:confirm_payments
       ]
     },
     "accountant" => {
@@ -98,7 +99,7 @@ module Permission
         dashboard:view orders:view inventory:view inventory:finance inventory:manufacturing
         accounting:ledgers accounting:transactions accounting:day_close accounting:reports accounting:setup
         attendance:view attendance:penalties attendance:waive_penalties staff:view staff:manage payroll:view payroll:manage
-        settings:general locations:manage printers:manage pos:access
+        settings:general locations:manage printers:manage pos:access sales:confirm_payments
       ]
     },
     "cashier" => {

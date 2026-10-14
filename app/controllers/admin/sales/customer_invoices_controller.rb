@@ -3,14 +3,16 @@
 module Admin
   module Sales
     class CustomerInvoicesController < BaseController
-      before_action :set_invoice, only: %i[show confirm record_payment]
+      before_action :set_invoice, only: %i[show confirm record_payment approve_payment reject_payment mark_dispatched void]
+      before_action :require_confirm_payments_access, only: %i[approve_payment reject_payment]
 
       def index
-        @status = params[:status].presence_in(%w[draft confirmed historical void])
+        @status = params[:status].presence_in(%w[draft pending_payment_confirmation confirmed historical void])
         scope = CustomerInvoice.recent.includes(:customer, :location)
         scope = scope.where(status: @status) if @status
         @pagy, @invoices = pagy(:offset, scope, limit: 50)
         @draft_count = CustomerInvoice.draft.count
+        @pending_confirmation_count = CustomerInvoice.pending_payment_confirmation.count
         @outstanding_cents = CustomerInvoice.outstanding.sum(Arel.sql("total_cents - amount_paid_cents"))
       end
 
@@ -48,6 +50,53 @@ module Admin
         confirm_now
       end
 
+      # Approving a pending online payment re-enters ConfirmCustomerInvoiceService —
+      # the invoice is no longer draft, so it falls straight through to settle_now!.
+      def approve_payment
+        confirm_now
+      end
+
+      def reject_payment
+        unless @invoice.pending_payment_confirmation?
+          redirect_to admin_sales_customer_invoice_path(@invoice), alert: t("sales.customer_invoices.errors.not_pending")
+          return
+        end
+
+        @invoice.update!(status: "draft")
+        redirect_to admin_sales_customer_invoice_path(@invoice),
+          notice: t("sales.customer_invoices.flash.payment_rejected")
+      end
+
+      # "dispatch" is reserved by ActionController::Metal (the core method that
+      # invokes an action) — naming this action that would shadow it.
+      def mark_dispatched
+        ::Sales::DispatchCustomerInvoiceService.new(@invoice, current_user).call
+        redirect_to admin_sales_customer_invoice_path(@invoice),
+          notice: t("sales.customer_invoices.flash.dispatched")
+      rescue ::Sales::DispatchCustomerInvoiceService::Error => e
+        redirect_to admin_sales_customer_invoice_path(@invoice), alert: e.message
+      # Anything else (e.g. a ledger/journal failure) would otherwise 422 and look
+      # like nothing happened — the invoice silently stays undispatched. Surface it,
+      # same as confirm_now does.
+      rescue ActiveRecord::RecordInvalid => e
+        Rails.logger.error("[DispatchCustomerInvoice] #{e.class}: #{e.message}")
+        redirect_to admin_sales_customer_invoice_path(@invoice),
+          alert: t("sales.customer_invoices.flash.dispatch_failed", error: e.message)
+      end
+
+      # A draft (including one bounced back here by reject_payment) or a still-
+      # pending invoice posts nothing yet, so voiding it is just marking it
+      # dead — same reasoning as Sales::CreditNotesController#void.
+      def void
+        unless @invoice.voidable?
+          redirect_to admin_sales_customer_invoice_path(@invoice), alert: t("sales.customer_invoices.errors.cannot_void")
+          return
+        end
+
+        @invoice.update!(status: "void")
+        redirect_to admin_sales_customer_invoices_path, notice: t("sales.customer_invoices.flash.voided")
+      end
+
       def record_payment
         treasury = Treasury.active.payable.visible_to(current_user).find_by(id: params[:treasury_id])
         amount_cents = (params[:amount].to_f * 100).round
@@ -68,7 +117,13 @@ module Admin
 
       def confirm_now
         result = ::Sales::ConfirmCustomerInvoiceService.new(@invoice || CustomerInvoice.find(params[:id]), current_user).call
-        key = result.credit_warning ? "confirmed_with_warning" : "confirmed"
+        key = if result.pending_confirmation
+                "submitted_for_confirmation"
+              elsif result.credit_warning
+                "confirmed_with_warning"
+              else
+                "confirmed"
+              end
         redirect_to admin_sales_customer_invoice_path(result.invoice),
           notice: t("sales.customer_invoices.flash.#{key}")
       rescue ::Sales::ConfirmCustomerInvoiceService::CreditBlocked => e
@@ -87,14 +142,22 @@ module Admin
         @invoice = CustomerInvoice.find(params[:id])
       end
 
+      def require_confirm_payments_access
+        return if current_user.can?("sales:confirm_payments")
+
+        flash[:alert] = t("flash.access_denied")
+        redirect_to admin_sales_customer_invoices_path
+      end
+
       def load_form_data
         # Every customer, not just commercial ones: the distribution vertical sells
         # to walk-in doctors through this same form, settling at the counter. Credit
         # is still controlled where it matters — at confirm, against the limits.
         @customers = Customer.order(:name)
-        @settlement_methods = ::Sales::SettlementTreasury.available_methods(user: current_user)
         @locations = Location.active.ordered
         @ingredients = Ingredient.active.order(:name)
+        @shipping_companies = ShippingCompany.active.ordered
+        @sales_payment_methods = ::Sales::PaymentMethod.active.ordered
         # Teammates the sale can be credited to (drives their bonus).
         @salespeople = User.where(company_id: Current.company.id).active.order(:name)
       end
@@ -114,6 +177,7 @@ module Admin
       def invoice_params
         params.require(:customer_invoice).permit(
           :customer_id, :location_id, :invoice_date, :notes, :salesperson_id, :payment_method,
+          :fulfillment_method, :shipping_company_id, :sales_payment_method_id,
           customer_invoice_lines_attributes: %i[id ingredient_id quantity unit unit_price_pounds _destroy]
         )
       end

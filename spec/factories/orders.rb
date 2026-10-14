@@ -24,6 +24,20 @@ FactoryBot.define do
     phone { nil }
   end
 
+  factory :shipping_company do
+    company { Current.company }
+    name { "Test Shipping Co" }
+    active { true }
+  end
+
+  # No default treasury — always pass one explicitly (no :treasury factory exists;
+  # other specs build Treasury directly with Treasury.create!).
+  factory :sales_payment_method, class: "Sales::PaymentMethod" do
+    company { Current.company }
+    name { "Test Online Method" }
+    active { true }
+  end
+
   factory :order do
     company { user.company }
     user

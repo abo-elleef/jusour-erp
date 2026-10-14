@@ -773,6 +773,10 @@ module ApplicationHelper
     end.to_json
   end
 
+  def shipping_company_search_options(shipping_companies)
+    shipping_companies.map { |sc| { value: sc.id, label: sc.name } }.to_json
+  end
+
   # ingredient_id => { id, name, position } for client-side category grouping on transfer forms.
   def ingredient_categories_json(ingredients)
     ingredients.to_h do |ingredient|
@@ -1298,6 +1302,12 @@ module ApplicationHelper
       items << { controller: "customer_statements", label: "sales.nav.statements", path: :admin_sales_customer_statements_path }
       items << { controller: "credit_notes", label: "sales.nav.credit_notes", path: :admin_sales_credit_notes_path }
       items << { controller: "price_tiers", label: "sales.nav.price_tiers", path: :admin_sales_price_tiers_path }
+      items << { controller: "shipping_companies", label: "sales.nav.shipping_companies", path: :admin_sales_shipping_companies_path }
+      items << { controller: "payment_methods", label: "sales.nav.payment_methods", path: :admin_sales_payment_methods_path }
+    end
+
+    if current_user.can?("sales:confirm_payments") && Current.company&.feature_enabled?(:ar_credit_sales)
+      items << { controller: "payment_approvals", label: "sales.nav.payment_approvals", path: :admin_sales_payment_approvals_path }
     end
 
     if Current.company&.feature_enabled?(:leads) && current_user.can?("leads:view")
@@ -1309,6 +1319,11 @@ module ApplicationHelper
 
   def sales_any_access?
     sales_sidebar_items.any?
+  end
+
+  # Not its own controller — the approval queue is the invoices index, filtered.
+  def admin_sales_payment_approvals_path
+    admin_sales_customer_invoices_path(status: "pending_payment_confirmation")
   end
 
   def sales_tab_active?(tab)

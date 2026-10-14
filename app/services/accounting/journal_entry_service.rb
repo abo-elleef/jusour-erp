@@ -500,6 +500,25 @@ module Accounting
         end
       end
 
+      # ── Shipping company charge (COD dispatch) ────────────────────────
+      # A COD shipment leaves with nobody holding our cash yet — the shipping
+      # company now owes it to us. Same shape as record_customer_charge!, just
+      # the debtor is the courier instead of the end customer:
+      #   DR shipping company's ledger treasury (asset)
+      #   CR Sales Revenue (4001)
+      def record_shipping_company_charge!(source:, shipping_company:, date:, user:, amount_cents:)
+        ar_treasury = shipping_company.ar_treasury
+        return unless ar_treasury.present?
+
+        create! source: source, date: date, user: user,
+                description: I18n.t("accounting.journal_entries.auto.shipping_company_charge",
+                                    name: shipping_company.name,
+                                    default: "COD dispatch — #{shipping_company.name}") do |lines|
+          lines << debit(ar_treasury, amount_cents)
+          lines << credit(SystemAccount::SALES_REVENUE, amount_cents)
+        end
+      end
+
       # ── Customer credit note / sales return ───────────────────────────
       # Reverses the AR raised by a sale (a return or allowance). Mirror-image of
       # record_customer_charge!:  DR Sales Revenue (4001)   CR Accounts Receivable

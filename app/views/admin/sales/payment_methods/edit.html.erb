@@ -1,0 +1,7 @@
+<% content_for :title, t("sales.payment_methods.edit_title", name: @payment_method.name) %>
+<div class="max-w-md">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-6">
+    <%= t("sales.payment_methods.edit_title", name: @payment_method.name) %>
+  </h1>
+  <%= render "form", payment_method: @payment_method, treasuries: @treasuries %>
+</div>

@@ -6,10 +6,15 @@ module Sales
   #
   # How the money is recognised depends on how the sale was settled:
   #
-  #   on account  — runs the two-limit credit check and raises Accounts Receivable
-  #   paid now    — banks the money straight into a treasury, no receivable at all
+  #   on_account        — runs the two-limit credit check and raises Accounts Receivable
+  #   cash               — banks the money straight into a treasury, no receivable at all
+  #   online             — same as cash, but only once someone with sales:confirm_payments
+  #                        has approved it (see the pending_payment_confirmation gate below)
+  #   cash_on_delivery   — confirms (stock leaves) but settles nowhere yet; the shipping
+  #                        company isn't charged until Sales::DispatchCustomerInvoiceService
+  #                        runs, because nobody is holding our cash until then
   #
-  # The second path exists because the whole distribution vertical sells this way:
+  # The paid-now paths exist because the whole distribution vertical sells this way:
   # a doctor at the counter pays cash or by wallet and walks out. Routing that
   # through AR would raise a debt and clear it in the same breath, and their
   # statements would read as though they were forever in and out of arrears.
@@ -20,7 +25,7 @@ module Sales
     class Error < StandardError; end
     class CreditBlocked < Error; end
 
-    Result = Struct.new(:invoice, :credit_warning, keyword_init: true)
+    Result = Struct.new(:invoice, :credit_warning, :pending_confirmation, keyword_init: true)
 
     def initialize(invoice, user)
       @invoice = invoice
@@ -29,8 +34,25 @@ module Sales
 
     def call
       validate!
-      return settle_now! if @invoice.paid_on_issue?
 
+      # First time an online-payment draft is confirmed: park it for approval
+      # instead of settling anything. Calling this again once it's
+      # pending_payment_confirmation (i.e. the approve action) falls through
+      # to settle_now! below, same as cash always has.
+      if @invoice.draft? && @invoice.online?
+        @invoice.update!(status: "pending_payment_confirmation")
+        return Result.new(invoice: @invoice, credit_warning: false, pending_confirmation: true)
+      end
+
+      return on_account_confirm! if @invoice.on_account?
+      return cod_confirm! if @invoice.cash_on_delivery?
+
+      settle_now!
+    end
+
+    private
+
+    def on_account_confirm!
       customer = @invoice.customer
 
       # Two-limit credit control against the balance this invoice would create.
@@ -56,14 +78,24 @@ module Sales
       Result.new(invoice: @invoice, credit_warning: status == :warning)
     end
 
-    private
+    # Cash-on-delivery: the sale is real and the goods leave now, but nobody is
+    # holding our cash yet — the shipping company only becomes accountable for
+    # it at dispatch (Sales::DispatchCustomerInvoiceService). No treasury, no
+    # revenue posted here; payment_status stays "unpaid" until then.
+    def cod_confirm!
+      ActiveRecord::Base.transaction do
+        deduct_stock!
+        @invoice.update!(status: "confirmed", confirmed_at: Time.current)
+      end
+
+      Result.new(invoice: @invoice, credit_warning: false)
+    end
 
     # Money in hand: it goes into the treasury for the method used, revenue is
     # recognised against it, and the invoice is settled on the spot. No credit
     # check — nothing is being extended.
     def settle_now!
-      treasury = @invoice.treasury ||
-                 SettlementTreasury.for(method: @invoice.payment_method, user: @user)
+      treasury = @invoice.treasury || SettlementTreasury.for(invoice: @invoice, user: @user)
       if treasury.blank?
         raise Error, I18n.t("sales.customer_invoices.errors.no_settlement_treasury",
                             default: "No treasury is set up to receive this payment method.")
@@ -98,10 +130,12 @@ module Sales
     end
 
     def validate!
-      # Only a draft can be confirmed — a historical invoice is already a completed
-      # sale from the previous system, and confirming it would post AR and deduct
-      # stock for goods that left years ago.
-      raise Error, I18n.t("sales.customer_invoices.errors.not_draft", default: "Only a draft invoice can be confirmed.") unless @invoice.draft?
+      # A draft starts the flow; pending_payment_confirmation is the same
+      # invoice coming back through on approval. Historical/confirmed/void
+      # can't be (re-)confirmed.
+      unless @invoice.draft? || @invoice.pending_payment_confirmation?
+        raise Error, I18n.t("sales.customer_invoices.errors.not_draft", default: "Only a draft invoice can be confirmed.")
+      end
       raise Error, I18n.t("sales.customer_invoices.errors.no_lines", default: "Add at least one line before confirming.") if @invoice.customer_invoice_lines.empty?
       raise Error, I18n.t("sales.customer_invoices.errors.no_location", default: "A selling location is required.") if @invoice.location.blank?
     end

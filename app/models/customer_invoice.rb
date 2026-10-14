@@ -11,14 +11,27 @@ class CustomerInvoice < ApplicationRecord
   # never touches the ledger, AR or stock — the money and the goods moved long
   # before we existed, so replaying them would double-count. It is terminal: a
   # historical invoice can't be confirmed (see Sales::ConfirmCustomerInvoiceService).
-  STATUSES = %w[draft confirmed historical void].freeze
+  # pending_payment_confirmation = a draft submitted with an online payment
+  # method, sitting in the approval queue (see Sales::ConfirmCustomerInvoiceService)
+  # until someone with sales:confirm_payments approves or rejects it. Stock
+  # has not moved yet — that still only happens on confirm.
+  STATUSES = %w[draft pending_payment_confirmation confirmed historical void].freeze
   PAYMENT_STATUSES = %w[unpaid partially_paid paid].freeze
+  FULFILLMENT_METHODS = %w[pickup delivery].freeze
 
-  # How the sale is settled. `on_account` is the credit sale this module was built
-  # for — it raises a receivable. The rest are settled at the point of sale and
-  # never touch AR; each resolves to the treasury the money lands in.
+  # How the sale is settled.
+  #   on_account        — the credit sale this module was built for; raises a receivable.
+  #   cash               — paid at the counter on the spot; banks straight into a treasury.
+  #   cash_on_delivery   — a delivery where the shipping company collects cash from the
+  #                        customer and owes it to us until they remit it. Nothing is
+  #                        banked at confirm — see Sales::DispatchCustomerInvoiceService.
+  #   online             — a configurable online method (Sales::PaymentMethod); needs
+  #                        approval before it settles (see pending_payment_confirmation).
   ON_ACCOUNT = "on_account"
-  PAID_NOW_METHODS = %w[cash instapay vodafone_cash].freeze
+  CASH = "cash"
+  CASH_ON_DELIVERY = "cash_on_delivery"
+  ONLINE = "online"
+  PAID_NOW_METHODS = [CASH, CASH_ON_DELIVERY, ONLINE].freeze
   PAYMENT_METHODS = [ON_ACCOUNT, *PAID_NOW_METHODS].freeze
 
   belongs_to :customer
@@ -30,6 +43,10 @@ class CustomerInvoice < ApplicationRecord
   # The teammate credited with the sale (drives their sales bonus), separate from
   # `user` who recorded it. Defaults to the recorder.
   belongs_to :salesperson, class_name: "User", optional: true
+  # Required when fulfillment_method is "delivery" — see validate :shipping_company_required_for_delivery.
+  belongs_to :shipping_company, optional: true
+  # Required when payment_method is "online" — which configured method/treasury was used.
+  belongs_to :sales_payment_method, class_name: "Sales::PaymentMethod", optional: true
 
   before_validation :default_salesperson
   has_many :customer_invoice_lines, -> { order(:position, :created_at) },
@@ -49,13 +66,17 @@ class CustomerInvoice < ApplicationRecord
   validates :status, inclusion: { in: STATUSES }
   validates :payment_status, inclusion: { in: PAYMENT_STATUSES }
   validates :payment_method, inclusion: { in: PAYMENT_METHODS }
+  validates :fulfillment_method, inclusion: { in: FULFILLMENT_METHODS }
   validates :invoice_number, presence: true,
     uniqueness: { scope: :company_id, case_sensitive: false }
+  validate :shipping_company_required_for_delivery
+  validate :sales_payment_method_required_for_online
 
   before_validation :assign_invoice_number, on: :create
   before_save :recalculate_total
 
   scope :draft, -> { where(status: "draft") }
+  scope :pending_payment_confirmation, -> { where(status: "pending_payment_confirmation") }
   scope :confirmed, -> { where(status: "confirmed") }
   scope :historical, -> { where(status: "historical") }
   scope :on_account, -> { where(payment_method: ON_ACCOUNT) }
@@ -81,14 +102,28 @@ class CustomerInvoice < ApplicationRecord
   end
 
   def draft?      = status == "draft"
+  def pending_payment_confirmation? = status == "pending_payment_confirmation"
   def confirmed?  = status == "confirmed"
   def historical? = status == "historical"
+  def void?       = status == "void"
 
-  # Paid on issue — the customer settled at the point of sale, so this sale never
-  # became a receivable and never appears on their statement of what they owe.
+  # Nothing has posted yet in either state — no stock deducted, no treasury or
+  # AR entry — so voiding is just marking it dead, the same reasoning
+  # Sales::CreditNotesController#void uses for a draft credit note. A confirmed
+  # invoice already moved stock/money and isn't handled here.
+  def voidable?   = draft? || pending_payment_confirmation?
+
+  # Paid on issue — the customer settled (or will settle) outside of AR, so
+  # this sale never becomes a receivable on the customer's own statement.
   def paid_on_issue? = payment_method != ON_ACCOUNT
   def on_account?    = payment_method == ON_ACCOUNT
-  def void?       = status == "void"
+  def cash?             = payment_method == CASH
+  def cash_on_delivery? = payment_method == CASH_ON_DELIVERY
+  def online?           = payment_method == ONLINE
+
+  def delivery? = fulfillment_method == "delivery"
+  def pickup?   = fulfillment_method == "pickup"
+  def dispatched? = dispatched_at.present?
 
   def subtotal_cents
     customer_invoice_lines.reject(&:marked_for_destruction?).sum(&:line_total_cents)
@@ -133,5 +168,17 @@ class CustomerInvoice < ApplicationRecord
     return if invoice_number.present?
 
     self.invoice_number = self.class.next_invoice_number(company: company || Current.company)
+  end
+
+  def shipping_company_required_for_delivery
+    return unless delivery?
+
+    errors.add(:shipping_company, :blank) if shipping_company.blank?
+  end
+
+  def sales_payment_method_required_for_online
+    return unless online?
+
+    errors.add(:sales_payment_method, :blank) if sales_payment_method.blank?
   end
 end

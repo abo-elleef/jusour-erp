@@ -193,8 +193,9 @@ module Accounting
       return unless remainder.positive?
 
       treasury, kind, credit_grows = case voucher.party
-                                      when ::Supplier then [voucher.party.ap_treasury, "ap_payment", true]
-                                      when ::Customer then [voucher.party.ar_treasury, "ar_payment", false]
+                                      when ::Supplier        then [voucher.party.ap_treasury, "ap_payment", true]
+                                      when ::Customer        then [voucher.party.ar_treasury, "ar_payment", false]
+                                      when ::ShippingCompany then [voucher.party.ar_treasury, "shipping_company_payment", false]
                                       end
       return if treasury.blank?
 

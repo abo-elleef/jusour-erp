@@ -10,7 +10,7 @@ class TreasuryTransaction < ApplicationRecord
   # treasury, never a receivable. Distinct from `ar_payment`, which settles a debt
   # that already existed.
   KINDS = %w[expense income drawer_open drawer_reconcile drawer_deposit adjustment transfer ap_invoice ap_payment ap_credit_note ar_invoice ar_payment ar_credit_note cash_sale payroll_advance payroll_salary staff_meal online_payment journal_entry fixed_asset_purchase fixed_asset_payment
-                voucher_receipt voucher_payment].freeze
+                voucher_receipt voucher_payment shipping_company_charge shipping_company_payment].freeze
 
   belongs_to :treasury
   belongs_to :user

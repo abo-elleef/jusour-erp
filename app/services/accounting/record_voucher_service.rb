@@ -87,6 +87,7 @@ module Accounting
       end
 
       CustomerArLedgerService.new(voucher.party).ensure_treasury! if voucher.party.is_a?(::Customer)
+      ShippingCompanyLedgerService.new(voucher.party).ensure_treasury! if voucher.party.is_a?(::ShippingCompany)
     end
 
     # An invoice carries its own paid-to-date and status, unlike an expense or an

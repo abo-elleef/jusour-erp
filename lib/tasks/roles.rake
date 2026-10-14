@@ -65,4 +65,28 @@ namespace :roles do
 
     puts "Updated #{granted} role(s); #{skipped} already had their leads permissions."
   end
+
+  # Same role set as accounting:day_close — the approval queue is a money-adjacent
+  # gate, not a sales:manage-level action everyone on the Sales module should hold.
+  CONFIRM_PAYMENTS_ROLE_KEYS = %w[owner super_manager manager sub_manager accountant].freeze
+
+  desc "Give existing built-in roles the sales:confirm_payments permission"
+  task grant_sales_confirm_payments: :environment do
+    key = "sales:confirm_payments"
+    granted = 0
+    skipped = 0
+
+    Role.unscoped.where(key: CONFIRM_PAYMENTS_ROLE_KEYS).find_each do |role|
+      if role.permission_keys.include?(key)
+        skipped += 1
+        next
+      end
+
+      role.permissions = role.permission_keys + [key]
+      role.save!
+      granted += 1
+    end
+
+    puts "Granted #{key} to #{granted} role(s); #{skipped} already had it."
+  end
 end

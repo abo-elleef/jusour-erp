@@ -97,4 +97,65 @@ RSpec.describe Sales::ConfirmCustomerInvoiceService do
     expect { described_class.new(confirmed, user).call }
       .to raise_error(Sales::ConfirmCustomerInvoiceService::Error)
   end
+
+  describe "cash on delivery" do
+    let(:shipping_company) { create(:shipping_company, company: company) }
+
+    def cod_invoice
+      inv = CustomerInvoice.new(company: company, customer: customer, user: user, location: location,
+        invoice_date: Date.current, payment_method: "cash_on_delivery", fulfillment_method: "delivery",
+        shipping_company: shipping_company)
+      inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 5, unit: ingredient.unit, unit_price_cents: 20_000)
+      inv.save!
+      inv
+    end
+
+    it "confirms (deducting stock) but settles nothing — the shipping company isn't charged until dispatch" do
+      inv = cod_invoice
+      described_class.new(inv, user).call
+
+      expect(inv.reload.status).to eq("confirmed")
+      expect(inv.payment_status).to eq("unpaid")
+      expect(inv.treasury).to be_nil
+      expect(ingredient.stock_batches.where(location: location).sum(:quantity_remaining).to_d).to eq(95)
+      expect(shipping_company.reload.balance_cents).to eq(0)
+    end
+  end
+
+  describe "online payment (needs approval before it settles)" do
+    let(:treasury) do
+      Treasury.create!(name: "Bank", treasury_type: "bank", balance_cents: 0, opening_balance_cents: 0, company: company)
+    end
+    let(:payment_method) { create(:sales_payment_method, company: company, treasury: treasury) }
+
+    def online_invoice
+      inv = CustomerInvoice.new(company: company, customer: customer, user: user, location: location,
+        invoice_date: Date.current, payment_method: "online", sales_payment_method: payment_method)
+      inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 5, unit: ingredient.unit, unit_price_cents: 20_000)
+      inv.save!
+      inv
+    end
+
+    it "parks a draft in pending_payment_confirmation without touching stock or a treasury" do
+      inv = online_invoice
+      result = described_class.new(inv, user).call
+
+      expect(result.pending_confirmation).to be(true)
+      expect(inv.reload.status).to eq("pending_payment_confirmation")
+      expect(ingredient.stock_batches.sum(:quantity_remaining).to_d).to eq(100) # untouched
+      expect(treasury.reload.balance_cents).to eq(0)
+    end
+
+    it "settles once approved: deducts stock exactly once and banks the money" do
+      inv = online_invoice
+      described_class.new(inv, user).call # -> pending
+      described_class.new(inv, user).call # -> approve (invoice is no longer draft)
+
+      expect(inv.reload.status).to eq("confirmed")
+      expect(inv.payment_status).to eq("paid")
+      expect(inv.treasury).to eq(treasury)
+      expect(treasury.reload.balance_cents).to eq(100_000)
+      expect(ingredient.stock_batches.sum(:quantity_remaining).to_d).to eq(95)
+    end
+  end
 end

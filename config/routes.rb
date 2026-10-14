@@ -125,8 +125,13 @@ Rails.application.routes.draw do
         member do
           post :confirm
           post :record_payment
+          post :approve_payment
+          post :reject_payment
+          post :mark_dispatched
+          patch :void
         end
       end
+      resources :payment_methods, controller: "payment_methods", except: %i[show]
       resources :credit_notes, only: %i[index new create show] do
         member do
           post :confirm
@@ -134,6 +139,7 @@ Rails.application.routes.draw do
         end
       end
       resources :price_tiers, except: %i[show]
+      resources :shipping_companies
       resources :customer_statements, only: %i[index show] do
         member { post :record_payment }
       end

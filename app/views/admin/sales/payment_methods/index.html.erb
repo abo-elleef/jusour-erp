@@ -1,0 +1,93 @@
+<% content_for :title, t("sales.payment_methods.title") %>
+
+<div class="max-w-6xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900" title="<%= t("sales.payment_methods.description") %>">
+      <%= t("sales.payment_methods.title") %>
+    </h1>
+    <%= link_to new_admin_sales_payment_method_path,
+          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
+      <span aria-hidden="true">+</span> <%= t("sales.payment_methods.new_button") %>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="p-5">
+      <%= search_form_for @q, url: admin_sales_payment_methods_path, method: :get, class: "flex flex-wrap items-end gap-4" do |f| %>
+        <%= hidden_field_tag :sort, @sort %>
+        <%= hidden_field_tag :dir, @direction %>
+        <div class="flex-1 min-w-[12rem]">
+          <%= f.label :name_cont, t("sales.payment_methods.search.label"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+          <%= f.search_field :name_cont,
+                placeholder: t("sales.payment_methods.search.placeholder"),
+                value: params.dig(:q, :name_cont),
+                class: pos_input_class %>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= label_tag :status, t("sales.payment_methods.search.status"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+          <%= select_tag :status,
+                options_for_select([[t("sales.payment_methods.active"), "active"], [t("sales.payment_methods.inactive"), "inactive"]], @status),
+                include_blank: t("sales.payment_methods.search.all_statuses"),
+                class: "#{pos_input_class} appearance-none" %>
+        </div>
+        <%= f.submit t("sales.payment_methods.search.apply"),
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
+        <% if @filtered %>
+          <%= link_to t("actions.clear"), admin_sales_payment_methods_path,
+                class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+        <% end %>
+        <span class="text-sm text-gray-500 ms-auto tabular-nums">
+          <%= t("sales.payment_methods.search.showing", count: @pagy.count) %>
+        </span>
+      <% end %>
+    </div>
+  </section>
+
+  <% if @payment_methods.any? %>
+    <% sort_opts = { sort: @sort, direction: @direction } %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5"><%= sort_header_link(t("sales.payment_methods.table.name"), :name, **sort_opts) %></th>
+              <th class="p-3"><%= t("sales.payment_methods.table.treasury") %></th>
+              <th class="p-3"><%= sort_header_link(t("sales.payment_methods.table.status"), :active, **sort_opts) %></th>
+              <th class="p-3 pe-5 text-end"><%= t("sales.payment_methods.table.actions") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @payment_methods.each do |payment_method| %>
+              <tr class="hover:bg-gray-100 transition-colors">
+                <td class="p-3 ps-5 font-medium text-gray-900"><%= payment_method.name %></td>
+                <td class="p-3 text-gray-700"><%= payment_method.treasury.name %></td>
+                <td class="p-3">
+                  <% if payment_method.active? %>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-green-100 text-green-800 border border-green-200"><%= t("sales.payment_methods.active") %></span>
+                  <% else %>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200"><%= t("sales.payment_methods.inactive") %></span>
+                  <% end %>
+                </td>
+                <td class="p-3 pe-5 text-end whitespace-nowrap">
+                  <%= link_to t("actions.edit"), edit_admin_sales_payment_method_path(payment_method),
+                        class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200" %>
+                  <%= button_to t("actions.remove"), admin_sales_payment_method_path(payment_method), method: :delete,
+                        class: "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200",
+                        form: { class: "inline-block", data: { turbo_confirm: t("sales.payment_methods.delete_confirm") } } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("sales.payment_methods.empty_title") %></p>
+      <p class="text-gray-500 text-sm mb-5"><%= t("sales.payment_methods.empty_hint") %></p>
+      <%= link_to t("sales.payment_methods.new_button"), new_admin_sales_payment_method_path,
+            class: "font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2.5 rounded-xl" %>
+    </section>
+  <% end %>
+</div>

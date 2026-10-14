@@ -1,0 +1,38 @@
+<%# locals: shipping_company %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+
+<%= form_with model: [:admin, :sales, shipping_company], class: "space-y-5 max-w-md" do |f| %>
+  <% if shipping_company.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <%= shipping_company.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="p-5 space-y-5">
+      <div>
+        <%= f.label :name, t("sales.shipping_companies.form.name"), class: label_class %>
+        <%= f.text_field :name, class: pos_input_class, autofocus: true %>
+      </div>
+      <div>
+        <%= f.label :phone, t("sales.shipping_companies.form.phone"), class: label_class %>
+        <%= f.text_field :phone, class: pos_input_class %>
+      </div>
+      <div>
+        <%= f.label :notes, t("sales.shipping_companies.form.notes"), class: label_class %>
+        <%= f.text_area :notes, rows: 3, class: pos_input_class %>
+      </div>
+      <label class="flex items-center gap-3 cursor-pointer">
+        <%= f.check_box :active, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+        <span class="text-sm font-medium text-gray-900"><%= t("sales.shipping_companies.form.active") %></span>
+      </label>
+    </div>
+  </section>
+
+  <div class="flex items-center gap-3">
+    <%= f.submit shipping_company.persisted? ? t("actions.save_changes") : t("sales.shipping_companies.form.create_button"),
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm" %>
+    <%= link_to t("actions.cancel"), admin_sales_shipping_companies_path,
+          class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl" %>
+  </div>
+<% end %>

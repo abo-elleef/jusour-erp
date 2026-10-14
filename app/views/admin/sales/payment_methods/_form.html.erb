@@ -1,0 +1,40 @@
+<%# locals: payment_method, treasuries %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% url = payment_method.persisted? ? admin_sales_payment_method_path(payment_method) : admin_sales_payment_methods_path %>
+<% method = payment_method.persisted? ? :patch : :post %>
+
+<%= form_with model: payment_method, url: url, method: method, scope: :sales_payment_method, class: "space-y-5 max-w-md" do |f| %>
+  <% if payment_method.errors.any? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+      <%= payment_method.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="p-5 space-y-5">
+      <div>
+        <%= f.label :name, t("sales.payment_methods.form.name"), class: label_class %>
+        <%= f.text_field :name, class: pos_input_class, autofocus: true,
+              placeholder: t("sales.payment_methods.form.name_placeholder") %>
+      </div>
+      <div>
+        <%= f.label :treasury_id, t("sales.payment_methods.form.treasury"), class: label_class %>
+        <%= f.collection_select :treasury_id, treasuries, :id, :name,
+              { prompt: t("sales.payment_methods.form.select_treasury") },
+              class: "#{pos_input_class} appearance-none", required: true %>
+        <p class="text-xs text-gray-500 mt-1"><%= t("sales.payment_methods.form.treasury_hint") %></p>
+      </div>
+      <label class="flex items-center gap-3 cursor-pointer">
+        <%= f.check_box :active, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+        <span class="text-sm font-medium text-gray-900"><%= t("sales.payment_methods.form.active") %></span>
+      </label>
+    </div>
+  </section>
+
+  <div class="flex items-center gap-3">
+    <%= f.submit payment_method.persisted? ? t("actions.save_changes") : t("sales.payment_methods.form.create_button"),
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm" %>
+    <%= link_to t("actions.cancel"), admin_sales_payment_methods_path,
+          class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl" %>
+  </div>
+<% end %>

@@ -14,25 +14,80 @@
       </p>
       <p class="text-gray-500 text-xs mt-0.5">
         <%= t("sales.customer_invoices.show.salesperson") %>: <span class="font-medium text-gray-700"><%= @invoice.salesperson&.name || @invoice.user.name %></span>
+        <% if @invoice.delivery? %>
+          · <%= t("sales.customer_invoices.show.shipping_company") %>:
+          <span class="font-medium text-gray-700"><%= @invoice.shipping_company&.name %></span>
+          <% if @invoice.cash_on_delivery? %>
+            — <%= @invoice.dispatched? ? t("sales.customer_invoices.show.dispatched_at", date: l(@invoice.dispatched_at, format: :long)) : t("sales.customer_invoices.show.not_dispatched") %>
+          <% end %>
+        <% end %>
       </p>
     </div>
     <%= link_to t("sales.customer_invoices.back"), admin_sales_customer_invoices_path,
           class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
   </div>
 
-  <%# Draft: confirm raises AR + deducts stock. %>
+  <%# Draft: confirm either settles now, waits for payment approval, or (COD)
+      deducts stock and leaves the shipping company to be charged at dispatch. %>
   <% if @invoice.draft? %>
     <div class="rounded-2xl border border-amber-200 bg-amber-50/50 px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3">
       <p class="text-sm text-amber-900">
-        <%= @invoice.paid_on_issue? ?
-              t("sales.customer_invoices.show.draft_hint_paid_now",
-                method: t("sales.customer_invoices.payment_methods.#{@invoice.payment_method}")) :
-              t("sales.customer_invoices.show.draft_hint") %>
+        <% if @invoice.cash_on_delivery? %>
+          <%= t("sales.customer_invoices.show.draft_hint_cod") %>
+        <% elsif @invoice.online? %>
+          <%= t("sales.customer_invoices.show.draft_hint_online") %>
+        <% elsif @invoice.paid_on_issue? %>
+          <%= t("sales.customer_invoices.show.draft_hint_paid_now",
+                method: t("sales.customer_invoices.payment_methods.#{@invoice.payment_method}")) %>
+        <% else %>
+          <%= t("sales.customer_invoices.show.draft_hint") %>
+        <% end %>
       </p>
-      <%= button_to t("sales.customer_invoices.show.confirm"), confirm_admin_sales_customer_invoice_path(@invoice),
+      <div class="flex items-center gap-2">
+        <%= button_to t("actions.void"), void_admin_sales_customer_invoice_path(@invoice),
+              method: :patch,
+              class: "text-sm font-semibold text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors",
+              form: { data: { turbo_confirm: t("sales.customer_invoices.show.void_prompt") } } %>
+        <%= button_to t("sales.customer_invoices.show.confirm"), confirm_admin_sales_customer_invoice_path(@invoice),
+              method: :post,
+              class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm",
+              form: { data: { turbo_confirm: t("sales.customer_invoices.show.confirm_prompt") } } %>
+      </div>
+    </div>
+  <%# Online payment, awaiting someone with sales:confirm_payments. %>
+  <% elsif @invoice.pending_payment_confirmation? %>
+    <div class="rounded-2xl border border-blue-200 bg-blue-50/50 px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-blue-900"><%= t("sales.customer_invoices.show.pending_hint") %></p>
+      <div class="flex items-center gap-2">
+        <%= button_to t("actions.void"), void_admin_sales_customer_invoice_path(@invoice),
+              method: :patch,
+              class: "text-sm font-semibold text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors",
+              form: { data: { turbo_confirm: t("sales.customer_invoices.show.void_prompt") } } %>
+        <% if current_user.can?("sales:confirm_payments") %>
+          <%= button_to t("sales.customer_invoices.show.reject"), reject_payment_admin_sales_customer_invoice_path(@invoice),
+                method: :post,
+                class: "bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-300",
+                form: { data: { turbo_confirm: t("sales.customer_invoices.show.reject_prompt") } } %>
+          <%= button_to t("sales.customer_invoices.show.approve"), approve_payment_admin_sales_customer_invoice_path(@invoice),
+                method: :post,
+                class: "bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm",
+                form: { data: { turbo_confirm: t("sales.customer_invoices.show.approve_prompt") } } %>
+        <% end %>
+      </div>
+    </div>
+  <%# Confirmed delivery, not yet handed to the shipping company. COD charges
+      their balance here; anything else is just a fulfillment stamp. %>
+  <% elsif @invoice.confirmed? && @invoice.delivery? && !@invoice.dispatched? %>
+    <div class="rounded-2xl border border-amber-200 bg-amber-50/50 px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-amber-900">
+        <%= @invoice.cash_on_delivery? ?
+              t("sales.customer_invoices.show.cod_awaiting_dispatch_hint", amount: format_money(@invoice.total_cents)) :
+              t("sales.customer_invoices.show.not_dispatched") %>
+      </p>
+      <%= button_to t("sales.customer_invoices.show.dispatch"), mark_dispatched_admin_sales_customer_invoice_path(@invoice),
             method: :post,
             class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm",
-            form: { data: { turbo_confirm: t("sales.customer_invoices.show.confirm_prompt") } } %>
+            form: { data: { turbo_confirm: t("sales.customer_invoices.show.dispatch_prompt") } } %>
     </div>
   <%# Imported history: a completed sale from the previous system, with no balance
       of its own to settle here. %>
@@ -71,7 +126,19 @@
     </table>
   </section>
 
-  <% if @invoice.confirmed? && @invoice.paid_on_issue? %>
+  <% if @invoice.confirmed? && @invoice.cash_on_delivery? %>
+    <% if @invoice.dispatched? %>
+      <div class="rounded-2xl border border-green-200 bg-green-50/60 px-5 py-4 mb-6">
+        <p class="text-sm text-green-900">
+          <%= t("sales.customer_invoices.show.settled_hint_cod",
+                amount: format_money(@invoice.total_cents),
+                shipping_company: @invoice.shipping_company.name) %>
+        </p>
+      </div>
+    <% end %>
+    <%# Not yet dispatched: the amber banner above already covers it — nothing
+        more to show (no treasury, no AR, no record-payment form applies). %>
+  <% elsif @invoice.confirmed? && @invoice.paid_on_issue? %>
     <div class="rounded-2xl border border-green-200 bg-green-50/60 px-5 py-4 mb-6">
       <p class="text-sm text-green-900">
         <%= t("sales.customer_invoices.show.settled_hint",

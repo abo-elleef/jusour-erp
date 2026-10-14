@@ -4,23 +4,26 @@ class Treasury < ApplicationRecord
   include Tenantable
   include Accountable
 
-  TYPES = %w[cash_drawer bank safe petty_cash mobile_wallet other supplier_ap customer_ar].freeze
+  TYPES = %w[cash_drawer bank safe petty_cash mobile_wallet other supplier_ap customer_ar shipping_company_ar].freeze
 
   # System-managed ledger treasuries that must not be picked as normal cash sources.
-  LEDGER_TYPES = %w[supplier_ap customer_ar].freeze
+  LEDGER_TYPES = %w[supplier_ap customer_ar shipping_company_ar].freeze
 
   # Where each treasury_type's account codes start. Also read by
   # AccountListService, JournalEntriesController and ChartOfAccountsService —
   # though now that account_code is persisted, they mostly don't need to.
   TREASURY_TYPE_BASE = {
-    "cash_drawer"   => 1000,
-    "bank"          => 1100,
-    "safe"          => 1200,
-    "petty_cash"    => 1300,
-    "mobile_wallet" => 1400,
-    "other"         => 1500,
-    "customer_ar"   => 1150,
-    "supplier_ap"   => 2000
+    "cash_drawer"        => 1000,
+    "bank"               => 1100,
+    "safe"               => 1200,
+    "petty_cash"         => 1300,
+    "mobile_wallet"      => 1400,
+    "other"              => 1500,
+    "customer_ar"        => 1150,
+    # Carved into the same 1100 block as customer_ar (1150) — 1160/1170 are
+    # taken by the fixed SALES_CLEARING/OTHER_RECEIVABLES system accounts.
+    "shipping_company_ar" => 1180,
+    "supplier_ap"        => 2000
   }.freeze
 
   has_many :treasury_transactions, dependent: :destroy
@@ -35,6 +38,7 @@ class Treasury < ApplicationRecord
   has_many :incoming_transfers, class_name: "TreasuryTransfer", foreign_key: :to_treasury_id, dependent: :restrict_with_error
   belongs_to :supplier, optional: true
   belongs_to :customer, optional: true
+  belongs_to :shipping_company, optional: true
 
   include MoneyInputs
 
@@ -134,13 +138,25 @@ class Treasury < ApplicationRecord
 
   # Stable per-company-per-type account code, assigned once at creation and
   # never changed — same pattern as Loan/Partner/ExpenseCategory/IncomeCategory.
+  #
+  # Candidate is base + however many of this type already exist, so codes stay
+  # clustered by type in the common case. But uniqueness is company-wide, not
+  # per-type (two bases only ~30 apart, e.g. customer_ar 1150 and
+  # shipping_company_ar 1180), so a company with enough of one type can reach
+  # into the next type's range — found 2026-10-14 when a company with 36
+  # customer_ar treasuries (up to 1186) collided with the first
+  # shipping_company_ar (1181). Walk forward from the candidate to the next
+  # code nothing else in the company holds, instead of trusting the per-type
+  # max is free company-wide.
   def assign_account_code
     return if account_code.present?
 
     base = TREASURY_TYPE_BASE.fetch(treasury_type, 1500)
     last = self.class.unscoped.where(company_id: company_id, treasury_type: treasury_type)
                      .maximum(:account_code)
-    self.account_code = (last || base) + 1
+    candidate = (last || base) + 1
+    candidate += 1 while self.class.unscoped.where(company_id: company_id).exists?(account_code: candidate)
+    self.account_code = candidate
   end
 
   def lock_supplier_ap_type

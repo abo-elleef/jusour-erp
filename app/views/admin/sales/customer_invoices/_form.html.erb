@@ -7,7 +7,7 @@
 <%= form_with model: invoice, url: admin_sales_customer_invoices_path, method: :post,
       class: "space-y-6",
       data: {
-        controller: "customer-invoice-lines",
+        controller: "customer-invoice-lines sale-fulfillment",
         searchable_select_options: ingredient_search_options(@ingredients),
         customer_invoice_lines_available_units_value: available_units.to_json,
         customer_invoice_lines_selling_prices_value: selling_prices.to_json
@@ -52,11 +52,31 @@
         <p class="text-xs text-gray-500 mt-1"><%= t("sales.customer_invoices.form.salesperson_hint") %></p>
       </div>
       <div>
+        <%= f.label :fulfillment_method, t("sales.customer_invoices.form.fulfillment_method"), class: label_class %>
+        <% fulfillment_options = CustomerInvoice::FULFILLMENT_METHODS.map { |m| [t("sales.customer_invoices.fulfillment_methods.#{m}"), m] } %>
+        <%= f.select :fulfillment_method, fulfillment_options, {}, class: "#{input_class} appearance-none",
+              data: { sale_fulfillment_target: "fulfillmentSelect", action: "change->sale-fulfillment#applyFulfillment" } %>
+      </div>
+      <div data-sale-fulfillment-target="shippingCompanyWrap" data-searchable-select-options="<%= shipping_company_search_options(@shipping_companies) %>">
+        <%= f.label :shipping_company_id, t("sales.customer_invoices.form.shipping_company"), class: label_class %>
+        <%= render "shared/searchable_select",
+              form: f, field: :shipping_company_id, selected: invoice.shipping_company_id,
+              placeholder: t("sales.customer_invoices.form.select_shipping_company"),
+              input_class: input_class %>
+      </div>
+      <div>
         <%= f.label :payment_method, t("sales.customer_invoices.form.payment_method"), class: label_class %>
         <% method_options = [[t("sales.customer_invoices.payment_methods.on_account"), CustomerInvoice::ON_ACCOUNT]] +
-                            @settlement_methods.map { |m| [t("sales.customer_invoices.payment_methods.#{m}"), m] } %>
-        <%= f.select :payment_method, method_options, {}, class: "#{input_class} appearance-none" %>
+                            CustomerInvoice::PAID_NOW_METHODS.map { |m| [t("sales.customer_invoices.payment_methods.#{m}"), m] } %>
+        <%= f.select :payment_method, method_options, {}, class: "#{input_class} appearance-none",
+              data: { sale_fulfillment_target: "paymentSelect", action: "change->sale-fulfillment#applyPaymentMethod" } %>
         <p class="text-xs text-gray-500 mt-1"><%= t("sales.customer_invoices.form.payment_method_hint") %></p>
+      </div>
+      <div data-sale-fulfillment-target="onlineMethodWrap">
+        <%= f.label :sales_payment_method_id, t("sales.customer_invoices.form.online_payment_method"), class: label_class %>
+        <%= f.collection_select :sales_payment_method_id, @sales_payment_methods, :id, :name,
+              { prompt: t("sales.customer_invoices.form.select_online_payment_method") },
+              class: "#{input_class} appearance-none" %>
       </div>
       <div class="sm:col-span-2">
         <%= f.label :notes, t("sales.customer_invoices.form.notes"), class: label_class %>

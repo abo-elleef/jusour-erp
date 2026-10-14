@@ -1,0 +1,7 @@
+<% content_for :title, t("sales.shipping_companies.edit_title", name: @shipping_company.name) %>
+<div class="max-w-md">
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-6">
+    <%= t("sales.shipping_companies.edit_title", name: @shipping_company.name) %>
+  </h1>
+  <%= render "form", shipping_company: @shipping_company %>
+</div>
