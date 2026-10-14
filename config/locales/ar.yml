@@ -2404,6 +2404,8 @@ ar:
         payment_method_hint: "«على الحساب» يضيف المبلغ إلى رصيد العميل. النقدي والإلكتروني يُقفلان الفاتورة فورًا؛ الدفع عند الاستلام يُقفل عند تحصيل شركة الشحن المبلغ."
         online_payment_method: "طريقة الدفع الإلكتروني"
         select_online_payment_method: "اختر طريقة دفع…"
+        payment_proof_attach: "إرفاق صورة"
+        payment_proof_replace: "استبدال الصورة"
         fulfillment_method: "طريقة التسليم"
         select_fulfillment_method: "اختر…"
         shipping_company: "شركة الشحن"
@@ -2444,6 +2446,8 @@ ar:
         reject_prompt: "رفض هذه الدفعة؟ ستعود الفاتورة إلى مسودة."
         void_prompt: "إلغاء هذه الفاتورة؟ لم يُسجَّل عليها شيء بعد، فهذا فقط يُنهي حالتها."
         cod_awaiting_dispatch_hint: "مؤكدة — خُصم المخزون. ستُحمَّل شركة الشحن %{amount} عند شحن هذه الفاتورة."
+        payment_proof: "إثبات الدفع"
+        payment_proof_hint: "لقطة شاشة لعملية الدفع (إنستاباي، تحويل بنكي، ...)."
         settled_hint: "مدفوعة بالكامل: %{amount} %{method}، إلى %{treasury}. لا يوجد مستحق على هذه العملية."
         settled_hint_cod: "تم الشحن: أصبحت %{shipping_company} مدينة لنا بمبلغ %{amount} عن طلب الدفع عند الاستلام هذا."
         confirm: "تأكيد البيع"
@@ -2467,6 +2471,9 @@ ar:
         voided: "تم إلغاء الفاتورة."
         dispatched: "تم شحن الفاتورة."
         dispatch_failed: "تعذّر شحن الفاتورة: %{error}"
+        payment_proof_attached: "تم حفظ إثبات الدفع."
+        payment_proof_required: "اختر صورة لرفعها."
+        cannot_attach_payment_proof: "لا يمكن إرفاق صورة بفاتورة ملغاة."
         payment_recorded: "تم تسجيل الدفعة."
         confirm_failed: "تعذّر تأكيد البيع: %{error}"
     leads:
@@ -2807,6 +2814,7 @@ ar:
     types:
       inventory: "المخزون"
       accounting: "المحاسبة"
+      sales: "المبيعات"
       unknown: "تنبيه"
     keys:
       low_stock: "مخزون منخفض"
@@ -2816,12 +2824,14 @@ ar:
       overtime_shift: "ساعات إضافية بالوردية"
       cash_variance: "فرق نقدي"
       vendor_balance_negative: "رصيد المورد سالب"
+      customer_invoice_payment_pending: "دفعة بانتظار الاعتماد"
       unknown: "تنبيه"
     index:
       description: "تنبيهات المخزون والمحاسبة للمالكين والمديرين."
       mark_all_read: "تعليم الكل كمقروء"
       mark_read: "تعليم كمقروء"
       view_ingredient: "عرض المكون"
+      view_invoice: "عرض الفاتورة"
       empty_title: "لا توجد إشعارات"
       empty_description: "لا جديد — ستظهر التنبيهات هنا."
       list_title: "التنبيهات الأخيرة"
@@ -2844,6 +2854,7 @@ ar:
         unread: "غير مقروء"
         inventory: "المخزون"
         accounting: "المحاسبة"
+        sales: "المبيعات"
         alert_label: "التنبيه"
         type_label: "النوع"
         status_label: "الحالة"
@@ -2868,6 +2879,7 @@ ar:
       overtime_shift: "دخل %{name} في وقت إضافي هذا الأسبوع."
       cash_variance: "فرق درج نقدي بقيمة %{variance} لـ %{name} بتاريخ %{date}."
       vendor_balance_negative: "أصبح رصيد %{supplier} سالباً (%{balance}) بعد تعديل فاتورة %{invoice_number} — أصبح المورد مديناً لك."
+      customer_invoice_payment_pending: "الفاتورة %{invoice_number} بانتظار اعتماد الدفعة."
 
   pos:
     title: "صقر POS"

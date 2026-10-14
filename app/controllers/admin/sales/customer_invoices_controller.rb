@@ -3,7 +3,7 @@
 module Admin
   module Sales
     class CustomerInvoicesController < BaseController
-      before_action :set_invoice, only: %i[show confirm record_payment approve_payment reject_payment mark_dispatched void]
+      before_action :set_invoice, only: %i[show confirm record_payment approve_payment reject_payment mark_dispatched void attach_payment_proof_image]
       before_action :require_confirm_payments_access, only: %i[approve_payment reject_payment]
 
       def index
@@ -95,6 +95,27 @@ module Admin
 
         @invoice.update!(status: "void")
         redirect_to admin_sales_customer_invoices_path, notice: t("sales.customer_invoices.flash.voided")
+      end
+
+      # Mirrors Admin::Inventory::VendorInvoicesController#attach_invoice_image:
+      # one attachment, replace to change, no delete route.
+      def attach_payment_proof_image
+        if @invoice.void?
+          redirect_to admin_sales_customer_invoice_path(@invoice),
+            alert: t("sales.customer_invoices.flash.cannot_attach_payment_proof")
+          return
+        end
+
+        image = params.dig(:customer_invoice, :payment_proof_image)
+        if image.blank?
+          redirect_to admin_sales_customer_invoice_path(@invoice),
+            alert: t("sales.customer_invoices.flash.payment_proof_required")
+          return
+        end
+
+        @invoice.payment_proof_image.attach(image)
+        redirect_to admin_sales_customer_invoice_path(@invoice),
+          notice: t("sales.customer_invoices.flash.payment_proof_attached")
       end
 
       def record_payment

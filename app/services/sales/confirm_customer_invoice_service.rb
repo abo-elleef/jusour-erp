@@ -41,6 +41,7 @@ module Sales
       # to settle_now! below, same as cash always has.
       if @invoice.draft? && @invoice.online?
         @invoice.update!(status: "pending_payment_confirmation")
+        Sales::NotifyService.deliver_payment_pending(@invoice)
         return Result.new(invoice: @invoice, credit_warning: false, pending_confirmation: true)
       end
 

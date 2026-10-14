@@ -24,7 +24,7 @@ module Admin
         .pluck(Arel.sql("notifications.params ->> 'message_key'"))
         .compact.sort
 
-      @type   = params[:type].presence_in(%w[inventory accounting])
+      @type   = params[:type].presence_in(%w[inventory accounting sales])
       @status = params[:status].presence_in(%w[unread read])
       @alert  = params[:alert].presence_in(@alert_keys)
       @from   = parse_date(params[:from])

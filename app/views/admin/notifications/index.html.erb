@@ -38,7 +38,8 @@
               options_for_select(
                 [[t("notifications.index.filters.all_types"), ""],
                  [t("notifications.index.filters.inventory"), "inventory"],
-                 [t("notifications.index.filters.accounting"), "accounting"]],
+                 [t("notifications.index.filters.accounting"), "accounting"],
+                 [t("notifications.index.filters.sales"), "sales"]],
                 @type
               ),
               class: "#{input_class} appearance-none" %>
@@ -125,6 +126,10 @@
                     <% if notification.unread? && notification.ingredient %>
                       <%= link_to t("notifications.index.view_ingredient"),
                             admin_inventory_ingredient_path(notification.ingredient),
+                            class: action_btn_class %>
+                    <% elsif notification.unread? && notification.customer_invoice %>
+                      <%= link_to t("notifications.index.view_invoice"),
+                            admin_sales_customer_invoice_path(notification.customer_invoice),
                             class: action_btn_class %>
                     <% end %>
                     <% if notification.unread? %>

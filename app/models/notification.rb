@@ -19,6 +19,11 @@ class Notification < ApplicationRecord
     Ingredient.find_by(id: id) if id.present?
   end
 
+  def customer_invoice
+    id = params["customer_invoice_id"] || params[:customer_invoice_id]
+    CustomerInvoice.find_by(id: id) if id.present?
+  end
+
   def unread?
     read_at.nil?
   end

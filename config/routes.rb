@@ -129,6 +129,7 @@ Rails.application.routes.draw do
           post :reject_payment
           post :mark_dispatched
           patch :void
+          patch :attach_payment_proof_image
         end
       end
       resources :payment_methods, controller: "payment_methods", except: %i[show]

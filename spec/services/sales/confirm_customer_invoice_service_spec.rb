@@ -146,6 +146,15 @@ RSpec.describe Sales::ConfirmCustomerInvoiceService do
       expect(treasury.reload.balance_cents).to eq(0)
     end
 
+    it "notifies whoever holds sales:confirm_payments when it's submitted" do
+      approver = create(:user, company: company, role: "manager")
+      inv = online_invoice
+
+      expect { described_class.new(inv, user).call }.to change(Notification, :count).by(1)
+      expect(Notification.last.recipient).to eq(approver)
+      expect(Notification.last.customer_invoice).to eq(inv)
+    end
+
     it "settles once approved: deducts stock exactly once and banks the money" do
       inv = online_invoice
       described_class.new(inv, user).call # -> pending

@@ -1549,6 +1549,7 @@ module ApplicationHelper
     case type
     when "inventory" then "bg-amber-100 text-amber-900"
     when "accounting" then "bg-blue-100 text-blue-900"
+    when "sales" then "bg-purple-100 text-purple-900"
     else "bg-gray-100 text-gray-700"
     end
   end
@@ -1557,6 +1558,7 @@ module ApplicationHelper
     case type
     when "inventory" then "border-amber-200"
     when "accounting" then "border-blue-200"
+    when "sales" then "border-purple-200"
     else "border-gray-200"
     end
   end
@@ -1613,6 +1615,11 @@ module ApplicationHelper
     end
     if raw[:vendor_invoice_id].present? && raw[:invoice_number].present?
       raw[:invoice_number] = link_to(raw[:invoice_number], admin_inventory_vendor_invoice_path(raw[:vendor_invoice_id]),
+                                     class: "font-medium text-blue-600 hover:underline").html_safe
+      has_links = true
+    end
+    if raw[:customer_invoice_id].present? && raw[:invoice_number].present?
+      raw[:invoice_number] = link_to(raw[:invoice_number], admin_sales_customer_invoice_path(raw[:customer_invoice_id]),
                                      class: "font-medium text-blue-600 hover:underline").html_safe
       has_links = true
     end

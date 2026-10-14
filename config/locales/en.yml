@@ -2398,6 +2398,8 @@ en:
         payment_method_hint: "On account adds to the customer's balance. Cash and online settle the sale now; cash on delivery settles once the shipping company remits it."
         online_payment_method: "Which online method"
         select_online_payment_method: "Select a payment method…"
+        payment_proof_attach: "Attach photo"
+        payment_proof_replace: "Replace photo"
         fulfillment_method: "Fulfillment"
         select_fulfillment_method: "Select…"
         shipping_company: "Shipping company"
@@ -2438,6 +2440,8 @@ en:
         reject_prompt: "Reject this payment? The invoice goes back to draft."
         void_prompt: "Void this invoice? Nothing has posted yet, so this just marks it dead."
         cod_awaiting_dispatch_hint: "Confirmed — stock deducted. The shipping company will be charged %{amount} once this is dispatched."
+        payment_proof: "Payment proof"
+        payment_proof_hint: "A screenshot of the payment transaction (InstaPay, bank transfer, …)."
         settled_hint: "Paid in full: %{amount} by %{method}, into %{treasury}. Nothing is owed on this sale."
         settled_hint_cod: "Dispatched: %{shipping_company} now owes us %{amount} for this cash-on-delivery order."
         confirm: "Confirm sale"
@@ -2461,6 +2465,9 @@ en:
         voided: "Invoice voided."
         dispatched: "Invoice dispatched."
         dispatch_failed: "Could not dispatch the invoice: %{error}"
+        payment_proof_attached: "Payment proof saved."
+        payment_proof_required: "Choose a photo to upload."
+        cannot_attach_payment_proof: "Cannot attach a photo to a voided invoice."
         payment_recorded: "Payment recorded."
         confirm_failed: "Could not confirm the sale: %{error}"
     leads:
@@ -2790,6 +2797,7 @@ en:
     types:
       inventory: "Inventory"
       accounting: "Accounting"
+      sales: "Sales"
       unknown: "Alert"
     keys:
       low_stock: "Low stock"
@@ -2799,12 +2807,14 @@ en:
       overtime_shift: "Shift overtime"
       cash_variance: "Cash variance"
       vendor_balance_negative: "Vendor balance negative"
+      customer_invoice_payment_pending: "Payment awaiting confirmation"
       unknown: "Alert"
     index:
       description: "Inventory and accounting alerts for owners and managers."
       mark_all_read: "Mark all read"
       mark_read: "Mark read"
       view_ingredient: "View ingredient"
+      view_invoice: "View invoice"
       empty_title: "No notifications"
       empty_description: "You're all caught up — new alerts will appear here."
       list_title: "Recent alerts"
@@ -2827,6 +2837,7 @@ en:
         unread: "Unread"
         inventory: "Inventory"
         accounting: "Accounting"
+        sales: "Sales"
         alert_label: "Alert"
         type_label: "Type"
         status_label: "Status"
@@ -2851,6 +2862,7 @@ en:
       overtime_shift: "%{name} has gone into overtime this week."
       cash_variance: "Cash drawer variance of %{variance} detected for %{name} on %{date}."
       vendor_balance_negative: "%{supplier}'s balance has gone negative (%{balance}) after editing invoice %{invoice_number} — they now owe you money back."
+      customer_invoice_payment_pending: "Invoice %{invoice_number} is awaiting payment confirmation."
 
   pos:
     title: "Saqr POS"

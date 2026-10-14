@@ -48,6 +48,10 @@ class CustomerInvoice < ApplicationRecord
   # Required when payment_method is "online" — which configured method/treasury was used.
   belongs_to :sales_payment_method, class_name: "Sales::PaymentMethod", optional: true
 
+  # Evidence of payment — an InstaPay/bank-transfer screenshot, mainly. Mirrors
+  # VendorInvoice#invoice_image: one attachment, replace to change, no delete.
+  has_one_attached :payment_proof_image
+
   before_validation :default_salesperson
   has_many :customer_invoice_lines, -> { order(:position, :created_at) },
     dependent: :destroy, inverse_of: :customer_invoice
