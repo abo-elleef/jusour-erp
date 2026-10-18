@@ -13,6 +13,9 @@
         <%= @customer.name.presence || t("customers.default_name") %>
       </h1>
       <p class="text-gray-600 mt-1 space-y-0.5">
+        <% if @customer.legacy_code.present? %>
+          <span class="block text-sm text-gray-500"><%= t("customers.show.legacy_code") %>: <span class="tabular-nums"><%= @customer.legacy_code %></span></span>
+        <% end %>
         <% if @customer.email.present? %><span class="block"><%= @customer.email %></span><% end %>
         <% @customer.contact_phones.each do |num| %>
           <span class="block"><%= num %></span>

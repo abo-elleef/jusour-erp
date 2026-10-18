@@ -3640,11 +3640,14 @@ en:
       with_points: "With points"
       with_points_hint: "Loyalty balance > 0"
       new_this_month: "New this month"
+      new_in_period: "New in period"
     search:
       title: "Search"
-      hint: "Find by name, email, or phone"
+      hint: "Find by name, email, phone, or old-system code; filter by joined date"
       label: "Search"
-      placeholder: "Name, email, or phone…"
+      placeholder: "Name, email, phone, or old code…"
+      joined_from: "Joined from"
+      joined_to: "Joined to"
       apply: "Apply search"
       showing:
         one: "Showing %{count} customer"
@@ -3672,6 +3675,11 @@ en:
       no_orders: "No orders yet."
       no_loyalty: "No loyalty transactions yet."
       order_date: "Date"
+      legacy_code: "Old code"
+    csv:
+      legacy_code: "Old code"
+      default_address: "Default address"
+      ar_balance: "Balance owed"
     form:
       commercial_heading: "Commercial & credit"
       commercial_hint: "Classify the customer and set their pricing and credit limits."

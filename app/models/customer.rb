@@ -47,7 +47,7 @@ class Customer < ApplicationRecord
   money_input :credit_warning_limit_cents, :credit_hard_limit_cents
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name email phone phone_secondary loyalty_points total_spent_cents created_at updated_at]
+    %w[name email phone phone_secondary legacy_code loyalty_points total_spent_cents created_at updated_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)

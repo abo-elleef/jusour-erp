@@ -3661,11 +3661,14 @@ ar:
       with_points: "لديهم نقاط"
       with_points_hint: "رصيد الولاء أكبر من 0"
       new_this_month: "جدد هذا الشهر"
+      new_in_period: "جدد في الفترة"
     search:
       title: "بحث"
-      hint: "ابحث بالاسم أو البريد أو الهاتف"
+      hint: "ابحث بالاسم أو البريد أو الهاتف أو كود النظام القديم، وصفِّ حسب تاريخ الانضمام"
       label: "بحث"
-      placeholder: "الاسم أو البريد أو الهاتف…"
+      placeholder: "الاسم أو البريد أو الهاتف أو الكود القديم…"
+      joined_from: "انضم من"
+      joined_to: "انضم حتى"
       apply: "تطبيق البحث"
       showing:
         zero: "عرض %{count} عميل"
@@ -3701,6 +3704,11 @@ ar:
       no_orders: "لا توجد طلبات بعد."
       no_loyalty: "لا توجد معاملات ولاء بعد."
       order_date: "التاريخ"
+      legacy_code: "الكود القديم"
+    csv:
+      legacy_code: "الكود القديم"
+      default_address: "العنوان الافتراضي"
+      ar_balance: "الرصيد المستحق"
     form:
       commercial_heading: "تجاري وائتمان"
       commercial_hint: "صنّف العميل وحدّد التسعير وحدود الائتمان."

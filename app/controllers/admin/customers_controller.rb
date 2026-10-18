@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module Admin
   class CustomersController < BaseController
     before_action :set_customer, only: %i[show edit update destroy]
@@ -10,14 +12,31 @@ module Admin
       @q = Customer.ransack(params[:q])
       @sort = parse_index_sort_param
       @direction = parse_index_sort_direction_param
+      @joined_from = parse_date_param(:joined_from)
+      @joined_to = parse_date_param(:joined_to)
+      scope = joined_scope(@q.result)
+
+      if request.format.csv?
+        return send_data customers_csv(scope.order(@sort => @direction, id: :asc)),
+                         filename: "customers-#{Date.current.iso8601}.csv",
+                         type: "text/csv; charset=utf-8"
+      end
+
       @total_count = Customer.count
       @loyalty_members_count = Customer.where("loyalty_points > 0").count
       @total_lifetime_spend_cents = Customer.sum(:total_spent_cents)
-      @new_this_month_count = Customer.where(created_at: Time.current.all_month).count
-      @filtered = params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)
+      @date_filtered = @joined_from.present? || @joined_to.present?
+      # With a joined-date range the card counts that period instead of this month.
+      @new_in_period_count =
+        if @date_filtered
+          joined_scope(Customer.all).count
+        else
+          Customer.where(created_at: Time.current.all_month).count
+        end
+      @filtered = @date_filtered || (params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?))
       @pagy, @customers = pagy(
         :offset,
-        @q.result.order(@sort => @direction, id: :asc),
+        scope.order(@sort => @direction, id: :asc),
         limit: 25
       )
     end
@@ -74,6 +93,48 @@ module Admin
 
     def set_customer
       @customer = Customer.includes(:addresses).find(params[:id])
+    end
+
+    def parse_date_param(key)
+      params[key].presence&.to_date
+    rescue ArgumentError, TypeError, Date::Error
+      nil
+    end
+
+    # Joined-date range is inclusive of both days, in the app time zone.
+    def joined_scope(scope)
+      scope = scope.where(created_at: @joined_from.beginning_of_day..) if @joined_from
+      scope = scope.where(created_at: ..@joined_to.end_of_day) if @joined_to
+      scope
+    end
+
+    def customers_csv(scope)
+      credit = Current.company&.feature_enabled?(:ar_credit_sales)
+      CSV.generate do |csv|
+        header = [
+          t("customers.csv.legacy_code"), t("customers.form.name"), t("customers.form.email"),
+          t("customers.form.phone"), t("customers.form.phone_secondary"),
+          t("customers.csv.default_address"), t("customers.table.loyalty"),
+          t("customers.table.lifetime_spend"), t("customers.table.joined")
+        ]
+        header += [t("customers.form.customer_type"), t("customers.csv.ar_balance")] if credit
+        csv << header
+
+        # `each`, not `find_each`: find_each would drop the user's chosen sort order.
+        scope.includes(*[:addresses, (:ar_treasury if credit)].compact).each do |customer|
+          default_address = customer.addresses.find(&:is_default?) || customer.addresses.first
+          row = [
+            customer.legacy_code, customer.name, customer.email, customer.phone, customer.phone_secondary,
+            default_address&.address, customer.loyalty_points,
+            helpers.format_amount(customer.total_spent_cents), customer.created_at.to_date
+          ]
+          if credit
+            row += [t("customers.form.types.#{customer.customer_type}"),
+                    helpers.format_amount(customer.ar_balance_cents)]
+          end
+          csv << row
+        end
+      end
     end
 
     def parse_index_sort_param

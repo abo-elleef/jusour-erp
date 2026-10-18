@@ -1,7 +1,7 @@
 <% content_for :title, admin_page_title %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
-<% action_btn_class = "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
-<% delete_btn_class = "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
+<% icon_btn_class = "inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors" %>
+<% delete_icon_btn_class = "inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-700 transition-colors" %>
 <% loyalty_chip_class = "text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 tabular-nums" %>
 
 <div class="max-w-6xl">
@@ -10,10 +10,15 @@
       <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
       <p class="text-gray-600 text-sm mt-1"><%= t("customers.description") %></p>
     </div>
-    <%= link_to new_admin_customer_path,
-          class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors shrink-0" do %>
-      <span aria-hidden="true">+</span> <%= t("customers.new_button") %>
-    <% end %>
+    <div class="flex flex-wrap gap-2 shrink-0">
+      <%= link_to t("actions.export_csv"),
+            admin_customers_path(**request.query_parameters.symbolize_keys, format: :csv),
+            class: "border border-gray-200 text-gray-700 text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-gray-50" %>
+      <%= link_to new_admin_customer_path,
+            class: "inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors" do %>
+        <span aria-hidden="true">+</span> <%= t("customers.new_button") %>
+      <% end %>
+    </div>
   </div>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -31,8 +36,15 @@
       <p class="text-xs text-gray-500 mt-1.5"><%= t("customers.stats.with_points_hint") %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("customers.stats.new_this_month") %></p>
-      <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= @new_this_month_count %></p>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <%= @date_filtered ? t("customers.stats.new_in_period") : t("customers.stats.new_this_month") %>
+      </p>
+      <p class="text-2xl font-bold mt-1 text-green-700 tabular-nums"><%= @new_in_period_count %></p>
+      <% if @date_filtered %>
+        <p class="text-xs text-gray-500 mt-1.5">
+          <%= [@joined_from, @joined_to].map { |d| d ? l(d, format: :long) : t("customers.shared.em_dash") }.join(" → ") %>
+        </p>
+      <% end %>
     </div>
   </div>
 
@@ -46,10 +58,18 @@
         <%= hidden_field_tag :sort, @sort %>
         <%= hidden_field_tag :dir, @direction %>
         <div class="flex-1 min-w-[12rem]">
-          <%= f.label :name_or_email_or_phone_or_phone_secondary_cont, t("customers.search.label"), class: label_class %>
-          <%= f.search_field :name_or_email_or_phone_or_phone_secondary_cont,
+          <%= f.label :name_or_email_or_phone_or_phone_secondary_or_legacy_code_cont, t("customers.search.label"), class: label_class %>
+          <%= f.search_field :name_or_email_or_phone_or_phone_secondary_or_legacy_code_cont,
                 placeholder: t("customers.search.placeholder"),
                 class: pos_input_class %>
+        </div>
+        <div>
+          <%= label_tag :joined_from, t("customers.search.joined_from"), class: label_class %>
+          <%= date_field_tag :joined_from, @joined_from, class: pos_input_class %>
+        </div>
+        <div>
+          <%= label_tag :joined_to, t("customers.search.joined_to"), class: label_class %>
+          <%= date_field_tag :joined_to, @joined_to, class: pos_input_class %>
         </div>
         <%= f.submit t("customers.search.apply"),
               class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
@@ -84,7 +104,7 @@
                 </div>
               </th>
               <th class="p-3 text-start"><%= sort_header_link(t("customers.table.joined"), :created_at, **sort_opts) %></th>
-              <th class="p-3 pe-5 text-end"><%= t("customers.table.actions") %></th>
+              <th class="p-3 pe-5 text-end"><span class="sr-only"><%= t("customers.table.actions") %></span></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 table-zebra">
@@ -93,6 +113,9 @@
                 <td class="p-3 ps-5">
                   <%= link_to c.display_name, admin_customer_path(c),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                  <% if c.legacy_code.present? %>
+                    <div class="text-xs text-gray-500 tabular-nums"><%= t("customers.show.legacy_code") %>: <%= c.legacy_code %></div>
+                  <% end %>
                 </td>
                 <td class="p-3 text-gray-600">
                   <% if c.email.present? %><div><%= c.email %></div><% end %>
@@ -115,13 +138,19 @@
                   <%= l(c.created_at.to_date, format: :long) %>
                 </td>
                 <td class="p-3 pe-5 text-end whitespace-nowrap">
-                  <div class="inline-flex gap-2">
-                    <%= link_to t("actions.view"), admin_customer_path(c), class: action_btn_class %>
-                    <%= link_to t("actions.edit"), edit_admin_customer_path(c), class: action_btn_class %>
+                  <%# Name already links to the show page, so only edit/delete need a control. %>
+                  <div class="inline-flex gap-1">
+                    <%= link_to edit_admin_customer_path(c), class: icon_btn_class,
+                          title: t("actions.edit"), aria: { label: t("actions.edit") } do %>
+                      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg>
+                    <% end %>
                     <% if policy(c).destroy? %>
-                      <%= button_to t("actions.delete"), admin_customer_path(c), method: :delete,
+                      <%= button_to admin_customer_path(c), method: :delete,
                             form: { data: { turbo_confirm: t("customers.delete_confirm") }, class: "inline" },
-                            class: delete_btn_class %>
+                            class: delete_icon_btn_class,
+                            title: t("actions.delete"), aria: { label: t("actions.delete") } do %>
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                      <% end %>
                     <% end %>
                   </div>
                 </td>
