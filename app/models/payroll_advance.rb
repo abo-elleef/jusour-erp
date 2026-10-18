@@ -1,79 +1,23 @@
 # frozen_string_literal: true
 
+# LEGACY — read-only. Advances are gone: money handed to an employee ahead of
+# payroll is now an ordinary payment voucher with the employee as its party,
+# and it lands on their own account (User#account_code) like every other
+# payment to them.
+#
+# Kept only so payroll:convert_to_staff_accounts can read the old rows and
+# record which voucher each one became (converted_voucher_id). Nothing in the
+# app writes here any more. Drop the table, this file, and PayrollAdvance in
+# PaymentAllocation::SETTLEABLE_TYPES / SettledRecordsHelper once production
+# has run the conversion and baked.
 class PayrollAdvance < ApplicationRecord
   include Tenantable
-  include MoneyInputs
-
-  money_input :amount_cents
 
   belongs_to :user
   belongs_to :treasury
   belongs_to :paid_by, class_name: "User"
-  has_many :treasury_transactions, as: :source_record, dependent: :destroy
-  has_many :payment_allocations, as: :settles, dependent: :destroy
+  belongs_to :converted_voucher, class_name: "Voucher", optional: true
+  has_many :payment_allocations, as: :settles
 
-  # Prepended so it runs before `dependent: :destroy` clears the allocations,
-  # which are the only route back to the voucher that paid this.
-  before_destroy :destroy_paying_voucher, prepend: true
-
-  monetize :amount_cents
-
-  validates :payroll_month, :paid_on, presence: true
-  validates :amount_cents, numericality: { only_integer: true, greater_than: 0 }
-  validate :salary_required
-  validate :payroll_not_finalized
-  validate :within_advance_limits
-
-  # The advance date drives which month it is deducted from.
-  before_validation :derive_payroll_month_from_paid_on
-
-  scope :for_month, ->(month) { where(payroll_month: month.to_date.beginning_of_month) }
-  scope :ordered, -> { order(paid_on: :asc, created_at: :asc) }
-
-  # Cap advances at the employee's configured monthly salary for the month,
-  # not attendance-based net pay. Remaining room shrinks as advances are paid.
-  def self.max_amount_cents_for(user, payroll_month)
-    advances_so_far = user.payroll_advances.for_month(payroll_month).sum(:amount_cents)
-    remaining = user.monthly_salary_cents.to_i - advances_so_far
-    [remaining, 0].max
-  end
-
-  private
-
-  # The voucher owns the cash and the entry, so voiding it is what gives the
-  # money back.
-  def destroy_paying_voucher
-    voucher_ids = payment_allocations.where(payment_type: "Voucher").select(:payment_id)
-    Voucher.where(id: voucher_ids).find_each do |voucher|
-      voucher.void!(reason: :source_removed) if voucher.payment_allocations.where.not(settles: self).none?
-    end
-  end
-
-  def derive_payroll_month_from_paid_on
-    return if paid_on.blank?
-
-    self.payroll_month = paid_on.to_date.beginning_of_month
-  end
-
-  def salary_required
-    return if user&.monthly_salary_cents.to_i.positive?
-
-    errors.add(:base, :salary_required)
-  end
-
-  def payroll_not_finalized
-    return if user.blank? || payroll_month.blank?
-    return unless PayrollSnapshot.exists?(user: user, payroll_month: payroll_month)
-
-    errors.add(:base, :payroll_finalized)
-  end
-
-  def within_advance_limits
-    return if user.blank? || payroll_month.blank? || amount_cents.blank?
-
-    max_allowed = self.class.max_amount_cents_for(user, payroll_month)
-    return if amount_cents <= max_allowed
-
-    errors.add(:amount_cents, :exceeds_limit, limit: max_allowed)
-  end
+  scope :unconverted, -> { where(converted_voucher_id: nil) }
 end

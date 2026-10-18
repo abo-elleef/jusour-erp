@@ -17,7 +17,8 @@
     # off what earlier periods charged.
     unpaid_expenses:      { negative: :settled_prior_expenses },
     uncollected_income:   { positive: :collected_prior_income },
-    ledger_only_expenses: { negative: :ledger_only_expenses_reverse }
+    ledger_only_expenses: { negative: :ledger_only_expenses_reverse },
+    staff_balances:       { negative: :staff_balances_reverse }
   }
 
   range = { start_date: @start_date, end_date: @end_date }
@@ -34,8 +35,8 @@
       cash_flow_admin_accounting_financial_statements_path(**range)
     when :equity_adjustments
       cash_flow_lines_admin_accounting_financial_statements_path(kind: "adjustment", **range)
-    when :advance_timing
-      cash_flow_lines_admin_accounting_financial_statements_path(kind: "payroll_advance", **range)
+    when :staff_balances
+      cash_flow_lines_admin_accounting_financial_statements_path(kind: "staff_payment", **range)
     when :digital_payments
       cash_flow_lines_admin_accounting_financial_statements_path(kind: "online_payment", **range)
     when :ledger_only_expenses

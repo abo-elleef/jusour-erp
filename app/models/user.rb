@@ -23,13 +23,14 @@ class User < ApplicationRecord
   WORK_DAYS_PER_MONTH = 30
   WORK_HOURS_PER_MONTH = 300
 
-  # Accountable — every employee's own payroll sub-account (salary, advances,
-  # staff meals all land here), rolling up into one company-wide "Wages and
-  # salaries" line on the chart of accounts (ChartOfAccountsService#wages_expense_line).
-  # A fresh, otherwise-unused block: ExpenseCategory grows upward from 5000
-  # and the fixed payroll/purchases/interest codes already live in that
-  # decade (5100/5500-5503/5600), so per-employee codes get their own space.
-  WAGES_ACCOUNT_CODE_BASE = 6000
+  # Accountable — every employee's own current account. Finalizing a month
+  # credits it with what they earned (the expense side goes to Salaries,
+  # 5501); every voucher paid to them debits it, every voucher received from
+  # them credits it, and staff meals debit it. A credit balance is what the
+  # company still owes them; a debit balance is what they owe the company.
+  # A liability block clear of tax payable (2100), loans (2101+), equipment
+  # payable (2200) and accrued expenses (2300).
+  WAGES_ACCOUNT_CODE_BASE = 2500
 
   devise :database_authenticatable, :recoverable, :rememberable
 
@@ -86,7 +87,10 @@ class User < ApplicationRecord
   has_many :incomes, dependent: :nullify
   has_many :payroll_adjustments, dependent: :destroy
   has_many :payroll_snapshots, dependent: :destroy
-  has_many :payroll_advances, dependent: :destroy
+  # Money paid to or received from this employee. A voucher is a printed
+  # document that moved cash, so the employee can't be deleted out from under
+  # it — deactivate them instead.
+  has_many :party_vouchers, class_name: "Voucher", as: :party, dependent: :restrict_with_error
   has_many :staff_attendances, dependent: :destroy
   has_many :recorded_payroll_adjustments, class_name: "PayrollAdjustment",
     foreign_key: :recorded_by_id, dependent: :nullify, inverse_of: :recorded_by
@@ -317,30 +321,53 @@ class User < ApplicationRecord
     Accounting::MonthlyPayrollService.new(self, payroll_month, sort: sort, direction: direction).call
   end
 
-  # Accountable — salary, advances and staff meals all post here once they're
-  # attributed to this specific employee (see JournalEntryService). Expense
-  # accounts read debit-less-credit, the mirror of Loan/Partner's
-  # credit-less-debit, since this one carries a debit normal balance.
+  # Accountable — see WAGES_ACCOUNT_CODE_BASE.
   def account_code = wages_account_code
-  def account_name = "#{name} — رواتب وأجور"
-  def account_type = "expense"
-  def normal_balance = :debit
+  def account_name = "#{name} — حساب موظف"
+  def account_type = "liability"
+  def normal_balance = :credit
 
-  def wages_balance_cents
-    wages_account_lines.sum(:debit_cents) - wages_account_lines.sum(:credit_cents)
+  # Positive: the company owes this employee. Negative: they owe the company
+  # (paid ahead of what they've earned, or meals not yet covered by a salary).
+  def staff_balance_cents
+    staff_account_lines.sum(:credit_cents) - staff_account_lines.sum(:debit_cents)
   end
 
-  private
+  # Vouchers to or from this employee dated in the month, newest first.
+  def staff_vouchers_for_month(month)
+    month = month.to_date.beginning_of_month
+    party_vouchers.active.where(voucher_date: month..month.end_of_month)
+                  .includes(:treasury).order(voucher_date: :desc, created_at: :desc)
+  end
 
-  def wages_account_lines
+  # Paid out less received back, for the month.
+  def staff_paid_cents_for_month(month)
+    staff_vouchers_for_month(month).sum(&:signed_amount_cents) * -1
+  end
+
+  # How far a payment can go before the "you are past the cap" warning: what
+  # the company owes them now plus one month's salary, the same headroom the
+  # old per-month advance limit gave.
+  def staff_payment_headroom_cents
+    staff_balance_cents + monthly_salary_cents.to_i
+  end
+
+    private
+
+  def staff_account_lines
     JournalEntryLine.joins(:journal_entry)
                     .where(journal_entries: { company_id: company_id })
                     .where(account_code: wages_account_code)
   end
 
+  # Walks forward past any code a treasury already holds in this company —
+  # supplier AP treasuries grow up from 2001 and per-type maxima are not
+  # company-wide (see Treasury#assign_account_code).
   def assign_wages_account_code
-    last = self.class.where(company_id: company_id).maximum(:wages_account_code) || WAGES_ACCOUNT_CODE_BASE
-    self.wages_account_code = last + 1
+    last = self.class.unscoped.where(company_id: company_id).maximum(:wages_account_code)
+    candidate = [last.to_i, WAGES_ACCOUNT_CODE_BASE].max + 1
+    candidate += 1 while Treasury.unscoped.where(company_id: company_id).exists?(account_code: candidate)
+    self.wages_account_code = candidate
   end
 
   def ensure_assigned_treasury

@@ -4,7 +4,7 @@ module Accounting
   class MonthlyPayrollService
     INDEX_SORTABLE_COLUMNS = %w[
       name base_salary_cents attendance_pay_cents daily_rate_cents penalties_cents bonuses_cents
-      net_pay_cents advances_cents staff_meals_cents remaining_pay_cents status
+      net_pay_cents paid_cents staff_meals_cents remaining_pay_cents status
     ].freeze
     INDEX_DEFAULT_SORT = "name"
     INDEX_DEFAULT_SORT_DIRECTION = "asc"
@@ -22,11 +22,12 @@ module Accounting
       :penalties_cents,
       :bonuses_cents,
       :net_pay_cents,
-      :advances_cents,
+      :paid_cents,
       :staff_meals_cents,
+      :balance_cents,
       :remaining_pay_cents,
       :adjustments,
-      :advances,
+      :payments,
       :finalized,
       :snapshot,
       keyword_init: true
@@ -49,7 +50,7 @@ module Accounting
 
     def build_calculated
       adjustments    = sorted_adjustments
-      advances       = @user.payroll_advances.for_month(@payroll_month).ordered
+      payments       = @user.staff_vouchers_for_month(@payroll_month)
       full_salary    = @user.monthly_salary_cents.to_i
 
       # Attendance drives base pay for everyone except owners. Owners keep a
@@ -62,8 +63,8 @@ module Accounting
       penalties      = adjustments.penalties.sum(:amount_cents)
       bonuses        = adjustments.bonuses.sum(:amount_cents)
       gross_net      = attendance_pay - penalties + bonuses
-      advances_total = advances.sum(:amount_cents)
       meals_total    = staff_meals_for_month
+      balance        = @user.staff_balance_cents
 
       Result.new(
         user: @user,
@@ -78,11 +79,17 @@ module Accounting
         penalties_cents: penalties,
         bonuses_cents: bonuses,
         net_pay_cents: gross_net,
-        advances_cents: advances_total,
+        paid_cents: payments.sum(&:signed_amount_cents) * -1,
         staff_meals_cents: meals_total,
-        remaining_pay_cents: gross_net - advances_total - meals_total,
+        balance_cents: balance,
+        # Not finalized yet, so this month's earnings aren't on the account:
+        # what they'd be owed once it is. Payments and meals — this month's
+        # and any earlier month's still unsettled — are already in the balance.
+        # Not floored: penalties beyond the month's pay show as a real negative
+        # here, even though finalizing will only ever accrue zero for it.
+        remaining_pay_cents: balance + gross_net,
         adjustments: adjustments,
-        advances: advances,
+        payments: payments,
         finalized: false,
         snapshot: nil
       )
@@ -103,7 +110,7 @@ module Accounting
 
       user.monthly_salary_cents.to_i.positive? ||
         user.payroll_adjustments.for_month(payroll_month).exists? ||
-        user.payroll_advances.for_month(payroll_month).exists?
+        user.staff_vouchers_for_month(payroll_month).exists?
     end
 
     def self.sort_rows(rows, sort:, direction:)
@@ -169,11 +176,14 @@ module Accounting
         penalties_cents: snapshot.penalties_cents,
         bonuses_cents: snapshot.bonuses_cents,
         net_pay_cents: snapshot.net_pay_cents,
-        advances_cents: snapshot.advances_cents,
+        paid_cents: calculated.paid_cents,
         staff_meals_cents: snapshot.staff_meals_cents,
-        remaining_pay_cents: snapshot.remaining_pay_cents,
+        balance_cents: calculated.balance_cents,
+        # Finalized: the month's earnings are on the account, so what's still
+        # owed is simply the balance.
+        remaining_pay_cents: calculated.balance_cents,
         adjustments: calculated.adjustments,
-        advances: calculated.advances,
+        payments: calculated.payments,
         finalized: true,
         snapshot: snapshot
       )

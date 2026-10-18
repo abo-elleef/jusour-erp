@@ -386,6 +386,7 @@ ar:
   reports_hub:
     title: "التقارير"
     subtitle: "كل تقارير النظام في مكان واحد."
+    staff: "الموظفون"
 
   order:
     types:
@@ -533,15 +534,18 @@ ar:
       deactivate_confirm: "تعطيل %{name}؟ لن يتمكن من تسجيل الدخول."
       activate_confirm: "إعادة تفعيل %{name}؟"
     wages_ledger:
-      title: "حساب الرواتب"
+      title: "حساب الموظف"
       balance: "رصيد الحساب"
-      balance_hint: "الراتب والسلف ووجبات الموظفين كلها تُسجَّل هنا."
+      balance_hint: "الأشهر المعتمدة تُضاف له؛ المدفوع له ووجبات الموظفين تُخصم منه."
       date: "التاريخ"
       number: "رقم القيد"
       description: "الوصف"
       debit: "مدين"
       credit: "دائن"
-      no_movements: "لا توجد قيود رواتب بعد."
+      no_movements: "لا توجد قيود بعد."
+      owed_to_them: "مستحق له"
+      they_owe: "عليه للشركة"
+      settled: "مسدد"
     payroll:
       title: "الراتب الشهري"
       subtitle: "خصومات ومكافآت لهذا الشهر. كل شهر = %{days} يوم عمل."
@@ -590,22 +594,23 @@ ar:
       remaining_pay: "المتبقي للدفع"
       staff_meals: "وجبات الموظفين"
       paid_from: "دُفع %{amount} من %{treasury} في %{date}"
-      fully_advanced_hint: "لا يوجد متبقٍ للدفع — الراتب مُغطّى بالكامل بالسلف."
-      record_fully_advanced_confirm: "تسجيل الراتب بدون دفعة من الخزينة؟ الرصيد المتبقي صفر."
-      advances:
-        title: "السلف"
-        heading: "سلف الراتب"
-        hint: "السلف تُدفع مبكراً من الراتب وتُخصم من المتبقي."
-        policy_hint: "يُحدّ سقف السلف بالراتب الشهري للموظف في ذلك الشهر، وليس بالراتب المحسوب من الحضور."
-        amount: "المبلغ"
-        amount_cents: "المبلغ (سنت)"
-        treasury: "دُفعت من"
-        pay: "دفع سلفة"
-        max_hint: "الحد الأقصى لهذا الشهر: %{max}"
-        date_hint: "اختر أي تاريخ — تُخصم السلفة من شهر ذلك التاريخ."
-        notes_placeholder: "السبب (اختياري)"
-        empty: "لا توجد سلف مدفوعة لهذا الشهر."
-        remove_confirm: "إزالة هذه السلفة؟ سيُستعاد رصيد الخزينة."
+      fully_advanced_hint: "لا يوجد متبقٍ للدفع — الحساب مسدد بالفعل."
+      record_fully_advanced_confirm: "تسجيل الراتب؟ لا يوجد متبقٍ للصرف."
+      paid_this_month: "المدفوع هذا الشهر"
+      still_owed: "المستحق له"
+      still_owed_hint_open: "الرصيد الحالي + مستحق هذا الشهر"
+      still_owed_hint_finalized: "رصيد الحساب الآن"
+      recorded_not_paid_hint: "سُجّل بدون صرف — اصرف الرصيد بسند صرف."
+      record_only: "تسجيل فقط — الصرف لاحقاً"
+      pay_from_treasury: "صرف الرصيد من"
+      payments:
+        heading: "المدفوع للموظف / المقبوض منه"
+        hint: "كل سند صرف له أو قبض منه بتاريخ هذا الشهر. الصرف قبل اعتماد الشهر مسموح — يُخصم ببساطة من المستحق له."
+        pay: "صرف"
+        receive: "قبض"
+        number: "السند"
+        treasury: "الخزينة"
+        empty: "لا يوجد مدفوع أو مقبوض هذا الشهر."
     payroll_portal:
       title: "معاينة الراتب"
       pin_title: "أدخل رمز PIN"
@@ -617,13 +622,15 @@ ar:
       lock: "قفل"
       locked: "تم قفل معاينة الراتب."
       adjustments_title: "الخصومات والمكافآت"
-      advances_title: "سلف الراتب"
-      gross_summary: "إجمالي الراتب %{net} · السلف المدفوعة %{advances}"
+      advances_title: "المدفوع لك هذا الشهر"
+      gross_summary: "إجمالي الراتب %{net} · المدفوع هذا الشهر %{advances}"
       recorded: "تم تسجيل الراتب لهذا الشهر"
       share_link: "رابط راتب الموظف"
       share_link_hint: "شارك هذا الرابط مع %{name}. يدخل رمز PIN لعرض الراتب الشهري — دون تسجيل دخول."
       copy_link: "نسخ الرابط"
       copied: "تم النسخ!"
+      paid_to_you: "مدفوع لك"
+      received_from_you: "مقبوض منك"
 
   roles:
     title: "الأدوار والصلاحيات"
@@ -4114,6 +4121,7 @@ ar:
         accounts_payable: "ذمم دائنة"
         short_term_loan: "قصير الأجل"
         long_term_loan: "طويل الأجل"
+        staff_accounts: "حسابات الموظفين"
       pdf:
         page_of: "صفحة %{page} من %{total}"
     profit_vs_cash:
@@ -4153,8 +4161,6 @@ ar:
         investing_hint: "الإنفاق الرأسمالي ليس مصروفاً تشغيلياً."
         equity_adjustments: "تعديلات نقدية على حقوق الملكية"
         equity_adjustments_hint: "تُقيَّد على الأرباح المحتجزة، فلا تظهر في قائمة الأرباح والخسائر."
-        advance_timing: "سلف الرواتب: المدفوع مقابل المحمَّل"
-        advance_timing_hint: "مدفوع %{paid}، محمَّل %{expensed}."
         digital_payments: "متحصلات الكروت والمحافظ"
         digital_payments_hint: "تُقفل حساب وسيط المبيعات (1160) بدل إثبات إيراد، فهي نقد مقابل إيراد أُثبت في موضع آخر."
         ledger_only_expenses: "مصروفات مُقيَّدة بقيد يومية"
@@ -4165,9 +4171,12 @@ ar:
         financing_formula: "إجمالي قسم الأنشطة التمويلية في قائمة التدفقات النقدية = %{result}"
         investing_formula: "إجمالي قسم الأنشطة الاستثمارية في قائمة التدفقات النقدية = %{result}"
         equity_adjustments_formula: "مجموع التعديلات النقدية المقيدة على الأرباح المحتجزة = %{result}"
-        advance_timing_formula: "السلف المحمَّلة %{expensed} − السلف المدفوعة %{paid} = %{result}"
         digital_payments_formula: "مجموع متحصلات الكروت والمحافظ خلال الفترة = %{result}"
         ledger_only_expenses_formula: "مصروفات تشغيلية أخرى في أ.خ %{ledger} − سجلات المصروفات %{records} = %{result}"
+        staff_balances: "رواتب مستحقة لم تُصرف بعد"
+        staff_balances_hint: "المستحق %{earned}، المصروف أو المخصوم %{paid}."
+        staff_balances_reverse: "صُرف للموظفين أكثر من المستحق"
+        staff_balances_formula: "المستحق %{earned} − المصروف ووجبات الموظفين %{paid} = %{result}"
     cash_flow:
       title: "قائمة التدفقات النقدية"
       description: "التدفقات النقدية الداخلة والخارجة من الأنشطة التشغيلية والاستثمارية والتمويلية."
@@ -4210,6 +4219,8 @@ ar:
         loan_repayment: "سداد القرض"
         capital_contribution: "مساهمة رأس المال"
         partner_drawings: "سحوبات الشركاء / توزيعات"
+        staff_payment: "مدفوعات للموظفين"
+        staff_receipt: "مقبوضات من الموظفين"
     partners:
       title: "الشركاء"
       description: "إدارة الحسابات الجارية للشركاء — متابعة السلف وتوزيع الأرباح والأرصدة."
@@ -4468,6 +4479,7 @@ ar:
         accrued_expenses: "مصروفات مستحقة"
         tax_payable: "ضرائب مستحقة"
         delivery_fee_expense: "مصروف رسوم التوصيل"
+        staff_accounts: "حسابات الموظفين الجارية"
       auto:
         fixed_asset_purchase: "أصل ثابت — %{name}"
         fixed_asset_payment: "دفعة أصل ثابت — %{name}"
@@ -4485,6 +4497,7 @@ ar:
         drawer_reconcile: "تسوية درج النقد — %{treasury}"
         online_payment: "دفع إلكتروني — %{treasury}"
         shipping_company_fee_payable: "رسوم توصيل مستحقة — %{name}"
+        payroll_accrual: "استحقاق راتب — %{employee} (%{month})"
     fixed_assets:
       paid_from_treasury: "مدفوع من"
       select_treasury: "اختر الخزينة…"
@@ -4625,6 +4638,7 @@ ar:
         fixed_expense: "حساب نظامي"
         income: "إيراد"
         expense: "مصروف"
+        staff_accounts: "حسابات الموظفين"
     integrations:
       statuses:
         connected: "متصل"
@@ -4969,6 +4983,10 @@ ar:
         exceeds_open_invoices: "المبلغ أكبر من %{open_total} المتبقي على فواتير المورد المفتوحة."
         invoice_party_mismatch: "يجب أن يكون طرف السند هو مورد الفاتورة أو عميلها."
         invalid_allocation: "يجب أن يكون كل بند في السند بمبلغ موجب."
+      staff_cap:
+        title: "هذا الصرف يتجاوز الحد المعتاد لـ %{name} بمقدار %{excess}."
+        detail: "المستحق له الآن: %{owed}. الراتب الشهري: %{salary}. الحد هو مجموعهما."
+        confirm: "أعلم ذلك — أصدر السند على أي حال"
     incomes:
       on_account_option: "على الحساب — غير محصَّل بعد"
       treasury_hint: "اتركه فارغًا إذا لم يُحصَّل بعد. اختيار خزينة يسجل التحصيل الآن ويصدر سند قبض."
@@ -5111,6 +5129,8 @@ ar:
         online_payment: "دفع إلكتروني"
         shipping_company_charge: "تحصيل الدفع عند الاستلام"
         shipping_company_fee_payable: "رسوم توصيل مستحقة"
+        staff_payment: "صرف لموظف"
+        staff_receipt: "قبض من موظف"
       transactions:
         drawer_open: "رصيد افتتاح — %{cashier} (%{date})"
         drawer_reconcile: "تسوية صندوق — %{cashier} (%{date})"
@@ -5246,7 +5266,6 @@ ar:
       penalties: "الخصومات"
       bonuses: "المكافآت"
       net_pay: "صافي الراتب"
-      advances: "السلف المدفوعة"
       remaining_pay: "المتبقي للدفع"
       totals: "الإجمالي"
       empty: "لا يوجد موظفون براتب أو تعديلات لهذا الشهر. عيّن الرواتب من صفحة الموظفين."
@@ -5266,6 +5285,7 @@ ar:
       record_all: "تسجيل الكل"
       record_all_confirm: "تسجيل رواتب %{count} موظفين؟ سيتم حفظ المبالغ لهذا الشهر."
       recorded_summary: "%{recorded} / %{total} مُسجّل"
+      paid_this_month: "المدفوع هذا الشهر"
     tax_reports:
       title: "تقرير ضريبة المبيعات"
       description: "الضريبة المحصّلة على المبيعات، موزعة حسب النسبة والتصنيف."
@@ -5468,6 +5488,27 @@ ar:
       not_clocked_in: "لا يوجد وردية مفتوحة"
       clock_in: "بداية الوردية"
       clock_out: "انهاء الوردية"
+    staff_payments_report:
+      title: "المدفوع للموظفين"
+      description: "الراتب الشهري لكل موظف مقابل ما وصله فعلاً خلال الشهر."
+      subtitle: "الرواتب الشهرية مقابل كل سند صرف أو قبض مع الموظفين خلال الشهر."
+      empty: "لا يوجد موظفون على الرواتب أو مدفوع لهم في هذا الشهر."
+      monthly_payroll: "الرواتب الشهرية"
+      earned_hint: "المستحق هذا الشهر: %{amount}"
+      went_to_staff: "ما خرج للموظفين هذا الشهر"
+      went_to_staff_hint: "مدفوع %{paid}، مسترد %{received} — %{count} سند"
+      balance_now: "أرصدة الموظفين الآن"
+      balance_now_hint: "موجب: مستحق للموظفين. سالب: على الموظفين للشركة."
+      monthly_salary: "الراتب الشهري"
+      earned: "المستحق"
+      paid_out: "المدفوع"
+      received: "المسترد"
+      net_paid: "صافي المدفوع"
+      balance: "الرصيد الآن"
+      finalized: "معتمد"
+      estimate: "تقديري"
+      vouchers_title: "سندات الشهر"
+      vouchers_hint: "كل سند صرف لموظف أو قبض منه بتاريخ داخل الشهر."
 
   kitchen:
     title: "شاشة المطبخ"
@@ -5656,9 +5697,7 @@ ar:
         other: "تم تسجيل رواتب %{count} موظفين."
       all_recorded: "جميع رواتب هذا الشهر مُسجّلة بالفعل."
       undone: "تم إلغاء تسجيل الراتب. يمكنك تعديل الخصومات والمكافآت والتسجيل مجدداً."
-    payroll_advance:
-      paid: "تم دفع سلفة الراتب."
-      removed: "تمت إزالة سلفة الراتب."
+      undo_backfilled: "هذا الشهر صُرف قبل بدء دفتر القيود، لذا لا يمكن التراجع عنه."
     settings:
       updated: "تم حفظ الإعدادات."
     tax_rate:

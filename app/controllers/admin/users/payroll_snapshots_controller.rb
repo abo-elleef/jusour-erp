@@ -27,7 +27,18 @@ module Admin
         snapshot = @user.payroll_snapshots.find_by!(payroll_month: payroll_month)
         authorize snapshot
 
+        # A month from before the ledger started was paid by a backfilled
+        # voucher, which only documents its treasury row and can't take it
+        # back — so the month can't be undone either.
+        if snapshot.payout_voucher&.backfilled?
+          return redirect_to redirect_path(payroll_month), alert: t("flash.payroll_snapshot.undo_backfilled")
+        end
+
         ApplicationRecord.transaction do
+          # The payout voucher stays in the book, voided — it was a printed
+          # document. The treasury removal only matters for months paid
+          # before payouts were vouchers.
+          snapshot.payout_voucher&.void!(user: current_user, reason: :source_removed)
           ::Accounting::TreasuryLedgerService.remove_source!(snapshot)
           ::Accounting::JournalEntryService.destroy_for_source!(snapshot)
           snapshot.destroy!

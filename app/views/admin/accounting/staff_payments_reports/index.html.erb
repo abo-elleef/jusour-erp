@@ -1,0 +1,172 @@
+<% content_for :title, t("accounting.staff_payments_report.title") %>
+<%
+  rows = @report.rows
+  sort_link = lambda do |label, column, align: :start|
+    next_direction = @sort == column && @sort_direction == "asc" ? "desc" : "asc"
+    link_class = "inline-flex items-center gap-1 hover:text-gray-900 transition-colors #{@sort == column ? 'text-gray-900' : 'text-gray-500'}"
+    link_class += " justify-end w-full" if align == :end
+    link_to admin_accounting_staff_payments_reports_path(
+              request.query_parameters.merge(sort: column, direction: next_direction)
+            ), class: link_class do
+      safe_join([label, payroll_sort_indicator(@sort, @sort_direction, column)])
+    end
+  end
+%>
+
+<div class="max-w-7xl">
+  <div class="mb-6">
+    <%= link_to t("reports_hub.title"), admin_reports_path, class: "text-xs font-semibold text-gray-500 hover:text-gray-900" %>
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900 mt-1"><%= t("accounting.staff_payments_report.title") %></h1>
+    <p class="text-sm text-gray-600 mt-1"><%= t("accounting.staff_payments_report.subtitle") %></p>
+  </div>
+
+  <%= form_with url: admin_accounting_staff_payments_reports_path, method: :get, class: "flex flex-wrap gap-4 items-end mb-6" do %>
+    <%= hidden_field_tag :sort, @sort %>
+    <%= hidden_field_tag :direction, @sort_direction %>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5" for="payroll_month"><%= t("staff.payroll.month") %></label>
+      <%= month_field_tag :payroll_month, @payroll_month.strftime("%Y-%m"), class: pos_input_class %>
+    </div>
+    <% if @filter_locations.size > 1 %>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5" for="location_id"><%= t("accounting.attendance.location") %></label>
+        <%= select_tag :location_id,
+              options_for_select(
+                [
+                  [t("accounting.attendance.all_locations"), ""],
+                  [t("accounting.attendance.company_wide_staff"), StaffLocationFilter::COMPANY_WIDE_FILTER]
+                ] + @filter_locations.map { |l| [l.name, l.id] },
+                @location_filter
+              ),
+              class: "#{pos_input_class} appearance-none min-w-[12rem]",
+              id: "location_id" %>
+      </div>
+    <% end %>
+    <%= submit_tag t("actions.apply"), class: "bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-semibold" %>
+  <% end %>
+
+  <% if rows.empty? %>
+    <div class="rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+      <%= t("accounting.staff_payments_report.empty") %>
+    </div>
+  <% else %>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.staff_payments_report.monthly_payroll") %></p>
+        <p class="text-2xl font-bold text-gray-900 tabular-nums mt-1"><%= format_amount(@report.total(:monthly_salary_cents)) %></p>
+        <p class="text-xs text-gray-500 mt-1.5">
+          <%= t("accounting.staff_payments_report.earned_hint", amount: format_amount(@report.total(:earned_cents))) %>
+        </p>
+      </div>
+      <div class="rounded-2xl border border-blue-200 bg-blue-50/40 p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.staff_payments_report.went_to_staff") %></p>
+        <p class="text-2xl font-bold text-blue-700 tabular-nums mt-1"><%= format_amount(@report.total(:net_paid_cents)) %></p>
+        <p class="text-xs text-gray-500 mt-1.5">
+          <%= t("accounting.staff_payments_report.went_to_staff_hint",
+                paid: format_amount(@report.total(:paid_out_cents)),
+                received: format_amount(@report.total(:received_cents)),
+                count: @report.vouchers.size) %>
+        </p>
+      </div>
+      <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.staff_payments_report.balance_now") %></p>
+        <p class="text-2xl font-bold text-amber-800 tabular-nums mt-1"><%= format_amount(@report.total(:balance_cents)) %></p>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.staff_payments_report.balance_now_hint") %></p>
+      </div>
+    </div>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-8">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold uppercase">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= sort_link.call(t("accounting.shift_logs.employee"), "name") %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.monthly_salary"), "monthly_salary_cents", align: :end) %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.earned"), "earned_cents", align: :end) %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.paid_out"), "paid_out_cents", align: :end) %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.received"), "received_cents", align: :end) %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.net_paid"), "net_paid_cents", align: :end) %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("staff.payroll.staff_meals"), "staff_meals_cents", align: :end) %></th>
+              <th class="p-3 pe-5 text-end"><%= sort_link.call(t("accounting.staff_payments_report.balance"), "balance_cents", align: :end) %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% rows.each do |row| %>
+              <tr>
+                <td class="p-3 ps-5">
+                  <%= link_to row.user.name, admin_user_path(row.user, payroll_month: @payroll_month.strftime("%Y-%m")),
+                        class: "font-semibold text-gray-900 hover:text-amber-700 hover:underline" %>
+                  <% unless row.user.active? %>
+                    <span class="ms-1 text-[0.65rem] font-semibold uppercase text-gray-400"><%= t("staff.show.inactive") %></span>
+                  <% end %>
+                </td>
+                <td class="p-3 text-end tabular-nums text-gray-700"><%= format_amount(row.monthly_salary_cents) %></td>
+                <td class="p-3 text-end tabular-nums">
+                  <span class="font-semibold text-gray-900"><%= format_amount(row.earned_cents) %></span>
+                  <span class="block text-[0.65rem] <%= row.finalized ? 'text-emerald-700' : 'text-gray-400' %>">
+                    <%= row.finalized ? t("accounting.staff_payments_report.finalized") : t("accounting.staff_payments_report.estimate") %>
+                  </span>
+                </td>
+                <td class="p-3 text-end tabular-nums text-blue-700"><%= format_amount(row.paid_out_cents) %></td>
+                <td class="p-3 text-end tabular-nums text-emerald-700"><%= format_amount(row.received_cents) %></td>
+                <td class="p-3 text-end tabular-nums font-semibold text-gray-900"><%= format_amount(row.net_paid_cents) %></td>
+                <td class="p-3 text-end tabular-nums text-orange-700"><%= format_amount(row.staff_meals_cents) %></td>
+                <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= row.balance_cents.negative? ? 'text-red-700' : 'text-amber-800' %>">
+                  <%= format_amount(row.balance_cents) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t border-gray-200 bg-gray-50 font-semibold">
+            <tr>
+              <td class="p-3 ps-5 text-gray-900"><%= t("accounting.monthly_payroll.totals") %></td>
+              <% %i[monthly_salary_cents earned_cents paid_out_cents received_cents net_paid_cents staff_meals_cents].each do |col| %>
+                <td class="p-3 text-end tabular-nums"><%= format_amount(@report.total(col)) %></td>
+              <% end %>
+              <td class="p-3 pe-5 text-end tabular-nums"><%= format_amount(@report.total(:balance_cents)) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.staff_payments_report.vouchers_title") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.staff_payments_report.vouchers_hint") %></p>
+      </div>
+      <% if @report.vouchers.any? %>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
+              <tr>
+                <th class="p-3 ps-5 text-start"><%= t("staff.payroll.happened_at") %></th>
+                <th class="p-3 text-start"><%= t("staff.payroll.payments.number") %></th>
+                <th class="p-3 text-start"><%= t("accounting.shift_logs.employee") %></th>
+                <th class="p-3 text-end"><%= t("staff.payroll.amount") %></th>
+                <th class="p-3 text-start"><%= t("staff.payroll.payments.treasury") %></th>
+                <th class="p-3 pe-5 text-start"><%= t("staff.payroll.notes") %></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 table-zebra">
+              <% @report.vouchers.each do |voucher| %>
+                <tr>
+                  <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums"><%= l(voucher.voucher_date, format: :short) %></td>
+                  <td class="p-3 font-mono text-xs"><%= link_to voucher.number, admin_accounting_voucher_path(voucher), class: "text-blue-700 hover:underline" %></td>
+                  <td class="p-3"><%= link_to voucher.party.name, admin_user_path(voucher.party), class: "text-gray-900 hover:underline" %></td>
+                  <td class="p-3 text-end tabular-nums font-semibold <%= voucher.payment? ? 'text-blue-700' : 'text-emerald-700' %>">
+                    <%= voucher.payment? ? "−" : "+" %><%= format_amount(voucher.amount_cents) %>
+                  </td>
+                  <td class="p-3"><%= link_to voucher.treasury.name, admin_accounting_treasury_path(voucher.treasury), class: "text-gray-600 hover:underline" %></td>
+                  <td class="p-3 pe-5 text-gray-600"><%= voucher.notes.presence || t("accounting.shared.em_dash") %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <p class="p-5 text-sm text-gray-500"><%= t("staff.payroll.payments.empty") %></p>
+      <% end %>
+    </section>
+  <% end %>
+</div>

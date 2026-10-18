@@ -54,13 +54,13 @@
           class: compact ? "inline-flex flex-wrap items-center gap-1.5 max-w-xs" : "flex flex-wrap items-end gap-2" do %>
       <div>
         <% unless compact %>
-          <label class="block text-xs font-semibold text-gray-600 mb-1"><%= t("staff.payroll.advances.treasury") %></label>
+          <label class="block text-xs font-semibold text-gray-600 mb-1"><%= t("staff.payroll.pay_from_treasury") %></label>
         <% end %>
         <%= select_tag "payroll_snapshot[treasury_id]",
-              options_from_collection_for_select(treasuries, :id, :name, default_treasury&.id),
+              options_for_select([[t("staff.payroll.record_only"), ""]]) +
+                    options_from_collection_for_select(treasuries, :id, :name, default_treasury&.id),
               class: "#{input_class} appearance-none",
-              required: true,
-              title: t("staff.payroll.advances.treasury") %>
+              title: t("staff.payroll.pay_from_treasury") %>
       </div>
       <% unless compact %>
         <div>
@@ -69,8 +69,7 @@
                 default_paid_on,
                 min: payroll_month.beginning_of_month,
                 max: payroll_month.end_of_month,
-                class: input_class,
-                required: true %>
+                class: input_class %>
         </div>
       <% else %>
         <%= hidden_field_tag "payroll_snapshot[paid_on]", default_paid_on %>

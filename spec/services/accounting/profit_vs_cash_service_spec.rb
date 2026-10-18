@@ -112,17 +112,22 @@ RSpec.describe Accounting::ProfitVsCashService do
       expect(line(:equity_adjustments).amount_cents).to eq(-60_00)
     end
 
-    it "names the gap between advances paid and advances charged" do
-      # advances_expensed_cents reads PayrollAdvance directly (see its comment
-      # in profit_vs_cash_service.rb) rather than a ledger code — each advance
-      # now posts to its own employee's account, which the ledger alone can no
-      # longer tell apart from that same employee's salary or staff meals.
-      treasury_txn(kind: "payroll_advance", amount_cents: -80_00)
+    it "names payroll earned in the period but not yet paid out" do
+      # Finalizing credits the employee's own account (earned); vouchers to
+      # them and staff meals debit it (paid). The period's net movement is the
+      # gap between payroll on the P&L and payroll cash.
       staff = create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000)
-      PayrollAdvance.create!(user: staff, treasury: cash, paid_by: owner,
-                             amount_cents: 50_00, paid_on: Date.current)
+      journal(description: "Payroll earned") do |e|
+        post(e, code: 5501, name: "Salaries", type: "expense", debit: 100_00)
+        post(e, code: staff.account_code, name: staff.account_name, type: "liability", credit: 100_00)
+      end
+      journal(description: "Paid to staff") do |e|
+        post(e, code: staff.account_code, name: staff.account_name, type: "liability", debit: 70_00)
+        post(e, code: 1201, name: "Safe", type: "asset", credit: 70_00)
+      end
 
-      expect(line(:advance_timing).amount_cents).to eq(-30_00)
+      expect(line(:staff_balances).amount_cents).to eq(30_00)
+      expect(line(:staff_balances).hint_values).to eq(earned: 100_00, paid: 70_00)
     end
 
     it "counts card takings as cash against revenue recognised elsewhere" do

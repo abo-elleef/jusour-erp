@@ -190,7 +190,7 @@ module Admin
         when "loan"
           Loan.find_by(id: id)&.account_code || 2199
         when "user"
-          User.find_by(id: id)&.account_code || 5999
+          User.find_by(id: id)&.account_code || User::WAGES_ACCOUNT_CODE_BASE
         else
           5999
         end

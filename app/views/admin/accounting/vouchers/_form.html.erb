@@ -18,6 +18,24 @@
 
   <%= f.hidden_field :direction %>
 
+  <% if @over_cap %>
+    <div class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900 space-y-2">
+      <p class="font-semibold">
+        <%= t("accounting.vouchers.staff_cap.title", name: @over_cap[:employee].name,
+              excess: format_amount(@over_cap[:excess_cents])) %>
+      </p>
+      <p>
+        <%= t("accounting.vouchers.staff_cap.detail",
+              owed: format_amount(@over_cap[:owed_cents]),
+              salary: format_amount(@over_cap[:salary_cents])) %>
+      </p>
+      <label class="inline-flex items-center gap-2 font-semibold">
+        <%= check_box_tag :confirm_over_cap, "1", false, class: "rounded border-amber-400" %>
+        <%= t("accounting.vouchers.staff_cap.confirm") %>
+      </label>
+    </div>
+  <% end %>
+
   <div class="rounded-2xl border border-gray-200 bg-white p-5 space-y-5">
     <div class="grid sm:grid-cols-2 gap-4">
       <div>

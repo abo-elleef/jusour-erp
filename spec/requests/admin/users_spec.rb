@@ -172,10 +172,10 @@ RSpec.describe "Admin::Users", type: :request do
         staff = create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000)
         treasury = Treasury.create!(company: company, name: "Safe", treasury_type: "safe",
                                     opening_balance_cents: 100_000, balance_cents: 100_000)
-        advance = Accounting::PayPayrollAdvanceService.new(
-          user: staff, amount_cents: 20_000, treasury: treasury, paid_by: owner, paid_on: Date.current
+        voucher = Accounting::RecordVoucherService.new(
+          direction: Voucher::PAYMENT, treasury: treasury, user: owner, amount_cents: 20_000,
+          party_type: "User", party_id: staff.id
         ).call
-        voucher = advance.payment_allocations.sole.payment
 
         get admin_user_path(staff)
 

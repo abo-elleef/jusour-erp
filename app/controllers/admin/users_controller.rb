@@ -116,11 +116,12 @@ module Admin
       load_attendance_audits
     end
 
-    # This employee's own payroll account (see User#account_code) — salary,
-    # advances and staff meals all land here, same ledger shape as the
+    # This employee's own current account (see User#account_code): months
+    # finalized credit it, vouchers paid to them and staff meals debit it,
+    # vouchers received from them credit it. Same ledger shape as the
     # Loan/Partner show pages.
     def load_wages_ledger
-      @wages_balance_cents = @user.wages_balance_cents
+      @wages_balance_cents = @user.staff_balance_cents
       @wages_lines = JournalEntryLine.joins(:journal_entry)
         .where(journal_entries: { company_id: Current.company.id })
         .where(account_code: @user.account_code)

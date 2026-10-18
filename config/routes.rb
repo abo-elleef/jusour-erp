@@ -203,7 +203,6 @@ Rails.application.routes.draw do
         post :create_assigned_treasury
       end
       resources :payroll_adjustments, only: %i[create destroy], module: :users
-      resources :payroll_advances, only: %i[create destroy], module: :users
       resource :payroll_snapshot, only: %i[create destroy], module: :users
     end
     get "settings", to: "settings#index", as: :settings
@@ -328,6 +327,7 @@ Rails.application.routes.draw do
       get "monthly_payroll", to: "monthly_payroll#index"
       post "monthly_payroll/finalize_all", to: "monthly_payroll#finalize_all", as: :monthly_payroll_finalize_all
       get "monthly_payroll/export", to: "monthly_payroll#export", as: :monthly_payroll_export
+      resources :staff_payments_reports, only: [:index]
 
       resources :tax_reports, only: [:index]
 

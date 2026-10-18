@@ -31,14 +31,6 @@ module Accounting
       new.create_transfer!(transfer)
     end
 
-    def self.sync_payroll_advance!(advance)
-      new.sync_payroll_advance!(advance)
-    end
-
-    def self.sync_payroll_salary!(snapshot)
-      new.sync_payroll_salary!(snapshot)
-    end
-
     def self.record_staff_meal!(treasury:, payment:, user:)
       new.record_staff_meal!(treasury: treasury, payment: payment, user: user)
     end
@@ -49,51 +41,6 @@ module Accounting
 
     def self.sync_drawer_deposit!(session)
       new.sync_drawer_deposit!(session)
-    end
-
-    # An advance is money handed to an employee against next month's pay. It
-    # happens daily here, and it left no document — the same gap the expense and
-    # the supplier payment had. It is a voucher now, settling the advance, with
-    # the advances account (5500) as its far side, which is exactly the entry it
-    # posted before.
-    #
-    # The movement keeps the `payroll_advance` kind: the cash flow statement
-    # counts it as operating and the profit-to-cash bridge compares it against
-    # what 5500 was charged. Nothing about the money is reclassified.
-    def sync_payroll_advance!(advance)
-      remove_for_source(advance)
-      JournalEntryService.destroy_for_source!(advance)
-      return if advance.treasury_id.blank?
-
-      RecordVoucherService.new(
-        direction: Voucher::PAYMENT,
-        treasury: advance.treasury,
-        user: advance.paid_by,
-        amount_cents: advance.amount_cents,
-        voucher_date: advance.paid_on,
-        counterparty: advance.user.name,
-        notes: payroll_advance_description(advance),
-        company: advance.company,
-        allocations: [{ settles: advance, amount_cents: advance.amount_cents }]
-      ).call
-    end
-
-    def sync_payroll_salary!(snapshot)
-      remove_for_source(snapshot)
-      JournalEntryService.destroy_for_source!(snapshot)
-      return unless snapshot.payout_required?
-      return if snapshot.treasury_id.blank?
-
-      record!(
-        treasury: snapshot.treasury,
-        user: snapshot.finalized_by,
-        amount_cents: -snapshot.remaining_pay_cents,
-        kind: "payroll_salary",
-        description: payroll_salary_description(snapshot),
-        occurred_on: snapshot.paid_on,
-        source: snapshot
-      )
-      JournalEntryService.record_payroll_salary!(snapshot)
     end
 
     def sync_expense_cash!(expense)
@@ -419,22 +366,6 @@ module Accounting
     def voucher_description(voucher)
       [voucher.number, voucher.counterparty.presence, voucher.notes.presence]
         .compact.join(" — ")
-    end
-
-    def payroll_advance_description(advance)
-      I18n.t(
-        "accounting.treasuries.transactions.payroll_advance",
-        employee: advance.user.name,
-        month: I18n.l(advance.payroll_month, format: "%B %Y")
-      )
-    end
-
-    def payroll_salary_description(snapshot)
-      I18n.t(
-        "accounting.treasuries.transactions.payroll_salary",
-        employee: snapshot.user.name,
-        month: I18n.l(snapshot.payroll_month, format: "%B %Y")
-      )
     end
 
     def drawer_open_description(session)

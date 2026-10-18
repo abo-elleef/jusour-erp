@@ -63,8 +63,8 @@ module Accounting
         Line.new(key: :financing, amount_cents: cash_flow.financing.total_cents),
         Line.new(key: :investing, amount_cents: cash_flow.investing.total_cents),
         Line.new(key: :equity_adjustments, amount_cents: equity_adjustments_cents),
-        Line.new(key: :advance_timing, amount_cents: -advance_timing_cents,
-                 hint_values: { paid: advances_paid_cents, expensed: advances_expensed_cents }),
+        Line.new(key: :staff_balances, amount_cents: staff_balance_movement_cents,
+                 hint_values: { earned: staff_earned_cents, paid: staff_paid_cents }),
         Line.new(key: :digital_payments, amount_cents: digital_payments_cents),
         Line.new(key: :ledger_only_expenses, amount_cents: ledger_only_expenses_cents,
                  hint_values: { ledger: coa.total_other_expense_cents, records: non_vendor_expense_records_cents })
@@ -153,24 +153,22 @@ module Accounting
       @equity_adjustments_cents ||= asset_treasury_transactions.where(kind: "adjustment").sum(:amount_cents)
     end
 
-    # An advance is paid in one period and charged in another often enough to
-    # be worth naming rather than leaving in the residual.
-    def advance_timing_cents
-      @advance_timing_cents ||= advances_paid_cents - advances_expensed_cents
+    # Payroll is charged to profit when a month is finalized (credited to the
+    # employee's own account) and leaves the treasury when a voucher pays them
+    # (debited from it) — staff meals debit it too. Those rarely fall in the
+    # same period: a salary finalized on the 31st and paid on the 2nd, or a
+    # payment ahead of earnings. The period's net movement on the staff
+    # accounts is exactly that gap: positive when more was earned than paid.
+    def staff_balance_movement_cents
+      @staff_balance_movement_cents ||= staff_earned_cents - staff_paid_cents
     end
 
-    def advances_paid_cents
-      @advances_paid_cents ||= asset_treasury_transactions.where(kind: "payroll_advance").sum(:amount_cents).abs
+    def staff_earned_cents
+      @staff_earned_cents ||= staff_account_lines.sum(:credit_cents)
     end
 
-    # Reads PayrollAdvance directly rather than a ledger account code: each
-    # advance now posts to its own employee's account (see User#account_code),
-    # which also carries that employee's salary and staff meals, so the
-    # ledger alone can no longer isolate "just advances". The advance row
-    # itself still can — same amount, same paid_on, voided or deleted drops
-    # out on its own.
-    def advances_expensed_cents
-      @advances_expensed_cents ||= PayrollAdvance.where(paid_on: @start_date..@end_date).sum(:amount_cents)
+    def staff_paid_cents
+      @staff_paid_cents ||= staff_account_lines.sum(:debit_cents)
     end
 
     # Card and wallet takings clear Sales clearing (1160) rather than crediting
@@ -254,6 +252,10 @@ module Accounting
         .where(treasuries: { company_id: Current.company.id })
         .where.not(treasuries: { treasury_type: ::Treasury::LEDGER_TYPES })
         .where(occurred_on: @start_date..@end_date)
+    end
+
+    def staff_account_lines
+      journal_lines.where(account_code: ::User.unscoped.where(company_id: Current.company.id).select(:wages_account_code))
     end
 
     def journal_lines

@@ -179,6 +179,7 @@ module Accounting
         when ::VendorInvoice          then settles.supplier.to_account
         when ::CustomerInvoice        then settles.customer.to_account
         when ::Customer, ::Supplier   then settles.to_account
+        # Legacy: only until payroll:convert_to_staff_accounts has run.
         when ::PayrollAdvance         then settles.user.to_account
         else default_counter_for(voucher)
         end
@@ -359,30 +360,21 @@ module Accounting
         end
       end
 
-      # ── Payroll Advance ───────────────────────────────────────────────
-      def record_payroll_advance!(advance)
-        destroy_for_source!(advance)
-        create! source: advance, date: advance.paid_on, user: advance.paid_by,
-                description: I18n.t("accounting.journal_entries.auto.payroll_advance",
-                                    employee: advance.user.name,
-                                    default: "Payroll Advance — #{advance.user.name}") do |lines|
-          lines << debit(SystemAccount::PAYROLL_ADVANCES, advance.amount_cents)
-          lines << credit(advance.treasury, advance.amount_cents)
-        end
-      end
-
-      # ── Payroll Salary (final payout) ─────────────────────────────────
-      def record_payroll_salary!(snapshot)
-        return unless snapshot.treasury.present? && snapshot.remaining_pay_cents.positive?
-
+      # ── Payroll accrual (month finalized) ─────────────────────────────
+      # The month's earnings become an expense and a debt to the employee in
+      # one step. Paying it out is a voucher, like any other money to them —
+      # see FinalizePayrollService.
+      def record_payroll_accrual!(snapshot)
         destroy_for_source!(snapshot)
+        return unless snapshot.net_pay_cents.positive?
+
         create! source: snapshot, date: snapshot.payroll_month.end_of_month, user: snapshot.finalized_by,
-                description: I18n.t("accounting.journal_entries.auto.payroll_salary",
+                description: I18n.t("accounting.journal_entries.auto.payroll_accrual",
                                     employee: snapshot.user.name,
                                     month: I18n.l(snapshot.payroll_month, format: "%B %Y"),
-                                    default: "Payroll Salary — #{snapshot.user.name}") do |lines|
-          lines << debit(snapshot.user, snapshot.remaining_pay_cents)
-          lines << credit(snapshot.treasury, snapshot.remaining_pay_cents)
+                                    default: "Payroll earned — #{snapshot.user.name}") do |lines|
+          lines << debit(SystemAccount::SALARIES, snapshot.net_pay_cents)
+          lines << credit(snapshot.user, snapshot.net_pay_cents)
         end
       end
 

@@ -136,7 +136,7 @@ module Admin
             t("accounting.monthly_payroll.penalties"),
             t("accounting.monthly_payroll.bonuses"),
             t("accounting.monthly_payroll.net_pay"),
-            t("accounting.monthly_payroll.advances"),
+            t("accounting.monthly_payroll.paid_this_month"),
             t("accounting.monthly_payroll.remaining_pay")
           ]
           @rows.each do |row|
@@ -148,7 +148,7 @@ module Admin
               amount(row.penalties_cents),
               amount(row.bonuses_cents),
               amount(row.net_pay_cents),
-              amount(row.advances_cents),
+              amount(row.paid_cents),
               amount(row.remaining_pay_cents)
             ]
           end
@@ -163,7 +163,7 @@ module Admin
             amount(@rows.sum(&:penalties_cents)),
             amount(@rows.sum(&:bonuses_cents)),
             amount(@rows.sum(&:net_pay_cents)),
-            amount(@rows.sum(&:advances_cents)),
+            amount(@rows.sum(&:paid_cents)),
             amount(@rows.sum(&:remaining_pay_cents))
           ]
         end

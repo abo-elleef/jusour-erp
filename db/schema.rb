@@ -1153,7 +1153,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
     t.text "notes"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "converted_voucher_id"
     t.index ["company_id"], name: "index_payroll_advances_on_company_id"
+    t.index ["converted_voucher_id"], name: "index_payroll_advances_on_converted_voucher_id"
     t.index ["paid_by_id"], name: "index_payroll_advances_on_paid_by_id"
     t.index ["payroll_month"], name: "index_payroll_advances_on_payroll_month"
     t.index ["treasury_id"], name: "index_payroll_advances_on_treasury_id"
@@ -1182,9 +1184,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
     t.decimal "payable_days", precision: 6, scale: 2, default: "0.0", null: false
     t.decimal "bonus_days", precision: 6, scale: 2, default: "0.0", null: false
     t.decimal "penalty_days", precision: 6, scale: 2, default: "0.0", null: false
+    t.uuid "payout_voucher_id"
     t.index ["company_id", "payroll_month"], name: "index_payroll_snapshots_on_company_id_and_payroll_month"
     t.index ["company_id"], name: "index_payroll_snapshots_on_company_id"
     t.index ["finalized_by_id"], name: "index_payroll_snapshots_on_finalized_by_id"
+    t.index ["payout_voucher_id"], name: "index_payroll_snapshots_on_payout_voucher_id"
     t.index ["treasury_id"], name: "index_payroll_snapshots_on_treasury_id"
     t.index ["user_id", "payroll_month"], name: "index_payroll_snapshots_on_user_id_and_payroll_month", unique: true
     t.index ["user_id"], name: "index_payroll_snapshots_on_user_id"
@@ -2070,10 +2074,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
   add_foreign_key "payroll_advances", "treasuries"
   add_foreign_key "payroll_advances", "users"
   add_foreign_key "payroll_advances", "users", column: "paid_by_id"
+  add_foreign_key "payroll_advances", "vouchers", column: "converted_voucher_id"
   add_foreign_key "payroll_snapshots", "companies"
   add_foreign_key "payroll_snapshots", "treasuries"
   add_foreign_key "payroll_snapshots", "users"
   add_foreign_key "payroll_snapshots", "users", column: "finalized_by_id"
+  add_foreign_key "payroll_snapshots", "vouchers", column: "payout_voucher_id"
   add_foreign_key "print_logs", "orders"
   add_foreign_key "print_logs", "printers"
   add_foreign_key "printer_menu_items", "menu_items"

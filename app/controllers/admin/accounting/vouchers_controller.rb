@@ -51,7 +51,8 @@ module Admin
       def new
         @voucher = Voucher.new(voucher_date: Date.current,
                                direction: requested_direction,
-                               treasury: Treasury.default_treasury)
+                               treasury: Treasury.default_treasury,
+                               party_selection: params[:party])
         authorize @voucher
         prefill_from_invoice
         prefill_from_party
@@ -61,6 +62,11 @@ module Admin
       def create
         @voucher = Voucher.new(voucher_params)
         authorize @voucher
+
+        if (@over_cap = staff_payment_over_cap)
+          load_form_collections
+          return render :new, status: :unprocessable_entity
+        end
 
         result = ::Accounting::RecordVoucherService.new(
           direction:    voucher_params[:direction],
@@ -110,6 +116,24 @@ module Admin
 
       def set_voucher
         @voucher = Voucher.find(params[:id])
+      end
+
+      # A warning, not a rule: paying an employee more than they're owed plus
+      # a month's salary is sometimes exactly what the owner means to do. The
+      # form comes back once with the figures; ticking the confirmation and
+      # submitting again goes through.
+      def staff_payment_over_cap
+        return unless @voucher.payment? && @voucher.party.is_a?(::User)
+        return if params[:confirm_over_cap] == "1"
+
+        employee = @voucher.party
+        headroom = employee.staff_payment_headroom_cents
+        return if @voucher.amount_cents.to_i <= headroom
+
+        { employee: employee,
+          owed_cents: employee.staff_balance_cents,
+          salary_cents: employee.monthly_salary_cents.to_i,
+          excess_cents: @voucher.amount_cents.to_i - headroom }
       end
 
       # `direction` comes as a query param on new, and inside the form on a

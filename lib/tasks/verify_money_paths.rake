@@ -68,7 +68,7 @@ class MoneyPathChecker
     treasury_adjustment!
     supplier_flow!
     customer_flow!
-    payroll_advance!
+    staff_account!
     pos_flow!
 
     @skips.each { |s| puts "  SKIP #{s}" }
@@ -248,16 +248,35 @@ class MoneyPathChecker
     check "customer payment — voucher with customer as party, rest on account"
   end
 
-  def payroll_advance!
+  # Money to and from an employee is a voucher against their own account;
+  # finalizing a month credits that account and, given a treasury, pays the
+  # balance out with one more voucher. Undoing the month voids that voucher.
+  def staff_account!
     staff = User.where(company: @company).where("monthly_salary_cents > 0").first
-    return skip("payroll advance", "no staff with a salary") if staff.blank?
+    return skip("staff account", "no staff with a salary") if staff.blank?
 
-    advance = Accounting::PayPayrollAdvanceService.new(
-      user: staff, amount_cents: 500, treasury: safe, paid_by: owner, paid_on: Date.current
-    ).call
-    check "payroll advance — paid"
-    advance.destroy!
-    check "payroll advance — deleted"
+    staff_voucher = lambda do |direction, cents|
+      Accounting::RecordVoucherService.new(
+        direction: direction, treasury: safe, user: owner, amount_cents: cents,
+        party_type: "User", party_id: staff.id
+      ).call
+    end
+
+    paid = staff_voucher.call(Voucher::PAYMENT, 500)
+    check "staff — paid ahead of payroll"
+    staff_voucher.call(Voucher::RECEIPT, 200)
+    check "staff — money received back"
+    paid.void!(user: owner)
+    check "staff — payment voided"
+
+    month = Date.current.beginning_of_month
+    month = month.next_month while PayrollSnapshot.exists?(user: staff, payroll_month: month)
+    snapshot = Accounting::FinalizePayrollService.new(staff, month, finalized_by: owner, treasury: safe).call
+    check "staff — month finalized and paid out"
+    snapshot.payout_voucher&.void!(user: owner)
+    Accounting::JournalEntryService.destroy_for_source!(snapshot)
+    snapshot.destroy!
+    check "staff — month undone"
   end
 
   # Opening a drawer, selling, taking cash and closing the day.

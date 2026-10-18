@@ -6,7 +6,12 @@
     </div>
     <div class="text-end">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.wages_ledger.balance") %></p>
-      <p class="text-lg font-bold tabular-nums text-gray-900"><%= format_amount(wages_balance_cents) %></p>
+      <p class="text-lg font-bold tabular-nums <%= wages_balance_cents.negative? ? 'text-red-700' : 'text-gray-900' %>"><%= format_amount(wages_balance_cents.abs) %></p>
+      <p class="text-xs text-gray-500">
+        <%= if wages_balance_cents.positive? then t("staff.wages_ledger.owed_to_them")
+            elsif wages_balance_cents.negative? then t("staff.wages_ledger.they_owe")
+            else t("staff.wages_ledger.settled") end %>
+      </p>
     </div>
   </div>
 
@@ -40,7 +45,7 @@
                 <%= line.journal_entry.description %>
               <% end %>
             </td>
-            <td class="p-3 text-end tabular-nums <%= line.debit_cents > 0 ? 'text-red-700 font-semibold' : 'text-gray-300' %>">
+            <td class="p-3 text-end tabular-nums <%= line.debit_cents > 0 ? 'text-blue-700 font-semibold' : 'text-gray-300' %>">
               <%= line.debit_cents > 0 ? format_amount(line.debit_cents) : "—" %>
             </td>
             <td class="p-3 pe-5 text-end tabular-nums <%= line.credit_cents > 0 ? 'text-green-700 font-semibold' : 'text-gray-300' %>">

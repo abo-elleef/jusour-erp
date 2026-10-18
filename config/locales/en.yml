@@ -384,6 +384,7 @@ en:
   reports_hub:
     title: "Reports"
     subtitle: "Every report in the app, in one place."
+    staff: "Staff"
 
   order:
     types:
@@ -531,15 +532,18 @@ en:
       deactivate_confirm: "Deactivate %{name}? They won't be able to log in."
       activate_confirm: "Reactivate %{name}?"
     wages_ledger:
-      title: "Payroll account"
+      title: "Staff account"
       balance: "Account balance"
-      balance_hint: "Salary, advances and staff meals all post here."
+      balance_hint: "Finalized months credit it; payments to them and staff meals debit it."
       date: "Date"
       number: "Entry #"
       description: "Description"
       debit: "Debit"
       credit: "Credit"
-      no_movements: "No payroll entries yet."
+      no_movements: "No entries yet."
+      owed_to_them: "Owed to them"
+      they_owe: "They owe the company"
+      settled: "Settled"
     payroll:
       title: "Monthly payroll"
       subtitle: "Penalties and bonuses for this month. Each month counts as %{days} work days."
@@ -588,22 +592,23 @@ en:
       remaining_pay: "Remaining to pay"
       staff_meals: "Staff Meals"
       paid_from: "Paid %{amount} from %{treasury} on %{date}"
-      fully_advanced_hint: "No remaining payout — salary fully covered by advances."
-      record_fully_advanced_confirm: "Record payroll with no treasury payout? Remaining balance is zero."
-      advances:
-        title: "Advances"
-        heading: "Salary advances"
-        hint: "Advances are paid early from salary and reduce the remaining payout."
-        policy_hint: "Advances are capped by the employee’s monthly salary for the month, not by attendance-based pay."
-        amount: "Amount"
-        amount_cents: "Amount (cents)"
-        treasury: "Paid from"
-        pay: "Pay advance"
-        max_hint: "Max for this month: %{max}"
-        date_hint: "Pick any date — the advance is deducted from that date's month."
-        notes_placeholder: "Reason (optional)"
-        empty: "No advances paid for this month."
-        remove_confirm: "Remove this advance? Treasury balance will be restored."
+      fully_advanced_hint: "Nothing left to pay — the account is already settled."
+      record_fully_advanced_confirm: "Record payroll? Nothing is left to pay out."
+      paid_this_month: "Paid this month"
+      still_owed: "Still owed"
+      still_owed_hint_open: "Balance now plus this month's earnings"
+      still_owed_hint_finalized: "Account balance now"
+      recorded_not_paid_hint: "Recorded without a payout — pay the balance with a payment voucher."
+      record_only: "Record only — pay later"
+      pay_from_treasury: "Pay balance from"
+      payments:
+        heading: "Paid to / received from this employee"
+        hint: "Every voucher to or from them dated this month. Paying before the month is finalized is fine — it simply reduces what they're owed."
+        pay: "Pay"
+        receive: "Receive"
+        number: "Voucher"
+        treasury: "Treasury"
+        empty: "No money paid or received this month."
     payroll_portal:
       title: "Salary preview"
       pin_title: "Enter your PIN"
@@ -615,13 +620,15 @@ en:
       lock: "Lock"
       locked: "Salary preview locked."
       adjustments_title: "Penalties & bonuses"
-      advances_title: "Salary advances"
-      gross_summary: "Gross pay %{net} · Advances paid %{advances}"
+      advances_title: "Paid to you this month"
+      gross_summary: "Gross pay %{net} · Paid this month %{advances}"
       recorded: "Payroll recorded for this month"
       share_link: "Staff salary link"
       share_link_hint: "Share this link with %{name}. They enter their PIN to view monthly salary — no login needed."
       copy_link: "Copy link"
       copied: "Copied!"
+      paid_to_you: "Paid to you"
+      received_from_you: "Received from you"
 
   roles:
     title: "Roles & permissions"
@@ -4063,6 +4070,7 @@ en:
         accounts_payable: "AP"
         short_term_loan: "Short-term"
         long_term_loan: "Long-term"
+        staff_accounts: "Staff accounts"
       pdf:
         page_of: "Page %{page} of %{total}"
     profit_vs_cash:
@@ -4102,8 +4110,6 @@ en:
         investing_hint: "Capital spending is not an operating expense."
         equity_adjustments: "Cash adjustments posted to equity"
         equity_adjustments_hint: "Booked against Retained Earnings, so the P&L never sees them."
-        advance_timing: "Salary advances paid vs charged"
-        advance_timing_hint: "Paid %{paid}, charged %{expensed}."
         digital_payments: "Card and wallet takings received"
         digital_payments_hint: "Clears Sales clearing (1160) rather than crediting revenue, so it is cash against revenue recognised elsewhere."
         ledger_only_expenses: "Expenses posted by journal entry"
@@ -4114,9 +4120,12 @@ en:
         financing_formula: "Total of the financing section on the cash flow statement = %{result}"
         investing_formula: "Total of the investing section on the cash flow statement = %{result}"
         equity_adjustments_formula: "Sum of cash adjustments posted to Retained Earnings = %{result}"
-        advance_timing_formula: "Advances charged %{expensed} − advances paid %{paid} = %{result}"
         digital_payments_formula: "Sum of card and wallet receipts in the period = %{result}"
         ledger_only_expenses_formula: "P&L other operating expenses %{ledger} − expense records %{records} = %{result}"
+        staff_balances: "Payroll earned but not yet paid"
+        staff_balances_hint: "Earned %{earned}, paid out or deducted %{paid}."
+        staff_balances_reverse: "Staff paid more than they earned"
+        staff_balances_formula: "Earned %{earned} − paid and staff meals %{paid} = %{result}"
     cash_flow:
       title: "Cash Flow Statement"
       description: "Cash inflows and outflows from operating, investing, and financing activities."
@@ -4159,6 +4168,8 @@ en:
         loan_repayment: "Loan repayment"
         capital_contribution: "Capital contribution"
         partner_drawings: "Partner drawings / distributions"
+        staff_payment: "Paid to staff"
+        staff_receipt: "Received from staff"
     partners:
       title: "Partners"
       description: "Manage partner current accounts — track advances, profit distributions, and individual balances."
@@ -4419,6 +4430,7 @@ en:
         accrued_expenses: "Accrued expenses"
         tax_payable: "Tax payable"
         delivery_fee_expense: "Delivery fee expense"
+        staff_accounts: "Staff current accounts"
       auto:
         fixed_asset_purchase: "Fixed asset — %{name}"
         fixed_asset_payment: "Fixed asset payment — %{name}"
@@ -4436,6 +4448,7 @@ en:
         drawer_reconcile: "Cash Drawer Reconciled — %{treasury}"
         online_payment: "Digital Payment — %{treasury}"
         shipping_company_fee_payable: "Delivery fee payable — %{name}"
+        payroll_accrual: "Payroll earned — %{employee} (%{month})"
     fixed_assets:
       paid_from_treasury: "Paid from"
       select_treasury: "Select treasury…"
@@ -4576,6 +4589,7 @@ en:
         fixed_expense: "System Account"
         income: "Income"
         expense: "Expense"
+        staff_accounts: "Staff accounts"
     integrations:
       statuses:
         connected: "Connected"
@@ -4920,6 +4934,10 @@ en:
         exceeds_open_invoices: "This is more than the %{open_total} still open on the supplier's invoices."
         invoice_party_mismatch: "The voucher's party must be the invoice's supplier or customer."
         invalid_allocation: "Every line on a voucher must be a positive amount."
+      staff_cap:
+        title: "This pays %{name} %{excess} more than the usual cap."
+        detail: "Owed to them now: %{owed}. Monthly salary: %{salary}. The cap is the two together."
+        confirm: "I know — issue it anyway"
     incomes:
       on_account_option: "On account — not collected yet"
       treasury_hint: "Leave blank if this is not collected yet. Naming a treasury records the collection now and issues a receipt voucher."
@@ -5060,6 +5078,8 @@ en:
         online_payment: "Online payment"
         shipping_company_charge: "Cash-on-delivery collected"
         shipping_company_fee_payable: "Delivery fee payable"
+        staff_payment: "Paid to staff"
+        staff_receipt: "Received from staff"
       transactions:
         drawer_open: "Opening float — %{cashier} (%{date})"
         drawer_reconcile: "Drawer reconcile — %{cashier} (%{date})"
@@ -5191,7 +5211,6 @@ en:
       penalties: "Penalties"
       bonuses: "Bonuses"
       net_pay: "Net salary"
-      advances: "Advances paid"
       remaining_pay: "Remaining to pay"
       totals: "Totals"
       empty: "No staff with salaries or adjustments for this month. Set monthly salaries under Staff."
@@ -5211,6 +5230,7 @@ en:
       record_all: "Record all"
       record_all_confirm: "Record payroll for %{count} staff members? Locked amounts will be saved for this month."
       recorded_summary: "%{recorded} / %{total} recorded"
+      paid_this_month: "Paid this month"
     tax_reports:
       title: "Sales tax report"
       description: "Tax collected on sales, broken down by rate and category."
@@ -5413,6 +5433,27 @@ en:
       not_clocked_in: "Not clocked in"
       clock_in: "Clock in"
       clock_out: "Clock out"
+    staff_payments_report:
+      title: "Money paid to staff"
+      description: "Each employee's monthly pay against what actually went to them during the month."
+      subtitle: "Monthly pay against every voucher to or from staff in the month."
+      empty: "No staff on payroll or paid in this month."
+      monthly_payroll: "Monthly payroll"
+      earned_hint: "Earned this month: %{amount}"
+      went_to_staff: "Went to staff this month"
+      went_to_staff_hint: "Paid %{paid}, received back %{received} — %{count} voucher(s)"
+      balance_now: "Staff balances now"
+      balance_now_hint: "Positive: still owed to staff. Negative: staff owe the company."
+      monthly_salary: "Monthly salary"
+      earned: "Earned"
+      paid_out: "Paid out"
+      received: "Received back"
+      net_paid: "Net paid"
+      balance: "Balance now"
+      finalized: "Finalized"
+      estimate: "Estimate"
+      vouchers_title: "Vouchers this month"
+      vouchers_hint: "Every payment to or receipt from an employee dated in the month."
 
   kitchen:
     title: "Kitchen Display"
@@ -5601,9 +5642,7 @@ en:
         other: "Payroll recorded for %{count} staff members."
       all_recorded: "All payroll for this month is already recorded."
       undone: "Recorded payroll removed. You can edit adjustments and record again."
-    payroll_advance:
-      paid: "Salary advance paid."
-      removed: "Salary advance removed."
+      undo_backfilled: "This month was paid before the ledger started, so it can't be undone."
     settings:
       updated: "Settings saved."
     tax_rate:

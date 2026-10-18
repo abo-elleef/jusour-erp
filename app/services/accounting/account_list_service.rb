@@ -43,7 +43,10 @@ module Accounting
       loan_options = Loan.active.ordered.map do |l|
         [ "#{l.account_code}  #{l.account_name}", encode(:loan, l.id, l.account_name, "liability") ]
       end
-      [ I18n.t("accounting.journal_entries.account_types.liability"), ap_options + loan_options ]
+      staff_options = User.active.order(:name).map do |u|
+        [ "#{u.account_code}  #{u.account_name}", encode(:user, u.id, u.account_name, "liability") ]
+      end
+      [ I18n.t("accounting.journal_entries.account_types.liability"), ap_options + loan_options + staff_options ]
     end
 
     def equity_group
@@ -70,10 +73,7 @@ module Accounting
         name = I18n.t(acct[:name_key])
         [ "#{acct[:code]}  #{name}", encode(:fixed_expense, acct[:code], name, "expense") ]
       end
-      staff = User.active.order(:name).map do |u|
-        [ "#{u.account_code}  #{u.account_name}", encode(:user, u.id, u.account_name, "expense") ]
-      end
-      [ I18n.t("accounting.journal_entries.account_types.expense"), dynamic + fixed + staff ]
+      [ I18n.t("accounting.journal_entries.account_types.expense"), dynamic + fixed ]
     end
 
     # Encode all account info into the option value so the controller can decode it

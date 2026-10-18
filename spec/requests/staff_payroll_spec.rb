@@ -49,18 +49,20 @@ RSpec.describe StaffPayrollController, type: :request do
       verify_pin!
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(I18n.t("staff.payroll.remaining_pay"))
+      expect(response.body).to include(I18n.t("staff.payroll.still_owed"))
       expect(response.body).not_to include(I18n.t("staff.payroll_portal.pin_title"))
     end
 
-    it "shows advances and remaining pay after PIN verification" do
+    it "shows money paid this month and what is still owed after PIN verification" do
       travel_to Time.zone.local(2026, 6, 10, 10, 0, 0) do
-        Accounting::PayPayrollAdvanceService.new(
-          user: staff,
-          amount_cents: 100_000,
+        Accounting::RecordVoucherService.new(
+          direction: Voucher::PAYMENT,
           treasury: treasury,
-          paid_by: owner,
-          paid_on: Date.new(2026, 6, 10)
+          user: owner,
+          amount_cents: 100_000,
+          voucher_date: Date.new(2026, 6, 10),
+          party_type: "User",
+          party_id: staff.id
         ).call
 
         verify_pin!(month: payroll_month)

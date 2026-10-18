@@ -50,21 +50,23 @@ RSpec.describe "Admin payroll snapshots", type: :request do
 
       transaction = TreasuryTransaction.last
       expect(transaction).to have_attributes(
-        kind: "payroll_salary",
+        kind: "staff_payment",
         amount_cents: -300_000,
-        source_record: snapshot
+        source_record: snapshot.payout_voucher
       )
       expect(treasury.reload.balance_cents).to eq(200_000)
       expect(response).to redirect_to(admin_user_path(staff, payroll_month: payroll_month.strftime("%Y-%m")))
     end
 
-    it "debits only remaining pay when advances were already paid" do
-      Accounting::PayPayrollAdvanceService.new(
-        user: staff,
-        amount_cents: 100_000,
+    it "pays out only what is still owed when they were already paid during the month" do
+      Accounting::RecordVoucherService.new(
+        direction: Voucher::PAYMENT,
         treasury: treasury,
-        paid_by: owner,
-        paid_on: payroll_month.change(day: 10)
+        user: owner,
+        amount_cents: 100_000,
+        voucher_date: payroll_month.change(day: 10),
+        party_type: "User",
+        party_id: staff.id
       ).call
 
       expect(treasury.reload.balance_cents).to eq(400_000)
@@ -80,8 +82,8 @@ RSpec.describe "Admin payroll snapshots", type: :request do
       snapshot = PayrollSnapshot.last
       expect(snapshot.remaining_pay_cents).to eq(200_000)
       expect(treasury.reload.balance_cents).to eq(200_000)
-      expect(TreasuryTransaction.where(kind: "payroll_salary").count).to eq(1)
-      expect(TreasuryTransaction.where(kind: "payroll_salary").last.amount_cents).to eq(-200_000)
+      expect(snapshot.payout_voucher.amount_cents).to eq(200_000)
+      expect(staff.staff_balance_cents).to eq(0)
     end
 
     it "keeps recorded payroll after salary changes" do
@@ -187,7 +189,7 @@ RSpec.describe "Admin payroll snapshots", type: :request do
             }
           }
       end.to change(PayrollSnapshot, :count).by(2)
-        .and change(TreasuryTransaction.where(kind: "payroll_salary"), :count).by(2)
+        .and change(TreasuryTransaction.where(kind: "staff_payment"), :count).by(2)
 
       expect(response).to redirect_to(admin_accounting_monthly_payroll_path(payroll_month: payroll_month.strftime("%Y-%m")))
       expect(PayrollSnapshot.pluck(:user_id)).to contain_exactly(staff.id, second_staff.id)

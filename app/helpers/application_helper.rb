@@ -1404,7 +1404,20 @@ module ApplicationHelper
     sales = sales_report_items
     sections << { key: :sales, label: t("nav.sales"), icon: :orders, items: sales } if sales.any?
 
+    staff = staff_report_items
+    sections << { key: :staff, label: t("reports_hub.staff"), icon: :customers, items: staff } if staff.any?
+
     sections
+  end
+
+  # Reports about staff and the money that goes to them. Same permission as
+  # the payroll pages they summarise.
+  def staff_report_items
+    return [] unless current_user.can?("payroll:view")
+
+    [{ label: t("accounting.staff_payments_report.title"),
+       path: admin_accounting_staff_payments_reports_path,
+       description: t("accounting.staff_payments_report.description") }]
   end
 
   def reports_any_access?

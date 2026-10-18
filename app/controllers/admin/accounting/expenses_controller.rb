@@ -155,21 +155,16 @@ module Admin
       end
 
       PURCHASES_CODES = [5100].freeze
-
-      # The three pooled codes (history, from before every employee had their
-      # own account) plus each employee's own code — see User#account_code
-      # and ChartOfAccountsService::POOLED_WAGES_CODES, which this mirrors.
-      def payroll_codes
-        ::Accounting::ChartOfAccountsService::POOLED_WAGES_CODES +
-          User.where(company_id: Current.company.id).pluck(:wages_account_code)
-      end
+      PAYROLL_CODES   = [
+        ::Accounting::JournalEntryService::ADVANCE_CODE,
+        ::Accounting::JournalEntryService::SALARY_CODE,
+        ::Accounting::JournalEntryService::STAFF_MEAL_CODE
+      ].freeze
 
       def build_ledger_summary(start_date, end_date)
-        # Upper bound covers ExpenseCategory's own dynamic growth (from 5000)
-        # and User's payroll accounts (from 6000, see WAGES_ACCOUNT_CODE_BASE).
         base = JournalEntryLine.joins(:journal_entry)
           .where(journal_entries: { company_id: Current.company.id })
-          .where("account_code >= 5000 AND account_code < 7000")
+          .where("account_code >= 5000 AND account_code < 6000")
         base = base.where(journal_entries: { date: start_date.. })  if start_date
         base = base.where(journal_entries: { date: ..end_date })    if end_date
 
@@ -183,10 +178,9 @@ module Admin
                      .reject { |_, v| v <= 0 }
         names = base.pluck(:account_code, :account_name).to_h
 
-        payroll_codes = self.payroll_codes
         purchases_cents = totals.select { |code, _| PURCHASES_CODES.include?(code) }.values.sum
-        payroll_cents   = totals.select { |code, _| payroll_codes.include?(code) }.values.sum
-        operations_lines = totals.reject { |code, _| (PURCHASES_CODES + payroll_codes).include?(code) }
+        payroll_cents   = totals.select { |code, _| PAYROLL_CODES.include?(code) }.values.sum
+        operations_lines = totals.reject { |code, _| (PURCHASES_CODES + PAYROLL_CODES).include?(code) }
                                  .map { |code, cents|
                                    { code: code,
                                      name: helpers.ledger_account_name(code, names[code]),

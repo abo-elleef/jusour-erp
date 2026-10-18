@@ -20,7 +20,7 @@ module Accounting
     # rows keep those kinds: an expense used to move its own cash, and the
     # statement has to keep reading both for periods that straddle the change.
     OPERATING_KINDS = %w[income online_payment drawer_reconcile expense ap_payment
-                         payroll_salary payroll_advance staff_meal adjustment
+                         payroll_salary payroll_advance staff_payment staff_receipt staff_meal adjustment
                          voucher_receipt voucher_payment].freeze
 
     # Cash moved by a journal entry — a reversal, or an entry written by hand.

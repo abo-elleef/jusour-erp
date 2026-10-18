@@ -42,16 +42,17 @@ module Accounting
       { code: JournalEntryService::INTEREST_CODE,  name_key: "accounting.loans.interest_expense_account" }
     ].freeze
 
-    # Codes salary/advance/staff-meal entries posted to before every employee
-    # had their own account (see User#account_code). Kept here so history
-    # written against the pool still reaches the "Wages and salaries" total —
-    # see wages_expense_line.
+    # The payroll expense accounts. Only Salaries (5501) is posted to now —
+    # finalizing a month debits it with what was earned. Advances (5500) and
+    # Staff meals (5502) hold history from before each employee had their own
+    # account, plus anything posted there by hand, so they still count towards
+    # the one "Wages and salaries" line — see wages_expense_line.
     POOLED_WAGES_CODES = [
       JournalEntryService::ADVANCE_CODE,
       JournalEntryService::SALARY_CODE,
       JournalEntryService::STAFF_MEAL_CODE
     ].freeze
-    WAGES_SUMMARY_CODE = User::WAGES_ACCOUNT_CODE_BASE
+    WAGES_SUMMARY_CODE = JournalEntryService::SALARY_CODE
 
     # ── Current assets ────────────────────────────────────────────────
 
@@ -244,8 +245,37 @@ module Accounting
       end
     end
 
+    # ── Staff current accounts (2500+) ────────────────────────────────
+
+    # Every employee's own account as one line: what the company owes its
+    # staff for months finalized and not yet paid out, less whatever was paid
+    # ahead of earnings. Negative means staff owe the company on balance.
+    # Cumulative, like every other balance here.
+    def staff_balance_line
+      return @staff_balance_line if defined?(@staff_balance_line)
+
+      scope = JournalEntryLine.joins(:journal_entry)
+        .where(journal_entries: { company_id: Current.company.id }, account_code: staff_account_codes)
+      scope = scope.where(journal_entries: { date: ..@end_date }) if @end_date
+      balance = scope.sum(:credit_cents).to_i - scope.sum(:debit_cents).to_i
+
+      @staff_balance_line =
+        if balance.zero?
+          nil
+        else
+          AccountLine.new(
+            code:           User::WAGES_ACCOUNT_CODE_BASE,
+            name:           I18n.t("accounting.journal_entries.accounts.staff_accounts"),
+            account_type:   :liability,
+            subtype:        "staff_accounts",
+            balance_cents:  balance,
+            normal_balance: :credit
+          )
+        end
+    end
+
     def liability_lines
-      @liability_lines ||= ap_liability_lines + loan_liability_lines + other_liability_lines
+      @liability_lines ||= ap_liability_lines + loan_liability_lines + [staff_balance_line].compact + other_liability_lines
     end
 
     def total_liabilities_cents
@@ -329,7 +359,7 @@ module Accounting
     # so charging it again when it is sold would count the same cost twice.
     def dynamic_expense_lines
       @dynamic_expense_lines ||= ledger_totals(:expense)
-        .except(*FIXED_EXPENSE_ACCOUNTS.map { |a| a[:code] }, *POOLED_WAGES_CODES, *wages_employee_codes)
+        .except(*FIXED_EXPENSE_ACCOUNTS.map { |a| a[:code] }, *POOLED_WAGES_CODES)
         .map do |code, (name, cents)|
         AccountLine.new(
           code:           code,
@@ -370,15 +400,12 @@ module Accounting
       end
     end
 
-    # One line for every employee's own payroll account plus whatever still
-    # sits in the pooled codes from before each employee had one (see
-    # User#account_code and POOLED_WAGES_CODES) — salary, advances, and staff
-    # meals all collapse into the single "Wages and salaries" figure an owner
-    # actually wants on the P&L, while still letting Staff#show drill into one
-    # person's own account.
+    # Every payroll expense code as one "Wages and salaries" figure. Netted
+    # (debits less credits) so a month undone and re-finalized can't count
+    # twice.
     def wages_expense_line(je_scope)
-      codes = POOLED_WAGES_CODES + wages_employee_codes
-      total = je_scope.where(account_code: codes).sum(:debit_cents)
+      scope = je_scope.where(account_code: POOLED_WAGES_CODES)
+      total = scope.sum(:debit_cents) - scope.sum(:credit_cents)
       return nil if total.zero?
 
       AccountLine.new(
@@ -464,8 +491,8 @@ module Accounting
         .order(:name)
     end
 
-    def wages_employee_codes
-      @wages_employee_codes ||= User.where(company_id: Current.company.id).pluck(:wages_account_code)
+    def staff_account_codes
+      @staff_account_codes ||= User.unscoped.where(company_id: Current.company.id).pluck(:wages_account_code)
     end
 
     # Liability postings, cumulative up to the end of the period. Deliberately
@@ -494,7 +521,7 @@ module Accounting
           .where(company_id: Current.company.id, treasury_type: "supplier_ap")
           .pluck(:account_code)
 
-        (ap_codes + Loan.ordered.pluck(:account_code)).to_set
+        (ap_codes + Loan.ordered.pluck(:account_code) + staff_account_codes).to_set
       end
     end
 

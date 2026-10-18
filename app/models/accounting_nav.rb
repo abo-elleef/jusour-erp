@@ -80,6 +80,8 @@ module AccountingNav
       "treasury_transfers" => "accounting:ledgers",
       "payroll" => "payroll:view",
       "monthly_payroll" => "payroll:view",
+      # Reports hub → Staff (ApplicationHelper#staff_report_items)
+      "staff_payments_reports" => "payroll:view",
       # live in the accounting namespace but are surfaced under Settings
       "integrations" => "integrations:manage",
       "payment_method_treasuries" => "payments:manage"

@@ -103,12 +103,18 @@ class Voucher < ApplicationRecord
   # kind says what sort of movement this was, and the cash flow statement and
   # the profit-to-cash bridge both read it; the voucher is the paperwork that
   # was missing, not a reclassification of the money.
+  #
+  # Money to or from an employee gets its own pair of kinds so the cash flow
+  # statement can still show what went to staff as one line — it used to be
+  # `payroll_advance` / `payroll_salary` before the employee became an account.
   def treasury_kind
     return "adjustment" if equity_adjustment?
-    return "payroll_advance" if settles_only?(::PayrollAdvance)
+    return(receipt? ? "staff_receipt" : "staff_payment") if staff?
 
     receipt? ? "voucher_receipt" : "voucher_payment"
   end
+
+  def staff? = party_type == "User"
 
   # True when the voucher settles at least one thing and everything it settles
   # is of the given type — the kind describes the whole movement, so a mixed

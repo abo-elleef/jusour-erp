@@ -77,11 +77,11 @@ RSpec.describe Accounting::MonthlyPayrollService do
       expect(result.base_salary_cents).to eq(300_000)
       expect(result.penalties_cents).to eq(10_000)
       expect(result.net_pay_cents).to eq(290_000)
-      expect(result.advances_cents).to eq(0)
+      expect(result.paid_cents).to eq(0)
       expect(result.remaining_pay_cents).to eq(290_000)
     end
 
-    it "subtracts advances from remaining pay" do
+    it "takes money already paid to them this month off what is still owed" do
       treasury = Treasury.create!(
         company: company,
         name: "Safe",
@@ -90,17 +90,20 @@ RSpec.describe Accounting::MonthlyPayrollService do
         balance_cents: 500_000
       )
 
-      Accounting::PayPayrollAdvanceService.new(
-        user: staff,
-        amount_cents: 50_000,
+      Accounting::RecordVoucherService.new(
+        direction: Voucher::PAYMENT,
         treasury: treasury,
-        paid_by: owner,
-        paid_on: payroll_month.change(day: 15)
+        user: owner,
+        amount_cents: 50_000,
+        voucher_date: payroll_month.change(day: 15),
+        party_type: "User",
+        party_id: staff.id
       ).call
 
       result = described_class.new(staff, payroll_month).call
 
-      expect(result.advances_cents).to eq(50_000)
+      expect(result.paid_cents).to eq(50_000)
+      expect(result.balance_cents).to eq(-50_000)
       expect(result.remaining_pay_cents).to eq(250_000)
     end
 
