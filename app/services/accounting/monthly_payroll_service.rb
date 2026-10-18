@@ -26,12 +26,44 @@ module Accounting
       :staff_meals_cents,
       :balance_cents,
       :remaining_pay_cents,
+      :debt_cents,
+      :deduction_cents,
+      :payout_cents,
       :adjustments,
       :payments,
       :finalized,
       :snapshot,
       keyword_init: true
     )
+
+    Payout = Struct.new(:debt_cents, :max_deduction_cents, :deduction_cents, :payout_cents, keyword_init: true)
+
+    # What finalizing a month pays out, given where the account stood before
+    # the month's earnings were credited (balance_before: + owed to them,
+    # − they owe the company).
+    #
+    # With nothing owed by them, it's everything owed to them: the balance plus
+    # the month's pay. When they owe the company — paid ahead during the month,
+    # or a large advance being repaid over several months — part of the month's
+    # pay is kept back against that debt:
+    #
+    #   payout = max(balance_before, 0) + net_pay − deduction
+    #
+    # The deduction can't exceed the debt or the month's pay. It defaults to
+    # the employee's standing plan (User#balance_deduction_cents) when one is
+    # set, and to as much as possible otherwise — the old behaviour, where an
+    # advance always came off the next salary in full. A requested amount
+    # (typed when finalizing) overrides both, within the same limits.
+    def self.payout_for(user:, balance_before_cents:, net_pay_cents:, requested_deduction_cents: nil)
+      net = [net_pay_cents.to_i, 0].max
+      debt = [-balance_before_cents.to_i, 0].max
+      max_deduction = [debt, net].min
+      wanted = requested_deduction_cents.presence&.to_i || user.balance_deduction_cents || max_deduction
+      deduction = wanted.clamp(0, max_deduction)
+
+      Payout.new(debt_cents: debt, max_deduction_cents: max_deduction, deduction_cents: deduction,
+                 payout_cents: [balance_before_cents.to_i, 0].max + net - deduction)
+    end
 
     def initialize(user, payroll_month, sort: nil, direction: nil)
       @user = user
@@ -88,6 +120,7 @@ module Accounting
         # Not floored: penalties beyond the month's pay show as a real negative
         # here, even though finalizing will only ever accrue zero for it.
         remaining_pay_cents: balance + gross_net,
+        **payout_fields(self.class.payout_for(user: @user, balance_before_cents: balance, net_pay_cents: gross_net)),
         adjustments: adjustments,
         payments: payments,
         finalized: false,
@@ -130,6 +163,10 @@ module Accounting
     end
 
     private
+
+    def payout_fields(payout)
+      { debt_cents: payout.debt_cents, deduction_cents: payout.deduction_cents, payout_cents: payout.payout_cents }
+    end
 
     def staff_meals_for_month
       month_start = @payroll_month.beginning_of_month.beginning_of_day
@@ -182,6 +219,9 @@ module Accounting
         # Finalized: the month's earnings are on the account, so what's still
         # owed is simply the balance.
         remaining_pay_cents: calculated.balance_cents,
+        debt_cents: [-calculated.balance_cents, 0].max,
+        deduction_cents: snapshot.deduction_cents,
+        payout_cents: snapshot.remaining_pay_cents,
         adjustments: calculated.adjustments,
         payments: calculated.payments,
         finalized: true,

@@ -110,6 +110,72 @@ RSpec.describe "A staff member's own account" do
     end
   end
 
+  describe "a large advance repaid over several months" do
+    def finalize_with(deduction: nil)
+      Accounting::FinalizePayrollService.new(staff, month, finalized_by: owner, treasury: safe,
+                                             paid_on: Date.new(2026, 6, 30), deduction_cents: deduction).call
+    end
+
+    before { voucher!(Voucher::PAYMENT, 1_200_000) } # 4× the salary
+
+    it "keeps back the standing plan amount and pays out the rest of the month" do
+      staff.update!(balance_deduction_cents: 75_000)
+      snapshot = finalize_with
+
+      expect(snapshot.deduction_cents).to eq(75_000)
+      expect(snapshot.payout_voucher.amount_cents).to eq(225_000)
+      expect(staff.staff_balance_cents).to eq(-1_125_000)
+    end
+
+    it "keeps back the whole month with no plan — the old behaviour" do
+      snapshot = finalize_with
+
+      expect(snapshot.deduction_cents).to eq(300_000)
+      expect(snapshot.payout_voucher).to be_nil
+      expect(staff.staff_balance_cents).to eq(-900_000)
+    end
+
+    it "lets the amount typed when finalizing override the plan, including zero" do
+      staff.update!(balance_deduction_cents: 75_000)
+      snapshot = finalize_with(deduction: 0)
+
+      expect(snapshot.deduction_cents).to eq(0)
+      expect(snapshot.payout_voucher.amount_cents).to eq(300_000)
+      expect(staff.staff_balance_cents).to eq(-1_200_000)
+    end
+
+    it "never keeps back more than the month's pay" do
+      snapshot = finalize_with(deduction: 5_000_000)
+      expect(snapshot.deduction_cents).to eq(300_000)
+    end
+
+    it "previews the plan before the month is finalized" do
+      staff.update!(balance_deduction_cents: 75_000)
+      summary = Accounting::MonthlyPayrollService.new(staff, month).call
+
+      expect(summary.debt_cents).to eq(1_200_000)
+      expect(summary.deduction_cents).to eq(75_000)
+      expect(summary.payout_cents).to eq(225_000)
+    end
+  end
+
+  it "keeps back no more than what they owe" do
+    voucher!(Voucher::PAYMENT, 50_000)
+    staff.update!(balance_deduction_cents: 75_000)
+    snapshot = finalize!(treasury: safe)
+
+    expect(snapshot.deduction_cents).to eq(50_000)
+    expect(snapshot.payout_voucher.amount_cents).to eq(250_000)
+    expect(staff.staff_balance_cents).to eq(0)
+  end
+
+  it "treats a blank or zero plan as no plan" do
+    staff.update!(balance_deduction_pounds: "")
+    expect(staff.balance_deduction_cents).to be_nil
+    staff.update!(balance_deduction_pounds: "0")
+    expect(staff.balance_deduction_cents).to be_nil
+  end
+
   it "a staff meal debits the employee's account" do
     order = create(:order, user: owner, company: company, total_cents: 2_000)
     Payments::StaffMealPaymentService.call(order: order, staff_meal_user: staff, treasury: safe, processed_by: owner)

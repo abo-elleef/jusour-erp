@@ -3,15 +3,17 @@
 module Accounting
   # Finalizing a month does one thing to the books: it credits the employee's
   # own account with what they earned (JournalEntryService#record_payroll_accrual!).
-  # Whatever was paid to them during the month — and staff meals — already
-  # debited that account, so the balance left afterwards is exactly what is
-  # still owed.
+  # Whatever was paid to them before — and staff meals — already debited that
+  # account.
   #
-  # Given a treasury, it also pays that balance out, as an ordinary payment
-  # voucher to the employee. Without one it only records the month, and the
-  # balance waits for a voucher whenever the money is actually handed over.
+  # Given a treasury, it also pays them out with an ordinary payment voucher:
+  # everything owed to them, less the deduction kept back against anything
+  # they owe the company (see MonthlyPayrollService.payout_for — a typed
+  # amount, else their standing plan, else all of it). Without a treasury it
+  # only records the month, and the balance waits for a voucher.
   class FinalizePayrollService
-    def initialize(user, payroll_month, finalized_by:, treasury: nil, paid_on: nil)
+    def initialize(user, payroll_month, finalized_by:, treasury: nil, paid_on: nil, deduction_cents: nil)
+      @deduction_cents = deduction_cents
       @user = user
       @payroll_month = payroll_month.to_date.beginning_of_month
       @finalized_by = finalized_by
@@ -25,6 +27,8 @@ module Accounting
 
       ApplicationRecord.transaction do
         snapshot.payout_voucher&.void!(user: @finalized_by, reason: :source_removed)
+        JournalEntryService.destroy_for_source!(snapshot) if snapshot.persisted?
+        balance_before = @user.staff_balance_cents
 
         snapshot.assign_attributes(
           base_salary_cents: summary.base_salary_cents,
@@ -41,6 +45,7 @@ module Accounting
           advances_cents: summary.paid_cents,
           staff_meals_cents: summary.staff_meals_cents,
           remaining_pay_cents: 0,
+          deduction_cents: 0,
           treasury: nil,
           paid_on: nil,
           payout_voucher: nil,
@@ -50,7 +55,12 @@ module Accounting
         snapshot.save!
         JournalEntryService.record_payroll_accrual!(snapshot)
 
-        pay_out!(snapshot) if @treasury
+        payout = MonthlyPayrollService.payout_for(
+          user: @user, balance_before_cents: balance_before,
+          net_pay_cents: snapshot.net_pay_cents, requested_deduction_cents: @deduction_cents
+        )
+        snapshot.update!(deduction_cents: payout.deduction_cents)
+        pay_out!(snapshot, payout.payout_cents) if @treasury
       end
 
       snapshot
@@ -58,8 +68,10 @@ module Accounting
 
     private
 
-    def pay_out!(snapshot)
-      owed = @user.staff_balance_cents
+    # Pays what's left after the deduction. When they owe the company more
+    # than the deduction covers, this hands over part of the month's pay while
+    # the rest of the debt carries on to next month.
+    def pay_out!(snapshot, owed)
       return unless owed.positive?
 
       paid_on = resolve_paid_on

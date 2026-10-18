@@ -10,7 +10,11 @@
    else
      payroll_summary&.remaining_pay_cents || snapshot&.remaining_pay_cents.to_i
    end %>
-<% payout_required = remaining_pay_cents.positive? %>
+<% payout_cents = payroll_summary&.payout_cents || remaining_pay_cents %>
+<% debt_cents = payroll_summary&.debt_cents.to_i %>
+<%# Owing the company means part of this month's pay can be kept back —
+    the form is needed then even when the default deduction leaves nothing to pay. %>
+<% payout_required = payout_cents.positive? || debt_cents.positive? %>
 <% treasuries = local_assigns[:treasuries] || Treasury.active.payable.visible_to(current_user).ordered %>
 <% default_treasury = local_assigns[:default_treasury] || Treasury.default_treasury %>
 <% btn_class = compact ? "inline-flex text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors" : "inline-flex text-sm font-semibold px-4 py-2 rounded-xl border transition-colors" %>
@@ -62,6 +66,23 @@
               class: "#{input_class} appearance-none",
               title: t("staff.payroll.pay_from_treasury") %>
       </div>
+      <% if debt_cents.positive? %>
+        <div>
+          <% unless compact %>
+            <label class="block text-xs font-semibold text-gray-600 mb-1" for="deduction_<%= user.id %>"><%= t("staff.payroll.deduction.field") %></label>
+          <% end %>
+          <%= text_field_tag "payroll_snapshot[deduction_pounds]",
+                format("%.2f", payroll_summary.deduction_cents / 100.0),
+                id: "deduction_#{user.id}",
+                inputmode: "decimal", autocomplete: "off",
+                title: t("staff.payroll.deduction.field_hint", debt: format_amount(debt_cents)),
+                data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" },
+                class: "#{input_class} #{compact ? 'w-24' : 'w-36'} tabular-nums" %>
+          <% unless compact %>
+            <p class="text-[11px] text-gray-500 mt-1"><%= t("staff.payroll.deduction.field_hint", debt: format_amount(debt_cents)) %></p>
+          <% end %>
+        </div>
+      <% end %>
       <% unless compact %>
         <div>
           <label class="block text-xs font-semibold text-gray-600 mb-1"><%= t("staff.payroll.happened_at") %></label>

@@ -8,7 +8,7 @@
     </div>
     <div class="flex flex-wrap gap-2 shrink-0">
       <% if policy(PayrollSnapshot).create? && @pending_count.positive? %>
-        <% pending_payout_cents = @rows.reject(&:finalized).sum(&:remaining_pay_cents) %>
+        <% pending_payout_cents = @rows.reject(&:finalized).sum { |r| [r.payout_cents, 0].max } %>
         <%= form_with url: admin_accounting_monthly_payroll_finalize_all_path(
               payroll_month: @payroll_month.strftime("%Y-%m"),
               location_id: @location_filter.presence
@@ -75,7 +75,7 @@
   <% end %>
 
   <% if @rows.any? %>
-    <% still_to_pay_cents = @rows.reject(&:finalized).sum(&:remaining_pay_cents) %>
+    <% still_to_pay_cents = @rows.reject(&:finalized).sum { |r| [r.payout_cents, 0].max } %>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
       <div class="rounded-2xl border border-gray-200 bg-white p-4">
         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.monthly_payroll.total_obligation") %></p>

@@ -83,6 +83,7 @@
               <th class="p-3 ps-5 text-start"><%= sort_link.call(t("accounting.shift_logs.employee"), "name") %></th>
               <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.monthly_salary"), "monthly_salary_cents", align: :end) %></th>
               <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.earned"), "earned_cents", align: :end) %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.kept_back"), "deduction_cents", align: :end) %></th>
               <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.paid_out"), "paid_out_cents", align: :end) %></th>
               <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.received"), "received_cents", align: :end) %></th>
               <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_payments_report.net_paid"), "net_paid_cents", align: :end) %></th>
@@ -107,6 +108,7 @@
                     <%= row.finalized ? t("accounting.staff_payments_report.finalized") : t("accounting.staff_payments_report.estimate") %>
                   </span>
                 </td>
+                <td class="p-3 text-end tabular-nums text-red-700"><%= format_amount(row.deduction_cents) %></td>
                 <td class="p-3 text-end tabular-nums text-blue-700"><%= format_amount(row.paid_out_cents) %></td>
                 <td class="p-3 text-end tabular-nums text-emerald-700"><%= format_amount(row.received_cents) %></td>
                 <td class="p-3 text-end tabular-nums font-semibold text-gray-900"><%= format_amount(row.net_paid_cents) %></td>
@@ -120,7 +122,7 @@
           <tfoot class="border-t border-gray-200 bg-gray-50 font-semibold">
             <tr>
               <td class="p-3 ps-5 text-gray-900"><%= t("accounting.monthly_payroll.totals") %></td>
-              <% %i[monthly_salary_cents earned_cents paid_out_cents received_cents net_paid_cents staff_meals_cents].each do |col| %>
+              <% %i[monthly_salary_cents earned_cents deduction_cents paid_out_cents received_cents net_paid_cents staff_meals_cents].each do |col| %>
                 <td class="p-3 text-end tabular-nums"><%= format_amount(@report.total(col)) %></td>
               <% end %>
               <td class="p-3 pe-5 text-end tabular-nums"><%= format_amount(@report.total(:balance_cents)) %></td>

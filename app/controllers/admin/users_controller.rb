@@ -119,14 +119,24 @@ module Admin
     # This employee's own current account (see User#account_code): months
     # finalized credit it, vouchers paid to them and staff meals debit it,
     # vouchers received from them credit it. Same ledger shape as the
-    # Loan/Partner show pages.
+    # Loan/Partner show pages, with its own date range (ledger_from /
+    # ledger_to — URL params, not the session range the accounting pages
+    # share) and pagination, both inside a Turbo Frame so neither reloads
+    # the rest of the page.
+    WAGES_LEDGER_PER_PAGE = 50
+
     def load_wages_ledger
+      @ledger_from = ledger_date_param(:ledger_from)
+      @ledger_to = ledger_date_param(:ledger_to)
       @wages_balance_cents = @user.staff_balance_cents
-      @wages_lines = JournalEntryLine.joins(:journal_entry)
-        .where(journal_entries: { company_id: Current.company.id })
-        .where(account_code: @user.account_code)
-        .includes(:journal_entry)
-        .order("journal_entries.date DESC, journal_entries.entry_number DESC")
+      @wages_statement = ::Accounting::StaffStatementService.new(@user, from: @ledger_from, to: @ledger_to)
+      @wages_pagy, @wages_lines = pagy(:offset, @wages_statement.lines, limit: WAGES_LEDGER_PER_PAGE)
+    end
+
+    def ledger_date_param(key)
+      Date.iso8601(params[key].to_s)
+    rescue ArgumentError
+      nil
     end
 
     # Every change (create/clear/re-set) to this staff member's attendance for
@@ -164,7 +174,7 @@ module Admin
 
     def user_params
       permitted = %i[name email pin]
-      permitted += %i[role_id monthly_salary_pounds all_locations] if current_user.owner?
+      permitted += %i[role_id monthly_salary_pounds balance_deduction_pounds all_locations] if current_user.owner?
       permitted += %i[assigned_treasury_id] if current_user.owner? || current_user.accountant?
       changing_password = action_name == "create" || params.dig(:user, :password).present?
       permitted += %i[password password_confirmation] if changing_password

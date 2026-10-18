@@ -544,6 +544,15 @@ en:
       owed_to_them: "Owed to them"
       they_owe: "They owe the company"
       settled: "Settled"
+      from: "From"
+      to: "To"
+      clear: "Clear"
+      opening: "Opening balance"
+      closing: "Closing balance"
+      running_balance: "Balance"
+      no_movements_in_range: "No entries in this date range."
+      voucher_payment: "Payment voucher %{number}"
+      voucher_receipt: "Receipt voucher %{number}"
     payroll:
       title: "Monthly payroll"
       subtitle: "Penalties and bonuses for this month. Each month counts as %{days} work days."
@@ -609,6 +618,17 @@ en:
         number: "Voucher"
         treasury: "Treasury"
         empty: "No money paid or received this month."
+      finalize_heading: "Finalize this month"
+      deduction:
+        field: "Keep back from this month's pay"
+        field_hint: "They owe %{debt}. Keep back up to that, or up to this month's pay."
+        owes: "Owes the company %{amount}"
+        kept_back_open: "Finalizing will keep back %{deduction} of this month's pay and pay out %{payout}. You can change the amount when finalizing."
+        kept_back_finalized: "Kept back %{deduction} of this month's pay; paid out %{payout}."
+        plan: "Standing plan: keep back %{amount} a month."
+        no_plan: "No standing plan: the whole month's pay goes to the debt until it's cleared. Set a monthly amount on the staff form to spread it out."
+        plan_field: "Monthly deduction from what they owe"
+        plan_field_hint: "For a large advance repaid over several months. Leave blank to take the whole month's pay until the debt is cleared."
     payroll_portal:
       title: "Salary preview"
       pin_title: "Enter your PIN"
@@ -629,6 +649,7 @@ en:
       copied: "Copied!"
       paid_to_you: "Paid to you"
       received_from_you: "Received from you"
+      deduction: "%{deduction} kept back from this month's pay against what you owe (%{debt} still owed)."
 
   roles:
     title: "Roles & permissions"
@@ -4449,6 +4470,7 @@ en:
         online_payment: "Digital Payment — %{treasury}"
         shipping_company_fee_payable: "Delivery fee payable — %{name}"
         payroll_accrual: "Payroll earned — %{employee} (%{month})"
+        voucher: "Voucher %{number}"
     fixed_assets:
       paid_from_treasury: "Paid from"
       select_treasury: "Select treasury…"
@@ -4938,6 +4960,7 @@ en:
         title: "This pays %{name} %{excess} more than the usual cap."
         detail: "Owed to them now: %{owed}. Monthly salary: %{salary}. The cap is the two together."
         confirm: "I know — issue it anyway"
+        detail_in_debt: "They already owe the company %{debt}. Monthly salary: %{salary}."
     incomes:
       on_account_option: "On account — not collected yet"
       treasury_hint: "Leave blank if this is not collected yet. Naming a treasury records the collection now and issues a receipt voucher."
@@ -5399,6 +5422,8 @@ en:
         attendance_status_id: "Status"
         quantity_on_hand: "Quantity on hand"
         location_id: "Location"
+        balance_deduction_cents: "Monthly deduction from what they owe"
+        wages_account_code: "Staff account code"
       values:
         recurrence:
           one_time: "One time"
@@ -5454,6 +5479,7 @@ en:
       estimate: "Estimate"
       vouchers_title: "Vouchers this month"
       vouchers_hint: "Every payment to or receipt from an employee dated in the month."
+      kept_back: "Kept back"
 
   kitchen:
     title: "Kitchen Display"

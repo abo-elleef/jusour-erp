@@ -25,9 +25,15 @@
               excess: format_amount(@over_cap[:excess_cents])) %>
       </p>
       <p>
-        <%= t("accounting.vouchers.staff_cap.detail",
-              owed: format_amount(@over_cap[:owed_cents]),
-              salary: format_amount(@over_cap[:salary_cents])) %>
+        <% if @over_cap[:owed_cents].negative? %>
+          <%= t("accounting.vouchers.staff_cap.detail_in_debt",
+                debt: format_amount(-@over_cap[:owed_cents]),
+                salary: format_amount(@over_cap[:salary_cents])) %>
+        <% else %>
+          <%= t("accounting.vouchers.staff_cap.detail",
+                owed: format_amount(@over_cap[:owed_cents]),
+                salary: format_amount(@over_cap[:salary_cents])) %>
+        <% end %>
       </p>
       <label class="inline-flex items-center gap-2 font-semibold">
         <%= check_box_tag :confirm_over_cap, "1", false, class: "rounded border-amber-400" %>

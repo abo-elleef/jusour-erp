@@ -14,6 +14,7 @@ class User < ApplicationRecord
     ]
 
   money_input :monthly_salary_cents
+  money_input :balance_deduction_cents
 
   ROLES = %w[owner super_manager manager sub_manager accountant cashier kitchen custom].freeze
   BUILTIN_ROLE_KEYS = %w[owner super_manager manager sub_manager accountant cashier kitchen].freeze
@@ -45,10 +46,12 @@ class User < ApplicationRecord
   validates :password, length: { within: 6..128 }, allow_blank: true
   validates :payroll_access_token, presence: true, uniqueness: true
   validates :wages_account_code, presence: true, uniqueness: { scope: :company_id }
+  validates :balance_deduction_cents, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   before_validation :assign_payroll_access_token, on: :create
   before_validation :assign_wages_account_code, on: :create
   before_validation :sync_hourly_rate_from_monthly_salary
+  before_validation { self.balance_deduction_cents = nil unless balance_deduction_cents.to_i.positive? }
 
   scope :active, -> { where(active: true) }
 

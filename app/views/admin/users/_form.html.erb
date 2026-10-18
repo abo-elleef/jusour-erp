@@ -38,6 +38,15 @@
         </div>
 
         <div>
+          <%= f.label :balance_deduction_pounds, t("staff.payroll.deduction.plan_field"), class: label_class %>
+          <%# text_field, not number_field: arabic-numerals turns Arabic-Indic digits into ASCII. %>
+          <%= f.text_field :balance_deduction_pounds, inputmode: "decimal", autocomplete: "off",
+                data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" },
+                class: input_class %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("staff.payroll.deduction.plan_field_hint") %></p>
+        </div>
+
+        <div>
           <%= f.label :role_id, t("staff.index.role"), class: label_class %>
           <% if current_user.owner? %>
             <%= f.select :role_id, Role.ordered.map { |r| [r.name, r.id] },

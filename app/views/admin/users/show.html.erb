@@ -123,7 +123,8 @@
   <% end %>
 
   <% if @wages_lines %>
-    <%= render "wages_ledger_section", wages_balance_cents: @wages_balance_cents, wages_lines: @wages_lines %>
+    <%= render "wages_ledger_section", wages_balance_cents: @wages_balance_cents, wages_lines: @wages_lines,
+          statement: @wages_statement, pagy: @wages_pagy %>
   <% end %>
 
   <% if @attendance_audits %>

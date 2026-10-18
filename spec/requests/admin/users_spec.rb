@@ -184,6 +184,29 @@ RSpec.describe "Admin::Users", type: :request do
         expect(response.body).to include(admin_accounting_voucher_path(voucher))
       end
 
+      it "filters the account by date and pages it" do
+        staff = create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000)
+        treasury = Treasury.create!(company: company, name: "Safe", treasury_type: "safe",
+                                    opening_balance_cents: 10_000_000, balance_cents: 10_000_000)
+        old = Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: treasury, user: owner,
+                                                   amount_cents: 1_000, voucher_date: Date.new(2026, 1, 5),
+                                                   party_type: "User", party_id: staff.id).call
+        recent = Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: treasury, user: owner,
+                                                      amount_cents: 2_000, voucher_date: Date.new(2026, 3, 5),
+                                                      party_type: "User", party_id: staff.id).call
+
+        get admin_user_path(staff, ledger_from: "2026-03-01", ledger_to: "2026-03-31")
+
+        expect(response.body).to include(recent.number)
+        expect(response.body).not_to include(old.number)
+        expect(response.body).to include(I18n.t("staff.wages_ledger.opening"))
+
+        stub_const("Admin::UsersController::WAGES_LEDGER_PER_PAGE", 1)
+        get admin_user_path(staff, page: 2)
+        expect(response.body).to include(old.number)
+        expect(response.body).not_to include(recent.number)
+      end
+
       it "shows no movements for a staff member with no payroll activity" do
         staff = create(:user, company: company, role: "cashier")
 

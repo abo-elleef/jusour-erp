@@ -1,3 +1,10 @@
+<%# locals: wages_balance_cents:, wages_lines:, statement:, pagy:
+    Its own Turbo Frame: the date filter and the page links reload only this
+    section, so the rest of the staff page (and where you were on it) stays. %>
+<% signed = ->(cents) { "#{cents.negative? ? '−' : ''}#{format_amount(cents.abs)}" } %>
+<% filtered = statement.from || statement.to %>
+
+<%= turbo_frame_tag "staff_account_ledger", data: { turbo_action: "advance" } do %>
 <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
   <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
     <div>
@@ -15,45 +22,98 @@
     </div>
   </div>
 
+  <%= form_with url: request.path, method: :get,
+        class: "px-5 py-3 border-b border-gray-100 flex flex-wrap items-end gap-3" do %>
+    <%= hidden_field_tag :payroll_month, params[:payroll_month] if params[:payroll_month].present? %>
+    <div>
+      <label for="ledger_from" class="block text-xs font-semibold text-gray-600 mb-1"><%= t("staff.wages_ledger.from") %></label>
+      <%= date_field_tag :ledger_from, statement.from, class: "#{pos_input_class} text-sm" %>
+    </div>
+    <div>
+      <label for="ledger_to" class="block text-xs font-semibold text-gray-600 mb-1"><%= t("staff.wages_ledger.to") %></label>
+      <%= date_field_tag :ledger_to, statement.to, class: "#{pos_input_class} text-sm" %>
+    </div>
+    <%= submit_tag t("actions.apply"), name: nil,
+          class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors" %>
+    <% if filtered %>
+      <%= link_to t("staff.wages_ledger.clear"),
+            request.path + (params[:payroll_month].present? ? "?payroll_month=#{params[:payroll_month]}" : ""),
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-2 py-2" %>
+    <% end %>
+  <% end %>
+
+  <% if filtered %>
+    <div class="px-5 py-2.5 border-b border-gray-100 bg-gray-50/40 flex flex-wrap gap-x-6 gap-y-1 text-xs text-gray-600 tabular-nums">
+      <% unless statement.opening_balance_cents.nil? %>
+        <span><%= t("staff.wages_ledger.opening") %>: <strong><%= signed.call(statement.opening_balance_cents) %></strong></span>
+      <% end %>
+      <span><%= t("staff.wages_ledger.debit") %>: <strong class="text-blue-700"><%= format_amount(statement.range_debit_cents) %></strong></span>
+      <span><%= t("staff.wages_ledger.credit") %>: <strong class="text-green-700"><%= format_amount(statement.range_credit_cents) %></strong></span>
+      <span><%= t("staff.wages_ledger.closing") %>: <strong><%= signed.call(statement.closing_balance_cents) %></strong></span>
+    </div>
+  <% end %>
+
   <% if wages_lines.empty? %>
-    <p class="p-8 text-center text-sm text-gray-400"><%= t("staff.wages_ledger.no_movements") %></p>
+    <p class="p-8 text-center text-sm text-gray-400">
+      <%= filtered ? t("staff.wages_ledger.no_movements_in_range") : t("staff.wages_ledger.no_movements") %>
+    </p>
   <% else %>
-    <table class="w-full text-sm">
-      <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-        <tr>
-          <th class="p-3 ps-5 text-start w-28"><%= t("staff.wages_ledger.date") %></th>
-          <th class="p-3 text-start w-32"><%= t("staff.wages_ledger.number") %></th>
-          <th class="p-3 text-start"><%= t("staff.wages_ledger.description") %></th>
-          <th class="p-3 text-end w-32"><%= t("staff.wages_ledger.debit") %></th>
-          <th class="p-3 pe-5 text-end w-32"><%= t("staff.wages_ledger.credit") %></th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100 table-zebra">
-        <% wages_lines.each do |line| %>
-          <% voucher_path = journal_entry_source_path(line.journal_entry) if line.journal_entry.source_record_type == "Voucher" %>
-          <tr class="hover:bg-blue-50/30 transition-colors cursor-pointer"
-              onclick="window.location='<%= admin_accounting_journal_entry_path(line.journal_entry) %>'">
-            <td class="p-3 ps-5 text-gray-500 tabular-nums"><%= l(line.journal_entry.date, format: :short) %></td>
-            <td class="p-3 font-mono text-xs text-blue-700 font-semibold"><%= line.journal_entry.entry_number %></td>
-            <td class="p-3 text-gray-900">
-              <% if voucher_path %>
-                <%# Breaks out of the row's own click-through to the journal entry. %>
-                <%= link_to line.journal_entry.description, voucher_path,
-                      onclick: "event.stopPropagation()",
-                      class: "text-amber-700 hover:text-amber-900 hover:underline underline-offset-2" %>
-              <% else %>
-                <%= line.journal_entry.description %>
-              <% end %>
-            </td>
-            <td class="p-3 text-end tabular-nums <%= line.debit_cents > 0 ? 'text-blue-700 font-semibold' : 'text-gray-300' %>">
-              <%= line.debit_cents > 0 ? format_amount(line.debit_cents) : "—" %>
-            </td>
-            <td class="p-3 pe-5 text-end tabular-nums <%= line.credit_cents > 0 ? 'text-green-700 font-semibold' : 'text-gray-300' %>">
-              <%= line.credit_cents > 0 ? format_amount(line.credit_cents) : "—" %>
-            </td>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start w-32"><%= t("staff.wages_ledger.date") %></th>
+            <th class="p-3 text-start w-32"><%= t("staff.wages_ledger.number") %></th>
+            <th class="p-3 text-start min-w-[12rem]"><%= t("staff.wages_ledger.description") %></th>
+            <th class="p-3 text-end w-28"><%= t("staff.wages_ledger.debit") %></th>
+            <th class="p-3 text-end w-28"><%= t("staff.wages_ledger.credit") %></th>
+            <th class="p-3 pe-5 text-end w-32"><%= t("staff.wages_ledger.running_balance") %></th>
           </tr>
-        <% end %>
-      </tbody>
-    </table>
+        </thead>
+        <tbody class="divide-y divide-gray-100 table-zebra">
+          <% wages_lines.each do |line| %>
+            <% entry = line.journal_entry %>
+            <% voucher = entry.source_record if entry.source_record_type == "Voucher" %>
+            <tr class="hover:bg-blue-50/30 transition-colors cursor-pointer"
+                onclick="window.location='<%= admin_accounting_journal_entry_path(entry) %>'">
+              <td class="p-3 ps-5 text-gray-500 tabular-nums whitespace-nowrap"><%= l(entry.date, format: :long) %></td>
+              <td class="p-3 font-mono text-xs text-blue-700 font-semibold whitespace-nowrap">
+                <%= link_to entry.entry_number, admin_accounting_journal_entry_path(entry),
+                      data: { turbo_frame: "_top" }, onclick: "event.stopPropagation()" %>
+              </td>
+              <td class="p-3 text-gray-900">
+                <% if voucher %>
+                  <%# Described in the viewer's language — the stored entry
+                      text is whatever language it was posted in. %>
+                  <%= link_to admin_accounting_voucher_path(voucher),
+                        data: { turbo_frame: "_top" }, onclick: "event.stopPropagation()",
+                        class: "text-amber-700 hover:text-amber-900 hover:underline underline-offset-2 whitespace-nowrap" do %>
+                    <%= t(voucher.payment? ? "staff.wages_ledger.voucher_payment" : "staff.wages_ledger.voucher_receipt",
+                          number: voucher.number) %>
+                  <% end %>
+                  <% if voucher.notes.present? %>
+                    <span class="block text-xs text-gray-500 mt-0.5"><%= voucher.notes %></span>
+                  <% end %>
+                <% else %>
+                  <%= entry.description %>
+                <% end %>
+              </td>
+              <td class="p-3 text-end tabular-nums <%= line.debit_cents > 0 ? 'text-blue-700 font-semibold' : 'text-gray-300' %>">
+                <%= line.debit_cents > 0 ? format_amount(line.debit_cents) : "—" %>
+              </td>
+              <td class="p-3 text-end tabular-nums <%= line.credit_cents > 0 ? 'text-green-700 font-semibold' : 'text-gray-300' %>">
+                <%= line.credit_cents > 0 ? format_amount(line.credit_cents) : "—" %>
+              </td>
+              <% running = line.running_balance_cents.to_i %>
+              <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= running.negative? ? 'text-red-700' : 'text-gray-900' %>">
+                <%= signed.call(running) %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <%= render "admin/accounting/pagination", pagy: pagy %>
   <% end %>
 </section>
+<% end %>

@@ -40,6 +40,14 @@
     </p>
   </div>
 
+  <% if payroll_summary.debt_cents.positive? || payroll_summary.deduction_cents.positive? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900">
+      <%= t("staff.payroll_portal.deduction",
+            deduction: format_money(payroll_summary.deduction_cents),
+            debt: format_money(payroll_summary.debt_cents)) %>
+    </div>
+  <% end %>
+
   <%# Summary stats %>
   <div class="grid grid-cols-2 gap-3">
     <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">

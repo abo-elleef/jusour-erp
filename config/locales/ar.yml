@@ -546,6 +546,15 @@ ar:
       owed_to_them: "مستحق له"
       they_owe: "عليه للشركة"
       settled: "مسدد"
+      from: "من"
+      to: "إلى"
+      clear: "مسح"
+      opening: "الرصيد الافتتاحي"
+      closing: "الرصيد الختامي"
+      running_balance: "الرصيد"
+      no_movements_in_range: "لا توجد قيود في هذه الفترة."
+      voucher_payment: "سند صرف %{number}"
+      voucher_receipt: "سند قبض %{number}"
     payroll:
       title: "الراتب الشهري"
       subtitle: "خصومات ومكافآت لهذا الشهر. كل شهر = %{days} يوم عمل."
@@ -611,6 +620,17 @@ ar:
         number: "السند"
         treasury: "الخزينة"
         empty: "لا يوجد مدفوع أو مقبوض هذا الشهر."
+      finalize_heading: "اعتماد هذا الشهر"
+      deduction:
+        field: "الخصم من راتب هذا الشهر"
+        field_hint: "عليه %{debt}. اخصم حتى هذا المبلغ أو حتى راتب الشهر."
+        owes: "عليه للشركة %{amount}"
+        kept_back_open: "عند الاعتماد سيُخصم %{deduction} من راتب هذا الشهر ويُصرف له %{payout}. يمكنك تعديل المبلغ عند الاعتماد."
+        kept_back_finalized: "خُصم %{deduction} من راتب هذا الشهر؛ وصُرف %{payout}."
+        plan: "خطة ثابتة: خصم %{amount} شهرياً."
+        no_plan: "لا توجد خطة ثابتة: يُخصم راتب الشهر بالكامل حتى سداد المديونية. حدّد مبلغاً شهرياً من نموذج الموظف لتقسيطها."
+        plan_field: "الخصم الشهري من المديونية"
+        plan_field_hint: "لسلفة كبيرة تُسدد على عدة أشهر. اتركه فارغاً لخصم راتب الشهر بالكامل حتى السداد."
     payroll_portal:
       title: "معاينة الراتب"
       pin_title: "أدخل رمز PIN"
@@ -631,6 +651,7 @@ ar:
       copied: "تم النسخ!"
       paid_to_you: "مدفوع لك"
       received_from_you: "مقبوض منك"
+      deduction: "خُصم %{deduction} من راتب هذا الشهر مقابل ما عليك (المتبقي عليك %{debt})."
 
   roles:
     title: "الأدوار والصلاحيات"
@@ -4498,6 +4519,7 @@ ar:
         online_payment: "دفع إلكتروني — %{treasury}"
         shipping_company_fee_payable: "رسوم توصيل مستحقة — %{name}"
         payroll_accrual: "استحقاق راتب — %{employee} (%{month})"
+        voucher: "سند %{number}"
     fixed_assets:
       paid_from_treasury: "مدفوع من"
       select_treasury: "اختر الخزينة…"
@@ -4987,6 +5009,7 @@ ar:
         title: "هذا الصرف يتجاوز الحد المعتاد لـ %{name} بمقدار %{excess}."
         detail: "المستحق له الآن: %{owed}. الراتب الشهري: %{salary}. الحد هو مجموعهما."
         confirm: "أعلم ذلك — أصدر السند على أي حال"
+        detail_in_debt: "عليه للشركة بالفعل %{debt}. الراتب الشهري: %{salary}."
     incomes:
       on_account_option: "على الحساب — غير محصَّل بعد"
       treasury_hint: "اتركه فارغًا إذا لم يُحصَّل بعد. اختيار خزينة يسجل التحصيل الآن ويصدر سند قبض."
@@ -5454,6 +5477,8 @@ ar:
         attendance_status_id: "الحالة"
         quantity_on_hand: "الكمية المتوفرة"
         location_id: "الموقع"
+        balance_deduction_cents: "الخصم الشهري من المديونية"
+        wages_account_code: "رقم حساب الموظف"
       values:
         recurrence:
           one_time: "مرة واحدة"
@@ -5509,6 +5534,7 @@ ar:
       estimate: "تقديري"
       vouchers_title: "سندات الشهر"
       vouchers_hint: "كل سند صرف لموظف أو قبض منه بتاريخ داخل الشهر."
+      kept_back: "المخصوم"
 
   kitchen:
     title: "شاشة المطبخ"

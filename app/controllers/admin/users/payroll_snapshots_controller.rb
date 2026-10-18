@@ -14,7 +14,8 @@ module Admin
           payroll_month,
           finalized_by: current_user,
           treasury: resolve_treasury,
-          paid_on: snapshot_params[:paid_on]
+          paid_on: snapshot_params[:paid_on],
+          deduction_cents: requested_deduction_cents
         ).call
 
         redirect_to redirect_path(payroll_month), notice: t("flash.payroll_snapshot.recorded")
@@ -54,7 +55,14 @@ module Admin
       end
 
       def snapshot_params
-        params.fetch(:payroll_snapshot, {}).permit(:treasury_id, :paid_on)
+        params.fetch(:payroll_snapshot, {}).permit(:treasury_id, :paid_on, :deduction_pounds)
+      end
+
+      # Blank means "use the default" (their plan, or all of it), not zero.
+      # Arabic-Indic digits arrive already normalized by arabic-numerals.
+      def requested_deduction_cents
+        raw = snapshot_params[:deduction_pounds].to_s.strip
+        raw.present? ? (raw.to_d * 100).round : nil
       end
 
       def resolve_treasury

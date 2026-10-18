@@ -1185,6 +1185,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
     t.decimal "bonus_days", precision: 6, scale: 2, default: "0.0", null: false
     t.decimal "penalty_days", precision: 6, scale: 2, default: "0.0", null: false
     t.uuid "payout_voucher_id"
+    t.integer "deduction_cents", default: 0, null: false
     t.index ["company_id", "payroll_month"], name: "index_payroll_snapshots_on_company_id_and_payroll_month"
     t.index ["company_id"], name: "index_payroll_snapshots_on_company_id"
     t.index ["finalized_by_id"], name: "index_payroll_snapshots_on_finalized_by_id"
@@ -1774,6 +1775,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
     t.boolean "all_locations", default: true, null: false
     t.uuid "assigned_treasury_id"
     t.integer "wages_account_code", null: false
+    t.integer "balance_deduction_cents"
     t.index ["active"], name: "index_users_on_active"
     t.index ["assigned_treasury_id"], name: "index_users_on_assigned_treasury_id"
     t.index ["company_id", "email"], name: "index_users_on_company_id_and_email", unique: true

@@ -90,6 +90,38 @@
     </div>
   </div>
 
+  <% if payroll_summary.debt_cents.positive? || payroll_summary.deduction_cents.positive? %>
+    <div class="px-5 py-4 border-b border-gray-100 bg-red-50/40">
+      <p class="text-sm font-semibold text-red-800">
+        <%= t("staff.payroll.deduction.owes", amount: format_amount(payroll_summary.debt_cents)) %>
+      </p>
+      <p class="text-xs text-gray-700 mt-1">
+        <%= t(payroll_summary.finalized ? "staff.payroll.deduction.kept_back_finalized" : "staff.payroll.deduction.kept_back_open",
+              deduction: format_amount(payroll_summary.deduction_cents),
+              payout: format_amount([payroll_summary.payout_cents, 0].max)) %>
+      </p>
+      <p class="text-[11px] text-gray-500 mt-1">
+        <% if user.balance_deduction_cents %>
+          <%= t("staff.payroll.deduction.plan", amount: format_amount(user.balance_deduction_cents)) %>
+        <% else %>
+          <%= t("staff.payroll.deduction.no_plan") %>
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+
+  <% if !readonly && !payroll_summary.finalized && policy(PayrollSnapshot).create? %>
+    <div class="px-5 py-4 border-b border-gray-100">
+      <h3 class="text-sm font-semibold text-gray-900 mb-3"><%= t("staff.payroll.finalize_heading") %></h3>
+      <%= render "admin/users/payroll_finalize_button",
+            user: user,
+            payroll_month: payroll_month,
+            payroll_summary: payroll_summary,
+            treasuries: local_assigns[:treasuries],
+            default_treasury: local_assigns[:default_treasury] %>
+    </div>
+  <% end %>
+
   <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80">
     <span class="text-sm font-semibold text-gray-900"><%= t("staff.payroll.net_pay") %></span>
     <span class="text-xl font-bold text-gray-900 tabular-nums"><%= format_money(payroll_summary.net_pay_cents) %></span>
