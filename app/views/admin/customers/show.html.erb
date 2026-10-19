@@ -3,10 +3,6 @@
 <% action_btn_class = "text-sm font-semibold px-4 py-2 rounded-xl transition-colors" %>
 
 <div class="max-w-6xl">
-  <div class="mb-6">
-    <%= link_to t("customers.back_to_list"), admin_customers_path, class: "text-gray-600 hover:underline text-sm" %>
-  </div>
-
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900">
@@ -22,7 +18,9 @@
         <% end %>
       </p>
     </div>
-    <div class="flex flex-wrap gap-2 shrink-0">
+    <div class="flex flex-wrap items-center gap-2 shrink-0">
+      <%= link_to t("customers.back_to_list"), admin_customers_path,
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
       <% if policy(@customer).update? %>
         <%= link_to t("actions.edit"), edit_admin_customer_path(@customer),
               class: "#{action_btn_class} bg-gray-900 hover:bg-gray-800 text-white" %>
@@ -67,6 +65,55 @@
     </ul>
   <% end %>
 
+  <% if @invoices&.any? %>
+    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+      <h2 class="text-lg font-bold"><%= t("customers.show.invoices") %></h2>
+      <% if @invoices_count > @invoices.size %>
+        <%= link_to t("customers.show.view_all_invoices", count: @invoices_count),
+              admin_sales_customer_invoices_path(customer_id: @customer.id),
+              class: "text-sm font-semibold text-amber-700 hover:text-amber-800 hover:underline" %>
+      <% end %>
+    </div>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-8">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("sales.customer_invoices.table.number") %></th>
+              <th class="p-3 text-start"><%= t("sales.customer_invoices.table.date") %></th>
+              <th class="p-3 text-start"><%= t("sales.customer_invoices.form.location") %></th>
+              <th class="p-3 text-start"><%= t("sales.customer_invoices.table.status") %></th>
+              <th class="p-3 text-end"><%= t("sales.customer_invoices.table.total") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("sales.customer_invoices.table.balance") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% @invoices.each do |inv| %>
+              <tr class="hover:bg-gray-100 transition-colors">
+                <td class="p-3 ps-5 font-medium tabular-nums">
+                  <%= link_to inv.invoice_number, admin_sales_customer_invoice_path(inv),
+                        class: "text-amber-700 hover:text-amber-800 hover:underline" %>
+                </td>
+                <td class="p-3 text-gray-600 whitespace-nowrap"><%= l(inv.invoice_date, format: :long) %></td>
+                <td class="p-3 text-gray-600">
+                  <% if inv.location %>
+                    <%= link_to inv.location.name, admin_location_path(inv.location), class: "hover:text-gray-900 hover:underline" %>
+                  <% end %>
+                </td>
+                <td class="p-3"><%= render "admin/sales/customer_invoices/status_badge", invoice: inv %></td>
+                <td class="p-3 text-end tabular-nums"><%= format_amount(inv.total_cents) %></td>
+                <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= inv.balance_due_cents.positive? && !inv.historical? ? 'text-amber-700' : 'text-gray-400' %>">
+                  <%= inv.historical? ? "—" : format_amount(inv.balance_due_cents) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  <% end %>
+
+  <% if @orders.any? || !@invoices&.any? %>
   <h2 class="text-lg font-bold mb-3"><%= t("customers.show.order_history") %></h2>
   <% if @orders.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-8">
@@ -99,6 +146,7 @@
     </section>
   <% else %>
     <p class="text-gray-500 mb-8"><%= t("customers.show.no_orders") %></p>
+  <% end %>
   <% end %>
 
   <h2 class="text-lg font-bold mb-3"><%= t("customers.show.loyalty_activity") %></h2>

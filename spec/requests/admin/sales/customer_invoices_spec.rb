@@ -91,6 +91,46 @@ RSpec.describe "Admin::Sales::CustomerInvoices", type: :request do
       expect(CustomerInvoice.outstanding.sum(:total_cents)).to eq(0)
     end
 
+    it "filters the index to one customer" do
+      other = create(:customer, company: company, name: "Other clinic", customer_type: "commercial")
+      other_inv = CustomerInvoice.new(company: company, customer: other, user: owner,
+        location: location, invoice_date: Date.current)
+      other_inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 1,
+        unit: ingredient.unit, unit_price_cents: 1_000)
+      other_inv.save!
+
+      get admin_sales_customer_invoices_path(customer_id: customer.id, locale: "en")
+      expect(response.body).to include(historical.invoice_number)
+      expect(response.body).not_to include(other_inv.invoice_number)
+    end
+
+    it "filters the index by invoice date range and ignores a malformed date" do
+      get admin_sales_customer_invoices_path(from_date: "2026-01-01", to_date: "2026-01-31", locale: "en")
+      expect(response.body).to include(historical.invoice_number)
+
+      get admin_sales_customer_invoices_path(from_date: "2026-01-04", locale: "en")
+      expect(response.body).not_to include(historical.invoice_number)
+
+      get admin_sales_customer_invoices_path(to_date: "not-a-date", locale: "en")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(historical.invoice_number)
+    end
+
+    it "lists them on the customer page, with a link to the invoice" do
+      get admin_customer_path(customer, locale: "en")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Sales invoices")
+      expect(response.body).to include(admin_sales_customer_invoice_path(historical))
+      expect(response.body).not_to include("Order history")
+    end
+
+    it "links the customer, location and seller from the invoice header" do
+      get admin_sales_customer_invoice_path(historical, locale: "en")
+      expect(response.body).to include(admin_customer_path(customer))
+      expect(response.body).to include(admin_location_path(location))
+      expect(response.body).to include(admin_user_path(owner))
+    end
+
     it "explains itself on the show page instead of offering a payment form" do
       get admin_sales_customer_invoice_path(historical, locale: "en")
       expect(response).to have_http_status(:ok)

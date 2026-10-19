@@ -2344,6 +2344,12 @@ ar:
   sales:
     customer_invoices:
       title: "فواتير المبيعات"
+      filters:
+        all_customers: "كل العملاء"
+        from_date: "من"
+        to_date: "إلى"
+        apply: "تطبيق"
+        clear: "مسح الفلاتر"
       description: "مبيعات آجلة للعملاء التجاريين."
       new_button: "بيع جديد"
       new_title: "فاتورة مبيعات جديدة"
@@ -3695,6 +3701,8 @@ ar:
       loyalty_balance: "رصيد الولاء"
       lifetime_spend: "إجمالي الإنفاق"
       order_history: "سجل الطلبات"
+      invoices: "فواتير المبيعات"
+      view_all_invoices: "عرض الكل (%{count})"
       loyalty_activity: "نشاط الولاء"
       no_orders: "لا توجد طلبات بعد."
       no_loyalty: "لا توجد معاملات ولاء بعد."

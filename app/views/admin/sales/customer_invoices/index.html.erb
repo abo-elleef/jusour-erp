@@ -23,12 +23,42 @@
     </div>
   </div>
 
+  <% filter_params = { customer_id: @customer&.id, from_date: @from_date&.iso8601, to_date: @to_date&.iso8601 }.compact %>
+  <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+  <section class="rounded-2xl border border-gray-200 bg-white p-4 mb-4">
+    <%= form_with url: admin_sales_customer_invoices_path, method: :get, class: "flex flex-wrap items-end gap-4" do |f| %>
+      <%= hidden_field_tag :status, @status if @status %>
+      <div class="min-w-[16rem] flex-1 max-w-sm" data-searchable-select-options="<%= customer_search_options(@customers) %>">
+        <%= label_tag :customer_id, t("sales.customer_invoices.table.customer"), class: label_class %>
+        <%= render "shared/searchable_select",
+              form: f, field: :customer_id, selected: @customer&.id,
+              placeholder: t("sales.customer_invoices.filters.all_customers"),
+              input_class: pos_input_class,
+              html: { "data-searchable-select-clear-on-empty-value" => "true" } %>
+      </div>
+      <div class="min-w-[10rem]">
+        <%= label_tag :from_date, t("sales.customer_invoices.filters.from_date"), class: label_class %>
+        <%= date_field_tag :from_date, @from_date, class: pos_input_class %>
+      </div>
+      <div class="min-w-[10rem]">
+        <%= label_tag :to_date, t("sales.customer_invoices.filters.to_date"), class: label_class %>
+        <%= date_field_tag :to_date, @to_date, class: pos_input_class %>
+      </div>
+      <%= submit_tag t("sales.customer_invoices.filters.apply"), name: nil,
+            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
+      <% if filter_params.any? %>
+        <%= link_to t("sales.customer_invoices.filters.clear"), admin_sales_customer_invoices_path(status: @status),
+              class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-2 py-2.5" %>
+      <% end %>
+    <% end %>
+  </section>
+
   <div class="flex flex-wrap items-center gap-2 text-sm mb-4">
     <span class="text-gray-500 me-1"><%= t("sales.customer_invoices.filter") %>:</span>
     <% [[nil, "all"], ["draft", "draft"], ["pending_payment_confirmation", "pending_payment_confirmation"],
         ["confirmed", "confirmed"], ["historical", "historical"], ["void", "void"]].each do |val, key| %>
       <%= link_to t("sales.customer_invoices.statuses.#{key}"),
-            admin_sales_customer_invoices_path(status: val),
+            admin_sales_customer_invoices_path(**filter_params, status: val),
             class: "px-3 py-1.5 rounded-lg font-medium border transition-colors #{@status == val ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" %>
     <% end %>
   </div>

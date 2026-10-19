@@ -11,6 +11,13 @@ module Admin
         @status = params[:status].presence_in(%w[draft pending_payment_confirmation confirmed historical void])
         scope = CustomerInvoice.recent.includes(:customer, :location)
         scope = scope.where(status: @status) if @status
+        @customer = Customer.find_by(id: params[:customer_id]) if params[:customer_id].present?
+        scope = scope.where(customer: @customer) if @customer
+        @from_date = parse_filter_date(params[:from_date])
+        @to_date = parse_filter_date(params[:to_date])
+        scope = scope.where(invoice_date: @from_date..) if @from_date
+        scope = scope.where(invoice_date: ..@to_date) if @to_date
+        @customers = Customer.order(:name)
         @pagy, @invoices = pagy(:offset, scope, limit: 50)
         @draft_count = CustomerInvoice.draft.count
         @pending_confirmation_count = CustomerInvoice.pending_payment_confirmation.count
@@ -166,6 +173,12 @@ module Admin
 
       def set_invoice
         @invoice = CustomerInvoice.find(params[:id])
+      end
+
+      def parse_filter_date(value)
+        Date.iso8601(value) if value.present?
+      rescue Date::Error
+        nil
       end
 
       def require_draft_for_edit

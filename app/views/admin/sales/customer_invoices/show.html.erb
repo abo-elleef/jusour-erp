@@ -9,14 +9,24 @@
         <h1 class="text-2xl font-bold tracking-tight text-gray-900 tabular-nums"><%= @invoice.invoice_number %></h1>
         <%= render "status_badge", invoice: @invoice %>
       </div>
+      <% header_link_class = "hover:text-gray-900 hover:underline" %>
+      <% seller = @invoice.salesperson || @invoice.user %>
       <p class="text-gray-600 text-sm mt-1">
-        <%= @invoice.customer.display_name %> · <%= l(@invoice.invoice_date, format: :long) %> · <%= @invoice.location&.name %>
+        <%= link_to @invoice.customer.display_name, admin_customer_path(@invoice.customer), class: header_link_class %>
+        · <%= l(@invoice.invoice_date, format: :long) %>
+        <% if @invoice.location %>
+          · <%= link_to @invoice.location.name, admin_location_path(@invoice.location), class: header_link_class %>
+        <% end %>
       </p>
       <p class="text-gray-500 text-xs mt-0.5">
-        <%= t("sales.customer_invoices.show.salesperson") %>: <span class="font-medium text-gray-700"><%= @invoice.salesperson&.name || @invoice.user.name %></span>
+        <%= t("sales.customer_invoices.show.salesperson") %>:
+        <%= link_to seller.name, admin_user_path(seller), class: "font-medium text-gray-700 #{header_link_class}" %>
         <% if @invoice.delivery? %>
           · <%= t("sales.customer_invoices.show.shipping_company") %>:
-          <span class="font-medium text-gray-700"><%= @invoice.shipping_company&.name %></span>
+          <% if @invoice.shipping_company %>
+            <%= link_to @invoice.shipping_company.name, admin_sales_shipping_company_path(@invoice.shipping_company),
+                  class: "font-medium text-gray-700 #{header_link_class}" %>
+          <% end %>
           <% if @invoice.cash_on_delivery? %>
             — <%= @invoice.dispatched? ? t("sales.customer_invoices.show.dispatched_at", date: l(@invoice.dispatched_at, format: :long)) : t("sales.customer_invoices.show.not_dispatched") %>
           <% end %>

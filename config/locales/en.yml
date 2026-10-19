@@ -2338,6 +2338,12 @@ en:
   sales:
     customer_invoices:
       title: "Sales invoices"
+      filters:
+        all_customers: "All customers"
+        from_date: "From"
+        to_date: "To"
+        apply: "Apply"
+        clear: "Clear filters"
       description: "Credit sales to commercial customers."
       new_button: "New sale"
       new_title: "New sales invoice"
@@ -3666,6 +3672,8 @@ en:
       loyalty_balance: "Loyalty balance"
       lifetime_spend: "Lifetime spend"
       order_history: "Order history"
+      invoices: "Sales invoices"
+      view_all_invoices: "View all (%{count})"
       loyalty_activity: "Loyalty activity"
       no_orders: "No orders yet."
       no_loyalty: "No loyalty transactions yet."

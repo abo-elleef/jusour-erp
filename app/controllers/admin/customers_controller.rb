@@ -44,6 +44,11 @@ module Admin
     def show
       authorize @customer
       @orders = @customer.orders.order(created_at: :desc).limit(50)
+      if current_user.can?("customers:manage") && Current.company&.feature_enabled?(:ar_credit_sales)
+        invoices = @customer.customer_invoices
+        @invoices_count = invoices.count
+        @invoices = invoices.includes(:location).order(invoice_date: :desc, created_at: :desc).limit(20)
+      end
       @loyalty_transactions = @customer.loyalty_transactions.order(created_at: :desc).limit(20)
     end
 
