@@ -47,11 +47,10 @@ export default class extends Controller {
     })
 
     rows.forEach((row) => this.bodyTarget.appendChild(row))
-    this.renumber()
-    this.updateIndicators(th)
-
     this.activeKey = key
     this.direction = direction
+    this.renumber()
+    this.updateIndicators(th)
     this.writeStoredSort(key, direction)
   }
 

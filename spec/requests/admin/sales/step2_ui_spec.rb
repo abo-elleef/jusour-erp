@@ -59,6 +59,35 @@ RSpec.describe "Admin::Sales step-2 UI", type: :request do
       expect(response.body).to include(inv.invoice_number)
     end
 
+    it "lists every invoiced customer of any type, sorted and searchable, with a total over everyone" do
+      walk_in = create(:customer, company: company, name: "Dr Walk-in", customer_type: "regular", phone: "01000000001")
+      never_invoiced = create(:customer, company: company, name: "Nobody", customer_type: "regular")
+      [[customer, 20_000], [walk_in, 5_000]].each do |cust, price|
+        inv = CustomerInvoice.new(company: company, customer: cust, user: owner, location: location, invoice_date: Date.current)
+        inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 1, unit: ingredient.unit, unit_price_cents: price)
+        inv.save!
+        Sales::ConfirmCustomerInvoiceService.new(inv, owner).call
+      end
+      expect(walk_in.reload.ar_balance_cents).to be_positive
+
+      get admin_sales_customer_statements_path(locale: "en")
+      body = response.body
+      expect(body).to include("Dr Walk-in", "Clinic", "Regular")
+      expect(body).not_to include(never_invoiced.name)
+      expect(body.index("Clinic")).to be < body.index("Dr Walk-in") # default: biggest balance first
+      expect(body).to include(ApplicationController.helpers.format_money(customer.reload.ar_balance_cents + walk_in.ar_balance_cents))
+
+      get admin_sales_customer_statements_path(sort: "balance", dir: "asc", locale: "en")
+      expect(response.body.index("Dr Walk-in")).to be < response.body.index("Clinic")
+
+      get admin_sales_customer_statements_path(query: "0100000", locale: "en")
+      expect(response.body).to include("Dr Walk-in")
+      expect(response.body).not_to include(">Clinic<")
+
+      get admin_sales_customer_statements_path(sort: "bogus; DROP TABLE x", locale: "en")
+      expect(response).to have_http_status(:ok)
+    end
+
     it "records a customer-level payment by receipt voucher, oldest invoice first" do
       inv = CustomerInvoice.new(company: company, customer: customer, user: owner, location: location, invoice_date: Date.current)
       inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 5, unit: ingredient.unit, unit_price_cents: 20_000)

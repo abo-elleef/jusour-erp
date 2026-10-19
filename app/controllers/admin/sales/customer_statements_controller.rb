@@ -5,11 +5,38 @@ module Admin
     class CustomerStatementsController < BaseController
       before_action :set_customer, only: %i[show]
 
+      # Server-side sort keys → SQL. Balances live on each customer's AR treasury
+      # (a stored column), so the whole list sorts and pages in the database.
+      SORTS = {
+        "name" => "LOWER(customers.name)",
+        "customer_type" => "customers.customer_type",
+        "tier" => "LOWER(price_tiers.name)",
+        "balance" => "COALESCE(treasuries.balance_cents, 0)"
+      }.freeze
+      DEFAULT_SORT = "balance"
+
       def index
-        @customers = Customer.where(customer_type: "commercial").order(:name).to_a
-        # AR balance per customer (reads each ledger treasury).
-        @balances = @customers.index_with(&:ar_balance_cents)
-        @total_ar_cents = @balances.values.sum
+        @sort = SORTS.key?(params[:sort]) ? params[:sort] : DEFAULT_SORT
+        @direction = params[:dir] == "asc" ? "asc" : "desc"
+        @query = params[:query].to_s.strip
+
+        # Anyone who was ever invoiced, of any type — plus anyone still carrying a
+        # balance without an invoice (an opening balance), so no debt is hidden.
+        listed = Customer.left_joins(:ar_treasury)
+          .where(id: CustomerInvoice.select(:customer_id))
+          .or(Customer.left_joins(:ar_treasury).where.not(treasuries: { balance_cents: 0 }))
+        @total_ar_cents = listed.sum("COALESCE(treasuries.balance_cents, 0)")
+
+        scope = listed.left_joins(:price_tier).includes(:ar_treasury, :price_tier)
+        if @query.present?
+          term = "%#{Customer.sanitize_sql_like(@query)}%"
+          scope = scope.where(
+            "customers.name ILIKE :t OR customers.phone ILIKE :t OR customers.phone_secondary ILIKE :t " \
+            "OR customers.legacy_code ILIKE :t", t: term
+          )
+        end
+        order = Arel.sql("#{SORTS.fetch(@sort)} #{@direction.upcase} NULLS LAST, customers.id ASC")
+        @pagy, @customers = pagy(:offset, scope.order(order), limit: 50)
       end
 
       def show

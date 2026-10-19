@@ -1,4 +1,6 @@
 <% content_for :title, t("sales.statements.title") %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% sort_opts = { sort: @sort, direction: @direction } %>
 
 <div class="max-w-7xl">
   <div class="mb-6">
@@ -6,41 +8,72 @@
     <p class="text-gray-600 text-sm mt-1"><%= t("sales.statements.description") %></p>
   </div>
 
-  <div class="bg-white rounded-2xl border border-gray-200 p-4 mb-6 inline-block min-w-[14rem]">
-    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.statements.total_ar") %></p>
-    <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= format_money(@total_ar_cents) %></p>
+  <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
+    <div class="bg-white rounded-2xl border border-gray-200 p-4 min-w-[14rem]">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.statements.total_ar") %></p>
+      <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= format_money(@total_ar_cents) %></p>
+    </div>
+
+    <%= form_with url: admin_sales_customer_statements_path, method: :get, class: "flex flex-wrap items-end gap-3" do %>
+      <%= hidden_field_tag :sort, @sort %>
+      <%= hidden_field_tag :dir, @direction %>
+      <div class="min-w-[16rem]">
+        <%= label_tag :query, t("sales.statements.search_label"), class: label_class %>
+        <%= search_field_tag :query, @query, placeholder: t("sales.statements.search_placeholder"), class: pos_input_class %>
+      </div>
+      <%= submit_tag t("sales.statements.search"), name: nil,
+            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
+      <% if @query.present? %>
+        <%= link_to t("sales.statements.clear_search"), admin_sales_customer_statements_path(sort: @sort, dir: @direction),
+              class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-2 py-2.5" %>
+      <% end %>
+    <% end %>
   </div>
 
   <% if @customers.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <table class="w-full text-left text-sm">
-        <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          <tr>
-            <th class="p-3 ps-5"><%= t("sales.statements.table.customer") %></th>
-            <th class="p-3"><%= t("sales.statements.table.tier") %></th>
-            <th class="p-3 text-end pe-5"><%= t("sales.statements.table.balance") %></th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <% @customers.each do |customer| %>
-            <tr class="hover:bg-gray-100 transition-colors">
-              <td class="p-3 ps-5">
-                <%= link_to customer.display_name, admin_sales_customer_statement_path(customer),
-                      class: "font-semibold text-amber-700 hover:text-amber-800" %>
-              </td>
-              <td class="p-3 text-gray-600"><%= customer.price_tier&.name || t("customers.form.no_tier") %></td>
-              <td class="p-3 text-end pe-5 tabular-nums font-semibold <%= @balances[customer].positive? ? 'text-amber-700' : 'text-gray-400' %>">
-                <%= format_money(@balances[customer]) %>
-              </td>
+      <div class="overflow-x-auto">
+        <table class="w-full text-start text-sm">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= sort_header_link(t("sales.statements.table.customer"), :name, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("sales.statements.table.customer_type"), :customer_type, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("sales.statements.table.tier"), :tier, **sort_opts) %></th>
+              <th class="p-3 text-end pe-5"><%= sort_header_link(t("sales.statements.table.balance"), :balance, **sort_opts) %></th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @customers.each do |customer| %>
+              <% balance = customer.ar_balance_cents %>
+              <tr class="hover:bg-gray-100 transition-colors">
+                <td class="p-3 ps-5">
+                  <%= link_to customer.display_name, admin_sales_customer_statement_path(customer),
+                        class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                </td>
+                <td class="p-3">
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded-lg border <%= customer.commercial? ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-gray-50 text-gray-700 border-gray-200' %>">
+                    <%= t("customers.form.types.#{customer.customer_type}") %>
+                  </span>
+                </td>
+                <td class="p-3 text-gray-600"><%= customer.price_tier&.name || t("customers.form.no_tier") %></td>
+                <td class="p-3 text-end pe-5 tabular-nums font-semibold <%= balance.positive? ? 'text-amber-700' : 'text-gray-400' %>">
+                  <%= format_money(balance) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
     </section>
+    <%= render "admin/accounting/pagination", pagy: @pagy %>
   <% else %>
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
-      <p class="text-gray-900 font-semibold mb-1"><%= t("sales.statements.empty_title") %></p>
-      <p class="text-gray-500 text-sm"><%= t("sales.statements.empty_hint") %></p>
+      <% if @query.present? %>
+        <p class="text-gray-900 font-semibold mb-1"><%= t("sales.statements.no_matches", query: @query) %></p>
+      <% else %>
+        <p class="text-gray-900 font-semibold mb-1"><%= t("sales.statements.empty_title") %></p>
+        <p class="text-gray-500 text-sm"><%= t("sales.statements.empty_hint") %></p>
+      <% end %>
     </section>
   <% end %>
 </div>
