@@ -67,19 +67,40 @@
       <p class="text-xs text-gray-500 mt-1"><%= t("accounting.vouchers.settles_hint") %></p>
     </div>
 
-    <% if @outstanding.any? %>
+    <% if @outstanding.any? || @outstanding_invoices.any? || @selected_settles == Admin::Accounting::VouchersController::OLDEST_FIRST %>
       <div>
         <label for="settles" class="block text-xs font-semibold text-gray-600 mb-1.5">
-          <%= receipt ? t("accounting.vouchers.uncollected_income") : t("accounting.vouchers.unpaid_expense") %>
+          <%= t("accounting.vouchers.settles") %>
         </label>
         <select name="settles" id="settles" class="<%= pos_input_class %>">
           <option value=""><%= t("accounting.vouchers.on_account_option") %></option>
-          <% @outstanding.each do |record| %>
-            <option value="<%= record.class.name %>:<%= record.id %>">
-              <%= l(record.public_send(date_field), format: :short) %> —
-              <%= record.description %> —
-              <%= t("accounting.vouchers.outstanding_of", amount: format_amount(record.outstanding_cents)) %>
-            </option>
+          <% oldest_first = Admin::Accounting::VouchersController::OLDEST_FIRST %>
+          <option value="<%= oldest_first %>" <%= "selected" if @selected_settles == oldest_first %>>
+            <%= receipt ? t("accounting.vouchers.oldest_first_option_receipt") : t("accounting.vouchers.oldest_first_option_payment") %>
+          </option>
+          <% if @outstanding_invoices.any? %>
+            <optgroup label="<%= receipt ? t("accounting.vouchers.open_customer_invoices") : t("accounting.vouchers.open_vendor_invoices") %>">
+              <% @outstanding_invoices.each do |invoice| %>
+                <% value = "#{invoice.class.name}:#{invoice.id}" %>
+                <option value="<%= value %>" <%= "selected" if value == @selected_settles %>>
+                  <%= invoice.invoice_number %> —
+                  <%= receipt ? invoice.customer&.display_name : invoice.supplier&.name %> —
+                  <%= t("accounting.vouchers.outstanding_of", amount: format_amount(invoice.balance_due_cents)) %>
+                </option>
+              <% end %>
+            </optgroup>
+          <% end %>
+          <% if @outstanding.any? %>
+            <optgroup label="<%= receipt ? t("accounting.vouchers.uncollected_income") : t("accounting.vouchers.unpaid_expense") %>">
+              <% @outstanding.each do |record| %>
+                <% value = "#{record.class.name}:#{record.id}" %>
+                <option value="<%= value %>" <%= "selected" if value == @selected_settles %>>
+                  <%= l(record.public_send(date_field), format: :short) %> —
+                  <%= record.description %> —
+                  <%= t("accounting.vouchers.outstanding_of", amount: format_amount(record.outstanding_cents)) %>
+                </option>
+              <% end %>
+            </optgroup>
           <% end %>
         </select>
       </div>

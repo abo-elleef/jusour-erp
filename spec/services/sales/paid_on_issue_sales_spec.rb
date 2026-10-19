@@ -26,9 +26,10 @@ RSpec.describe "Sales paid on issue" do
 
   before { Current.company = company }
 
-  def sell!(method:, cents: 120_000, customer: doctor)
+  def sell!(method:, cents: 120_000, customer: doctor, sales_payment_method: nil)
     invoice = CustomerInvoice.new(company: company, customer: customer, user: user,
-      location: location, invoice_date: Date.current, payment_method: method)
+      location: location, invoice_date: Date.current, payment_method: method,
+      sales_payment_method: sales_payment_method)
     invoice.customer_invoice_lines.build(ingredient: ingredient, quantity: 1,
       unit: ingredient.unit, unit_price_cents: cents)
     invoice.save!
@@ -81,35 +82,39 @@ RSpec.describe "Sales paid on issue" do
     end
   end
 
-  describe "a wallet sale" do
-    let!(:mapping) do
-      PaymentMethodTreasury.create!(company: company, payment_method: "instapay", treasury: wallet)
+  # A wallet / InstaPay / bank transfer is an "online" sale: it names the
+  # company's Sales::PaymentMethod for that channel, waits for someone with
+  # sales:confirm_payments to approve it, and only then lands in that method's
+  # treasury.
+  describe "an online (wallet) sale" do
+    let!(:instapay) { Sales::PaymentMethod.create!(company: company, name: "InstaPay", treasury: wallet) }
+
+    def approve!(invoice)
+      Sales::ConfirmCustomerInvoiceService.new(invoice, user).call
+      invoice.reload
     end
 
-    it "lands in the treasury the company mapped for that wallet" do
-      sell!(method: "instapay")
+    it "waits for approval before any money moves" do
+      invoice = sell!(method: "online", sales_payment_method: instapay)
 
+      expect(invoice.status).to eq("pending_payment_confirmation")
+      expect(invoice.payment_status).to eq("unpaid")
+      expect(wallet.reload.balance_cents).to eq(0)
+    end
+
+    it "lands in the treasury the company mapped for that method once approved" do
+      invoice = approve!(sell!(method: "online", sales_payment_method: instapay))
+
+      expect(invoice).to be_confirmed
+      expect(invoice.payment_status).to eq("paid")
       expect(wallet.reload.balance_cents).to eq(120_000)
       expect(drawer.reload.balance_cents).to eq(0)
+      expect(doctor.reload.ar_balance_cents).to eq(0)
     end
 
-    it "is refused when the wallet has no treasury behind it" do
-      mapping.destroy
-
-      expect { sell!(method: "instapay") }
-        .to raise_error(Sales::ConfirmCustomerInvoiceService::Error)
-    end
-
-    it "rolls back completely when it is refused" do
-      mapping.destroy
-      expect {
-        begin
-          sell!(method: "instapay")
-        rescue Sales::ConfirmCustomerInvoiceService::Error
-          nil
-        end
-      }.not_to change(StockAdjustment, :count)
-      expect(CustomerInvoice.last).to be_draft
+    it "is refused when it does not say which payment method took the money" do
+      expect { sell!(method: "online") }.to raise_error(ActiveRecord::RecordInvalid)
+      expect(wallet.reload.balance_cents).to eq(0)
     end
   end
 

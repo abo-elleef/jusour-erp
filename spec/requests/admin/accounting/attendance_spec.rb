@@ -220,7 +220,9 @@ RSpec.describe "Admin::Accounting::Attendance", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["ok"]).to be(true)
       expect(response.parsed_body["html"]).to include(owner.name)
-      expect(response.parsed_body["html"]).to include(present.label)
+      # The popover shows the translated label for a seeded status, not the
+      # English text stored on the row.
+      expect(response.parsed_body["html"]).to include(ApplicationController.helpers.attendance_status_label(present))
     end
 
     it "refuses a sub-manager, who can reach the grid but not the audit trail" do

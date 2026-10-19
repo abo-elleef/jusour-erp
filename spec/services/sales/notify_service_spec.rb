@@ -27,7 +27,7 @@ RSpec.describe Sales::NotifyService do
     it "follows a company's own customized role permissions, not the built-in defaults" do
       custom_role = Role.create!(company: company, key: "custom_sales_rep", name: "Custom Sales Rep",
         permissions: %w[sales:confirm_payments])
-      user = create(:user, company: company, role: "custom_sales_rep")
+      user = create(:user, company: company, role: "custom", role_id: custom_role.id)
 
       expect(described_class.recipients_for("sales:confirm_payments")).to include(user)
       expect(custom_role).to be_present

@@ -51,14 +51,57 @@ RSpec.describe "Paying a supplier invoice", type: :request do
     expect(response.body).to include(admin_accounting_voucher_path(voucher))
   end
 
-  it "records the payment through the controller and marks the invoice paid" do
-    post record_payment_admin_inventory_vendor_invoice_path(invoice),
-         params: { treasury_id: treasury.id, payment_amount_dollars: "50.00",
-                   payment_date: Date.current.to_s }
+  def issue_voucher(amount:, settles: "VendorInvoice:#{invoice.id}", party: nil)
+    post admin_accounting_vouchers_path, params: {
+      voucher: { direction: Voucher::PAYMENT, treasury_id: treasury.id, amount_pounds: amount,
+                 voucher_date: Date.current.to_s, party_selection: party },
+      settles: settles
+    }
+  end
+
+  it "links the invoice page to a payment voucher instead of a payment form" do
+    get admin_inventory_vendor_invoice_path(invoice)
+
+    voucher_link = new_admin_accounting_voucher_path(direction: Voucher::PAYMENT, settles: "VendorInvoice:#{invoice.id}")
+    expect(response.body).to include(ERB::Util.html_escape(voucher_link))
+    expect(response.body).not_to include("record_payment")
+  end
+
+  it "no longer routes a payment through the invoice" do
+    expect { Rails.application.routes.recognize_path("/admin/inventory/vendor_invoices/#{invoice.id}/record_payment", method: :post) }
+      .to raise_error(ActionController::RoutingError)
+  end
+
+  it "opens the voucher with the invoice, its balance and its supplier filled in" do
+    get new_admin_accounting_voucher_path(direction: Voucher::PAYMENT, settles: "VendorInvoice:#{invoice.id}")
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to match(/<option value="VendorInvoice:#{invoice.id}" selected>/)
+    expect(response.body).to include('value="50.00"').or include('value="50.0"')
+  end
+
+  it "pays the invoice from the voucher form and marks it paid" do
+    issue_voucher(amount: "50.00")
 
     expect(invoice.reload.payment_status).to eq("paid")
     expect(invoice.payment_vouchers.count).to eq(1)
     expect(treasury.reload.balance_cents).to eq(95_000)
+    expect(supplier.ap_treasury.reload.balance_cents).to be_zero
+  end
+
+  it "refuses to settle more than the invoice still owes" do
+    expect { issue_voucher(amount: "60.00") }.not_to change { invoice.reload.amount_paid_cents }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(treasury.reload.balance_cents).to eq(100_000)
+  end
+
+  it "refuses a voucher whose party is a different supplier" do
+    other = Supplier.create!(name: "Other Farms", lead_time_days: 2, company: company)
+
+    expect { issue_voucher(amount: "50.00", party: "Supplier:#{other.id}") }
+      .not_to change { invoice.reload.amount_paid_cents }
+    expect(response).to have_http_status(:unprocessable_entity)
   end
 
   it "gives everything back when the payment is reversed" do

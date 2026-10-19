@@ -124,7 +124,6 @@ Rails.application.routes.draw do
       resources :customer_invoices, only: %i[index new create show edit update] do
         member do
           post :confirm
-          post :record_payment
           post :approve_payment
           post :reject_payment
           post :mark_dispatched
@@ -141,9 +140,7 @@ Rails.application.routes.draw do
       end
       resources :price_tiers, except: %i[show]
       resources :shipping_companies
-      resources :customer_statements, only: %i[index show] do
-        member { post :record_payment }
-      end
+      resources :customer_statements, only: %i[index show]
       resources :leads do
         member do
           post :convert
@@ -362,7 +359,6 @@ Rails.application.routes.draw do
       end
       resources :suppliers do
         member do
-          post :pay_supplier
           get :purchase_request
           get :count_sheet
         end
@@ -373,7 +369,6 @@ Rails.application.routes.draw do
           post :mark_historical
           delete :mark_historical, action: :unmark_historical
           post :receive
-          post :record_payment
           patch :void
           patch :attach_invoice_image
         end

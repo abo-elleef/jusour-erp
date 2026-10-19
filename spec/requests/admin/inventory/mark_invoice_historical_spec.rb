@@ -153,8 +153,10 @@ RSpec.describe "Mark invoice historical", type: :request do
       expect(inv.balance_due_cents).to eq(60_000)
       expect(inv.payable?).to be(true)
 
-      post record_payment_admin_inventory_vendor_invoice_path(inv), params: {
-        payment_amount_dollars: "600.00", treasury_id: treasury.id, payment_date: Date.current.to_s
+      post admin_accounting_vouchers_path, params: {
+        voucher: { direction: Voucher::PAYMENT, treasury_id: treasury.id, amount_pounds: "600.00",
+                   voucher_date: Date.current.to_s },
+        settles: "VendorInvoice:#{inv.id}"
       }
 
       expect(inv.reload.payment_status).to eq("paid")
@@ -166,11 +168,11 @@ RSpec.describe "Mark invoice historical", type: :request do
       expect(supplier.ap_treasury.reload.balance_cents).to be_zero
     end
 
-    it "still offers the payment form after the historical part is marked" do
+    it "still offers paying by voucher after the historical part is marked" do
       mark(inv, pounds: "400.00")
       get admin_inventory_vendor_invoice_path(inv, locale: "en")
 
-      expect(response.body).to include(I18n.t("inventory.vendor_invoices.record_payment_heading", locale: :en))
+      expect(response.body).to include(I18n.t("inventory.vendor_invoices.pay_by_voucher_heading", locale: :en))
     end
 
     it "lets more of the same invoice be marked historical later" do
@@ -190,8 +192,10 @@ RSpec.describe "Mark invoice historical", type: :request do
     end
 
     it "does not let a normal payment and a historical marking together exceed the invoice" do
-      post record_payment_admin_inventory_vendor_invoice_path(inv), params: {
-        payment_amount_dollars: "800.00", treasury_id: treasury.id, payment_date: Date.current.to_s
+      post admin_accounting_vouchers_path, params: {
+        voucher: { direction: Voucher::PAYMENT, treasury_id: treasury.id, amount_pounds: "800.00",
+                   voucher_date: Date.current.to_s },
+        settles: "VendorInvoice:#{inv.id}"
       }
       mark(inv, pounds: "400.00") # only 200.00 of room left on the invoice
 

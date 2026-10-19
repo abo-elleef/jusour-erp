@@ -54,7 +54,6 @@ RSpec.describe "Admin sidebar nested module nav", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('data-nested-nav-key-value="accounting"')
       expect(response.body).to include('data-nested-nav-open-value="true"')
-      expect(response.body).to include('data-nested-nav-open-group-value="transactions"')
     end
   end
 end

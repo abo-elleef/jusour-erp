@@ -6,7 +6,7 @@ module Admin
   module Inventory
     class VendorInvoicesController < BaseController
       before_action :set_vendor_invoice,
-        only: %i[show export edit update receive record_payment void attach_invoice_image
+        only: %i[show export edit update receive void attach_invoice_image
                  mark_historical unmark_historical]
 
       def index
@@ -189,29 +189,6 @@ module Admin
         build_line_items
         load_form_data
         render :edit, status: :unprocessable_entity
-      end
-
-      def record_payment
-        authorize_inventory!(:record_vendor_invoice_payment)
-        treasury = Treasury.find(params[:treasury_id])
-        payment_date = params[:payment_date].present? ? Date.parse(params[:payment_date]) : Date.current
-        amount_cents = (BigDecimal(params[:payment_amount_dollars].to_s.presence || "0") * 100).round
-
-        ::Accounting::RecordVendorInvoicePaymentService.new(
-          vendor_invoice: @vendor_invoice,
-          user: current_user,
-          treasury: treasury,
-          amount_cents: amount_cents,
-          payment_date: payment_date
-        ).call
-
-        notice_key = @vendor_invoice.reload.paid? ? "flash.vendor_invoice.paid" : "flash.vendor_invoice.payment_recorded"
-        redirect_to admin_inventory_vendor_invoice_path(@vendor_invoice), notice: t(notice_key)
-      rescue ::Accounting::RecordVendorInvoicePaymentService::Error,
-             ActiveRecord::RecordInvalid => e
-        prepare_show
-        flash.now[:alert] = e.message
-        render :show, status: :unprocessable_entity
       end
 
       # Settles this invoice against a payment that was recorded on the supplier's

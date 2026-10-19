@@ -59,15 +59,44 @@ RSpec.describe "Admin::Sales step-2 UI", type: :request do
       expect(response.body).to include(inv.invoice_number)
     end
 
-    it "records a customer-level payment" do
+    it "records a customer-level payment by receipt voucher, oldest invoice first" do
       inv = CustomerInvoice.new(company: company, customer: customer, user: owner, location: location, invoice_date: Date.current)
       inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 5, unit: ingredient.unit, unit_price_cents: 20_000)
       inv.save!
       Sales::ConfirmCustomerInvoiceService.new(inv, owner).call
       treasury = Treasury.create!(name: "Cash", treasury_type: "cash_drawer", balance_cents: 0, opening_balance_cents: 0, company: company)
 
-      post record_payment_admin_sales_customer_statement_path(customer), params: { amount: "500", treasury_id: treasury.id }
+      oldest_first = Admin::Accounting::VouchersController::OLDEST_FIRST
+      get admin_sales_customer_statement_path(customer)
+      link = new_admin_accounting_voucher_path(direction: Voucher::RECEIPT, party: "Customer:#{customer.id}", settles: oldest_first)
+      expect(response.body).to include(ERB::Util.html_escape(link))
+
+      post admin_accounting_vouchers_path, params: {
+        voucher: { direction: Voucher::RECEIPT, treasury_id: treasury.id, amount_pounds: "500",
+                   voucher_date: Date.current.to_s, party_selection: "Customer:#{customer.id}" },
+        settles: oldest_first
+      }
       expect(customer.reload.ar_balance_cents).to eq(50_000) # 100,000 - 50,000
+      expect(inv.reload.amount_paid_cents).to eq(50_000)
+      expect(treasury.reload.balance_cents).to eq(50_000)
+    end
+
+    it "keeps an overpayment on the customer's account" do
+      inv = CustomerInvoice.new(company: company, customer: customer, user: owner, location: location, invoice_date: Date.current)
+      inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 1, unit: ingredient.unit, unit_price_cents: 20_000)
+      inv.save!
+      Sales::ConfirmCustomerInvoiceService.new(inv, owner).call # AR 20,000
+      treasury = Treasury.create!(name: "Cash", treasury_type: "cash_drawer", balance_cents: 0, opening_balance_cents: 0, company: company)
+
+      post admin_accounting_vouchers_path, params: {
+        voucher: { direction: Voucher::RECEIPT, treasury_id: treasury.id, amount_pounds: "300",
+                   voucher_date: Date.current.to_s, party_selection: "Customer:#{customer.id}" },
+        settles: Admin::Accounting::VouchersController::OLDEST_FIRST
+      }
+
+      expect(inv.reload.payment_status).to eq("paid")
+      expect(customer.reload.ar_balance_cents).to eq(-10_000) # 20,000 owed, 30,000 paid
+      expect(Voucher.last.payment_allocations.map(&:settles)).to eq([inv, customer])
     end
   end
 

@@ -134,17 +134,29 @@ RSpec.describe "Admin::Sales::CustomerInvoices", type: :request do
     expect(response).to redirect_to(admin_sales_customer_invoice_path(inv))
   end
 
-  it "records a payment against a confirmed invoice" do
+  it "collects a confirmed invoice by receipt voucher, not from the invoice page" do
     inv = CustomerInvoice.new(company: company, customer: customer, user: owner, location: location, invoice_date: Date.current)
     inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 5, unit: ingredient.unit, unit_price_cents: 2_000)
     inv.save!
     Sales::ConfirmCustomerInvoiceService.new(inv, owner).call
     treasury = Treasury.create!(name: "Cash", treasury_type: "cash_drawer", balance_cents: 0, opening_balance_cents: 0, company: company)
 
-    post record_payment_admin_sales_customer_invoice_path(inv), params: { amount: "40", treasury_id: treasury.id }
+    get admin_sales_customer_invoice_path(inv)
+    expect(response.body).to include(
+      ERB::Util.html_escape(new_admin_accounting_voucher_path(direction: Voucher::RECEIPT, settles: "CustomerInvoice:#{inv.id}"))
+    )
+    expect(response.body).not_to include("record_payment")
+
+    post admin_accounting_vouchers_path, params: {
+      voucher: { direction: Voucher::RECEIPT, treasury_id: treasury.id, amount_pounds: "40",
+                 voucher_date: Date.current.to_s },
+      settles: "CustomerInvoice:#{inv.id}"
+    }
 
     expect(customer.reload.ar_balance_cents).to eq(6_000) # 10,000 - 4,000
     expect(treasury.reload.balance_cents).to eq(4_000)
+    expect(inv.reload.amount_paid_cents).to eq(4_000)
+    expect(inv.payment_status).to eq("partially_paid")
   end
 
   it "credits the sale to a chosen teammate (for their bonus)" do

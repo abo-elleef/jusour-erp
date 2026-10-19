@@ -582,6 +582,7 @@ ar:
       staff: "الموظفون والحضور"
       settings: "الإعدادات"
       apps: "التطبيقات"
+      sales: "المبيعات"
     keys:
       dashboard:
         view: "عرض لوحة التحكم"
@@ -633,6 +634,12 @@ ar:
         access: "الوصول للمطبخ"
       production:
         access: "الوصول للإنتاج"
+      leads:
+        view: "عرض العملاء المحتملين"
+        manage: "إدارة العملاء المحتملين"
+        reports: "تقارير العملاء المحتملين"
+      sales:
+        confirm_payments: "تأكيد المدفوعات الإلكترونية"
   settings:
     title: "إعدادات النظام"
     description: "الولاء والضرائب والمخزون وإعدادات المالك فقط."
@@ -1461,19 +1468,10 @@ ar:
         ap_credit_note_badge: "إشعار دائن"
         pay_supplier:
           title: "سداد للمورد"
-          hint: "أدخل المبلغ مرة واحدة. يُوزَّع على فواتير المورد المفتوحة من الأقدم للأحدث، فتظل حالة كل فاتورة صحيحة."
+          hint: "يُسدَّد للموردين بسند صرف. يُوزَّع المبلغ على فواتير المورد المفتوحة من الأقدم للأحدث، فتظل حالة كل فاتورة صحيحة."
           open_total_hint: "%{count} فاتورة مفتوحة — %{total} مستحقة"
-          allocation_heading: "كيف سيُوزَّع هذا المبلغ"
-          balance_due: "المتبقي"
-          will_settle: "ستُسدَّد"
-          will_partial: "سداد جزئي"
-          untouched: "بدون تغيير"
-          unallocated_warning: "المبلغ أكبر من إجمالي الفواتير المفتوحة. أنقصه بمقدار"
-          submit: "تسجيل السداد"
+          submit: "سداد بسند صرف"
           balance_without_invoices: "رصيد ذمم هذا المورد %{balance} ولا توجد فاتورة مفتوحة لتسويته. أصدر إشعارًا دائنًا أو صحّح الفاتورة المسبِّبة."
-          success:
-            one: "تم تسجيل السداد على فاتورة واحدة."
-            other: "تم تسجيل السداد على %{count} فاتورة (%{settled} سُدِّدت بالكامل)."
           errors:
             amount_zero: "يجب أن يكون المبلغ أكبر من صفر."
             treasury_required: "من فضلك اختر خزينة صحيحة."
@@ -1673,11 +1671,11 @@ ar:
       reverse_payment_confirm: "عكس هذه الدفعة بمبلغ %{amount} من %{treasury}؟ سيُعاد المبلغ إلى الخزينة وسيتم تحديث رصيد الفاتورة."
       void: "إلغاء الفاتورة"
       void_confirm: "التراجع عن هذه الفاتورة؟ سيتم عكس المدفوعات والمصروفات وحركات الخزينة. المخزون المستلم لن يُعكس."
-      record_payment_heading: "تسجيل الدفع"
-      record_payment_hint: "يمكن تطبيق عدة مدفوعات حتى تُسدَّد الفاتورة بالكامل. كل دفعة تنشئ مصروفاً."
+      pay_by_voucher_heading: "سداد هذه الفاتورة"
+      pay_by_voucher_hint: "تُسدَّد الفواتير بإصدار سند صرف. يُفتح السند وبه هذه الفاتورة والمبلغ المتبقي عليها."
+      pay_by_voucher_button: "سداد بسند صرف"
       payment_date: "تاريخ الدفع"
       pay_from_treasury: "الدفع من الخزينة"
-      record_payment_button: "تسجيل الدفع"
       form:
         invoice_details: "تفاصيل الفاتورة"
         invoice_details_hint: "المورد والرقم وتاريخ الاستلام"
@@ -2465,11 +2463,9 @@ ar:
         customer_balance: "رصيد العميل"
         record_payment: "تسجيل دفعة"
         record_payment_hint: "الدفعات تُسوّي أقدم فواتير العميل أولاً."
-        amount: "المبلغ"
-        treasury: "استُلمت في"
-        select_treasury: "اختر خزينة…"
-        payment_date: "تاريخ الدفعة"
-        record: "تسجيل الدفعة"
+        receive_by_voucher_heading: "تحصيل الدفعة"
+        receive_by_voucher_hint: "تُحصَّل الفواتير بإصدار سند قبض. يُفتح السند وبه هذه الفاتورة والمبلغ المتبقي عليها."
+        receive_by_voucher_button: "تحصيل بسند قبض"
       flash:
         saved: "تم حفظ المسودة."
         confirmed: "تم تأكيد البيع — رُفع الرصيد وخُصم المخزون."
@@ -2482,7 +2478,6 @@ ar:
         payment_proof_attached: "تم حفظ إثبات الدفع."
         payment_proof_required: "اختر صورة لرفعها."
         cannot_attach_payment_proof: "لا يمكن إرفاق صورة بفاتورة ملغاة."
-        payment_recorded: "تم تسجيل الدفعة."
         confirm_failed: "تعذّر تأكيد البيع: %{error}"
     leads:
       title: "العملاء المحتملون"
@@ -4651,6 +4646,10 @@ ar:
       settled_by: "سُدِّد بـ"
       not_settled_yet: "لم يُسدَّد بأي سند بعد."
       unpaid_expense: "مصروف غير مسدد"
+      oldest_first_option_payment: "فواتير المورد المفتوحة — الأقدم أولًا"
+      oldest_first_option_receipt: "فواتير العميل المفتوحة — الأقدم أولًا، والباقي تحت الحساب"
+      open_vendor_invoices: "فواتير موردين مفتوحة"
+      open_customer_invoices: "فواتير عملاء مفتوحة"
       uncollected_income: "إيراد غير محصَّل"
       on_account_option: "تحت الحساب — لا يسدد شيئًا"
       on_account: "تحت الحساب"
@@ -4695,6 +4694,11 @@ ar:
         invalid_amount: "يجب أن تكون قيمة السند أكبر من صفر."
         treasury_required: "الخزينة مطلوبة."
         over_allocated: "لا يمكن أن يسدد السند أكثر من قيمته."
+        invoice_not_payable: "لا يمكن تسوية هذه الفاتورة بهذا السند."
+        exceeds_invoice_balance: "المبلغ المسدد يتجاوز المتبقي على الفاتورة (%{amount})."
+        oldest_first_needs_party: "لتوزيع السند على الفواتير المفتوحة، اختر موردًا لسند الصرف أو عميلًا لسند القبض."
+        exceeds_open_invoices: "المبلغ أكبر من %{open_total} المتبقي على فواتير المورد المفتوحة."
+        invoice_party_mismatch: "يجب أن يكون طرف السند هو مورد الفاتورة أو عميلها."
         invalid_allocation: "يجب أن يكون كل بند في السند بمبلغ موجب."
     incomes:
       on_account_option: "على الحساب — غير محصَّل بعد"
@@ -5448,8 +5452,6 @@ ar:
       draft_saved: "تم حفظ المسودة. لم يُستلم شيء بعد."
       created: "تم تسجيل فاتورة المورد واستلام المخزون."
       updated: "تم تحديث فاتورة المورد وتعديل المخزون."
-      payment_recorded: "تم تسجيل الدفع."
-      paid: "تم سداد الفاتورة بالكامل."
       voided: "تم التراجع عن فاتورة المورد. عُكست المدفوعات والمصروفات وأرصدة الخزائن."
       already_void: "هذه الفاتورة ملغاة بالفعل."
       payment_reversed: "تم عكس الدفعة. تم إعادة الرصيد إلى الخزينة."

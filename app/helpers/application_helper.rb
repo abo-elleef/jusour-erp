@@ -950,13 +950,6 @@ module ApplicationHelper
     [label, badge_class]
   end
 
-  def vendor_invoice_balance_due_dollars(invoice)
-    cents = invoice.balance_due_cents
-    return nil if cents.zero?
-
-    (cents.to_d / 100).round(2)
-  end
-
   def vendor_invoice_line_unit_price_dollars(line)
     cents = line.unit_price_cents.to_i
     return nil if cents.zero? && line.new_record?

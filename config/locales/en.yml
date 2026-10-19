@@ -584,6 +584,7 @@ en:
       staff: "Staff & attendance"
       settings: "Settings"
       apps: "Apps"
+      sales: "Sales"
     keys:
       dashboard:
         view: "View dashboard"
@@ -635,6 +636,12 @@ en:
         access: "Kitchen (KDS) access"
       production:
         access: "Production access"
+      leads:
+        view: "View leads"
+        manage: "Manage leads"
+        reports: "Leads reports"
+      sales:
+        confirm_payments: "Confirm online payments"
   settings:
     title: "System settings"
     description: "Loyalty, tax rates, inventory, and owner-only configuration."
@@ -1461,19 +1468,10 @@ en:
         ap_credit_note_badge: "Credit note"
         pay_supplier:
           title: "Pay supplier"
-          hint: "Enter one amount. It is applied to this supplier's open invoices oldest first, so each invoice's status stays correct."
+          hint: "Suppliers are paid by payment voucher. The amount is applied to their open invoices oldest first, so each invoice's status stays correct."
           open_total_hint: "%{count} open invoices — %{total} outstanding"
-          allocation_heading: "How this payment will be applied"
-          balance_due: "Balance due"
-          will_settle: "Will be paid"
-          will_partial: "Partly paid"
-          untouched: "Untouched"
-          unallocated_warning: "This is more than the open invoices come to. Reduce it by"
-          submit: "Record payment"
+          submit: "Pay by voucher"
           balance_without_invoices: "This supplier's AP balance is %{balance} but has no open invoice to settle. Raise a credit note or correct the invoice that caused it."
-          success:
-            one: "Payment recorded against 1 invoice."
-            other: "Payment recorded across %{count} invoices (%{settled} fully paid)."
           errors:
             amount_zero: "Amount must be greater than zero."
             treasury_required: "Please select a valid treasury."
@@ -1673,11 +1671,11 @@ en:
       reverse_payment_confirm: "Reverse this payment of %{amount} from %{treasury}? The amount will be credited back to the treasury and the invoice balance updated."
       void: "Void invoice"
       void_confirm: "Undo this invoice? Payments, expenses, and treasury movements will be reversed. Stock already received will not be reversed."
-      record_payment_heading: "Record payment"
-      record_payment_hint: "Apply one or more payments until the invoice is fully paid. Each payment creates an expense."
+      pay_by_voucher_heading: "Pay this invoice"
+      pay_by_voucher_hint: "Invoices are paid by issuing a payment voucher. The voucher opens with this invoice and its balance due filled in."
+      pay_by_voucher_button: "Pay by voucher"
       payment_date: "Payment date"
       pay_from_treasury: "Pay from treasury"
-      record_payment_button: "Record payment"
       form:
         invoice_details: "Invoice details"
         invoice_details_hint: "Supplier, number, and receipt date"
@@ -2459,11 +2457,9 @@ en:
         customer_balance: "Customer balance"
         record_payment: "Record a payment"
         record_payment_hint: "Payments settle this customer's oldest invoices first."
-        amount: "Amount"
-        treasury: "Received into"
-        select_treasury: "Select a treasury…"
-        payment_date: "Payment date"
-        record: "Record payment"
+        receive_by_voucher_heading: "Collect payment"
+        receive_by_voucher_hint: "Invoices are collected by issuing a receipt voucher. The voucher opens with this invoice and its balance due filled in."
+        receive_by_voucher_button: "Receive by voucher"
       flash:
         saved: "Draft saved."
         confirmed: "Sale confirmed — balance raised and stock deducted."
@@ -2476,7 +2472,6 @@ en:
         payment_proof_attached: "Payment proof saved."
         payment_proof_required: "Choose a photo to upload."
         cannot_attach_payment_proof: "Cannot attach a photo to a voided invoice."
-        payment_recorded: "Payment recorded."
         confirm_failed: "Could not confirm the sale: %{error}"
     leads:
       title: "Leads"
@@ -4624,6 +4619,10 @@ en:
       settled_by: "Settled by"
       not_settled_yet: "No voucher has settled this yet."
       unpaid_expense: "Unpaid expense"
+      oldest_first_option_payment: "Supplier's open invoices — oldest first"
+      oldest_first_option_receipt: "Customer's open invoices — oldest first, the rest on account"
+      open_vendor_invoices: "Open supplier invoices"
+      open_customer_invoices: "Open customer invoices"
       uncollected_income: "Uncollected income"
       on_account_option: "On account — settles nothing"
       on_account: "On account"
@@ -4668,6 +4667,11 @@ en:
         invalid_amount: "Voucher amount must be positive."
         treasury_required: "A treasury is required."
         over_allocated: "A voucher cannot settle more than its own amount."
+        invoice_not_payable: "This invoice cannot be settled by this voucher."
+        exceeds_invoice_balance: "The amount settled exceeds the invoice balance due (%{amount})."
+        oldest_first_needs_party: "To spread a voucher across open invoices, pay a supplier or receive from a customer as its party."
+        exceeds_open_invoices: "This is more than the %{open_total} still open on the supplier's invoices."
+        invoice_party_mismatch: "The voucher's party must be the invoice's supplier or customer."
         invalid_allocation: "Every line on a voucher must be a positive amount."
     incomes:
       on_account_option: "On account — not collected yet"
@@ -5415,8 +5419,6 @@ en:
       draft_saved: "Draft saved. Nothing has been received yet."
       created: "Vendor invoice recorded and stock received."
       updated: "Vendor invoice updated and stock adjusted."
-      payment_recorded: "Payment recorded."
-      paid: "Invoice fully paid."
       voided: "Vendor invoice undone. Payments, expenses, and treasury balances were reversed."
       already_void: "This invoice is already voided."
       payment_reversed: "Payment reversed. Treasury balance has been credited back."

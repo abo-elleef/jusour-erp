@@ -31,32 +31,19 @@
     <% end %>
   </div>
 
-  <%# Record a payment %>
-  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
-    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-      <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.customer_invoices.show.record_payment") %></h2>
-      <p class="text-xs text-gray-500 mt-0.5"><%= t("sales.customer_invoices.show.record_payment_hint") %></p>
-    </div>
-    <%= form_with url: record_payment_admin_sales_customer_statement_path(@customer), method: :post,
-          class: "p-5 flex flex-wrap items-end gap-4" do %>
-      <div class="min-w-[10rem]">
-        <%= label_tag :amount, t("sales.customer_invoices.show.amount"), class: label_class %>
-        <%= number_field_tag :amount, nil, step: 0.01, min: 0, required: true, class: input_class, placeholder: "0.00" %>
+  <%# Payments are taken only by receipt voucher — oldest invoices first. %>
+  <% if policy(Voucher).create? %>
+    <section class="rounded-2xl border border-gray-200 bg-white mb-6 px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.customer_invoices.show.record_payment") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("sales.customer_invoices.show.record_payment_hint") %></p>
       </div>
-      <div class="min-w-[12rem]">
-        <%= label_tag :treasury_id, t("sales.customer_invoices.show.treasury"), class: label_class %>
-        <%= select_tag :treasury_id, options_from_collection_for_select(@treasuries, :id, :name),
-              include_blank: t("sales.customer_invoices.show.select_treasury"), required: true,
-              class: "#{input_class} appearance-none" %>
-      </div>
-      <div class="min-w-[10rem]">
-        <%= label_tag :payment_date, t("sales.customer_invoices.show.payment_date"), class: label_class %>
-        <%= date_field_tag :payment_date, Date.current, max: Date.current, class: input_class %>
-      </div>
-      <%= submit_tag t("sales.customer_invoices.show.record"),
+      <%= link_to t("sales.customer_invoices.show.receive_by_voucher_button"),
+            new_admin_accounting_voucher_path(direction: Voucher::RECEIPT, party: "Customer:#{@customer.id}",
+                                              settles: Admin::Accounting::VouchersController::OLDEST_FIRST),
             class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
-    <% end %>
-  </section>
+    </section>
+  <% end %>
 
   <%# Invoices %>
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">

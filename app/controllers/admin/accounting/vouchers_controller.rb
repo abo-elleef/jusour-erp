@@ -10,6 +10,9 @@ module Admin
     # is wrong the document is voided, which takes the cash back, and a new one
     # is issued with its own number.
     class VouchersController < BaseController
+      # `settles` value for "spread across the party's open invoices".
+      OLDEST_FIRST = "oldest_first"
+
       before_action :set_voucher, only: %i[show destroy]
 
       def index
@@ -50,6 +53,8 @@ module Admin
                                direction: requested_direction,
                                treasury: Treasury.default_treasury)
         authorize @voucher
+        prefill_from_invoice
+        prefill_from_party
         load_form_collections
       end
 
@@ -65,7 +70,7 @@ module Admin
           voucher_date: voucher_params[:voucher_date].presence || Date.current,
           counterparty: voucher_params[:counterparty],
           notes:        voucher_params[:notes],
-          allocations:  requested_allocations,
+          allocations:  requested_allocations.tap { |list| validate_invoice_allocations!(list) },
           party_type:   @voucher.party_type,
           party_id:     @voucher.party_id
         ).call
@@ -107,13 +112,18 @@ module Admin
         @voucher = Voucher.find(params[:id])
       end
 
+      # `direction` comes as a query param on new, and inside the form on a
+      # failed create that re-renders it.
       def requested_direction
-        Voucher::DIRECTIONS.include?(params[:direction]) ? params[:direction] : Voucher::PAYMENT
+        direction = params[:direction].presence || params.dig(:voucher, :direction)
+        Voucher::DIRECTIONS.include?(direction) ? direction : Voucher::PAYMENT
       end
 
       # What the voucher settles. One target for now — the table takes many, and
       # will when vouchers absorb supplier and customer payments.
       def requested_allocations
+        return oldest_first_allocations if params[:settles] == OLDEST_FIRST
+
         settles = find_settles_target
         return [] if settles.nil?
 
@@ -129,14 +139,126 @@ module Admin
         return nil if id.blank?
 
         case type
-        when "Expense" then Expense.find_by(id: id)
-        when "Income"  then Income.find_by(id: id)
+        when "Expense"         then Expense.find_by(id: id)
+        when "Income"          then Income.find_by(id: id)
+        when "VendorInvoice"   then VendorInvoice.find_by(id: id)
+        when "CustomerInvoice" then CustomerInvoice.find_by(id: id)
         end
+      end
+
+      # One amount spread across the party's open invoices, oldest first — what the
+      # supplier page's "pay supplier" and the customer statement's "record a
+      # payment" used to do, now as a single voucher. A customer may pay ahead:
+      # anything left over is allocated to the customer, on their own receivable.
+      # A supplier may not, so their AP balance always equals what the open
+      # invoices still owe.
+      def oldest_first_allocations
+        party = @voucher.party
+        direction = voucher_params[:direction]
+
+        invoices =
+          if party.is_a?(::Supplier) && direction == Voucher::PAYMENT
+            ::Accounting::PaySupplierService.open_invoices_for(party)
+          elsif party.is_a?(::Customer) && direction == Voucher::RECEIPT
+            open_customer_invoices(party)
+          else
+            raise ::Accounting::RecordVoucherService::Error, t("accounting.vouchers.errors.oldest_first_needs_party")
+          end
+
+        remaining = @voucher.amount_cents.to_i
+        open_total = invoices.sum(&:balance_due_cents)
+        if party.is_a?(::Supplier) && remaining > open_total
+          raise ::Accounting::RecordVoucherService::Error,
+                t("accounting.vouchers.errors.exceeds_open_invoices", open_total: helpers.format_amount(open_total))
+        end
+
+        allocations = invoices.each_with_object([]) do |invoice, list|
+          break list if remaining <= 0
+
+          applied = [remaining, invoice.balance_due_cents].min
+          remaining -= applied
+          list << { settles: invoice, amount_cents: applied }
+        end
+        allocations << { settles: party, amount_cents: remaining } if remaining.positive?
+        allocations
+      end
+
+      def open_customer_invoices(customer)
+        customer.customer_invoices.outstanding.on_account.order(:invoice_date, :created_at)
+                .select { |invoice| invoice.balance_due_cents.positive? }
+      end
+
+      # The supplier page and customer statement link in with
+      # `party=Supplier:<id>&settles=oldest_first`.
+      def prefill_from_party
+        return unless params[:settles] == OLDEST_FIRST && params[:party].present?
+
+        @voucher.party_selection = params[:party]
+        party = @voucher.party
+        invoices = case party
+                   when ::Supplier then ::Accounting::PaySupplierService.open_invoices_for(party)
+                   when ::Customer then open_customer_invoices(party)
+                   else return
+                   end
+        @selected_settles = OLDEST_FIRST
+        @voucher.amount_cents = invoices.sum(&:balance_due_cents)
+        @voucher.counterparty = party.is_a?(::Supplier) ? party.name : party.display_name
+      end
+
+      # Invoices are paid from here and nowhere else, so the invoice page links in
+      # with `settles=VendorInvoice:<id>` (or CustomerInvoice). Start the voucher
+      # off with what's left on it and the party it's owed to or by.
+      def prefill_from_invoice
+        invoice = find_settles_target
+        return unless invoice.is_a?(::VendorInvoice) || invoice.is_a?(::CustomerInvoice)
+
+        party = invoice_party(invoice)
+        @selected_settles = params[:settles]
+        @voucher.amount_cents = [invoice.balance_due_cents, 0].max
+        @voucher.party_type = party.class.name
+        @voucher.party_id = party.id
+        @voucher.counterparty = invoice.is_a?(::VendorInvoice) ? party.name : party.display_name
+      end
+
+      def invoice_party(invoice)
+        invoice.is_a?(::VendorInvoice) ? invoice.supplier : invoice.customer
+      end
+
+      # RecordVoucherService trusts what it settles; an invoice has a balance and a
+      # direction of its own, so check them here before any money moves.
+      def validate_invoice_allocations!(allocations)
+        allocations.each do |allocation|
+          invoice = allocation[:settles]
+          next unless invoice.is_a?(::VendorInvoice) || invoice.is_a?(::CustomerInvoice)
+
+          expected_direction = invoice.is_a?(::VendorInvoice) ? Voucher::PAYMENT : Voucher::RECEIPT
+          open = invoice.is_a?(::VendorInvoice) ? invoice.payable? : payable_customer_invoice?(invoice)
+
+          if voucher_params[:direction] != expected_direction || !open
+            raise ::Accounting::RecordVoucherService::Error, t("accounting.vouchers.errors.invoice_not_payable")
+          end
+          if allocation[:amount_cents] > invoice.balance_due_cents
+            raise ::Accounting::RecordVoucherService::Error, t("accounting.vouchers.errors.exceeds_invoice_balance",
+                                                               amount: helpers.format_amount(invoice.balance_due_cents))
+          end
+          if @voucher.party.present? && @voucher.party != invoice_party(invoice)
+            raise ::Accounting::RecordVoucherService::Error, t("accounting.vouchers.errors.invoice_party_mismatch")
+          end
+        end
+      end
+
+      # Paid-on-issue invoices settle through their own payment method (cash at
+      # confirm, courier remittance, online approval) — only on-account ones are
+      # collected by voucher.
+      def payable_customer_invoice?(invoice)
+        invoice.confirmed? && invoice.on_account? && invoice.balance_due_cents.positive?
       end
 
       def load_form_collections
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
         @outstanding = outstanding_targets
+        @outstanding_invoices = outstanding_invoices
+        @selected_settles ||= params[:settles]
         @party_options = ::Accounting::PartyOptions.for_select
       end
 
@@ -150,6 +272,17 @@ module Admin
           .includes(:payment_allocations)
           .reject { |record| record.outstanding_cents <= 0 }
           .sort_by { |record| record.public_send(requested_direction == Voucher::RECEIPT ? :income_date : :expense_date) }
+      end
+
+      # Open invoices this voucher can pay (supplier) or collect (customer).
+      def outstanding_invoices
+        if requested_direction == Voucher::RECEIPT
+          CustomerInvoice.outstanding.on_account.includes(:customer).order(:invoice_date, :created_at)
+                         .select { |invoice| invoice.balance_due_cents.positive? }
+        else
+          VendorInvoice.posted.outstanding.includes(:supplier).order(:invoice_date, :created_at)
+                       .select(&:payable?)
+        end
       end
 
       def voucher_params

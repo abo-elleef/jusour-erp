@@ -3,7 +3,7 @@
 module Admin
   module Sales
     class CustomerInvoicesController < BaseController
-      before_action :set_invoice, only: %i[show edit update confirm record_payment approve_payment reject_payment mark_dispatched void attach_payment_proof_image]
+      before_action :set_invoice, only: %i[show edit update confirm approve_payment reject_payment mark_dispatched void attach_payment_proof_image]
       before_action :require_draft_for_edit, only: %i[edit update]
       before_action :require_confirm_payments_access, only: %i[approve_payment reject_payment]
 
@@ -65,9 +65,7 @@ module Admin
         end
       end
 
-      def show
-        @treasuries = Treasury.active.payable.visible_to(current_user).ordered
-      end
+      def show; end
 
       def confirm
         confirm_now
@@ -141,22 +139,6 @@ module Admin
           notice: t("sales.customer_invoices.flash.payment_proof_attached")
       end
 
-      def record_payment
-        treasury = Treasury.active.payable.visible_to(current_user).find_by(id: params[:treasury_id])
-        amount_cents = (params[:amount].to_f * 100).round
-
-        ::Sales::RecordCustomerPaymentService.new(
-          customer: @invoice.customer, treasury: treasury, amount_cents: amount_cents,
-          user: current_user, payment_date: parse_date(params[:payment_date]) || Date.current,
-          notes: params[:notes].presence
-        ).call
-
-        redirect_to admin_sales_customer_invoice_path(@invoice),
-          notice: t("sales.customer_invoices.flash.payment_recorded")
-      rescue ::Sales::RecordCustomerPaymentService::Error => e
-        redirect_to admin_sales_customer_invoice_path(@invoice), alert: e.message
-      end
-
       private
 
       def confirm_now
@@ -214,14 +196,6 @@ module Admin
 
       def default_location
         Location.active.ordered.first
-      end
-
-      def parse_date(raw)
-        return if raw.blank?
-
-        Date.parse(raw.to_s)
-      rescue ArgumentError
-        nil
       end
 
       def invoice_params

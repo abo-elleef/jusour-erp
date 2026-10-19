@@ -215,84 +215,23 @@
     </section>
   <% end %>
 
-  <%# Paying a supplier means paying their invoices. There is deliberately no
-      way to move an AP balance on its own any more: the old direct payment did
-      exactly that and left the invoice list claiming 868,924.29 that had in
-      fact been paid. The money is split oldest-invoice-first. %>
-  <% if @payable_invoices.any? && InventoryPolicy.new(current_user, @supplier).update? %>
-    <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mb-6"
-             data-controller="supplier-payment"
-             data-supplier-payment-settled-label-value="<%= t("inventory.suppliers.show.pay_supplier.will_settle") %>"
-             data-supplier-payment-partial-label-value="<%= t("inventory.suppliers.show.pay_supplier.will_partial") %>"
-             data-supplier-payment-untouched-label-value="<%= t("inventory.suppliers.show.pay_supplier.untouched") %>">
-      <div class="px-5 py-4 border-b border-amber-100">
+  <%# Paying a supplier means paying their invoices, and payments are made only
+      by voucher. The voucher spreads the amount across the open invoices
+      oldest first, so the AP balance never drifts from what they still owe. %>
+  <% if @payable_invoices.any? && policy(Voucher).create? %>
+    <section class="rounded-2xl border border-amber-200 bg-amber-50/40 mb-6 px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
         <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.suppliers.show.pay_supplier.title") %></h2>
         <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.suppliers.show.pay_supplier.hint") %></p>
+        <p class="text-xs text-gray-500 mt-1">
+          <%= t("inventory.suppliers.show.pay_supplier.open_total_hint",
+                total: format_money(@payable_total_cents), count: @payable_invoices.size) %>
+        </p>
       </div>
-
-      <%= form_with url: pay_supplier_admin_inventory_supplier_path(@supplier), method: :post,
-            class: "px-5 py-4" do %>
-        <div class="grid sm:grid-cols-3 gap-4 items-start">
-          <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.amount") %></label>
-            <%= number_field_tag :amount_pounds, nil, step: "0.01", min: "0.01",
-                  max: (@payable_total_cents / 100.0).round(2),
-                  placeholder: format("%g", @payable_total_cents / 100.0),
-                  class: pos_input_class, required: true,
-                  data: { supplier_payment_target: "amount", action: "input->supplier-payment#allocate" } %>
-            <p class="text-xs text-gray-500 mt-1">
-              <%= t("inventory.suppliers.show.pay_supplier.open_total_hint",
-                    total: format_money(@payable_total_cents), count: @payable_invoices.size) %>
-            </p>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.treasury") %></label>
-            <% payable_treasuries = Treasury.active.payable.visible_to(current_user).ordered %>
-            <%= select_tag :treasury_id,
-                  options_from_collection_for_select(payable_treasuries, :id, :name, Treasury.default_treasury&.id),
-                  class: pos_input_class, required: true %>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.shared.day") %></label>
-            <%= date_field_tag :payment_date, Date.current, class: pos_input_class %>
-          </div>
-        </div>
-
-        <%# The split, live, before anything is committed. %>
-        <div class="mt-4 rounded-xl border border-amber-200 bg-white overflow-hidden">
-          <p class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase bg-gray-50/80 border-b border-gray-100">
-            <%= t("inventory.suppliers.show.pay_supplier.allocation_heading") %>
-          </p>
-          <ul class="divide-y divide-gray-100">
-            <% @payable_invoices.each do |invoice| %>
-              <li class="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm transition-opacity"
-                  data-supplier-payment-target="row" data-due-cents="<%= invoice.balance_due_cents %>">
-                <%= link_to invoice.invoice_number, admin_inventory_vendor_invoice_path(invoice),
-                      class: "font-semibold text-amber-700 hover:text-amber-800" %>
-                <span class="text-xs text-gray-500"><%= l(invoice.invoice_date.to_date, format: :long) %></span>
-                <span class="text-xs text-gray-500 ms-auto">
-                  <%= t("inventory.suppliers.show.pay_supplier.balance_due") %>
-                  <span class="tabular-nums font-medium text-gray-700"><%= format_amount(invoice.balance_due_cents) %></span>
-                </span>
-                <span class="tabular-nums font-semibold text-gray-900 w-28 text-end" data-supplier-payment-target="allocated">0.00</span>
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full border border-gray-200 text-gray-400"
-                      data-supplier-payment-target="state"><%= t("inventory.suppliers.show.pay_supplier.untouched") %></span>
-              </li>
-            <% end %>
-          </ul>
-          <div class="hidden px-4 py-2.5 bg-red-50 border-t border-red-200 text-sm text-red-800"
-               data-supplier-payment-target="unallocatedWrap">
-            <%= t("inventory.suppliers.show.pay_supplier.unallocated_warning") %>
-            <span class="tabular-nums font-bold" data-supplier-payment-target="unallocated">0.00</span>
-          </div>
-        </div>
-
-        <div class="mt-4">
-          <%= submit_tag t("inventory.suppliers.show.pay_supplier.submit"),
-                class: "bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl text-sm font-semibold",
-                data: { supplier_payment_target: "submit" } %>
-        </div>
-      <% end %>
+      <%= link_to t("inventory.suppliers.show.pay_supplier.submit"),
+            new_admin_accounting_voucher_path(direction: Voucher::PAYMENT, party: "Supplier:#{@supplier.id}",
+                                              settles: Admin::Accounting::VouchersController::OLDEST_FIRST),
+            class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold" %>
     </section>
   <% elsif @supplier.ap_balance_cents != 0 && InventoryPolicy.new(current_user, @supplier).update? %>
     <%# A balance with nothing open to pay it against. Always a data problem —

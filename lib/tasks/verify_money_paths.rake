@@ -184,6 +184,19 @@ class MoneyPathChecker
 
     Accounting::ReverseVendorInvoicePaymentService.new(payment: voucher, user: owner).call
     check "vendor invoice — payment reversed"
+
+    # What the voucher form issues for "Pay by voucher" / the supplier page: the
+    # supplier as the voucher's party, settling their invoices oldest first.
+    voucher = Accounting::RecordVoucherService.new(
+      direction: Voucher::PAYMENT, treasury: safe, user: owner, amount_cents: 3_000,
+      voucher_date: Date.current, counterparty: supplier.name, company: @company,
+      party_type: "Supplier", party_id: supplier.id,
+      allocations: [{ settles: invoice.reload, amount_cents: 3_000 }]
+    ).call
+    check "vendor invoice — voucher with supplier as party"
+
+    voucher.void!(user: owner, reason: :voided_by_user)
+    check "vendor invoice — party voucher voided"
   end
 
   def customer_flow!
@@ -214,6 +227,25 @@ class MoneyPathChecker
     Sales::RecordCustomerPaymentService.new(customer: customer, treasury: safe,
                                             amount_cents: 1_000, user: owner).call
     check "customer payment — on account"
+
+    # What the voucher form issues for the customer statement's "Receive by
+    # voucher": the customer as the voucher's party, an invoice line and the
+    # overpayment left on their own account.
+    second = CustomerInvoice.new(company: @company, customer: customer, user: owner,
+                                 location: location, invoice_date: Date.current)
+    second.customer_invoice_lines.build(ingredient: ingredient, quantity: 1,
+                                        unit: ingredient.unit, unit_price_cents: 4_000)
+    second.save!
+    Sales::ConfirmCustomerInvoiceService.new(second, owner).call
+    check "customer invoice — second confirmed on account"
+
+    Accounting::RecordVoucherService.new(
+      direction: Voucher::RECEIPT, treasury: safe, user: owner, amount_cents: 5_000,
+      voucher_date: Date.current, counterparty: customer.display_name, company: @company,
+      party_type: "Customer", party_id: customer.id,
+      allocations: [{ settles: second.reload, amount_cents: 4_000 }, { settles: customer, amount_cents: 1_000 }]
+    ).call
+    check "customer payment — voucher with customer as party, rest on account"
   end
 
   def payroll_advance!

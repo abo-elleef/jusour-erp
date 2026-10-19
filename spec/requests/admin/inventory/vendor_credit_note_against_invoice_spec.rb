@@ -60,8 +60,11 @@ RSpec.describe "Vendor credit note applied to an invoice", type: :request do
     expect(ap_treasury.reload.balance_cents).to eq(9_000)
 
     # Paying the remaining balance closes the invoice and lands the AP at zero.
-    post record_payment_admin_inventory_vendor_invoice_path(invoice),
-      params: { treasury_id: treasury.id, payment_amount_dollars: "90.00" }
+    post admin_accounting_vouchers_path, params: {
+      voucher: { direction: Voucher::PAYMENT, treasury_id: treasury.id, amount_pounds: "90.00",
+                 voucher_date: Date.current.to_s },
+      settles: "VendorInvoice:#{invoice.id}"
+    }
 
     invoice.reload
     expect(invoice).to be_paid
@@ -74,8 +77,11 @@ RSpec.describe "Vendor credit note applied to an invoice", type: :request do
     post confirm_admin_inventory_vendor_credit_note_path(credit_note)
 
     expect {
-      post record_payment_admin_inventory_vendor_invoice_path(invoice),
-        params: { treasury_id: treasury.id, payment_amount_dollars: "100.00" }
+      post admin_accounting_vouchers_path, params: {
+        voucher: { direction: Voucher::PAYMENT, treasury_id: treasury.id, amount_pounds: "100.00",
+                   voucher_date: Date.current.to_s },
+        settles: "VendorInvoice:#{invoice.id}"
+      }
     }.not_to change { invoice.reload.amount_paid_cents }
 
     expect(response).to have_http_status(:unprocessable_entity)

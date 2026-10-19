@@ -29,9 +29,16 @@ module Sales
     # permission key. Relies on Current.company already being set (same
     # assumption the existing NotifyServices make) — Role/User are both
     # Tenantable, so this is already scoped to it.
+    #
+    # Resolves roles the way User#effective_role does: by the assigned role_id
+    # first, and by the role string only for users with no role_id. Matching on
+    # the string alone missed every user on a custom role, whose string is just
+    # "custom".
     def self.recipients_for(permission_key)
-      role_keys = Role.where("permissions @> ?", [permission_key].to_json).pluck(:key)
-      User.where(role: role_keys, active: true)
+      roles = Role.where("permissions @> ?", [permission_key].to_json)
+      by_assigned = User.where(role_id: roles.select(:id))
+      by_key      = User.where(role_id: nil, role: roles.select(:key))
+      by_assigned.or(by_key).where(active: true)
     end
   end
 end
