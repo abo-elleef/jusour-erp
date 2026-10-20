@@ -85,7 +85,7 @@ class PosController < ApplicationController
       return
     end
 
-    session[:pos_workstation_id] = workstation.id
+    remember_pos_workstation!(workstation)
     sync_draft_order_workstation!(workstation)
     redirect_to pos_path, notice: t("flash.pos.workstation_changed", name: workstation.name), status: :see_other
   end

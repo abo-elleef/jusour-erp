@@ -9,6 +9,11 @@ module PosLocationScoped
   # a branch actually set. Deliberately out of the session cookie, which is already
   # close to its size limit.
   POS_LOCATION_COOKIE = :pos_location_id
+  # The till this device is. Same reasoning as the branch: a register is one till,
+  # whoever signs in at it. Written only when a cashier picks a till, never when one
+  # is auto-selected, so a branch gaining a second till does not leave every device
+  # pinned to the first.
+  POS_WORKSTATION_COOKIE = :pos_workstation_id
 
   included do
     before_action :load_pos_locations
@@ -30,9 +35,11 @@ module PosLocationScoped
                         else
                           Workstation.none
                         end
-    @pos_workstation = current_pos_workstation
+    @pos_workstation = current_pos_workstation || device_pos_workstation
 
-    if @pos_workstation.blank? && @pos_workstations.size == 1
+    if @pos_workstation.present? && session[:pos_workstation_id].blank?
+      session[:pos_workstation_id] = @pos_workstation.id
+    elsif @pos_workstation.blank? && @pos_workstations.size == 1
       session[:pos_workstation_id] = @pos_workstations.first.id
       @pos_workstation = @pos_workstations.first
     elsif @pos_workstation.present? && @pos_location.present? && @pos_workstation.location_id != @pos_location.id
@@ -80,6 +87,20 @@ module PosLocationScoped
 
     session[:pos_location_id] = location.id
     cookies.permanent.signed[POS_LOCATION_COOKIE] = location.id
+  end
+
+  # Only a till in the branch now selected: a device moved to another branch falls
+  # back to that branch's picker rather than a till it cannot ring on.
+  def device_pos_workstation
+    id = cookies.signed[POS_WORKSTATION_COOKIE]
+    return if id.blank?
+
+    @pos_workstations.find { |ws| ws.id == id }
+  end
+
+  def remember_pos_workstation!(workstation)
+    session[:pos_workstation_id] = workstation.id
+    cookies.permanent.signed[POS_WORKSTATION_COOKIE] = workstation.id
   end
 
   def current_pos_workstation
