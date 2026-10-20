@@ -39,6 +39,7 @@
               <th class="p-3 ps-5 text-start"><%= sort_header_link(t("sales.statements.table.customer"), :name, **sort_opts) %></th>
               <th class="p-3 text-start"><%= sort_header_link(t("sales.statements.table.customer_type"), :customer_type, **sort_opts) %></th>
               <th class="p-3 text-start"><%= sort_header_link(t("sales.statements.table.tier"), :tier, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("sales.statements.table.last_invoice"), :last_invoice, **sort_opts) %></th>
               <th class="p-3 text-end pe-5"><%= sort_header_link(t("sales.statements.table.balance"), :balance, **sort_opts) %></th>
             </tr>
           </thead>
@@ -49,6 +50,13 @@
                 <td class="p-3 ps-5">
                   <%= link_to customer.display_name, admin_sales_customer_statement_path(customer),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>
+                  <%# The search also matches these, so show them: otherwise a row
+                      found by phone or old code looks like a wrong match. %>
+                  <% hints = [customer.phone, customer.phone_secondary].compact_blank %>
+                  <% hints << "#{t('customers.show.legacy_code')}: #{customer.legacy_code}" if customer.legacy_code.present? %>
+                  <% if hints.any? %>
+                    <span class="block text-xs text-gray-500 tabular-nums mt-0.5"><%= hints.join(" · ") %></span>
+                  <% end %>
                 </td>
                 <td class="p-3">
                   <span class="text-xs font-semibold px-2 py-0.5 rounded-lg border <%= customer.commercial? ? 'bg-blue-50 text-blue-800 border-blue-200' : 'bg-gray-50 text-gray-700 border-gray-200' %>">
@@ -56,8 +64,24 @@
                   </span>
                 </td>
                 <td class="p-3 text-gray-600"><%= customer.price_tier&.name || t("customers.form.no_tier") %></td>
+                <td class="p-3 text-gray-600 whitespace-nowrap">
+                  <%= customer.last_invoice_date ? l(customer.last_invoice_date, format: :long) : t("sales.shared.em_dash") %>
+                </td>
                 <td class="p-3 text-end pe-5 tabular-nums font-semibold <%= balance.positive? ? 'text-amber-700' : 'text-gray-400' %>">
                   <%= format_money(balance) %>
+                  <%# Same rule that blocks / flags a sale at confirmation. %>
+                  <% case customer.credit_status_for(balance) %>
+                  <% when :blocked %>
+                    <span class="block text-xs font-semibold text-red-700 mt-0.5"
+                          title="<%= t("sales.statements.limit_title", limit: format_amount(customer.credit_hard_limit_cents)) %>">
+                      <%= t("sales.statements.over_hard_limit") %>
+                    </span>
+                  <% when :warning %>
+                    <span class="block text-xs font-semibold text-amber-600 mt-0.5"
+                          title="<%= t("sales.statements.limit_title", limit: format_amount(customer.credit_warning_limit_cents)) %>">
+                      <%= t("sales.statements.over_warning_limit") %>
+                    </span>
+                  <% end %>
                 </td>
               </tr>
             <% end %>

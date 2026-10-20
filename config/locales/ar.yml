@@ -2791,10 +2791,27 @@ ar:
       search: "بحث"
       clear_search: "مسح"
       no_matches: "لا يوجد عملاء يطابقون “%{query}”."
+      over_hard_limit: "تجاوز حد الائتمان — البيع موقوف"
+      over_warning_limit: "تجاوز حد التنبيه"
+      limit_title: "الحد: %{limit}"
+      credit:
+        heading: "الائتمان"
+        edit: "تعديل الحدود"
+        no_limit: "بدون حد"
+        available: "الائتمان المتاح"
+        on_receipt: "مستحق عند الاستلام"
+        days:
+          zero: "٠ يوم"
+          one: "يوم واحد"
+          two: "يومان"
+          few: "%{count} أيام"
+          many: "%{count} يومًا"
+          other: "%{count} يوم"
       table:
         customer: "العميل"
         customer_type: "النوع"
         tier: "الشريحة"
+        last_invoice: "آخر فاتورة"
         balance: "الرصيد"
       buckets:
         not_due: "غير مستحق"

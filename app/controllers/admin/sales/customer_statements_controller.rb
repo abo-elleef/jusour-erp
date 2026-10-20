@@ -11,7 +11,8 @@ module Admin
         "name" => "LOWER(customers.name)",
         "customer_type" => "customers.customer_type",
         "tier" => "LOWER(price_tiers.name)",
-        "balance" => "COALESCE(treasuries.balance_cents, 0)"
+        "balance" => "COALESCE(treasuries.balance_cents, 0)",
+        "last_invoice" => "last_invoices.last_invoice_date"
       }.freeze
       DEFAULT_SORT = "balance"
 
@@ -27,7 +28,12 @@ module Admin
           .or(Customer.left_joins(:ar_treasury).where.not(treasuries: { balance_cents: 0 }))
         @total_ar_cents = listed.sum("COALESCE(treasuries.balance_cents, 0)")
 
+        # Latest real sale per customer — drafts and voids aren't sales.
+        last_invoices = CustomerInvoice.where.not(status: %w[draft void])
+          .group(:customer_id).select("customer_id, MAX(invoice_date) AS last_invoice_date")
         scope = listed.left_joins(:price_tier).includes(:ar_treasury, :price_tier)
+          .joins("LEFT JOIN (#{last_invoices.to_sql}) last_invoices ON last_invoices.customer_id = customers.id")
+          .select("customers.*, last_invoices.last_invoice_date")
         if @query.present?
           term = "%#{Customer.sanitize_sql_like(@query)}%"
           scope = scope.where(

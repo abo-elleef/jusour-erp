@@ -21,6 +21,53 @@
           class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
   </div>
 
+  <%# Credit limits — the same rule that flags / blocks a sale at confirmation. %>
+  <% balance = @statement.ledger_balance_cents %>
+  <% credit_status = @customer.credit_status_for(balance) %>
+  <% no_limit = t("sales.statements.credit.no_limit") %>
+  <section class="rounded-2xl border bg-white mb-6 <%= { blocked: 'border-red-200', warning: 'border-amber-200' }.fetch(credit_status, 'border-gray-200') %>">
+    <div class="px-5 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.statements.credit.heading") %></h2>
+        <% if credit_status == :blocked %>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-lg border bg-red-50 text-red-700 border-red-200"><%= t("sales.statements.over_hard_limit") %></span>
+        <% elsif credit_status == :warning %>
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-lg border bg-amber-50 text-amber-700 border-amber-200"><%= t("sales.statements.over_warning_limit") %></span>
+        <% end %>
+      </div>
+      <% if policy(@customer).update? %>
+        <%= link_to t("sales.statements.credit.edit"), edit_admin_customer_path(@customer),
+              class: "text-xs font-semibold text-amber-700 hover:text-amber-800 hover:underline" %>
+      <% end %>
+    </div>
+    <dl class="grid grid-cols-2 sm:grid-cols-4 gap-4 px-5 py-4 text-sm">
+      <div>
+        <dt class="text-xs font-semibold text-gray-500"><%= t("customers.form.warning_limit") %></dt>
+        <dd class="mt-1 font-semibold tabular-nums text-gray-900">
+          <%= @customer.credit_warning_limit_cents ? format_money(@customer.credit_warning_limit_cents) : no_limit %>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold text-gray-500"><%= t("customers.form.hard_limit") %></dt>
+        <dd class="mt-1 font-semibold tabular-nums text-gray-900">
+          <%= @customer.credit_hard_limit_cents ? format_money(@customer.credit_hard_limit_cents) : no_limit %>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold text-gray-500"><%= t("sales.statements.credit.available") %></dt>
+        <dd class="mt-1 font-semibold tabular-nums <%= credit_status == :blocked ? 'text-red-700' : 'text-gray-900' %>">
+          <%= @customer.credit_hard_limit_cents ? format_money(@customer.credit_hard_limit_cents - balance) : no_limit %>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs font-semibold text-gray-500"><%= t("customers.form.terms_days") %></dt>
+        <dd class="mt-1 font-semibold tabular-nums text-gray-900">
+          <%= @customer.credit_terms_days.to_i.positive? ? t("sales.statements.credit.days", count: @customer.credit_terms_days) : t("sales.statements.credit.on_receipt") %>
+        </dd>
+      </div>
+    </dl>
+  </section>
+
   <%# Aging buckets %>
   <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
     <% @statement.buckets.each do |bucket, cents| %>

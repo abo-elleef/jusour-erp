@@ -2774,10 +2774,23 @@ en:
       search: "Search"
       clear_search: "Clear"
       no_matches: "No customers match “%{query}”."
+      over_hard_limit: "Over credit limit — sales blocked"
+      over_warning_limit: "Over warning limit"
+      limit_title: "Limit: %{limit}"
+      credit:
+        heading: "Credit"
+        edit: "Edit limits"
+        no_limit: "No limit"
+        available: "Available credit"
+        on_receipt: "Due on receipt"
+        days:
+          one: "1 day"
+          other: "%{count} days"
       table:
         customer: "Customer"
         customer_type: "Type"
         tier: "Tier"
+        last_invoice: "Last invoice"
         balance: "Balance"
       buckets:
         not_due: "Not due"

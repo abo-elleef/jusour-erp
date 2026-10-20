@@ -54,9 +54,20 @@ RSpec.describe "Admin::Sales step-2 UI", type: :request do
       get admin_sales_customer_statements_path
       expect(response.body).to include("Clinic")
 
-      get admin_sales_customer_statement_path(customer)
+      get admin_sales_customer_statement_path(customer, locale: "en")
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(inv.invoice_number)
+      expect(response.body).to include("No limit", "Due on receipt")
+
+      # Balance is 1,000.00: past the 500.00 warning limit, inside the 2,000.00 hard limit.
+      customer.update!(credit_warning_limit_cents: 50_000, credit_hard_limit_cents: 200_000, credit_terms_days: 30)
+      get admin_sales_customer_statement_path(customer, locale: "en")
+      expect(response.body).to include("30 days", "Over warning limit")
+      expect(response.body).to include(ApplicationController.helpers.format_money(200_000 - customer.ar_balance_cents))
+
+      customer.update!(credit_hard_limit_cents: 60_000)
+      get admin_sales_customer_statement_path(customer, locale: "en")
+      expect(response.body).to include("Over credit limit")
     end
 
     it "lists every invoiced customer of any type, sorted and searchable, with a total over everyone" do
@@ -82,7 +93,19 @@ RSpec.describe "Admin::Sales step-2 UI", type: :request do
 
       get admin_sales_customer_statements_path(query: "0100000", locale: "en")
       expect(response.body).to include("Dr Walk-in")
+      expect(response.body).to include("01000000001") # shows why the row matched
       expect(response.body).not_to include(">Clinic<")
+
+      walk_in.customer_invoices.first.update_columns(invoice_date: Date.new(2026, 1, 5))
+      get admin_sales_customer_statements_path(sort: "last_invoice", dir: "asc", locale: "en")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.l(Date.new(2026, 1, 5), format: :long, locale: :en))
+      expect(response.body.index("Dr Walk-in")).to be < response.body.index("Clinic")
+
+      customer.update!(credit_hard_limit_cents: 1_000)
+      walk_in.update!(credit_warning_limit_cents: 1_000)
+      get admin_sales_customer_statements_path(locale: "en")
+      expect(response.body).to include("Over credit limit", "Over warning limit")
 
       get admin_sales_customer_statements_path(sort: "bogus; DROP TABLE x", locale: "en")
       expect(response).to have_http_status(:ok)
