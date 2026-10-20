@@ -44,6 +44,34 @@ en:
       call: "Call %{number}"
       whatsapp: "WhatsApp %{number}"
       whatsapp_short: "WhatsApp"
+    storefront:
+      meta_description: "Browse the %{company} product catalog"
+      product_meta_description: "%{product} from %{company}"
+      search_label: "Search products"
+      search_placeholder: "Search products…"
+      whatsapp_short: "WhatsApp"
+      chat_on_whatsapp: "Chat with us on WhatsApp"
+      ask_on_whatsapp: "Ask about this product"
+      whatsapp_inquiry: "Hello, I'd like to ask about %{product} (code %{code}): %{url}"
+      contact_us: "Contact us"
+      categories: "Product categories"
+      all_products: "All products"
+      featured: "Featured"
+      results_for: "Results for “%{query}”"
+      product_count:
+        one: "1 product"
+        other: "%{count} products"
+      no_results: "No products match your search."
+      clear_search: "Show all products"
+      empty: "Our catalog is coming soon."
+      about: "About %{company}"
+      price_on_request: "Price on request"
+      pagination: "Pages"
+      page_of: "Page %{page} of %{pages}"
+      breadcrumb: "Breadcrumb"
+      product_code: "Code: %{code}"
+      show_photo: "Show photo %{number}"
+      related: "More in this category"
 
   promos:
     badge: "Promo"
@@ -662,6 +690,8 @@ en:
         reports: "Leads reports"
       sales:
         confirm_payments: "Confirm online payments"
+      storefront:
+        manage: "Manage the storefront website"
   settings:
     title: "System settings"
     description: "Loyalty, tax rates, inventory, and owner-only configuration."
@@ -2617,6 +2647,127 @@ en:
       leads: "Leads"
       lead_reports: "Leads reports"
       reports: "Reports"
+      storefront: "Website settings"
+      storefront_listings: "Website products"
+    storefront:
+      title: "Website settings"
+      description: "Your public product catalog — customers browse it without signing in."
+      manage_products:
+        one: "Manage products (1)"
+        other: "Manage products (%{count})"
+      view_site: "View website"
+      copy: "Copy"
+      copied: "Copied!"
+      status:
+        live: "The website is live"
+        "off": "The website is off — visitors see a not-found page"
+        published_products:
+          one: "1 product visible"
+          other: "%{count} products visible"
+      urls:
+        path: "Website link"
+        subdomain: "Subdomain link"
+        subdomain_unset: "Pick a subdomain below to get a short link."
+        subdomain_unavailable: "Subdomain links aren't set up on this server yet."
+      sections:
+        publishing: "Publishing"
+        branding: "Branding"
+        contact: "Contact details"
+        contact_hint: "Shown on every page. WhatsApp turns on the “Ask about this product” button."
+        seo: "Search engines"
+      form:
+        enabled: "Publish the website"
+        enabled_hint: "When off, every page of the website answers “not found”."
+        subdomain: "Subdomain"
+        subdomain_hint: "Lowercase letters, numbers and dashes. Changing it breaks links people already saved."
+        show_prices: "Show prices"
+        show_prices_hint: "Uses each product's selling price. When off — or when a product has no price — the site says “Price on request”."
+        tagline: "Tagline"
+        about: "About the company"
+        logo: "Logo"
+        logo_hint: "PNG or JPEG, ideally on a transparent or white background."
+        banner: "Banner image"
+        banner_hint: "Wide photo for the top of the home page (about 1600 × 600)."
+        remove_image: "Remove"
+        whatsapp_number: "WhatsApp number"
+        phone: "Phone"
+        email: "Email"
+        address: "Address"
+        seo_description: "Search description"
+        seo_description_hint: "The short summary Google and link previews show. Defaults to the tagline."
+      flash:
+        updated: "Website settings saved."
+    storefront_listings:
+      title: "Website products"
+      description: "Products published on your website. Name, category, unit and price come from Inventory."
+      settings_button: "Website settings"
+      bulk_button: "Add many products"
+      new_button: "Add product"
+      new_title: "Add a product to the website"
+      site_off_html: "The website is not published yet, so nobody can see these products. %{link}"
+      site_off_link: "Open website settings"
+      search_placeholder: "Search name or code…"
+      all_categories: "All categories"
+      statuses:
+        published: "Published"
+        hidden: "Hidden"
+      featured: "Featured"
+      no_photo: "No photo"
+      no_price: "No price"
+      ingredient_inactive: "Inactive in inventory — hidden"
+      view_on_site: "View on website"
+      remove_button: "Remove from website"
+      remove_confirm: "Remove this product from the website? Its photos and description are deleted; the inventory item is not affected."
+      empty_title: "No products on the website yet"
+      empty_hint: "Pick the products you sell and publish them in one go."
+      all_listed_title: "Every active product is already on the website"
+      all_listed_hint: "New products you add in Inventory will show up here."
+      select_all: "Select all"
+      bulk_title: "Add many products"
+      bulk_description: "Tick the products to publish. They go live with their inventory name and price; add photos and descriptions afterwards."
+      bulk_submit: "Publish selected"
+      bulk_truncated: "Showing the first %{shown} of %{total}. Filter by category or search to see the rest."
+      table:
+        photo: "Photo"
+        product: "Product"
+        category: "Category"
+        price: "Price"
+        status: "Status"
+        position: "Order"
+        updated: "Updated"
+        actions: "Actions"
+      form:
+        product_heading: "Product"
+        product_hint: "What visitors read. Leave the title blank to use the inventory name."
+        ingredient: "Inventory item"
+        ingredient_placeholder: "Search products…"
+        ingredient_hint: "Only active items not already on the website are listed."
+        selling_price: "Selling price"
+        title: "Website title"
+        title_hint: "Optional — e.g. a friendlier or bilingual name."
+        description: "Description"
+        slug: "Link name"
+        slug_hint: "The last part of this product's web address. Changing it breaks links people already shared."
+        photos_heading: "Photos"
+        photos_hint: "Up to %{count} photos (JPEG, PNG or WebP, 10 MB each). The first one is the cover."
+        cover: "Cover"
+        remove_photo_confirm: "Remove this photo?"
+        display_heading: "Display"
+        published: "Published"
+        published_hint: "Untick to hide the product without losing its photos and description."
+        featured: "Featured"
+        featured_hint: "Shown at the top of the home page."
+        position: "Order"
+        position_hint: "Lower numbers show first."
+      flash:
+        created: "Product added to the website."
+        updated: "Product saved."
+        deleted: "Product removed from the website."
+        image_removed: "Photo removed."
+        bulk_created:
+          zero: "No products were added."
+          one: "1 product published."
+          other: "%{count} products published."
     lead_reports:
       title: "Leads reports"
       description: "How your pipeline is moving: funnel, drop-off reasons, and rep performance."
@@ -5572,6 +5723,27 @@ en:
   activerecord:
     errors:
       models:
+        storefront:
+          attributes:
+            subdomain:
+              taken: "is already used by another website"
+              exclusion: "is reserved — pick another"
+            logo:
+              invalid_image_type: "must be a JPEG, PNG or WebP image"
+              image_too_large: "must be 10 MB or smaller"
+            banner:
+              invalid_image_type: "must be a JPEG, PNG or WebP image"
+              image_too_large: "must be 10 MB or smaller"
+        storefront_listing:
+          attributes:
+            ingredient_id:
+              taken: "is already on the website"
+            slug:
+              taken: "is already used by another product"
+            images:
+              too_many: "can't be more than %{count}"
+              invalid_image_type: "must be JPEG, PNG or WebP images"
+              image_too_large: "must be 10 MB or smaller each"
         category:
           attributes:
             code:
@@ -5847,6 +6019,18 @@ en:
       user:
         one: "Staff member"
         other: "Staff members"
+    attributes:
+      storefront:
+        subdomain: "Subdomain"
+        logo: "Logo"
+        banner: "Banner image"
+        email: "Email"
+      storefront_listing:
+        ingredient: "Inventory item"
+        ingredient_id: "Inventory item"
+        slug: "Link name"
+        images: "Photos"
+        position: "Order"
   dashboard:
     today_section: "Today at a glance"
     today_revenue: "Revenue"

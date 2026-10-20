@@ -42,6 +42,38 @@ ar:
       call: "اتصال %{number}"
       whatsapp: "واتساب %{number}"
       whatsapp_short: "واتساب"
+    storefront:
+      meta_description: "تصفح كتالوج منتجات %{company}"
+      product_meta_description: "%{product} من %{company}"
+      search_label: "ابحث في المنتجات"
+      search_placeholder: "ابحث في المنتجات…"
+      whatsapp_short: "واتساب"
+      chat_on_whatsapp: "تواصل معنا عبر واتساب"
+      ask_on_whatsapp: "استفسر عن هذا المنتج"
+      whatsapp_inquiry: "مرحباً، أود الاستفسار عن %{product} (كود %{code}): %{url}"
+      contact_us: "تواصل معنا"
+      categories: "فئات المنتجات"
+      all_products: "كل المنتجات"
+      featured: "منتجات مميزة"
+      results_for: "نتائج البحث عن «%{query}»"
+      product_count:
+        zero: "لا منتجات"
+        one: "منتج واحد"
+        two: "منتجان"
+        few: "%{count} منتجات"
+        many: "%{count} منتجاً"
+        other: "%{count} منتج"
+      no_results: "لا توجد منتجات تطابق بحثك."
+      clear_search: "عرض كل المنتجات"
+      empty: "الكتالوج قريباً."
+      about: "عن %{company}"
+      price_on_request: "السعر عند الطلب"
+      pagination: "الصفحات"
+      page_of: "صفحة %{page} من %{pages}"
+      breadcrumb: "مسار التصفح"
+      product_code: "الكود: %{code}"
+      show_photo: "عرض الصورة %{number}"
+      related: "المزيد من هذه الفئة"
 
   promos:
     badge: "عرض"
@@ -660,6 +692,8 @@ ar:
         reports: "تقارير العملاء المحتملين"
       sales:
         confirm_payments: "تأكيد المدفوعات الإلكترونية"
+      storefront:
+        manage: "إدارة الموقع الإلكتروني"
   settings:
     title: "إعدادات النظام"
     description: "الولاء والضرائب والمخزون وإعدادات المالك فقط."
@@ -2623,6 +2657,138 @@ ar:
       leads: "العملاء المحتملون"
       lead_reports: "تقارير العملاء المحتملين"
       reports: "التقارير"
+      storefront: "إعدادات الموقع"
+      storefront_listings: "منتجات الموقع"
+    storefront:
+      title: "إعدادات الموقع"
+      description: "كتالوج منتجاتك العام — يتصفحه العملاء دون تسجيل دخول."
+      manage_products:
+        zero: "إدارة المنتجات (0)"
+        one: "إدارة المنتجات (1)"
+        two: "إدارة المنتجات (2)"
+        few: "إدارة المنتجات (%{count})"
+        many: "إدارة المنتجات (%{count})"
+        other: "إدارة المنتجات (%{count})"
+      view_site: "عرض الموقع"
+      copy: "نسخ"
+      copied: "تم النسخ!"
+      status:
+        live: "الموقع منشور"
+        "off": "الموقع متوقف — يرى الزوار صفحة غير موجودة"
+        published_products:
+          zero: "لا منتجات ظاهرة"
+          one: "منتج واحد ظاهر"
+          two: "منتجان ظاهران"
+          few: "%{count} منتجات ظاهرة"
+          many: "%{count} منتجاً ظاهراً"
+          other: "%{count} منتج ظاهر"
+      urls:
+        path: "رابط الموقع"
+        subdomain: "رابط النطاق الفرعي"
+        subdomain_unset: "اختر نطاقاً فرعياً بالأسفل للحصول على رابط قصير."
+        subdomain_unavailable: "روابط النطاقات الفرعية غير مفعّلة على هذا الخادم بعد."
+      sections:
+        publishing: "النشر"
+        branding: "الهوية"
+        contact: "بيانات التواصل"
+        contact_hint: "تظهر في كل الصفحات. رقم الواتساب يفعّل زر «استفسر عن هذا المنتج»."
+        seo: "محركات البحث"
+      form:
+        enabled: "نشر الموقع"
+        enabled_hint: "عند الإيقاف، تظهر كل صفحات الموقع كـ«غير موجودة»."
+        subdomain: "النطاق الفرعي"
+        subdomain_hint: "أحرف إنجليزية صغيرة وأرقام وشرطات. تغييره يكسر الروابط المحفوظة لدى العملاء."
+        show_prices: "إظهار الأسعار"
+        show_prices_hint: "يستخدم سعر البيع لكل منتج. عند الإيقاف — أو إذا لم يكن للمنتج سعر — يظهر «السعر عند الطلب»."
+        tagline: "الشعار النصي"
+        about: "نبذة عن الشركة"
+        logo: "اللوجو"
+        logo_hint: "PNG أو JPEG، ويفضل بخلفية شفافة أو بيضاء."
+        banner: "صورة الغلاف"
+        banner_hint: "صورة عريضة لأعلى الصفحة الرئيسية (حوالي 1600 × 600)."
+        remove_image: "حذف"
+        whatsapp_number: "رقم الواتساب"
+        phone: "الهاتف"
+        email: "البريد الإلكتروني"
+        address: "العنوان"
+        seo_description: "وصف محركات البحث"
+        seo_description_hint: "الملخص القصير الذي يظهر في جوجل ومعاينات الروابط. افتراضياً هو الشعار النصي."
+      flash:
+        updated: "تم حفظ إعدادات الموقع."
+    storefront_listings:
+      title: "منتجات الموقع"
+      description: "المنتجات المنشورة على موقعك. الاسم والفئة والوحدة والسعر تأتي من المخزون."
+      settings_button: "إعدادات الموقع"
+      bulk_button: "إضافة منتجات متعددة"
+      new_button: "إضافة منتج"
+      new_title: "إضافة منتج إلى الموقع"
+      site_off_html: "الموقع غير منشور بعد، لذلك لا يرى أحد هذه المنتجات. %{link}"
+      site_off_link: "افتح إعدادات الموقع"
+      search_placeholder: "ابحث بالاسم أو الكود…"
+      all_categories: "كل الفئات"
+      statuses:
+        published: "منشور"
+        hidden: "مخفي"
+      featured: "مميز"
+      no_photo: "بدون صورة"
+      no_price: "بدون سعر"
+      ingredient_inactive: "غير نشط في المخزون — مخفي"
+      view_on_site: "عرض على الموقع"
+      remove_button: "إزالة من الموقع"
+      remove_confirm: "إزالة هذا المنتج من الموقع؟ ستُحذف صوره ووصفه؛ ولن يتأثر صنف المخزون."
+      empty_title: "لا توجد منتجات على الموقع بعد"
+      empty_hint: "اختر المنتجات التي تبيعها وانشرها دفعة واحدة."
+      all_listed_title: "كل المنتجات النشطة موجودة على الموقع بالفعل"
+      all_listed_hint: "المنتجات الجديدة التي تضيفها في المخزون ستظهر هنا."
+      select_all: "تحديد الكل"
+      bulk_title: "إضافة منتجات متعددة"
+      bulk_description: "حدد المنتجات المراد نشرها. تُنشر باسمها وسعرها في المخزون؛ ويمكنك إضافة الصور والوصف لاحقاً."
+      bulk_submit: "نشر المحدد"
+      bulk_truncated: "يتم عرض أول %{shown} من %{total}. صفِّ حسب الفئة أو ابحث لرؤية الباقي."
+      table:
+        photo: "الصورة"
+        product: "المنتج"
+        category: "الفئة"
+        price: "السعر"
+        status: "الحالة"
+        position: "الترتيب"
+        updated: "آخر تعديل"
+        actions: "إجراءات"
+      form:
+        product_heading: "المنتج"
+        product_hint: "ما يقرؤه الزوار. اترك العنوان فارغاً لاستخدام اسم المخزون."
+        ingredient: "صنف المخزون"
+        ingredient_placeholder: "ابحث في المنتجات…"
+        ingredient_hint: "تظهر فقط الأصناف النشطة غير الموجودة على الموقع."
+        selling_price: "سعر البيع"
+        title: "العنوان على الموقع"
+        title_hint: "اختياري — مثلاً اسم أوضح أو بلغتين."
+        description: "الوصف"
+        slug: "اسم الرابط"
+        slug_hint: "الجزء الأخير من عنوان هذا المنتج. تغييره يكسر الروابط التي تمت مشاركتها."
+        photos_heading: "الصور"
+        photos_hint: "حتى %{count} صور (JPEG أو PNG أو WebP، 10 ميجابايت لكل صورة). الأولى هي صورة الغلاف."
+        cover: "الغلاف"
+        remove_photo_confirm: "حذف هذه الصورة؟"
+        display_heading: "العرض"
+        published: "منشور"
+        published_hint: "ألغِ التحديد لإخفاء المنتج دون فقد صوره ووصفه."
+        featured: "مميز"
+        featured_hint: "يظهر أعلى الصفحة الرئيسية."
+        position: "الترتيب"
+        position_hint: "الأرقام الأصغر تظهر أولاً."
+      flash:
+        created: "تمت إضافة المنتج إلى الموقع."
+        updated: "تم حفظ المنتج."
+        deleted: "تمت إزالة المنتج من الموقع."
+        image_removed: "تم حذف الصورة."
+        bulk_created:
+          zero: "لم تتم إضافة أي منتج."
+          one: "تم نشر منتج واحد."
+          two: "تم نشر منتجين."
+          few: "تم نشر %{count} منتجات."
+          many: "تم نشر %{count} منتجاً."
+          other: "تم نشر %{count} منتج."
     lead_reports:
       title: "تقارير العملاء المحتملين"
       description: "كيف يتحرك قمع المبيعات: المراحل، أسباب الانسحاب، وأداء المندوبين."
@@ -5619,6 +5785,27 @@ ar:
   activerecord:
     errors:
       models:
+        storefront:
+          attributes:
+            subdomain:
+              taken: "مستخدم بالفعل لموقع آخر"
+              exclusion: "محجوز — اختر غيره"
+            logo:
+              invalid_image_type: "يجب أن يكون صورة JPEG أو PNG أو WebP"
+              image_too_large: "يجب ألا يتجاوز 10 ميجابايت"
+            banner:
+              invalid_image_type: "يجب أن تكون صورة JPEG أو PNG أو WebP"
+              image_too_large: "يجب ألا تتجاوز 10 ميجابايت"
+        storefront_listing:
+          attributes:
+            ingredient_id:
+              taken: "موجود على الموقع بالفعل"
+            slug:
+              taken: "مستخدم لمنتج آخر"
+            images:
+              too_many: "لا يمكن أن تزيد عن %{count}"
+              invalid_image_type: "يجب أن تكون صور JPEG أو PNG أو WebP"
+              image_too_large: "يجب ألا تتجاوز كل صورة 10 ميجابايت"
         category:
           attributes:
             code:
@@ -5884,6 +6071,18 @@ ar:
       user:
         one: "موظف"
         other: "موظفون"
+    attributes:
+      storefront:
+        subdomain: "النطاق الفرعي"
+        logo: "اللوجو"
+        banner: "صورة الغلاف"
+        email: "البريد الإلكتروني"
+      storefront_listing:
+        ingredient: "صنف المخزون"
+        ingredient_id: "صنف المخزون"
+        slug: "اسم الرابط"
+        images: "الصور"
+        position: "الترتيب"
   dashboard:
     today_section: "اليوم في لمحة"
     today_revenue: "الإيرادات"

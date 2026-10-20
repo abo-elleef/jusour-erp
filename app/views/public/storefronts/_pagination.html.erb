@@ -1,0 +1,14 @@
+<%# locals: pagy: %>
+<% if pagy.pages > 1 %>
+  <nav class="mt-8 flex items-center justify-center gap-3 text-sm" aria-label="<%= t("public.storefront.pagination") %>">
+    <% if pagy.previous %>
+      <%= link_to t("actions.previous"), "#{request.path}?#{request.query_parameters.merge("page" => pagy.previous).to_query}",
+            class: "rounded-full border border-stone-300 bg-white px-4 py-2 font-medium text-stone-700 hover:bg-stone-50", rel: "prev" %>
+    <% end %>
+    <span class="tabular-nums text-stone-500"><%= t("public.storefront.page_of", page: pagy.page, pages: pagy.pages) %></span>
+    <% if pagy.next %>
+      <%= link_to t("actions.next"), "#{request.path}?#{request.query_parameters.merge("page" => pagy.next).to_query}",
+            class: "rounded-full border border-stone-300 bg-white px-4 py-2 font-medium text-stone-700 hover:bg-stone-50", rel: "next" %>
+    <% end %>
+  </nav>
+<% end %>

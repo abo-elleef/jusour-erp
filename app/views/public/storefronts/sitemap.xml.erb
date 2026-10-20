@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc><%= request.base_url + storefront_home_path %></loc>
+  </url>
+<% @listings.each do |listing| %>
+  <url>
+    <loc><%= storefront_product_url(listing) %></loc>
+    <lastmod><%= listing.updated_at.to_date.iso8601 %></lastmod>
+  </url>
+<% end %>
+</urlset>

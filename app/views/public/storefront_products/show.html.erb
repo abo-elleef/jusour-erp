@@ -1,0 +1,83 @@
+<% ingredient = @listing.ingredient %>
+<% content_for :title, "#{@listing.display_title} — #{@company.name}" %>
+<% content_for :meta_description, @listing.description.presence&.truncate(160) || t("public.storefront.product_meta_description", product: @listing.display_title, company: @company.name) %>
+<% content_for :canonical_url, storefront_product_url(@listing) %>
+<% content_for :og_type, "product" %>
+<% if (cover = @listing.cover_image) %>
+  <% content_for :og_image, url_for(cover.variant(:detail)) %>
+<% end %>
+<% inquiry = t("public.storefront.whatsapp_inquiry", product: @listing.display_title, code: ingredient.code, url: storefront_product_url(@listing)) %>
+
+<div class="max-w-6xl mx-auto px-4 py-6">
+  <nav class="mb-4 text-sm text-stone-500" aria-label="<%= t("public.storefront.breadcrumb") %>">
+    <%= link_to t("public.storefront.all_products"), storefront_home_path, class: "hover:text-amber-800" %>
+    <span class="mx-1" aria-hidden="true">/</span>
+    <%= link_to ingredient.ingredient_category.name, storefront_home_path(category: ingredient.ingredient_category_id), class: "hover:text-amber-800" %>
+  </nav>
+
+  <div class="grid gap-8 md:grid-cols-2">
+    <div data-controller="storefront-gallery">
+      <div class="aspect-square overflow-hidden rounded-2xl border border-stone-200 bg-white">
+        <% if cover %>
+          <%= image_tag cover.variant(:detail), alt: @listing.display_title, class: "h-full w-full object-contain",
+                data: { storefront_gallery_target: "main" } %>
+        <% else %>
+          <div class="flex h-full w-full items-center justify-center text-sm text-stone-400"><%= ingredient.ingredient_category.name %></div>
+        <% end %>
+      </div>
+      <% if @listing.images.size > 1 %>
+        <div class="mt-3 flex gap-2 overflow-x-auto">
+          <% @listing.images.each_with_index do |image, index| %>
+            <button type="button"
+                    class="shrink-0 overflow-hidden rounded-xl border-2 <%= index.zero? ? 'border-amber-600' : 'border-transparent' %> focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700/30"
+                    data-action="storefront-gallery#show"
+                    data-storefront-gallery-target="thumb"
+                    data-src="<%= url_for(image.variant(:detail)) %>"
+                    aria-label="<%= t("public.storefront.show_photo", number: index + 1) %>">
+              <%= image_tag image.variant(:thumb), alt: "", loading: "lazy", class: "h-16 w-16 object-cover" %>
+            </button>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+
+    <div>
+      <p class="text-xs font-medium uppercase tracking-wide text-amber-800/80"><%= ingredient.ingredient_category.name %></p>
+      <h1 class="mt-1 text-2xl sm:text-3xl font-semibold leading-tight text-stone-900"><%= @listing.display_title %></h1>
+      <p class="mt-1 text-sm text-stone-500"><%= t("public.storefront.product_code", code: ingredient.code) %></p>
+
+      <%= render "public/storefronts/price", listing: @listing, css: "mt-4 text-xl" %>
+
+      <% if @listing.description.present? %>
+        <div class="mt-5 text-sm leading-relaxed text-stone-700"><%= simple_format(@listing.description) %></div>
+      <% end %>
+
+      <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+        <% if @storefront.whatsapp_url %>
+          <%= link_to "#{@storefront.whatsapp_url}?text=#{ERB::Util.url_encode(inquiry)}", target: "_blank", rel: "noopener",
+                class: "inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 py-3 text-sm font-semibold text-white hover:bg-[#1EBE5A]" do %>
+            <%= render "public/storefronts/whatsapp_icon", css: "h-5 w-5" %>
+            <%= t("public.storefront.ask_on_whatsapp") %>
+          <% end %>
+        <% end %>
+        <% if @storefront.phone_url %>
+          <%= link_to @storefront.phone_url, dir: "ltr",
+                class: "inline-flex flex-1 items-center justify-center gap-2 rounded-full border border-stone-300 bg-white px-6 py-3 text-sm font-semibold text-stone-900 hover:bg-stone-50" do %>
+            <span class="tabular-nums"><%= @storefront.phone %></span>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <% if @related.any? %>
+    <section class="mt-12">
+      <h2 class="mb-4 text-lg font-semibold text-stone-900"><%= t("public.storefront.related") %></h2>
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <% @related.each do |listing| %>
+          <%= render "public/storefronts/product_card", listing: listing %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+</div>

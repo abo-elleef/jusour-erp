@@ -1,0 +1,101 @@
+<% content_for :title, @category ? "#{@category.name} — #{@company.name}" : @company.name %>
+
+<% unless @filtering %>
+  <section class="relative overflow-hidden bg-stone-900 text-white">
+    <% if @storefront.banner.attached? %>
+      <%= image_tag @storefront.banner.variant(:hero), alt: "", class: "absolute inset-0 h-full w-full object-cover opacity-50" %>
+    <% end %>
+    <div class="relative max-w-6xl mx-auto px-4 py-12 sm:py-16">
+      <h1 class="text-3xl sm:text-4xl font-semibold leading-tight"><%= @company.name %></h1>
+      <% if @storefront.tagline.present? %>
+        <p class="mt-3 max-w-2xl text-base sm:text-lg text-stone-200"><%= @storefront.tagline %></p>
+      <% end %>
+      <% if @storefront.whatsapp_url || @storefront.phone_url %>
+        <div class="mt-6 flex flex-wrap gap-3">
+          <% if @storefront.whatsapp_url %>
+            <%= link_to @storefront.whatsapp_url, target: "_blank", rel: "noopener",
+                  class: "inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1EBE5A]" do %>
+              <%= render "public/storefronts/whatsapp_icon", css: "h-4 w-4" %>
+              <%= t("public.storefront.chat_on_whatsapp") %>
+            <% end %>
+          <% end %>
+          <% if @storefront.phone_url %>
+            <%= link_to @storefront.phone_url, dir: "ltr",
+                  class: "inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/10 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/20" do %>
+              <span class="tabular-nums"><%= @storefront.phone %></span>
+            <% end %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+<% end %>
+
+<div class="max-w-6xl mx-auto px-4 py-6">
+  <% if @categories.any? %>
+    <nav class="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1" aria-label="<%= t("public.storefront.categories") %>">
+      <% chip = "h-9 shrink-0 inline-flex items-center rounded-full border px-4 text-sm font-medium transition-colors" %>
+      <%= link_to t("public.storefront.all_products"), storefront_home_path(q: @query.presence),
+            class: "#{chip} #{@category ? 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50' : 'border-stone-900 bg-stone-900 text-white'}",
+            aria: { current: (@category ? nil : "page") } %>
+      <% @categories.each do |category| %>
+        <% active = @category&.id == category.id %>
+        <%= link_to category.name, storefront_home_path(category: category.id, q: @query.presence),
+              class: "#{chip} #{active ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'}",
+              aria: { current: (active ? "page" : nil) } %>
+      <% end %>
+    </nav>
+  <% end %>
+
+  <% if @featured.any? %>
+    <section class="mb-10">
+      <h2 class="mb-4 text-lg font-semibold text-stone-900"><%= t("public.storefront.featured") %></h2>
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <% @featured.each do |listing| %>
+          <%= render "public/storefronts/product_card", listing: listing %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <section>
+    <div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="text-lg font-semibold text-stone-900">
+        <% if @query.present? %>
+          <%= t("public.storefront.results_for", query: @query) %>
+        <% else %>
+          <%= @category&.name || t("public.storefront.all_products") %>
+        <% end %>
+      </h2>
+      <% if @pagy.count.positive? %>
+        <p class="text-sm text-stone-500 tabular-nums"><%= t("public.storefront.product_count", count: @pagy.count) %></p>
+      <% end %>
+    </div>
+
+    <% if @listings.any? %>
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        <% @listings.each do |listing| %>
+          <%= render "public/storefronts/product_card", listing: listing %>
+        <% end %>
+      </div>
+      <%= render "public/storefronts/pagination", pagy: @pagy %>
+    <% else %>
+      <div class="rounded-2xl border border-dashed border-stone-300 bg-white px-6 py-16 text-center">
+        <p class="font-medium text-stone-900">
+          <%= @filtering ? t("public.storefront.no_results") : t("public.storefront.empty") %>
+        </p>
+        <% if @filtering %>
+          <%= link_to t("public.storefront.clear_search"), storefront_home_path,
+                class: "mt-3 inline-block text-sm font-semibold text-amber-700 hover:underline" %>
+        <% end %>
+      </div>
+    <% end %>
+  </section>
+
+  <% if !@filtering && @storefront.about.present? %>
+    <section class="mt-12 rounded-2xl border border-stone-200 bg-white p-6">
+      <h2 class="text-lg font-semibold text-stone-900"><%= t("public.storefront.about", company: @company.name) %></h2>
+      <div class="mt-3 text-sm leading-relaxed text-stone-600"><%= simple_format(@storefront.about) %></div>
+    </section>
+  <% end %>
+</div>

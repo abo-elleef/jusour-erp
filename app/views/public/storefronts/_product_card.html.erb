@@ -1,0 +1,19 @@
+<%# locals: listing: %>
+<%= link_to storefront_product_path(listing),
+      class: "group flex flex-col overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm transition hover:border-amber-300 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700/30" do %>
+  <div class="aspect-square bg-stone-100">
+    <% if (image = listing.cover_image) %>
+      <%= image_tag image.variant(:card), alt: listing.display_title, loading: "lazy", decoding: "async",
+            class: "h-full w-full object-cover transition group-hover:scale-[1.02]" %>
+    <% else %>
+      <div class="flex h-full w-full items-center justify-center px-3 text-center text-xs font-medium text-stone-400">
+        <%= listing.ingredient.ingredient_category.name %>
+      </div>
+    <% end %>
+  </div>
+  <div class="flex flex-1 flex-col gap-1 p-3">
+    <p class="text-[11px] font-medium uppercase tracking-wide text-amber-800/80 truncate"><%= listing.ingredient.ingredient_category.name %></p>
+    <h3 class="font-semibold leading-snug text-stone-900 line-clamp-2"><%= listing.display_title %></h3>
+    <%= render "public/storefronts/price", listing: listing, css: "mt-auto pt-1 text-sm" %>
+  </div>
+<% end %>

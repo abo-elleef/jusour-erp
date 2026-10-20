@@ -89,4 +89,28 @@ namespace :roles do
 
     puts "Granted #{key} to #{granted} role(s); #{skipped} already had it."
   end
+
+  # Mirrors Permission::BUILTIN_ROLES — owner and super_manager get every key,
+  # manager gets storefront:manage explicitly.
+  STOREFRONT_ROLE_KEYS = %w[owner super_manager manager].freeze
+
+  desc "Give existing built-in roles the storefront:manage permission"
+  task grant_storefront_manage: :environment do
+    key = "storefront:manage"
+    granted = 0
+    skipped = 0
+
+    Role.unscoped.where(key: STOREFRONT_ROLE_KEYS).find_each do |role|
+      if role.permission_keys.include?(key)
+        skipped += 1
+        next
+      end
+
+      role.permissions = role.permission_keys + [key]
+      role.save!
+      granted += 1
+    end
+
+    puts "Granted #{key} to #{granted} role(s); #{skipped} already had it."
+  end
 end

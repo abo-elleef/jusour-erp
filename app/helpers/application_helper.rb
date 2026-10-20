@@ -1336,6 +1336,11 @@ module ApplicationHelper
       items << { controller: "leads", label: "sales.nav.leads", path: :admin_sales_leads_path }
     end
 
+    if Current.company&.feature_enabled?(:storefront) && current_user.can?("storefront:manage")
+      items << { controller: "storefront_listings", label: "sales.nav.storefront_listings", path: :admin_sales_storefront_listings_path }
+      items << { controller: "storefronts", label: "sales.nav.storefront", path: :admin_sales_storefront_path }
+    end
+
     items
   end
 

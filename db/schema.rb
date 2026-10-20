@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_14_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1564,6 +1564,41 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_14_120000) do
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.datetime "remember_created_at"
+  create_table "storefront_listings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.string "slug", null: false
+    t.string "title", default: "", null: false
+    t.text "description", default: "", null: false
+    t.boolean "published", default: true, null: false
+    t.boolean "featured", default: false, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "ingredient_id"], name: "index_storefront_listings_on_company_id_and_ingredient_id", unique: true
+    t.index ["company_id", "slug"], name: "index_storefront_listings_on_company_id_and_slug", unique: true
+    t.index ["company_id"], name: "index_storefront_listings_on_company_id"
+    t.index ["ingredient_id"], name: "index_storefront_listings_on_ingredient_id"
+  end
+
+  create_table "storefronts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.boolean "enabled", default: false, null: false
+    t.string "subdomain"
+    t.string "tagline", default: "", null: false
+    t.text "about", default: "", null: false
+    t.string "phone", default: "", null: false
+    t.string "whatsapp_number", default: "", null: false
+    t.string "email", default: "", null: false
+    t.string "address", default: "", null: false
+    t.boolean "show_prices", default: true, null: false
+    t.string "seo_description", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower((subdomain)::text)", name: "index_storefronts_on_lower_subdomain", unique: true, where: "(subdomain IS NOT NULL)"
+    t.index ["company_id"], name: "index_storefronts_on_company_id", unique: true
+  end
+
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_super_admin_users_on_email", unique: true
@@ -2106,6 +2141,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_14_120000) do
   add_foreign_key "supplier_price_histories", "vendor_invoice_lines", on_delete: :nullify
   add_foreign_key "suppliers", "companies"
   add_foreign_key "suppliers", "treasuries"
+  add_foreign_key "storefront_listings", "companies"
+  add_foreign_key "storefront_listings", "ingredients"
+  add_foreign_key "storefronts", "companies"
   add_foreign_key "tax_rates", "companies"
   add_foreign_key "treasuries", "companies"
   add_foreign_key "treasury_transactions", "companies"

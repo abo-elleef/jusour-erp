@@ -49,6 +49,12 @@ module SaqrPos
       g.orm :active_record, primary_key_type: :uuid
     end
 
+    # Public storefronts answer on <subdomain>.<storefront_domain> (see
+    # Storefront.subdomain_from_host). Blank turns subdomain routing off — the
+    # /s/:company_slug path always works. Development uses *.localhost, which
+    # browsers resolve to 127.0.0.1 with no DNS setup.
+    config.x.storefront_domain = ENV.fetch("STOREFRONT_DOMAIN") { Rails.env.production? ? "" : "localhost" }
+
     config.autoload_paths << Rails.root.join("app/services")
     config.eager_load_paths << Rails.root.join("app/services")
   end

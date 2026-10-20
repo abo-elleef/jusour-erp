@@ -1,6 +1,21 @@
 # frozen_string_literal: true
 
 Rails.application.routes.draw do
+  # Storefronts on their own subdomain (acme.<storefront_domain>). Must come
+  # first: on a storefront host nothing else of the app may match, sign-in included.
+  constraints(->(request) { Storefront.host_match?(request) }) do
+    scope module: :public, as: :storefront_host do
+      get "/", to: "storefronts#show", as: :home
+      get "p/:listing_slug", to: "storefront_products#show", as: :product
+      get "sitemap.xml", to: "storefronts#sitemap", as: :sitemap, defaults: { format: :xml }
+    end
+    # Nothing else of the app answers on a storefront host — no sign-in page or
+    # admin under a client's brand. Active Storage stays reachable for photos.
+    match "*path", to: "public/storefronts#not_found", via: :all, format: false,
+      # Restates the host check: a route-level constraint replaces the block's.
+      constraints: ->(request) { Storefront.host_match?(request) && !request.path.start_with?("/rails/") }
+  end
+
   devise_for :users, controllers: {
     sessions: "users/sessions",
     passwords: "users/passwords"
@@ -112,6 +127,13 @@ Rails.application.routes.draw do
     get ":company_slug/:location_slug", to: "menus#show", as: :public_menu
   end
 
+  # Storefront by path — always works, before (or without) a subdomain.
+  scope module: :public, path: "s/:company_slug", as: :public_storefront do
+    get "/", to: "storefronts#show", as: :home
+    get "p/:listing_slug", to: "storefront_products#show", as: :product
+    get "sitemap.xml", to: "storefronts#sitemap", as: :sitemap, defaults: { format: :xml }
+  end
+
   get "staff/payroll/:token", to: "staff_payroll#show", as: :staff_payroll
   post "staff/payroll/:token/verify", to: "staff_payroll#verify", as: :verify_staff_payroll
   delete "staff/payroll/:token", to: "staff_payroll#lock", as: :lock_staff_payroll
@@ -149,6 +171,15 @@ Rails.application.routes.draw do
         resources :lead_activities, only: %i[create]
       end
       resources :lead_reports, only: %i[index]
+      # The public catalog website — gated on the `storefront` feature.
+      resource :storefront, only: %i[show update]
+      resources :storefront_listings, except: %i[show] do
+        collection do
+          get :bulk_new
+          post :bulk_create
+        end
+        member { delete :remove_image }
+      end
       resources :reports, only: %i[index]
     end
 

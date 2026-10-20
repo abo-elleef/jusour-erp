@@ -1,0 +1,174 @@
+<% content_for :title, t("sales.storefront.title") %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% hint_class = "text-xs text-gray-500 mt-1" %>
+<% file_class = "text-sm text-gray-600 file:me-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gray-100 file:font-semibold file:text-gray-700 hover:file:bg-gray-200" %>
+<% path_url = public_storefront_home_url(company_slug: Current.company.slug) %>
+<% subdomain_url = @storefront.persisted? ? @storefront.subdomain_url(port: request.port) : nil %>
+
+<div class="max-w-3xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("sales.storefront.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("sales.storefront.description") %></p>
+    </div>
+    <%= link_to t("sales.storefront.manage_products", count: @listing_count), admin_sales_storefront_listings_path,
+          class: "inline-flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-200 text-gray-800 text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm shrink-0" %>
+  </div>
+
+  <section class="mb-6 rounded-2xl border <%= @storefront.persisted? && @storefront.enabled? ? 'border-green-200 bg-green-50/60' : 'border-gray-200 bg-white' %> p-5">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <p class="text-sm font-semibold text-gray-900">
+          <% if @storefront.persisted? && @storefront.enabled? %>
+            <%= t("sales.storefront.status.live") %>
+          <% else %>
+            <%= t("sales.storefront.status.off") %>
+          <% end %>
+        </p>
+        <p class="text-xs text-gray-600 mt-0.5"><%= t("sales.storefront.status.published_products", count: @published_count) %></p>
+      </div>
+      <% if @storefront.persisted? && @storefront.enabled? %>
+        <%= link_to t("sales.storefront.view_site"), subdomain_url || path_url, target: "_blank", rel: "noopener",
+              class: "text-sm font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2 rounded-xl border border-amber-200" %>
+      <% end %>
+    </div>
+
+    <dl class="mt-4 space-y-3 text-sm">
+      <% [[t("sales.storefront.urls.path"), path_url], [t("sales.storefront.urls.subdomain"), subdomain_url]].each do |label, url| %>
+        <div>
+          <dt class="text-xs font-semibold text-gray-500"><%= label %></dt>
+          <dd class="mt-1">
+            <% if url %>
+              <div class="flex items-center gap-1.5" data-controller="clipboard" data-clipboard-text-value="<%= url %>"
+                   data-clipboard-copied-label-value="<%= t("sales.storefront.copied") %>">
+                <input type="text" readonly value="<%= url %>" dir="ltr" onclick="this.select()"
+                       class="min-w-0 flex-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-700 font-mono"
+                       data-clipboard-target="source" aria-label="<%= label %>">
+                <button type="button" data-action="clipboard#copy" data-clipboard-target="button"
+                        class="shrink-0 text-xs font-semibold text-amber-700 hover:bg-amber-50 px-2.5 py-1.5 rounded-lg border border-amber-200">
+                  <%= t("sales.storefront.copy") %>
+                </button>
+              </div>
+            <% else %>
+              <span class="text-xs text-gray-500"><%= Storefront.base_domain.present? ? t("sales.storefront.urls.subdomain_unset") : t("sales.storefront.urls.subdomain_unavailable") %></span>
+            <% end %>
+          </dd>
+        </div>
+      <% end %>
+    </dl>
+  </section>
+
+  <%= form_with model: @storefront, url: admin_sales_storefront_path, method: :patch, class: "space-y-6" do |f| %>
+    <% if @storefront.errors.any? %>
+      <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+        <%= @storefront.errors.full_messages.to_sentence %>
+      </div>
+    <% end %>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.storefront.sections.publishing") %></h2>
+      </div>
+      <div class="p-5 space-y-5">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <%= f.check_box :enabled, class: "mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+          <span>
+            <span class="block text-sm font-semibold text-gray-900"><%= t("sales.storefront.form.enabled") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("sales.storefront.form.enabled_hint") %></span>
+          </span>
+        </label>
+        <div>
+          <%= f.label :subdomain, t("sales.storefront.form.subdomain"), class: label_class %>
+          <div class="flex items-center gap-2" dir="ltr">
+            <%= f.text_field :subdomain, class: pos_input_class, placeholder: Current.company.slug, autocapitalize: "none", spellcheck: false %>
+            <% if Storefront.base_domain.present? %>
+              <span class="shrink-0 text-sm text-gray-500">.<%= Storefront.base_domain %></span>
+            <% end %>
+          </div>
+          <p class="<%= hint_class %>"><%= t("sales.storefront.form.subdomain_hint") %></p>
+        </div>
+        <label class="flex items-start gap-3 cursor-pointer">
+          <%= f.check_box :show_prices, class: "mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+          <span>
+            <span class="block text-sm font-semibold text-gray-900"><%= t("sales.storefront.form.show_prices") %></span>
+            <span class="block text-xs text-gray-500 mt-0.5"><%= t("sales.storefront.form.show_prices_hint") %></span>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.storefront.sections.branding") %></h2>
+      </div>
+      <div class="p-5 space-y-5">
+        <div>
+          <%= f.label :tagline, t("sales.storefront.form.tagline"), class: label_class %>
+          <%= f.text_field :tagline, class: pos_input_class, maxlength: 160 %>
+        </div>
+        <div>
+          <%= f.label :about, t("sales.storefront.form.about"), class: label_class %>
+          <%= f.text_area :about, rows: 5, class: pos_input_class %>
+        </div>
+        <% { logo: :header, banner: :hero }.each do |field, variant| %>
+          <div>
+            <%= f.label field, t("sales.storefront.form.#{field}"), class: label_class %>
+            <%= f.file_field field, accept: Storefront::IMAGE_CONTENT_TYPES.join(","), class: file_class %>
+            <p class="<%= hint_class %>"><%= t("sales.storefront.form.#{field}_hint") %></p>
+            <% attachment = @storefront.public_send(field) %>
+            <% if @storefront.persisted? && attachment.attached? && attachment.blob.persisted? %>
+              <div class="mt-3 flex items-center gap-4">
+                <%= image_tag attachment.variant(variant), class: "h-16 max-w-[12rem] rounded-xl border border-gray-200 object-contain bg-gray-50" %>
+                <label class="inline-flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                  <%= check_box_tag "storefront[remove_#{field}]", "1", false, class: "rounded border-gray-300 text-red-600" %>
+                  <%= t("sales.storefront.form.remove_image") %>
+                </label>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.storefront.sections.contact") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("sales.storefront.sections.contact_hint") %></p>
+      </div>
+      <div class="p-5 grid gap-5 sm:grid-cols-2">
+        <div>
+          <%= f.label :whatsapp_number, t("sales.storefront.form.whatsapp_number"), class: label_class %>
+          <%= f.telephone_field :whatsapp_number, class: pos_input_class, dir: "ltr", placeholder: "+20 10 1234 5678" %>
+        </div>
+        <div>
+          <%= f.label :phone, t("sales.storefront.form.phone"), class: label_class %>
+          <%= f.telephone_field :phone, class: pos_input_class, dir: "ltr" %>
+        </div>
+        <div>
+          <%= f.label :email, t("sales.storefront.form.email"), class: label_class %>
+          <%= f.email_field :email, class: pos_input_class, dir: "ltr" %>
+        </div>
+        <div>
+          <%= f.label :address, t("sales.storefront.form.address"), class: label_class %>
+          <%= f.text_field :address, class: pos_input_class %>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.storefront.sections.seo") %></h2>
+      </div>
+      <div class="p-5">
+        <%= f.label :seo_description, t("sales.storefront.form.seo_description"), class: label_class %>
+        <%= f.text_area :seo_description, rows: 2, maxlength: 300, class: pos_input_class %>
+        <p class="<%= hint_class %>"><%= t("sales.storefront.form.seo_description_hint") %></p>
+      </div>
+    </section>
+
+    <div class="flex items-center gap-3">
+      <%= f.submit t("actions.save_changes"),
+            class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm" %>
+    </div>
+  <% end %>
+</div>

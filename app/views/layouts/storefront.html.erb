@@ -1,0 +1,105 @@
+<% page_title = content_for?(:title) ? yield(:title) : @company.name %>
+<% page_description = content_for?(:meta_description) ? yield(:meta_description) : (@storefront.seo_description.presence || @storefront.tagline.presence || t("public.storefront.meta_description", company: @company.name)) %>
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>" dir="<%= html_dir %>">
+  <head>
+    <title><%= page_title %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="<%= page_description %>">
+    <link rel="canonical" href="<%= content_for?(:canonical_url) ? yield(:canonical_url) : request.base_url + request.path %>">
+    <meta property="og:type" content="<%= content_for?(:og_type) ? yield(:og_type) : "website" %>">
+    <meta property="og:site_name" content="<%= @company.name %>">
+    <meta property="og:title" content="<%= page_title %>">
+    <meta property="og:description" content="<%= page_description %>">
+    <% if content_for?(:og_image) %>
+      <meta property="og:image" content="<%= yield(:og_image) %>">
+    <% elsif @storefront.banner.attached? %>
+      <meta property="og:image" content="<%= url_for(@storefront.banner.variant(:hero)) %>">
+    <% end %>
+    <% if @storefront.logo.attached? %>
+      <link rel="icon" href="<%= url_for(@storefront.logo.variant(:header)) %>">
+    <% end %>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="bg-stone-50 min-h-screen text-gray-900 antialiased flex flex-col">
+    <header class="border-b border-stone-200/80 bg-white">
+      <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <%= link_to storefront_home_path, class: "flex items-center gap-3 min-w-0 me-auto" do %>
+          <% if @storefront.logo.attached? %>
+            <%= image_tag @storefront.logo.variant(:header), alt: @company.name, class: "h-10 w-auto max-w-[8rem] object-contain" %>
+          <% end %>
+          <span class="min-w-0">
+            <span class="block text-lg font-semibold text-stone-900 truncate"><%= @company.name %></span>
+            <% if @storefront.tagline.present? %>
+              <span class="block text-xs text-stone-500 truncate"><%= @storefront.tagline %></span>
+            <% end %>
+          </span>
+        <% end %>
+
+        <%= form_with url: storefront_home_path, method: :get, class: "order-last w-full sm:order-none sm:w-auto sm:flex-1 sm:max-w-sm", role: "search" do %>
+          <label for="storefront-search" class="sr-only"><%= t("public.storefront.search_label") %></label>
+          <input id="storefront-search" type="search" name="q" value="<%= @query %>"
+                 placeholder="<%= t("public.storefront.search_placeholder") %>"
+                 class="w-full rounded-full border border-stone-300 bg-stone-50 px-4 py-2 text-sm focus:border-amber-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-amber-600/20">
+        <% end %>
+
+        <div class="flex items-center gap-2 text-xs font-semibold">
+          <% { en: "EN", ar: "عربي" }.each do |code, label| %>
+            <% if I18n.locale == code %>
+              <span class="rounded-full bg-stone-900 px-2.5 py-1 text-white"><%= label %></span>
+            <% else %>
+              <%= link_to label, "#{request.path}?#{request.query_parameters.merge("locale" => code.to_s).to_query}",
+                    class: "rounded-full px-2.5 py-1 text-stone-600 hover:bg-stone-100", lang: code, hreflang: code %>
+            <% end %>
+          <% end %>
+          <% if @storefront.whatsapp_url %>
+            <%= link_to @storefront.whatsapp_url, target: "_blank", rel: "noopener",
+                  class: "ms-1 inline-flex items-center gap-1.5 rounded-full border border-[#B7DFC5] bg-[#E7F5EC] px-3 py-1.5 text-[#146B3A] hover:bg-[#D4EEDB]" do %>
+              <%= render "public/storefronts/whatsapp_icon", css: "h-4 w-4" %>
+              <span><%= t("public.storefront.whatsapp_short") %></span>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </header>
+
+    <main class="flex-1">
+      <%= yield %>
+    </main>
+
+    <footer class="border-t border-stone-200 bg-white">
+      <div class="max-w-6xl mx-auto px-4 py-8 grid gap-6 sm:grid-cols-2 text-sm text-stone-600">
+        <div>
+          <p class="font-semibold text-stone-900"><%= @company.name %></p>
+          <% if @storefront.about.present? %>
+            <p class="mt-2 line-clamp-4 leading-relaxed"><%= @storefront.about %></p>
+          <% end %>
+        </div>
+        <% if @storefront.contact_present? %>
+          <div class="space-y-1.5 sm:text-end">
+            <p class="font-semibold text-stone-900"><%= t("public.storefront.contact_us") %></p>
+            <% if @storefront.phone_url %>
+              <p><%= link_to @storefront.phone, @storefront.phone_url, dir: "ltr", class: "hover:text-amber-800 tabular-nums" %></p>
+            <% end %>
+            <% if @storefront.whatsapp_url %>
+              <p><%= link_to @storefront.whatsapp_number, @storefront.whatsapp_url, target: "_blank", rel: "noopener", dir: "ltr", class: "hover:text-amber-800 tabular-nums" %></p>
+            <% end %>
+            <% if @storefront.email.present? %>
+              <p><%= mail_to @storefront.email, class: "hover:text-amber-800" %></p>
+            <% end %>
+            <% if @storefront.address.present? %>
+              <p><%= @storefront.address %></p>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+      <p class="border-t border-stone-100 py-3 text-center text-xs text-stone-400">
+        © <%= Date.current.year %> <%= @company.name %>
+      </p>
+    </footer>
+  </body>
+</html>

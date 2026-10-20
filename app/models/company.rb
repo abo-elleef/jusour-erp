@@ -10,11 +10,14 @@ class Company < ApplicationRecord
   # tickets it produces, and the reports built on them (sales, food cost, usage,
   # tax). A distributor sells products from a price list, not dishes from a menu,
   # so all of it is off for them.
-  FEATURES = %w[manufacturing attendance kds menu ar_credit_sales price_tiers landed_cost leads].freeze
+  # `storefront` is the public product-catalog website (see Storefront) — a
+  # distributor's answer to the restaurant's per-branch public menu.
+  FEATURES = %w[manufacturing attendance kds menu ar_credit_sales price_tiers landed_cost leads storefront].freeze
 
   # Per-profile default state. Anything not listed defaults to ON.
   PROFILE_FEATURE_DEFAULTS = {
-    "restaurant"   => { "ar_credit_sales" => false, "price_tiers" => false, "landed_cost" => false, "leads" => false },
+    "restaurant"   => { "ar_credit_sales" => false, "price_tiers" => false, "landed_cost" => false, "leads" => false,
+                        "storefront" => false },
     "distribution" => { "manufacturing" => false, "attendance" => false, "kds" => false, "menu" => false }
   }.freeze
 
@@ -27,6 +30,7 @@ class Company < ApplicationRecord
   has_many :cash_drawer_sessions, dependent: :destroy
   has_many :customers, dependent: :destroy
   has_many :leads, dependent: :destroy
+  has_one :storefront, dependent: :destroy
   has_associated_audits
 
   validates :name, presence: true

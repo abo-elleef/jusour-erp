@@ -52,7 +52,8 @@ module Permission
     { key: "leads:view",              group: "sales" },
     { key: "leads:manage",            group: "sales" },
     { key: "leads:reports",           group: "sales" },
-    { key: "sales:confirm_payments",  group: "sales" }
+    { key: "sales:confirm_payments",  group: "sales" },
+    { key: "storefront:manage",       group: "sales" }
   ].freeze
 
   KEYS = CATALOG.map { |p| p[:key] }.freeze
@@ -80,6 +81,7 @@ module Permission
         attendance:log attendance:view attendance:penalties attendance:waive_penalties attendance:audit staff:view locations:manage printers:manage
         pos:access kitchen:access production:access
         leads:view leads:manage leads:reports sales:confirm_payments
+        storefront:manage
       ]
     },
     "sub_manager" => {
