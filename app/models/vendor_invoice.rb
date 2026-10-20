@@ -126,9 +126,16 @@ class VendorInvoice < ApplicationRecord
   # blocked once either applies, so that settlement isn't quietly reopened by an
   # ordinary edit.
   def editable?
-    return true if draft?
+    edit_blocked_reason.nil?
+  end
 
-    !void? && credit_applied_cents.zero? && historical_settled_cents.zero?
+  # Why editable? is false, as a symbol the show page turns into a tooltip;
+  # nil when the invoice can be edited.
+  def edit_blocked_reason
+    return if draft?
+    return :void if void?
+    return :credit_applied unless credit_applied_cents.zero?
+    :historical_settled unless historical_settled_cents.zero?
   end
 
   def postable?

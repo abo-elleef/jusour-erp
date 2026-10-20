@@ -20,8 +20,11 @@
         <% if @credit_note.customer_invoice %> · <%= t("sales.credit_notes.for_invoice", number: @credit_note.customer_invoice.invoice_number) %><% end %>
       </p>
     </div>
-    <%= link_to t("sales.credit_notes.back"), admin_sales_credit_notes_path,
-          class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+    <div class="flex items-center gap-2">
+      <%= edit_button(blocked_reason: customer_credit_note_edit_blocked_message(@credit_note)) %>
+      <%= link_to t("sales.credit_notes.back"), admin_sales_credit_notes_path,
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+    </div>
   </div>
 
   <% if @credit_note.historical? %>

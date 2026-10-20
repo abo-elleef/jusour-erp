@@ -9,6 +9,7 @@
       <%= render "admin/inventory/vendor_credit_notes/status_badge", cn: @vendor_credit_note %>
     </div>
     <div class="flex items-center gap-2">
+      <%= edit_button(blocked_reason: vendor_credit_note_edit_blocked_message(@vendor_credit_note)) %>
       <% if @vendor_credit_note.postable? %>
         <%= button_to t("inventory.vendor_credit_notes.confirm_button"),
               confirm_admin_inventory_vendor_credit_note_path(@vendor_credit_note),

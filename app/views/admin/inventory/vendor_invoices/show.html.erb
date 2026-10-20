@@ -102,10 +102,8 @@
         </svg>
         <%= t("inventory.vendor_invoices.export") %>
       <% end %>
-      <% if @vendor_invoice.editable? %>
-        <%= link_to t("actions.edit"), edit_admin_inventory_vendor_invoice_path(@vendor_invoice),
-              class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" %>
-      <% end %>
+      <%= edit_button(edit_admin_inventory_vendor_invoice_path(@vendor_invoice),
+            blocked_reason: vendor_invoice_edit_blocked_message(@vendor_invoice)) %>
       <% if !@vendor_invoice.void? && can_manage_inventory_stock? %>
         <%= button_to t("inventory.vendor_invoices.void"),
               void_admin_inventory_vendor_invoice_path(@vendor_invoice),

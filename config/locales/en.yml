@@ -124,6 +124,26 @@ en:
     apply_search: "Apply search"
     save_changes: "Save changes"
 
+  edit_blocked:
+    no_permission: "You don't have permission to edit this. Ask an owner for the inventory management permission."
+    vendor_invoice:
+      void: "This invoice is void, so it can no longer be edited."
+      credit_applied: "Vendor credit notes %{numbers} are applied to this invoice. Editing would re-post its stock and supplier balance underneath them, so it's locked. Correct it with another credit note, or a new invoice for any shortfall."
+      historical_settled: "An owner marked this invoice as settled by a historical payment. It's locked until an owner unmarks it."
+    customer_invoice:
+      pending_payment_confirmation: "This invoice is waiting for payment approval. Rejecting the payment returns it to draft, and then it can be edited."
+      confirmed: "Confirmed invoices are final: stock and the customer's balance are already posted. Correct it with a credit note."
+      historical: "Historical invoices are imported records and can't be edited."
+      void: "This invoice is void, so it can no longer be edited."
+    vendor_credit_note:
+      draft: "Credit notes can't be edited. Void this draft and create a new one."
+      confirmed: "Confirmed credit notes are final: stock and the supplier balance are already posted."
+      void: "This credit note is void, so it can no longer be edited."
+    customer_credit_note:
+      draft: "Credit notes can't be edited. Void this draft and create a new one."
+      confirmed: "Confirmed credit notes are final: stock and the customer's balance are already posted."
+      historical: "Historical credit notes are imported records and can't be edited."
+      void: "This credit note is void, so it can no longer be edited."
   shared:
     row_index: "#"
     date: "Date"

@@ -33,8 +33,12 @@
         <% end %>
       </p>
     </div>
-    <%= link_to t("sales.customer_invoices.back"), admin_sales_customer_invoices_path,
-          class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+    <div class="flex items-center gap-2">
+      <%= edit_button(edit_admin_sales_customer_invoice_path(@invoice),
+            blocked_reason: customer_invoice_edit_blocked_message(@invoice)) %>
+      <%= link_to t("sales.customer_invoices.back"), admin_sales_customer_invoices_path,
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+    </div>
   </div>
 
   <%# Draft: confirm either settles now, waits for payment approval, or (COD)
@@ -54,8 +58,6 @@
         <% end %>
       </p>
       <div class="flex items-center gap-2">
-        <%= link_to t("actions.edit"), edit_admin_sales_customer_invoice_path(@invoice),
-              class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-300 transition-colors" %>
         <%= button_to t("actions.void"), void_admin_sales_customer_invoice_path(@invoice),
               method: :patch,
               class: "text-sm font-semibold text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors",

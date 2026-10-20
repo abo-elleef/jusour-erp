@@ -416,6 +416,33 @@ module ApplicationHelper
     Money.new(cents || 0).format(locale: I18n.locale, symbol: MONEY_SYMBOL)
   end
 
+  # An Edit action that is always on screen. When editing is allowed it is a
+  # plain link; otherwise it renders greyed out and explains why on hover, tap
+  # or focus (same tooltip behaviour as info_tooltip_icon), so a missing button
+  # never leaves the user guessing. aria-disabled rather than disabled: a
+  # disabled button fires no mouse or focus events, so its tooltip could never open.
+  def edit_button(path = nil, blocked_reason: nil)
+    base = "inline-flex text-sm font-semibold px-4 py-2.5 rounded-xl border transition-colors"
+    return link_to(t("actions.edit"), path, class: "#{base} text-gray-700 hover:bg-gray-100 border-gray-200") if blocked_reason.blank?
+
+    tag.span class: "relative inline-flex", data: { controller: "tooltip" } do
+      button = tag.button t("actions.edit"), type: "button",
+        class: "#{base} text-gray-400 bg-gray-50 border-gray-200 cursor-not-allowed",
+        aria: { disabled: true },
+        data: {
+          tooltip_target: "trigger",
+          action: "mouseenter->tooltip#onMouseEnter mouseleave->tooltip#onMouseLeave " \
+                   "focus->tooltip#onFocus blur->tooltip#onBlur click->tooltip#toggle"
+        }
+      panel = tag.span blocked_reason,
+        role: "tooltip",
+        class: "hidden absolute z-20 top-full mt-2 end-0 w-72 max-w-[80vw] rounded-xl border " \
+               "border-gray-200 bg-white p-3 text-xs leading-relaxed text-gray-600 shadow-lg font-normal text-start",
+        data: { tooltip_target: "panel" }
+      button + panel
+    end
+  end
+
   # A small "i" icon that reveals explanatory text next to a label — on hover
   # where the device supports it, on tap where it doesn't (see tooltip_controller.js).
   # For a short line of methodology text that would otherwise need its own
