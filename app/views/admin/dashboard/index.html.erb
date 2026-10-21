@@ -149,6 +149,12 @@
         <%= link_to t("inventory.tools.stock_transfers"), admin_inventory_stock_transfers_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
         <%= link_to t("nav.inventory"), admin_inventory_ingredients_path, class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" %>
       <% end %>
+      <% if @storefront_url %>
+        <%= link_to @storefront_url, target: "_blank", rel: "noopener",
+              class: "p-4 bg-white rounded-2xl border border-gray-200 hover:border-gray-300 text-center text-sm font-semibold transition-colors" do %>
+          <%= t("dashboard.view_website") %> <span aria-hidden="true">↗</span>
+        <% end %>
+      <% end %>
     </div>
   </section>
 </div>

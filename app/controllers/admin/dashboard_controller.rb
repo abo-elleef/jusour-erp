@@ -7,9 +7,19 @@ module Admin
       load_treasury_flow   if helpers.accounting_any_access?
       load_inventory_stats if helpers.inventory_any_access?
       load_pending_stats   if helpers.inventory_any_access? || current_user.can?("payroll:view")
+      load_storefront_url  if Current.company.feature_enabled?(:storefront) && current_user.can?("storefront:manage")
     end
 
     private
+
+    # Only a published site gets a quick link — a draft one would open a 404.
+    def load_storefront_url
+      storefront = ::Storefront.find_by(enabled: true)
+      return unless storefront
+
+      @storefront_url = storefront.subdomain_url(port: request.port) ||
+        public_storefront_home_url(company_slug: Current.company.slug)
+    end
 
     def load_today_stats
       today_orders = Order.completed.on_date(Date.current)

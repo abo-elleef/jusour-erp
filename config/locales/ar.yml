@@ -6101,6 +6101,7 @@ ar:
     payroll_pending: "معلّق"
     no_pending_access: "لا توجد عناصر للعرض."
     quick_links: "روابط سريعة"
+    view_website: "عرض الموقع"
     treasury_flow_section: "حركة الخزينة — اليوم"
     treasury_in_today: "الأموال الواردة"
     treasury_out_today: "الأموال الصادرة"

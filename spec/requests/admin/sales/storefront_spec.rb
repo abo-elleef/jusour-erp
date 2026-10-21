@@ -181,6 +181,35 @@ RSpec.describe "Admin storefront", type: :request do
     end
   end
 
+  describe "dashboard quick link" do
+    before { sign_in owner }
+
+    it "links to the published website" do
+      Storefront.create!(company: company, enabled: true)
+
+      get admin_root_path
+
+      expect(response.body).to include(public_storefront_home_url(company_slug: company.slug))
+      expect(response.body).to include(I18n.t("dashboard.view_website"))
+    end
+
+    it "prefers the subdomain link when one is set" do
+      Storefront.create!(company: company, enabled: true, subdomain: "acme")
+
+      get admin_root_path
+
+      expect(response.body).to include("http://acme.localhost")
+    end
+
+    it "is absent while the website is unpublished" do
+      Storefront.create!(company: company, enabled: false)
+
+      get admin_root_path
+
+      expect(response.body).not_to include(I18n.t("dashboard.view_website"))
+    end
+  end
+
   it "shows the website in the sales sidebar" do
     sign_in owner
 
