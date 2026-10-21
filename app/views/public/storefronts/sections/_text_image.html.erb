@@ -1,0 +1,23 @@
+<%# locals: section: %>
+<% title = section.text(:title) %>
+<% body = section.text(:body) %>
+<% if title.present? || body.present? || section.image.attached? %>
+  <section class="max-w-6xl mx-auto px-4 pt-10">
+    <div class="grid overflow-hidden rounded-2xl border border-stone-200 bg-white md:grid-cols-2">
+      <% if section.image.attached? %>
+        <%# Cropped to the block, so a tall portrait photo can't stretch it. %>
+        <div class="relative h-64 md:h-auto md:min-h-80 <%= 'md:order-last' if section.setting(:image_position) == 'end' %>">
+          <%= image_tag section.image.variant(:half), alt: "", loading: "lazy", class: "absolute inset-0 h-full w-full object-cover" %>
+        </div>
+      <% end %>
+      <div class="self-center p-6 sm:p-8 <%= 'md:col-span-2' unless section.image.attached? %>">
+        <% if title.present? %>
+          <h2 class="text-xl font-semibold text-stone-900"><%= title %></h2>
+        <% end %>
+        <% if body.present? %>
+          <div class="mt-3 text-sm leading-relaxed text-stone-600"><%= simple_format(body) %></div>
+        <% end %>
+      </div>
+    </div>
+  </section>
+<% end %>

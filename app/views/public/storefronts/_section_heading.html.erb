@@ -1,0 +1,7 @@
+<%# locals: title:, link: nil %>
+<div class="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+  <h2 class="text-lg font-semibold text-stone-900"><%= title %></h2>
+  <% if local_assigns[:link] %>
+    <%= link_to t("public.storefront.view_all"), link, class: "text-sm font-semibold text-(--sf-primary) hover:underline" %>
+  <% end %>
+</div>

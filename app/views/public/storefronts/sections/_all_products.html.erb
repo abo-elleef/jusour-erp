@@ -1,0 +1,5 @@
+<%# locals: section: %>
+<div class="max-w-6xl mx-auto px-4 pt-8">
+  <%= render "public/storefronts/category_chips" %>
+  <%= render "public/storefronts/results", heading: section.text(:title).presence || t("public.storefront.all_products") %>
+</div>

@@ -43,6 +43,8 @@ ar:
       whatsapp: "واتساب %{number}"
       whatsapp_short: "واتساب"
     storefront:
+      view_all: "عرض الكل"
+      open_map: "افتح في خرائط جوجل"
       follow_us: "تابعنا"
       shop_by_category: "تسوق حسب الفئة"
       social:
@@ -2733,6 +2735,7 @@ ar:
     shared:
       em_dash: "—"
     nav:
+      storefront_sections: "الصفحة الرئيسية للموقع"
       storefront_categories: "فئات الموقع"
       invoices: "الفواتير"
       statements: "كشوف الحساب"
@@ -2852,6 +2855,84 @@ ar:
         image_hint: "تظهر في مربع الفئة بالصفحة الرئيسية وأعلى صفحة الفئة. الصور العريضة أفضل."
       flash:
         updated: "تم حفظ الفئة."
+    storefront_sections:
+      title: "الصفحة الرئيسية للموقع"
+      description: "ابنِ الصفحة الرئيسية من أقسام جاهزة. اسحب لإعادة الترتيب، أو استخدم الأسهم على الهاتف."
+      drag_hint: "اسحب لإعادة الترتيب"
+      move_up: "نقل لأعلى"
+      move_down: "نقل لأسفل"
+      hide: "إخفاء"
+      show: "إظهار"
+      remove_confirm: "حذف هذا القسم من الصفحة الرئيسية؟"
+      empty: "لا توجد أقسام في الصفحة الرئيسية. أضف قسماً بالأسفل."
+      add_heading: "إضافة قسم"
+      types:
+        hero:
+          name: "الغلاف الرئيسي"
+          hint: "عنوان كبير فوق صورة الغلاف، مع زري واتساب والاتصال."
+        categories:
+          name: "تسوق حسب الفئة"
+          hint: "مربع لكل فئة، بالصور من صفحة فئات الموقع."
+        featured_products:
+          name: "منتجات مميزة"
+          hint: "المنتجات التي حددتها كمميزة."
+        category_products:
+          name: "منتجات من فئة"
+          hint: "صف قصير من منتجات فئة واحدة، مع رابط «عرض الكل»."
+        all_products:
+          name: "كل المنتجات"
+          hint: "قائمة المنتجات الكاملة مع فلاتر الفئات والصفحات."
+        text_image:
+          name: "نص وصورة"
+          hint: "عنوان وفقرة وصورة اختيارية — قصتكم، الجودة، الشهادات."
+        promo_banner:
+          name: "بانر ترويجي"
+          hint: "صورة عريضة بعنوان وزر — العروض والمنتجات الجديدة."
+        brand_logos:
+          name: "شعارات العلامات"
+          hint: "شريط من الشعارات — خطوط منتجاتكم أو شركاؤكم."
+        about:
+          name: "من نحن"
+          hint: "نص «نبذة عن الشركة» من إعدادات الموقع."
+        contact:
+          name: "تواصل معنا"
+          hint: "العنوان والهاتف والبريد وواتساب ورابط الخريطة."
+      fields:
+        headline: "العنوان"
+        subheadline: "العنوان الفرعي"
+        show_contact_buttons: "إظهار زري واتساب والاتصال"
+        title: "العنوان"
+        limit: "عدد المنتجات"
+        category_id: "الفئة"
+        body: "النص"
+        image_position: "موضع الصورة"
+        subtitle: "العنوان الفرعي"
+        button_label: "نص الزر"
+        link: "رابط الزر"
+        map_url: "رابط خرائط جوجل"
+      field_hints:
+        link: "عنوان ويب كامل، أو صفحة في موقعك مثل ‎/?category=…"
+        map_link: "افتح المكان في خرائط جوجل، اضغط مشاركة، والصق الرابط."
+        hero:
+          headline: "إذا ترك فارغاً يُستخدم اسم الشركة."
+          subheadline: "إذا ترك فارغاً يُستخدم الشعار النصي من إعدادات الموقع."
+      choices:
+        image_position:
+          end: "بعد النص"
+          start: "قبل النص"
+      form:
+        enabled: "إظهار هذا القسم في الصفحة الرئيسية"
+        pick_category: "اختر فئة"
+        image: "الصورة"
+        logos: "الشعارات"
+        logos_hint: "حتى %{count} صورة. صور PNG الشفافة هي الأفضل."
+        remove_logo_confirm: "حذف هذا الشعار؟"
+      flash:
+        created: "تمت إضافة القسم. املأه واحفظ."
+        updated: "تم حفظ القسم."
+        deleted: "تم حذف القسم."
+        logo_removed: "تم حذف الشعار."
+        settings_first: "احفظ إعدادات الموقع أولاً."
     storefront_listings:
       title: "منتجات الموقع"
       description: "المنتجات المنشورة على موقعك. الاسم والفئة والوحدة والسعر تأتي من المخزون."
@@ -5964,6 +6045,24 @@ ar:
   activerecord:
     errors:
       models:
+        storefront_section:
+          attributes:
+            base:
+              too_many_sections: "لا يمكن أن تحتوي الصفحة الرئيسية على أكثر من %{count} قسماً"
+              invalid_limit: "اختر عدد المنتجات المعروضة"
+              invalid_choice: "اختر أحد الخيارات"
+              invalid_link: "رابط الزر يجب أن يكون عنواناً كاملاً يبدأ بـ https:// أو مساراً يبدأ بـ /"
+              invalid_map_link: "رابط الخريطة يجب أن يكون من خرائط جوجل"
+              category_required: "اختر فئة"
+            section_type:
+              only_one: "يمكن أن يظهر مرة واحدة فقط في الصفحة الرئيسية"
+            image:
+              invalid_image_type: "يجب أن تكون صورة JPEG أو PNG أو WebP"
+              image_too_large: "يجب ألا تتجاوز 10 ميجابايت"
+            logos:
+              too_many: "لا يمكن أن تزيد عن %{count}"
+              invalid_image_type: "يجب أن تكون صور JPEG أو PNG أو WebP"
+              image_too_large: "يجب ألا تتجاوز كل صورة 10 ميجابايت"
         storefront_category:
           attributes:
             image:
@@ -6268,6 +6367,10 @@ ar:
         one: "موظف"
         other: "موظفون"
     attributes:
+      storefront_section:
+        section_type: "القسم"
+        image: "الصورة"
+        logos: "الشعارات"
       storefront_category:
         image: "الصورة"
       storefront:

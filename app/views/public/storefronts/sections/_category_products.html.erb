@@ -1,0 +1,10 @@
+<%# locals: section: %>
+<% listings = @section_products[section] || [] %>
+<% category = listings.first&.ingredient&.ingredient_category %>
+<% if listings.any? %>
+  <section class="max-w-6xl mx-auto px-4 pt-8">
+    <%= render "public/storefronts/section_heading", title: section.text(:title).presence || storefront_category_name(category),
+          link: storefront_home_path(category: category.id) %>
+    <%= render "public/storefronts/grid", listings: listings %>
+  </section>
+<% end %>

@@ -169,6 +169,42 @@ RSpec.describe "Public storefronts", type: :request do
     end
   end
 
+  describe "home page sections" do
+    def add(type, position, **settings)
+      StorefrontSection.new(storefront: storefront, section_type: type, position: position).tap do |s|
+        s.assign_settings(settings)
+        s.save!
+      end
+    end
+
+    it "renders the saved blocks in order and skips hidden ones" do
+      add("promo_banner", 0, title: "Winter offer", button_label: "Shop now", link: "/?q=gloves")
+      add("category_products", 1, category_id: other_category.id, title: "Consumables row")
+      add("text_image", 2, title: "Our story", body: "Founded in Cairo").update!(enabled: false)
+
+      get public_storefront_home_path(company_slug: company.slug)
+
+      body = response.body
+      expect(body).to include("Winter offer", %(href="/?q=gloves"), "Consumables row", "Nitrile gloves")
+      expect(body.index("Winter offer")).to be < body.index("Consumables row")
+      expect(body).not_to include("Our story", I18n.t("public.storefront.chat_on_whatsapp", locale: :en))
+    end
+
+    it "shows the default layout before any block is saved" do
+      get public_storefront_home_path(company_slug: company.slug)
+
+      expect(response.body).to include("Everything for your clinic", "Mouth mirror", I18n.t("public.storefront.featured", locale: :en))
+    end
+
+    it "shows plain results, without the blocks, for search and later pages" do
+      add("promo_banner", 0, title: "Winter offer")
+
+      get public_storefront_home_path(company_slug: company.slug, q: "mirror")
+      expect(response.body).to include("Mouth mirror")
+      expect(response.body).not_to include("Winter offer")
+    end
+  end
+
   describe "on the storefront's subdomain" do
     before { host! "acme.localhost" }
 

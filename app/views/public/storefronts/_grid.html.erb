@@ -1,0 +1,6 @@
+<%# locals: listings: %>
+<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+  <% listings.each do |listing| %>
+    <%= render "public/storefronts/product_card", listing: listing %>
+  <% end %>
+</div>

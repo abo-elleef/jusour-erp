@@ -42,6 +42,8 @@ class Storefront < ApplicationRecord
   MIN_PRIMARY_CONTRAST = 3.0
   MAX_IMAGE_SIZE = 10.megabytes
 
+  has_many :sections, -> { order(:position, :created_at) }, class_name: "StorefrontSection", dependent: :destroy
+
   has_one_attached :logo do |attachable|
     attachable.variant :header, resize_to_limit: [320, 320], preprocessed: true
   end
@@ -116,6 +118,20 @@ class Storefront < ApplicationRecord
   def whatsapp_url
     digits = whatsapp_number.to_s.gsub(/\D/, "")
     "https://wa.me/#{digits}" if digits.present?
+  end
+
+  # A link admins may put on the site: a full http(s) address, or a path on
+  # the storefront itself ("/?category=..."). Never javascript:, never "//host".
+  def self.safe_link?(url)
+    url.to_s.match?(%r{\A/(?!/)\S*\z}) || url.to_s.match?(%r{\Ahttps?://[^\s]+\z}i)
+  end
+
+  # The home page blocks to render: the saved ones, or — until someone edits
+  # the home page — the default layout, which matches the original design.
+  def home_sections
+    return StorefrontSection.default_layout(self) unless sections.exists?
+
+    sections.where(enabled: true).includes(image_attachment: :blob, logos_attachments: :blob).to_a
   end
 
   def self.relative_luminance(hex)
@@ -198,8 +214,7 @@ class Storefront < ApplicationRecord
 
   # A full http(s) link, or a path on the storefront itself ("/?category=...").
   def announcement_url_is_safe
-    return if announcement_url.blank?
-    return if announcement_url.match?(%r{\A/(?!/)}) || announcement_url.match?(%r{\Ahttps?://[^\s]+\z}i)
+    return if announcement_url.blank? || self.class.safe_link?(announcement_url)
 
     errors.add(:announcement_url, :invalid)
   end

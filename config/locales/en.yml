@@ -45,6 +45,8 @@ en:
       whatsapp: "WhatsApp %{number}"
       whatsapp_short: "WhatsApp"
     storefront:
+      view_all: "View all"
+      open_map: "Open in Google Maps"
       follow_us: "Follow us"
       shop_by_category: "Shop by category"
       social:
@@ -2720,6 +2722,7 @@ en:
     shared:
       em_dash: "—"
     nav:
+      storefront_sections: "Website home page"
       storefront_categories: "Website categories"
       invoices: "Invoices"
       statements: "Statements"
@@ -2831,6 +2834,84 @@ en:
         image_hint: "Shown on the home page tile and at the top of the category page. Landscape works best."
       flash:
         updated: "Category saved."
+    storefront_sections:
+      title: "Website home page"
+      description: "Build the home page from ready-made blocks. Drag to reorder, or use the arrows on a phone."
+      drag_hint: "Drag to reorder"
+      move_up: "Move up"
+      move_down: "Move down"
+      hide: "Hide"
+      show: "Show"
+      remove_confirm: "Remove this block from the home page?"
+      empty: "The home page has no blocks. Add one below."
+      add_heading: "Add a block"
+      types:
+        hero:
+          name: "Hero banner"
+          hint: "Big heading over your banner photo, with WhatsApp and call buttons."
+        categories:
+          name: "Shop by category"
+          hint: "A tile for each category, using the photos from Website categories."
+        featured_products:
+          name: "Featured products"
+          hint: "Products you marked as featured."
+        category_products:
+          name: "Products from a category"
+          hint: "A short row of products from one category, with a “View all” link."
+        all_products:
+          name: "All products"
+          hint: "The full product list with category filters and pages."
+        text_image:
+          name: "Text and photo"
+          hint: "A heading, a paragraph and an optional photo — your story, quality, certifications."
+        promo_banner:
+          name: "Promo banner"
+          hint: "A wide photo with a heading and a button — offers and new arrivals."
+        brand_logos:
+          name: "Brand logos"
+          hint: "A strip of logos — your product lines or partners."
+        about:
+          name: "About"
+          hint: "The “About the company” text from Website settings."
+        contact:
+          name: "Contact"
+          hint: "Address, phone, email, WhatsApp and a map link."
+      fields:
+        headline: "Heading"
+        subheadline: "Subheading"
+        show_contact_buttons: "Show WhatsApp and call buttons"
+        title: "Heading"
+        limit: "How many products"
+        category_id: "Category"
+        body: "Text"
+        image_position: "Photo position"
+        subtitle: "Subheading"
+        button_label: "Button text"
+        link: "Button link"
+        map_url: "Google Maps link"
+      field_hints:
+        link: "A full web address, or a page on your site such as /?category=…"
+        map_link: "Open the place in Google Maps, tap Share, and paste the link."
+        hero:
+          headline: "Blank uses the company name."
+          subheadline: "Blank uses the tagline from Website settings."
+      choices:
+        image_position:
+          end: "After the text"
+          start: "Before the text"
+      form:
+        enabled: "Show this block on the home page"
+        pick_category: "Choose a category"
+        image: "Photo"
+        logos: "Logos"
+        logos_hint: "Up to %{count} images. Transparent PNGs look best."
+        remove_logo_confirm: "Remove this logo?"
+      flash:
+        created: "Block added. Fill it in and save."
+        updated: "Block saved."
+        deleted: "Block removed."
+        logo_removed: "Logo removed."
+        settings_first: "Save the website settings first."
     storefront_listings:
       title: "Website products"
       description: "Products published on your website. Name, category, unit and price come from Inventory."
@@ -5899,6 +5980,24 @@ en:
   activerecord:
     errors:
       models:
+        storefront_section:
+          attributes:
+            base:
+              too_many_sections: "The home page can have at most %{count} blocks"
+              invalid_limit: "Pick how many products to show"
+              invalid_choice: "Pick one of the options"
+              invalid_link: "The button link must be a full https:// address or a path starting with /"
+              invalid_map_link: "The map link must be a Google Maps link"
+              category_required: "Choose a category"
+            section_type:
+              only_one: "can only appear once on the home page"
+            image:
+              invalid_image_type: "must be a JPEG, PNG or WebP image"
+              image_too_large: "must be 10 MB or smaller"
+            logos:
+              too_many: "can't be more than %{count}"
+              invalid_image_type: "must be JPEG, PNG or WebP images"
+              image_too_large: "must be 10 MB or smaller each"
         storefront_category:
           attributes:
             image:
@@ -6213,6 +6312,10 @@ en:
         one: "Staff member"
         other: "Staff members"
     attributes:
+      storefront_section:
+        section_type: "Block"
+        image: "Photo"
+        logos: "Logos"
       storefront_category:
         image: "Photo"
       storefront:

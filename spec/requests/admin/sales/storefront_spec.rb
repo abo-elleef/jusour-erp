@@ -232,6 +232,88 @@ RSpec.describe "Admin storefront", type: :request do
     end
   end
 
+  describe "home page editor" do
+    let!(:storefront) { Storefront.create!(company: company, enabled: true) }
+
+    before { sign_in owner }
+
+    it "starts from the default layout" do
+      get admin_sales_storefront_sections_path
+
+      expect(response).to have_http_status(:ok)
+      expect(storefront.sections.pluck(:section_type)).to eq(StorefrontSection::DEFAULT_LAYOUT)
+      expect(response.body).to include(I18n.t("sales.storefront_sections.types.hero.name"))
+    end
+
+    it "adds a block and saves its settings, photo and Arabic text" do
+      get admin_sales_storefront_sections_path
+      post admin_sales_storefront_sections_path(section_type: "promo_banner")
+      section = storefront.sections.find_by!(section_type: "promo_banner")
+      expect(response).to redirect_to(edit_admin_sales_storefront_section_path(section))
+      expect(section.position).to eq(StorefrontSection::DEFAULT_LAYOUT.size)
+
+      get edit_admin_sales_storefront_section_path(section)
+      expect(response).to have_http_status(:ok)
+
+      patch admin_sales_storefront_section_path(section), params: {
+        enabled: "1", image: photo,
+        settings: { title: "Offer", title_ar: "عرض", link: "https://example.com", button_label: "Go", junk: "x" }
+      }
+      expect(response).to redirect_to(edit_admin_sales_storefront_section_path(section))
+      expect(section.reload.settings).to include("title" => "Offer", "title_ar" => "عرض", "link" => "https://example.com")
+      expect(section.settings).not_to have_key("junk")
+      expect(section.image).to be_attached
+    end
+
+    it "refuses an unsafe button link" do
+      section = StorefrontSection.create!(storefront: storefront, section_type: "promo_banner")
+
+      patch admin_sales_storefront_section_path(section), params: { settings: { link: "javascript:alert(1)" } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(section.reload.setting(:link)).to be_nil
+    end
+
+    it "hides, moves, reorders and removes blocks" do
+      get admin_sales_storefront_sections_path
+      hero, categories = storefront.sections.first(2)
+
+      patch toggle_admin_sales_storefront_section_path(hero)
+      expect(hero.reload).not_to be_enabled
+
+      patch move_admin_sales_storefront_section_path(categories, direction: "up")
+      expect(storefront.sections.reload.first).to eq(categories)
+
+      ids = storefront.sections.pluck(:id).reverse
+      patch reorder_admin_sales_storefront_sections_path, params: { positions: ids.each_with_index.to_h }, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(storefront.sections.reload.pluck(:id)).to eq(ids)
+
+      delete admin_sales_storefront_section_path(hero)
+      expect(storefront.sections.reload.pluck(:position)).to eq((0...(StorefrontSection::DEFAULT_LAYOUT.size - 1)).to_a)
+    end
+
+    it "won't add a second all-products grid" do
+      get admin_sales_storefront_sections_path
+
+      post admin_sales_storefront_sections_path(section_type: "all_products")
+
+      expect(response).to redirect_to(admin_sales_storefront_sections_path)
+      expect(storefront.sections.where(section_type: "all_products").count).to eq(1)
+    end
+
+    it "manages brand logos one by one" do
+      section = StorefrontSection.create!(storefront: storefront, section_type: "brand_logos")
+
+      patch admin_sales_storefront_section_path(section), params: { logos: [photo] }
+      patch admin_sales_storefront_section_path(section), params: { logos: [fixture_file_upload("storefront_product.png", "image/png")] }
+      expect(section.reload.logos.count).to eq(2)
+
+      delete remove_logo_admin_sales_storefront_section_path(section, attachment_id: section.ordered_logos.first.id)
+      expect(section.reload.logos.count).to eq(1)
+    end
+  end
+
   describe "dashboard quick link" do
     before { sign_in owner }
 

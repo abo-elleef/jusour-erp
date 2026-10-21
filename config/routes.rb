@@ -176,6 +176,14 @@ Rails.application.routes.draw do
       # Keyed by the inventory category's id: the storefront row is created on
       # first save, so a category without one can still be edited.
       resources :storefront_categories, only: %i[index edit update]
+      resources :storefront_sections, except: %i[show new] do
+        member do
+          patch :toggle
+          patch :move
+          delete :remove_logo
+        end
+        collection { patch :reorder }
+      end
       resources :storefront_listings, except: %i[show] do
         collection do
           get :bulk_new

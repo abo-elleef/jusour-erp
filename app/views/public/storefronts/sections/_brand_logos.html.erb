@@ -1,0 +1,14 @@
+<%# locals: section: %>
+<% logos = section.persisted? ? section.ordered_logos : [] %>
+<% if logos.any? %>
+  <section class="max-w-6xl mx-auto px-4 pt-10">
+    <% if section.text(:title).present? %>
+      <%= render "public/storefronts/section_heading", title: section.text(:title) %>
+    <% end %>
+    <div class="flex flex-wrap items-center justify-center gap-x-10 gap-y-6 rounded-2xl border border-stone-200 bg-white px-6 py-8">
+      <% logos.each do |logo| %>
+        <%= image_tag logo.variant(:logo), alt: "", loading: "lazy", class: "h-12 w-auto max-w-[9rem] object-contain" %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

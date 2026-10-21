@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_22_100200) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_23_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1602,6 +1602,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_22_100200) do
     t.index ["ingredient_id"], name: "index_storefront_listings_on_ingredient_id"
   end
 
+  create_table "storefront_sections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "storefront_id", null: false
+    t.string "section_type", null: false
+    t.integer "position", default: 0, null: false
+    t.boolean "enabled", default: true, null: false
+    t.jsonb "settings", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_storefront_sections_on_company_id"
+    t.index ["storefront_id", "position"], name: "index_storefront_sections_on_storefront_id_and_position"
+  end
+
   create_table "storefronts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.boolean "enabled", default: false, null: false
@@ -2184,6 +2197,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_22_100200) do
   add_foreign_key "storefront_categories", "ingredient_categories"
   add_foreign_key "storefront_listings", "companies"
   add_foreign_key "storefront_listings", "ingredients"
+  add_foreign_key "storefront_sections", "companies"
+  add_foreign_key "storefront_sections", "storefronts"
   add_foreign_key "storefronts", "companies"
   add_foreign_key "tax_rates", "companies"
   add_foreign_key "treasuries", "companies"

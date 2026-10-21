@@ -1,0 +1,14 @@
+<% if @categories.any? %>
+  <nav class="-mx-4 mb-6 flex gap-2 overflow-x-auto px-4 pb-1" aria-label="<%= t("public.storefront.categories") %>">
+    <% chip = "h-9 shrink-0 inline-flex items-center rounded-full border px-4 text-sm font-medium transition-colors" %>
+    <% on = "border-(--sf-primary) bg-(--sf-primary) text-(--sf-on-primary)" %>
+    <% off = "border-stone-300 bg-white text-stone-700 hover:bg-stone-50" %>
+    <%= link_to t("public.storefront.all_products"), storefront_home_path(q: @query.presence),
+          class: "#{chip} #{@category ? off : on}", aria: { current: (@category ? nil : "page") } %>
+    <% @categories.each do |category| %>
+      <% active = @category&.id == category.id %>
+      <%= link_to storefront_category_name(category), storefront_home_path(category: category.id, q: @query.presence),
+            class: "#{chip} #{active ? on : off}", aria: { current: (active ? "page" : nil) } %>
+    <% end %>
+  </nav>
+<% end %>

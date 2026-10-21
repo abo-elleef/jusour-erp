@@ -1,0 +1,78 @@
+<% content_for :title, t("sales.storefront_sections.title") %>
+
+<div class="max-w-4xl">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight text-gray-900"><%= t("sales.storefront_sections.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("sales.storefront_sections.description") %></p>
+    </div>
+    <% if @storefront.enabled? %>
+      <%= link_to t("sales.storefront.view_site"), @storefront.subdomain_url(port: request.port) || public_storefront_home_url(company_slug: Current.company.slug),
+            target: "_blank", rel: "noopener",
+            class: "inline-flex text-sm font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2 rounded-xl border border-amber-200" %>
+    <% end %>
+  </div>
+
+  <%= turbo_frame_tag "storefront-sections" do %>
+    <% if flash[:alert].present? %>
+      <div class="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert"><%= flash[:alert] %></div>
+    <% end %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <ol class="divide-y divide-gray-100"
+          data-controller="sortable-list" data-sortable-list-url-value="<%= reorder_admin_sales_storefront_sections_path %>"
+          data-sortable-list-display-offset-value="1">
+        <% @sections.each_with_index do |section, index| %>
+          <li class="flex flex-wrap items-center gap-3 px-4 py-3 <%= 'bg-gray-50/70' unless section.enabled? %>"
+              data-sortable-list-target="item" data-id="<%= section.id %>">
+            <span class="cursor-grab select-none text-gray-400" title="<%= t("sales.storefront_sections.drag_hint") %>" aria-hidden="true">⋮⋮</span>
+            <span class="w-7 text-xs font-semibold tabular-nums text-gray-400" data-sortable-list-target="position">#<%= index + 1 %></span>
+            <div class="min-w-0 flex-1">
+              <p class="text-sm font-semibold <%= section.enabled? ? 'text-gray-900' : 'text-gray-400 line-through' %>">
+                <%= t("sales.storefront_sections.types.#{section.section_type}.name") %>
+              </p>
+              <% summary = section.text(:title, locale: :en).presence || section.text(:headline, locale: :en).presence ||
+                           (section.section_type == "category_products" && @categories[section.setting(:category_id)]&.name) %>
+              <p class="text-xs text-gray-500 truncate"><%= summary.presence || t("sales.storefront_sections.types.#{section.section_type}.hint") %></p>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <% btn = "inline-flex text-xs font-semibold px-2.5 py-1.5 rounded-xl border" %>
+              <%= button_to "↑", move_admin_sales_storefront_section_path(section, direction: "up"), method: :patch, disabled: index.zero?,
+                    class: "#{btn} border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-30", title: t("sales.storefront_sections.move_up"),
+                    aria: { label: t("sales.storefront_sections.move_up") } %>
+              <%= button_to "↓", move_admin_sales_storefront_section_path(section, direction: "down"), method: :patch, disabled: index == @sections.size - 1,
+                    class: "#{btn} border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-30", title: t("sales.storefront_sections.move_down"),
+                    aria: { label: t("sales.storefront_sections.move_down") } %>
+              <%= button_to (section.enabled? ? t("sales.storefront_sections.hide") : t("sales.storefront_sections.show")),
+                    toggle_admin_sales_storefront_section_path(section), method: :patch,
+                    class: "#{btn} #{section.enabled? ? 'border-gray-200 text-gray-700 hover:bg-gray-100' : 'border-green-200 text-green-800 hover:bg-green-50'}" %>
+              <%= link_to t("actions.edit"), edit_admin_sales_storefront_section_path(section), data: { turbo_frame: "_top" },
+                    class: "#{btn} border-gray-200 text-gray-700 hover:bg-gray-100" %>
+              <%= button_to t("actions.remove"), admin_sales_storefront_section_path(section), method: :delete,
+                    class: "#{btn} border-red-200 text-red-700 hover:bg-red-50",
+                    form: { data: { turbo_confirm: t("sales.storefront_sections.remove_confirm") } } %>
+            </div>
+          </li>
+        <% end %>
+      </ol>
+      <% if @sections.empty? %>
+        <p class="p-8 text-center text-sm text-gray-500"><%= t("sales.storefront_sections.empty") %></p>
+      <% end %>
+    </section>
+  <% end %>
+
+  <section class="mt-8">
+    <h2 class="text-sm font-semibold text-gray-900 mb-3"><%= t("sales.storefront_sections.add_heading") %></h2>
+    <div class="grid gap-3 sm:grid-cols-2">
+      <% present_singletons = @sections.map(&:section_type) & StorefrontSection::SINGLETON_TYPES %>
+      <% StorefrontSection::TYPES.each_key do |type| %>
+        <% next if present_singletons.include?(type) %>
+        <%= button_to admin_sales_storefront_sections_path(section_type: type), data: { turbo_frame: "_top" },
+              class: "w-full text-start rounded-2xl border border-gray-200 bg-white px-4 py-3 hover:border-amber-300 hover:bg-amber-50/40 transition-colors",
+              form: { class: "block" } do %>
+          <span class="block text-sm font-semibold text-gray-900">+ <%= t("sales.storefront_sections.types.#{type}.name") %></span>
+          <span class="block text-xs text-gray-500 mt-0.5"><%= t("sales.storefront_sections.types.#{type}.hint") %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+</div>

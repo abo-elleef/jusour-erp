@@ -1,0 +1,11 @@
+<%# locals: section: %>
+<% if @categories.any? %>
+  <section class="max-w-6xl mx-auto px-4 pt-8">
+    <%= render "public/storefronts/section_heading", title: section.text(:title).presence || t("public.storefront.shop_by_category") %>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+      <% @categories.each do |category| %>
+        <%= render "public/storefronts/category_tile", category: category %>
+      <% end %>
+    </div>
+  </section>
+<% end %>
