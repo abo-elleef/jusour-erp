@@ -68,7 +68,7 @@
     <div class="p-5 space-y-4">
       <% if listing.persisted? && listing.images.attached? %>
         <ul class="flex flex-wrap gap-3">
-          <% listing.images.select(&:persisted?).each_with_index do |image, index| %>
+          <% listing.ordered_images.select(&:persisted?).each_with_index do |image, index| %>
             <li class="relative">
               <%= image_tag image.variant(:thumb), alt: "", class: "h-24 w-24 rounded-xl border border-gray-200 object-cover" %>
               <% if index.zero? %>

@@ -59,8 +59,14 @@ class StorefrontListing < ApplicationRecord
     Ingredient.unit_display_label(ingredient.unit)
   end
 
+  # Photos in upload order. Attachment ids are UUIDs, so the association's own
+  # order (by id) is random; sorted in Ruby so a preloaded list stays one query.
+  def ordered_images
+    images.attachments.sort_by { |attachment| [attachment.created_at || Time.current, attachment.id.to_s] }
+  end
+
   def cover_image
-    images.first if images.attached?
+    ordered_images.first
   end
 
   private

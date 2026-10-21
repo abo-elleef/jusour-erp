@@ -70,6 +70,15 @@ RSpec.describe StorefrontListing, type: :model do
     expect(listing.display_title).to eq("Nitrile gloves")
   end
 
+  it "uses the first uploaded photo as the cover, whatever the attachment ids sort to" do
+    listing = described_class.create!(ingredient: ingredient)
+    photo = Rails.root.join("spec/fixtures/files/storefront_product.png")
+    listing.images.attach(Array.new(4) { |i| { io: File.open(photo), filename: "p#{i}.png", content_type: "image/png" } })
+
+    expect(listing.reload.ordered_images.map { |a| a.blob.filename.to_s }).to eq(%w[p0.png p1.png p2.png p3.png])
+    expect(listing.cover_image.blob.filename.to_s).to eq("p0.png")
+  end
+
   it "caps the number of photos" do
     listing = described_class.create!(ingredient: ingredient)
     listing.images = Array.new(StorefrontListing::MAX_IMAGES + 1) do |i|

@@ -63,7 +63,7 @@ module Admin
         @listing.assign_attributes(listing_params.except(:images, :ingredient_id))
         # Assigning to a has_many_attached replaces it, so keep the photos already
         # there and add the new uploads after them.
-        @listing.images = @listing.images.blobs + new_images if new_images.any?
+        @listing.images = @listing.ordered_images.map(&:blob) + new_images if new_images.any?
 
         if @listing.save
           redirect_to edit_admin_sales_storefront_listing_path(@listing), notice: t("sales.storefront_listings.flash.updated")

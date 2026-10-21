@@ -27,7 +27,7 @@
       </div>
       <% if @listing.images.size > 1 %>
         <div class="mt-3 flex gap-2 overflow-x-auto">
-          <% @listing.images.each_with_index do |image, index| %>
+          <% @listing.ordered_images.each_with_index do |image, index| %>
             <button type="button"
                     class="shrink-0 overflow-hidden rounded-xl border-2 <%= index.zero? ? 'border-amber-600' : 'border-transparent' %> focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700/30"
                     data-action="storefront-gallery#show"
