@@ -1342,6 +1342,7 @@ module ApplicationHelper
       items << { controller: "storefront_listings", label: "sales.nav.storefront_listings", path: :admin_sales_storefront_listings_path }
       items << { controller: "storefront_categories", label: "sales.nav.storefront_categories", path: :admin_sales_storefront_categories_path }
       items << { controller: "storefront_sections", label: "sales.nav.storefront_sections", path: :admin_sales_storefront_sections_path }
+      items << { controller: "storefront_pages", label: "sales.nav.storefront_pages", path: :admin_sales_storefront_pages_path }
       items << { controller: "storefronts", label: "sales.nav.storefront", path: :admin_sales_storefront_path }
     end
 

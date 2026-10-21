@@ -129,6 +129,13 @@
           </div>
         <% end %>
       </div>
+      <% if @live_pages.present? %>
+        <nav class="max-w-6xl mx-auto px-4 pb-6 flex flex-wrap gap-x-5 gap-y-2 text-sm" aria-label="<%= t("public.storefront.pages_nav") %>">
+          <% @live_pages.each do |page| %>
+            <%= link_to page.display_title, storefront_page_path(page), class: "text-stone-600 hover:text-(--sf-primary)" %>
+          <% end %>
+        </nav>
+      <% end %>
       <p class="border-t border-stone-100 py-3 text-center text-xs text-stone-400">
         © <%= Date.current.year %> <%= @company.name %>
       </p>

@@ -45,6 +45,13 @@ en:
       whatsapp: "WhatsApp %{number}"
       whatsapp_short: "WhatsApp"
     storefront:
+      home: "Home"
+      pages_nav: "Information"
+      pages:
+        about: "About us"
+        contact: "Contact"
+        delivery_returns: "Delivery & returns"
+        privacy: "Privacy policy"
       view_all: "View all"
       open_map: "Open in Google Maps"
       follow_us: "Follow us"
@@ -2722,6 +2729,7 @@ en:
     shared:
       em_dash: "—"
     nav:
+      storefront_pages: "Website pages"
       storefront_sections: "Website home page"
       storefront_categories: "Website categories"
       invoices: "Invoices"
@@ -2912,6 +2920,34 @@ en:
         deleted: "Block removed."
         logo_removed: "Logo removed."
         settings_first: "Save the website settings first."
+    storefront_pages:
+      title: "Website pages"
+      description: "Four information pages, linked from the footer of every page. Publish the ones you need."
+      table:
+        page: "Page"
+        languages: "Written in"
+        status: "Status"
+        actions: "Actions"
+      hints:
+        about: "Your story, mission and values."
+        contact: "Directions and opening hours — your phone, WhatsApp and address are added below it."
+        delivery_returns: "Where you deliver, how long it takes, and your returns policy."
+        privacy: "What customer data you collect and how you use it."
+      statuses:
+        live: "Live"
+        empty: "Published, but empty"
+        "off": "Not published"
+      form:
+        enabled: "Publish this page"
+        enabled_hint: "Shows in the website footer once it has text in at least one language."
+        title: "Page title"
+        title_hint: "Blank uses the standard title."
+        body_hint: "Write in English, Arabic or both — visitors see their language, or the other one if theirs is empty. You can add headings, lists, links and photos."
+        body_en: "English"
+        body_ar: "العربية"
+        rejected_file: "Only photos (JPEG, PNG or WebP, up to 10 MB) can be added to a page."
+      flash:
+        updated: "Page saved."
     storefront_listings:
       title: "Website products"
       description: "Products published on your website. Name, category, unit and price come from Inventory."
@@ -6312,6 +6348,9 @@ en:
         one: "Staff member"
         other: "Staff members"
     attributes:
+      storefront_page:
+        slot: "Page"
+        title: "Page title"
       storefront_section:
         section_type: "Block"
         image: "Photo"

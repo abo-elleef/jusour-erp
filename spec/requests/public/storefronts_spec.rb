@@ -205,6 +205,52 @@ RSpec.describe "Public storefronts", type: :request do
     end
   end
 
+  describe "info pages" do
+    let!(:delivery) do
+      storefront.pages.create!(slot: "delivery_returns", enabled: true,
+        body: %(<h2>Shipping</h2><p>We deliver across Egypt.</p><script>alert("x")</script><a href="javascript:alert(1)">bad</a>))
+    end
+
+    it "shows a published page, sanitized, and links it from the footer" do
+      get public_storefront_page_path(company_slug: company.slug, page_slot: "delivery-returns")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Delivery &amp; returns", "We deliver across Egypt.")
+      expect(response.body).not_to include("<script>alert", "javascript:alert")
+
+      get public_storefront_home_path(company_slug: company.slug)
+      expect(response.body).to include(public_storefront_page_path(company_slug: company.slug, page_slot: "delivery-returns"))
+    end
+
+    it "404s for unpublished, empty or unknown pages" do
+      storefront.pages.create!(slot: "privacy", enabled: true)
+      delivery.update!(enabled: false)
+
+      %w[delivery-returns privacy blog].each do |slot|
+        get public_storefront_page_path(company_slug: company.slug, page_slot: slot)
+        expect(response).to have_http_status(:not_found), "expected /pages/#{slot} to 404"
+      end
+    end
+
+    it "adds the contact details under the contact page" do
+      storefront.pages.create!(slot: "contact", enabled: true, body: "<p>Open Saturday to Thursday</p>")
+
+      get public_storefront_page_path(company_slug: company.slug, page_slot: "contact")
+
+      expect(response.body).to include("Open Saturday to Thursday", "https://wa.me/201012345678")
+    end
+
+    it "serves pages on the subdomain and lists them in the sitemap" do
+      host! "acme.localhost"
+
+      get "/pages/delivery-returns"
+      expect(response).to have_http_status(:ok)
+
+      get "/sitemap.xml"
+      expect(response.body).to include("http://acme.localhost/pages/delivery-returns")
+    end
+  end
+
   describe "on the storefront's subdomain" do
     before { host! "acme.localhost" }
 

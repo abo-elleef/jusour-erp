@@ -43,6 +43,7 @@ class Storefront < ApplicationRecord
   MAX_IMAGE_SIZE = 10.megabytes
 
   has_many :sections, -> { order(:position, :created_at) }, class_name: "StorefrontSection", dependent: :destroy
+  has_many :pages, class_name: "StorefrontPage", dependent: :destroy
 
   has_one_attached :logo do |attachable|
     attachable.variant :header, resize_to_limit: [320, 320], preprocessed: true
@@ -132,6 +133,12 @@ class Storefront < ApplicationRecord
     return StorefrontSection.default_layout(self) unless sections.exists?
 
     sections.where(enabled: true).includes(image_attachment: :blob, logos_attachments: :blob).to_a
+  end
+
+  # Published info pages with content, in their fixed order — for the footer
+  # and the sitemap.
+  def live_pages
+    pages.with_rich_text_body.with_rich_text_body_ar.in_slot_order.select(&:live?)
   end
 
   def self.relative_luminance(hex)

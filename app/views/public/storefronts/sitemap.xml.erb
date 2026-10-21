@@ -3,6 +3,12 @@
   <url>
     <loc><%= request.base_url + storefront_home_path %></loc>
   </url>
+<% @pages.each do |page| %>
+  <url>
+    <loc><%= storefront_page_url(page) %></loc>
+    <lastmod><%= page.updated_at.to_date.iso8601 %></lastmod>
+  </url>
+<% end %>
 <% @listings.each do |listing| %>
   <url>
     <loc><%= storefront_product_url(listing) %></loc>

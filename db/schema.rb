@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_23_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_23_100100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -31,6 +31,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_23_100000) do
     t.uuid "company_id", null: false
     t.index ["company_id", "provider"], name: "index_accounting_integrations_on_company_id_and_provider", unique: true
     t.index ["company_id"], name: "index_accounting_integrations_on_company_id"
+  end
+
+  create_table "action_text_rich_texts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.text "body"
+    t.string "record_type", null: false
+    t.uuid "record_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["record_type", "record_id", "name"], name: "index_action_text_rich_texts_uniqueness", unique: true
   end
 
   create_table "active_storage_attachments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1602,6 +1612,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_23_100000) do
     t.index ["ingredient_id"], name: "index_storefront_listings_on_ingredient_id"
   end
 
+  create_table "storefront_pages", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "storefront_id", null: false
+    t.string "slot", null: false
+    t.boolean "enabled", default: false, null: false
+    t.string "title", default: "", null: false
+    t.string "title_ar", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_storefront_pages_on_company_id"
+    t.index ["storefront_id", "slot"], name: "index_storefront_pages_on_storefront_id_and_slot", unique: true
+  end
+
   create_table "storefront_sections", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.uuid "storefront_id", null: false
@@ -2197,6 +2220,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_23_100000) do
   add_foreign_key "storefront_categories", "ingredient_categories"
   add_foreign_key "storefront_listings", "companies"
   add_foreign_key "storefront_listings", "ingredients"
+  add_foreign_key "storefront_pages", "companies"
+  add_foreign_key "storefront_pages", "storefronts"
   add_foreign_key "storefront_sections", "companies"
   add_foreign_key "storefront_sections", "storefronts"
   add_foreign_key "storefronts", "companies"

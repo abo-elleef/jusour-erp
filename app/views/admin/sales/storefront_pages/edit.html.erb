@@ -1,0 +1,51 @@
+<% slot_name = t("public.storefront.pages.#{@page.slot}", locale: :en) %>
+<% content_for :title, slot_name %>
+<%= stylesheet_link_tag "actiontext" %>
+<%= javascript_import_module_tag "rich_text_editor" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<%# Trix's stylesheet is un-layered, so it beats Tailwind utilities — the height is set inline. %>
+<% editor_class = "storefront-prose block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm focus:border-amber-500 focus:outline-none" %>
+<% rejected = t("sales.storefront_pages.form.rejected_file") %>
+
+<div class="max-w-4xl">
+  <%= link_to "← #{t("sales.storefront_pages.title")}", admin_sales_storefront_pages_path, class: "text-sm text-gray-500 hover:text-gray-900" %>
+  <h1 class="mt-2 text-2xl font-bold tracking-tight text-gray-900"><%= slot_name %></h1>
+  <p class="text-gray-600 text-sm mt-1 mb-6"><%= t("sales.storefront_pages.hints.#{@page.slot}") %></p>
+
+  <%= form_with model: @page, url: admin_sales_storefront_page_path(@page.to_param_slot), method: :patch, class: "space-y-6" do |f| %>
+    <% if @page.errors.any? %>
+      <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+        <%= @page.errors.full_messages.to_sentence %>
+      </div>
+    <% end %>
+
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 space-y-5">
+      <label class="flex items-start gap-3 cursor-pointer">
+        <%= f.check_box :enabled, class: "mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+        <span>
+          <span class="block text-sm font-semibold text-gray-900"><%= t("sales.storefront_pages.form.enabled") %></span>
+          <span class="block text-xs text-gray-500 mt-0.5"><%= t("sales.storefront_pages.form.enabled_hint") %></span>
+        </span>
+      </label>
+      <%= render "admin/sales/storefronts/bilingual_field", form: f, field: :title, maxlength: 80,
+            label: t("sales.storefront_pages.form.title"), hint: t("sales.storefront_pages.form.title_hint") %>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 space-y-6">
+      <p class="text-xs text-gray-500"><%= t("sales.storefront_pages.form.body_hint") %></p>
+      <div>
+        <%= f.label :body, t("sales.storefront_pages.form.body_en"), class: label_class %>
+        <%= f.rich_text_area :body, class: editor_class, dir: "ltr", lang: "en", style: "min-height: 14rem", data: { rejected_file_message: rejected } %>
+      </div>
+      <div>
+        <%= f.label :body_ar, t("sales.storefront_pages.form.body_ar"), class: label_class %>
+        <%= f.rich_text_area :body_ar, class: editor_class, dir: "rtl", lang: "ar", style: "min-height: 14rem", data: { rejected_file_message: rejected } %>
+      </div>
+    </section>
+
+    <div class="flex items-center gap-3">
+      <%= f.submit t("actions.save_changes"), class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm" %>
+      <%= link_to t("actions.cancel"), admin_sales_storefront_pages_path, class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl" %>
+    </div>
+  <% end %>
+</div>

@@ -7,6 +7,7 @@ Rails.application.routes.draw do
     scope module: :public, as: :storefront_host do
       get "/", to: "storefronts#show", as: :home
       get "p/:listing_slug", to: "storefront_products#show", as: :product
+      get "pages/:page_slot", to: "storefront_pages#show", as: :page
       get "sitemap.xml", to: "storefronts#sitemap", as: :sitemap, defaults: { format: :xml }
     end
     # Nothing else of the app answers on a storefront host — no sign-in page or
@@ -131,6 +132,7 @@ Rails.application.routes.draw do
   scope module: :public, path: "s/:company_slug", as: :public_storefront do
     get "/", to: "storefronts#show", as: :home
     get "p/:listing_slug", to: "storefront_products#show", as: :product
+    get "pages/:page_slot", to: "storefront_pages#show", as: :page
     get "sitemap.xml", to: "storefronts#sitemap", as: :sitemap, defaults: { format: :xml }
   end
 
@@ -176,6 +178,8 @@ Rails.application.routes.draw do
       # Keyed by the inventory category's id: the storefront row is created on
       # first save, so a category without one can still be edited.
       resources :storefront_categories, only: %i[index edit update]
+      # The four fixed info pages, keyed by slot (about, contact, ...).
+      resources :storefront_pages, only: %i[index edit update], param: :slot
       resources :storefront_sections, except: %i[show new] do
         member do
           patch :toggle

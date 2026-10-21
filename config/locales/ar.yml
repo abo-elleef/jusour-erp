@@ -43,6 +43,13 @@ ar:
       whatsapp: "واتساب %{number}"
       whatsapp_short: "واتساب"
     storefront:
+      home: "الرئيسية"
+      pages_nav: "معلومات"
+      pages:
+        about: "من نحن"
+        contact: "تواصل معنا"
+        delivery_returns: "التوصيل والاسترجاع"
+        privacy: "سياسة الخصوصية"
       view_all: "عرض الكل"
       open_map: "افتح في خرائط جوجل"
       follow_us: "تابعنا"
@@ -2735,6 +2742,7 @@ ar:
     shared:
       em_dash: "—"
     nav:
+      storefront_pages: "صفحات الموقع"
       storefront_sections: "الصفحة الرئيسية للموقع"
       storefront_categories: "فئات الموقع"
       invoices: "الفواتير"
@@ -2933,6 +2941,34 @@ ar:
         deleted: "تم حذف القسم."
         logo_removed: "تم حذف الشعار."
         settings_first: "احفظ إعدادات الموقع أولاً."
+    storefront_pages:
+      title: "صفحات الموقع"
+      description: "أربع صفحات معلومات، تظهر روابطها أسفل كل صفحة. انشر ما تحتاجه منها."
+      table:
+        page: "الصفحة"
+        languages: "مكتوبة بـ"
+        status: "الحالة"
+        actions: "إجراءات"
+      hints:
+        about: "قصتكم ورسالتكم وقيمكم."
+        contact: "الاتجاهات ومواعيد العمل — يُضاف أسفلها الهاتف وواتساب والعنوان."
+        delivery_returns: "أماكن التوصيل ومدته وسياسة الاسترجاع."
+        privacy: "بيانات العملاء التي تجمعونها وكيف تستخدمونها."
+      statuses:
+        live: "منشورة"
+        empty: "منشورة لكنها فارغة"
+        "off": "غير منشورة"
+      form:
+        enabled: "نشر هذه الصفحة"
+        enabled_hint: "تظهر في أسفل الموقع بمجرد أن يكون لها نص بلغة واحدة على الأقل."
+        title: "عنوان الصفحة"
+        title_hint: "إذا ترك فارغاً يُستخدم العنوان القياسي."
+        body_hint: "اكتب بالإنجليزية أو العربية أو كليهما — يرى الزائر لغته، أو الأخرى إذا كانت لغته فارغة. يمكنك إضافة عناوين وقوائم وروابط وصور."
+        body_en: "English"
+        body_ar: "العربية"
+        rejected_file: "يمكن إضافة الصور فقط (JPEG أو PNG أو WebP حتى 10 ميجابايت) إلى الصفحة."
+      flash:
+        updated: "تم حفظ الصفحة."
     storefront_listings:
       title: "منتجات الموقع"
       description: "المنتجات المنشورة على موقعك. الاسم والفئة والوحدة والسعر تأتي من المخزون."
@@ -6367,6 +6403,9 @@ ar:
         one: "موظف"
         other: "موظفون"
     attributes:
+      storefront_page:
+        slot: "الصفحة"
+        title: "عنوان الصفحة"
       storefront_section:
         section_type: "القسم"
         image: "الصورة"

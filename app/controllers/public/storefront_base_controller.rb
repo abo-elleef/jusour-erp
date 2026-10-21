@@ -14,7 +14,8 @@ module Public
 
     layout "storefront"
 
-    helper_method :storefront_home_path, :storefront_product_path, :storefront_product_url, :via_host?
+    helper_method :storefront_home_path, :storefront_product_path, :storefront_product_url, :storefront_page_path,
+      :storefront_page_url, :via_host?
 
     private
 
@@ -58,6 +59,22 @@ module Public
       end
     end
 
+    def storefront_page_path(page)
+      if via_host?
+        storefront_host_page_path(page_slot: page.to_param_slot)
+      else
+        public_storefront_page_path(company_slug: @company.slug, page_slot: page.to_param_slot)
+      end
+    end
+
+    def storefront_page_url(page)
+      if via_host?
+        storefront_host_page_url(page_slot: page.to_param_slot)
+      else
+        public_storefront_page_url(company_slug: @company.slug, page_slot: page.to_param_slot)
+      end
+    end
+
     def set_locale_from_company
       return if session[:locale].present? || params[:locale].present?
 
@@ -72,6 +89,7 @@ module Public
     # page comes from memory (see StorefrontHelper#storefront_category_name).
     def load_storefront_categories
       @storefront_categories = StorefrontCategory.includes(image_attachment: :blob).index_by(&:ingredient_category_id)
+      @live_pages = @storefront.live_pages
     end
 
     def visible_listings

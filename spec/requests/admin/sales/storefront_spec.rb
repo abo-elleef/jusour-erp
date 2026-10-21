@@ -314,6 +314,38 @@ RSpec.describe "Admin storefront", type: :request do
     end
   end
 
+  describe "website pages" do
+    let!(:storefront) { Storefront.create!(company: company, enabled: true) }
+
+    before { sign_in owner }
+
+    it "lists the four pages and creates one on first save" do
+      get admin_sales_storefront_pages_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Delivery &amp; returns", "Privacy policy")
+
+      get edit_admin_sales_storefront_page_path("delivery-returns")
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("trix-editor")
+
+      patch admin_sales_storefront_page_path("delivery-returns"), params: {
+        storefront_page: { enabled: "1", title: "Shipping", body: "<p>Cairo in 2 days</p>", body_ar: "<p>القاهرة خلال يومين</p>" }
+      }
+
+      expect(response).to redirect_to(admin_sales_storefront_pages_path)
+      page = storefront.pages.sole
+      expect(page).to have_attributes(slot: "delivery_returns", enabled: true, title: "Shipping")
+      expect(page.body.to_plain_text).to eq("Cairo in 2 days")
+      expect(page.body_ar.to_plain_text).to eq("القاهرة خلال يومين")
+    end
+
+    it "404s for a slot that doesn't exist" do
+      get edit_admin_sales_storefront_page_path("blog")
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   describe "dashboard quick link" do
     before { sign_in owner }
 

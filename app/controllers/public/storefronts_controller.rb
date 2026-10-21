@@ -28,6 +28,7 @@ module Public
 
     def sitemap
       @listings = StorefrontListing.visible.ordered.select(:id, :slug, :updated_at)
+      @pages = @storefront.live_pages
       render layout: false
     end
 
