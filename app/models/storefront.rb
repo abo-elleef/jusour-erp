@@ -6,6 +6,7 @@
 # there is no cart or checkout yet.
 class Storefront < ApplicationRecord
   include Tenantable
+  include StorefrontLocalized
 
   audited associated_with: :company
 
@@ -17,6 +18,28 @@ class Storefront < ApplicationRecord
   ].freeze
   SUBDOMAIN_FORMAT = /\A[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\z/
   IMAGE_CONTENT_TYPES = %w[image/jpeg image/png image/webp].freeze
+
+  # Curated, Arabic-capable Google Fonts. "system" loads nothing.
+  FONTS = {
+    "system" => nil,
+    "cairo" => "Cairo",
+    "tajawal" => "Tajawal",
+    "ibm_plex_sans_arabic" => "IBM Plex Sans Arabic",
+    "almarai" => "Almarai"
+  }.freeze
+  HEADER_STYLES = %w[light dark].freeze
+  # Each network's URL must point at that network, so a social button can't be
+  # turned into a link to anywhere.
+  SOCIAL_NETWORKS = {
+    "facebook" => %w[facebook.com fb.com],
+    "instagram" => %w[instagram.com],
+    "tiktok" => %w[tiktok.com],
+    "youtube" => %w[youtube.com youtu.be]
+  }.freeze
+  HEX_COLOR = /\A#[0-9a-f]{6}\z/
+  # The primary color is also used as text on white (prices, links), so it has
+  # to stay readable there — WCAG's 3:1 minimum for large/bold text.
+  MIN_PRIMARY_CONTRAST = 3.0
   MAX_IMAGE_SIZE = 10.megabytes
 
   has_one_attached :logo do |attachable|
@@ -27,12 +50,19 @@ class Storefront < ApplicationRecord
   end
 
   before_validation :normalize_subdomain
+  before_validation :normalize_theme
 
   validates :company_id, uniqueness: true
   validates :subdomain, format: { with: SUBDOMAIN_FORMAT }, allow_nil: true
   validates :subdomain, uniqueness: { case_sensitive: false }, allow_nil: true
   validate :subdomain_not_reserved
   validate :images_are_acceptable
+  validates :primary_color, :accent_color, format: { with: HEX_COLOR }
+  validates :font, inclusion: { in: FONTS.keys }
+  validates :header_style, inclusion: { in: HEADER_STYLES }
+  validate :primary_color_readable_on_white
+  validate :social_urls_point_at_their_network
+  validate :announcement_url_is_safe
 
   def self.reserved_subdomains
     RESERVED_SUBDOMAINS + ENV.fetch("STOREFRONT_RESERVED_SUBDOMAINS", "").split(",").map { |s| s.strip.downcase }
@@ -88,6 +118,44 @@ class Storefront < ApplicationRecord
     "https://wa.me/#{digits}" if digits.present?
   end
 
+  def self.relative_luminance(hex)
+    channels = hex.delete("#").scan(/../).map { |c| c.to_i(16) / 255.0 }
+    r, g, b = channels.map { |c| c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055)**2.4 }
+    (0.2126 * r) + (0.7152 * g) + (0.0722 * b)
+  end
+
+  def self.contrast_ratio(hex_a, hex_b)
+    a, b = [relative_luminance(hex_a), relative_luminance(hex_b)].sort.reverse
+    (a + 0.05) / (b + 0.05)
+  end
+
+  # White or near-black, whichever reads better on `hex` — so a button's text
+  # is legible whatever brand color the company picks.
+  def self.text_color_on(hex)
+    contrast_ratio(hex, "#ffffff") >= contrast_ratio(hex, "#111827") ? "#ffffff" : "#111827"
+  end
+
+  def font_family
+    FONTS[font]
+  end
+
+  def google_fonts_url
+    return if font_family.nil?
+
+    "https://fonts.googleapis.com/css2?family=#{font_family.tr(' ', '+')}:wght@400;500;600;700&display=swap"
+  end
+
+  def social_links
+    SOCIAL_NETWORKS.keys.filter_map do |network|
+      url = public_send(:"#{network}_url")
+      [network, url] if url.present?
+    end
+  end
+
+  def announcement_visible?
+    announcement_enabled? && localized(:announcement_text).present?
+  end
+
   def contact_present?
     phone.present? || whatsapp_number.present? || email.present? || address.present?
   end
@@ -96,6 +164,44 @@ class Storefront < ApplicationRecord
 
   def normalize_subdomain
     self.subdomain = subdomain.to_s.strip.downcase.presence
+  end
+
+  def normalize_theme
+    self.primary_color = primary_color.to_s.strip.downcase
+    self.accent_color = accent_color.to_s.strip.downcase
+    self.announcement_url = announcement_url.to_s.strip
+    SOCIAL_NETWORKS.each_key do |network|
+      attribute = :"#{network}_url"
+      url = public_send(attribute).to_s.strip
+      # "instagram.com/curelix" is how people paste it — assume https.
+      url = "https://#{url}" if url.present? && !url.match?(%r{\Ahttps?://}i)
+      public_send(:"#{attribute}=", url)
+    end
+  end
+
+  def primary_color_readable_on_white
+    return unless primary_color.to_s.match?(HEX_COLOR)
+
+    errors.add(:primary_color, :too_light) if self.class.contrast_ratio(primary_color, "#ffffff") < MIN_PRIMARY_CONTRAST
+  end
+
+  def social_urls_point_at_their_network
+    SOCIAL_NETWORKS.each do |network, hosts|
+      url = public_send(:"#{network}_url")
+      next if url.blank?
+
+      host = URI.parse(url).host.to_s.downcase rescue ""
+      ok = url.match?(%r{\Ahttps?://}i) && hosts.any? { |h| host == h || host.end_with?(".#{h}") }
+      errors.add(:"#{network}_url", :wrong_network) unless ok
+    end
+  end
+
+  # A full http(s) link, or a path on the storefront itself ("/?category=...").
+  def announcement_url_is_safe
+    return if announcement_url.blank?
+    return if announcement_url.match?(%r{\A/(?!/)}) || announcement_url.match?(%r{\Ahttps?://[^\s]+\z}i)
+
+    errors.add(:announcement_url, :invalid)
   end
 
   def subdomain_not_reserved

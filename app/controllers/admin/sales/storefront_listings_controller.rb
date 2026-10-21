@@ -21,8 +21,8 @@ module Admin
         base = base.where(ingredients: { ingredient_category_id: @category_id }) if @category_id
         if @query.present?
           term = "%#{StorefrontListing.sanitize_sql_like(@query)}%"
-          base = base.where("storefront_listings.title ILIKE :term OR ingredients.name ILIKE :term OR ingredients.code ILIKE :term",
-            term: term)
+          base = base.where("storefront_listings.title ILIKE :term OR storefront_listings.title_ar ILIKE :term OR " \
+                            "ingredients.name ILIKE :term OR ingredients.code ILIKE :term", term: term)
         end
 
         # Tab counts follow the category/search filter but not the status tab
@@ -142,8 +142,8 @@ module Admin
       end
 
       def listing_params
-        params.require(:storefront_listing).permit(:ingredient_id, :title, :description, :slug, :published, :featured,
-          :position, images: [])
+        params.require(:storefront_listing).permit(:ingredient_id, :title, :title_ar, :description, :description_ar, :slug,
+          :published, :featured, :position, images: [])
       end
     end
   end

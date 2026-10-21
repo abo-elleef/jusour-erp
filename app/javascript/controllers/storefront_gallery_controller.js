@@ -11,7 +11,7 @@ export default class extends Controller {
     this.mainTarget.src = thumb.dataset.src
     this.thumbTargets.forEach((el) => {
       const active = el === thumb
-      el.classList.toggle("border-amber-600", active)
+      el.classList.toggle("border-(--sf-primary)", active)
       el.classList.toggle("border-transparent", !active)
     })
   }

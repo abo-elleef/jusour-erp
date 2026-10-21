@@ -1,0 +1,31 @@
+<%# locals: form:, field:, label:, rows: nil, maxlength: nil, hint: nil
+    English goes in `field`, Arabic in `field_ar`; the site shows the visitor's
+    language and falls back to the other when one is blank. %>
+<% rows = local_assigns[:rows] %>
+<% maxlength = local_assigns[:maxlength] %>
+<% hint = local_assigns[:hint] %>
+<% input_class = pos_input_class %>
+<div>
+  <p class="block text-xs font-semibold text-gray-600 mb-1.5"><%= label %></p>
+  <div class="grid gap-3 sm:grid-cols-2">
+    <div>
+      <%= form.label field, t("sales.storefront.form.english"), class: "block text-[11px] font-medium text-gray-500 mb-1" %>
+      <% if rows %>
+        <%= form.text_area field, rows: rows, maxlength: maxlength, class: input_class, dir: "ltr", lang: "en" %>
+      <% else %>
+        <%= form.text_field field, maxlength: maxlength, class: input_class, dir: "ltr", lang: "en" %>
+      <% end %>
+    </div>
+    <div>
+      <%= form.label :"#{field}_ar", t("sales.storefront.form.arabic"), class: "block text-[11px] font-medium text-gray-500 mb-1" %>
+      <% if rows %>
+        <%= form.text_area :"#{field}_ar", rows: rows, maxlength: maxlength, class: input_class, dir: "rtl", lang: "ar" %>
+      <% else %>
+        <%= form.text_field :"#{field}_ar", maxlength: maxlength, class: input_class, dir: "rtl", lang: "ar" %>
+      <% end %>
+    </div>
+  </div>
+  <% if hint %>
+    <p class="text-xs text-gray-500 mt-1"><%= hint %></p>
+  <% end %>
+</div>

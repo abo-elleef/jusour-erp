@@ -45,6 +45,13 @@ en:
       whatsapp: "WhatsApp %{number}"
       whatsapp_short: "WhatsApp"
     storefront:
+      follow_us: "Follow us"
+      shop_by_category: "Shop by category"
+      social:
+        facebook: "Facebook"
+        instagram: "Instagram"
+        tiktok: "TikTok"
+        youtube: "YouTube"
       meta_description: "Browse the %{company} product catalog"
       product_meta_description: "%{product} from %{company}"
       search_label: "Search products"
@@ -2713,6 +2720,7 @@ en:
     shared:
       em_dash: "—"
     nav:
+      storefront_categories: "Website categories"
       invoices: "Invoices"
       statements: "Statements"
       credit_notes: "Credit notes"
@@ -2726,6 +2734,15 @@ en:
       storefront: "Website settings"
       storefront_listings: "Website products"
     storefront:
+      fonts:
+        system: "Standard (no download)"
+        cairo: "Cairo"
+        tajawal: "Tajawal"
+        ibm_plex_sans_arabic: "IBM Plex Sans Arabic"
+        almarai: "Almarai"
+      header_styles:
+        light: "Light"
+        dark: "Dark"
       title: "Website settings"
       description: "Your public product catalog — customers browse it without signing in."
       manage_products:
@@ -2746,12 +2763,34 @@ en:
         subdomain_unset: "Pick a subdomain below to get a short link."
         subdomain_unavailable: "Subdomain links aren't set up on this server yet."
       sections:
+        look: "Look & feel"
+        look_hint: "Your brand colors and font, used across every page of the website."
+        announcement: "Announcement bar"
+        announcement_hint: "One short line at the very top of every page — offers, delivery news, holidays."
+        social: "Social links"
+        social_hint: "Shown as buttons in the footer. Leave blank to hide."
         publishing: "Publishing"
         branding: "Branding"
         contact: "Contact details"
         contact_hint: "Shown on every page. WhatsApp turns on the “Ask about this product” button."
         seo: "Search engines"
       form:
+        english: "English"
+        arabic: "العربية"
+        bilingual_hint: "Visitors see their language; if one side is blank they see the other."
+        primary_color: "Brand color"
+        primary_color_hint: "Buttons, prices and links. Must be dark enough to read on white."
+        accent_color: "Accent color"
+        accent_color_hint: "The home page banner, category tiles and the dark header style."
+        preview: "Preview"
+        font: "Font"
+        font_hint: "All options support Arabic."
+        header_style: "Header style"
+        header_style_hint: "Dark uses your accent color behind the logo and menu."
+        announcement_enabled: "Show the announcement bar"
+        announcement_text: "Announcement"
+        announcement_url: "Link (optional)"
+        announcement_url_hint: "A full web address, or a page on your site such as /?category=…"
         enabled: "Publish the website"
         enabled_hint: "When off, every page of the website answers “not found”."
         subdomain: "Subdomain"
@@ -2773,6 +2812,25 @@ en:
         seo_description_hint: "The short summary Google and link previews show. Defaults to the tagline."
       flash:
         updated: "Website settings saved."
+    storefront_categories:
+      title: "Website categories"
+      description: "How your inventory categories look on the website: a photo, plus names and descriptions in English and Arabic."
+      edit_hint: "Leave a name blank to use the inventory category name."
+      empty: "No active inventory categories yet."
+      table:
+        photo: "Photo"
+        website_name: "Name on the website"
+        inventory_category: "Inventory category"
+        products: "Products on the website"
+        actions: "Actions"
+      form:
+        title: "Name on the website"
+        title_hint: "Blank uses the inventory category name."
+        description: "Description"
+        image: "Photo"
+        image_hint: "Shown on the home page tile and at the top of the category page. Landscape works best."
+      flash:
+        updated: "Category saved."
     storefront_listings:
       title: "Website products"
       description: "Products published on your website. Name, category, unit and price come from Inventory."
@@ -5841,8 +5899,25 @@ en:
   activerecord:
     errors:
       models:
+        storefront_category:
+          attributes:
+            image:
+              invalid_image_type: "must be a JPEG, PNG or WebP image"
+              image_too_large: "must be 10 MB or smaller"
         storefront:
           attributes:
+            primary_color:
+              too_light: "is too light to read on white — pick a darker shade"
+            facebook_url:
+              wrong_network: "must be a facebook.com link"
+            instagram_url:
+              wrong_network: "must be an instagram.com link"
+            tiktok_url:
+              wrong_network: "must be a tiktok.com link"
+            youtube_url:
+              wrong_network: "must be a youtube.com link"
+            announcement_url:
+              invalid: "must be a full https:// address or a path starting with /"
             subdomain:
               taken: "is already used by another website"
               exclusion: "is reserved — pick another"
@@ -6138,7 +6213,16 @@ en:
         one: "Staff member"
         other: "Staff members"
     attributes:
+      storefront_category:
+        image: "Photo"
       storefront:
+        primary_color: "Brand color"
+        accent_color: "Accent color"
+        facebook_url: "Facebook link"
+        instagram_url: "Instagram link"
+        tiktok_url: "TikTok link"
+        youtube_url: "YouTube link"
+        announcement_url: "Announcement link"
         subdomain: "Subdomain"
         logo: "Logo"
         banner: "Banner image"

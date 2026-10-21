@@ -43,6 +43,13 @@ ar:
       whatsapp: "واتساب %{number}"
       whatsapp_short: "واتساب"
     storefront:
+      follow_us: "تابعنا"
+      shop_by_category: "تسوق حسب الفئة"
+      social:
+        facebook: "فيسبوك"
+        instagram: "إنستجرام"
+        tiktok: "تيك توك"
+        youtube: "يوتيوب"
       meta_description: "تصفح كتالوج منتجات %{company}"
       product_meta_description: "%{product} من %{company}"
       search_label: "ابحث في المنتجات"
@@ -2726,6 +2733,7 @@ ar:
     shared:
       em_dash: "—"
     nav:
+      storefront_categories: "فئات الموقع"
       invoices: "الفواتير"
       statements: "كشوف الحساب"
       credit_notes: "إشعارات دائنة"
@@ -2739,6 +2747,15 @@ ar:
       storefront: "إعدادات الموقع"
       storefront_listings: "منتجات الموقع"
     storefront:
+      fonts:
+        system: "قياسي (بدون تحميل)"
+        cairo: "Cairo"
+        tajawal: "Tajawal"
+        ibm_plex_sans_arabic: "IBM Plex Sans Arabic"
+        almarai: "Almarai"
+      header_styles:
+        light: "فاتح"
+        dark: "داكن"
       title: "إعدادات الموقع"
       description: "كتالوج منتجاتك العام — يتصفحه العملاء دون تسجيل دخول."
       manage_products:
@@ -2767,12 +2784,34 @@ ar:
         subdomain_unset: "اختر نطاقاً فرعياً بالأسفل للحصول على رابط قصير."
         subdomain_unavailable: "روابط النطاقات الفرعية غير مفعّلة على هذا الخادم بعد."
       sections:
+        look: "الشكل والهوية"
+        look_hint: "ألوان علامتك التجارية والخط، وتُستخدم في كل صفحات الموقع."
+        announcement: "شريط الإعلانات"
+        announcement_hint: "سطر قصير أعلى كل صفحة — عروض، أخبار التوصيل، الإجازات."
+        social: "روابط التواصل الاجتماعي"
+        social_hint: "تظهر كأزرار في أسفل الصفحة. اتركها فارغة لإخفائها."
         publishing: "النشر"
         branding: "الهوية"
         contact: "بيانات التواصل"
         contact_hint: "تظهر في كل الصفحات. رقم الواتساب يفعّل زر «استفسر عن هذا المنتج»."
         seo: "محركات البحث"
       form:
+        english: "English"
+        arabic: "العربية"
+        bilingual_hint: "يرى الزائر لغته؛ وإذا كانت إحدى الخانتين فارغة يرى الأخرى."
+        primary_color: "لون العلامة"
+        primary_color_hint: "الأزرار والأسعار والروابط. يجب أن يكون داكناً بما يكفي ليُقرأ على الأبيض."
+        accent_color: "اللون الثانوي"
+        accent_color_hint: "غلاف الصفحة الرئيسية، مربعات الفئات، ونمط الرأس الداكن."
+        preview: "معاينة"
+        font: "الخط"
+        font_hint: "كل الخيارات تدعم العربية."
+        header_style: "نمط الرأس"
+        header_style_hint: "الداكن يستخدم اللون الثانوي خلف اللوجو والقائمة."
+        announcement_enabled: "إظهار شريط الإعلانات"
+        announcement_text: "الإعلان"
+        announcement_url: "رابط (اختياري)"
+        announcement_url_hint: "عنوان ويب كامل، أو صفحة في موقعك مثل ‎/?category=…"
         enabled: "نشر الموقع"
         enabled_hint: "عند الإيقاف، تظهر كل صفحات الموقع كـ«غير موجودة»."
         subdomain: "النطاق الفرعي"
@@ -2794,6 +2833,25 @@ ar:
         seo_description_hint: "الملخص القصير الذي يظهر في جوجل ومعاينات الروابط. افتراضياً هو الشعار النصي."
       flash:
         updated: "تم حفظ إعدادات الموقع."
+    storefront_categories:
+      title: "فئات الموقع"
+      description: "شكل فئات المخزون على الموقع: صورة، وأسماء وأوصاف بالعربية والإنجليزية."
+      edit_hint: "اترك الاسم فارغاً لاستخدام اسم فئة المخزون."
+      empty: "لا توجد فئات مخزون نشطة بعد."
+      table:
+        photo: "الصورة"
+        website_name: "الاسم على الموقع"
+        inventory_category: "فئة المخزون"
+        products: "المنتجات على الموقع"
+        actions: "إجراءات"
+      form:
+        title: "الاسم على الموقع"
+        title_hint: "إذا ترك فارغاً يُستخدم اسم فئة المخزون."
+        description: "الوصف"
+        image: "الصورة"
+        image_hint: "تظهر في مربع الفئة بالصفحة الرئيسية وأعلى صفحة الفئة. الصور العريضة أفضل."
+      flash:
+        updated: "تم حفظ الفئة."
     storefront_listings:
       title: "منتجات الموقع"
       description: "المنتجات المنشورة على موقعك. الاسم والفئة والوحدة والسعر تأتي من المخزون."
@@ -5906,8 +5964,25 @@ ar:
   activerecord:
     errors:
       models:
+        storefront_category:
+          attributes:
+            image:
+              invalid_image_type: "يجب أن تكون صورة JPEG أو PNG أو WebP"
+              image_too_large: "يجب ألا تتجاوز 10 ميجابايت"
         storefront:
           attributes:
+            primary_color:
+              too_light: "فاتح جداً ولا يُقرأ على الأبيض — اختر درجة أغمق"
+            facebook_url:
+              wrong_network: "يجب أن يكون رابطاً من facebook.com"
+            instagram_url:
+              wrong_network: "يجب أن يكون رابطاً من instagram.com"
+            tiktok_url:
+              wrong_network: "يجب أن يكون رابطاً من tiktok.com"
+            youtube_url:
+              wrong_network: "يجب أن يكون رابطاً من youtube.com"
+            announcement_url:
+              invalid: "يجب أن يكون عنواناً كاملاً يبدأ بـ https:// أو مساراً يبدأ بـ /"
             subdomain:
               taken: "مستخدم بالفعل لموقع آخر"
               exclusion: "محجوز — اختر غيره"
@@ -6193,7 +6268,16 @@ ar:
         one: "موظف"
         other: "موظفون"
     attributes:
+      storefront_category:
+        image: "الصورة"
       storefront:
+        primary_color: "لون العلامة"
+        accent_color: "اللون الثانوي"
+        facebook_url: "رابط فيسبوك"
+        instagram_url: "رابط إنستجرام"
+        tiktok_url: "رابط تيك توك"
+        youtube_url: "رابط يوتيوب"
+        announcement_url: "رابط الإعلان"
         subdomain: "النطاق الفرعي"
         logo: "اللوجو"
         banner: "صورة الغلاف"

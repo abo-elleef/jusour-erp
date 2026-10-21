@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_22_100200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1569,6 +1569,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.datetime "remember_created_at"
+  create_table "storefront_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "ingredient_category_id", null: false
+    t.string "title", default: "", null: false
+    t.string "title_ar", default: "", null: false
+    t.text "description", default: "", null: false
+    t.text "description_ar", default: "", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "ingredient_category_id"], name: "idx_on_company_id_ingredient_category_id_7a105cdf8d", unique: true
+    t.index ["company_id"], name: "index_storefront_categories_on_company_id"
+    t.index ["ingredient_category_id"], name: "index_storefront_categories_on_ingredient_category_id"
+  end
+
   create_table "storefront_listings", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.uuid "ingredient_id", null: false
@@ -1580,6 +1594,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "title_ar", default: "", null: false
+    t.text "description_ar", default: "", null: false
     t.index ["company_id", "ingredient_id"], name: "index_storefront_listings_on_company_id_and_ingredient_id", unique: true
     t.index ["company_id", "slug"], name: "index_storefront_listings_on_company_id_and_slug", unique: true
     t.index ["company_id"], name: "index_storefront_listings_on_company_id"
@@ -1600,6 +1616,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
     t.string "seo_description", default: "", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "primary_color", default: "#b45309", null: false
+    t.string "accent_color", default: "#1c1917", null: false
+    t.string "font", default: "system", null: false
+    t.string "header_style", default: "light", null: false
+    t.boolean "announcement_enabled", default: false, null: false
+    t.string "announcement_text", default: "", null: false
+    t.string "announcement_text_ar", default: "", null: false
+    t.string "announcement_url", default: "", null: false
+    t.string "facebook_url", default: "", null: false
+    t.string "instagram_url", default: "", null: false
+    t.string "tiktok_url", default: "", null: false
+    t.string "youtube_url", default: "", null: false
+    t.string "tagline_ar", default: "", null: false
+    t.text "about_ar", default: "", null: false
+    t.string "seo_description_ar", default: "", null: false
     t.index "lower((subdomain)::text)", name: "index_storefronts_on_lower_subdomain", unique: true, where: "(subdomain IS NOT NULL)"
     t.index ["company_id"], name: "index_storefronts_on_company_id", unique: true
   end
@@ -2149,6 +2180,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_20_100100) do
   add_foreign_key "supplier_price_histories", "vendor_invoice_lines", on_delete: :nullify
   add_foreign_key "suppliers", "companies"
   add_foreign_key "suppliers", "treasuries"
+  add_foreign_key "storefront_categories", "companies"
+  add_foreign_key "storefront_categories", "ingredient_categories"
   add_foreign_key "storefront_listings", "companies"
   add_foreign_key "storefront_listings", "ingredients"
   add_foreign_key "storefronts", "companies"

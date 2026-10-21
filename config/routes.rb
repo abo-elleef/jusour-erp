@@ -173,6 +173,9 @@ Rails.application.routes.draw do
       resources :lead_reports, only: %i[index]
       # The public catalog website — gated on the `storefront` feature.
       resource :storefront, only: %i[show update]
+      # Keyed by the inventory category's id: the storefront row is created on
+      # first save, so a category without one can still be edited.
+      resources :storefront_categories, only: %i[index edit update]
       resources :storefront_listings, except: %i[show] do
         collection do
           get :bulk_new

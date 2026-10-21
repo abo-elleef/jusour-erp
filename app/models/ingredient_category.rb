@@ -6,6 +6,7 @@ class IngredientCategory < ApplicationRecord
   audited associated_with: :company
 
   has_many :ingredients, dependent: :restrict_with_error
+  has_one :storefront_category, dependent: :destroy
 
   # The code is derived from the name and kept in sync (name-driven): renaming
   # the category re-derives the code and cascades it into every ingredient code.

@@ -6,6 +6,7 @@
 # here too, so they stay off the operational model.
 class StorefrontListing < ApplicationRecord
   include Tenantable
+  include StorefrontLocalized
 
   audited associated_with: :company
 
@@ -47,8 +48,16 @@ class StorefrontListing < ApplicationRecord
   scope :visible, -> { published.joins(:ingredient).where(ingredients: { active: true }) }
   scope :ordered, -> { order(featured: :desc, position: :asc, created_at: :asc) }
 
-  def display_title
+  # English falls back to the inventory name rather than to the Arabic title;
+  # Arabic falls back to the English title, then the inventory name.
+  def display_title(locale: I18n.locale)
+    return title_ar.presence || title.presence || ingredient.name if locale.to_s == "ar"
+
     title.presence || ingredient.name
+  end
+
+  def display_description(locale: I18n.locale)
+    localized(:description, locale: locale)
   end
 
   def price_cents

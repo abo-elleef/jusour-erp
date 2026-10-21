@@ -1,0 +1,13 @@
+<%# locals: category: %>
+<% meta = storefront_category_for(category) %>
+<%= link_to storefront_home_path(category: category.id),
+      class: "group relative flex aspect-[4/3] items-end overflow-hidden rounded-2xl bg-(--sf-accent) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--sf-primary)/40" do %>
+  <% if meta&.image&.attached? %>
+    <%= image_tag meta.image.variant(:tile), alt: "", loading: "lazy", decoding: "async",
+          class: "absolute inset-0 h-full w-full object-cover transition group-hover:scale-[1.03]" %>
+    <span class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" aria-hidden="true"></span>
+    <span class="relative p-4 text-base font-semibold text-white"><%= storefront_category_name(category) %></span>
+  <% else %>
+    <span class="relative p-4 text-base font-semibold text-(--sf-on-accent)"><%= storefront_category_name(category) %></span>
+  <% end %>
+<% end %>

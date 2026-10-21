@@ -41,15 +41,10 @@
           <p class="<%= hint_class %>"><%= t("sales.storefront_listings.form.ingredient_hint") %></p>
         </div>
       <% end %>
-      <div>
-        <%= f.label :title, t("sales.storefront_listings.form.title"), class: label_class %>
-        <%= f.text_field :title, class: pos_input_class, maxlength: 160 %>
-        <p class="<%= hint_class %>"><%= t("sales.storefront_listings.form.title_hint") %></p>
-      </div>
-      <div>
-        <%= f.label :description, t("sales.storefront_listings.form.description"), class: label_class %>
-        <%= f.text_area :description, rows: 6, class: pos_input_class %>
-      </div>
+      <%= render "admin/sales/storefronts/bilingual_field", form: f, field: :title, maxlength: 160,
+            label: t("sales.storefront_listings.form.title"), hint: t("sales.storefront_listings.form.title_hint") %>
+      <%= render "admin/sales/storefronts/bilingual_field", form: f, field: :description, rows: 6,
+            label: t("sales.storefront_listings.form.description") %>
       <% if listing.persisted? %>
         <div>
           <%= f.label :slug, t("sales.storefront_listings.form.slug"), class: label_class %>

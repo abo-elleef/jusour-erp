@@ -61,6 +61,15 @@ RSpec.describe StorefrontListing, type: :model do
     end
   end
 
+  it "shows the Arabic title to Arabic visitors and never to English ones" do
+    listing = described_class.create!(ingredient: ingredient(name: "Gloves"), title_ar: "قفازات")
+
+    expect(listing.display_title(locale: :ar)).to eq("قفازات")
+    expect(listing.display_title(locale: :en)).to eq("Gloves")
+    listing.update!(description: "Nitrile, powder-free")
+    expect(listing.display_description(locale: :ar)).to eq("Nitrile, powder-free")
+  end
+
   it "falls back to the ingredient name and price" do
     listing = described_class.create!(ingredient: ingredient(name: "Gloves", selling_price_cents: 12_500))
 

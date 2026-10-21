@@ -1,6 +1,8 @@
 <% ingredient = @listing.ingredient %>
+<% category_name = storefront_category_name(ingredient.ingredient_category) %>
+<% description = @listing.display_description %>
 <% content_for :title, "#{@listing.display_title} — #{@company.name}" %>
-<% content_for :meta_description, @listing.description.presence&.truncate(160) || t("public.storefront.product_meta_description", product: @listing.display_title, company: @company.name) %>
+<% content_for :meta_description, description.presence&.truncate(160) || t("public.storefront.product_meta_description", product: @listing.display_title, company: @company.name) %>
 <% content_for :canonical_url, storefront_product_url(@listing) %>
 <% content_for :og_type, "product" %>
 <% if (cover = @listing.cover_image) %>
@@ -10,9 +12,9 @@
 
 <div class="max-w-6xl mx-auto px-4 py-6">
   <nav class="mb-4 text-sm text-stone-500" aria-label="<%= t("public.storefront.breadcrumb") %>">
-    <%= link_to t("public.storefront.all_products"), storefront_home_path, class: "hover:text-amber-800" %>
+    <%= link_to t("public.storefront.all_products"), storefront_home_path, class: "hover:text-(--sf-primary)" %>
     <span class="mx-1" aria-hidden="true">/</span>
-    <%= link_to ingredient.ingredient_category.name, storefront_home_path(category: ingredient.ingredient_category_id), class: "hover:text-amber-800" %>
+    <%= link_to category_name, storefront_home_path(category: ingredient.ingredient_category_id), class: "hover:text-(--sf-primary)" %>
   </nav>
 
   <div class="grid gap-8 md:grid-cols-2">
@@ -22,14 +24,14 @@
           <%= image_tag cover.variant(:detail), alt: @listing.display_title, class: "h-full w-full object-contain",
                 data: { storefront_gallery_target: "main" } %>
         <% else %>
-          <div class="flex h-full w-full items-center justify-center text-sm text-stone-400"><%= ingredient.ingredient_category.name %></div>
+          <div class="flex h-full w-full items-center justify-center text-sm text-stone-400"><%= category_name %></div>
         <% end %>
       </div>
       <% if @listing.images.size > 1 %>
         <div class="mt-3 flex gap-2 overflow-x-auto">
           <% @listing.ordered_images.each_with_index do |image, index| %>
             <button type="button"
-                    class="shrink-0 overflow-hidden rounded-xl border-2 <%= index.zero? ? 'border-amber-600' : 'border-transparent' %> focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700/30"
+                    class="shrink-0 overflow-hidden rounded-xl border-2 <%= index.zero? ? 'border-(--sf-primary)' : 'border-transparent' %> focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--sf-primary)/30"
                     data-action="storefront-gallery#show"
                     data-storefront-gallery-target="thumb"
                     data-src="<%= url_for(image.variant(:detail)) %>"
@@ -42,14 +44,14 @@
     </div>
 
     <div>
-      <p class="text-xs font-medium uppercase tracking-wide text-amber-800/80"><%= ingredient.ingredient_category.name %></p>
+      <p class="text-xs font-medium uppercase tracking-wide text-(--sf-primary)/80"><%= category_name %></p>
       <h1 class="mt-1 text-2xl sm:text-3xl font-semibold leading-tight text-stone-900"><%= @listing.display_title %></h1>
       <p class="mt-1 text-sm text-stone-500"><%= t("public.storefront.product_code", code: ingredient.code) %></p>
 
       <%= render "public/storefronts/price", listing: @listing, css: "mt-4 text-xl" %>
 
-      <% if @listing.description.present? %>
-        <div class="mt-5 text-sm leading-relaxed text-stone-700"><%= simple_format(@listing.description) %></div>
+      <% if description.present? %>
+        <div class="mt-5 text-sm leading-relaxed text-stone-700"><%= simple_format(description) %></div>
       <% end %>
 
       <div class="mt-6 flex flex-col gap-3 sm:flex-row">

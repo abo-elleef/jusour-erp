@@ -65,6 +65,25 @@ RSpec.describe "Admin storefront", type: :request do
       expect(storefront.logo).to be_attached
     end
 
+    it "saves the look and feel, announcement, social links and Arabic copy" do
+      patch admin_sales_storefront_path, params: {
+        storefront: { primary_color: "#1D4ED8", accent_color: "#0f172a", font: "tajawal", header_style: "dark",
+                      announcement_enabled: "1", announcement_text: "Offer", announcement_text_ar: "عرض",
+                      tiktok_url: "tiktok.com/@acme", tagline_ar: "شعار" }
+      }
+
+      expect(response).to redirect_to(admin_sales_storefront_path)
+      expect(Storefront.sole).to have_attributes(primary_color: "#1d4ed8", font: "tajawal", header_style: "dark",
+        announcement_enabled: true, announcement_text_ar: "عرض", tiktok_url: "https://tiktok.com/@acme", tagline_ar: "شعار")
+    end
+
+    it "refuses a brand color that can't be read on white" do
+      patch admin_sales_storefront_path, params: { storefront: { primary_color: "#fef08a" } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.body).to include(I18n.t("activerecord.errors.models.storefront.attributes.primary_color.too_light"))
+    end
+
     it "re-renders with an error for a taken subdomain" do
       other = create(:company)
       Storefront.create!(company: other, subdomain: "acme")
@@ -178,6 +197,38 @@ RSpec.describe "Admin storefront", type: :request do
 
       expect(StorefrontListing.count).to eq(0)
       expect(Ingredient.exists?(item.id)).to be(true)
+    end
+  end
+
+  describe "website categories" do
+    before { sign_in owner }
+
+    it "lists active categories and saves a photo and names on first edit" do
+      category
+      get admin_sales_storefront_categories_path
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Instruments")
+
+      get edit_admin_sales_storefront_category_path(category)
+      expect(response).to have_http_status(:ok)
+
+      patch admin_sales_storefront_category_path(category), params: {
+        storefront_category: { title: "Dental instruments", title_ar: "أدوات الأسنان", image: photo }
+      }
+
+      expect(response).to redirect_to(admin_sales_storefront_categories_path)
+      meta = StorefrontCategory.sole
+      expect(meta).to have_attributes(ingredient_category: category, title: "Dental instruments", title_ar: "أدوات الأسنان")
+      expect(meta.image).to be_attached
+    end
+
+    it "removes the photo when asked" do
+      meta = StorefrontCategory.create!(ingredient_category: category)
+      meta.image.attach(photo)
+
+      patch admin_sales_storefront_category_path(category), params: { storefront_category: { title: "", remove_image: "1" } }
+
+      expect(meta.reload.image).not_to be_attached
     end
   end
 

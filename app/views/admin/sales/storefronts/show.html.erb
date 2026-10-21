@@ -102,14 +102,9 @@
         <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.storefront.sections.branding") %></h2>
       </div>
       <div class="p-5 space-y-5">
-        <div>
-          <%= f.label :tagline, t("sales.storefront.form.tagline"), class: label_class %>
-          <%= f.text_field :tagline, class: pos_input_class, maxlength: 160 %>
-        </div>
-        <div>
-          <%= f.label :about, t("sales.storefront.form.about"), class: label_class %>
-          <%= f.text_area :about, rows: 5, class: pos_input_class %>
-        </div>
+        <%= render "bilingual_field", form: f, field: :tagline, label: t("sales.storefront.form.tagline"), maxlength: 160,
+              hint: t("sales.storefront.form.bilingual_hint") %>
+        <%= render "bilingual_field", form: f, field: :about, label: t("sales.storefront.form.about"), rows: 5 %>
         <% { logo: :header, banner: :hero }.each do |field, variant| %>
           <div>
             <%= f.label field, t("sales.storefront.form.#{field}"), class: label_class %>
@@ -125,6 +120,94 @@
                 </label>
               </div>
             <% end %>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden" data-controller="storefront-theme-preview">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.storefront.sections.look") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("sales.storefront.sections.look_hint") %></p>
+      </div>
+      <div class="p-5 space-y-5">
+        <div class="grid gap-5 sm:grid-cols-2">
+          <% %i[primary_color accent_color].each do |field| %>
+            <div>
+              <%= f.label field, t("sales.storefront.form.#{field}"), class: label_class %>
+              <div class="flex items-center gap-2">
+                <%= f.color_field field, class: "h-10 w-14 cursor-pointer rounded-lg border border-gray-200 bg-white p-1",
+                      data: { storefront_theme_preview_target: field.to_s.camelize(:lower), action: "input->storefront-theme-preview#update" } %>
+                <code class="text-xs text-gray-500" dir="ltr" data-storefront-theme-preview-target="<%= field.to_s.camelize(:lower) %>Code"><%= @storefront.public_send(field) %></code>
+              </div>
+              <p class="<%= hint_class %>"><%= t("sales.storefront.form.#{field}_hint") %></p>
+            </div>
+          <% end %>
+        </div>
+
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4" aria-hidden="true">
+          <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-500 mb-3"><%= t("sales.storefront.form.preview") %></p>
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="rounded-full px-4 py-2 text-sm font-semibold" data-storefront-theme-preview-target="primarySample"
+                  style="background: <%= @storefront.primary_color %>; color: <%= Storefront.text_color_on(@storefront.primary_color) %>"><%= t("public.storefront.all_products") %></span>
+            <span class="text-base font-bold" data-storefront-theme-preview-target="priceSample" style="color: <%= @storefront.primary_color %>"><%= format_money(12_500) %></span>
+            <span class="rounded-xl px-4 py-2 text-sm font-semibold" data-storefront-theme-preview-target="accentSample"
+                  style="background: <%= @storefront.accent_color %>; color: <%= Storefront.text_color_on(@storefront.accent_color) %>"><%= Current.company.name %></span>
+          </div>
+        </div>
+
+        <div class="grid gap-5 sm:grid-cols-2">
+          <div>
+            <%= f.label :font, t("sales.storefront.form.font"), class: label_class %>
+            <%= f.select :font, Storefront::FONTS.keys.map { |key| [t("sales.storefront.fonts.#{key}"), key] }, {}, class: pos_input_class %>
+            <p class="<%= hint_class %>"><%= t("sales.storefront.form.font_hint") %></p>
+          </div>
+          <fieldset>
+            <legend class="<%= label_class %>"><%= t("sales.storefront.form.header_style") %></legend>
+            <div class="flex gap-4 pt-1">
+              <% Storefront::HEADER_STYLES.each do |style| %>
+                <label class="inline-flex items-center gap-2 text-sm text-gray-800 cursor-pointer">
+                  <%= f.radio_button :header_style, style, class: "border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+                  <%= t("sales.storefront.header_styles.#{style}") %>
+                </label>
+              <% end %>
+            </div>
+            <p class="<%= hint_class %>"><%= t("sales.storefront.form.header_style_hint") %></p>
+          </fieldset>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.storefront.sections.announcement") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("sales.storefront.sections.announcement_hint") %></p>
+      </div>
+      <div class="p-5 space-y-5">
+        <label class="flex items-start gap-3 cursor-pointer">
+          <%= f.check_box :announcement_enabled, class: "mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+          <span class="block text-sm font-semibold text-gray-900"><%= t("sales.storefront.form.announcement_enabled") %></span>
+        </label>
+        <%= render "bilingual_field", form: f, field: :announcement_text, label: t("sales.storefront.form.announcement_text"), maxlength: 160 %>
+        <div>
+          <%= f.label :announcement_url, t("sales.storefront.form.announcement_url"), class: label_class %>
+          <%= f.text_field :announcement_url, class: pos_input_class, dir: "ltr", placeholder: "https://…", spellcheck: false %>
+          <p class="<%= hint_class %>"><%= t("sales.storefront.form.announcement_url_hint") %></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.storefront.sections.social") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("sales.storefront.sections.social_hint") %></p>
+      </div>
+      <div class="p-5 grid gap-5 sm:grid-cols-2">
+        <% Storefront::SOCIAL_NETWORKS.each_key do |network| %>
+          <div>
+            <%= f.label :"#{network}_url", t("public.storefront.social.#{network}"), class: label_class %>
+            <%= f.url_field :"#{network}_url", class: pos_input_class, dir: "ltr", spellcheck: false,
+                  placeholder: "https://#{Storefront::SOCIAL_NETWORKS[network].first}/…" %>
           </div>
         <% end %>
       </div>
@@ -160,9 +243,8 @@
         <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.storefront.sections.seo") %></h2>
       </div>
       <div class="p-5">
-        <%= f.label :seo_description, t("sales.storefront.form.seo_description"), class: label_class %>
-        <%= f.text_area :seo_description, rows: 2, maxlength: 300, class: pos_input_class %>
-        <p class="<%= hint_class %>"><%= t("sales.storefront.form.seo_description_hint") %></p>
+        <%= render "bilingual_field", form: f, field: :seo_description, label: t("sales.storefront.form.seo_description"),
+              rows: 2, maxlength: 300, hint: t("sales.storefront.form.seo_description_hint") %>
       </div>
     </section>
 

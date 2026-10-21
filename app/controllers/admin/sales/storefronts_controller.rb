@@ -42,8 +42,11 @@ module Admin
 
       def storefront_params
         params.require(:storefront).permit(
-          :enabled, :subdomain, :tagline, :about, :phone, :whatsapp_number, :email, :address,
-          :show_prices, :seo_description, :logo, :banner
+          :enabled, :subdomain, :tagline, :tagline_ar, :about, :about_ar, :phone, :whatsapp_number, :email, :address,
+          :show_prices, :seo_description, :seo_description_ar, :logo, :banner,
+          :primary_color, :accent_color, :font, :header_style,
+          :announcement_enabled, :announcement_text, :announcement_text_ar, :announcement_url,
+          :facebook_url, :instagram_url, :tiktok_url, :youtube_url
         )
       end
     end

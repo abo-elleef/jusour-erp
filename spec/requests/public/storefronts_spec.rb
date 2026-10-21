@@ -107,6 +107,68 @@ RSpec.describe "Public storefronts", type: :request do
     end
   end
 
+  describe "look and feel" do
+    it "renders the brand colors and font from settings" do
+      storefront.update!(primary_color: "#1d4ed8", accent_color: "#0f172a", font: "cairo", header_style: "dark")
+
+      get public_storefront_home_path(company_slug: company.slug)
+
+      expect(response.body).to include("--sf-primary: #1d4ed8", "--sf-on-primary: #ffffff", "--sf-accent: #0f172a")
+      expect(response.body).to include("fonts.googleapis.com/css2?family=Cairo")
+      expect(response.body).to include("bg-(--sf-accent) text-(--sf-on-accent)")
+    end
+
+    it "never writes an unvalidated color into the page" do
+      storefront.update_columns(primary_color: "red;}</style><script>alert(1)</script>")
+
+      get public_storefront_home_path(company_slug: company.slug)
+
+      expect(response.body).not_to include("<script>alert(1)")
+      expect(response.body).to include("--sf-primary: #b45309")
+    end
+
+    it "shows the announcement bar and social links" do
+      storefront.update!(announcement_enabled: true, announcement_text: "Free delivery this week", announcement_url: "/?q=gloves",
+        instagram_url: "instagram.com/acme")
+
+      get public_storefront_home_path(company_slug: company.slug)
+
+      expect(response.body).to include("Free delivery this week", %(href="/?q=gloves"), "https://instagram.com/acme")
+    end
+
+    it "serves Arabic copy to Arabic visitors" do
+      storefront.update!(tagline_ar: "كل ما تحتاجه عيادتك")
+      mirror.update!(title_ar: "مرآة فم")
+      StorefrontCategory.create!(company: company, ingredient_category: category, title_ar: "أدوات", description_ar: "أدوات الفحص")
+
+      get public_storefront_home_path(company_slug: company.slug, locale: "ar")
+      expect(response.body).to include("كل ما تحتاجه عيادتك", "مرآة فم", "أدوات")
+
+      get public_storefront_home_path(company_slug: company.slug, category: category.id, locale: "ar")
+      expect(response.body).to include("أدوات الفحص")
+
+      get public_storefront_home_path(company_slug: company.slug, locale: "en")
+      expect(response.body).to include("Everything for your clinic", "Mouth mirror", "Instruments")
+    end
+
+    it "finds products by their Arabic title" do
+      mirror.update!(title_ar: "مرآة فم")
+
+      get public_storefront_home_path(company_slug: company.slug, q: "مرآة")
+
+      expect(response.body).to include("Mouth mirror")
+      expect(response.body).not_to include("Nitrile gloves")
+    end
+
+    it "shows a shop-by-category grid on the home page" do
+      StorefrontCategory.create!(company: company, ingredient_category: other_category, title: "Gloves & masks")
+
+      get public_storefront_home_path(company_slug: company.slug)
+
+      expect(response.body).to include(I18n.t("public.storefront.shop_by_category", locale: :en), "Gloves &amp; masks")
+    end
+  end
+
   describe "on the storefront's subdomain" do
     before { host! "acme.localhost" }
 

@@ -10,6 +10,7 @@ module Public
     skip_before_action :authenticate_user!
     before_action :set_storefront
     before_action :set_locale_from_company
+    before_action :load_storefront_categories
 
     layout "storefront"
 
@@ -65,6 +66,12 @@ module Public
 
       session[:locale] = locale.to_s
       I18n.locale = locale
+    end
+
+    # Few rows per company; loaded once so every category name and tile on the
+    # page comes from memory (see StorefrontHelper#storefront_category_name).
+    def load_storefront_categories
+      @storefront_categories = StorefrontCategory.includes(image_attachment: :blob).index_by(&:ingredient_category_id)
     end
 
     def visible_listings

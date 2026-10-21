@@ -1,7 +1,7 @@
 <%# locals: listing:, css: %>
 <% if @storefront.show_prices && listing.price_cents.positive? %>
   <p class="<%= css %> tabular-nums">
-    <span class="font-bold text-amber-700"><%= format_money(listing.price_cents) %></span>
+    <span class="font-bold text-(--sf-primary)"><%= format_money(listing.price_cents) %></span>
     <% if listing.unit_label.present? %>
       <span class="text-stone-500">/ <%= listing.unit_label %></span>
     <% end %>
