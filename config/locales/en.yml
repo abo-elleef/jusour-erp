@@ -45,6 +45,7 @@ en:
       whatsapp: "WhatsApp %{number}"
       whatsapp_short: "WhatsApp"
     storefront:
+      read_more: "Read more"
       home: "Home"
       pages_nav: "Information"
       pages:
@@ -80,7 +81,6 @@ en:
       no_results: "No products match your search."
       clear_search: "Show all products"
       empty: "Our catalog is coming soon."
-      about: "About %{company}"
       price_on_request: "Price on request"
       pagination: "Pages"
       page_of: "Page %{page} of %{pages}"
@@ -2786,6 +2786,8 @@ en:
         contact_hint: "Shown on every page. WhatsApp turns on the “Ask about this product” button."
         seo: "Search engines"
       form:
+        map_url: "Google Maps link"
+        map_url_hint: "Open your location in Google Maps, tap Share, and paste the link. Shown as an “Open in Maps” button."
         english: "English"
         arabic: "العربية"
         bilingual_hint: "Visitors see their language; if one side is blank they see the other."
@@ -2809,7 +2811,6 @@ en:
         show_prices: "Show prices"
         show_prices_hint: "Uses each product's selling price. When off — or when a product has no price — the site says “Price on request”."
         tagline: "Tagline"
-        about: "About the company"
         logo: "Logo"
         logo_hint: "PNG or JPEG, ideally on a transparent or white background."
         banner: "Banner image"
@@ -2879,11 +2880,8 @@ en:
           name: "Brand logos"
           hint: "A strip of logos — your product lines or partners."
         about:
-          name: "About"
-          hint: "The “About the company” text from Website settings."
-        contact:
-          name: "Contact"
-          hint: "Address, phone, email, WhatsApp and a map link."
+          name: "About teaser"
+          hint: "The first lines of your About us page, with a “Read more” link. Hidden until that page is published."
       fields:
         headline: "Heading"
         subheadline: "Subheading"
@@ -2896,10 +2894,8 @@ en:
         subtitle: "Subheading"
         button_label: "Button text"
         link: "Button link"
-        map_url: "Google Maps link"
       field_hints:
         link: "A full web address, or a page on your site such as /?category=…"
-        map_link: "Open the place in Google Maps, tap Share, and paste the link."
         hero:
           headline: "Blank uses the company name."
           subheadline: "Blank uses the tagline from Website settings."
@@ -6023,7 +6019,6 @@ en:
               invalid_limit: "Pick how many products to show"
               invalid_choice: "Pick one of the options"
               invalid_link: "The button link must be a full https:// address or a path starting with /"
-              invalid_map_link: "The map link must be a Google Maps link"
               category_required: "Choose a category"
             section_type:
               only_one: "can only appear once on the home page"
@@ -6041,6 +6036,8 @@ en:
               image_too_large: "must be 10 MB or smaller"
         storefront:
           attributes:
+            map_url:
+              not_google_maps: "must be a Google Maps link"
             primary_color:
               too_light: "is too light to read on white — pick a darker shade"
             facebook_url:
@@ -6358,6 +6355,7 @@ en:
       storefront_category:
         image: "Photo"
       storefront:
+        map_url: "Google Maps link"
         primary_color: "Brand color"
         accent_color: "Accent color"
         facebook_url: "Facebook link"

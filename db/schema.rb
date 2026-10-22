@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_23_100100) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_24_100100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1667,6 +1667,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_23_100100) do
     t.string "tagline_ar", default: "", null: false
     t.text "about_ar", default: "", null: false
     t.string "seo_description_ar", default: "", null: false
+    t.string "map_url", default: "", null: false
     t.index "lower((subdomain)::text)", name: "index_storefronts_on_lower_subdomain", unique: true, where: "(subdomain IS NOT NULL)"
     t.index ["company_id"], name: "index_storefronts_on_company_id", unique: true
   end

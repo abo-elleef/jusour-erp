@@ -14,12 +14,11 @@ class StorefrontSection < ApplicationRecord
   LIMITS = [4, 8, 12].freeze
   TEXT_LIMIT = 160
   LONG_TEXT_LIMIT = 3_000
-  MAP_HOSTS = %w[google.com maps.google.com maps.app.goo.gl goo.gl].freeze
 
   # Field kinds:
   #   text / long_text — English in `name`, Arabic in `name_ar`
   #   boolean, limit (one of LIMITS), category (an inventory category id),
-  #   link (Storefront.safe_link?), map_link (a Google Maps URL), choice (options:)
+  #   link (Storefront.safe_link?), choice (options:)
   TYPES = {
     "hero" => [
       { name: "headline", kind: :text },
@@ -46,15 +45,16 @@ class StorefrontSection < ApplicationRecord
       { name: "link", kind: :link }
     ],
     "brand_logos" => [{ name: "title", kind: :text }],
-    "about" => [{ name: "title", kind: :text }],
-    "contact" => [{ name: "title", kind: :text }, { name: "map_url", kind: :map_link }]
+    # A teaser of the "About us" page with a "Read more" link — the story
+    # itself is written once, on that page.
+    "about" => [{ name: "title", kind: :text }]
   }.freeze
 
   IMAGE_TYPES = %w[text_image promo_banner].freeze
   LOGO_TYPES = %w[brand_logos].freeze
   # The paginated product grid can appear once.
   SINGLETON_TYPES = %w[all_products].freeze
-  DEFAULT_LAYOUT = %w[hero categories featured_products all_products about].freeze
+  DEFAULT_LAYOUT = %w[hero categories featured_products all_products].freeze
 
   belongs_to :storefront
 
@@ -134,7 +134,7 @@ class StorefrontSection < ApplicationRecord
         cleaned[name] = ActiveModel::Type::Boolean.new.cast(raw[name]) || false if raw.key?(name)
       when :limit
         cleaned[name] = raw[name].to_i if raw.key?(name)
-      when :category, :link, :map_link, :choice
+      when :category, :link, :choice
         cleaned[name] = raw[name].to_s.strip if raw.key?(name)
       end
     end
@@ -175,20 +175,11 @@ class StorefrontSection < ApplicationRecord
         errors.add(:base, :invalid_choice) unless field[:options].include?(value.to_s)
       when :link
         errors.add(:base, :invalid_link) if value.present? && !Storefront.safe_link?(value)
-      when :map_link
-        errors.add(:base, :invalid_map_link) if value.present? && !map_link?(value)
       when :category
         category = IngredientCategory.unscoped_by_company.find_by(id: value) if value.present?
         errors.add(:base, :category_required) if category.nil? || category.company_id != company_id
       end
     end
-  end
-
-  def map_link?(url)
-    uri = URI.parse(url.to_s)
-    %w[http https].include?(uri.scheme) && MAP_HOSTS.any? { |h| uri.host.to_s.downcase == h || uri.host.to_s.downcase.end_with?(".#{h}") }
-  rescue URI::InvalidURIError
-    false
   end
 
   def images_are_acceptable

@@ -69,12 +69,13 @@ RSpec.describe "Admin storefront", type: :request do
       patch admin_sales_storefront_path, params: {
         storefront: { primary_color: "#1D4ED8", accent_color: "#0f172a", font: "tajawal", header_style: "dark",
                       announcement_enabled: "1", announcement_text: "Offer", announcement_text_ar: "عرض",
-                      tiktok_url: "tiktok.com/@acme", tagline_ar: "شعار" }
+                      tiktok_url: "tiktok.com/@acme", tagline_ar: "شعار", map_url: "https://maps.app.goo.gl/acme" }
       }
 
       expect(response).to redirect_to(admin_sales_storefront_path)
       expect(Storefront.sole).to have_attributes(primary_color: "#1d4ed8", font: "tajawal", header_style: "dark",
-        announcement_enabled: true, announcement_text_ar: "عرض", tiktok_url: "https://tiktok.com/@acme", tagline_ar: "شعار")
+        announcement_enabled: true, announcement_text_ar: "عرض", tiktok_url: "https://tiktok.com/@acme", tagline_ar: "شعار",
+        map_url: "https://maps.app.goo.gl/acme")
     end
 
     it "refuses a brand color that can't be read on white" do

@@ -104,7 +104,6 @@
       <div class="p-5 space-y-5">
         <%= render "bilingual_field", form: f, field: :tagline, label: t("sales.storefront.form.tagline"), maxlength: 160,
               hint: t("sales.storefront.form.bilingual_hint") %>
-        <%= render "bilingual_field", form: f, field: :about, label: t("sales.storefront.form.about"), rows: 5 %>
         <% { logo: :header, banner: :hero }.each do |field, variant| %>
           <div>
             <%= f.label field, t("sales.storefront.form.#{field}"), class: label_class %>
@@ -234,6 +233,11 @@
         <div>
           <%= f.label :address, t("sales.storefront.form.address"), class: label_class %>
           <%= f.text_field :address, class: pos_input_class %>
+        </div>
+        <div class="sm:col-span-2">
+          <%= f.label :map_url, t("sales.storefront.form.map_url"), class: label_class %>
+          <%= f.url_field :map_url, class: pos_input_class, dir: "ltr", spellcheck: false, placeholder: "https://maps.app.goo.gl/…" %>
+          <p class="<%= hint_class %>"><%= t("sales.storefront.form.map_url_hint") %></p>
         </div>
       </div>
     </section>

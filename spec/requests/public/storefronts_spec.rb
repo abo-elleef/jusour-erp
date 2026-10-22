@@ -232,12 +232,38 @@ RSpec.describe "Public storefronts", type: :request do
       end
     end
 
+    it "teases the About us page on the home page, only once it's published" do
+      about = storefront.pages.create!(slot: "about", enabled: false, body: "<p>Founded in Cairo to serve clinics.</p>")
+      StorefrontSection.create!(storefront: storefront, section_type: "about", position: 0)
+
+      get public_storefront_home_path(company_slug: company.slug)
+      expect(response.body).not_to include("Founded in Cairo")
+
+      about.update!(enabled: true)
+      get public_storefront_home_path(company_slug: company.slug)
+      expect(response.body).to include("Founded in Cairo", I18n.t("public.storefront.read_more", locale: :en),
+        public_storefront_page_path(company_slug: company.slug, page_slot: "about"))
+    end
+
+    it "shows the tagline and contact details, not the company story, in the footer" do
+      storefront.update!(map_url: "https://maps.app.goo.gl/acme")
+
+      get public_storefront_home_path(company_slug: company.slug)
+
+      footer = response.body[response.body.index("<footer")..]
+      expect(footer).to include("Everything for your clinic", "https://maps.app.goo.gl/acme", "+20 10 1234 5678")
+    end
+
     it "adds the contact details under the contact page" do
       storefront.pages.create!(slot: "contact", enabled: true, body: "<p>Open Saturday to Thursday</p>")
 
       get public_storefront_page_path(company_slug: company.slug, page_slot: "contact")
 
       expect(response.body).to include("Open Saturday to Thursday", "https://wa.me/201012345678")
+
+      storefront.update!(map_url: "https://maps.app.goo.gl/acme")
+      get public_storefront_page_path(company_slug: company.slug, page_slot: "contact")
+      expect(response.body).to include("https://maps.app.goo.gl/acme")
     end
 
     it "serves pages on the subdomain and lists them in the sitemap" do

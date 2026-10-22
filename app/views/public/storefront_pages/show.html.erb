@@ -19,13 +19,19 @@
       <% if @storefront.address.present? %><p><%= @storefront.address %></p><% end %>
       <% if @storefront.phone_url %><p><%= link_to @storefront.phone, @storefront.phone_url, dir: "ltr", class: "hover:text-(--sf-primary) tabular-nums" %></p><% end %>
       <% if @storefront.email.present? %><p><%= mail_to @storefront.email, class: "hover:text-(--sf-primary)" %></p><% end %>
-      <% if @storefront.whatsapp_url %>
-        <%= link_to @storefront.whatsapp_url, target: "_blank", rel: "noopener",
-              class: "mt-3 inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1EBE5A]" do %>
-          <%= render "public/storefronts/whatsapp_icon", css: "h-4 w-4" %>
-          <%= t("public.storefront.chat_on_whatsapp") %>
+      <div class="flex flex-wrap gap-3 pt-3">
+        <% if @storefront.whatsapp_url %>
+          <%= link_to @storefront.whatsapp_url, target: "_blank", rel: "noopener",
+                class: "inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#1EBE5A]" do %>
+            <%= render "public/storefronts/whatsapp_icon", css: "h-4 w-4" %>
+            <%= t("public.storefront.chat_on_whatsapp") %>
+          <% end %>
         <% end %>
-      <% end %>
+        <% if @storefront.map_url.present? %>
+          <%= link_to t("public.storefront.open_map"), @storefront.map_url, target: "_blank", rel: "noopener",
+                class: "inline-flex items-center whitespace-nowrap rounded-full border border-stone-300 px-5 py-2.5 text-sm font-semibold text-stone-800 hover:border-(--sf-primary) hover:text-(--sf-primary)" %>
+        <% end %>
+      </div>
     </div>
   <% end %>
 </div>

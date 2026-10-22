@@ -72,11 +72,11 @@
                   options_for_select(field[:options].map { |o| [t("sales.storefront_sections.choices.#{name}.#{o}"), o] }, @section.setting(name)),
                   id: "settings_#{name}", class: input_class %>
           </div>
-        <% when :link, :map_link %>
+        <% when :link %>
           <div>
             <label for="settings_<%= name %>" class="<%= label_class %>"><%= label %></label>
             <%= text_field_tag "settings[#{name}]", @section.setting(name), id: "settings_#{name}", dir: "ltr", spellcheck: false,
-                  placeholder: (field[:kind] == :map_link ? "https://maps.app.goo.gl/…" : "https://… or /?category=…"), class: input_class %>
+                  placeholder: "https://… or /?category=…", class: input_class %>
             <p class="text-xs text-gray-500 mt-1"><%= t("sales.storefront_sections.field_hints.#{field[:kind]}") %></p>
           </div>
         <% end %>

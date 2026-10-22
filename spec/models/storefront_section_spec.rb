@@ -24,11 +24,13 @@ RSpec.describe StorefrontSection, type: :model do
     expect(section("hero").setting(:show_contact_buttons)).to be(true)
   end
 
-  it "accepts only safe button links and Google Maps map links" do
+  it "accepts only safe button links" do
     expect(section("promo_banner", link: "/?category=1")).to be_valid
     expect(section("promo_banner", link: "javascript:alert(1)")).not_to be_valid
-    expect(section("contact", map_url: "https://maps.app.goo.gl/abc")).to be_valid
-    expect(section("contact", map_url: "https://evil.example/maps")).not_to be_valid
+  end
+
+  it "has no contact block — contact details live in settings, the footer and the Contact page" do
+    expect(section("contact")).not_to be_valid
   end
 
   it "requires a category of the same company for a category block" do
@@ -67,8 +69,8 @@ RSpec.describe StorefrontSection, type: :model do
       described_class.seed_defaults!(storefront)
       expect(storefront.sections.count).to eq(StorefrontSection::DEFAULT_LAYOUT.size)
 
-      storefront.sections.find_by(section_type: "about").update!(enabled: false)
-      expect(storefront.home_sections.map(&:section_type)).to eq(%w[hero categories featured_products all_products])
+      storefront.sections.find_by(section_type: "featured_products").update!(enabled: false)
+      expect(storefront.home_sections.map(&:section_type)).to eq(%w[hero categories all_products])
     end
   end
 end

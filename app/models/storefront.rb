@@ -10,6 +10,12 @@ class Storefront < ApplicationRecord
 
   audited associated_with: :company
 
+  # The company story moved to the "About us" page (data copied by
+  # MoveStorefrontAboutIntoAboutPage). Ignored rather than dropped so dynos
+  # still running the previous release don't break mid-deploy; drop them in a
+  # later release.
+  self.ignored_columns += %w[about about_ar]
+
   # Labels that could collide with the platform's own hosts. Extend per deploy
   # with STOREFRONT_RESERVED_SUBDOMAINS (comma-separated) when the storefront
   # domain is shared with the app itself.
@@ -36,6 +42,8 @@ class Storefront < ApplicationRecord
     "tiktok" => %w[tiktok.com],
     "youtube" => %w[youtube.com youtu.be]
   }.freeze
+  # Accepted for the "Open in Maps" button — Google Maps place and share links.
+  MAP_HOSTS = %w[google.com maps.google.com maps.app.goo.gl goo.gl].freeze
   HEX_COLOR = /\A#[0-9a-f]{6}\z/
   # The primary color is also used as text on white (prices, links), so it has
   # to stay readable there — WCAG's 3:1 minimum for large/bold text.
@@ -66,6 +74,7 @@ class Storefront < ApplicationRecord
   validate :primary_color_readable_on_white
   validate :social_urls_point_at_their_network
   validate :announcement_url_is_safe
+  validate :map_url_is_google_maps
 
   def self.reserved_subdomains
     RESERVED_SUBDOMAINS + ENV.fetch("STOREFRONT_RESERVED_SUBDOMAINS", "").split(",").map { |s| s.strip.downcase }
@@ -141,6 +150,14 @@ class Storefront < ApplicationRecord
     pages.with_rich_text_body.with_rich_text_body_ar.in_slot_order.select(&:live?)
   end
 
+  def self.map_link?(url)
+    uri = URI.parse(url.to_s)
+    host = uri.host.to_s.downcase
+    %w[http https].include?(uri.scheme) && MAP_HOSTS.any? { |h| host == h || host.end_with?(".#{h}") }
+  rescue URI::InvalidURIError
+    false
+  end
+
   def self.relative_luminance(hex)
     channels = hex.delete("#").scan(/../).map { |c| c.to_i(16) / 255.0 }
     r, g, b = channels.map { |c| c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055)**2.4 }
@@ -180,7 +197,7 @@ class Storefront < ApplicationRecord
   end
 
   def contact_present?
-    phone.present? || whatsapp_number.present? || email.present? || address.present?
+    phone.present? || whatsapp_number.present? || email.present? || address.present? || map_url.present?
   end
 
   private
@@ -193,6 +210,7 @@ class Storefront < ApplicationRecord
     self.primary_color = primary_color.to_s.strip.downcase
     self.accent_color = accent_color.to_s.strip.downcase
     self.announcement_url = announcement_url.to_s.strip
+    self.map_url = map_url.to_s.strip
     SOCIAL_NETWORKS.each_key do |network|
       attribute = :"#{network}_url"
       url = public_send(attribute).to_s.strip
@@ -224,6 +242,10 @@ class Storefront < ApplicationRecord
     return if announcement_url.blank? || self.class.safe_link?(announcement_url)
 
     errors.add(:announcement_url, :invalid)
+  end
+
+  def map_url_is_google_maps
+    errors.add(:map_url, :not_google_maps) if map_url.present? && !self.class.map_link?(map_url)
   end
 
   def subdomain_not_reserved

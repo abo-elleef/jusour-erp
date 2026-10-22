@@ -145,11 +145,20 @@ RSpec.describe Storefront, type: :model do
   end
 
   it "serves each language its own copy and falls back to the other" do
-    storefront = described_class.new(tagline: "Clinic supplies", tagline_ar: "مستلزمات العيادات", about: "English only")
+    storefront = described_class.new(tagline: "Clinic supplies", tagline_ar: "مستلزمات العيادات", seo_description: "English only")
 
     expect(storefront.localized(:tagline, locale: :en)).to eq("Clinic supplies")
     expect(storefront.localized(:tagline, locale: :ar)).to eq("مستلزمات العيادات")
-    expect(storefront.localized(:about, locale: :ar)).to eq("English only")
+    expect(storefront.localized(:seo_description, locale: :ar)).to eq("English only")
+  end
+
+  it "takes only Google Maps links as the map link" do
+    expect(described_class.new(map_url: "https://maps.app.goo.gl/abc123")).to be_valid
+    expect(described_class.new(map_url: "https://www.google.com/maps/place/Cairo")).to be_valid
+
+    other = described_class.new(map_url: "https://evil.example/maps")
+    expect(other).not_to be_valid
+    expect(other.errors.details[:map_url]).to include(error: :not_google_maps)
   end
 
   it "rejects non-image uploads" do

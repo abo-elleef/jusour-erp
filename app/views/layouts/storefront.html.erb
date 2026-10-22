@@ -94,8 +94,8 @@
       <div class="max-w-6xl mx-auto px-4 py-8 grid gap-6 sm:grid-cols-2 text-sm text-stone-600">
         <div>
           <p class="font-semibold text-stone-900"><%= @company.name %></p>
-          <% if (about = @storefront.localized(:about)).present? %>
-            <p class="mt-2 line-clamp-4 leading-relaxed"><%= about %></p>
+          <% if (footer_tagline = @storefront.localized(:tagline)).present? %>
+            <p class="mt-2 leading-relaxed"><%= footer_tagline %></p>
           <% end %>
           <% if (links = @storefront.social_links).any? %>
             <ul class="mt-4 flex flex-wrap gap-2" aria-label="<%= t("public.storefront.follow_us") %>">
@@ -125,6 +125,10 @@
             <% end %>
             <% if @storefront.address.present? %>
               <p><%= @storefront.address %></p>
+            <% end %>
+            <% if @storefront.map_url.present? %>
+              <p><%= link_to t("public.storefront.open_map"), @storefront.map_url, target: "_blank", rel: "noopener",
+                       class: "font-medium text-(--sf-primary) hover:underline" %></p>
             <% end %>
           </div>
         <% end %>
