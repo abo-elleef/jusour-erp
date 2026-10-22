@@ -161,6 +161,19 @@ RSpec.describe Storefront, type: :model do
     expect(other.errors.details[:map_url]).to include(error: :not_google_maps)
   end
 
+  it "has a recommended-size hint for every image slot, in both languages" do
+    helper = ApplicationController.helpers
+    %i[en ar].each do |locale|
+      I18n.with_locale(locale) do
+        described_class::IMAGE_GUIDES.each do |slot, (width, height)|
+          hint = helper.storefront_image_hint(slot, count: 12)
+          expect(hint).to include("#{width} × #{height}")
+          expect(hint).not_to include("translation missing")
+        end
+      end
+    end
+  end
+
   it "rejects non-image uploads" do
     storefront = described_class.new
     storefront.logo.attach(io: StringIO.new("text"), filename: "logo.txt", content_type: "text/plain")

@@ -25,6 +25,21 @@ class Storefront < ApplicationRecord
   SUBDOMAIN_FORMAT = /\A[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\z/
   IMAGE_CONTENT_TYPES = %w[image/jpeg image/png image/webp].freeze
 
+  # Recommended upload size (width, height in px) for each image slot — matched
+  # to how the public pages crop and size them (see the variants on each model).
+  # Shown under every upload field via StorefrontHelper#storefront_image_hint.
+  # One image serves desktop and phones: wide images are cropped to the middle
+  # on small screens, so the hints ask for a centered subject.
+  IMAGE_GUIDES = {
+    "logo" => [400, 160],
+    "banner" => [1600, 600],
+    "product" => [1200, 1200],
+    "category" => [1200, 900],
+    "text_image" => [1200, 900],
+    "promo_banner" => [1600, 500],
+    "brand_logo" => [240, 120]
+  }.freeze
+
   # Curated, Arabic-capable Google Fonts. "system" loads nothing.
   FONTS = {
     "system" => nil,

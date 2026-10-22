@@ -255,6 +255,7 @@ RSpec.describe "Admin storefront", type: :request do
 
       get edit_admin_sales_storefront_section_path(section)
       expect(response).to have_http_status(:ok)
+      expect(response.body).to include("1600 × 500")
 
       patch admin_sales_storefront_section_path(section), params: {
         enabled: "1", image: photo,

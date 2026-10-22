@@ -59,6 +59,7 @@
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.storefront_listings.form.photos_heading") %></h2>
       <p class="text-xs text-gray-500 mt-0.5"><%= t("sales.storefront_listings.form.photos_hint", count: StorefrontListing::MAX_IMAGES) %></p>
+      <p class="text-xs text-gray-500 mt-0.5"><%= storefront_image_hint(:product) %></p>
     </div>
     <div class="p-5 space-y-4">
       <% if listing.persisted? && listing.images.attached? %>

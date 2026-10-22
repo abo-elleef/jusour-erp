@@ -108,7 +108,7 @@
           <div>
             <%= f.label field, t("sales.storefront.form.#{field}"), class: label_class %>
             <%= f.file_field field, accept: Storefront::IMAGE_CONTENT_TYPES.join(","), class: file_class %>
-            <p class="<%= hint_class %>"><%= t("sales.storefront.form.#{field}_hint") %></p>
+            <p class="<%= hint_class %>"><%= storefront_image_hint(field) %></p>
             <% attachment = @storefront.public_send(field) %>
             <% if @storefront.persisted? && attachment.attached? && attachment.blob.persisted? %>
               <div class="mt-3 flex items-center gap-4">

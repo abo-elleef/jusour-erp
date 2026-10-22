@@ -2745,6 +2745,14 @@ en:
       storefront: "Website settings"
       storefront_listings: "Website products"
     storefront:
+      image_hints:
+        logo: "Recommended %{size} px — a wide logo, ideally a transparent PNG. Shown about 40 px tall."
+        banner: "Recommended %{size} px. Your heading sits on top and phones crop the sides, so keep the main subject in the middle and avoid text in the photo."
+        product: "Recommended %{size} px (square), with the product centered on a plain background."
+        category: "Recommended %{size} px. Shown as a tile on the home page and a wide strip on the category page, so keep the subject in the middle."
+        text_image: "Recommended %{size} px (landscape). It's cropped to sit beside the text, so keep the subject in the middle."
+        promo_banner: "Recommended %{size} px. The heading sits on one side and phones crop to the middle, so keep the subject centered and avoid text in the photo."
+        brand_logo: "Recommended %{size} px each, ideally transparent PNGs. Shown about 48 px tall. Up to %{count} logos."
       fonts:
         system: "Standard (no download)"
         cairo: "Cairo"
@@ -2812,9 +2820,7 @@ en:
         show_prices_hint: "Uses each product's selling price. When off — or when a product has no price — the site says “Price on request”."
         tagline: "Tagline"
         logo: "Logo"
-        logo_hint: "PNG or JPEG, ideally on a transparent or white background."
         banner: "Banner image"
-        banner_hint: "Wide photo for the top of the home page (about 1600 × 600)."
         remove_image: "Remove"
         whatsapp_number: "WhatsApp number"
         phone: "Phone"
@@ -2840,7 +2846,6 @@ en:
         title_hint: "Blank uses the inventory category name."
         description: "Description"
         image: "Photo"
-        image_hint: "Shown on the home page tile and at the top of the category page. Landscape works best."
       flash:
         updated: "Category saved."
     storefront_sections:
@@ -2908,7 +2913,6 @@ en:
         pick_category: "Choose a category"
         image: "Photo"
         logos: "Logos"
-        logos_hint: "Up to %{count} images. Transparent PNGs look best."
         remove_logo_confirm: "Remove this logo?"
       flash:
         created: "Block added. Fill it in and save."

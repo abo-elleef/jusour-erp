@@ -86,6 +86,7 @@
         <div>
           <label for="image" class="<%= label_class %>"><%= t("sales.storefront_sections.form.image") %></label>
           <%= file_field_tag :image, accept: Storefront::IMAGE_CONTENT_TYPES.join(","), class: file_class %>
+          <p class="text-xs text-gray-500 mt-1"><%= storefront_image_hint(@section.section_type) %></p>
           <% if @section.image.attached? && @section.image.blob.persisted? %>
             <div class="mt-3 flex items-center gap-4">
               <%= image_tag @section.image.variant(:half), class: "h-20 rounded-xl border border-gray-200 object-cover" %>
@@ -114,7 +115,7 @@
             </ul>
           <% end %>
           <%= file_field_tag "logos[]", multiple: true, id: "logos", accept: Storefront::IMAGE_CONTENT_TYPES.join(","), class: file_class %>
-          <p class="text-xs text-gray-500 mt-1"><%= t("sales.storefront_sections.form.logos_hint", count: StorefrontSection::MAX_LOGOS) %></p>
+          <p class="text-xs text-gray-500 mt-1"><%= storefront_image_hint(:brand_logo, count: StorefrontSection::MAX_LOGOS) %></p>
         </div>
       <% end %>
     </section>

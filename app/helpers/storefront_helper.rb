@@ -19,6 +19,12 @@ module StorefrontHelper
     tag.style(css.html_safe) # rubocop:disable Rails/OutputSafety -- built only from validated values above
   end
 
+  # "Recommended 1600 × 600 px …" for an upload field, from Storefront::IMAGE_GUIDES.
+  def storefront_image_hint(slot, **options)
+    width, height = Storefront::IMAGE_GUIDES.fetch(slot.to_s)
+    t("sales.storefront.image_hints.#{slot}", size: "#{width} × #{height}", **options)
+  end
+
   def storefront_header_dark?
     @storefront&.header_style == "dark"
   end
