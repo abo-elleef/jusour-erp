@@ -11,6 +11,8 @@
             class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg border border-gray-200 transition-colors" do %>
         <span aria-hidden="true">↓</span> <%= t("inventory.ingredients.index.export_csv") %>
       <% end %>
+      <%= link_to t("inventory.tools.ingredient_availabilities"), admin_inventory_ingredient_availabilities_path,
+            class: "inline-flex items-center text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg border border-gray-200 transition-colors" %>
       <%= link_to t("inventory.tools.ingredient_categories"), admin_inventory_ingredient_categories_path,
             class: "inline-flex items-center text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-lg border border-gray-200 transition-colors" %>
       <% if can_manage_inventory_settings? %>
@@ -23,19 +25,24 @@
   </div>
 
   <% filter_q = params[:q]&.to_unsafe_h %>
-  <% index_filter_params = { q: filter_q, stock: @stock_filter, status: @status, supplier_id: @supplier_id, sort: @sort, dir: @direction }.compact %>
+  <% index_filter_params = { q: filter_q, stock: @stock_filter, status: @status, supplier_id: @supplier_id, location_id: @location_id, sort: @sort, dir: @direction }.compact %>
   <% category_options_json = [{ value: "", label: t("inventory.ingredients.index.all_categories") }] +
     IngredientCategory.ordered.map { |category| { value: category.id, label: category.name } } %>
   <% supplier_options_json = [
     { value: "", label: t("inventory.ingredients.index.all_suppliers") },
     { value: "none", label: t("inventory.ingredients.index.no_supplier") }
   ] + @suppliers.map { |supplier| { value: supplier.id, label: supplier.name } } %>
+  <% location_options_json = [{ value: "", label: t("inventory.ingredients.index.all_locations") }] +
+    @accessible_locations.map { |location| { value: location.id, label: location.name } } %>
   <% selected_category_value = @q.ingredient_category_id_eq.to_s %>
   <% selected_category_label = category_options_json.find { |opt| opt[:value].to_s == selected_category_value }&.dig(:label) ||
     t("inventory.ingredients.index.all_categories") %>
   <% selected_supplier_value = @supplier_id.to_s %>
   <% selected_supplier_label = supplier_options_json.find { |opt| opt[:value].to_s == selected_supplier_value }&.dig(:label) ||
     t("inventory.ingredients.index.all_suppliers") %>
+  <% selected_location_value = @location_id.to_s %>
+  <% selected_location_label = location_options_json.find { |opt| opt[:value].to_s == selected_location_value }&.dig(:label) ||
+    t("inventory.ingredients.index.all_locations") %>
 
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <%= link_to admin_inventory_ingredients_path(sort: @sort, dir: @direction),
@@ -98,7 +105,7 @@
       <%= hidden_field_tag :sort, @sort if @sort != "name" %>
       <%= hidden_field_tag :dir, @direction if @direction != "asc" || @sort != "name" %>
       <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
-        <div class="md:col-span-4">
+        <div class="md:col-span-3">
           <%= f.label :name_or_code_cont, t("inventory.ingredients.index.search_label"), class: "block text-sm font-medium text-gray-700 mb-1" %>
           <%= f.search_field :name_or_code_cont,
                 placeholder: t("inventory.ingredients.index.search_placeholder"),
@@ -129,7 +136,7 @@
                 class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
           </div>
         </div>
-        <div class="md:col-span-3" data-searchable-select-options="<%= supplier_options_json.to_json %>">
+        <div class="md:col-span-2" data-searchable-select-options="<%= supplier_options_json.to_json %>">
           <%= label_tag :supplier_id, t("inventory.ingredients.index.supplier"), class: "block text-sm font-medium text-gray-700 mb-1" %>
           <div class="relative"
                data-controller="searchable-select"
@@ -146,6 +153,31 @@
                    aria-autocomplete="list"
                    value="<%= selected_supplier_label %>"
                    placeholder="<%= t("inventory.ingredients.index.all_suppliers") %>"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                   data-searchable-select-target="input"
+                   data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+            <ul data-searchable-select-target="menu"
+                role="listbox"
+                class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
+          </div>
+        </div>
+        <div class="md:col-span-2" data-searchable-select-options="<%= location_options_json.to_json %>">
+          <%= label_tag :location_id, t("inventory.ingredients.index.location"), class: "block text-sm font-medium text-gray-700 mb-1" %>
+          <div class="relative"
+               data-controller="searchable-select"
+               data-searchable-select-clear-on-empty-value="true"
+               data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
+            <%= hidden_field_tag :location_id,
+                  selected_location_value,
+                  data: { searchable_select_target: "hidden" } %>
+            <input type="text"
+                   autocomplete="off"
+                   spellcheck="false"
+                   role="combobox"
+                   aria-expanded="false"
+                   aria-autocomplete="list"
+                   value="<%= selected_location_label %>"
+                   placeholder="<%= t("inventory.ingredients.index.all_locations") %>"
                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
                    data-searchable-select-target="input"
                    data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />

@@ -62,6 +62,7 @@ RSpec.describe "Who can edit inventory setup", type: :request do
         admin_inventory_ingredient_categories_path,
         admin_inventory_suppliers_path,
         admin_inventory_ingredients_path,
+        admin_inventory_ingredient_availabilities_path,
         admin_inventory_ingredient_path(ingredient),
         admin_inventory_supplier_path(supplier)
       ].each do |path|

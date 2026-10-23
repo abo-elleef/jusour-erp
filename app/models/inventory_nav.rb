@@ -21,6 +21,8 @@ module InventoryNav
           path: :admin_inventory_suppliers_path, permission: "inventory:view" },
         { controller: "ingredients", label: "inventory.tools.ingredients",
           path: :admin_inventory_ingredients_path, permission: "inventory:view" },
+        { controller: "ingredient_availabilities", label: "inventory.tools.ingredient_availabilities",
+          path: :admin_inventory_ingredient_availabilities_path, permission: "inventory:view" },
         { controller: "import_shipments", label: "inventory.tools.import_shipments",
           path: :admin_inventory_import_shipments_path, permission: "inventory:view",
           feature: :landed_cost },

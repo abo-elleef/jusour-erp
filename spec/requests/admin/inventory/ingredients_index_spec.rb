@@ -123,3 +123,62 @@ RSpec.describe "Admin::Inventory::Ingredients index missing stock settings", typ
     expect(response.body).to include(I18n.t("inventory.ingredients.index.max_at", quantity: 20))
   end
 end
+
+RSpec.describe "Admin::Inventory::Ingredients index location filter", type: :request do
+  include Devise::Test::IntegrationHelpers
+
+  let(:company) { create(:company) }
+  # users.wages_account_code is NOT NULL with nothing in the app that sets it.
+  let(:owner) { create(:user, :owner, company: company, wages_account_code: 9101) }
+  let(:category) { create(:ingredient_category, company: company) }
+  let(:branch_a) { Location.create!(name: "Branch A", location_type: "branch", company: company) }
+  let(:branch_b) { Location.create!(name: "Branch B", location_type: "branch", company: company) }
+  let(:everywhere) do
+    create(:ingredient, company: company, ingredient_category: category, name: "Everywhere Tomatoes")
+  end
+  let(:only_a) do
+    create(:ingredient, company: company, ingredient_category: category, name: "Branch Salt",
+      all_locations: false, restricted_location_ids: [branch_a.id])
+  end
+
+  before do
+    Current.company = company
+    sign_in owner
+  end
+
+  it "keeps company-wide ingredients and those scoped to the chosen location" do
+    everywhere
+    only_a
+    get admin_inventory_ingredients_path(location_id: branch_a.id)
+
+    expect(response.body).to include("Everywhere Tomatoes")
+    expect(response.body).to include("Branch Salt")
+    expect(response.body).to include("Branch A")
+  end
+
+  it "hides an ingredient scoped to a different location" do
+    everywhere
+    only_a
+    get admin_inventory_ingredients_path(location_id: branch_b.id)
+
+    expect(response.body).to include("Everywhere Tomatoes")
+    expect(response.body).not_to include("Branch Salt")
+  end
+
+  it "ignores an unknown location and lists every ingredient" do
+    everywhere
+    only_a
+    get admin_inventory_ingredients_path(location_id: SecureRandom.uuid)
+
+    expect(response.body).to include("Everywhere Tomatoes")
+    expect(response.body).to include("Branch Salt")
+  end
+
+  it "keeps the location when another filter link is followed" do
+    everywhere
+    get admin_inventory_ingredients_path(location_id: branch_a.id)
+
+    link = Nokogiri::HTML(response.body).at_css("a[href*='status=inactive']")
+    expect(link["href"]).to include("location_id=#{branch_a.id}")
+  end
+end

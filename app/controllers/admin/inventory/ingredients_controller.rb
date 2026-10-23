@@ -17,6 +17,7 @@ module Admin
         @stock_filter = params[:stock].presence
         @status = %w[active inactive all].include?(params[:status]) ? params[:status] : "active"
         @supplier_id = resolve_supplier_filter(params[:supplier_id])
+        @location_id = resolve_location_filter(params[:location_id])
         @sort = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : "name"
         @direction = params[:dir].to_s == "desc" ? "desc" : "asc"
         @q = Ingredient.ransack(params[:q])
@@ -27,12 +28,14 @@ module Admin
         scope = scope.active if @status == "active"
         scope = scope.where(active: false) if @status == "inactive"
         scope = apply_supplier_filter(scope)
+        scope = apply_location_filter(scope)
         @ingredients = apply_sort(apply_stock_filter(scope))
 
         respond_to do |format|
           format.html do
             @suppliers = Supplier.active.order(:name)
-            @filtered = @stock_filter.present? || params[:q].present? || @status != "active" || @supplier_id.present?
+            @filtered = @stock_filter.present? || params[:q].present? || @status != "active" ||
+              @supplier_id.present? || @location_id.present?
             @low_stock_count = Ingredient.active.low_stock.count
             @out_of_stock_count = Ingredient.active.out_of_stock.count
             @expiring_count = Ingredient.active.expiring_soon.count
@@ -419,6 +422,23 @@ module Admin
         else
           scope.where(id: SupplierIngredient.where(supplier_id: @supplier_id).select(:ingredient_id))
         end
+      end
+
+      # Blank = every ingredient. A chosen location keeps ingredients that are
+      # company-wide plus those explicitly scoped to that location — the same
+      # rule as Ingredient#can_access_location?.
+      def resolve_location_filter(raw)
+        id = raw.to_s.presence
+        return if id.blank?
+
+        Location.active.where(id: current_user.accessible_location_ids).find_by(id: id)&.id
+      end
+
+      def apply_location_filter(scope)
+        return scope if @location_id.blank?
+
+        scoped_here = IngredientLocationAccess.where(location_id: @location_id).select(:ingredient_id)
+        scope.where(all_locations: true).or(scope.where(id: scoped_here))
       end
 
       def apply_sort(scope)

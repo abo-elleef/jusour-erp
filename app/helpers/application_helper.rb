@@ -58,7 +58,7 @@ module ApplicationHelper
   ACCOUNTING_LEDGERS_GROUP       = %w[treasuries journal_entries chart_of_accounts fixed_assets partners loans].freeze
 
   INVENTORY_OPERATIONS_GROUP = %w[vendor_invoices vendor_credit_notes stock_transfers stock_transfer_templates stock_takes manufacturing_templates manufacturing_runs manufacturing_template_lines].freeze
-  INVENTORY_SETUP_GROUP      = %w[suppliers ingredients ingredient_categories units unit_conversions].freeze
+  INVENTORY_SETUP_GROUP      = %w[suppliers ingredients ingredient_availabilities ingredient_categories units unit_conversions].freeze
   INVENTORY_REPORTS_GROUP    = %w[reports].freeze
 
   # Can this user reshape the inventory catalog (ingredients, vendors,
@@ -505,7 +505,9 @@ module ApplicationHelper
       next if AUDIT_HISTORY_HIDDEN_FIELDS.include?(field)
 
       label = t("accounting.audit_history.fields.#{field}", default: field.humanize)
-      if audit.action.to_s == "update" && value.is_a?(Array) && value.size == 2
+      # location_access_changed stores the same [from, to] pairs as a normal
+      # update, but under its own action so the history can say what happened.
+      if %w[update location_access_changed].include?(audit.action.to_s) && value.is_a?(Array) && value.size == 2
         {
           label: label,
           kind: :update,

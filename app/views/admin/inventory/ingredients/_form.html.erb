@@ -191,7 +191,11 @@
           </label>
         <% end %>
       </div>
-      <p class="text-xs text-gray-500 mt-1.5"><%= t("inventory.ingredients.form.locations_hint") %></p>
+      <p class="text-xs text-gray-500 mt-1.5">
+        <%= t("inventory.ingredients.form.locations_hint") %>
+        <%= link_to t("inventory.ingredient_availabilities.form_link"), admin_inventory_ingredient_availabilities_path,
+              class: "font-semibold text-amber-700 hover:underline" %>
+      </p>
     </div>
   </div>
 
