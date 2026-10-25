@@ -26,6 +26,16 @@ RSpec.describe "Admin::MenuItems index code + search", type: :request do
     expect(response.body).not_to include("Cola")
   end
 
+  it "numbers the rows" do
+    create(:menu_item, company: company, category: category, name: "Cheeseburger", code: "BURG-01")
+    create(:menu_item, company: company, category: category, name: "Cola", code: "DRINK-01")
+
+    get admin_menu_items_path
+
+    row_numbers = Nokogiri::HTML(response.body).css("tbody tr").map { |row| row.css("td").first.text.strip }
+    expect(row_numbers).to eq(%w[1 2])
+  end
+
   it "finds an item by name too" do
     create(:menu_item, company: company, category: category, name: "Falafel Wrap", code: "MI-9001")
 
