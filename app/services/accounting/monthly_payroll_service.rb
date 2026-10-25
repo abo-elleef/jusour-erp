@@ -4,7 +4,7 @@ module Accounting
   class MonthlyPayrollService
     INDEX_SORTABLE_COLUMNS = %w[
       name base_salary_cents attendance_pay_cents daily_rate_cents penalties_cents bonuses_cents
-      net_pay_cents paid_cents staff_meals_cents remaining_pay_cents status
+      net_pay_cents paid_cents staff_meals_cents remaining_pay_cents payout_cents status
     ].freeze
     INDEX_DEFAULT_SORT = "name"
     INDEX_DEFAULT_SORT_DIRECTION = "asc"

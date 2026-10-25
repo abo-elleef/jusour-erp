@@ -5235,6 +5235,8 @@ en:
       bonuses: "Bonuses"
       net_pay: "Net salary"
       remaining_pay: "Remaining to pay"
+      payout_this_month: "To pay this month"
+      payout_deduction: "after deducting %{amount}"
       totals: "Totals"
       empty: "No staff with salaries or adjustments for this month. Set monthly salaries under Staff."
       total_obligation: "Total salary obligation"

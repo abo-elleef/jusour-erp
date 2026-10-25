@@ -5290,6 +5290,8 @@ ar:
       bonuses: "المكافآت"
       net_pay: "صافي الراتب"
       remaining_pay: "المتبقي للدفع"
+      payout_this_month: "للصرف هذا الشهر"
+      payout_deduction: "بعد خصم %{amount}"
       totals: "الإجمالي"
       empty: "لا يوجد موظفون براتب أو تعديلات لهذا الشهر. عيّن الرواتب من صفحة الموظفين."
       total_obligation: "إجمالي الالتزام بالراتب"

@@ -75,8 +75,8 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
         params: { payroll_month: Date.current.strftime("%Y-%m"), location_id: downtown.id }
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to match(%r{font-medium w-48">\s*Branch Cashier\s*</td>})
-      expect(response.body).not_to match(%r{font-medium w-48">\s*Other Branch\s*</td>})
+      expect(response.body).to match(%r{font-medium w-48">\s*<a [^>]*>Branch Cashier</a>\s*</td>})
+      expect(response.body).not_to match(%r{font-medium w-48">\s*<a [^>]*>Other Branch</a>})
     end
 
     it "sorts rows by net pay descending" do
@@ -89,7 +89,25 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       expect(response.body.index("Higher Paid")).to be < response.body.index("Lower Paid")
     end
 
-    it "shows the real negative remaining pay when penalties exceed salary" do
+    it "shows what to pay this month, after the advance deduction" do
+      payroll_month = Date.current.beginning_of_month
+      staff = create(:user, company: company, name: "Advance Taker", role: "cashier",
+                     monthly_salary_cents: 300_000, balance_deduction_cents: 50_000)
+      safe = Treasury.create!(company: company, name: "Safe", treasury_type: "safe",
+                              opening_balance_cents: 2_000_000, balance_cents: 2_000_000)
+      Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: safe, user: owner,
+                                           amount_cents: 1_200_000, voucher_date: payroll_month,
+                                           party_type: "User", party_id: staff.id).call
+
+      get admin_accounting_monthly_payroll_path, params: { payroll_month: payroll_month.strftime("%Y-%m") }
+
+      row_doc = Nokogiri::HTML(response.body).at_css("td.font-medium", text: "Advance Taker").parent
+      payout_cell = row_doc.css("td")[8]
+      expect(payout_cell.text).to include("2,500.00")
+      expect(payout_cell.text).to include(I18n.t("accounting.monthly_payroll.payout_deduction", amount: "500.00"))
+    end
+
+    it "shows a negative remaining pay as owed to the company when penalties exceed salary" do
       payroll_month = Date.current.beginning_of_month
       staff = create(:user, company: company, name: "Over Penalized", role: "cashier",
                      monthly_salary_cents: 300_000)
@@ -108,7 +126,10 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       expect(response).to have_http_status(:ok)
       row_doc = Nokogiri::HTML(response.body).at_css("td.font-medium", text: "Over Penalized").parent
       remaining_pay_cell = row_doc.css("td")[7]
-      expect(remaining_pay_cell.text).to include("-500.00")
+      expect(remaining_pay_cell.text).to include("500.00")
+      expect(remaining_pay_cell.text).not_to include("-500.00")
+      expect(remaining_pay_cell.text).to include(I18n.t("staff.wages_ledger.they_owe"))
+      expect(remaining_pay_cell["class"]).to include("text-red-700")
 
       total_row = Nokogiri::HTML(response.body).at_css("tfoot tr")
       totals_remaining_cell = total_row.css("td")[7]
