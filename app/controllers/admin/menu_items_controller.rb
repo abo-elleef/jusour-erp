@@ -2,6 +2,16 @@
 
 module Admin
   class MenuItemsController < BaseController
+    # Header sort key => SQL. Name, code and category ignore case.
+    SORT_COLUMNS = {
+      "code" => "LOWER(menu_items.code)",
+      "name" => "LOWER(menu_items.name)",
+      "category" => "LOWER(categories.name)",
+      "price" => "menu_items.base_price_cents",
+      "tax" => "menu_items.tax_category",
+      "status" => "menu_items.available"
+    }.freeze
+
     before_action :set_menu_item, only: %i[edit update destroy]
 
     def index
@@ -9,8 +19,12 @@ module Admin
       @total_count = scope.count
       @available_count = scope.where(available: true).count
       @unavailable_count = @total_count - @available_count
+      @sort = SORT_COLUMNS.key?(params[:sort].to_s) ? params[:sort].to_s : nil
+      @direction = params[:dir].to_s == "desc" ? "desc" : "asc"
       @menu_items = scope.joins(:category)
-        .order("categories.position ASC, menu_items.position ASC, menu_items.name ASC")
+      @menu_items = @menu_items.order(Arel.sql("#{SORT_COLUMNS[@sort]} #{@direction.upcase}")) if @sort
+      # Unsorted (and as the tiebreak): the menu's own order, as on the POS.
+      @menu_items = @menu_items.order("categories.position ASC, menu_items.position ASC, menu_items.name ASC")
       if params[:category_id].present?
         @menu_items = @menu_items.where(category_id: params[:category_id])
         @filtered_category_id = params[:category_id]

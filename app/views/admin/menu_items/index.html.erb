@@ -42,6 +42,10 @@
       </div>
       <div class="p-5">
         <%= form_with url: admin_menu_items_path, method: :get, class: "flex flex-wrap items-end gap-4" do %>
+          <% if @sort %>
+            <%= hidden_field_tag :sort, @sort, id: nil %>
+            <%= hidden_field_tag :dir, @direction, id: nil %>
+          <% end %>
           <div class="min-w-[12rem] flex-1 max-w-xs">
             <%= label_tag :search, t("admin.menu_items.search"), class: label_class %>
             <%= search_field_tag :search, @search, placeholder: t("admin.menu_items.search_placeholder"), class: input_class %>
@@ -56,7 +60,7 @@
           <%= submit_tag t("actions.apply_filters"),
                 class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
           <% if @filtered_category_id.present? || @search.present? %>
-            <%= link_to t("actions.clear"), admin_menu_items_path,
+            <%= link_to t("actions.clear"), admin_menu_items_path({ sort: @sort, dir: (@direction if @sort) }.compact),
                   class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
           <% end %>
           <span class="text-sm text-gray-500 ml-auto tabular-nums">
@@ -75,12 +79,13 @@
             <tr>
               <th class="p-3 pl-5 w-12 text-gray-400"><%= t("shared.row_index") %></th>
               <th class="p-3 w-16"></th>
-              <th class="p-3"><%= t("admin.menu_items.table.code") %></th>
-              <th class="p-3"><%= t("admin.menu_items.table.name") %></th>
-              <th class="p-3"><%= t("admin.menu_items.table.category") %></th>
-              <th class="p-3 text-right"><%= t("admin.menu_items.table.price") %></th>
-              <th class="p-3"><%= t("admin.menu_items.table.tax") %></th>
-              <th class="p-3"><%= t("admin.menu_items.table.status") %></th>
+              <% sort_opts = { sort: @sort, direction: @direction } %>
+              <th class="p-3"><%= sort_header_link(t("admin.menu_items.table.code"), :code, **sort_opts) %></th>
+              <th class="p-3"><%= sort_header_link(t("admin.menu_items.table.name"), :name, **sort_opts) %></th>
+              <th class="p-3"><%= sort_header_link(t("admin.menu_items.table.category"), :category, **sort_opts) %></th>
+              <th class="p-3 text-right"><%= sort_header_link(t("admin.menu_items.table.price"), :price, **sort_opts) %></th>
+              <th class="p-3"><%= sort_header_link(t("admin.menu_items.table.tax"), :tax, **sort_opts) %></th>
+              <th class="p-3"><%= sort_header_link(t("admin.menu_items.table.status"), :status, **sort_opts) %></th>
               <th class="p-3 pr-5 text-right"><%= t("admin.menu_items.table.actions") %></th>
             </tr>
           </thead>
