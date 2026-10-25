@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_24_100100) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_25_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1574,11 +1574,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_24_100100) do
     t.index ["transferred_on"], name: "index_stock_transfers_on_transferred_on"
   end
 
-  create_table "super_admin_users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.string "name", null: false
-    t.string "email", default: "", null: false
-    t.string "encrypted_password", default: "", null: false
-    t.datetime "remember_created_at"
   create_table "storefront_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.uuid "ingredient_category_id", null: false
@@ -1672,6 +1667,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_24_100100) do
     t.index ["company_id"], name: "index_storefronts_on_company_id", unique: true
   end
 
+  create_table "super_admin_users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.string "email", default: "", null: false
+    t.string "encrypted_password", default: "", null: false
+    t.datetime "remember_created_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_super_admin_users_on_email", unique: true
@@ -1844,6 +1844,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_24_100100) do
     t.uuid "assigned_treasury_id"
     t.integer "wages_account_code", null: false
     t.integer "balance_deduction_cents"
+    t.integer "payroll_pin_failed_attempts", default: 0, null: false
+    t.datetime "payroll_pin_locked_until"
     t.index ["active"], name: "index_users_on_active"
     t.index ["assigned_treasury_id"], name: "index_users_on_assigned_treasury_id"
     t.index ["company_id", "email"], name: "index_users_on_company_id_and_email", unique: true
@@ -2209,14 +2211,6 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_24_100100) do
   add_foreign_key "stock_transfers", "users", column: "received_by_id"
   add_foreign_key "stock_transfers", "users", column: "requested_by_id"
   add_foreign_key "stock_transfers", "users", column: "sent_by_id"
-  add_foreign_key "supplier_ingredients", "ingredients"
-  add_foreign_key "supplier_ingredients", "suppliers"
-  add_foreign_key "supplier_price_histories", "ingredients"
-  add_foreign_key "supplier_price_histories", "suppliers"
-  add_foreign_key "supplier_price_histories", "users", column: "recorded_by_user_id"
-  add_foreign_key "supplier_price_histories", "vendor_invoice_lines", on_delete: :nullify
-  add_foreign_key "suppliers", "companies"
-  add_foreign_key "suppliers", "treasuries"
   add_foreign_key "storefront_categories", "companies"
   add_foreign_key "storefront_categories", "ingredient_categories"
   add_foreign_key "storefront_listings", "companies"
@@ -2226,6 +2220,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_24_100100) do
   add_foreign_key "storefront_sections", "companies"
   add_foreign_key "storefront_sections", "storefronts"
   add_foreign_key "storefronts", "companies"
+  add_foreign_key "supplier_ingredients", "ingredients"
+  add_foreign_key "supplier_ingredients", "suppliers"
+  add_foreign_key "supplier_price_histories", "ingredients"
+  add_foreign_key "supplier_price_histories", "suppliers"
+  add_foreign_key "supplier_price_histories", "users", column: "recorded_by_user_id"
+  add_foreign_key "supplier_price_histories", "vendor_invoice_lines", on_delete: :nullify
+  add_foreign_key "suppliers", "companies"
+  add_foreign_key "suppliers", "treasuries"
   add_foreign_key "tax_rates", "companies"
   add_foreign_key "treasuries", "companies"
   add_foreign_key "treasury_transactions", "companies"

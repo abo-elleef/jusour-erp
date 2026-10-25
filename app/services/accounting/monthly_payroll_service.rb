@@ -96,7 +96,9 @@ module Accounting
       bonuses        = adjustments.bonuses.sum(:amount_cents)
       gross_net      = attendance_pay - penalties + bonuses
       meals_total    = staff_meals_for_month
-      balance        = @user.staff_balance_cents
+      # As of the month's last day: later months' payments and accruals don't
+      # belong to this month's figures.
+      balance        = @user.staff_balance_cents(as_of: @payroll_month.end_of_month)
 
       Result.new(
         user: @user,

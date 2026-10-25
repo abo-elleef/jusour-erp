@@ -107,6 +107,30 @@ RSpec.describe Accounting::MonthlyPayrollService do
       expect(result.remaining_pay_cents).to eq(250_000)
     end
 
+    it "uses the balance as of the month's end, not later months' payments" do
+      treasury = Treasury.create!(company: company, name: "Safe", treasury_type: "safe",
+                                  opening_balance_cents: 2_000_000, balance_cents: 2_000_000)
+      june = Date.new(2026, 6, 1)
+      [[june.change(day: 10), 500_000], [Date.new(2026, 7, 5), 400_000]].each do |date, cents|
+        Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: treasury, user: owner,
+                                             amount_cents: cents, voucher_date: date,
+                                             party_type: "User", party_id: staff.id).call
+      end
+
+      open_june = described_class.new(staff, june).call
+      expect(open_june.balance_cents).to eq(-500_000)
+      expect(open_june.debt_cents).to eq(500_000)
+      expect(open_june.payout_cents).to eq(0)
+
+      Accounting::FinalizePayrollService.new(staff, june, finalized_by: owner).call
+      recorded_june = described_class.new(staff, june).call
+      # 5,000 advance less June's 3,000 pay: 2,000 owed at the end of June,
+      # whatever was paid in July.
+      expect(recorded_june.debt_cents).to eq(200_000)
+      expect(recorded_june.deduction_cents).to eq(300_000)
+      expect(staff.staff_balance_cents).to eq(-600_000)
+    end
+
     it "returns snapshot values when payroll is recorded" do
       PayrollAdjustment.create!(
         user: staff,

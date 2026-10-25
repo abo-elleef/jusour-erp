@@ -29,22 +29,77 @@
     </div>
   <% end %>
 
-  <%# Remaining pay hero — what staff still receives this month %>
+  <%# This month only: what the month's pay comes to after any advance
+      deduction, and whether it has been paid. The account balance (an advance
+      still being repaid) is a separate box below. %>
+  <% snapshot = payroll_summary.snapshot %>
+  <% payout_voucher = snapshot&.payout_voucher %>
+  <% net_cents = [payroll_summary.net_pay_cents, 0].max %>
+  <% deduction_cents = payroll_summary.deduction_cents.to_i %>
+  <% payout_cents = payroll_summary.payout_cents.to_i %>
+  <% carried_cents = payout_cents - net_cents + deduction_cents %>
   <div class="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/80 p-5 shadow-sm">
-    <p class="text-xs font-semibold text-amber-800 uppercase tracking-wide"><%= t("staff.payroll.still_owed") %></p>
-    <p class="text-3xl sm:text-4xl font-bold text-amber-950 tabular-nums mt-1"><%= format_money(payroll_summary.remaining_pay_cents) %></p>
-    <p class="text-xs text-amber-800/80 mt-2">
-      <%= t("staff.payroll_portal.gross_summary",
-            net: format_money(payroll_summary.net_pay_cents),
-            advances: format_money(payroll_summary.paid_cents)) %>
-    </p>
+    <p class="text-xs font-semibold text-amber-800 uppercase tracking-wide"><%= t("staff.payroll_portal.to_pay_title") %></p>
+    <p class="text-3xl sm:text-4xl font-bold text-amber-950 tabular-nums mt-1"><%= format_amount(payout_cents) %></p>
+    <% if payout_voucher %>
+      <p class="inline-flex mt-3 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
+        <%= t("staff.payroll_portal.status_paid", date: l(payout_voucher.voucher_date, format: :long)) %>
+      </p>
+    <% elsif payout_cents.zero? %>
+      <p class="inline-flex mt-3 text-xs font-semibold px-2.5 py-1 rounded-full bg-gray-100 text-gray-700">
+        <%= t("staff.payroll_portal.status_nothing") %>
+      </p>
+    <% elsif payroll_summary.finalized %>
+      <%# Recorded before payouts were issued as vouchers. %>
+      <p class="inline-flex mt-3 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">
+        <%= t("staff.payroll_portal.recorded") %>
+      </p>
+    <% else %>
+      <p class="inline-flex mt-3 text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-200/70 text-amber-900">
+        <%= t("staff.payroll_portal.status_not_paid") %>
+      </p>
+    <% end %>
+
+    <dl class="mt-4 space-y-1.5 text-sm text-amber-900/90">
+      <div class="flex justify-between gap-3">
+        <dt><%= t("staff.payroll_portal.breakdown_net") %></dt>
+        <dd class="tabular-nums"><%= format_amount(net_cents) %></dd>
+      </div>
+      <% if carried_cents.positive? %>
+        <div class="flex justify-between gap-3">
+          <dt><%= t("staff.payroll_portal.breakdown_carried") %></dt>
+          <dd class="tabular-nums">+<%= format_amount(carried_cents) %></dd>
+        </div>
+      <% end %>
+      <% if deduction_cents.positive? %>
+        <div class="flex justify-between gap-3 text-red-700">
+          <dt><%= t("staff.payroll_portal.breakdown_deduction") %></dt>
+          <dd class="tabular-nums">−<%= format_amount(deduction_cents) %></dd>
+        </div>
+      <% end %>
+      <div class="flex justify-between gap-3 border-t border-amber-200 pt-1.5 font-semibold text-amber-950">
+        <dt><%= t("staff.payroll_portal.breakdown_total") %></dt>
+        <dd class="tabular-nums"><%= format_amount(payout_cents) %></dd>
+      </div>
+    </dl>
   </div>
 
-  <% if payroll_summary.debt_cents.positive? || payroll_summary.deduction_cents.positive? %>
-    <div class="rounded-2xl border border-red-200 bg-red-50/60 p-4 text-sm text-red-900">
-      <%= t("staff.payroll_portal.deduction",
-            deduction: format_money(payroll_summary.deduction_cents),
-            debt: format_money(payroll_summary.debt_cents)) %>
+  <%# What they owe the company, apart from this month's pay. Open month:
+      debt_cents is before this month's deduction; recorded: after it. %>
+  <% debt_now_cents = payroll_summary.finalized ? payroll_summary.debt_cents.to_i : payroll_summary.debt_cents.to_i - deduction_cents %>
+  <% if payroll_summary.debt_cents.to_i.positive? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50/60 p-4">
+      <p class="text-xs font-semibold text-red-700 uppercase tracking-wide"><%= t("staff.payroll_portal.debt_title") %></p>
+      <p class="text-2xl font-bold text-red-700 tabular-nums mt-1"><%= format_amount(payroll_summary.debt_cents) %></p>
+      <% if deduction_cents.positive? %>
+        <p class="text-xs text-red-900/80 mt-2">
+          <% if payroll_summary.finalized %>
+            <%= t("staff.payroll_portal.debt_deducted", deduction: format_amount(deduction_cents)) %>
+          <% else %>
+            <%= t("staff.payroll_portal.debt_will_deduct", deduction: format_amount(deduction_cents), after: format_amount(debt_now_cents)) %>
+          <% end %>
+        </p>
+      <% end %>
     </div>
   <% end %>
 
@@ -54,30 +109,22 @@
       <p class="text-[0.65rem] font-semibold text-gray-500 uppercase tracking-wide leading-tight">
         <%= payroll_summary.attendance_recorded ? t("accounting.monthly_payroll.attendance_pay") : t("staff.payroll.base_salary") %>
       </p>
-      <p class="text-base sm:text-lg font-bold text-gray-900 tabular-nums mt-1.5 break-all"><%= format_money(payroll_summary.attendance_pay_cents) %></p>
+      <p class="text-base sm:text-lg font-bold text-gray-900 tabular-nums mt-1.5 break-all"><%= format_amount(payroll_summary.attendance_pay_cents) %></p>
       <% if (days_label = payroll_attendance_days_label(payroll_summary)) %>
         <p class="text-[11px] font-normal text-gray-400 mt-1"><%= days_label %></p>
       <% end %>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
       <p class="text-[0.65rem] font-semibold text-gray-500 uppercase tracking-wide leading-tight"><%= t("staff.payroll.daily_rate") %></p>
-      <p class="text-base sm:text-lg font-bold text-gray-900 tabular-nums mt-1.5 break-all"><%= format_money(payroll_summary.daily_rate_cents) %></p>
+      <p class="text-base sm:text-lg font-bold text-gray-900 tabular-nums mt-1.5 break-all"><%= format_amount(payroll_summary.daily_rate_cents) %></p>
     </div>
     <div class="rounded-2xl border border-red-100 bg-red-50/80 p-4 shadow-sm">
       <p class="text-[0.65rem] font-semibold text-red-600 uppercase tracking-wide leading-tight"><%= t("staff.payroll.penalties") %></p>
-      <p class="text-base sm:text-lg font-bold text-red-700 tabular-nums mt-1.5 break-all">−<%= format_money(payroll_summary.penalties_cents) %></p>
+      <p class="text-base sm:text-lg font-bold text-red-700 tabular-nums mt-1.5 break-all">−<%= format_amount(payroll_summary.penalties_cents) %></p>
     </div>
     <div class="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4 shadow-sm">
       <p class="text-[0.65rem] font-semibold text-emerald-600 uppercase tracking-wide leading-tight"><%= t("staff.payroll.bonuses") %></p>
-      <p class="text-base sm:text-lg font-bold text-emerald-700 tabular-nums mt-1.5 break-all">+<%= format_money(payroll_summary.bonuses_cents) %></p>
-    </div>
-    <div class="rounded-2xl border border-blue-100 bg-blue-50/80 p-4 shadow-sm">
-      <p class="text-[0.65rem] font-semibold text-blue-600 uppercase tracking-wide leading-tight"><%= t("staff.payroll.paid_this_month") %></p>
-      <p class="text-base sm:text-lg font-bold text-blue-700 tabular-nums mt-1.5 break-all"><%= format_money(payroll_summary.paid_cents) %></p>
-    </div>
-    <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p class="text-[0.65rem] font-semibold text-gray-500 uppercase tracking-wide leading-tight"><%= t("staff.payroll.net_pay") %></p>
-      <p class="text-base sm:text-lg font-bold text-gray-900 tabular-nums mt-1.5 break-all"><%= format_money(payroll_summary.net_pay_cents) %></p>
+      <p class="text-base sm:text-lg font-bold text-emerald-700 tabular-nums mt-1.5 break-all">+<%= format_amount(payroll_summary.bonuses_cents) %></p>
     </div>
   </div>
 
@@ -92,8 +139,13 @@
           <li class="p-4">
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0 flex-1">
-                <span class="inline-flex text-[0.65rem] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full <%= voucher.payment? ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800' %>">
-                  <%= voucher.payment? ? t("staff.payroll_portal.paid_to_you") : t("staff.payroll_portal.received_from_you") %>
+                <% kind = if !voucher.payment? then :received_from_you
+                          elsif payout_voucher && voucher.id == payout_voucher.id then :salary
+                          else :advance
+                          end %>
+                <span class="inline-flex text-[0.65rem] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full <%= { salary: 'bg-amber-100 text-amber-800', advance: 'bg-blue-100 text-blue-800', received_from_you: 'bg-emerald-100 text-emerald-800' }[kind] %>"
+                      data-payment-kind="<%= kind %>">
+                  <%= t("staff.payroll_portal.payment_kinds.#{kind}") %>
                 </span>
                 <p class="text-xs text-gray-500 mt-1.5 tabular-nums">
                   <%= t("staff.payroll.happened_at") %>: <%= l(voucher.voucher_date, format: :long) %>
@@ -102,8 +154,10 @@
                   <p class="text-xs text-gray-500 mt-1.5 leading-relaxed"><%= voucher.notes %></p>
                 <% end %>
               </div>
-              <p class="shrink-0 text-base font-bold tabular-nums <%= voucher.payment? ? 'text-blue-700' : 'text-emerald-700' %>">
-                <%= voucher.payment? ? "−" : "+" %><%= format_money(voucher.amount_cents) %>
+              <%# Signed from the employee's side: money paid to them is +, money
+                  they paid back is −. %>
+              <p class="shrink-0 text-base font-bold tabular-nums <%= voucher.payment? ? 'text-emerald-700' : 'text-red-700' %>" data-payment-amount>
+                <%= voucher.payment? ? "+" : "−" %><%= format_amount(voucher.amount_cents) %>
               </p>
             </div>
           </li>
@@ -136,7 +190,7 @@
                 <% end %>
               </div>
               <p class="shrink-0 text-base font-bold tabular-nums <%= adj.penalty? ? 'text-red-700' : 'text-emerald-700' %>">
-                <%= adj.penalty? ? "−" : "+" %><%= format_money(adj.amount_cents) %>
+                <%= adj.penalty? ? "−" : "+" %><%= format_amount(adj.amount_cents) %>
               </p>
             </div>
           </li>

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module Admin
   module Inventory
     # One grid for the location scope that otherwise lives on each ingredient's
@@ -18,6 +20,14 @@ module Admin
         authorize_inventory_index!(Ingredient)
         load_locations
         load_ingredients
+
+        respond_to do |format|
+          format.html
+          format.csv do
+            send_data availability_csv, filename: "ingredient-location-access-#{Date.current}.csv",
+              type: "text/csv; charset=utf-8"
+          end
+        end
       end
 
       def bulk_update
@@ -36,6 +46,8 @@ module Admin
         @availability = AVAILABILITIES.include?(params[:availability].to_s) ? params[:availability].to_s : "all"
         @query = params[:q].to_s.strip
         @category_id = params[:category_id].presence
+        @filter_locations = Location.active.ordered.where(id: current_user.accessible_location_ids).to_a
+        @location_id = @filter_locations.find { |loc| loc.id.to_s == params[:location_id].to_s }&.id
         @sort = SORT_COLUMNS.include?(params[:sort].to_s) ? params[:sort].to_s : "name"
         @direction = params[:dir].to_s == "desc" ? "desc" : "asc"
       end
@@ -45,6 +57,7 @@ module Admin
           q: @query.presence,
           status: (@status unless @status == "active"),
           category_id: @category_id,
+          location_id: @location_id,
           availability: (@availability unless @availability == "all"),
           sort: (@sort unless @sort == "name"),
           dir: (@direction unless @direction == "asc")
@@ -69,6 +82,16 @@ module Admin
           .includes(:ingredient_category, :restricted_locations)
           .order(Arel.sql("#{sort_column} #{@direction == 'desc' ? 'DESC' : 'ASC'}"))
           .to_a
+        load_balances
+      end
+
+      # On-hand per [ingredient_id, location_id], in one query. Missing means the
+      # ingredient never had a stock row at that location.
+      def load_balances
+        @balances = IngredientLocation
+          .where(ingredient_id: @ingredients.map(&:id), location_id: @locations.map(&:id))
+          .pluck(:ingredient_id, :location_id, :quantity_on_hand)
+          .to_h { |ingredient_id, location_id, quantity| [[ingredient_id, location_id], quantity] }
       end
 
       def filtered_ingredients
@@ -76,6 +99,7 @@ module Admin
         scope = scope.active if @status == "active"
         scope = scope.where(active: false) if @status == "inactive"
         scope = scope.where(ingredient_category_id: @category_id) if @category_id
+        scope = usable_at_location(scope) if @location_id
         if @query.present?
           term = "%#{Ingredient.sanitize_sql_like(@query.downcase)}%"
           scope = scope.where(
@@ -83,6 +107,56 @@ module Admin
           )
         end
         scope
+      end
+
+      # Same rule as the ingredients index: usable there through "all locations"
+      # or an explicit assignment.
+      def usable_at_location(scope)
+        scoped_here = IngredientLocationAccess.where(location_id: @location_id).select(:ingredient_id)
+        scope.where(all_locations: true).or(scope.where(id: scoped_here))
+      end
+
+      # Same rows and columns as the grid (filters included): per location a
+      # yes/no column and its on-hand balance (blank when never stocked there).
+      # BOM first so Excel opens the Arabic names as UTF-8.
+      def availability_csv
+        yes = t("inventory.ingredient_availabilities.csv.yes")
+        no = t("inventory.ingredient_availabilities.csv.no")
+        body = CSV.generate do |csv|
+          csv << [
+            t("shared.row_index"),
+            t("inventory.ingredient_availabilities.csv.code"),
+            t("inventory.ingredient_availabilities.col.ingredient"),
+            t("inventory.ingredient_availabilities.filter.category"),
+            t("inventory.ingredient_availabilities.filter.status"),
+            t("inventory.ingredient_availabilities.col.all"),
+            t("inventory.ingredient_availabilities.csv.unit"),
+            *@locations.flat_map { |loc| [loc.name, t("inventory.ingredient_availabilities.csv.balance", location: loc.name)] }
+          ]
+          @ingredients.each_with_index do |ingredient, index|
+            restricted_ids = ingredient.restricted_locations.map(&:id)
+            csv << [
+              index + 1,
+              ingredient.code,
+              ingredient.name,
+              ingredient.ingredient_category&.name,
+              t("inventory.ingredient_availabilities.filter.status_#{ingredient.active? ? 'active' : 'inactive'}"),
+              ingredient.all_locations? ? yes : no,
+              helpers.ingredient_unit_label(ingredient.unit),
+              *@locations.flat_map do |loc|
+                allowed = ingredient.all_locations? || restricted_ids.include?(loc.id)
+                [allowed ? yes : no, csv_quantity(@balances[[ingredient.id, loc.id]])]
+              end
+            ]
+          end
+        end
+        "\uFEFF#{body}"
+      end
+
+      def csv_quantity(quantity)
+        return if quantity.nil?
+
+        helpers.number_with_precision(quantity, precision: 3, strip_insignificant_zeros: true)
       end
 
       def sort_column

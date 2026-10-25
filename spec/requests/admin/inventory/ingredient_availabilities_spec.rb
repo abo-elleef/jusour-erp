@@ -57,6 +57,81 @@ RSpec.describe "Ingredient location access", type: :request do
     expect(response.body).not_to include("Tomatoes")
   end
 
+  it "filters to ingredients usable at a location, like the ingredients index" do
+    pepper = Ingredient.create!(name: "Pepper", ingredient_category: category, unit: "kg",
+      reorder_threshold: 1, company: company, all_locations: false,
+      restricted_location_ids: [branch_b.id])
+
+    get admin_inventory_ingredient_availabilities_path(location_id: branch_a.id)
+
+    html = Nokogiri::HTML(response.body)
+    expect(html.at_css("#availability_#{everywhere.id}_all")).to be_present
+    expect(html.at_css("#availability_#{limited.id}_all")).to be_present
+    expect(html.at_css("#availability_#{pepper.id}_all")).to be_nil
+  end
+
+  it "shows each location's balance under its checkbox, negatives in red" do
+    IngredientLocation.create!(ingredient: limited, location: branch_a, quantity_on_hand: 12.5)
+    IngredientLocation.create!(ingredient: limited, location: branch_b, quantity_on_hand: -2)
+
+    get admin_inventory_ingredient_availabilities_path
+
+    html = Nokogiri::HTML(response.body)
+    cell_balance = ->(ingredient, location) { html.at_css("#availability_#{ingredient.id}_#{location.id}").ancestors("td").first.at_css("[data-balance]") }
+    expect(cell_balance.call(limited, branch_a).text).to include("12.5")
+    expect(cell_balance.call(limited, branch_b).text).to include("-2")
+    expect(cell_balance.call(limited, branch_b)["class"]).to include("text-red-600")
+    expect(cell_balance.call(everywhere, branch_a).text.strip).to eq(I18n.t("accounting.shared.em_dash"))
+  end
+
+  it "offers a balances-only print that leaves out the access checkboxes" do
+    get admin_inventory_ingredient_availabilities_path
+
+    html = Nokogiri::HTML(response.body)
+    button = html.at_css("button[data-controller='print-mode'][data-print-mode-mode-value='balances']")
+    expect(button.text.strip).to eq(I18n.t("inventory.ingredient_availabilities.print_balances"))
+
+    cell = html.at_css("#availability_#{limited.id}_#{branch_a.id}").ancestors("td").first
+    expect(cell.at_css("[data-print-availability] #availability_#{limited.id}_#{branch_a.id}")).to be_present
+    expect(cell.at_css("[data-balance]").ancestors("[data-print-availability]")).to be_empty
+    expect(html.at_css("#availability_#{limited.id}_all").ancestors("td").first["data-print-availability"]).not_to be_nil
+  end
+
+  it "numbers the rows" do
+    get admin_inventory_ingredient_availabilities_path
+
+    row_numbers = Nokogiri::HTML(response.body).css("tbody tr").map { |row| row.css("td").first.text.strip }
+    expect(row_numbers).to eq(%w[1 2])
+  end
+
+  it "exports the filtered grid as CSV, with access and balance per location" do
+    IngredientLocation.create!(ingredient: limited, location: branch_a, quantity_on_hand: 12.5)
+    IngredientLocation.create!(ingredient: limited, location: branch_b, quantity_on_hand: -2)
+
+    get admin_inventory_ingredient_availabilities_path(format: :csv, location_id: branch_a.id)
+
+    expect(response).to have_http_status(:ok)
+    expect(response.headers["Content-Disposition"]).to include("ingredient-location-access-#{Date.current}.csv")
+    rows = CSV.parse(response.body.delete_prefix("\uFEFF"))
+    balance = ->(name) { I18n.t("inventory.ingredient_availabilities.csv.balance", location: name) }
+    expect(rows.first.last(4)).to eq(["Branch A", balance.call("Branch A"), "Branch B", balance.call("Branch B")])
+    yes = I18n.t("inventory.ingredient_availabilities.csv.yes")
+    no = I18n.t("inventory.ingredient_availabilities.csv.no")
+    by_name = rows.drop(1).index_by { |row| row[2] }
+    expect(by_name["Tomatoes"].last(4)).to eq([yes, nil, yes, nil])
+    expect(by_name["Salt"].last(4)).to eq([yes, "12.5", no, "-2"])
+  end
+
+  it "offers print and CSV export, hidden from the printout" do
+    get admin_inventory_ingredient_availabilities_path
+
+    html = Nokogiri::HTML(response.body)
+    csv_link = html.at_css("a[href*='ingredient_availabilities.csv']")
+    expect(csv_link).to be_present
+    expect(csv_link.ancestors(".print-hide")).to be_present
+    expect(html.at_css("button[onclick='window.print()']")).to be_present
+  end
+
   describe "saving the grid" do
     it "limits an everywhere ingredient to the locations still checked" do
       untouched_at = limited.updated_at

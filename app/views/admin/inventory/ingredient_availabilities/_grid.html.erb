@@ -3,15 +3,16 @@
                  path: admin_inventory_ingredient_availabilities_path, base_params: filter_params } %>
 <% box_class = "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
 
-<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden <%= "rounded-b-none" if editable %>">
-  <div class="overflow-auto max-h-[calc(100vh-18rem)]">
+<section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden <%= "rounded-b-none" if editable %>">
+  <div class="overflow-auto max-h-[calc(100vh-18rem)] print:overflow-visible print:max-h-none">
     <table class="w-full text-sm border-separate border-spacing-0">
       <thead class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
         <tr>
-          <th class="sticky top-0 start-0 z-40 bg-gray-50 p-3 ps-5 text-start min-w-56 border-b border-gray-100">
+          <th class="sticky top-0 z-30 bg-gray-50 p-3 ps-5 text-start w-12 text-gray-400 border-b border-gray-100"><%= t("shared.row_index") %></th>
+          <th class="sticky top-0 start-0 z-40 bg-gray-50 p-3 text-start min-w-56 border-b border-gray-100">
             <%= sort_header_link(t("inventory.ingredient_availabilities.col.ingredient"), :name, **sort_opts) %>
           </th>
-          <th class="sticky top-0 z-30 bg-gray-50 p-3 text-center border-b border-gray-100 min-w-28 normal-case tracking-normal">
+          <th data-print-availability class="sticky top-0 z-30 bg-gray-50 p-3 text-center border-b border-gray-100 min-w-28 normal-case tracking-normal">
             <div class="text-[11px] font-semibold text-gray-700"><%= t("inventory.ingredient_availabilities.col.all") %></div>
             <% if editable %>
               <input type="checkbox"
@@ -27,6 +28,7 @@
               <div class="text-[10px] font-medium text-gray-400 mt-0.5"><%= t("admin.locations.type_#{loc.location_type}") %></div>
               <% if editable %>
                 <input type="checkbox"
+                       data-print-availability
                        class="<%= box_class %> mt-2"
                        data-ingredient-availability-target="column"
                        data-location-id="<%= loc.id %>"
@@ -38,10 +40,11 @@
         </tr>
       </thead>
       <tbody>
-        <% @ingredients.each do |ingredient| %>
+        <% @ingredients.each_with_index do |ingredient, index| %>
           <% restricted_ids = ingredient.restricted_locations.map(&:id) %>
           <tr class="group" <%= %(data-ingredient-availability-target="row").html_safe if editable %>>
-            <td data-sticky class="sticky start-0 z-10 bg-white group-hover:bg-gray-50 p-3 ps-5 border-b border-gray-100">
+            <td class="p-3 ps-5 text-gray-400 tabular-nums border-b border-gray-100"><%= table_row_number(index) %></td>
+            <td data-sticky class="sticky start-0 z-10 bg-white group-hover:bg-gray-50 p-3 border-b border-gray-100">
               <%= link_to ingredient.name, edit_admin_inventory_ingredient_path(ingredient),
                     class: "font-semibold text-gray-900 hover:text-amber-700" %>
               <div class="text-xs text-gray-400 mt-0.5">
@@ -52,7 +55,7 @@
                 <% end %>
               </div>
             </td>
-            <td class="p-3 text-center border-b border-gray-100 bg-white group-hover:bg-gray-50">
+            <td data-print-availability class="p-3 text-center border-b border-gray-100 bg-white group-hover:bg-gray-50">
               <% if editable %>
                 <%= hidden_field_tag "availabilities[#{ingredient.id}][all_locations]", "0", id: nil %>
                 <%= check_box_tag "availabilities[#{ingredient.id}][all_locations]", "1", ingredient.all_locations?,
@@ -67,7 +70,9 @@
             </td>
             <% @locations.each do |loc| %>
               <% checked = ingredient.all_locations? || restricted_ids.include?(loc.id) %>
+              <% balance = @balances[[ingredient.id, loc.id]] %>
               <td class="p-3 text-center border-b border-gray-100">
+                <span data-print-availability>
                 <% if editable %>
                   <%= check_box_tag "availabilities[#{ingredient.id}][location_ids][]", loc.id, checked,
                         id: "availability_#{ingredient.id}_#{loc.id}",
@@ -78,6 +83,16 @@
                         id: "availability_#{ingredient.id}_#{loc.id}", disabled: true,
                         class: "#{box_class} #{"opacity-50" if ingredient.all_locations?}" %>
                 <% end %>
+                </span>
+                <div class="mt-1 text-[11px] tabular-nums whitespace-nowrap <%= balance&.negative? ? "text-red-600 font-semibold" : "text-gray-500" %>"
+                     data-balance>
+                  <% if balance.nil? %>
+                    <span class="text-gray-300"><%= t("accounting.shared.em_dash") %></span>
+                  <% else %>
+                    <%= number_with_precision(balance, precision: 3, strip_insignificant_zeros: true) %>
+                    <%= ingredient_unit_label(ingredient.unit) %>
+                  <% end %>
+                </div>
               </td>
             <% end %>
           </tr>

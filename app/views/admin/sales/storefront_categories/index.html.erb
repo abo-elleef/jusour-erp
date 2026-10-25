@@ -1,7 +1,7 @@
 <% content_for :title, t("sales.storefront_categories.title") %>
 <% inventory_links = current_user.can?("inventory:view") %>
 
-<div class="max-w-5xl">
+<div class="max-w-full">
   <div class="mb-6">
     <h1 class="text-xl font-bold tracking-tight text-gray-900"><%= t("sales.storefront_categories.title") %></h1>
     <p class="text-gray-600 text-sm mt-1"><%= t("sales.storefront_categories.description") %></p>

@@ -89,6 +89,11 @@
   display: none;
 }
 
+/* Shown only when printing in a named mode (print-mode Stimulus controller). */
+.print-balances-only {
+  display: none;
+}
+
 @media print {
   /* Hide the sidebar, mobile header, toasts and any control opted out. */
   aside[data-sidebar-target="panel"],
@@ -136,6 +141,16 @@
   .stock-transfer-print,
   .print-flow {
     break-inside: auto;
+  }
+
+  /* Ingredient availability "print balances": drop the access checkboxes and
+     the "all locations" column, keep each location's on-hand balance. */
+  html[data-print-mode="balances"] [data-print-availability] {
+    display: none !important;
+  }
+
+  html[data-print-mode="balances"] .print-balances-only {
+    display: block;
   }
 }
 

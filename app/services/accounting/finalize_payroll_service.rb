@@ -28,7 +28,7 @@ module Accounting
       ApplicationRecord.transaction do
         snapshot.payout_voucher&.void!(user: @finalized_by, reason: :source_removed)
         JournalEntryService.destroy_for_source!(snapshot) if snapshot.persisted?
-        balance_before = @user.staff_balance_cents
+        balance_before = @user.staff_balance_cents(as_of: @payroll_month.end_of_month)
 
         snapshot.assign_attributes(
           base_salary_cents: summary.base_salary_cents,

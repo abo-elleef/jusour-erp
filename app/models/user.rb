@@ -11,6 +11,7 @@ class User < ApplicationRecord
     except: %i[
       encrypted_password reset_password_token reset_password_sent_at
       remember_created_at pin_digest payroll_access_token
+      payroll_pin_failed_attempts payroll_pin_locked_until
     ]
 
   money_input :monthly_salary_cents
@@ -282,6 +283,36 @@ class User < ApplicationRecord
     pin_digest.present?
   end
 
+  # The staff payroll link is opened with a 4-digit PIN, from any device. After
+  # this many wrong guesses in a row the link is locked for a while, so the
+  # 10,000 combinations can't be tried through it.
+  PAYROLL_PIN_MAX_ATTEMPTS = 5
+  PAYROLL_PIN_LOCKOUT = 15.minutes
+
+  def payroll_pin_locked?
+    payroll_pin_locked_until.present? && payroll_pin_locked_until.future?
+  end
+
+  # Checks a PIN typed on the payroll link, counting failures. A right PIN
+  # clears the count; the fifth wrong one starts the lockout. While locked,
+  # every PIN is refused without being checked.
+  def verify_payroll_pin(raw)
+    return false if payroll_pin_locked?
+
+    if authenticate_pin(raw)
+      update_columns(payroll_pin_failed_attempts: 0, payroll_pin_locked_until: nil) if payroll_pin_failed_attempts.positive?
+      return true
+    end
+
+    attempts = payroll_pin_failed_attempts + 1
+    if attempts >= PAYROLL_PIN_MAX_ATTEMPTS
+      update_columns(payroll_pin_failed_attempts: 0, payroll_pin_locked_until: PAYROLL_PIN_LOCKOUT.from_now)
+    else
+      update_columns(payroll_pin_failed_attempts: attempts)
+    end
+    false
+  end
+
   def deactivate!
     update!(active: false)
   end
@@ -332,8 +363,13 @@ class User < ApplicationRecord
 
   # Positive: the company owes this employee. Negative: they owe the company
   # (paid ahead of what they've earned, or meals not yet covered by a salary).
-  def staff_balance_cents
-    staff_account_lines.sum(:credit_cents) - staff_account_lines.sum(:debit_cents)
+  # as_of: the balance at the end of that day (vouchers post on their voucher
+  # date, a month's accrual on its last day), so a past month isn't shown
+  # with later months' advances and deductions.
+  def staff_balance_cents(as_of: nil)
+    lines = staff_account_lines
+    lines = lines.where(journal_entries: { date: ..as_of.to_date }) if as_of
+    lines.sum(:credit_cents) - lines.sum(:debit_cents)
   end
 
   # Vouchers to or from this employee dated in the month, newest first.

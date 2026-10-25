@@ -2,7 +2,7 @@
 <% filter_params = { category_id: @category_id, q: @query.presence, sort: params[:sort], dir: params[:dir] }.compact %>
 <% inventory_links = current_user.can?("inventory:view") %>
 
-<div class="max-w-7xl">
+<div class="max-w-full">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
     <div>
       <h1 class="text-xl font-bold tracking-tight text-gray-900"><%= t("sales.storefront_listings.title") %></h1>
