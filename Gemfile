@@ -77,5 +77,3 @@ end
 group :development do
   gem "web-console"
 end
-
-gem "bidi", "~> 0.0.2"
