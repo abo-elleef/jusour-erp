@@ -38,8 +38,10 @@ module Printing
         doc.align(:center)
         doc.bold
         doc.text(restaurant)
-        doc.bold(false)
+        doc.double_height
         doc.text(@order.order_number)
+        doc.double_height(false)
+        doc.bold(false)
         doc.text(@order.created_at.strftime("%d/%m/%Y %I:%M %p"))
         doc.bold
         doc.double_height

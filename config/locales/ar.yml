@@ -3,6 +3,7 @@ ar:
     formats:
       short_time: "%H:%M"
       long_with_time: "%-d %B %Y %I:%M %p"
+      ticket: "%-d %b %I:%M %p"
   date:
     formats:
       long: "%-d %B %Y"

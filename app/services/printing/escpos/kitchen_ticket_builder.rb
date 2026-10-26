@@ -25,9 +25,9 @@ module Printing
         doc.bold
         doc.double_height(true)
         doc.text(I18n.t("printing.kitchen_ticket.title"))
+        doc.text(@order.order_number)
         doc.double_height(false)
         doc.bold(false)
-        doc.text(@order.order_number)
         doc.text(@order.created_at.strftime("%b %d %l:%M %p"))
         doc.bold
         doc.double_height(true)

@@ -27,10 +27,10 @@ module Printing
         doc.bold
         doc.double_height(true)
         doc.text(@title)
+        doc.text(@order.order_number)
         doc.double_height(false)
         doc.bold(false)
-        doc.text(@order.order_number)
-        doc.text(I18n.l(@order.created_at, format: :short))
+        doc.text(I18n.l(@order.created_at, format: :ticket))
         doc.bold
         doc.double_height(true)
         doc.text(@order.fulfillment_summary)
