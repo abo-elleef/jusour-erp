@@ -55,6 +55,30 @@ RSpec.describe Printing::Escpos::Document do
     end
   end
 
+  describe "Arabic image lines" do
+    around do |example|
+      I18n.with_locale(:ar) { example.run }
+    end
+
+    before do
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("/fonts/arabic.ttf")
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:render_line).and_return("IMG".b)
+    end
+
+    it "draws the image at double size while double height is on" do
+      doc = described_class.new(charset: "utf-8")
+      doc.double_height
+      doc.text("التجميع")
+      doc.double_height(false)
+      doc.text("توصيل")
+
+      expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_line)
+        .with(anything, hash_including(font_scale: 2)).once
+      expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_line)
+        .with(anything, hash_including(font_scale: 1)).once
+    end
+  end
+
   describe "Latin encoding" do
     around do |example|
       I18n.with_locale(:en) { example.run }

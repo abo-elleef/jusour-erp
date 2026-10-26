@@ -17,6 +17,7 @@ module Printing
         # for Arabic because ESC/POS printers can't shape Arabic glyphs themselves).
         @use_images = @rtl && ArabicImageRenderer.arabic_font.present?
         @current_align = :left
+        @double_height = false
         init
       end
 
@@ -101,6 +102,7 @@ module Printing
       end
 
       def double_height(on = true)
+        @double_height = on ? true : false
         @buffer << GS << "!" << (on ? "\x11" : "\x00")
       end
 
@@ -177,7 +179,8 @@ module Printing
       # correctly: reshape assigns correct glyph forms, bidi reorders to visual order.
       def write_arabic_image(text, align: :right)
         visual = Bidi.visual_for_print(text, reshape: true)
-        bytes  = ArabicImageRenderer.render_line(visual, doc_width: @width, align: align)
+        bytes  = ArabicImageRenderer.render_line(visual, doc_width: @width, align: align,
+                                                         font_scale: @double_height ? 2 : 1)
         if bytes
           @buffer << bytes.b
         else

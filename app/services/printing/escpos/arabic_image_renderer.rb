@@ -39,13 +39,15 @@ module Printing
 
       # Returns raw ESC/POS bytes for a single Arabic text line.
       # align: :left | :center | :right
-      def render_line(text, doc_width: 42, align: :right)
+      # font_scale: 2 doubles the point size — the printer's double-size command
+      # only enlarges built-in text, never a raster image.
+      def render_line(text, doc_width: 42, align: :right, font_scale: 1)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
 
         gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
-        pbm     = render_pbm_single(text.to_s.strip, gravity, px_width, font)
+        pbm     = render_pbm_single(text.to_s.strip, gravity, px_width, font, pt: (FONT_SIZE_PT * font_scale).to_i)
         pbm ? pbm_to_escpos(pbm) : nil
       end
 
@@ -270,11 +272,11 @@ module Printing
       end
 
       # Single text annotation → PBM binary.
-      def render_pbm_single(text, gravity, px_width, font)
+      def render_pbm_single(text, gravity, px_width, font, pt: FONT_SIZE_PT)
         cmd = [
           im_command,
-          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}", "xc:white",
-          "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
+          "-size", "#{px_width}x#{pt * 2}", "xc:white",
+          "-font", font, "-pointsize", pt.to_s, "-fill", "black",
           "-gravity", gravity, "-annotate", "+0+0", text,
           "-type", "Bilevel", "pbm:-"
         ]
