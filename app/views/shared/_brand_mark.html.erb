@@ -1,0 +1,21 @@
+<%# Jusour (جسور, "bridges") product mark: a bridge arch over a deck. Pass
+    size: as Tailwind width/height classes (default w-10 h-10). %>
+<% size = local_assigns.fetch(:size, "w-10 h-10") %>
+<%# Unique per render: a page can show the mark twice, and url(#id) resolves to
+    the first match, which may sit inside a display:none panel. %>
+<% gradient_id = "brand-mark-bg-#{SecureRandom.hex(4)}" %>
+<svg class="<%= size %> shrink-0" viewBox="0 0 48 48" aria-hidden="true">
+  <defs>
+    <linearGradient id="<%= gradient_id %>" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f766e" />
+      <stop offset="1" stop-color="#0b2a4a" />
+    </linearGradient>
+  </defs>
+  <rect width="48" height="48" rx="12" fill="url(#<%= gradient_id %>)" />
+  <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 30 Q24 12 38 30" stroke-width="3" />
+    <path d="M7 30 H41" stroke-width="3" />
+    <path d="M17 23.3 V30 M24 21 V30 M31 23.3 V30" stroke-width="2" />
+    <path d="M12 30 V37 M36 30 V37" stroke-width="3" />
+  </g>
+</svg>

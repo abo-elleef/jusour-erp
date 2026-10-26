@@ -14,6 +14,20 @@ en:
     en: "English"
     ar: "العربية"
 
+  # Product brand (the SaaS itself, not any one tenant). Used on the sign-in
+  # and password pages; tenant-facing screens keep their own names.
+  brand:
+    name: "Jusour"
+    tagline: "The bridges that connect your business"
+    pitch: "Sales, stock, accounts and your team in one connected system — built in Arabic, for businesses in Egypt."
+    modules:
+      sales: "Sales & invoices"
+      inventory: "Inventory & purchasing"
+      accounting: "Accounts & treasuries"
+      people: "Staff & payroll"
+      online: "Online store & menus"
+    rights: "© %{year} Jusour. All rights reserved."
+
   app:
     name: "Saqr POS"
     admin_name: "Saqr Admin"
@@ -96,12 +110,12 @@ en:
 
   auth:
     sign_in_title: "Sign in"
-    sign_in_subtitle: "Restaurant POS, inventory, and back office"
-    sign_in_heading: "Staff sign in"
+    sign_in_subtitle: "Sign in to your company's workspace"
+    sign_in_heading: "Welcome back"
     sign_in_hint: "Use the email and password from your manager or owner."
     sign_in_button: "Sign in"
     email: "Email"
-    email_placeholder: "you@restaurant.com"
+    email_placeholder: "you@company.com"
     password: "Password"
     show_password: "Show password"
     hide_password: "Hide password"

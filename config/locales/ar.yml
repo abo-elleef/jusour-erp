@@ -14,6 +14,20 @@ ar:
     en: "English"
     ar: "العربية"
 
+  # Product brand (the SaaS itself, not any one tenant). Used on the sign-in
+  # and password pages; tenant-facing screens keep their own names.
+  brand:
+    name: "جسور"
+    tagline: "الجسور التي تربط تفاصيل أعمالك ببعضها"
+    pitch: "المبيعات والمخزون والحسابات وفريق العمل في نظام واحد مترابط — بالعربية، ومصمم للشركات في مصر."
+    modules:
+      sales: "المبيعات والفواتير"
+      inventory: "المخزون والمشتريات"
+      accounting: "الحسابات والخزائن"
+      people: "الموظفون والرواتب"
+      online: "المتجر والقائمة الإلكترونية"
+    rights: "© %{year} جسور. جميع الحقوق محفوظة."
+
   app:
     name: "صقر POS"
     admin_name: "صقر — الإدارة"
@@ -98,12 +112,12 @@ ar:
 
   auth:
     sign_in_title: "تسجيل الدخول"
-    sign_in_subtitle: "نقطة البيع والمخزون ولوحة الإدارة"
-    sign_in_heading: "دخول الموظفين"
+    sign_in_subtitle: "سجّل الدخول إلى مساحة عمل شركتك"
+    sign_in_heading: "مرحباً بعودتك"
     sign_in_hint: "استخدم البريد وكلمة المرور من المدير أو المالك."
     sign_in_button: "تسجيل الدخول"
     email: "البريد الإلكتروني"
-    email_placeholder: "you@restaurant.com"
+    email_placeholder: "you@company.com"
     password: "كلمة المرور"
     show_password: "إظهار كلمة المرور"
     hide_password: "إخفاء كلمة المرور"

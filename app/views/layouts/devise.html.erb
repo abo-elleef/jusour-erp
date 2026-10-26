@@ -1,28 +1,67 @@
 <!DOCTYPE html>
 <html lang="<%= html_lang %>" dir="<%= html_dir %>" class="h-full">
   <head>
-    <title><%= content_for?(:title) ? yield(:title) : t("auth.sign_in_title") %> — <%= t("app.name") %></title>
+    <title><%= content_for?(:title) ? yield(:title) : t("auth.sign_in_title") %> — <%= t("brand.name") %></title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b2a4a">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
     <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
-  <body class="min-h-full bg-gradient-to-br from-amber-50 via-gray-50 to-gray-100 text-gray-900">
-    <div class="min-h-full flex flex-col">
-      <header class="flex justify-end p-4 sm:p-6">
-        <%= render "shared/locale_switcher" %>
-      </header>
+  <body class="min-h-full bg-slate-50 text-gray-900">
+    <div class="min-h-screen lg:grid lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      <%# Brand panel — desktop only; phones get the compact header below. %>
+      <aside class="hidden lg:flex relative overflow-hidden flex-col justify-between p-12 xl:p-16 text-white bg-gradient-to-br from-slate-950 via-[#0b2a4a] to-teal-800">
+        <svg class="absolute inset-x-0 bottom-0 w-full h-64 text-white/[0.06] pointer-events-none" viewBox="0 0 600 240" preserveAspectRatio="none" aria-hidden="true">
+          <g fill="none" stroke="currentColor" stroke-width="3">
+            <path d="M-20 200 Q100 60 220 200 Q340 60 460 200 Q580 60 700 200" />
+            <path d="M-20 200 H700" />
+            <path d="M40 140 V200 M100 112 V200 M160 140 V200 M280 140 V200 M340 112 V200 M400 140 V200 M520 140 V200 M580 112 V200" stroke-width="2" />
+          </g>
+        </svg>
 
-      <main class="flex-1 flex items-center justify-center px-4 pb-12">
-        <div class="w-full max-w-md">
-          <%= yield %>
+        <div class="relative flex items-center gap-3">
+          <%= render "shared/brand_mark", size: "w-11 h-11" %>
+          <span class="text-2xl font-bold tracking-tight"><%= t("brand.name") %></span>
         </div>
-      </main>
 
-      <footer class="pb-6 text-center text-xs text-gray-500">
-        <%= t("app.name") %>
-      </footer>
+        <div class="relative max-w-md">
+          <h2 class="text-3xl xl:text-4xl font-bold leading-tight"><%= t("brand.tagline") %></h2>
+          <p class="mt-4 text-base text-slate-300 leading-relaxed"><%= t("brand.pitch") %></p>
+
+          <ul class="mt-10 space-y-4 border-s-2 border-teal-400/40 ps-6">
+            <% %w[sales inventory accounting people online].each do |key| %>
+              <li class="relative text-sm font-medium text-slate-100">
+                <span class="absolute -start-[1.95rem] top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-teal-400 ring-4 ring-teal-400/20" aria-hidden="true"></span>
+                <%= t("brand.modules.#{key}") %>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+
+        <p class="relative text-xs text-slate-400"><%= t("brand.rights", year: Date.current.year) %></p>
+      </aside>
+
+      <div class="min-h-screen flex flex-col">
+        <header class="flex items-center justify-between gap-4 p-4 sm:p-6">
+          <div class="flex items-center gap-2.5 lg:invisible">
+            <%= render "shared/brand_mark", size: "w-9 h-9" %>
+            <span class="text-lg font-bold tracking-tight text-slate-900"><%= t("brand.name") %></span>
+          </div>
+          <%= render "shared/locale_switcher" %>
+        </header>
+
+        <main class="flex-1 flex items-center justify-center px-4 pb-12">
+          <div class="w-full max-w-md">
+            <%= yield %>
+          </div>
+        </main>
+
+        <footer class="pb-6 text-center text-xs text-gray-500 lg:hidden">
+          <%= t("brand.rights", year: Date.current.year) %>
+        </footer>
+      </div>
     </div>
 
     <%= render "shared/toasts" %>
