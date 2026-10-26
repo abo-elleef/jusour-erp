@@ -12,7 +12,7 @@ module Admin
       doc = Printing::Escpos::Document.new(width: width)
       doc.align(:center)
       doc.bold
-      doc.text(Setting.get("restaurant_name", t("app.name")))
+      doc.text(Current.company.receipt_name)
       doc.bold(false)
       doc.text(t("printing.test.title"))
       doc.text(t("printing.test.arabic_sample")) if Printing::Escpos::Charset.arabic_locale?

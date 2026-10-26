@@ -29,8 +29,8 @@ en:
     rights: "© %{year} Jusour. All rights reserved."
 
   app:
-    name: "Saqr POS"
-    admin_name: "Saqr Admin"
+    name: "Jusour"
+    admin_name: "Jusour Admin"
     admin_name_for: "%{brand} Admin"
 
   # Business-type-aware vocabulary (step 5). Distribution companies read "Product"
@@ -3362,7 +3362,7 @@ en:
       customer_invoice_payment_pending: "Invoice %{invoice_number} is awaiting payment confirmation."
 
   pos:
-    title: "Saqr POS"
+    title: "Jusour POS"
     location:
       label: "Branch"
       select: "Select branch"

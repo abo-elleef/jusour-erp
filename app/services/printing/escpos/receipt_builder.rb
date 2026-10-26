@@ -24,7 +24,7 @@ module Printing
       private
 
       def compose(doc)
-        restaurant = Setting.get("restaurant_name", I18n.t("app.name"))
+        restaurant = @order.company.receipt_name
 
         # ── Logo ───────────────────────────────────────────────────────────
         logo_source = Printing::Config.receipt_logo_url

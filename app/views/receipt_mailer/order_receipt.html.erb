@@ -1,4 +1,4 @@
-<h1>Saqr Chicken & Burgers</h1>
+<h1><%= @order.company.receipt_name %></h1>
 <p>Receipt for <%= @order.order_number %></p>
 <p>Date: <%= @order.created_at.strftime("%B %d, %Y at %l:%M %p") %></p>
 <table>

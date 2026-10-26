@@ -1,4 +1,4 @@
-<h1 class="text-center text-lg font-bold mb-2"><%= Setting.get("restaurant_name", t("app.name")) %></h1>
+<h1 class="text-center text-lg font-bold mb-2"><%= @order.company.receipt_name %></h1>
 <p class="text-center text-gray-600 mb-1"><%= @order.order_number %> · <%= @order.created_at.strftime("%d/%m/%Y %I:%M %p") %></p>
 <p class="text-center text-gray-600 mb-1"><%= t("order.labels.order_type") %>: <%= @order.fulfillment_summary %></p>
 <hr class="mb-4">

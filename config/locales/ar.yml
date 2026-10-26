@@ -29,8 +29,8 @@ ar:
     rights: "© %{year} جسور. جميع الحقوق محفوظة."
 
   app:
-    name: "صقر POS"
-    admin_name: "صقر — الإدارة"
+    name: "جسور"
+    admin_name: "جسور — الإدارة"
     admin_name_for: "%{brand} — الإدارة"
 
   glossary:
@@ -3401,7 +3401,7 @@ ar:
       customer_invoice_payment_pending: "الفاتورة %{invoice_number} بانتظار اعتماد الدفعة."
 
   pos:
-    title: "صقر POS"
+    title: "جسور — نقطة البيع"
     location:
       label: "الفرع"
       select: "اختر الفرع"

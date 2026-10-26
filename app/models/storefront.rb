@@ -99,7 +99,7 @@ class Storefront < ApplicationRecord
     Rails.configuration.x.storefront_domain.to_s.downcase
   end
 
-  # "acme" for "acme.saqr.store" when the storefront domain is "saqr.store";
+  # "acme" for "acme.jusour-erp.com" when the storefront domain is "jusour-erp.com";
   # nil for the bare domain, nested subdomains, reserved labels, or any other host.
   def self.subdomain_from_host(host)
     base = base_domain

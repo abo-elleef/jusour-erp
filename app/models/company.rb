@@ -31,6 +31,7 @@ class Company < ApplicationRecord
   has_many :customers, dependent: :destroy
   has_many :leads, dependent: :destroy
   has_one :storefront, dependent: :destroy
+  has_one :company_setting
   has_associated_audits
 
   validates :name, presence: true
@@ -53,6 +54,12 @@ class Company < ApplicationRecord
 
   def distribution?
     business_type == "distribution"
+  end
+
+  # The name printed on this company's receipts: the restaurant_name setting
+  # when one is set, otherwise the company's own name — never the product's.
+  def receipt_name
+    company_setting&.restaurant_name.presence || name
   end
 
   # Is a toggleable module on for this company? A per-company override wins;
