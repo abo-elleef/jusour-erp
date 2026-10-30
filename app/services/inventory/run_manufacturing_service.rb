@@ -99,6 +99,8 @@ module Inventory
     # consumption against the location so its on-hand drops too.
     def deduct_input!(ingredient, quantity, run)
       remaining = quantity
+      # Read before the draw-down below moves the average it is taken from.
+      unit_cost_cents = Inventory::LocationUnitCost.call(ingredient: ingredient, location: @location)
 
       ingredient.stock_batches.where(location: @location).fifo_order.with_stock.each do |batch|
         break if remaining <= 0
@@ -113,6 +115,7 @@ module Inventory
         user: @user,
         location: @location,
         quantity_delta: -quantity,
+        unit_cost_cents: unit_cost_cents,
         adjustment_type: "production_consumption",
         reason_notes: consumption_note(run, ingredient)
       )

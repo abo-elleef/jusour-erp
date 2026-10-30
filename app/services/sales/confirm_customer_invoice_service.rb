@@ -155,6 +155,8 @@ module Sales
     # app permits that; a low-stock alert fires if warranted.)
     def deduct_fifo(ingredient, quantity)
       remaining = quantity
+      # Read before the draw-down below moves the average it is taken from.
+      unit_cost_cents = Inventory::LocationUnitCost.call(ingredient: ingredient, location: @invoice.location)
       ingredient.stock_batches.where(location: @invoice.location).fifo_order.with_stock.each do |batch|
         break if remaining <= 0
 
@@ -168,6 +170,7 @@ module Sales
         user: @user,
         location: @invoice.location,
         quantity_delta: -quantity,
+        unit_cost_cents: unit_cost_cents,
         adjustment_type: "customer_sale",
         reason_notes: "Sold via invoice #{@invoice.invoice_number}"
       )

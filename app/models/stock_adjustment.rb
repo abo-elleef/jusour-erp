@@ -25,7 +25,7 @@ class StockAdjustment < ApplicationRecord
   # batches and must leave this false to avoid double-counting.
   attr_accessor :maintain_batches
   # Optional override for the cost stamped on a newly created overage batch when
-  # +maintain_batches+ is true. Defaults to the ingredient master cost.
+  # +maintain_batches+ is true. Defaults to the movement's own unit cost.
   attr_accessor :batch_cost_per_unit_cents
 
   # stock_adjustments carries no company_id of its own, so any query that does
@@ -39,6 +39,7 @@ class StockAdjustment < ApplicationRecord
   validate :quantity_delta_not_zero
   validates :adjustment_type, inclusion: { in: ADJUSTMENT_TYPES }
 
+  before_create :stamp_unit_cost, if: -> { unit_cost_cents.nil? }
   after_create :update_ingredient_stock
   after_create :sync_location_batches, if: :maintain_batches_for_location?
 
@@ -48,6 +49,23 @@ class StockAdjustment < ApplicationRecord
     return unless quantity_delta.to_d.zero?
 
     errors.add(:quantity_delta, "must not be zero")
+  end
+
+  # Records what a base unit of this movement was worth when it happened, so
+  # valued reports never re-price the past. A movement tied to a batch moves at
+  # that batch's cost; otherwise it moves at the location's weighted average.
+  # Runs before the after_create batch draw-down, so a removal reads the average
+  # it is being taken from. Services that draw batches down themselves before
+  # creating the row read the average first and pass unit_cost_cents in.
+  def stamp_unit_cost
+    self.unit_cost_cents =
+      if stock_batch
+        stock_batch.cost_per_unit_cents
+      elsif !batch_cost_per_unit_cents.nil?
+        batch_cost_per_unit_cents
+      else
+        Inventory::LocationUnitCost.call(ingredient: ingredient, location: location)
+      end
   end
 
   def update_ingredient_stock
@@ -71,10 +89,11 @@ class StockAdjustment < ApplicationRecord
 
   # Keep the location's batch ledger in step with a manual adjustment so the
   # stock is FIFO-costed and transferable. Adds create a batch at the override
-  # or ingredient master cost; removals draw down existing batches oldest-first.
+  # or the movement's unit cost, so the batch and the movement agree on value;
+  # removals draw down existing batches oldest-first.
   def sync_location_batches
     if quantity_delta.to_d.positive?
-      cost = batch_cost_per_unit_cents.nil? ? ingredient.cost_per_unit_cents : batch_cost_per_unit_cents
+      cost = batch_cost_per_unit_cents.nil? ? unit_cost_cents.to_i : batch_cost_per_unit_cents
       ingredient.stock_batches.create!(
         location: location,
         quantity_received: quantity_delta,

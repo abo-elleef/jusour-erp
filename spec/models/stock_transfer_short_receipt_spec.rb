@@ -111,4 +111,19 @@ RSpec.describe "Stock transfer with a short receipt", type: :model do
     # sent(24) - received(0) would still read 24 as bare arithmetic.
     expect(line.reload.quantity_in_transit).to eq(0)
   end
+
+  it "moves value at the same unit cost on both sides of the transfer" do
+    StockBatch.where(ingredient: ingredient, location: kitchen).update_all(cost_per_unit_cents: 300)
+    StockBatch.create!(ingredient: ingredient, location: kitchen, quantity_received: 10,
+      quantity_remaining: 10, cost_per_unit_cents: 100, received_on: Date.current - 1)
+
+    send_all(24)
+    confirm(24)
+
+    out = StockAdjustment.find_by(stock_transfer: transfer, adjustment_type: "transfer_out")
+    arrived = StockAdjustment.find_by(stock_transfer: transfer, adjustment_type: "transfer_in")
+    # FIFO: 10 x 100 + 14 x 300 = 5200 / 24
+    expect(out.unit_cost_cents).to eq(217)
+    expect(arrived.unit_cost_cents).to eq(217)
+  end
 end

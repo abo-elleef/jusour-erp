@@ -46,4 +46,17 @@ RSpec.describe Inventory::DeductStockService do
     expect(other.ingredient_stock(cheese).quantity_on_hand.to_d).to eq(5)   # untouched
     expect(cheese.reload.quantity_on_hand.to_d).to eq(13)                   # 8 (branch) + 5 (other)
   end
+
+  it "records the consumption at the location average it was drawn from" do
+    StockBatch.create!(ingredient: cheese, location: branch, quantity_received: 10,
+      quantity_remaining: 10, cost_per_unit_cents: 1500, received_on: Date.current + 1)
+    order = create(:order, user: user, location: branch)
+    create(:order_item, order: order, menu_item: menu_item, quantity: 1)
+
+    described_class.new(order).call
+
+    # (10 x 500 + 10 x 1500) / 20, read before FIFO takes 2 from the 500 batch.
+    movement = StockAdjustment.where(ingredient: cheese, adjustment_type: "consumption").last
+    expect(movement.unit_cost_cents).to eq(1000)
+  end
 end

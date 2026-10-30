@@ -39,6 +39,8 @@ module Inventory
 
     def deduct_fifo(ingredient, quantity_needed)
       remaining = quantity_needed
+      # Read before the draw-down below moves the average it is taken from.
+      unit_cost_cents = Inventory::LocationUnitCost.call(ingredient: ingredient, location: @order.location)
 
       # Consume from the selling location's own FIFO batches; the location-scoped
       # adjustment then rolls the location on-hand up into the global total.
@@ -57,6 +59,7 @@ module Inventory
         user: @order.user,
         location: @order.location,
         quantity_delta: -quantity_needed,
+        unit_cost_cents: unit_cost_cents,
         adjustment_type: "consumption",
         reason_notes: "Auto-deducted from Order #{@order.order_number}"
       )

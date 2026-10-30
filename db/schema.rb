@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_30_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_30_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1390,6 +1390,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_30_100000) do
     t.uuid "stock_transfer_id"
     t.uuid "unit_id"
     t.decimal "balance_after", precision: 10, scale: 3
+    t.integer "unit_cost_cents"
+    t.boolean "unit_cost_estimated", default: false, null: false
     t.index ["adjustment_type"], name: "index_stock_adjustments_on_adjustment_type"
     t.index ["created_at"], name: "index_stock_adjustments_on_created_at"
     t.index ["ingredient_id"], name: "index_stock_adjustments_on_ingredient_id"

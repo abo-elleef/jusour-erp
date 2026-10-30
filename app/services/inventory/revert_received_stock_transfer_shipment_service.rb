@@ -90,7 +90,7 @@ module Inventory
     # => shortfall the destination could not cover
     def move_stock_back!(ingredient, quantity, at:)
       cost_per_unit_cents = shipment_cost_for(ingredient)
-      shortfall = take_from_destination!(ingredient, quantity, at: at)
+      shortfall = take_from_destination!(ingredient, quantity, cost_per_unit_cents, at: at)
       return_to_source!(ingredient, quantity, cost_per_unit_cents, at: at)
       shortfall
     end
@@ -117,7 +117,7 @@ module Inventory
     # what its batches still hold. The two can drift — a consumption recorded
     # without batch maintenance moves the balance but leaves the batch alone —
     # and on-hand is both what the user sees and what actually goes negative.
-    def take_from_destination!(ingredient, quantity, at:)
+    def take_from_destination!(ingredient, quantity, cost_per_unit_cents, at:)
       on_hand = IngredientLocation
         .find_by(ingredient_id: ingredient.id, location_id: @transfer.to_location_id)
         &.quantity_on_hand.to_d
@@ -143,6 +143,9 @@ module Inventory
         location: @transfer.to_location,
         stock_transfer: @transfer,
         quantity_delta: -quantity,
+        # The same cost return_to_source! re-creates at the source, so the
+        # revert moves value back without making or losing any.
+        unit_cost_cents: cost_per_unit_cents,
         adjustment_type: "transfer_out",
         reason_notes: revert_note("out", @transfer.to_location),
         created_at: at,

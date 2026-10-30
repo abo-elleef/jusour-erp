@@ -95,12 +95,15 @@ module Inventory
 
       avg_cost = quantity.zero? ? ingredient.cost_per_unit_cents : (total_cost_cents / quantity).round
 
+      # Out at exactly the cost the destination batch is created at, so a
+      # transfer moves value between locations without making or losing any.
       StockAdjustment.create!(
         ingredient: ingredient,
         user: @user,
         location: location,
         stock_transfer: @transfer,
         quantity_delta: -quantity,
+        unit_cost_cents: avg_cost,
         adjustment_type: "transfer_out",
         reason_notes: transfer_note("out", location, @shipment.sequence),
         created_at: at,
