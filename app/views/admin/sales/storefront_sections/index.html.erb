@@ -7,7 +7,7 @@
       <p class="text-gray-600 text-sm mt-1"><%= t("sales.storefront_sections.description") %></p>
     </div>
     <% if @storefront.enabled? %>
-      <%= link_to t("sales.storefront.view_site"), @storefront.subdomain_url(port: request.port) || public_storefront_home_url(company_slug: Current.company.slug),
+      <%= link_to t("sales.storefront.view_site"), @storefront.public_url(port: request.port) || public_storefront_home_url(company_slug: Current.company.slug),
             target: "_blank", rel: "noopener",
             class: "inline-flex text-sm font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2 rounded-xl border border-amber-200" %>
     <% end %>

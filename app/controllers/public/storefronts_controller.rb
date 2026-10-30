@@ -4,7 +4,8 @@ module Public
   class StorefrontsController < StorefrontBaseController
     PER_PAGE = 24
 
-    skip_before_action :set_storefront, :set_locale_from_company, :load_storefront_categories, only: :not_found
+    skip_before_action :set_storefront, :redirect_to_custom_domain, :set_locale_from_company, :load_storefront_categories,
+      only: :not_found
 
     def show
       @query = params[:q].to_s.strip.first(100)

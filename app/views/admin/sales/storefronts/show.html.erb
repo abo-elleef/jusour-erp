@@ -4,6 +4,7 @@
 <% file_class = "text-sm text-gray-600 file:me-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gray-100 file:font-semibold file:text-gray-700 hover:file:bg-gray-200" %>
 <% path_url = public_storefront_home_url(company_slug: Current.company.slug) %>
 <% subdomain_url = @storefront.persisted? ? @storefront.subdomain_url(port: request.port) : nil %>
+<% custom_domain_url = @storefront.custom_domain_url %>
 
 <div class="max-w-3xl">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
@@ -28,13 +29,15 @@
         <p class="text-xs text-gray-600 mt-0.5"><%= t("sales.storefront.status.published_products", count: @published_count) %></p>
       </div>
       <% if @storefront.persisted? && @storefront.enabled? %>
-        <%= link_to t("sales.storefront.view_site"), subdomain_url || path_url, target: "_blank", rel: "noopener",
+        <%= link_to t("sales.storefront.view_site"), custom_domain_url || subdomain_url || path_url, target: "_blank", rel: "noopener",
               class: "text-sm font-semibold text-amber-700 hover:bg-amber-50 px-4 py-2 rounded-xl border border-amber-200" %>
       <% end %>
     </div>
 
     <dl class="mt-4 space-y-3 text-sm">
-      <% [[t("sales.storefront.urls.path"), path_url], [t("sales.storefront.urls.subdomain"), subdomain_url]].each do |label, url| %>
+      <% url_rows = [[t("sales.storefront.urls.path"), path_url], [t("sales.storefront.urls.subdomain"), subdomain_url]] %>
+      <% url_rows.unshift([t("sales.storefront.urls.custom_domain"), custom_domain_url]) if custom_domain_url %>
+      <% url_rows.each do |label, url| %>
         <div>
           <dt class="text-xs font-semibold text-gray-500"><%= label %></dt>
           <dd class="mt-1">

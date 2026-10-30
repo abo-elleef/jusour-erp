@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 # A company's public product catalog website — one per company. Reached at
-# /s/:company_slug, and at <subdomain>.<storefront_domain> once a subdomain is
-# set. Phase 1 is a catalog only: visitors browse and contact the company;
+# /s/:company_slug, at <subdomain>.<storefront_domain> once a subdomain is set,
+# and at the company's own domain (custom_domain) once the success team has
+# connected one. Phase 1 is a catalog only: visitors browse and contact the company;
 # there is no cart or checkout yet.
 class Storefront < ApplicationRecord
   include Tenantable
@@ -23,6 +24,9 @@ class Storefront < ApplicationRecord
     www app admin api mail smtp ftp static assets cdn staging dev test help support status blog docs
   ].freeze
   SUBDOMAIN_FORMAT = /\A[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\z/
+  # A full host name such as "www.curelix.com": two or more labels ending in a
+  # letters-only TLD — so never "localhost" or a bare IP address.
+  CUSTOM_DOMAIN_FORMAT = /\A(?=.{4,253}\z)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\z/
   IMAGE_CONTENT_TYPES = %w[image/jpeg image/png image/webp].freeze
 
   # Recommended upload size (width, height in px) for each image slot — matched
@@ -76,12 +80,16 @@ class Storefront < ApplicationRecord
   end
 
   before_validation :normalize_subdomain
+  before_validation :normalize_custom_domain
   before_validation :normalize_theme
 
   validates :company_id, uniqueness: true
   validates :subdomain, format: { with: SUBDOMAIN_FORMAT }, allow_nil: true
   validates :subdomain, uniqueness: { case_sensitive: false }, allow_nil: true
   validate :subdomain_not_reserved
+  validates :custom_domain, format: { with: CUSTOM_DOMAIN_FORMAT }, allow_nil: true
+  validates :custom_domain, uniqueness: { case_sensitive: false }, allow_nil: true
+  validate :custom_domain_not_on_platform
   validate :images_are_acceptable
   validates :primary_color, :accent_color, format: { with: HEX_COLOR }
   validates :font, inclusion: { in: FONTS.keys }
@@ -114,25 +122,60 @@ class Storefront < ApplicationRecord
     label if label.match?(SUBDOMAIN_FORMAT)
   end
 
-  # Route constraint — cheap and DB-free on purpose; an unknown subdomain still
-  # routes to the storefront controllers, which answer 404.
+  # True for the storefront domain itself and every host under it — the
+  # platform's own hosts (www.jusour-erp.com) and storefront subdomains alike.
+  def self.platform_host?(host)
+    base = base_domain
+    base.present? && (host == base || host.end_with?(".#{base}"))
+  end
+
+  # "www.curelix.com" when it could be a company's own domain; nil for the
+  # platform's hosts, localhost, IP addresses and anything else malformed.
+  def self.custom_domain_from_host(host)
+    host = host.to_s.downcase
+    return if platform_host?(host) || !host.match?(CUSTOM_DOMAIN_FORMAT)
+
+    host
+  end
+
+  # Route constraint. Subdomains match without the DB; an unknown subdomain
+  # still routes to the storefront controllers, which answer 404. Any other
+  # host is checked against the connected custom domains — one indexed lookup,
+  # and never for the platform's own hosts, so app pages pay nothing.
   def self.host_match?(request)
-    subdomain_from_host(request.host).present?
+    return true if subdomain_from_host(request.host).present?
+
+    domain = custom_domain_from_host(request.host)
+    domain.present? && unscoped_by_company.exists?(["lower(custom_domain) = ?", domain])
   end
 
   # Host lookup runs before any tenant is known, so it bypasses the tenant scope.
-  def self.enabled_for_subdomain(subdomain)
-    unscoped_by_company.joins(:company).where(enabled: true, companies: { active: true })
-      .find_by("lower(storefronts.subdomain) = ?", subdomain.to_s.downcase)
+  def self.enabled_for_host(host)
+    scope = unscoped_by_company.joins(:company).where(enabled: true, companies: { active: true })
+    if (subdomain = subdomain_from_host(host))
+      scope.find_by("lower(storefronts.subdomain) = ?", subdomain)
+    elsif (domain = custom_domain_from_host(host))
+      scope.find_by("lower(storefronts.custom_domain) = ?", domain)
+    end
   end
 
   # The storefront's own URL on its subdomain, or nil before one is configured.
   def subdomain_url(port: nil)
     return if subdomain.blank? || self.class.base_domain.blank?
 
-    scheme = Rails.env.production? ? "https" : "http"
-    host = "#{subdomain}.#{self.class.base_domain}"
-    port.present? && ![80, 443].include?(port.to_i) ? "#{scheme}://#{host}:#{port}" : "#{scheme}://#{host}"
+    url_for_host("#{subdomain}.#{self.class.base_domain}", port: port)
+  end
+
+  # Always https — the success team connects a domain only once its
+  # certificate is live.
+  def custom_domain_url
+    "https://#{custom_domain}" if custom_domain.present?
+  end
+
+  # The address to share and link to: the company's own domain when connected,
+  # else the subdomain, else nil (callers fall back to the /s/:slug path).
+  def public_url(port: nil)
+    custom_domain_url || subdomain_url(port: port)
   end
 
   def phone_url
@@ -219,6 +262,23 @@ class Storefront < ApplicationRecord
 
   def normalize_subdomain
     self.subdomain = subdomain.to_s.strip.downcase.presence
+  end
+
+  # Accepts what people paste: "https://www.Curelix.com/" → "www.curelix.com".
+  def normalize_custom_domain
+    domain = custom_domain.to_s.strip.downcase.sub(%r{\Ahttps?://}, "").sub(%r{[/?#].*\z}, "").delete_suffix(".")
+    self.custom_domain = domain.presence
+  end
+
+  def url_for_host(host, port: nil)
+    scheme = Rails.env.production? ? "https" : "http"
+    port.present? && ![80, 443].include?(port.to_i) ? "#{scheme}://#{host}:#{port}" : "#{scheme}://#{host}"
+  end
+
+  # Hosts under the storefront domain are subdomains — set those with the
+  # subdomain field instead.
+  def custom_domain_not_on_platform
+    errors.add(:custom_domain, :exclusion) if custom_domain.present? && self.class.platform_host?(custom_domain)
   end
 
   def normalize_theme

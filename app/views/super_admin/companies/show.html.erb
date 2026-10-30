@@ -94,3 +94,28 @@
     <% end %>
   </div>
 </div>
+
+<%# Website (storefront) addresses %>
+<% if @company.feature_enabled?(:storefront) %>
+  <div class="mt-6 rounded-2xl border border-gray-800 bg-gray-900 overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-800">
+      <h2 class="text-sm font-semibold text-white">Website</h2>
+      <%= link_to "Set domain", edit_super_admin_company_storefront_domain_path(@company),
+            class: "text-xs text-indigo-400 hover:text-indigo-300" %>
+    </div>
+    <dl class="divide-y divide-gray-800 text-sm">
+      <div class="flex items-center justify-between gap-4 px-5 py-3">
+        <dt class="text-gray-400">Status</dt>
+        <dd class="text-white"><%= @storefront&.enabled? ? "Published" : "Not published" %></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 px-5 py-3">
+        <dt class="text-gray-400">Subdomain</dt>
+        <dd class="font-mono text-white" dir="ltr"><%= @storefront&.subdomain_url || "—" %></dd>
+      </div>
+      <div class="flex items-center justify-between gap-4 px-5 py-3">
+        <dt class="text-gray-400">Custom domain</dt>
+        <dd class="font-mono text-white" dir="ltr"><%= @storefront&.custom_domain_url || "—" %></dd>
+      </div>
+    </dl>
+  </div>
+<% end %>

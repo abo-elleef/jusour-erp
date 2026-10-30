@@ -8,6 +8,7 @@ module SuperAdmin
       @locations = Location.unscoped.where(company_id: @company.id).order(:name)
       @owners    = User.unscoped.where(company_id: @company.id, role: "owner").order(:name)
       @stats     = company_stats(@company)
+      @storefront = Storefront.unscoped_by_company.find_by(company_id: @company.id)
     end
 
     def new

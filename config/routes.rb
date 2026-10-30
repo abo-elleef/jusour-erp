@@ -32,6 +32,7 @@ Rails.application.routes.draw do
       member { get :impersonate }
       resources :locations, only: %i[new create edit update]
       resources :users, only: %i[new create]
+      resource :storefront_domain, only: %i[edit update]
     end
   end
 

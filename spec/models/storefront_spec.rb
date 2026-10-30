@@ -64,21 +64,80 @@ RSpec.describe Storefront, type: :model do
     end
   end
 
-  describe ".enabled_for_subdomain" do
-    it "finds an enabled storefront of an active company regardless of the current tenant" do
-      storefront = described_class.create!(subdomain: "acme", enabled: true)
+  describe "custom_domain" do
+    around do |example|
+      original = Rails.configuration.x.storefront_domain
+      Rails.configuration.x.storefront_domain = "jusour-erp.com"
+      example.run
+    ensure
+      Rails.configuration.x.storefront_domain = original
+    end
+
+    it "is normalized from a pasted address, blank meaning none" do
+      storefront = described_class.create!(custom_domain: " https://www.Curelix.com/ar?x=1 ")
+      expect(storefront.custom_domain).to eq("www.curelix.com")
+
+      storefront.update!(custom_domain: "")
+      expect(storefront.custom_domain).to be_nil
+    end
+
+    it "rejects malformed hosts and the platform's own hosts" do
+      %w[localhost 127.0.0.1 curelix -bad.com curelix..com].each do |bad|
+        expect(described_class.new(custom_domain: bad)).not_to be_valid, "expected #{bad} to be invalid"
+      end
+      expect(described_class.new(custom_domain: "jusour-erp.com")).not_to be_valid
+      expect(described_class.new(custom_domain: "curelix.jusour-erp.com")).not_to be_valid
+    end
+
+    it "is unique across companies, case-insensitively" do
+      described_class.create!(custom_domain: "www.curelix.com")
       Current.company = create(:company)
 
-      expect(described_class.enabled_for_subdomain("acme")).to eq(storefront)
+      expect(described_class.new(custom_domain: "WWW.curelix.com")).not_to be_valid
+    end
+
+    it "is the public URL when set, ahead of the subdomain" do
+      storefront = described_class.new(subdomain: "curelix")
+      expect(storefront.public_url).to eq("http://curelix.jusour-erp.com")
+
+      storefront.custom_domain = "www.curelix.com"
+      expect(storefront.public_url).to eq("https://www.curelix.com")
+    end
+  end
+
+  describe ".enabled_for_host" do
+    it "finds an enabled storefront of an active company regardless of the current tenant" do
+      storefront = described_class.create!(subdomain: "acme", custom_domain: "www.acme-foods.com", enabled: true)
+      Current.company = create(:company)
+
+      expect(described_class.enabled_for_host("acme.localhost")).to eq(storefront)
+      expect(described_class.enabled_for_host("WWW.Acme-Foods.com")).to eq(storefront)
+      expect(described_class.enabled_for_host("www.other.com")).to be_nil
     end
 
     it "skips disabled storefronts and inactive companies" do
-      storefront = described_class.create!(subdomain: "acme", enabled: false)
-      expect(described_class.enabled_for_subdomain("acme")).to be_nil
+      storefront = described_class.create!(subdomain: "acme", custom_domain: "www.acme-foods.com", enabled: false)
+      expect(described_class.enabled_for_host("acme.localhost")).to be_nil
+      expect(described_class.enabled_for_host("www.acme-foods.com")).to be_nil
 
       storefront.update!(enabled: true)
       company.update!(active: false)
-      expect(described_class.enabled_for_subdomain("acme")).to be_nil
+      expect(described_class.enabled_for_host("acme.localhost")).to be_nil
+      expect(described_class.enabled_for_host("www.acme-foods.com")).to be_nil
+    end
+  end
+
+  describe ".host_match?" do
+    def request_for(host) = instance_double(ActionDispatch::Request, host: host)
+
+    it "matches subdomains and connected custom domains, nothing else" do
+      described_class.create!(custom_domain: "www.acme-foods.com")
+
+      expect(described_class.host_match?(request_for("acme.localhost"))).to be(true)
+      expect(described_class.host_match?(request_for("www.acme-foods.com"))).to be(true)
+      expect(described_class.host_match?(request_for("www.other.com"))).to be(false)
+      expect(described_class.host_match?(request_for("localhost"))).to be(false)
+      expect(described_class.host_match?(request_for("127.0.0.1"))).to be(false)
     end
   end
 

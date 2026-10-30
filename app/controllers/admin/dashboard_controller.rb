@@ -17,7 +17,7 @@ module Admin
       storefront = ::Storefront.find_by(enabled: true)
       return unless storefront
 
-      @storefront_url = storefront.subdomain_url(port: request.port) ||
+      @storefront_url = storefront.public_url(port: request.port) ||
         public_storefront_home_url(company_slug: Current.company.slug)
     end
 

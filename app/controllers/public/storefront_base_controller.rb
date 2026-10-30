@@ -2,13 +2,14 @@
 
 module Public
   # Shared lookup for the public storefront. The same pages answer two ways:
-  # by path (/s/:company_slug/...) and on the storefront's own subdomain, where
-  # there is no slug in the URL and the host picks the company. Links inside the
-  # pages are built with storefront_*_path so they stay in whichever form the
-  # visitor arrived by.
+  # by path (/s/:company_slug/...) and on the storefront's own subdomain or custom
+  # domain, where there is no slug in the URL and the host picks the company.
+  # Links inside the pages are built with storefront_*_path so they stay in
+  # whichever form the visitor arrived by.
   class StorefrontBaseController < ApplicationController
     skip_before_action :authenticate_user!
     before_action :set_storefront
+    before_action :redirect_to_custom_domain
     before_action :set_locale_from_company
     before_action :load_storefront_categories
 
@@ -21,7 +22,7 @@ module Public
 
     def set_storefront
       if via_host?
-        @storefront = Storefront.enabled_for_subdomain(Storefront.subdomain_from_host(request.host))
+        @storefront = Storefront.enabled_for_host(request.host)
         raise ActiveRecord::RecordNotFound if @storefront.nil?
 
         @company = @storefront.company
@@ -33,6 +34,17 @@ module Public
       end
 
       raise ActiveRecord::RecordNotFound unless @company.feature_enabled?(:storefront)
+    end
+
+    # Once a company's own domain is connected, its subdomain sends visitors
+    # (and search engines) there for good, path and query kept. The /s/:slug
+    # path stays as it is — it's the fallback link admins share and preview.
+    def redirect_to_custom_domain
+      return unless via_host? && @storefront.custom_domain.present? && (request.get? || request.head?)
+      return if request.host.casecmp?(@storefront.custom_domain)
+
+      redirect_to "#{@storefront.custom_domain_url}#{request.fullpath}", status: :moved_permanently,
+        allow_other_host: true
     end
 
     def via_host?

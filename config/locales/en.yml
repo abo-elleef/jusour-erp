@@ -2821,6 +2821,7 @@ en:
         subdomain: "Subdomain link"
         subdomain_unset: "Pick a subdomain below to get a short link."
         subdomain_unavailable: "Subdomain links aren't set up on this server yet."
+        custom_domain: "Your own domain"
       sections:
         look: "Look & feel"
         look_hint: "Your brand colors and font, used across every page of the website."

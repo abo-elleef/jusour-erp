@@ -311,4 +311,59 @@ RSpec.describe "Public storefronts", type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  describe "on the company's own domain" do
+    before do
+      storefront.update!(custom_domain: "www.acme-dental.com")
+      host! "www.acme-dental.com"
+    end
+
+    it "serves the catalog and product pages with host-relative links" do
+      get "/"
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Mouth mirror")
+      expect(response.body).to include(%(href="/p/#{mirror.slug}"))
+
+      get "/p/#{ERB::Util.url_encode(gloves.slug)}"
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Nitrile gloves")
+    end
+
+    it "does not expose the app's own pages under the client's brand" do
+      get "/users/sign_in"
+      expect(response).to have_http_status(:not_found)
+
+      get "/admin"
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "404s while the storefront is unpublished" do
+      storefront.update!(enabled: false)
+      get "/"
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "permanently redirects the subdomain there, keeping path and query" do
+      host! "acme.localhost"
+      get "/?category=#{category.id}"
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to("https://www.acme-dental.com/?category=#{category.id}")
+    end
+
+    it "leaves the /s/:slug path alone" do
+      host! "localhost"
+      get "/s/acme-dental"
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "does not answer on a domain no storefront has connected" do
+      host! "www.someone-else.com"
+      get "/users/sign_in"
+
+      expect(response).to have_http_status(:ok)
+    end
+  end
 end
