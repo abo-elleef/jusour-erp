@@ -41,7 +41,7 @@ module Admin
       end
     end
 
-    # The page is a shell (header and stat cards) plus one Turbo frame that
+    # The page is a shell (the header) plus one Turbo frame that
     # lazily loads the active tab from this same URL. A frame request gets
     # just that tab; anything else gets the shell. Payroll and Statement are
     # money, so they appear only for admin-access users, as before.
@@ -54,13 +54,10 @@ module Admin
       @tabs = visible_tabs
       @tab = requested_tab
 
-      if turbo_frame_request_id == TAB_FRAME
-        load_shell_stats
-        send(:"load_#{@tab}_tab")
-        render "tab", layout: "turbo_rails/frame"
-      else
-        load_shell_stats
-      end
+      return unless turbo_frame_request_id == TAB_FRAME
+
+      send(:"load_#{@tab}_tab")
+      render "tab", layout: "turbo_rails/frame"
     end
 
     # Printable statement of account for the same date range as the tab.
@@ -137,10 +134,6 @@ module Admin
       tab = params[:tab].presence
       tab ||= "payroll" if params[:payroll_month].present?
       @tabs.include?(tab) ? tab : @tabs.first
-    end
-
-    def load_shell_stats
-      @balance_cents = @user.staff_balance_cents if current_user.admin_access?
     end
 
     def load_overview_tab; end

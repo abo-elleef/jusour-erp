@@ -29,13 +29,11 @@ RSpec.describe "Staff member page tabs and statement of account", type: :request
   end
 
   describe "the shell" do
-    it "renders the header and stats with an empty, lazily-loading tab frame" do
-      voucher(Voucher::PAYMENT, 20_000, on: Date.current)
-
+    it "renders the header with an empty, lazily-loading tab frame" do
       get admin_user_path(staff)
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Mona", 'id="user_stats"', I18n.t("staff.wages_ledger.they_owe"))
+      expect(response.body).to include("Mona")
       expect(response.body).to match(/<turbo-frame[^>]*id="user_tab"[^>]*src="[^"]*#{staff.id}/)
       expect(response.body).to include(I18n.t("staff.show.tabs.loading"))
       expect(response.body).not_to include(I18n.t("staff.show.account_details"))
@@ -70,7 +68,7 @@ RSpec.describe "Staff member page tabs and statement of account", type: :request
       expect(response.body).to match(/<a[^>]*aria-current="page"[^>]*>#{I18n.t("staff.show.tabs.payroll")}</)
     end
 
-    it "refreshes the balance card and shows the flash after a payroll action" do
+    it "shows the flash after a payroll action inside the frame" do
       post admin_user_payroll_adjustments_path(staff), params: {
         payroll_adjustment: { kind: "bonus", unit_type: "fixed", amount_pounds: "100",
                               payroll_month: "2026-04-01", happened_at: "2026-04-10" }
@@ -79,7 +77,6 @@ RSpec.describe "Staff member page tabs and statement of account", type: :request
 
       get admin_user_path(staff, payroll_month: "2026-04-01"), headers: { "Turbo-Frame" => "user_tab" }
 
-      expect(response.body).to include('<turbo-stream action="replace" target="user_stats">')
       expect(response.body).to include('<turbo-stream action="append" target="toast-container">')
       expect(response.body).to include(I18n.t("flash.payroll_adjustment.created"))
     end
