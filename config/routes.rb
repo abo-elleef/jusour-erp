@@ -411,6 +411,7 @@ Rails.application.routes.draw do
         member do
           get :purchase_request
           get :count_sheet
+          get :statement
         end
       end
       resources :vendor_invoices, only: %i[index show new create edit update] do

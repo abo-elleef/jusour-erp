@@ -31,7 +31,7 @@ RSpec.describe "Admin::Inventory::Suppliers show ingredient balances", type: :re
 
   it "shows company-wide balance by default" do
     ingredient.update_columns(max_quantity: 20)
-    get admin_inventory_supplier_path(supplier)
+    get_supplier_tab(supplier, "ingredients")
     expect(response).to have_http_status(:ok)
     expect(response.body).to match(/15\s*<span class="text-xs font-normal text-gray-500"/)
     expect(response.body).to include(I18n.t("inventory.suppliers.show.all_locations"))
@@ -41,7 +41,7 @@ RSpec.describe "Admin::Inventory::Suppliers show ingredient balances", type: :re
 
   it "filters balance to the selected location" do
     IngredientLocation.where(ingredient: ingredient, location: location_a).update_all(max_quantity: 18)
-    get admin_inventory_supplier_path(supplier, location_id: location_a.id)
+    get_supplier_tab(supplier, "ingredients", location_id: location_a.id)
     expect(response).to have_http_status(:ok)
     expect(response.body).to include(I18n.t("inventory.suppliers.show.ingredients_hint_location", location: location_a.name))
     expect(response.body).to match(/12\s*<span class="text-xs font-normal text-gray-500"/)
@@ -50,7 +50,7 @@ RSpec.describe "Admin::Inventory::Suppliers show ingredient balances", type: :re
   end
 
   it "renders a sticky ingredients table header" do
-    get admin_inventory_supplier_path(supplier)
+    get_supplier_tab(supplier, "ingredients")
     expect(response.body).to include("sticky top-0")
     expect(response.body).to include("max-h-[60vh]")
   end
@@ -60,13 +60,13 @@ RSpec.describe "Admin::Inventory::Suppliers show ingredient balances", type: :re
     SupplierIngredient.create!(supplier: supplier, ingredient: beef, price_cents: 500)
     IngredientLocation.create!(ingredient: beef, location: location_a, quantity_on_hand: 1, reorder_threshold: 1)
 
-    get admin_inventory_supplier_path(supplier, location_id: location_a.id, sort: "ingredient", dir: "asc")
+    get_supplier_tab(supplier, "ingredients", location_id: location_a.id, sort: "ingredient", dir: "asc")
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("sort=ingredient")
     expect(response.body).to include("location_id=#{location_a.id}")
     expect(order_of(%w[Beef Chicken])).to eq(%w[Beef Chicken])
 
-    get admin_inventory_supplier_path(supplier, location_id: location_a.id, sort: "ingredient", dir: "desc")
+    get_supplier_tab(supplier, "ingredients", location_id: location_a.id, sort: "ingredient", dir: "desc")
     expect(order_of(%w[Beef Chicken])).to eq(%w[Chicken Beef])
   end
 

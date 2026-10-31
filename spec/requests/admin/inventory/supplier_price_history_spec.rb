@@ -119,30 +119,30 @@ RSpec.describe "Supplier price history", type: :request do
   describe "the supplier page" do
     # Without the frame, filtering is a full navigation that resets the admin
     # shell's scroll container and dumps the user at the top of a long page.
-    it "renders the section in a Turbo frame so filtering keeps the scroll position" do
+    it "renders the section in the tab frame so filtering keeps the scroll position" do
       post_invoice
 
-      get admin_inventory_supplier_path(supplier)
+      get_supplier_tab(supplier, "price_history")
 
-      expect(response.body).to include('id="supplier_price_history"')
-      expect(response.body).to include("turbo-frame")
+      expect(response.body).to match(/<turbo-frame[^>]*id="supplier_tab"/)
+      expect(response.body).to include(I18n.t("inventory.suppliers.show.price_history_heading"))
     end
 
     it "does not disable Turbo on the filter form — the frame needs it" do
       post_invoice
 
-      get admin_inventory_supplier_path(supplier)
+      get_supplier_tab(supplier, "price_history")
 
       form = response.body[/<form[^>]*ph_ingredient_id.*?<\/form>/m] ||
              response.body[/<form(?:(?!<\/form>).)*?searchable-select.*?<\/form>/m]
-      expect(response.body).to include("supplier_price_history")
+      expect(form).to be_present
       expect(form.to_s).not_to include('data-turbo="false"')
     end
 
     it "shows who received the price and links the invoice (notice 2)" do
       invoice = post_invoice
 
-      get admin_inventory_supplier_path(supplier)
+      get_supplier_tab(supplier, "price_history")
 
       expect(response.body).to include(I18n.t("inventory.suppliers.show.price_history_recorded_by"))
       expect(response.body).to include(owner.name)
@@ -156,10 +156,10 @@ RSpec.describe "Supplier price history", type: :request do
 
       # Row count is the precise signal: the ingredient name also appears in the
       # supplier's ingredient table and in the filter's own option list.
-      get admin_inventory_supplier_path(supplier)
+      get_supplier_tab(supplier, "price_history")
       expect(response.body).to include(showing(1, 2, 2))
 
-      get admin_inventory_supplier_path(supplier, ph_ingredient_id: onions.id)
+      get_supplier_tab(supplier, "price_history", ph_ingredient_id: onions.id)
       expect(response.body).to include(showing(1, 1, 1))
       expect(response.body).to include("Onions")
     end
@@ -168,7 +168,7 @@ RSpec.describe "Supplier price history", type: :request do
       spinach = ingredient("Spinach")
       post_invoice(ing: tomatoes)
 
-      get admin_inventory_supplier_path(supplier, ph_ingredient_id: spinach.id)
+      get_supplier_tab(supplier, "price_history", ph_ingredient_id: spinach.id)
 
       expect(response.body).to include(I18n.t("inventory.suppliers.show.price_history_filtered_empty"))
     end
@@ -177,7 +177,7 @@ RSpec.describe "Supplier price history", type: :request do
       # 26 distinct ingredients → 26 rows, one page of 25 plus a second page.
       26.times { |i| post_invoice(ing: ingredient("Herb #{i}"), total: "#{i + 1}.00") }
 
-      get admin_inventory_supplier_path(supplier)
+      get_supplier_tab(supplier, "price_history")
 
       expect(response.body).to include(showing(1, 25, 26))
     end

@@ -1,0 +1,30 @@
+<%# Paying a supplier means paying their invoices, and payments are made only
+    by voucher. The voucher spreads the amount across the open invoices
+    oldest first, so the AP balance never drifts from what they still owe. %>
+<% if @payable_invoices.any? && policy(Voucher).create? %>
+  <section class="rounded-2xl border border-amber-200 bg-amber-50/40 mb-6 px-5 py-4 flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.suppliers.show.pay_supplier.title") %></h2>
+      <p class="text-xs text-gray-600 mt-0.5"><%= t("inventory.suppliers.show.pay_supplier.hint") %></p>
+      <p class="text-xs text-gray-500 mt-1">
+        <%= t("inventory.suppliers.show.pay_supplier.open_total_hint",
+              total: format_amount(@payable_total_cents), count: @payable_invoices.size) %>
+      </p>
+    </div>
+    <%= link_to t("inventory.suppliers.show.pay_supplier.submit"),
+          new_admin_accounting_voucher_path(direction: Voucher::PAYMENT, party: "Supplier:#{@supplier.id}",
+                                            settles: Admin::Accounting::VouchersController::OLDEST_FIRST),
+          data: { turbo_frame: "_top" },
+          class: "bg-amber-600 hover:bg-amber-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold" %>
+  </section>
+<% elsif @supplier.ap_balance_cents != 0 && InventoryPolicy.new(current_user, @supplier).update? %>
+  <%# A balance with nothing open to pay it against. Always a data problem —
+      an overpayment, or AP moved by something other than an invoice. %>
+  <section class="rounded-2xl border border-red-200 bg-red-50/40 px-5 py-4 mb-6">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.suppliers.show.pay_supplier.title") %></h2>
+    <p class="text-xs text-red-800 mt-1">
+      <%= t("inventory.suppliers.show.pay_supplier.balance_without_invoices",
+            balance: format_amount(@supplier.ap_balance_cents)) %>
+    </p>
+  </section>
+<% end %>

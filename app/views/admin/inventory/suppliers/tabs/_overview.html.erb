@@ -1,0 +1,73 @@
+<%= render "admin/inventory/suppliers/pay_supplier" %>
+
+<div class="grid gap-6 lg:grid-cols-2">
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-3">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.suppliers.show.overview.recent_invoices_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.suppliers.show.overview.recent_invoices_hint", count: @recent_invoices.size) %></p>
+      </div>
+      <%= link_to t("inventory.suppliers.show.overview.see_all"), admin_inventory_supplier_path(@supplier, tab: "invoices"),
+            class: "text-sm font-medium text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-colors" %>
+    </div>
+    <% if @recent_invoices.any? %>
+      <ul class="divide-y divide-gray-100">
+        <% @recent_invoices.each do |invoice| %>
+          <% status_label, status_class = vendor_invoice_payment_badge(invoice.payment_status) %>
+          <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-2 hover:bg-gray-100 transition-colors">
+            <%= link_to invoice.invoice_number, admin_inventory_vendor_invoice_path(invoice),
+                  data: { turbo_frame: "_top" },
+                  class: "font-semibold text-amber-700 hover:text-amber-800" %>
+            <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= status_class %>">
+              <%= status_label %>
+            </span>
+            <span class="text-sm text-gray-600 tabular-nums"><%= format_amount(invoice.total_cents) %></span>
+            <span class="text-xs text-gray-500"><%= l(invoice.invoice_date.to_date, format: :long) %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="p-5 text-sm text-gray-500"><%= t("inventory.suppliers.show.invoices.empty") %></p>
+    <% end %>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-3">
+      <div>
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.suppliers.show.overview.reorder_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.suppliers.show.overview.reorder_hint") %></p>
+      </div>
+      <div class="flex items-center gap-2">
+        <% if @reorder_count.positive? %>
+          <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-red-100 text-red-800 text-xs font-semibold">
+            <%= t("inventory.suppliers.show.reorder_count", count: @reorder_count) %>
+          </span>
+        <% end %>
+        <%= link_to t("inventory.suppliers.show.overview.see_all"), admin_inventory_supplier_path(@supplier, tab: "ingredients"),
+              class: "text-sm font-medium text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl transition-colors" %>
+      </div>
+    </div>
+    <% if @reorder_links.any? %>
+      <ul class="divide-y divide-gray-100">
+        <% @reorder_links.each do |link| %>
+          <% ing = link.ingredient %>
+          <% balance = @ingredient_balances[ing.id] %>
+          <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-2 hover:bg-gray-100 transition-colors">
+            <%= link_to ing.name, admin_inventory_ingredient_path(ing),
+                  data: { turbo_frame: "_top" },
+                  class: "font-semibold text-amber-700 hover:text-amber-800" %>
+            <span class="text-sm tabular-nums text-red-700 font-semibold">
+              <%= number_with_precision(balance[:quantity], precision: 2, strip_insignificant_zeros: true) %>
+              <span class="text-xs font-normal text-gray-500"><%= ingredient_unit_label(ing.unit) %></span>
+              <span class="text-xs font-normal text-gray-500">
+                / <%= number_with_precision(balance[:reorder_at], precision: 2, strip_insignificant_zeros: true) %>
+              </span>
+            </span>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="p-5 text-sm text-gray-500"><%= t("inventory.suppliers.show.overview.reorder_empty") %></p>
+    <% end %>
+  </section>
+</div>

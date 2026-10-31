@@ -1,0 +1,37 @@
+<% content_for :title, t("inventory.suppliers.statement.title", name: @supplier.name) %>
+<div class="max-w-7xl print:max-w-none">
+  <div class="print-hide flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("inventory.suppliers.statement.title", name: @supplier.name) %></h1>
+      <p class="text-gray-600 text-sm mt-1">
+        <%= t("accounting.shared.date_range_value", start: l(@statement.start_date, format: :long), end: l(@statement.end_date, format: :long)) %>
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <%= link_to t("inventory.suppliers.back_to_supplier", name: @supplier.name),
+            admin_inventory_supplier_path(@supplier, tab: "statement", start_date: @statement.start_date, end_date: @statement.end_date),
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+      <button type="button" onclick="window.print()"
+              class="inline-flex text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-colors">
+        <%= t("inventory.suppliers.purchase_request.print") %>
+      </button>
+    </div>
+  </div>
+
+  <div class="hidden print:block mb-6">
+    <p class="text-lg font-bold text-gray-900"><%= Current.company.name %></p>
+    <p class="text-base font-semibold text-gray-700"><%= t("inventory.suppliers.statement.title", name: @supplier.name) %></p>
+    <% contact_parts = [@supplier.contact_name, @supplier.phone, @supplier.email].compact_blank %>
+    <% if contact_parts.any? %>
+      <p class="text-sm text-gray-600"><%= contact_parts.join(" · ") %></p>
+    <% end %>
+    <p class="text-sm text-gray-500">
+      <%= t("accounting.shared.date_range_value", start: l(@statement.start_date, format: :long), end: l(@statement.end_date, format: :long)) %>
+    </p>
+  </div>
+
+  <%= render "statement",
+        statement: @statement,
+        form_url: statement_admin_inventory_supplier_path(@supplier),
+        hidden_params: {} %>
+</div>

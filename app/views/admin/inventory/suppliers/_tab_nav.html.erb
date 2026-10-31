@@ -1,0 +1,11 @@
+<%# Tab links live inside the frame, so a click swaps only the frame and the
+    scroll position stays put. Each tab starts clean: sort, filter and page
+    params belong to the tab that set them and are not carried across. %>
+<nav class="flex gap-1 overflow-x-auto border-b border-gray-200" aria-label="<%= t("inventory.suppliers.show.tabs.label") %>">
+  <% Admin::Inventory::SuppliersController::TABS.each_with_index do |name, index| %>
+    <%= link_to t("inventory.suppliers.show.tabs.#{name}"),
+          admin_inventory_supplier_path(supplier, (index.zero? ? {} : { tab: name })),
+          class: admin_section_tab_class(name == active_tab),
+          aria: { current: (name == active_tab ? "page" : nil) } %>
+  <% end %>
+</nav>

@@ -1,0 +1,12 @@
+<div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+  <p class="text-sm text-gray-600"><%= t("inventory.suppliers.statement.hint") %></p>
+  <%= link_to t("inventory.suppliers.statement.open_printable"),
+        statement_admin_inventory_supplier_path(@supplier, start_date: @statement.start_date, end_date: @statement.end_date),
+        data: { turbo_frame: "_top" },
+        class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200 bg-white transition-colors" %>
+</div>
+
+<%= render "admin/inventory/suppliers/statement",
+      statement: @statement,
+      form_url: admin_inventory_supplier_path(@supplier),
+      hidden_params: { tab: "statement" } %>

@@ -43,8 +43,8 @@ RSpec.describe "Admin::Inventory::Suppliers purchase request", type: :request do
     ingredient.update_column(:quantity_on_hand, 4)
   end
 
-  it "shows a generate purchase request link on the vendor page" do
-    get admin_inventory_supplier_path(supplier)
+  it "shows a generate purchase request link on the vendor page's ingredients tab" do
+    get_supplier_tab(supplier, "ingredients")
     expect(response).to have_http_status(:ok)
     expect(response.body).to include(I18n.t("inventory.suppliers.show.purchase_request"))
     expect(response.body).to include(purchase_request_admin_inventory_supplier_path(supplier))

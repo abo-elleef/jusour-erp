@@ -166,7 +166,7 @@ RSpec.describe "Vendor invoice drafts", type: :request do
     end
 
     it "is absent from the supplier's purchase history" do
-      get admin_inventory_supplier_path(supplier)
+      get_supplier_tab(supplier, "invoices")
 
       expect(response.body).not_to include(VendorInvoice.order(:created_at).last.invoice_number)
     end

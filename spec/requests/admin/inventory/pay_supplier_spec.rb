@@ -48,7 +48,7 @@ RSpec.describe "Pay supplier", type: :request do
     let!(:open_invoice) { invoice(10_000, on: Date.current - 1) }
 
     it "links to a payment voucher instead of carrying its own payment form" do
-      get admin_inventory_supplier_path(supplier)
+      get_supplier_tab(supplier, "overview")
 
       link = new_admin_accounting_voucher_path(direction: Voucher::PAYMENT, party: "Supplier:#{supplier.id}",
                                                settles: Admin::Accounting::VouchersController::OLDEST_FIRST)

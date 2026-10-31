@@ -4,7 +4,7 @@ module Admin
   module Inventory
     class SuppliersController < BaseController
       before_action :set_supplier,
-        only: %i[show edit update destroy purchase_request count_sheet]
+        only: %i[show edit update destroy purchase_request count_sheet statement]
 
       SORT_COLUMNS = %w[name contact lead_time ingredients invoice_total outstanding status].freeze
 
@@ -71,58 +71,46 @@ module Admin
       STOCK_RANK = { out: 0, low: 1, near: 2, ok: 3 }.freeze
       SHOW_INGREDIENT_SORT_COLUMNS = %w[ingredient balance reorder_at max_quantity vendor_product unit_price preferred].freeze
 
+      # The page is a shell (header, stat cards) around one Turbo frame that
+      # holds the active tab. The shell request runs only the shell's queries;
+      # the frame then fetches the same URL and gets just its tab back. Every
+      # link inside the frame (tabs, sorting, filters, paging) swaps the frame
+      # alone, so the scroll position never resets, and advances the URL so a
+      # reload or a shared link lands on the same tab. A fresh visit with no
+      # ?tab= always opens on the overview — the last tab is not remembered.
+      TABS = %w[overview ingredients invoices statement price_history].freeze
+      TAB_FRAME = "supplier_tab"
+
+      OVERVIEW_LIST_SIZE = 5
+
+      INVOICE_SORTS = {
+        "number" => "vendor_invoices.invoice_number",
+        "date" => "vendor_invoices.invoice_date",
+        "total" => "vendor_invoices.total_cents",
+        "status" => "vendor_invoices.payment_status"
+      }.freeze
+      INVOICE_STATUS_FILTERS = %w[open paid void].freeze
+
       def show
         authorize_inventory!(:show)
-        load_stock_location_filter
-        @sort = SHOW_INGREDIENT_SORT_COLUMNS.include?(params[:sort]) ? params[:sort] : nil
-        @direction = params[:dir] == "desc" ? "desc" : "asc"
+        @tab = TABS.include?(params[:tab]) ? params[:tab] : TABS.first
 
-        links = @supplier.supplier_ingredients
-          .includes(ingredient: :unit_ref)
-          .to_a
-          .select { |link| link.ingredient.active? }
-
-        @ingredient_balances = ingredient_balances_for(links)
-        @supplier_ingredients = sort_supplier_ingredients(links)
-        @reorder_count = @supplier_ingredients.count do |link|
-          %i[out low].include?(@ingredient_balances[link.ingredient_id][:status])
+        if turbo_frame_request_id == TAB_FRAME
+          send(:"load_#{@tab}_tab")
+          # The admin layout is set explicitly, which overrides turbo-rails'
+          # automatic frame layout — without this every tab would render the
+          # whole sidebar shell only for Turbo to throw it away.
+          render "tab", layout: "turbo_rails/frame"
+        else
+          load_shell_stats
         end
-
-        # Purchase history for this supplier — drafts have bought nothing yet, so they
-        # belong on the invoices index (where you resume them), not here.
-        @vendor_invoices = @supplier.vendor_invoices.posted.order(invoice_date: :desc).limit(10)
-        load_price_history
-        # What a payment voucher can land on, in the order it will be applied.
-        @payable_invoices = ::Accounting::PaySupplierService.open_invoices_for(@supplier)
-        @payable_total_cents = @payable_invoices.sum(&:balance_due_cents)
-        @ap_transactions = if @supplier.ap_treasury
-                             @supplier.ap_treasury.treasury_transactions
-                               .where(kind: %w[ap_invoice ap_payment ap_credit_note])
-                               .order(occurred_on: :desc, created_at: :desc)
-                               .limit(50)
-                           else
-                             TreasuryTransaction.none
-                           end
       end
 
-      # Price trend for this supplier: paginated and filterable by ingredient, since
-      # one supplier can accumulate far more recorded changes than a page can show.
-      def load_price_history
-        histories = @supplier.supplier_price_histories
-
-        # Options come from what this supplier actually has history for, so the
-        # filter never offers an ingredient that would return nothing.
-        @price_history_ingredients = Ingredient
-          .where(id: histories.select(:ingredient_id))
-          .order(:name)
-
-        @price_history_ingredient_id = params[:ph_ingredient_id].presence
-        scope = histories
-          .includes(:ingredient, :recorded_by_user, vendor_invoice_line: :vendor_invoice)
-          .most_recent_first
-        scope = scope.where(ingredient_id: @price_history_ingredient_id) if @price_history_ingredient_id
-
-        @price_history_pagy, @price_histories = pagy(:offset, scope, limit: 25)
+      # Standalone, printable statement of account. The statement tab renders
+      # the same partial; this page exists to print or send to the supplier.
+      def statement
+        authorize_inventory!(:show)
+        load_statement
       end
 
       def new
@@ -202,6 +190,111 @@ module Admin
       end
 
       private
+
+      def load_shell_stats
+        @ingredient_count = active_supplier_ingredients.count
+        @invoice_count = @supplier.vendor_invoices.posted.where.not(payment_status: "void").count
+      end
+
+      def active_supplier_ingredients
+        @supplier.supplier_ingredients.joins(:ingredient).merge(Ingredient.where(active: true))
+      end
+
+      def load_overview_tab
+        load_pay_supplier
+        @recent_invoices = @supplier.vendor_invoices.posted.order(invoice_date: :desc, created_at: :desc)
+          .limit(OVERVIEW_LIST_SIZE)
+
+        links = active_supplier_ingredients.includes(ingredient: :unit_ref).to_a
+        balances = ingredient_balances_for(links)
+        urgent = links.select { |link| %i[out low].include?(balances[link.ingredient_id][:status]) }
+        @reorder_count = urgent.size
+        @reorder_links = urgent
+          .sort_by { |link| [STOCK_RANK.fetch(balances[link.ingredient_id][:status], 3), link.ingredient.name.to_s.downcase] }
+          .first(OVERVIEW_LIST_SIZE)
+        @ingredient_balances = balances
+      end
+
+      def load_ingredients_tab
+        load_stock_location_filter
+        @sort = SHOW_INGREDIENT_SORT_COLUMNS.include?(params[:sort]) ? params[:sort] : nil
+        @direction = params[:dir] == "desc" ? "desc" : "asc"
+
+        links = active_supplier_ingredients.includes(ingredient: :unit_ref).to_a
+        @ingredient_balances = ingredient_balances_for(links)
+        @supplier_ingredients = sort_supplier_ingredients(links)
+        @reorder_count = @supplier_ingredients.count do |link|
+          %i[out low].include?(@ingredient_balances[link.ingredient_id][:status])
+        end
+      end
+
+      # Drafts have bought nothing yet, so they belong on the invoices index
+      # (where you resume them), not here.
+      def load_invoices_tab
+        load_pay_supplier
+        @invoice_sort = INVOICE_SORTS.key?(params[:sort]) ? params[:sort] : "date"
+        @invoice_direction = params[:dir] == "asc" ? "asc" : "desc"
+        @invoice_status = INVOICE_STATUS_FILTERS.include?(params[:status]) ? params[:status] : nil
+
+        posted = @supplier.vendor_invoices.posted
+        @invoice_status_counts = {
+          nil => posted.count,
+          "open" => posted.outstanding.count,
+          "paid" => posted.where(payment_status: "paid").count,
+          "void" => posted.where(payment_status: "void").count
+        }
+
+        scope = case @invoice_status
+                when "open" then posted.outstanding
+                when "paid", "void" then posted.where(payment_status: @invoice_status)
+                else posted
+                end
+        order = Arel.sql("#{INVOICE_SORTS.fetch(@invoice_sort)} #{@invoice_direction.upcase}, vendor_invoices.created_at DESC")
+        @invoice_pagy, @invoices = pagy(:offset, scope.order(order), limit: 25)
+      end
+
+      def load_statement_tab
+        load_statement
+      end
+
+      # Price trend for this supplier: paginated and filterable by ingredient, since
+      # one supplier can accumulate far more recorded changes than a page can show.
+      def load_price_history_tab
+        histories = @supplier.supplier_price_histories
+
+        # Options come from what this supplier actually has history for, so the
+        # filter never offers an ingredient that would return nothing.
+        @price_history_ingredients = Ingredient
+          .where(id: histories.select(:ingredient_id))
+          .order(:name)
+
+        @price_history_ingredient_id = params[:ph_ingredient_id].presence
+        scope = histories
+          .includes(:ingredient, :recorded_by_user, vendor_invoice_line: :vendor_invoice)
+          .most_recent_first
+        scope = scope.where(ingredient_id: @price_history_ingredient_id) if @price_history_ingredient_id
+
+        @price_history_pagy, @price_histories = pagy(:offset, scope, limit: 25)
+      end
+
+      # What a payment voucher can land on, in the order it will be applied.
+      def load_pay_supplier
+        @payable_invoices = ::Accounting::PaySupplierService.open_invoices_for(@supplier)
+        @payable_total_cents = @payable_invoices.sum(&:balance_due_cents)
+      end
+
+      # URL params only, not the session-shared report range: a statement is
+      # per supplier and gets printed or sent, so its range belongs in the link.
+      def load_statement
+        @statement_start_date = safe_date_param(:start_date) || Date.current.beginning_of_year
+        @statement_end_date = safe_date_param(:end_date) || Date.current
+        if @statement_start_date > @statement_end_date
+          @statement_start_date, @statement_end_date = @statement_end_date, @statement_start_date
+        end
+        @statement = ::Accounting::SupplierStatementService.new(
+          @supplier, start_date: @statement_start_date, end_date: @statement_end_date
+        ).call
+      end
 
       def send_purchase_request_csv
         csv = CSV.generate do |out|

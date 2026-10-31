@@ -150,8 +150,8 @@ RSpec.describe "Supplier count sheet", type: :request do
       .not_to change(StockTake, :count)
   end
 
-  it "is reachable from the vendor page" do
-    get admin_inventory_supplier_path(supplier)
+  it "is reachable from the vendor page's ingredients tab" do
+    get_supplier_tab(supplier, "ingredients")
 
     expect(response.body).to include(count_sheet_admin_inventory_supplier_path(supplier))
     expect(response.body).to include(I18n.t("inventory.suppliers.count_sheet.action"))
