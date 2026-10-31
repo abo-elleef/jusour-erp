@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_10_30_110000) do
+ActiveRecord::Schema[7.1].define(version: 2026_10_31_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1392,6 +1392,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_30_110000) do
     t.decimal "balance_after", precision: 10, scale: 3
     t.integer "unit_cost_cents"
     t.boolean "unit_cost_estimated", default: false, null: false
+    t.uuid "vendor_credit_note_id"
     t.index ["adjustment_type"], name: "index_stock_adjustments_on_adjustment_type"
     t.index ["created_at"], name: "index_stock_adjustments_on_created_at"
     t.index ["ingredient_id"], name: "index_stock_adjustments_on_ingredient_id"
@@ -1400,6 +1401,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_30_110000) do
     t.index ["stock_transfer_id"], name: "index_stock_adjustments_on_stock_transfer_id"
     t.index ["unit_id"], name: "index_stock_adjustments_on_unit_id"
     t.index ["user_id"], name: "index_stock_adjustments_on_user_id"
+    t.index ["vendor_credit_note_id"], name: "index_stock_adjustments_on_vendor_credit_note_id"
   end
 
   create_table "stock_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1890,6 +1892,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_30_110000) do
     t.string "kind", default: "goods_return", null: false
     t.uuid "location_id"
     t.uuid "vendor_invoice_id"
+    t.datetime "voided_at"
+    t.uuid "voided_by_id"
     t.index ["company_id", "credit_note_number"], name: "index_vendor_credit_notes_on_company_and_number", unique: true
     t.index ["company_id", "kind"], name: "index_vendor_credit_notes_on_company_id_and_kind"
     t.index ["company_id"], name: "index_vendor_credit_notes_on_company_id"
@@ -1899,6 +1903,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_30_110000) do
     t.index ["supplier_id"], name: "index_vendor_credit_notes_on_supplier_id"
     t.index ["user_id"], name: "index_vendor_credit_notes_on_user_id"
     t.index ["vendor_invoice_id"], name: "index_vendor_credit_notes_on_vendor_invoice_id"
+    t.index ["voided_by_id"], name: "index_vendor_credit_notes_on_voided_by_id"
   end
 
   create_table "vendor_invoice_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2180,6 +2185,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_30_110000) do
   add_foreign_key "stock_adjustments", "stock_transfers"
   add_foreign_key "stock_adjustments", "units"
   add_foreign_key "stock_adjustments", "users"
+  add_foreign_key "stock_adjustments", "vendor_credit_notes"
   add_foreign_key "stock_batches", "ingredients"
   add_foreign_key "stock_batches", "locations"
   add_foreign_key "stock_batches", "suppliers"
@@ -2254,6 +2260,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_10_30_110000) do
   add_foreign_key "vendor_credit_notes", "locations"
   add_foreign_key "vendor_credit_notes", "suppliers"
   add_foreign_key "vendor_credit_notes", "users"
+  add_foreign_key "vendor_credit_notes", "users", column: "voided_by_id"
   add_foreign_key "vendor_credit_notes", "vendor_invoices"
   add_foreign_key "vendor_invoice_lines", "ingredients"
   add_foreign_key "vendor_invoice_lines", "units"

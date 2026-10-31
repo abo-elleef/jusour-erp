@@ -1722,6 +1722,8 @@ en:
       no_invoice: "No specific invoice"
       errors:
         exceeds_invoice_balance: "The credit is larger than the balance left on invoice %{invoice_number}."
+        not_confirmed: "Only a confirmed credit note can be voided this way."
+        stock_unlinked: "This credit note's returned stock can't be traced to its stock movements, so voiding it would guess at the quantity and cost. Correct it with a stock adjustment instead."
       kind: "Type"
       kind_hint: "A goods return sends the items back and removes them from stock. A price adjustment only reduces what you owe."
       kinds:
@@ -1733,14 +1735,17 @@ en:
       stock_effect_return: "Confirming this note removes these quantities from stock."
       stock_effect_adjustment: "A price adjustment: stock is not affected, only the supplier balance."
       stock_adjustment_note: "Returned on credit note %{credit_note_number} — %{supplier}"
+      void_stock_adjustment_note: "Credit note %{credit_note_number} voided — %{supplier}"
+      voided_by: "Voided by"
       select_supplier: "Select supplier…"
       created: "Credit note created."
       confirmed: "Credit note confirmed and AP balance updated."
       voided: "Credit note voided."
-      cannot_void: "Only draft credit notes can be voided."
+      cannot_void: "This credit note is already void."
       confirm_button: "Confirm & Post"
       confirm_prompt: "Confirm this credit note? The supplier AP balance will be reduced."
       void_prompt: "Void this credit note?"
+      void_confirmed_prompt: "Void this confirmed credit note? Its credit comes off the invoice, the supplier AP balance goes back up, and any returned stock is added back."
       statuses:
         draft: "Draft"
         confirmed: "Confirmed"
@@ -3291,7 +3296,7 @@ en:
         saved: "Draft saved."
         confirmed: "Credit note confirmed."
         voided: "Credit note voided."
-        cannot_void: "Only draft credit notes can be voided."
+        cannot_void: "This credit note is already void."
   notifications:
     types:
       inventory: "Inventory"

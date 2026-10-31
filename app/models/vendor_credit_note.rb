@@ -20,10 +20,15 @@ class VendorCreditNote < ApplicationRecord
   # rebate that belongs to no single invoice, and that one only moves the supplier
   # balance. When it is set, confirming the note settles that invoice.
   belongs_to :vendor_invoice, optional: true
+  belongs_to :voided_by, class_name: "User", optional: true
   has_many :vendor_credit_note_lines,
     -> { order(:position, :created_at) },
     dependent: :destroy,
     inverse_of: :vendor_credit_note
+  # The stock a goods return sent back, so voiding the note can put it back.
+  has_many :stock_adjustments, dependent: :restrict_with_exception
+
+  audited associated_with: :company
 
   accepts_nested_attributes_for :vendor_credit_note_lines,
     allow_destroy: true,

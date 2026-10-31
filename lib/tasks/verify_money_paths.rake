@@ -197,6 +197,18 @@ class MoneyPathChecker
 
     voucher.void!(user: owner, reason: :voided_by_user)
     check "vendor invoice — party voucher voided"
+
+    credit_note = VendorCreditNote.create!(
+      supplier: supplier, user: owner, company: @company, location: location,
+      vendor_invoice: invoice.reload, credit_note_date: Date.current, kind: "goods_return",
+      vendor_credit_note_lines_attributes: [{ ingredient_id: ingredient.id, quantity: 1,
+                                              line_total_cents: 1_000, position: 0 }]
+    )
+    Inventory::ConfirmVendorCreditNoteService.call!(credit_note: credit_note, user: owner)
+    check "vendor credit note — confirmed against invoice"
+
+    Inventory::VoidVendorCreditNoteService.call!(credit_note: credit_note.reload, user: owner)
+    check "vendor credit note — voided"
   end
 
   def customer_flow!

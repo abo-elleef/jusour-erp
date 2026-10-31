@@ -53,6 +53,7 @@ module Inventory
         next if qty <= 0
 
         adjustment = StockAdjustment.new(
+          vendor_credit_note: @credit_note,
           ingredient: line.ingredient,
           user: @user,
           location: @credit_note.location,

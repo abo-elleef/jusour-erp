@@ -123,4 +123,96 @@ RSpec.describe "Vendor credit note applied to an invoice", type: :request do
     expect(note).not_to be_valid
     expect(note.errors[:vendor_invoice]).to be_present
   end
+
+  describe "voiding a confirmed credit note" do
+    let(:ap_treasury) { supplier.reload.ap_treasury }
+
+    def location_on_hand
+      IngredientLocation.find_by(ingredient: ingredient, location: location).quantity_on_hand
+    end
+
+    it "puts the invoice balance, AP balance, journal and stock back as they were" do
+      invoice
+      credit_note = credit_note_for(invoice, quantity: 2, line_total: "20.00")
+      post confirm_admin_inventory_vendor_credit_note_path(credit_note)
+      expect(invoice.reload.balance_due_cents).to eq(8_000)
+      expect(ap_treasury.balance_cents).to eq(8_000)
+      expect(location_on_hand).to eq(8)
+      return_cost = credit_note.stock_adjustments.removals.sole.unit_cost_cents
+
+      patch void_admin_inventory_vendor_credit_note_path(credit_note)
+
+      credit_note.reload
+      expect(credit_note).to be_void
+      expect(credit_note.voided_by).to eq(owner)
+      invoice.reload
+      expect(invoice.credit_applied_cents).to eq(0)
+      expect(invoice.balance_due_cents).to eq(10_000)
+      expect(invoice).to be_unpaid
+      expect(invoice).to be_editable
+      expect(ap_treasury.reload.balance_cents).to eq(10_000)
+      expect(TreasuryTransaction.where(source_record: credit_note)).to be_empty
+      expect(JournalEntry.where(source_record_type: "VendorCreditNote", source_record_id: credit_note.id)).to be_empty
+      expect(location_on_hand).to eq(10)
+      expect(credit_note.stock_adjustments.additions.sole.unit_cost_cents).to eq(return_cost)
+      expect(ingredient.stock_batches.where(location: location).sum(:quantity_remaining)).to eq(10)
+    end
+
+    it "keeps the invoice locked while another confirmed note is still applied" do
+      first = credit_note_for(invoice, quantity: 1, line_total: "10.00")
+      post confirm_admin_inventory_vendor_credit_note_path(first)
+      second = credit_note_for(invoice, quantity: 1, line_total: "10.00")
+      post confirm_admin_inventory_vendor_credit_note_path(second)
+
+      patch void_admin_inventory_vendor_credit_note_path(first)
+
+      invoice.reload
+      expect(invoice.credit_applied_cents).to eq(1_000)
+      expect(invoice).not_to be_editable
+      expect(ap_treasury.reload.balance_cents).to eq(9_000)
+    end
+
+    it "voids a price adjustment without touching stock" do
+      invoice
+      note = VendorCreditNote.create!(
+        supplier: supplier, user: owner, company: company, credit_note_date: Date.current,
+        kind: "price_adjustment", vendor_invoice: invoice,
+        vendor_credit_note_lines_attributes: {
+          "0" => { ingredient_id: ingredient.id, quantity: 1, line_total_pounds: "15.00", position: "0" }
+        }
+      )
+      post confirm_admin_inventory_vendor_credit_note_path(note)
+
+      expect { patch void_admin_inventory_vendor_credit_note_path(note) }
+        .not_to change(StockAdjustment, :count)
+
+      expect(note.reload).to be_void
+      expect(invoice.reload.balance_due_cents).to eq(10_000)
+      expect(ap_treasury.reload.balance_cents).to eq(10_000)
+    end
+
+    it "refuses a goods return whose stock movements are not linked, changing nothing" do
+      credit_note = credit_note_for(invoice, quantity: 1, line_total: "10.00")
+      post confirm_admin_inventory_vendor_credit_note_path(credit_note)
+      credit_note.stock_adjustments.update_all(vendor_credit_note_id: nil)
+
+      patch void_admin_inventory_vendor_credit_note_path(credit_note)
+
+      expect(flash[:alert]).to eq(I18n.t("inventory.vendor_credit_notes.errors.stock_unlinked"))
+      expect(credit_note.reload).to be_confirmed
+      expect(invoice.reload.credit_applied_cents).to eq(1_000)
+      expect(ap_treasury.reload.balance_cents).to eq(9_000)
+    end
+
+    it "is owner-only" do
+      credit_note = credit_note_for(invoice, quantity: 1, line_total: "10.00")
+      post confirm_admin_inventory_vendor_credit_note_path(credit_note)
+      sign_in create(:user, :manager, company: company)
+
+      patch void_admin_inventory_vendor_credit_note_path(credit_note)
+
+      expect(credit_note.reload).to be_confirmed
+      expect(ap_treasury.reload.balance_cents).to eq(9_000)
+    end
+  end
 end

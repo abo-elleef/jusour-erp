@@ -8,6 +8,7 @@ class StockAdjustment < ApplicationRecord
   belongs_to :location, optional: true
   belongs_to :stock_batch, optional: true
   belongs_to :stock_transfer, optional: true
+  belongs_to :vendor_credit_note, optional: true
   references_unit :unit, column: :unit_id
 
   ADJUSTMENT_TYPES = %w[

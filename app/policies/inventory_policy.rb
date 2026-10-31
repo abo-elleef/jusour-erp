@@ -55,6 +55,12 @@ class InventoryPolicy < ApplicationPolicy
     user&.owner?
   end
 
+  # Owner-only for the same reason: voiding a confirmed credit note reopens the
+  # invoice it settled and moves the supplier's AP balance and stock back.
+  def void_confirmed_vendor_credit_note?
+    user&.owner?
+  end
+
   def reverse_vendor_invoice_payment?
     user&.can?("inventory:finance")
   end

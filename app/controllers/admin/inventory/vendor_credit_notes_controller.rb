@@ -54,15 +54,27 @@ module Admin
           alert: e.message
       end
 
+      # A draft posted nothing, so it just changes status. A confirmed note has
+      # to unwind its invoice credit, AP balance, journal entry and stock, and is
+      # owner-only.
       def void
+        if @vendor_credit_note.confirmed?
+          authorize_inventory!(:void_confirmed_vendor_credit_note)
+          ::Inventory::VoidVendorCreditNoteService.call!(credit_note: @vendor_credit_note, user: current_user)
+          return redirect_to admin_inventory_vendor_credit_note_path(@vendor_credit_note),
+            notice: t("inventory.vendor_credit_notes.voided")
+        end
+
         authorize_inventory!(:update)
         unless @vendor_credit_note.draft?
           return redirect_to admin_inventory_vendor_credit_note_path(@vendor_credit_note),
             alert: t("inventory.vendor_credit_notes.cannot_void")
         end
-        @vendor_credit_note.update!(status: "void")
+        @vendor_credit_note.update!(status: "void", voided_at: Time.current, voided_by: current_user)
         redirect_to admin_inventory_vendor_credit_notes_path,
           notice: t("inventory.vendor_credit_notes.voided")
+      rescue ::Inventory::VoidVendorCreditNoteService::Error => e
+        redirect_to admin_inventory_vendor_credit_note_path(@vendor_credit_note), alert: e.message
       end
 
       private

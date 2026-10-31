@@ -23,6 +23,12 @@
               class: "text-sm font-semibold text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors",
               data: { turbo_confirm: t("inventory.vendor_credit_notes.void_prompt") } %>
       <% end %>
+      <% if @vendor_credit_note.confirmed? && InventoryPolicy.new(current_user, @vendor_credit_note).void_confirmed_vendor_credit_note? %>
+        <%= button_to t("actions.void"), void_admin_inventory_vendor_credit_note_path(@vendor_credit_note),
+              method: :patch,
+              class: "text-sm font-semibold text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors",
+              data: { turbo_confirm: t("inventory.vendor_credit_notes.void_confirmed_prompt") } %>
+      <% end %>
     </div>
   </div>
 
@@ -41,7 +47,11 @@
          @vendor_credit_note.vendor_invoice ? link_to(@vendor_credit_note.vendor_invoice.invoice_number, admin_inventory_vendor_invoice_path(@vendor_credit_note.vendor_invoice), class: "text-amber-700 hover:underline") : t("inventory.vendor_credit_notes.no_invoice")],
         [t("inventory.vendor_credit_notes.location"),
          @vendor_credit_note.location ? link_to(@vendor_credit_note.location.name, admin_location_path(@vendor_credit_note.location), class: "text-amber-700 hover:underline") : "—"],
-      ].each do |label, value| %>
+        (if @vendor_credit_note.voided_at
+           [t("inventory.vendor_credit_notes.voided_by"),
+            "#{@vendor_credit_note.voided_by&.name || "—"} · #{l(@vendor_credit_note.voided_at, format: :short)}"]
+         end),
+      ].compact.each do |label, value| %>
         <div class="bg-white px-5 py-4">
           <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1"><%= label %></dt>
           <dd class="text-sm text-gray-900"><%= value %></dd>
