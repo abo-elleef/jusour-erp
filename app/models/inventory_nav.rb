@@ -61,7 +61,22 @@ module InventoryNav
           description: "inventory.reports.vendor_basket.description" },
         { controller: "reports", action: "vendor_purchases_summary", label: "inventory.tools.vendor_purchases_summary",
           path: :admin_inventory_reports_vendor_purchases_summary_path, permission: "inventory:view",
-          description: "inventory.reports.vendor_purchases_summary.description" }
+          description: "inventory.reports.vendor_purchases_summary.description" },
+        { controller: "reports", action: "item_card", label: "inventory.tools.item_card",
+          path: :admin_inventory_reports_item_card_path, permission: "inventory:view",
+          description: "inventory.reports.item_card.description" },
+        { controller: "reports", action: "adjustments", label: "inventory.tools.adjustments",
+          path: :admin_inventory_reports_adjustments_path, permission: "inventory:view",
+          description: "inventory.reports.adjustments.description" },
+        { controller: "reports", action: "stock_levels", label: "inventory.tools.stock_levels",
+          path: :admin_inventory_reports_stock_levels_path, permission: "inventory:view",
+          description: "inventory.reports.stock_levels.description" },
+        { controller: "reports", action: "stagnant_items", label: "inventory.tools.stagnant_items",
+          path: :admin_inventory_reports_stagnant_items_path, permission: "inventory:view",
+          description: "inventory.reports.stagnant_items.description" },
+        { controller: "reports", action: "turnover", label: "inventory.tools.turnover",
+          path: :admin_inventory_reports_turnover_path, permission: "inventory:view",
+          description: "inventory.reports.turnover.description" }
       ]
     }
   ].freeze

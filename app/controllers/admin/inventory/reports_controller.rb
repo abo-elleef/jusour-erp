@@ -3,6 +3,8 @@
 module Admin
   module Inventory
     class ReportsController < BaseController
+      include ValuedReports
+
       # Buckets used by the vendor grouping for ingredients that don't resolve to a
       # single supplier. Symbols so they can't collide with a Supplier record.
       VENDOR_GROUP_NONE = :no_vendor

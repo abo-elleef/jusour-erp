@@ -1,0 +1,195 @@
+<% cell = "p-3" %>
+<% period = t("accounting.shared.date_range_value", start: l(@start_date, format: :long), end: l(@end_date, format: :long)) %>
+<div class="max-w-7xl print:max-w-none" <%= tag.attributes(data: { controller: "auto-print" }) if print_mode? %>>
+  <%= render "admin/inventory/reports/valued/header",
+        description: t("inventory.reports.item_card.description"), period: period %>
+
+  <%= render layout: "admin/inventory/reports/valued/filters",
+        locals: { dates: true, form_data: { searchable_select_options: ingredient_search_options(@ingredients) } } do %>
+    <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+    <div class="min-w-[16rem]"
+         data-controller="searchable-select"
+         data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
+      <%= label_tag :ingredient_id, t("inventory.reports.item_card.item"), class: label_class %>
+      <%= hidden_field_tag :ingredient_id, @ingredient&.id, data: { searchable_select_target: "hidden" } %>
+      <input type="text" autocomplete="off" spellcheck="false" role="combobox"
+             aria-expanded="false" aria-autocomplete="list"
+             placeholder="<%= t("inventory.reports.item_card.all_items") %>"
+             class="<%= pos_input_class %>"
+             data-searchable-select-target="input"
+             data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+      <ul data-searchable-select-target="menu" role="listbox"
+          class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
+    </div>
+  <% end %>
+
+  <% if @ingredient %>
+    <% totals = @totals %>
+    <% unit = ingredient_unit_label(@ingredient.unit) %>
+    <div class="mb-4">
+      <h2 class="text-lg font-bold text-gray-900">
+        <%= link_to @ingredient.name, admin_inventory_ingredient_path(@ingredient), class: "hover:text-amber-700 hover:underline" %>
+        <span class="text-sm font-normal text-gray-500"><%= @ingredient.code %> · <%= unit %></span>
+      </h2>
+      <p class="hidden print:block text-xs text-gray-500"><%= period %></p>
+    </div>
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 print:gap-2 print:mb-3">
+      <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.item_card.opening"),
+            value: "#{report_qty(totals.opening_qty)} #{unit}", hint: format_amount(totals.opening_value) %>
+      <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.item_card.in"), tone: :good,
+            value: "#{report_qty(totals.qty_in)} #{unit}", hint: format_amount(totals.value_in) %>
+      <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.item_card.out"), tone: :bad,
+            value: "#{report_qty(totals.qty_out)} #{unit}", hint: format_amount(totals.value_out) %>
+      <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.item_card.closing"),
+            value: "#{report_qty(totals.closing_qty)} #{unit}", hint: format_amount(totals.closing_value) %>
+    </div>
+
+    <section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden print:rounded-none">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 print-hide">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.item_card.ledger_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.item_card.ledger_hint") %></p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[960px] print:min-w-0 print:text-xs">
+          <thead class="border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="<%= cell %> ps-5 text-start"><%= t("inventory.reports.item_card.date") %></th>
+              <th class="<%= cell %> text-start"><%= t("inventory.reports.item_card.type") %></th>
+              <th class="<%= cell %> text-start"><%= t("inventory.reports.item_card.reference") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.item_card.in") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.item_card.out") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.item_card.balance") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.item_card.unit_cost") %></th>
+              <th class="<%= cell %> text-end"><%= t("inventory.reports.item_card.in_value") %></th>
+              <th class="<%= cell %> pe-5 text-end"><%= t("inventory.reports.item_card.out_value") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% if @pagy.nil? || @pagy.page == 1 %>
+              <tr class="bg-gray-50/60 font-semibold">
+                <td class="<%= cell %> ps-5 text-gray-500 tabular-nums"><%= l(@start_date) %></td>
+                <td class="<%= cell %>" colspan="4"><%= t("inventory.reports.item_card.opening") %></td>
+                <td class="<%= cell %> text-end tabular-nums"><%= report_qty(totals.opening_qty) %></td>
+                <td class="<%= cell %>"></td>
+                <td class="<%= cell %> pe-5 text-end tabular-nums" colspan="2"><%= format_amount(totals.opening_value) %></td>
+              </tr>
+            <% end %>
+            <% @movements.each do |adj| %>
+              <% value = (adj.quantity_delta.abs * adj.unit_cost_cents.to_i).round %>
+              <tr class="hover:bg-gray-50">
+                <td class="<%= cell %> ps-5 text-gray-600 tabular-nums whitespace-nowrap">
+                  <%= l(adj.created_at, format: :short) %>
+                  <% unless @location %><span class="block text-xs text-gray-400"><%= adj.location&.name %></span><% end %>
+                </td>
+                <td class="<%= cell %> whitespace-nowrap"><%= inventory_adjustment_type_label(adj.adjustment_type) %></td>
+                <td class="<%= cell %> text-gray-600 text-xs max-w-[18rem]">
+                  <%= adj.reason_notes %>
+                  <span class="block text-gray-400"><%= adj.user&.name %></span>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums text-green-700"><%= report_qty(adj.quantity_delta) if adj.quantity_delta.positive? %></td>
+                <td class="<%= cell %> text-end tabular-nums text-red-700"><%= report_qty(-adj.quantity_delta) if adj.quantity_delta.negative? %></td>
+                <td class="<%= cell %> text-end tabular-nums font-semibold <%= 'text-red-700' if adj.running_qty.to_d.negative? %>"><%= report_qty(adj.running_qty) %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600">
+                  <%= format_amount(adj.unit_cost_cents) %><%= estimated_cost_mark(adj.unit_cost_estimated ? 1 : 0) %>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums"><%= format_amount(value) if adj.quantity_delta.positive? %></td>
+                <td class="<%= cell %> pe-5 text-end tabular-nums"><%= format_amount(value) if adj.quantity_delta.negative? %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t-2 border-gray-200 font-bold text-gray-900">
+            <tr>
+              <td class="<%= cell %> ps-5" colspan="3"><%= t("inventory.reports.item_card.period_totals", count: totals.count) %></td>
+              <td class="<%= cell %> text-end tabular-nums text-green-700"><%= report_qty(totals.qty_in) %></td>
+              <td class="<%= cell %> text-end tabular-nums text-red-700"><%= report_qty(totals.qty_out) %></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= report_qty(totals.closing_qty) %></td>
+              <td class="<%= cell %>"></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= format_amount(totals.value_in) %></td>
+              <td class="<%= cell %> pe-5 text-end tabular-nums"><%= format_amount(totals.value_out) %></td>
+            </tr>
+            <tr class="font-semibold text-gray-700">
+              <td class="<%= cell %> ps-5" colspan="5"><%= t("inventory.reports.item_card.closing") %></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= report_qty(totals.closing_qty) %></td>
+              <td class="<%= cell %>"></td>
+              <td class="<%= cell %> pe-5 text-end tabular-nums" colspan="2"><%= format_amount(totals.closing_value) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <% if @pagy %><div class="print-hide"><%= render "admin/accounting/pagination", pagy: @pagy %></div><% end %>
+    </section>
+    <%= render "admin/inventory/reports/valued/footnote", estimated: totals.estimated %>
+  <% else %>
+    <% rows = @summaries %>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 print:gap-2 print:mb-3">
+      <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.item_card.opening_value"), value: format_amount(rows.sum(&:opening_value)) %>
+      <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.item_card.in_value"), tone: :good, value: format_amount(rows.sum(&:value_in)) %>
+      <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.item_card.out_value"), tone: :bad, value: format_amount(rows.sum(&:value_out)) %>
+      <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.item_card.closing_value"), value: format_amount(rows.sum(&:closing_value)) %>
+    </div>
+
+    <section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden print:rounded-none">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 print-hide">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.item_card.summary_heading") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.item_card.summary_hint") %></p>
+      </div>
+      <% if rows.empty? %>
+        <p class="px-5 py-10 text-center text-sm text-gray-500"><%= t("inventory.reports.shared.empty") %></p>
+      <% else %>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm min-w-[960px] print:min-w-0 print:text-xs" data-controller="sortable-table"
+                 data-sortable-table-storage-key-value="item-card-summary">
+            <thead class="border-b border-gray-100 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <tr>
+                <%= sortable_report_th t("inventory.reports.item_card.item"), "item", align: :start %>
+                <%= sortable_report_th t("inventory.reports.item_card.opening"), "opening", type: :number %>
+                <%= sortable_report_th t("inventory.reports.item_card.in"), "in", type: :number %>
+                <%= sortable_report_th t("inventory.reports.item_card.out"), "out", type: :number %>
+                <%= sortable_report_th t("inventory.reports.item_card.closing"), "closing", type: :number %>
+                <%= sortable_report_th t("inventory.reports.item_card.closing_value"), "closing_value", type: :number, pe: true %>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100" data-sortable-table-target="body">
+              <% rows.each do |row| %>
+                <% unit = ingredient_unit_label(row.ingredient.unit) %>
+                <tr class="hover:bg-gray-50">
+                  <td class="<%= cell %> ps-5" data-sort-key="item">
+                    <%= link_to row.ingredient.name,
+                          admin_inventory_reports_item_card_path(request.query_parameters.except("print").merge(ingredient_id: row.ingredient.id)),
+                          class: "font-medium text-amber-700 hover:text-amber-900 hover:underline" %>
+                    <span class="block text-xs text-gray-400"><%= row.ingredient.ingredient_category&.name %> · <%= unit %></span>
+                  </td>
+                  <td class="<%= cell %> text-end tabular-nums" data-sort-key="opening" data-sort-value="<%= row.opening_value %>">
+                    <%= report_qty(row.opening_qty) %><span class="block text-xs text-gray-400"><%= format_amount(row.opening_value) %></span>
+                  </td>
+                  <td class="<%= cell %> text-end tabular-nums text-green-700" data-sort-key="in" data-sort-value="<%= row.value_in %>">
+                    <%= report_qty(row.qty_in) %><span class="block text-xs text-gray-400"><%= format_amount(row.value_in) %></span>
+                  </td>
+                  <td class="<%= cell %> text-end tabular-nums text-red-700" data-sort-key="out" data-sort-value="<%= row.value_out %>">
+                    <%= report_qty(row.qty_out) %><span class="block text-xs text-gray-400"><%= format_amount(row.value_out) %><%= estimated_cost_mark(row.estimated) %></span>
+                  </td>
+                  <td class="<%= cell %> text-end tabular-nums font-semibold <%= 'text-red-700' if row.closing_qty.negative? %>" data-sort-key="closing" data-sort-value="<%= row.closing_qty %>">
+                    <%= report_qty(row.closing_qty) %> <span class="text-xs font-normal text-gray-400"><%= unit %></span>
+                  </td>
+                  <td class="<%= cell %> pe-5 text-end tabular-nums font-semibold" data-sort-key="closing_value" data-sort-value="<%= row.closing_value %>"><%= format_amount(row.closing_value) %></td>
+                </tr>
+              <% end %>
+            </tbody>
+            <tfoot class="border-t-2 border-gray-200 font-bold text-gray-900">
+              <tr>
+                <td class="<%= cell %> ps-5"><%= t("inventory.reports.shared.total") %></td>
+                <td class="<%= cell %> text-end tabular-nums"><%= format_amount(rows.sum(&:opening_value)) %></td>
+                <td class="<%= cell %> text-end tabular-nums"><%= format_amount(rows.sum(&:value_in)) %></td>
+                <td class="<%= cell %> text-end tabular-nums"><%= format_amount(rows.sum(&:value_out)) %></td>
+                <td class="<%= cell %>"></td>
+                <td class="<%= cell %> pe-5 text-end tabular-nums"><%= format_amount(rows.sum(&:closing_value)) %></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      <% end %>
+    </section>
+    <%= render "admin/inventory/reports/valued/footnote", estimated: rows.sum(&:estimated) %>
+  <% end %>
+</div>

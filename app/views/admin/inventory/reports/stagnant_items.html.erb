@@ -1,0 +1,80 @@
+<% cell = "p-3" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<div class="max-w-7xl print:max-w-none" <%= tag.attributes(data: { controller: "auto-print" }) if print_mode? %>>
+  <%= render "admin/inventory/reports/valued/header",
+        description: t("inventory.reports.stagnant_items.description"),
+        period: t("inventory.reports.stagnant_items.days_value", days: @days) %>
+
+  <%= render layout: "admin/inventory/reports/valued/filters", locals: { dates: false } do %>
+    <div class="w-[9rem]">
+      <%= label_tag :days, t("inventory.reports.stagnant_items.days"), class: label_class %>
+      <%= number_field_tag :days, @days, min: 1, max: 365, class: pos_input_class %>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-2 gap-4 mb-6 print:gap-2 print:mb-3">
+    <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.stagnant_items.items"), tone: :warn, value: @rows.size %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.stagnant_items.value"), tone: :warn,
+          value: format_amount(@rows.sum(&:value_cents)) %>
+  </div>
+
+  <section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden print:rounded-none">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 print-hide">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.stagnant_items.table_heading", days: @days) %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.stagnant_items.table_hint") %></p>
+    </div>
+    <% if @rows.empty? %>
+      <p class="px-5 py-10 text-center text-sm text-gray-500"><%= t("inventory.reports.stagnant_items.empty", days: @days) %></p>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[820px] print:min-w-0 print:text-xs" data-controller="sortable-table"
+               data-sortable-table-storage-key-value="stagnant-items">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <%= sortable_report_th t("inventory.reports.shared.item"), "item", align: :start %>
+              <%= sortable_report_th t("inventory.reports.shared.category"), "category", align: :start %>
+              <%= sortable_report_th t("inventory.reports.stock_levels.on_hand"), "on_hand", type: :number %>
+              <%= sortable_report_th t("inventory.reports.stagnant_items.last_used"), "last_used", type: :number %>
+              <%= sortable_report_th t("inventory.reports.stagnant_items.last_moved"), "last_moved", type: :number %>
+              <%= sortable_report_th t("inventory.reports.shared.value"), "value", type: :number, pe: true %>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100" data-sortable-table-target="body">
+            <% @rows.each do |row| %>
+              <tr class="hover:bg-gray-50">
+                <td class="<%= cell %> ps-5" data-sort-key="item">
+                  <%= link_to row.ingredient.name,
+                        admin_inventory_reports_item_card_path({ ingredient_id: row.ingredient.id, location_id: @location&.id }.compact),
+                        class: "font-medium text-amber-700 hover:text-amber-900 hover:underline" %>
+                </td>
+                <td class="<%= cell %> text-gray-600" data-sort-key="category"><%= row.ingredient.ingredient_category&.name %></td>
+                <td class="<%= cell %> text-end tabular-nums" data-sort-key="on_hand" data-sort-value="<%= row.on_hand %>">
+                  <%= report_qty(row.on_hand) %> <span class="text-xs text-gray-400"><%= ingredient_unit_label(row.ingredient.unit) %></span>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums" data-sort-key="last_used" data-sort-value="<%= row.days_since_used || 99999 %>">
+                  <% if row.last_used_at %>
+                    <%= l(row.last_used_at.to_date) %>
+                    <span class="block text-xs text-gray-400"><%= t("inventory.reports.stagnant_items.days_ago", count: row.days_since_used) %></span>
+                  <% else %>
+                    <span class="text-xs font-semibold text-red-700"><%= t("inventory.reports.stagnant_items.never_used") %></span>
+                  <% end %>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600" data-sort-key="last_moved" data-sort-value="<%= row.last_moved_at.to_i %>">
+                  <%= row.last_moved_at ? l(row.last_moved_at.to_date) : "—" %>
+                </td>
+                <td class="<%= cell %> pe-5 text-end tabular-nums font-semibold" data-sort-key="value" data-sort-value="<%= row.value_cents %>"><%= format_amount(row.value_cents) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t-2 border-gray-200 font-bold text-gray-900">
+            <tr>
+              <td class="<%= cell %> ps-5" colspan="5"><%= t("inventory.reports.shared.total") %></td>
+              <td class="<%= cell %> pe-5 text-end tabular-nums"><%= format_amount(@rows.sum(&:value_cents)) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    <% end %>
+  </section>
+  <p class="mt-4 text-xs text-gray-500"><%= t("inventory.reports.stagnant_items.footnote") %></p>
+</div>

@@ -120,81 +120,19 @@ namespace :inventory do
     puts "Done — #{changed} cost(s) updated across #{examined} derived ingredient(s)."
   end
 
-  # Fills unit_cost_cents on stock movements recorded before it existed.
+  # Fills unit_cost_cents on stock movements recorded before it existed — exact
+  # from batches and transfer pairs where history kept the cost, otherwise
+  # reconstructed as the running average at the time (see
+  # Inventory::MovementCostBackfill). Safe to re-run.
   #
   #   bin/rails inventory:backfill_movement_costs
-  #
-  # Movements tied to a batch get that batch's cost, which is exact: either the
-  # row's own stock_batch_id, or the "ADJ-<id>" batch a manual add or stock-take
-  # surplus created for itself. A transfer's outgoing row takes the cost of the
-  # arrival it pairs with. Everything else gets the location's weighted
-  # average as of today and is flagged unit_cost_estimated, because nothing
-  # recorded what it was worth at the time. Safe to re-run: it only fills NULLs.
   desc "Back-fill unit_cost_cents on historical stock movements"
   task backfill_movement_costs: :environment do
-    conn = ActiveRecord::Base.connection
-
-    linked = conn.exec_update(<<~SQL.squish)
-      UPDATE stock_adjustments sa
-      SET unit_cost_cents = sb.cost_per_unit_cents
-      FROM stock_batches sb
-      WHERE sa.unit_cost_cents IS NULL AND sb.id = sa.stock_batch_id
-    SQL
-
-    self_created = conn.exec_update(<<~SQL.squish)
-      UPDATE stock_adjustments sa
-      SET unit_cost_cents = sb.cost_per_unit_cents
-      FROM stock_batches sb
-      WHERE sa.unit_cost_cents IS NULL
-        AND sa.quantity_delta > 0
-        AND sb.ingredient_id = sa.ingredient_id
-        AND sb.batch_reference = 'ADJ-' || sa.id::text
-    SQL
-
-    # A transfer leaves one location at the cost it arrives at the other. The
-    # two rows are written together — at one shared timestamp today, a few
-    # milliseconds apart in older code — so the outgoing row takes its exact
-    # cost from the closest matching arrival within a few seconds.
-    pair = <<~SQL.squish
-      FROM stock_adjustments arrival
-      WHERE arrival.adjustment_type = 'transfer_in'
-        AND arrival.unit_cost_cents IS NOT NULL
-        AND arrival.unit_cost_estimated = false
-        AND arrival.stock_transfer_id = sa.stock_transfer_id
-        AND arrival.ingredient_id = sa.ingredient_id
-        AND arrival.quantity_delta = -sa.quantity_delta
-        AND arrival.created_at BETWEEN sa.created_at - interval '5 seconds'
-                                   AND sa.created_at + interval '5 seconds'
-    SQL
-    transfers = conn.exec_update(<<~SQL.squish)
-      UPDATE stock_adjustments sa
-      SET unit_cost_cents = (
-        SELECT arrival.unit_cost_cents #{pair}
-        ORDER BY abs(extract(epoch FROM arrival.created_at - sa.created_at))
-        LIMIT 1
-      )
-      WHERE sa.unit_cost_cents IS NULL
-        AND sa.adjustment_type = 'transfer_out'
-        AND EXISTS (SELECT 1 #{pair})
-    SQL
-
-    estimated = 0
-    combos = StockAdjustment.where(unit_cost_cents: nil).distinct.pluck(:location_id, :ingredient_id)
-    combos.group_by(&:first).each do |location_id, pairs|
-      location = location_id && Location.unscoped.find_by(id: location_id)
-      ingredients = Ingredient.unscoped.where(id: pairs.map(&:last)).to_a
-      costs = Inventory::LocationUnitCost.map_for(ingredients: ingredients, location: location)
-
-      costs.each do |ingredient_id, cost|
-        estimated += StockAdjustment
-          .where(unit_cost_cents: nil, ingredient_id: ingredient_id, location_id: location_id)
-          .update_all(unit_cost_cents: cost, unit_cost_estimated: true)
-      end
-    end
-
-    puts "Exact from batch: #{linked + self_created} (#{linked} linked, #{self_created} self-created)."
-    puts "Exact from the paired transfer arrival: #{transfers}."
-    puts "Estimated at today's location average: #{estimated}."
+    result = Inventory::MovementCostBackfill.call
+    puts "Exact from batch: #{result.linked + result.self_created} " \
+         "(#{result.linked} linked, #{result.self_created} self-created)."
+    puts "Exact from the paired transfer arrival: #{result.transfers}."
+    puts "Reconstructed at the running average of the time: #{result.estimated}."
     left = StockAdjustment.where(unit_cost_cents: nil).count
     puts "Still without a cost: #{left}." if left.positive?
   end

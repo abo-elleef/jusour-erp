@@ -1,0 +1,26 @@
+<%# Title, description, CSV + Print buttons, and a print-only line naming the
+    filters and print time. locals: description, period (optional text). %>
+<% export_params = request.query_parameters.except("page", "print") %>
+<div class="flex flex-wrap justify-between items-start gap-4 mb-6 print:mb-3">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900 print:text-xl"><%= admin_page_title %></h1>
+    <p class="text-gray-600 text-sm mt-1 max-w-3xl print-hide"><%= description %></p>
+    <p class="print-only text-xs text-gray-600 mt-1">
+      <%= Current.company&.name %>
+      · <%= [@location&.name || t("inventory.reports.shared.all_locations"), @category&.name].compact.join(" / ") %>
+      <% if local_assigns[:period] %> · <%= period %><% end %>
+      · <%= t("inventory.reports.shared.printed_at", time: l(Time.current, format: :short)) %>
+    </p>
+  </div>
+  <div class="flex flex-wrap gap-2 shrink-0 print-hide">
+    <%= link_to url_for(export_params.merge(format: :csv)),
+          class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" do %>
+      <span aria-hidden="true">&darr;</span> <%= t("actions.export_csv") %>
+    <% end %>
+    <%= link_to url_for(export_params.merge(print: 1)), target: "_blank", rel: "noopener",
+          data: { turbo: false },
+          class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" do %>
+      <%= t("inventory.reports.shared.print") %>
+    <% end %>
+  </div>
+</div>

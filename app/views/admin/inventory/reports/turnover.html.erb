@@ -1,0 +1,86 @@
+<% cell = "p-3" %>
+<% result = @result %>
+<% period = t("accounting.shared.date_range_value", start: l(@start_date, format: :long), end: l(@end_date, format: :long)) %>
+<div class="max-w-7xl print:max-w-none" <%= tag.attributes(data: { controller: "auto-print" }) if print_mode? %>>
+  <%= render "admin/inventory/reports/valued/header",
+        description: t("inventory.reports.turnover.description"), period: period %>
+
+  <%= render layout: "admin/inventory/reports/valued/filters", locals: { dates: true } do %><% end %>
+
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6 print:gap-2 print:mb-3">
+    <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.turnover.used_value"), value: format_amount(result.used_value) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.turnover.average_value"), value: format_amount(result.average_value.round) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.turnover.turnover"),
+          value: result.turnover ? "#{result.turnover}×" : "—", hint: t("inventory.reports.turnover.over_days", count: result.days) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.turnover.days_of_stock"),
+          value: result.days_of_stock || "—", hint: t("inventory.reports.turnover.days_hint") %>
+  </div>
+
+  <section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden print:rounded-none">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 print-hide">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.turnover.table_heading") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.turnover.table_hint") %></p>
+    </div>
+    <% if result.rows.empty? %>
+      <p class="px-5 py-10 text-center text-sm text-gray-500"><%= t("inventory.reports.shared.empty") %></p>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[960px] print:min-w-0 print:text-xs" data-controller="sortable-table"
+               data-sortable-table-storage-key-value="inventory-turnover">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <%= sortable_report_th t("inventory.reports.shared.item"), "item", align: :start %>
+              <%= sortable_report_th t("inventory.reports.turnover.opening"), "opening", type: :number %>
+              <%= sortable_report_th t("inventory.reports.turnover.closing"), "closing", type: :number %>
+              <%= sortable_report_th t("inventory.reports.turnover.used"), "used", type: :number %>
+              <%= sortable_report_th t("inventory.reports.turnover.average_value"), "avg_value", type: :number %>
+              <%= sortable_report_th t("inventory.reports.turnover.qty_turnover"), "qty_turnover", type: :number %>
+              <%= sortable_report_th t("inventory.reports.turnover.turnover"), "turnover", type: :number %>
+              <%= sortable_report_th t("inventory.reports.turnover.days_of_stock"), "days", type: :number, pe: true %>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100" data-sortable-table-target="body">
+            <% result.rows.each do |row| %>
+              <% unit = ingredient_unit_label(row.ingredient.unit) %>
+              <% days = result.days_of_stock(row) %>
+              <tr class="hover:bg-gray-50">
+                <td class="<%= cell %> ps-5" data-sort-key="item">
+                  <%= link_to row.ingredient.name,
+                        admin_inventory_reports_item_card_path({ ingredient_id: row.ingredient.id, location_id: @location&.id,
+                          start_date: @start_date, end_date: @end_date }.compact),
+                        class: "font-medium text-amber-700 hover:text-amber-900 hover:underline" %>
+                  <span class="block text-xs text-gray-400"><%= row.ingredient.ingredient_category&.name %> · <%= unit %></span>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums" data-sort-key="opening" data-sort-value="<%= row.opening_qty %>"><%= report_qty(row.opening_qty) %></td>
+                <td class="<%= cell %> text-end tabular-nums" data-sort-key="closing" data-sort-value="<%= row.closing_qty %>"><%= report_qty(row.closing_qty) %></td>
+                <td class="<%= cell %> text-end tabular-nums" data-sort-key="used" data-sort-value="<%= row.used_value %>">
+                  <%= report_qty(row.used_qty) %><span class="block text-xs text-gray-400"><%= format_amount(row.used_value) %></span>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums" data-sort-key="avg_value" data-sort-value="<%= row.average_value %>"><%= format_amount(row.average_value.round) %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600" data-sort-key="qty_turnover" data-sort-value="<%= row.quantity_turnover || -1 %>"><%= row.quantity_turnover || "—" %></td>
+                <td class="<%= cell %> text-end tabular-nums font-semibold" data-sort-key="turnover" data-sort-value="<%= row.turnover || -1 %>">
+                  <% if row.turnover %><%= row.turnover %>×<% else %><span class="text-xs font-normal text-gray-400" title="<%= t("inventory.reports.turnover.no_average_hint") %>"><%= t("inventory.reports.turnover.no_average") %></span><% end %>
+                </td>
+                <td class="<%= cell %> pe-5 text-end tabular-nums" data-sort-key="days" data-sort-value="<%= days || 99999 %>"><%= days || "—" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t-2 border-gray-200 font-bold text-gray-900">
+            <tr>
+              <td class="<%= cell %> ps-5" colspan="3"><%= t("inventory.reports.shared.total") %></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= format_amount(result.used_value) %></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= format_amount(result.average_value.round) %></td>
+              <td class="<%= cell %>"></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= result.turnover ? "#{result.turnover}×" : "—" %></td>
+              <td class="<%= cell %> pe-5 text-end tabular-nums"><%= result.days_of_stock || "—" %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    <% end %>
+  </section>
+  <div class="mt-4 text-xs text-gray-500 space-y-1">
+    <p><%= t("inventory.reports.turnover.formula") %></p>
+    <p><%= t("inventory.reports.turnover.usage_note") %></p>
+  </div>
+</div>

@@ -1,0 +1,119 @@
+<% cell = "p-3" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% status_tone = { "below_min" => "bg-red-50 text-red-700 border-red-200", "ok" => "bg-green-50 text-green-700 border-green-200",
+                   "over_max" => "bg-amber-50 text-amber-700 border-amber-200", "no_levels" => "bg-gray-50 text-gray-600 border-gray-200" } %>
+<div class="max-w-7xl print:max-w-none" <%= tag.attributes(data: { controller: "auto-print" }) if print_mode? %>>
+  <%= render "admin/inventory/reports/valued/header",
+        description: t("inventory.reports.stock_levels.description"),
+        period: t("inventory.reports.stock_levels.as_of", date: l(Date.current, format: :long)) %>
+
+  <%= render layout: "admin/inventory/reports/valued/filters", locals: { dates: false } do %>
+    <%= hidden_field_tag :status, @status %>
+    <div class="min-w-[12rem]">
+      <%= label_tag :supplier_id, t("inventory.reports.stock_levels.supplier"), class: label_class %>
+      <%= select_tag :supplier_id,
+            options_for_select([[t("inventory.reports.stock_levels.all_suppliers"), ""]] +
+              @suppliers.map { |s| [s.name, s.id] }, @supplier&.id),
+            class: pos_input_class %>
+    </div>
+    <div class="w-[8rem]">
+      <%= label_tag :cover_days, t("inventory.reports.stock_levels.cover_days"), class: label_class %>
+      <%= number_field_tag :cover_days, @cover_days, min: 1, max: 90, class: pos_input_class %>
+    </div>
+  <% end %>
+
+  <div class="flex flex-wrap gap-2 mb-4 print-hide">
+    <% (["below_min", "all"] + %w[ok over_max no_levels]).each do |status| %>
+      <% active = @status == status %>
+      <% count = status == "all" ? @status_counts.values.sum : @status_counts.fetch(status, 0) %>
+      <%= link_to url_for(request.query_parameters.except("print").merge(status: status)),
+            class: "inline-flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors #{active ? 'bg-amber-600 border-amber-600 text-white' : 'border-gray-200 text-gray-700 hover:bg-gray-100'}" do %>
+        <%= t("inventory.reports.stock_levels.statuses.#{status}") %>
+        <span class="tabular-nums <%= active ? 'text-amber-100' : 'text-gray-400' %>"><%= count %></span>
+      <% end %>
+    <% end %>
+  </div>
+  <p class="print-only text-xs text-gray-600 mb-3"><%= t("inventory.reports.stock_levels.statuses.#{@status}") %></p>
+
+  <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6 print:grid-cols-3 print:gap-2 print:mb-3">
+    <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.stock_levels.statuses.below_min"), tone: :bad,
+          value: @status_counts.fetch("below_min", 0) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.stock_levels.statuses.no_levels"), tone: :warn,
+          value: @status_counts.fetch("no_levels", 0), hint: t("inventory.reports.stock_levels.no_levels_hint") %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("inventory.reports.stock_levels.order_value"),
+          value: format_amount(@rows.sum(&:order_cents)) %>
+  </div>
+
+  <section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden print:rounded-none">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50 print-hide">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("inventory.reports.stock_levels.table_heading") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("inventory.reports.stock_levels.table_hint", days: @cover_days) %></p>
+    </div>
+    <% if @rows.empty? %>
+      <p class="px-5 py-10 text-center text-sm text-gray-500"><%= t("inventory.reports.shared.empty") %></p>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[1000px] print:min-w-0 print:text-xs" data-controller="sortable-table"
+               data-sortable-table-storage-key-value="stock-levels">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <%= sortable_report_th t("inventory.reports.shared.item"), "item", align: :start %>
+              <%= sortable_report_th t("inventory.reports.stock_levels.supplier"), "supplier", align: :start %>
+              <%= sortable_report_th t("inventory.reports.stock_levels.on_hand"), "on_hand", type: :number %>
+              <%= sortable_report_th t("inventory.reports.stock_levels.min"), "min", type: :number %>
+              <%= sortable_report_th t("inventory.reports.stock_levels.max"), "max", type: :number %>
+              <%= sortable_report_th t("inventory.reports.stock_levels.avg_daily"), "avg", type: :number %>
+              <%= sortable_report_th t("inventory.reports.stock_levels.days_cover"), "cover", type: :number %>
+              <%= sortable_report_th t("inventory.reports.stock_levels.status"), "status", align: :start %>
+              <%= sortable_report_th t("inventory.reports.stock_levels.order_qty"), "order", type: :number %>
+              <%= sortable_report_th t("inventory.reports.stock_levels.order_value"), "order_value", type: :number, pe: true %>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100" data-sortable-table-target="body">
+            <% @rows.each do |row| %>
+              <% unit = ingredient_unit_label(row.ingredient.unit) %>
+              <tr class="hover:bg-gray-50">
+                <td class="<%= cell %> ps-5" data-sort-key="item">
+                  <%= link_to row.ingredient.name, admin_inventory_ingredient_path(row.ingredient),
+                        class: "font-medium text-amber-700 hover:text-amber-900 hover:underline" %>
+                  <span class="block text-xs text-gray-400"><%= row.ingredient.ingredient_category&.name %> · <%= unit %></span>
+                </td>
+                <td class="<%= cell %> text-gray-600" data-sort-key="supplier">
+                  <% if row.supplier %>
+                    <%= link_to row.supplier.name, admin_inventory_supplier_path(row.supplier), class: "hover:text-amber-700 hover:underline" %>
+                  <% else %>
+                    <span class="text-gray-400">—</span>
+                  <% end %>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums font-semibold <%= 'text-red-700' if row.on_hand.negative? %>" data-sort-key="on_hand" data-sort-value="<%= row.on_hand %>"><%= report_qty(row.on_hand) %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600" data-sort-key="min" data-sort-value="<%= row.min %>"><%= row.min.positive? ? report_qty(row.min) : "—" %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600" data-sort-key="max" data-sort-value="<%= row.max %>"><%= row.max.positive? ? report_qty(row.max) : "—" %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600" data-sort-key="avg" data-sort-value="<%= row.avg_daily_usage %>"><%= row.avg_daily_usage.positive? ? report_qty(row.avg_daily_usage.round(3)) : "—" %></td>
+                <td class="<%= cell %> text-end tabular-nums" data-sort-key="cover" data-sort-value="<%= row.days_of_cover || 99999 %>"><%= row.days_of_cover || "—" %></td>
+                <td class="<%= cell %>" data-sort-key="status">
+                  <span class="inline-block text-xs font-semibold px-2 py-0.5 rounded-full border <%= status_tone[row.status] %>"><%= t("inventory.reports.stock_levels.statuses.#{row.status}") %></span>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums font-semibold" data-sort-key="order" data-sort-value="<%= row.suggested_base %>">
+                  <% if row.order_quantity.positive? %>
+                    <%= report_qty(row.order_quantity) %> <span class="text-xs font-normal text-gray-500"><%= ingredient_unit_label(row.order_unit) %></span>
+                    <span class="block text-xs font-normal text-gray-400"><%= t("inventory.reports.stock_levels.basis.#{row.target_basis}") %></span>
+                  <% else %>
+                    <span class="text-gray-300">—</span>
+                  <% end %>
+                </td>
+                <td class="<%= cell %> pe-5 text-end tabular-nums" data-sort-key="order_value" data-sort-value="<%= row.order_cents %>"><%= format_amount(row.order_cents) if row.order_quantity.positive? %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t-2 border-gray-200 font-bold text-gray-900">
+            <tr>
+              <td class="<%= cell %> ps-5" colspan="9"><%= t("inventory.reports.shared.total") %></td>
+              <td class="<%= cell %> pe-5 text-end tabular-nums"><%= format_amount(@rows.sum(&:order_cents)) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    <% end %>
+  </section>
+  <p class="mt-4 text-xs text-gray-500"><%= t("inventory.reports.stock_levels.footnote", window: Inventory::Reports::StockLevelsService::USAGE_WINDOW_DAYS) %></p>
+</div>

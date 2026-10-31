@@ -1,0 +1,8 @@
+<%# How values are built, plus a marker legend when estimated costs are present.
+    locals: estimated (count of rows with a reconstructed cost) %>
+<div class="mt-4 text-xs text-gray-500 space-y-1">
+  <p><%= t("inventory.reports.shared.valuation_note") %></p>
+  <% if estimated.to_i.positive? %>
+    <p><span class="text-amber-600 font-bold">*</span> <%= t("inventory.reports.shared.estimated_hint") %></p>
+  <% end %>
+</div>

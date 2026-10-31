@@ -476,6 +476,11 @@ Rails.application.routes.draw do
         get :transfer_trends
         get :vendor_basket
         get :vendor_purchases_summary
+        get :item_card
+        get :adjustments
+        get :stock_levels
+        get :stagnant_items
+        get :turnover
       end
     end
   end
