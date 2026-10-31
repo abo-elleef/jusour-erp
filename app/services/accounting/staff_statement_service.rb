@@ -17,14 +17,15 @@ module Accounting
       @to = to
     end
 
-    # Newest first, each line carrying `running_balance_cents`.
+    # Oldest first, as a statement reads, each line carrying
+    # `running_balance_cents`.
     def lines
       scope = JournalEntryLine.from(running_lines, :journal_entry_lines)
                               .joins(:journal_entry)
                               .includes(journal_entry: :source_record)
       scope = scope.where(journal_entries: { date: @from.. }) if @from
       scope = scope.where(journal_entries: { date: ..@to }) if @to
-      scope.order(Arel.sql("journal_entries.date DESC, journal_entries.entry_number DESC, journal_entry_lines.id DESC"))
+      scope.order(Arel.sql("journal_entries.date, journal_entries.entry_number, journal_entry_lines.id"))
     end
 
     # Balance before the range starts; nil when the range is open-ended.

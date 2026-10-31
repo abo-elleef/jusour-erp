@@ -96,7 +96,7 @@ RSpec.describe "Admin payroll snapshots", type: :request do
         }
       staff.update!(monthly_salary_cents: 450_000)
 
-      get admin_user_path(staff, payroll_month: payroll_month.strftime("%Y-%m"))
+      get_user_tab(staff, "payroll", payroll_month: payroll_month.strftime("%Y-%m"))
 
       snapshot = PayrollSnapshot.find_by!(user: staff, payroll_month: payroll_month)
       expect(response).to have_http_status(:ok)

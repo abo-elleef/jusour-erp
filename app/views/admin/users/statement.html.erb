@@ -1,0 +1,30 @@
+<% content_for :title, t("staff.statement.title", name: @user.name) %>
+<% range = t("accounting.shared.date_range_value", start: l(@statement.from, format: :long), end: l(@statement.to, format: :long)) %>
+<div class="max-w-7xl print:max-w-none">
+  <div class="print-hide flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("staff.statement.title", name: @user.name) %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= range %></p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <%= link_to t("staff.show.back_to_profile", name: @user.name),
+            admin_user_path(@user, tab: "statement", start_date: @statement.from, end_date: @statement.to),
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+      <button type="button" onclick="window.print()"
+              class="inline-flex text-sm font-semibold bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl transition-colors">
+        <%= t("staff.statement.print") %>
+      </button>
+    </div>
+  </div>
+
+  <div class="hidden print:block mb-6">
+    <p class="text-lg font-bold text-gray-900"><%= Current.company.name %></p>
+    <p class="text-base font-semibold text-gray-700"><%= t("staff.statement.title", name: @user.name) %></p>
+    <p class="text-sm text-gray-500"><%= range %></p>
+  </div>
+
+  <%= render "statement",
+        statement: @statement,
+        form_url: statement_admin_user_path(@user),
+        hidden_params: {} %>
+</div>

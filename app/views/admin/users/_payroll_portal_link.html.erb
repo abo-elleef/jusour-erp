@@ -1,6 +1,6 @@
 <% if current_user.admin_access? && @user.payroll_access_token.present? %>
   <% portal_url = staff_payroll_url(token: @user.payroll_access_token) %>
-  <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mt-8 max-w-7xl">
+  <section class="rounded-2xl border border-amber-200 bg-amber-50/40 overflow-hidden mt-6">
     <div class="px-5 py-4 border-b border-amber-100">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.payroll_portal.share_link") %></h2>
       <p class="text-xs text-gray-600 mt-0.5"><%= t("staff.payroll_portal.share_link_hint", name: @user.name) %></p>

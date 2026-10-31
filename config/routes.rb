@@ -215,6 +215,7 @@ Rails.application.routes.draw do
     resources :customers
     resources :users do
       member do
+        get :statement
         patch :activate
         post :create_assigned_treasury
       end

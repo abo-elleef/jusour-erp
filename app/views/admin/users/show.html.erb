@@ -1,6 +1,5 @@
 <% content_for :title, @user.name %>
 <% action_btn_class = "text-sm font-semibold px-4 py-2 rounded-xl transition-colors" %>
-<% stat_card_class = "rounded-2xl border border-gray-200 bg-white p-4" %>
 
 <div class="max-w-7xl">
   <div class="mb-4">
@@ -36,100 +35,17 @@
     </div>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-    <div class="<%= stat_card_class %>">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.payroll.base_salary") %></p>
-      <p class="text-xl font-bold text-gray-900 mt-1 tabular-nums">
-        <% if @user.monthly_salary_cents.positive? %>
-          <%= format_money(@user.monthly_salary_cents) %>
-        <% else %>
-          <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
-        <% end %>
-      </p>
+  <%= render "stats" %>
+
+  <%# The active tab loads lazily into this frame from the same URL — see
+      UsersController#show. Until it arrives, the placeholder holds the space
+      so the page doesn't jump. %>
+  <%= turbo_frame_tag Admin::UsersController::TAB_FRAME,
+        src: admin_user_path(@user, request.query_parameters),
+        data: { turbo_action: "advance" } do %>
+    <%= render "tab_nav", user: @user, tabs: @tabs, active_tab: @tab %>
+    <div class="rounded-2xl border border-gray-200 bg-white px-5 py-12 mt-6 text-center text-sm text-gray-500 animate-pulse">
+      <%= t("staff.show.tabs.loading") %>
     </div>
-    <div class="<%= stat_card_class %>">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.payroll.daily_rate") %></p>
-      <p class="text-xl font-bold text-gray-900 mt-1 tabular-nums">
-        <% if @user.monthly_salary_cents.positive? %>
-          <%= format_money(@user.daily_rate_cents) %>
-        <% else %>
-          <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
-        <% end %>
-      </p>
-    </div>
-    <div class="<%= stat_card_class %>">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.show.hourly_rate") %></p>
-      <p class="text-xl font-bold text-gray-900 mt-1 tabular-nums">
-        <% if @user.monthly_salary_cents.positive? %>
-          <%= format_money(@user.hourly_rate_cents) %>
-        <% else %>
-          <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
-        <% end %>
-      </p>
-    </div>
-  </div>
-
-  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-8">
-    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-      <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.show.account_details") %></h2>
-    </div>
-    <dl class="divide-y divide-gray-100 text-sm">
-      <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
-        <dt class="text-gray-500"><%= t("staff.show.joined") %></dt>
-        <dd class="font-medium text-gray-900 tabular-nums"><%= l(@user.created_at.to_date, format: :long) %></dd>
-      </div>
-      <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
-        <dt class="text-gray-500"><%= t("staff.show.pin_status") %></dt>
-        <dd class="font-medium text-gray-900">
-          <%= @user.pin_configured? ? t("staff.show.pin_set") : t("staff.show.pin_missing") %>
-        </dd>
-      </div>
-      <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
-        <dt class="text-gray-500"><%= t("staff.show.status") %></dt>
-        <dd class="font-medium text-gray-900"><%= @user.active? ? t("staff.show.active") : t("staff.show.inactive") %></dd>
-      </div>
-      <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
-        <dt class="text-gray-500"><%= t("staff.show.assigned_treasury") %></dt>
-        <dd class="font-medium text-gray-900">
-          <% if @user.assigned_treasury %>
-            <% if policy(@user.assigned_treasury).show? %>
-              <%= link_to @user.assigned_treasury.name, admin_accounting_treasury_path(@user.assigned_treasury),
-                    class: "text-amber-700 hover:text-amber-800 underline underline-offset-2" %>
-            <% else %>
-              <%= @user.assigned_treasury.name %>
-            <% end %>
-            <span class="text-gray-500 tabular-nums ms-2">
-              (<%= format_money(@user.assigned_treasury.balance_cents) %>)
-            </span>
-          <% else %>
-            <span class="text-gray-400"><%= t("staff.show.assigned_treasury_none") %></span>
-          <% end %>
-        </dd>
-      </div>
-    </dl>
-  </section>
-
-  <% if current_user.admin_access? %>
-    <%= render "payroll_portal_link" %>
   <% end %>
-
-  <% if @payroll_summary %>
-    <%= render "payroll_section",
-          user: @user,
-          payroll_month: @payroll_month,
-          payroll_summary: @payroll_summary,
-          payroll_sort: @payroll_sort,
-          payroll_direction: @payroll_direction %>
-  <% end %>
-
-  <% if @wages_lines %>
-    <%= render "wages_ledger_section", wages_balance_cents: @wages_balance_cents, wages_lines: @wages_lines,
-          statement: @wages_statement, pagy: @wages_pagy %>
-  <% end %>
-
-  <% if @attendance_audits %>
-    <%= render "shared/audit_history", audits: @attendance_audits, title: t("accounting.attendance.staff_history_title") %>
-  <% end %>
-
-  <%= render "shared/audit_history", audits: @audits %>
 </div>

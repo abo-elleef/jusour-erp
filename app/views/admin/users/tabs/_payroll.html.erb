@@ -1,0 +1,10 @@
+<%= render "admin/users/payroll_section",
+      user: @user,
+      payroll_month: @payroll_month,
+      payroll_summary: @payroll_summary,
+      payroll_sort: @payroll_sort,
+      payroll_direction: @payroll_direction %>
+
+<% if @attendance_audits %>
+  <%= render "shared/audit_history", audits: @attendance_audits, title: t("accounting.attendance.staff_history_title") %>
+<% end %>

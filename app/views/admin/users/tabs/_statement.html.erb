@@ -1,0 +1,12 @@
+<div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+  <p class="text-sm text-gray-600"><%= t("staff.statement.hint") %></p>
+  <%= link_to t("staff.statement.open_printable"),
+        statement_admin_user_path(@user, start_date: @statement.from, end_date: @statement.to),
+        data: { turbo_frame: "_top" },
+        class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200 bg-white transition-colors" %>
+</div>
+
+<%= render "admin/users/statement",
+      statement: @statement,
+      form_url: admin_user_path(@user),
+      hidden_params: { tab: "statement" } %>

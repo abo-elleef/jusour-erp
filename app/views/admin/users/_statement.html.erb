@@ -1,0 +1,124 @@
+<%# Staff statement of account body, shared by the Statement tab (inside the
+    tab frame) and the printable statement page.
+    Locals: statement (Accounting::StaffStatementService with from/to set),
+    form_url, hidden_params (extra query to keep on apply). %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% cell = "p-3 print:px-2 print:py-1.5 whitespace-nowrap" %>
+<% wrap_cell = "p-3 print:px-2 print:py-1.5" %>
+<% opening = statement.opening_balance_cents %>
+<% closing = statement.closing_balance_cents %>
+<% lines = statement.lines.to_a %>
+
+<div class="print-hide rounded-2xl border border-gray-200 bg-white px-5 py-4 mb-6">
+  <%= form_with url: form_url, method: :get, class: "flex flex-wrap items-end gap-4" do %>
+    <% hidden_params.each do |key, value| %>
+      <%= hidden_field_tag key, value %>
+    <% end %>
+    <div class="min-w-[10rem]">
+      <%= label_tag :start_date, t("accounting.shared.start"), class: label_class %>
+      <%= date_field_tag :start_date, statement.from, class: pos_input_class %>
+    </div>
+    <div class="min-w-[10rem]">
+      <%= label_tag :end_date, t("accounting.shared.end"), class: label_class %>
+      <%= date_field_tag :end_date, statement.to, class: pos_input_class %>
+    </div>
+    <%= submit_tag t("actions.apply_range"),
+          class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors cursor-pointer" %>
+  <% end %>
+</div>
+
+<div class="grid grid-cols-2 lg:grid-cols-4 print:grid-cols-4 gap-4 print:gap-2 mb-6 print:mb-4">
+  <div class="rounded-2xl border border-gray-200 bg-white p-4 print:p-3">
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.wages_ledger.opening") %></p>
+    <p class="text-xl font-bold mt-1 tabular-nums <%= opening.negative? ? 'text-red-700' : 'text-gray-900' %>"><%= format_amount(opening.abs) %></p>
+    <p class="text-xs text-gray-500 mt-1"><%= staff_balance_label(opening) %> · <%= l(statement.from, format: :long) %></p>
+  </div>
+  <div class="rounded-2xl border border-gray-200 bg-white p-4 print:p-3">
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.wages_ledger.credit") %></p>
+    <p class="text-xl font-bold mt-1 text-green-700 tabular-nums"><%= format_amount(statement.range_credit_cents) %></p>
+    <p class="text-xs text-gray-500 mt-1"><%= t("staff.statement.credit_hint") %></p>
+  </div>
+  <div class="rounded-2xl border border-gray-200 bg-white p-4 print:p-3">
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.wages_ledger.debit") %></p>
+    <p class="text-xl font-bold mt-1 text-blue-700 tabular-nums"><%= format_amount(statement.range_debit_cents) %></p>
+    <p class="text-xs text-gray-500 mt-1"><%= t("staff.statement.debit_hint") %></p>
+  </div>
+  <div class="rounded-2xl border border-gray-200 bg-white p-4 print:p-3">
+    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.wages_ledger.closing") %></p>
+    <p class="text-xl font-bold mt-1 tabular-nums <%= closing.negative? ? 'text-red-700' : 'text-gray-900' %>"><%= format_amount(closing.abs) %></p>
+    <p class="text-xs text-gray-500 mt-1"><%= staff_balance_label(closing) %> · <%= l(statement.to, format: :long) %></p>
+  </div>
+</div>
+
+<%# Deliberately unsorted and unpaginated: a statement reads in date order with
+    a running balance, and it has to print whole. The date range is the filter.
+    print-flow lets the section break across pages, and the overflow wrappers
+    turn visible in print so no column is clipped (same as the vendor one). %>
+<section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden print:overflow-visible">
+  <div class="overflow-x-auto print:overflow-visible">
+    <table class="w-full text-sm print:text-xs">
+      <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <tr>
+          <th class="<%= cell %> ps-5 text-start"><%= t("staff.wages_ledger.date") %></th>
+          <th class="<%= cell %> text-start"><%= t("staff.wages_ledger.number") %></th>
+          <th class="<%= wrap_cell %> text-start"><%= t("staff.wages_ledger.description") %></th>
+          <th class="<%= cell %> text-end"><%= t("staff.wages_ledger.debit") %></th>
+          <th class="<%= cell %> text-end"><%= t("staff.wages_ledger.credit") %></th>
+          <th class="<%= cell %> pe-5 text-end"><%= t("staff.wages_ledger.running_balance") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 table-zebra">
+        <tr class="bg-gray-50 font-semibold">
+          <td class="<%= cell %> ps-5 text-gray-600 tabular-nums"><%= l(statement.from) %></td>
+          <td class="<%= wrap_cell %> text-gray-900" colspan="4"><%= t("staff.wages_ledger.opening") %></td>
+          <td class="<%= cell %> pe-5 text-end tabular-nums <%= opening.negative? ? 'text-red-700' : 'text-gray-900' %>"><%= staff_signed_amount(opening) %></td>
+        </tr>
+        <% lines.each do |line| %>
+          <% entry = line.journal_entry %>
+          <% voucher = entry.source_record if entry.source_record_type == "Voucher" %>
+          <% running = line.running_balance_cents.to_i %>
+          <tr class="hover:bg-gray-100 transition-colors">
+            <td class="<%= cell %> ps-5 text-gray-600 tabular-nums"><%= l(entry.date) %></td>
+            <td class="<%= cell %> font-mono text-xs">
+              <%= link_to entry.entry_number, admin_accounting_journal_entry_path(entry),
+                    data: { turbo_frame: "_top" }, class: "font-semibold text-blue-700 hover:text-blue-800" %>
+            </td>
+            <td class="<%= wrap_cell %> text-gray-900">
+              <% if voucher %>
+                <%# Described in the viewer's language — the stored entry text
+                    is whatever language it was posted in. %>
+                <%= link_to t(voucher.payment? ? "staff.wages_ledger.voucher_payment" : "staff.wages_ledger.voucher_receipt", number: voucher.number),
+                      admin_accounting_voucher_path(voucher), data: { turbo_frame: "_top" },
+                      class: "font-semibold text-amber-700 hover:text-amber-800 whitespace-nowrap" %>
+                <% if voucher.notes.present? %>
+                  <span class="block text-xs text-gray-500 mt-0.5"><%= voucher.notes %></span>
+                <% end %>
+              <% else %>
+                <%= entry.description %>
+              <% end %>
+            </td>
+            <td class="<%= cell %> text-end tabular-nums text-blue-700"><%= format_amount(line.debit_cents) if line.debit_cents.positive? %></td>
+            <td class="<%= cell %> text-end tabular-nums text-green-700"><%= format_amount(line.credit_cents) if line.credit_cents.positive? %></td>
+            <td class="<%= cell %> pe-5 text-end tabular-nums font-semibold <%= running.negative? ? 'text-red-700' : 'text-gray-900' %>"><%= staff_signed_amount(running) %></td>
+          </tr>
+        <% end %>
+        <% if lines.empty? %>
+          <tr>
+            <td class="p-5 print:p-3 text-center text-gray-500" colspan="6"><%= t("staff.wages_ledger.no_movements_in_range") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+      <%# Browsers repeat a <tfoot> on every printed page; the closing balance
+          belongs only at the end, so print it as an ordinary row group. %>
+      <tfoot class="border-t-2 border-gray-200 font-semibold print:table-row-group">
+        <tr>
+          <td class="<%= cell %> ps-5 text-gray-600 tabular-nums"><%= l(statement.to) %></td>
+          <td class="<%= wrap_cell %> text-gray-900" colspan="2"><%= t("staff.wages_ledger.closing") %> · <%= staff_balance_label(closing) %></td>
+          <td class="<%= cell %> text-end tabular-nums text-blue-700"><%= format_amount(statement.range_debit_cents) %></td>
+          <td class="<%= cell %> text-end tabular-nums text-green-700"><%= format_amount(statement.range_credit_cents) %></td>
+          <td class="<%= cell %> pe-5 text-end tabular-nums <%= closing.negative? ? 'text-red-700' : 'text-gray-900' %>"><%= staff_signed_amount(closing) %></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</section>

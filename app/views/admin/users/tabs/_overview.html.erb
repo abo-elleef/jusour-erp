@@ -1,0 +1,42 @@
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("staff.show.account_details") %></h2>
+  </div>
+  <dl class="divide-y divide-gray-100 text-sm">
+    <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
+      <dt class="text-gray-500"><%= t("staff.show.joined") %></dt>
+      <dd class="font-medium text-gray-900 tabular-nums"><%= l(@user.created_at.to_date, format: :long) %></dd>
+    </div>
+    <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
+      <dt class="text-gray-500"><%= t("staff.show.pin_status") %></dt>
+      <dd class="font-medium text-gray-900">
+        <%= @user.pin_configured? ? t("staff.show.pin_set") : t("staff.show.pin_missing") %>
+      </dd>
+    </div>
+    <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
+      <dt class="text-gray-500"><%= t("staff.show.status") %></dt>
+      <dd class="font-medium text-gray-900"><%= @user.active? ? t("staff.show.active") : t("staff.show.inactive") %></dd>
+    </div>
+    <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
+      <dt class="text-gray-500"><%= t("staff.show.assigned_treasury") %></dt>
+      <dd class="font-medium text-gray-900">
+        <% if @user.assigned_treasury %>
+          <% if policy(@user.assigned_treasury).show? %>
+            <%= link_to @user.assigned_treasury.name, admin_accounting_treasury_path(@user.assigned_treasury),
+                  data: { turbo_frame: "_top" },
+                  class: "text-amber-700 hover:text-amber-800 underline underline-offset-2" %>
+          <% else %>
+            <%= @user.assigned_treasury.name %>
+          <% end %>
+          <span class="text-gray-500 tabular-nums ms-2">
+            (<%= format_amount(@user.assigned_treasury.balance_cents) %>)
+          </span>
+        <% else %>
+          <span class="text-gray-400"><%= t("staff.show.assigned_treasury_none") %></span>
+        <% end %>
+      </dd>
+    </div>
+  </dl>
+</section>
+
+<%= render "admin/users/payroll_portal_link" %>

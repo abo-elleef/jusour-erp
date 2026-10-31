@@ -1,0 +1,20 @@
+<%# Frame responses use turbo-rails' bare frame layout. The frame advances the
+    URL, and Turbo then takes the document title from this response, so give it
+    the same title the full page has. %>
+<% content_for :head, tag.title(@user.name) %>
+<%= turbo_frame_tag Admin::UsersController::TAB_FRAME, data: { turbo_action: "advance" } do %>
+  <%# Payroll actions submit inside this frame and redirect back to it, so the
+      page keeps its scroll. These streams run as the frame content lands:
+      they refresh the shell's balance card and show the action's flash,
+      which the bare frame layout would otherwise drop. %>
+  <%= turbo_stream.replace "user_stats", partial: "admin/users/stats" %>
+  <% { notice: :notice, alert: :alert }.each do |key, type| %>
+    <% if flash[key].present? %>
+      <%= turbo_stream.append "toast-container", partial: "shared/toast", locals: { message: flash[key], type: type } %>
+    <% end %>
+  <% end %>
+  <%= render "admin/users/tab_nav", user: @user, tabs: @tabs, active_tab: @tab %>
+  <div class="mt-6">
+    <%= render "admin/users/tabs/#{@tab}" %>
+  </div>
+<% end %>

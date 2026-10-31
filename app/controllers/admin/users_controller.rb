@@ -4,7 +4,7 @@ module Admin
   class UsersController < BaseController
     include StaffLocationFilter
 
-    before_action :set_user, only: %i[show edit update destroy activate create_assigned_treasury]
+    before_action :set_user, only: %i[show statement edit update destroy activate create_assigned_treasury]
     before_action :load_drawer_treasuries, only: %i[new create edit update]
 
     def index
@@ -41,10 +41,34 @@ module Admin
       end
     end
 
+    # The page is a shell (header and stat cards) plus one Turbo frame that
+    # lazily loads the active tab from this same URL. A frame request gets
+    # just that tab; anything else gets the shell. Payroll and Statement are
+    # money, so they appear only for admin-access users, as before.
+    TABS = %w[overview payroll statement history].freeze
+    FINANCE_TABS = %w[payroll statement].freeze
+    TAB_FRAME = "user_tab"
+
     def show
       authorize @user
-      load_payroll_context
-      @audits = @user.audits.includes(:user).reorder(version: :desc)
+      @tabs = visible_tabs
+      @tab = requested_tab
+
+      if turbo_frame_request_id == TAB_FRAME
+        load_shell_stats
+        send(:"load_#{@tab}_tab")
+        render "tab", layout: "turbo_rails/frame"
+      else
+        load_shell_stats
+      end
+    end
+
+    # Printable statement of account for the same date range as the tab.
+    def statement
+      authorize @user, :show?
+      return redirect_to admin_user_path(@user), alert: t("flash.unauthorized") unless current_user.admin_access?
+
+      load_statement
     end
 
     def edit
@@ -103,37 +127,55 @@ module Admin
       @drawer_treasuries = Treasury.active.cash_drawers.ordered
     end
 
-    def load_payroll_context
-      return unless current_user.admin_access?
+    def visible_tabs
+      current_user.admin_access? ? TABS : TABS - FINANCE_TABS
+    end
 
+    # Links from payroll pages (attendance, monthly payroll, the payroll
+    # actions' redirects) carry payroll_month but no tab; they mean Payroll.
+    def requested_tab
+      tab = params[:tab].presence
+      tab ||= "payroll" if params[:payroll_month].present?
+      @tabs.include?(tab) ? tab : @tabs.first
+    end
+
+    def load_shell_stats
+      @balance_cents = @user.staff_balance_cents if current_user.admin_access?
+    end
+
+    def load_overview_tab; end
+
+    def load_payroll_tab
       @payroll_month = parse_payroll_month
       @payroll_sort = parse_payroll_sort_param
       @payroll_direction = parse_payroll_direction_param
       @payroll_summary = @user.monthly_payroll(@payroll_month, sort: @payroll_sort, direction: @payroll_direction)
       @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       @default_treasury = Treasury.default_treasury
-      load_wages_ledger
       load_attendance_audits
+    end
+
+    def load_statement_tab
+      load_statement
+    end
+
+    def load_history_tab
+      @audits = @user.audits.includes(:user).reorder(version: :desc)
     end
 
     # This employee's own current account (see User#account_code): months
     # finalized credit it, vouchers paid to them and staff meals debit it,
-    # vouchers received from them credit it. Same ledger shape as the
-    # Loan/Partner show pages, with its own date range (ledger_from /
-    # ledger_to — URL params, not the session range the accounting pages
-    # share) and pagination, both inside a Turbo Frame so neither reloads
-    # the rest of the page.
-    WAGES_LEDGER_PER_PAGE = 50
-
-    def load_wages_ledger
-      @ledger_from = ledger_date_param(:ledger_from)
-      @ledger_to = ledger_date_param(:ledger_to)
-      @wages_balance_cents = @user.staff_balance_cents
-      @wages_statement = ::Accounting::StaffStatementService.new(@user, from: @ledger_from, to: @ledger_to)
-      @wages_pagy, @wages_lines = pagy(:offset, @wages_statement.lines, limit: WAGES_LEDGER_PER_PAGE)
+    # vouchers received from them credit it. Dates are URL params (not the
+    # session range the accounting pages share), defaulting to the year so far;
+    # a reversed range is swapped rather than shown empty.
+    def load_statement
+      start_date = statement_date_param(:start_date) || Date.current.beginning_of_year
+      end_date = statement_date_param(:end_date) || Date.current
+      start_date, end_date = end_date, start_date if start_date > end_date
+      @statement = ::Accounting::StaffStatementService.new(@user, from: start_date, to: end_date)
     end
 
-    def ledger_date_param(key)
+    def statement_date_param(key)
       Date.iso8601(params[key].to_s)
     rescue ArgumentError
       nil

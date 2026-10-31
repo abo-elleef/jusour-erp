@@ -60,7 +60,7 @@ RSpec.describe "Money to staff", type: :request do
     end
 
     it "shows the debt and the deduction field on the staff page" do
-      get admin_user_path(staff, payroll_month: month.strftime("%Y-%m"))
+      get_user_tab(staff, "payroll", payroll_month: month.strftime("%Y-%m"))
       expect(response.body).to include(I18n.t("staff.payroll.deduction.field"))
       expect(response.body).to include("payroll_snapshot[deduction_pounds]")
     end

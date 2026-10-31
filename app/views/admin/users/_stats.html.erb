@@ -1,0 +1,26 @@
+<%# Shell stat cards. Frame responses replace this block too (see tab.html.erb),
+    so the balance stays right after a payroll action inside the Payroll tab. %>
+<% card = "rounded-2xl border border-gray-200 bg-white p-4" %>
+<% label = "text-xs font-semibold text-gray-500 uppercase tracking-wide" %>
+<% rate = ->(cents) { @user.monthly_salary_cents.positive? ? format_amount(cents) : tag.span(t("accounting.shared.em_dash"), class: "text-gray-400") } %>
+<div id="user_stats" class="grid grid-cols-2 <%= @balance_cents ? 'lg:grid-cols-4' : 'sm:grid-cols-3' %> gap-4 mb-6">
+  <div class="<%= card %>">
+    <p class="<%= label %>"><%= t("staff.payroll.base_salary") %></p>
+    <p class="text-xl font-bold text-gray-900 mt-1 tabular-nums"><%= rate.call(@user.monthly_salary_cents) %></p>
+  </div>
+  <div class="<%= card %>">
+    <p class="<%= label %>"><%= t("staff.payroll.daily_rate") %></p>
+    <p class="text-xl font-bold text-gray-900 mt-1 tabular-nums"><%= rate.call(@user.daily_rate_cents) %></p>
+  </div>
+  <div class="<%= card %>">
+    <p class="<%= label %>"><%= t("staff.show.hourly_rate") %></p>
+    <p class="text-xl font-bold text-gray-900 mt-1 tabular-nums"><%= rate.call(@user.hourly_rate_cents) %></p>
+  </div>
+  <% if @balance_cents %>
+    <div class="<%= card %>">
+      <p class="<%= label %>"><%= t("staff.wages_ledger.balance") %></p>
+      <p class="text-xl font-bold mt-1 tabular-nums <%= @balance_cents.negative? ? 'text-red-700' : 'text-gray-900' %>"><%= format_amount(@balance_cents.abs) %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= staff_balance_label(@balance_cents) %></p>
+    </div>
+  <% end %>
+</div>

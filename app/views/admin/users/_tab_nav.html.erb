@@ -1,0 +1,11 @@
+<%# Tab links live inside the frame, so a click swaps only the frame and the
+    scroll position stays put. Each tab starts clean: month, sort and date
+    params belong to the tab that set them and are not carried across. %>
+<nav class="flex gap-1 overflow-x-auto border-b border-gray-200" aria-label="<%= t("staff.show.tabs.label") %>">
+  <% tabs.each_with_index do |name, index| %>
+    <%= link_to t("staff.show.tabs.#{name}"),
+          admin_user_path(user, (index.zero? ? {} : { tab: name })),
+          class: admin_section_tab_class(name == active_tab),
+          aria: { current: (name == active_tab ? "page" : nil) } %>
+  <% end %>
+</nav>

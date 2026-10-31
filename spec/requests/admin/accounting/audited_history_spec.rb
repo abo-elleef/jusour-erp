@@ -94,7 +94,7 @@ RSpec.describe "Audited change history", type: :request do
         "encrypted_password", "pin_digest", "payroll_access_token", "reset_password_token"
       )
 
-      get admin_user_path(staff)
+      get_user_tab(staff, "history")
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(I18n.t("accounting.audit_history.title"))
     end
