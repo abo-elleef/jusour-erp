@@ -15,11 +15,16 @@ module Admin
         @total_count = Supplier.count
         @active_count = Supplier.where(active: true).count
         @inactive_count = @total_count - @active_count
-        @filtered = (params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)) || @status != "active"
+        # Toggle: only suppliers we owe, or who owe us (an overpayment) — the
+        # ones that need attention. Independent of the active/inactive filter.
+        @balance_nonzero = params[:balance] == "nonzero"
+        @filtered = (params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)) ||
+          @status != "active" || @balance_nonzero
 
         scope = @q.result.includes(:supplier_ingredients, :ap_treasury)
         scope = scope.where(active: true) if @status == "active"
         scope = scope.where(active: false) if @status == "inactive"
+        scope = scope.where(treasury_id: Treasury.where.not(balance_cents: 0).select(:id)) if @balance_nonzero
         suppliers = scope.to_a
         supplier_ids = suppliers.map(&:id)
 
@@ -38,9 +43,10 @@ module Admin
         @date_filtered = @start_date.present? || @end_date.present?
 
         # When date-filtering, also capture invoices from suppliers not in the
-        # current view (e.g. inactive suppliers hidden by the status filter) so
-        # the footer total matches the ledger (account 5100).
-        if @date_filtered && @status != "all"
+        # current view (inactive suppliers hidden by the status filter, settled
+        # ones hidden by the balance toggle) so the footer total matches the
+        # ledger (account 5100).
+        if @date_filtered && (@status != "all" || @balance_nonzero)
           all_invoice_scope = VendorInvoice
             .where(company_id: Current.company.id)
             .where.not(payment_status: "void")

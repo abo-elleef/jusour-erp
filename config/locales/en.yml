@@ -1580,6 +1580,7 @@ en:
         status_active: "Active"
         status_inactive: "Inactive"
         status_all: "All"
+        balance_nonzero: "With a balance only"
         empty_title: "No suppliers found"
         empty_description_filtered: "Try a different search or clear filters."
         empty_description: "Add vendors to link ingredients and create purchase orders."
