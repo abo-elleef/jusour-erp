@@ -1,0 +1,104 @@
+<% content_for :title, t("accounting.labour_cost.title") %>
+<% cell = "p-3 whitespace-nowrap text-end tabular-nums" %>
+<% status_badge = {
+     complete: nil,
+     current: "bg-blue-50 text-blue-700 border-blue-200",
+     not_finalized: "bg-amber-50 text-amber-800 border-amber-200",
+     partial: "bg-amber-50 text-amber-800 border-amber-200",
+     no_revenue: "bg-gray-50 text-gray-600 border-gray-200"
+   } %>
+<% pct = ->(value) { value ? number_to_percentage(value, precision: 1) : t("sales.shared.em_dash") } %>
+
+<div class="max-w-6xl print:max-w-none" <%= tag.attributes(data: { controller: "auto-print" }) if print_mode? %>>
+  <%= render "admin/accounting/ledger_reports/header", title: t("accounting.labour_cost.title"),
+        description: t("accounting.labour_cost.description") %>
+
+  <%= render layout: "admin/accounting/ledger_reports/filters" do %><% end %>
+
+  <% complete = @result.complete %>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 print:grid-cols-4 print:gap-2 print:mb-3">
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.labour_cost.stats.percent"),
+          value: pct.(@result.percent), hint: t("accounting.labour_cost.stats.percent_hint", count: complete.size) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.labour_cost.stats.cost"),
+          value: format_amount(@result.cost_cents), hint: t("accounting.labour_cost.stats.complete_only") %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.labour_cost.stats.revenue"),
+          value: format_amount(@result.revenue_cents), hint: t("accounting.labour_cost.stats.complete_only") %>
+    <% best = complete.select(&:percent).min_by(&:percent) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.labour_cost.stats.best"),
+          value: best ? pct.(best.percent) : t("sales.shared.em_dash"),
+          hint: best && l(best.month, format: "%B %Y") %>
+  </div>
+
+  <% if @result.months.empty? %>
+    <section class="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+      <p class="text-gray-900 font-semibold"><%= t("accounting.labour_cost.empty") %></p>
+    </section>
+  <% else %>
+    <% chart_months = complete.select(&:percent) %>
+    <% if chart_months.size >= 2 %>
+      <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6 print-hide">
+        <h2 class="text-sm font-semibold text-gray-900 mb-3"><%= t("accounting.labour_cost.chart_title") %></h2>
+        <%= line_chart chart_months.to_h { |m| [l(m.month, format: "%b %Y"), m.percent.round(1)] },
+              height: "240px", discrete: true, suffix: "%", legend: false, curve: false,
+              library: { scales: { y: { beginAtZero: true } } } %>
+      </section>
+    <% end %>
+
+    <section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden print:rounded-none">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <p class="text-xs text-gray-500"><%= t("accounting.labour_cost.table_hint") %></p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("accounting.labour_cost.table.month") %></th>
+              <th class="p-3 text-end"><%= t("accounting.labour_cost.table.revenue") %></th>
+              <th class="p-3 text-end"><%= t("accounting.labour_cost.table.cost") %></th>
+              <th class="p-3 text-end"><%= t("accounting.labour_cost.table.percent") %></th>
+              <th class="p-3 text-end"><%= t("accounting.labour_cost.table.headcount") %></th>
+              <th class="p-3 text-end"><%= t("accounting.labour_cost.table.per_head") %></th>
+              <th class="p-3 pe-5 text-start"><%= t("accounting.labour_cost.table.status") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @result.months.each do |month| %>
+              <% muted = month.status != :complete %>
+              <tr class="<%= 'text-gray-500' if muted %>">
+                <td class="p-3 ps-5 whitespace-nowrap font-medium <%= muted ? 'text-gray-500' : 'text-gray-900' %>">
+                  <%= link_to l(month.month, format: "%B %Y"),
+                        admin_accounting_monthly_payroll_path(payroll_month: month.month.strftime("%Y-%m")),
+                        class: "hover:text-amber-700 hover:underline" %>
+                </td>
+                <td class="<%= cell %>"><%= format_amount(month.revenue_cents) %></td>
+                <td class="<%= cell %>"><%= format_amount(month.cost_cents) %></td>
+                <td class="<%= cell %> font-bold <%= muted ? 'text-gray-400' : 'text-gray-900' %>"><%= pct.(month.percent) %></td>
+                <td class="<%= cell %>"><%= month.headcount %></td>
+                <td class="<%= cell %>"><%= month.cost_per_head_cents ? format_amount(month.cost_per_head_cents) : t("sales.shared.em_dash") %></td>
+                <td class="p-3 pe-5 whitespace-nowrap">
+                  <% if (badge = status_badge[month.status]) %>
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full border text-xs font-medium <%= badge %>"
+                          title="<%= t("accounting.labour_cost.status_hint.#{month.status}") %>">
+                      <%= t("accounting.labour_cost.status.#{month.status}") %>
+                    </span>
+                  <% else %>
+                    <span class="text-xs text-green-700"><%= t("accounting.labour_cost.status.complete") %></span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t-2 border-gray-300 font-bold text-gray-900">
+            <tr>
+              <td class="p-3 ps-5"><%= t("accounting.labour_cost.table.total") %></td>
+              <td class="<%= cell %>"><%= format_amount(@result.revenue_cents) %></td>
+              <td class="<%= cell %>"><%= format_amount(@result.cost_cents) %></td>
+              <td class="<%= cell %>"><%= pct.(@result.percent) %></td>
+              <td class="p-3 pe-5 text-xs font-normal text-gray-500" colspan="3"><%= t("accounting.labour_cost.stats.complete_only") %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  <% end %>
+</div>

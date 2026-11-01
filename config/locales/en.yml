@@ -4302,6 +4302,7 @@ en:
       ap_aging: "Payables aging"
       trial_balance: "Trial balance"
       general_ledger: "General ledger"
+      labour_cost: "Labour cost % of sales"
       business_days: "Business days"
       audit_log: "Audit log"
       integrations: "Integrations"
@@ -4377,6 +4378,41 @@ en:
         staff_accounts: "Staff accounts"
       pdf:
         page_of: "Page %{page} of %{total}"
+    labour_cost:
+      title: "Labour cost % of sales"
+      description: "What staff earned each month against that month's sales, for the whole company. Sales are the P&L's revenue."
+      table_hint: "Pay is the payroll month's finalized pay after bonuses and penalties. Totals use complete months only. Click a month to open its payroll."
+      chart_title: "Labour cost % by month"
+      empty: "No sales or payroll in this range."
+      table:
+        month: "Month"
+        revenue: "Sales"
+        cost: "Staff pay"
+        percent: "Labour %"
+        headcount: "Staff paid"
+        per_head: "Pay per person"
+        status: "Status"
+        total: "Total"
+      stats:
+        percent: "Labour cost %"
+        percent_hint:
+          one: "Over 1 complete month"
+          other: "Over %{count} complete months"
+        cost: "Staff pay"
+        revenue: "Sales"
+        complete_only: "Complete months only"
+        best: "Best month"
+      status:
+        complete: "Complete"
+        current: "Month in progress"
+        not_finalized: "Payroll not finalized"
+        partial: "Payroll partly finalized"
+        no_revenue: "No sales recorded"
+      status_hint:
+        current: "The month is not over yet, so sales and pay are incomplete."
+        not_finalized: "No payroll has been finalized for this month yet."
+        partial: "Far fewer staff were finalized than in a usual month."
+        no_revenue: "Pay was recorded but no sales are on the books for this month, e.g. before the journal went live."
     ledger:
       debit: "Debit"
       credit: "Credit"

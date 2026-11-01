@@ -46,6 +46,8 @@ module AccountingNav
           description: "accounting.category_analysis.description" },
         { controller: "budgets",              label: "accounting.nav.budgets",       path: :admin_accounting_budgets_path,                             permission: "accounting:reports",
           description: "accounting.budgets.description" },
+        { controller: "labour_cost_reports", label: "accounting.nav.labour_cost", path: :admin_accounting_labour_cost_reports_path, permission: "payroll:view",
+          description: "accounting.labour_cost.description" },
         { controller: "ledger_reports", action: "trial_balance",  label: "accounting.nav.trial_balance",  path: :trial_balance_admin_accounting_ledger_reports_path,  permission: "accounting:reports",
           description: "accounting.ledger.trial_balance.description" },
         { controller: "ledger_reports", action: "general_ledger", label: "accounting.nav.general_ledger", path: :general_ledger_admin_accounting_ledger_reports_path, permission: "accounting:reports",
