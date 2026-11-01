@@ -20,8 +20,9 @@
 <% btn_class = compact ? "inline-flex text-xs font-semibold px-3 py-1.5 rounded-xl border transition-colors" : "inline-flex text-sm font-semibold px-4 py-2 rounded-xl border transition-colors" %>
 <% input_class = compact ? "bg-gray-50 border border-gray-200 rounded-lg px-2 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" : "bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
 <% snapshot_params = { payroll_month: payroll_month.strftime("%Y-%m"), return_to: return_to }.compact %>
-<% default_paid_on = [Date.current, payroll_month.end_of_month].min %>
-<% default_paid_on = [default_paid_on, payroll_month.beginning_of_month].max %>
+<%# Salaries usually go out early the next month: the voucher takes that date,
+    the accrual stays on the month's last day. %>
+<% default_paid_on = [Date.current, payroll_month.beginning_of_month].max %>
 
 <% if policy(PayrollSnapshot).create? %>
   <% if finalized %>
@@ -31,6 +32,23 @@
         <span class="<%= btn_class %> bg-emerald-50 text-emerald-800 border-emerald-200"><%= t("staff.payroll.recorded") %></span>
         <span class="text-[0.65rem] leading-tight text-gray-500 normal-case"><%= recorded_meta %></span>
       </span>
+      <%# Recorded to pay later: pay this one employee now, on the chosen day. %>
+      <% if !snapshot.paid_out? && payout_cents.positive? %>
+        <%= form_with url: admin_accounting_monthly_payroll_pay_out_path(payroll_month: payroll_month.strftime("%Y-%m"), user_id: user.id),
+              method: :post,
+              class: "inline-flex flex-wrap items-center gap-1.5 max-w-xs mt-1",
+              data: { turbo_confirm: t("staff.payroll.pay_now_confirm", amount: format_amount(payout_cents), name: user.name) } do %>
+          <%= select_tag "payroll_snapshot[treasury_id]",
+                options_from_collection_for_select(treasuries, :id, :name, default_treasury&.id),
+                class: input_class %>
+          <%= date_field_tag "payroll_snapshot[paid_on]",
+                [Date.current, payroll_month.beginning_of_month].max,
+                min: payroll_month.beginning_of_month,
+                class: input_class %>
+          <%= submit_tag t("staff.payroll.pay_now"),
+                class: "#{btn_class} bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 cursor-pointer" %>
+        <% end %>
+      <% end %>
     <% else %>
       <span class="<%= btn_class %> bg-emerald-50 text-emerald-800 border-emerald-200" title="<%= recorded_meta %>">
         <%= t("staff.payroll.recorded") %>
@@ -89,7 +107,6 @@
           <%= date_field_tag "payroll_snapshot[paid_on]",
                 default_paid_on,
                 min: payroll_month.beginning_of_month,
-                max: payroll_month.end_of_month,
                 class: input_class %>
         </div>
       <% else %>

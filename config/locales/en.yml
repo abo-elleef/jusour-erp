@@ -633,6 +633,9 @@ en:
       overtime_hint: "Bonus = hours × hourly rate (from monthly salary)."
       overtime_label: "Overtime — %{hours} hrs"
       record_payroll: "Record payroll"
+      pay_now: "Pay"
+      pay_now_confirm: "Pay %{amount} to %{name}?"
+      awaiting_payout: "Not paid yet"
       recorded: "Recorded"
       recorded_on: "Recorded on %{date} by %{name}"
       undo_record: "Undo"
@@ -5529,6 +5532,10 @@ en:
       status_draft: "Draft"
       salary_link: "Staff salary link"
       record_all: "Record all"
+      pay_all:
+        one: "Pay %{count} recorded salary"
+        other: "Pay %{count} recorded salaries"
+      pay_all_confirm: "Pay %{amount} to %{count} staff members from the selected treasury, dated on the chosen day?"
       record_all_confirm: "Record payroll for %{count} staff members? Locked amounts will be saved for this month."
       recorded_summary: "%{recorded} / %{total} recorded"
       paid_this_month: "Paid this month"
@@ -5945,6 +5952,11 @@ en:
         one: "Payroll recorded for %{count} staff member."
         other: "Payroll recorded for %{count} staff members."
       all_recorded: "All payroll for this month is already recorded."
+      bulk_paid:
+        one: "Paid %{count} staff member."
+        other: "Paid %{count} staff members."
+      nothing_to_pay: "Nothing recorded for this month is waiting to be paid."
+      pay_treasury_required: "Choose the treasury to pay from."
       undone: "Recorded payroll removed. You can edit adjustments and record again."
       undo_backfilled: "This month was paid before the ledger started, so it can't be undone."
     settings:
@@ -6274,7 +6286,7 @@ en:
               blank: "must be selected when there is remaining pay"
             paid_on:
               blank: "must be set when there is remaining pay"
-              must_be_in_payroll_month: "must be in the payroll month"
+              before_payroll_month: "must not be before the payroll month"
         customer:
           attributes:
             phone:

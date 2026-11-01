@@ -15,6 +15,8 @@ module Admin
         @rows = sorted_payroll_rows
         @finalized_count = @rows.count(&:finalized)
         @pending_count = @rows.count - @finalized_count
+        # Recorded to pay later, and still owed something.
+        @awaiting_payout_rows = @rows.select { |r| r.finalized && !r.snapshot.paid_out? && r.payout_cents.positive? }
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
         @default_treasury = Treasury.default_treasury
 
@@ -48,6 +50,43 @@ module Admin
         end
 
         notice = finalized.positive? ? t("flash.payroll_snapshot.bulk_recorded", count: finalized) : t("flash.payroll_snapshot.all_recorded")
+        redirect_to admin_accounting_monthly_payroll_path(payroll_index_params), notice: notice
+      rescue ActiveRecord::RecordInvalid => e
+        redirect_to admin_accounting_monthly_payroll_path(payroll_index_params),
+          alert: e.record.errors.full_messages.to_sentence
+      end
+
+      # Pays out months recorded with "pay later": the figures were locked on
+      # the month's last day, the money goes out now, dated the chosen day.
+      # Everyone on the page still owed, or just one employee (user_id).
+      # All or nothing, so a failure halfway doesn't leave half the staff paid.
+      def pay_out
+        authorize PayrollSnapshot, :create?
+
+        @payroll_month = parse_payroll_month
+        load_staff_location_filter
+        treasury = resolve_bulk_treasury
+        unless treasury
+          return redirect_to admin_accounting_monthly_payroll_path(payroll_index_params),
+            alert: t("flash.payroll_snapshot.pay_treasury_required")
+        end
+
+        snapshots = PayrollSnapshot.for_month(@payroll_month)
+                                   .where(user: apply_staff_location_filter(User.active))
+                                   .includes(:user)
+        snapshots = snapshots.where(user_id: params[:user_id]) if params[:user_id].present?
+        paid = 0
+
+        ApplicationRecord.transaction do
+          snapshots.each do |snapshot|
+            voucher = ::Accounting::PayOutPayrollService.new(
+              snapshot, treasury: treasury, paid_by: current_user, paid_on: bulk_paid_on
+            ).call
+            paid += 1 if voucher
+          end
+        end
+
+        notice = paid.positive? ? t("flash.payroll_snapshot.bulk_paid", count: paid) : t("flash.payroll_snapshot.nothing_to_pay")
         redirect_to admin_accounting_monthly_payroll_path(payroll_index_params), notice: notice
       rescue ActiveRecord::RecordInvalid => e
         redirect_to admin_accounting_monthly_payroll_path(payroll_index_params),

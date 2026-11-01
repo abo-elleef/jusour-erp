@@ -86,7 +86,7 @@ module Accounting
     end
 
     def month_vouchers
-      Voucher.active.where(party_type: "User", voucher_date: @month..@month.end_of_month)
+      Voucher.for_staff_month(@month)
     end
   end
 end

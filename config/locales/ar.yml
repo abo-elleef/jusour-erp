@@ -635,6 +635,9 @@ ar:
       overtime_hint: "المكافأة = الساعات × أجر الساعة (من الراتب الشهري)."
       overtime_label: "ساعات إضافية — %{hours} س"
       record_payroll: "تسجيل الراتب"
+      pay_now: "صرف"
+      pay_now_confirm: "صرف %{amount} لـ %{name}؟"
+      awaiting_payout: "لم يُصرف بعد"
       recorded: "مُسجّل"
       recorded_on: "سُجّل في %{date} بواسطة %{name}"
       undo_record: "تراجع"
@@ -5587,6 +5590,10 @@ ar:
       status_draft: "مسودة"
       salary_link: "رابط راتب الموظف"
       record_all: "تسجيل الكل"
+      pay_all:
+        one: "صرف %{count} راتب مسجّل"
+        other: "صرف %{count} رواتب مسجّلة"
+      pay_all_confirm: "صرف %{amount} لـ %{count} موظفين من الخزنة المختارة بالتاريخ المحدد؟"
       record_all_confirm: "تسجيل رواتب %{count} موظفين؟ سيتم حفظ المبالغ لهذا الشهر."
       recorded_summary: "%{recorded} / %{total} مُسجّل"
       paid_this_month: "المدفوع هذا الشهر"
@@ -6003,6 +6010,11 @@ ar:
         one: "تم تسجيل راتب %{count} موظف."
         other: "تم تسجيل رواتب %{count} موظفين."
       all_recorded: "جميع رواتب هذا الشهر مُسجّلة بالفعل."
+      bulk_paid:
+        one: "تم صرف راتب %{count} موظف."
+        other: "تم صرف رواتب %{count} موظفين."
+      nothing_to_pay: "لا توجد رواتب مسجّلة لهذا الشهر في انتظار الصرف."
+      pay_treasury_required: "اختر الخزنة التي سيتم الصرف منها."
       undone: "تم إلغاء تسجيل الراتب. يمكنك تعديل الخصومات والمكافآت والتسجيل مجدداً."
       undo_backfilled: "هذا الشهر صُرف قبل بدء دفتر القيود، لذا لا يمكن التراجع عنه."
     settings:
@@ -6332,7 +6344,7 @@ ar:
               blank: "يجب اختيارها عند وجود متبقٍ للدفع"
             paid_on:
               blank: "يجب تحديده عند وجود متبقٍ للدفع"
-              must_be_in_payroll_month: "يجب أن يكون ضمن شهر الراتب"
+              before_payroll_month: "لا يمكن أن يكون قبل شهر الراتب"
         customer:
           attributes:
             phone:

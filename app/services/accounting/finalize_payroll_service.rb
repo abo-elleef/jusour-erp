@@ -22,12 +22,14 @@ module Accounting
     end
 
     def call
-      summary = MonthlyPayrollService.new(@user, @payroll_month).build_calculated
       snapshot = PayrollSnapshot.find_or_initialize_by(user: @user, payroll_month: @payroll_month)
 
       ApplicationRecord.transaction do
         snapshot.payout_voucher&.void!(user: @finalized_by, reason: :source_removed)
         JournalEntryService.destroy_for_source!(snapshot) if snapshot.persisted?
+        # After the old payout is voided, so re-finalizing doesn't count it as
+        # paid during the month.
+        summary = MonthlyPayrollService.new(@user, @payroll_month).build_calculated
         balance_before = @user.staff_balance_cents(as_of: @payroll_month.end_of_month)
 
         snapshot.assign_attributes(
@@ -74,27 +76,8 @@ module Accounting
     def pay_out!(snapshot, owed)
       return unless owed.positive?
 
-      paid_on = resolve_paid_on
-      voucher = RecordVoucherService.new(
-        direction: Voucher::PAYMENT,
-        treasury: @treasury,
-        user: @finalized_by,
-        amount_cents: owed,
-        voucher_date: paid_on,
-        counterparty: @user.name,
-        notes: I18n.t("accounting.treasuries.transactions.payroll_salary",
-                      employee: @user.name,
-                      month: I18n.l(@payroll_month, format: "%B %Y")),
-        party_type: "User",
-        party_id: @user.id
-      ).call
-
-      snapshot.update!(remaining_pay_cents: owed, treasury: @treasury, paid_on: paid_on, payout_voucher: voucher)
-    end
-
-    def resolve_paid_on
-      date = @paid_on.presence || Date.current
-      date.to_date.clamp(@payroll_month.beginning_of_month, @payroll_month.end_of_month)
+      PayOutPayrollService.new(snapshot, treasury: @treasury, paid_by: @finalized_by,
+                                         paid_on: @paid_on, amount_cents: owed).call
     end
   end
 end

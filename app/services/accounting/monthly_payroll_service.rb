@@ -97,8 +97,9 @@ module Accounting
       gross_net      = attendance_pay - penalties + bonuses
       meals_total    = staff_meals_for_month
       # As of the month's last day: later months' payments and accruals don't
-      # belong to this month's figures.
-      balance        = @user.staff_balance_cents(as_of: @payroll_month.end_of_month)
+      # belong to this month's figures — except this month's own salary
+      # payout, which counts here even when it went out early next month.
+      balance        = @user.staff_month_end_balance_cents(@payroll_month)
 
       Result.new(
         user: @user,
@@ -223,7 +224,8 @@ module Accounting
         remaining_pay_cents: calculated.balance_cents,
         debt_cents: [-calculated.balance_cents, 0].max,
         deduction_cents: snapshot.deduction_cents,
-        payout_cents: snapshot.remaining_pay_cents,
+        # Paid out: what went to them. Recorded to pay later: what's due.
+        payout_cents: snapshot.paid_out? ? snapshot.remaining_pay_cents : snapshot.payout_due_cents,
         adjustments: calculated.adjustments,
         payments: calculated.payments,
         finalized: true,

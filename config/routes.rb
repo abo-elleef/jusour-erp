@@ -343,6 +343,7 @@ Rails.application.routes.draw do
       get "payroll/export", to: "payroll#export", as: :payroll_export
       get "monthly_payroll", to: "monthly_payroll#index"
       post "monthly_payroll/finalize_all", to: "monthly_payroll#finalize_all", as: :monthly_payroll_finalize_all
+      post "monthly_payroll/pay_out", to: "monthly_payroll#pay_out", as: :monthly_payroll_pay_out
       get "monthly_payroll/export", to: "monthly_payroll#export", as: :monthly_payroll_export
       resources :staff_payments_reports, only: [:index]
 

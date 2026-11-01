@@ -69,6 +69,17 @@ class Voucher < ApplicationRecord
   scope :recent,   -> { order(voucher_date: :desc, created_at: :desc) }
   scope :on_date_range, ->(start_date, end_date) { where(voucher_date: start_date..end_date) }
 
+  # Staff vouchers for a payroll month: those dated in the month, except that
+  # a salary payout paid after its own month (October's pay on 3 November)
+  # counts in the month it pays for, not the one it's dated in.
+  def self.for_staff_month(month)
+    month = month.to_date.beginning_of_month
+    late = PayrollSnapshot.paid_late
+    staff = active.where(party_type: "User")
+    staff.where(voucher_date: month..month.end_of_month).where.not(id: late.select(:payout_voucher_id))
+         .or(staff.where(id: late.for_month(month).select(:payout_voucher_id)))
+  end
+
   # Prepended so it runs before `dependent: :destroy` clears the allocations —
   # they are the only route back to what this voucher paid off.
   before_destroy :unapply_from_invoices, prepend: true

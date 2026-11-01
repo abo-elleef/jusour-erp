@@ -372,11 +372,21 @@ class User < ApplicationRecord
     lines.sum(:credit_cents) - lines.sum(:debit_cents)
   end
 
-  # Vouchers to or from this employee dated in the month, newest first.
+  # Vouchers to or from this employee for the month, newest first — see
+  # Voucher.for_staff_month for where a late salary payout lands.
   def staff_vouchers_for_month(month)
+    Voucher.for_staff_month(month).where(party_id: id)
+           .includes(:treasury).order(voucher_date: :desc, created_at: :desc)
+  end
+
+  # The account at the end of the month, counting the month's own salary
+  # payout even when it went out early next month — so a month paid on the
+  # 3rd of the next shows as settled, the same as one paid on its last day.
+  def staff_month_end_balance_cents(month)
     month = month.to_date.beginning_of_month
-    party_vouchers.active.where(voucher_date: month..month.end_of_month)
-                  .includes(:treasury).order(voucher_date: :desc, created_at: :desc)
+    late_payouts = Voucher.active.where(id: PayrollSnapshot.paid_late.for_month(month).where(user_id: id)
+                                                           .select(:payout_voucher_id))
+    staff_balance_cents(as_of: month.end_of_month) + late_payouts.sum(&:signed_amount_cents)
   end
 
   # Paid out less received back, for the month.
@@ -391,13 +401,14 @@ class User < ApplicationRecord
     staff_balance_cents + monthly_salary_cents.to_i
   end
 
-    private
-
+  # Ledger lines on this employee's own account.
   def staff_account_lines
     JournalEntryLine.joins(:journal_entry)
                     .where(journal_entries: { company_id: company_id })
                     .where(account_code: wages_account_code)
   end
+
+    private
 
   # Walks forward past any code a treasury already holds in this company —
   # supplier AP treasuries grow up from 2001 and per-type maxima are not
