@@ -1,0 +1,123 @@
+<%# AR or AP aging — one template for both sides (@side). %>
+<% scope = "accounting.aging.#{@side}" %>
+<% buckets = Accounting::AgingBuckets::ALL %>
+<% cell = "p-3 whitespace-nowrap" %>
+<% export_params = request.query_parameters.except("print") %>
+<% content_for :title, t("#{scope}.title") %>
+
+<div class="max-w-7xl print:max-w-none" <%= tag.attributes(data: { controller: "auto-print" }) if print_mode? %>>
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6 print:mb-3">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900 print:text-xl"><%= t("#{scope}.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1 max-w-3xl print-hide"><%= t("#{scope}.description") %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("accounting.aging.as_of", date: l(@result.as_of, format: :long)) %></p>
+      <p class="print-only text-xs text-gray-600 mt-1">
+        <%= Current.company&.name %>
+        <% if @overdue_only %> · <%= t("accounting.aging.overdue_only") %><% end %>
+        · <%= t("inventory.reports.shared.printed_at", time: l(Time.current, format: :short)) %>
+      </p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 shrink-0 print-hide">
+      <%# A GET link styled as a switch, like the vendors index balance toggle:
+          the state lives in the URL, so CSV and Print carry it along. %>
+      <%= link_to url_for(export_params.except("overdue_only").merge(@overdue_only ? {} : { "overdue_only" => "1" })),
+            role: "switch", aria: { checked: @overdue_only },
+            class: "inline-flex items-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border transition-colors #{@overdue_only ? 'border-amber-300 bg-amber-50 text-amber-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" do %>
+        <%# Knob placed by flex, not absolute offsets, so it mirrors in RTL. %>
+        <span class="inline-flex items-center h-4 w-7 p-0.5 shrink-0 rounded-full transition-colors <%= @overdue_only ? 'justify-end bg-amber-600' : 'bg-gray-300' %>">
+          <span class="h-3 w-3 rounded-full bg-white shadow"></span>
+        </span>
+        <%= t("accounting.aging.overdue_only") %>
+      <% end %>
+      <%= link_to url_for(export_params.merge(format: :csv)),
+            class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" do %>
+        <span aria-hidden="true">&darr;</span> <%= t("actions.export_csv") %>
+      <% end %>
+      <%= link_to url_for(export_params.merge(print: 1)), target: "_blank", rel: "noopener", data: { turbo: false },
+            class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" do %>
+        <%= t("inventory.reports.shared.print") %>
+      <% end %>
+    </div>
+  </div>
+
+  <% ninety = @result.bucket_cents(:days_90_plus) %>
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 print:grid-cols-4 print:gap-2 print:mb-3">
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.aging.stats.total"),
+          value: format_amount(@result.invoiced_cents),
+          hint: t("accounting.aging.stats.total_hint", invoices: @result.invoice_count, parties: @result.rows.count { |row| row.invoice_count.positive? }) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.aging.stats.overdue"),
+          tone: @result.overdue_cents.positive? ? :warn : :neutral, value: format_amount(@result.overdue_cents),
+          hint: t("accounting.aging.stats.overdue_hint") %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.aging.stats.ninety"),
+          tone: ninety.positive? ? :bad : :neutral, value: format_amount(ninety),
+          hint: (@result.invoiced_cents.positive? ? t("accounting.aging.stats.share", percent: number_to_percentage(ninety * 100.0 / @result.invoiced_cents, precision: 0)) : nil) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.aging.stats.unallocated"),
+          tone: @result.unallocated_cents.zero? ? :neutral : :warn, value: format_amount(@result.unallocated_cents),
+          hint: t("#{scope}.unallocated_hint") %>
+  </div>
+
+  <% if @result.rows.empty? %>
+    <section class="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("#{scope}.empty") %></p>
+      <% if @overdue_only %><p class="text-gray-500 text-sm"><%= t("accounting.aging.empty_overdue_hint") %></p><% end %>
+    </section>
+  <% else %>
+    <section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden print:rounded-none">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <p class="text-xs text-gray-500"><%= t("#{scope}.table_hint") %></p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm" data-controller="sortable-table"
+               data-sortable-table-storage-key-value="aging-<%= @side %>">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <%= sortable_report_th t("#{scope}.party"), "party", align: :start %>
+              <%= sortable_report_th t("accounting.aging.table.invoices"), "invoices", type: :number %>
+              <% buckets.each do |bucket| %>
+                <%= sortable_report_th t("accounting.aging.buckets.#{bucket}"), bucket.to_s, type: :number %>
+              <% end %>
+              <%= sortable_report_th t("accounting.aging.table.total"), "total", type: :number %>
+              <%= sortable_report_th t("accounting.aging.table.oldest_days"), "oldest", type: :number %>
+              <%= sortable_report_th t("accounting.aging.table.ledger"), "ledger", type: :number %>
+              <%= sortable_report_th t("accounting.aging.table.unallocated"), "unallocated", type: :number, pe: true %>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100" data-sortable-table-target="body">
+            <% @result.rows.each do |row| %>
+              <% name = Accounting::AgingReportService.party_name(row.party) %>
+              <% party_path = @side == :receivable ? admin_sales_customer_statement_path(row.party) : admin_inventory_supplier_path(row.party, tab: "statement") %>
+              <tr>
+                <td class="<%= cell %> ps-5 font-medium text-gray-900" data-sort-key="party" data-sort-value="<%= name %>">
+                  <%= link_to name, party_path, class: "hover:text-amber-700 hover:underline" %>
+                </td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600" data-sort-key="invoices" data-sort-value="<%= row.invoice_count %>"><%= row.invoice_count %></td>
+                <% buckets.each do |bucket| %>
+                  <% cents = row.buckets[bucket] %>
+                  <% tone = if cents.zero? then "text-gray-300" elsif bucket == :days_90_plus then "text-red-700 font-semibold" else "text-gray-700" end %>
+                  <td class="<%= cell %> text-end tabular-nums <%= tone %>" data-sort-key="<%= bucket %>" data-sort-value="<%= cents %>"><%= format_amount(cents) %></td>
+                <% end %>
+                <td class="<%= cell %> text-end tabular-nums font-bold text-gray-900" data-sort-key="total" data-sort-value="<%= row.invoiced_cents %>"><%= format_amount(row.invoiced_cents) %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-600" data-sort-key="oldest" data-sort-value="<%= row.oldest_days %>"><%= row.oldest_days.positive? ? row.oldest_days : t("sales.shared.em_dash") %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-700" data-sort-key="ledger" data-sort-value="<%= row.ledger_cents %>"><%= format_amount(row.ledger_cents) %></td>
+                <td class="<%= cell %> text-end pe-5 tabular-nums <%= row.unallocated_cents.zero? ? "text-gray-300" : "text-amber-700" %>" data-sort-key="unallocated" data-sort-value="<%= row.unallocated_cents %>"><%= format_amount(row.unallocated_cents) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t-2 border-gray-200 font-bold text-gray-900">
+            <tr>
+              <td class="<%= cell %> ps-5"><%= t("accounting.aging.table.grand_total") %></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= @result.invoice_count %></td>
+              <% buckets.each do |bucket| %>
+                <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@result.bucket_cents(bucket)) %></td>
+              <% end %>
+              <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@result.invoiced_cents) %></td>
+              <td class="<%= cell %>"></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@result.ledger_cents) %></td>
+              <td class="<%= cell %> text-end pe-5 tabular-nums"><%= format_amount(@result.unallocated_cents) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  <% end %>
+</div>

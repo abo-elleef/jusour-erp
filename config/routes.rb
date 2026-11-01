@@ -283,6 +283,12 @@ Rails.application.routes.draw do
       resources :treasury_transfers, only: %i[new create]
       resources :payment_method_treasuries, only: %i[index create destroy]
       resources :chart_of_accounts, only: [:index]
+      resources :aging_reports, only: [] do
+        collection do
+          get :receivable
+          get :payable
+        end
+      end
       resources :financial_statements, only: [] do
         collection do
           get  :profit_loss
