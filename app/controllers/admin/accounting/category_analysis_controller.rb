@@ -37,13 +37,16 @@ module Admin
       def analysis_csv
         CSV.generate do |csv|
           csv << ["Category analysis", "#{@start_date} to #{@end_date}"]
-          csv << ["Type", "Category", "Entries", "Total", "Share %", "Average"] + @analysis.period_labels
+          csv << ["Type", "Category", "Entries", "Total", "Previous period", "Change", "Change %", "Share %", "Average"] + @analysis.period_labels
           @analysis.rows.each do |row|
             csv << [
               row.kind.to_s,
               row.category.name,
               row.entry_count,
               helpers.format_money(row.total_cents),
+              helpers.format_money(row.previous_cents),
+              helpers.format_money(row.change_cents),
+              row.change_pct&.round(1),
               row.share_pct,
               helpers.format_money(row.average_cents)
             ] + @analysis.periods.map { |period| helpers.format_money(row.amounts[period] || 0) }

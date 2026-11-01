@@ -1,0 +1,107 @@
+<% content_for :title, t("accounting.treasury_movements.title") %>
+<% cell = "p-3 whitespace-nowrap text-end tabular-nums" %>
+<% signed = ->(cents) { cents.zero? ? tag.span("–", class: "text-gray-300") : format_amount(cents) } %>
+
+<div class="max-w-7xl print:max-w-none" <%= tag.attributes(data: { controller: "auto-print" }) if print_mode? %>>
+  <%= render "admin/accounting/ledger_reports/header", title: t("accounting.treasury_movements.title"),
+        description: t("accounting.treasury_movements.description") %>
+
+  <%= render layout: "admin/accounting/ledger_reports/filters" do %><% end %>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 print:grid-cols-4 print:gap-2 print:mb-3">
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.treasury_movements.table.opening"), value: format_amount(@result.opening_cents) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.treasury_movements.table.in"), tone: :good, value: format_amount(@result.in_cents) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.treasury_movements.table.out"), tone: :bad, value: format_amount(@result.out_cents) %>
+    <%= render "admin/inventory/reports/valued/stat", label: t("accounting.treasury_movements.table.closing"), value: format_amount(@result.closing_cents),
+          hint: t("accounting.treasury_movements.net", amount: format_amount(@result.in_cents - @result.out_cents)) %>
+  </div>
+
+  <% if @result.rows.empty? %>
+    <section class="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center">
+      <p class="text-gray-900 font-semibold"><%= t("accounting.treasury_movements.empty") %></p>
+    </section>
+  <% else %>
+    <section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6 print:rounded-none">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <p class="text-xs text-gray-500"><%= t("accounting.treasury_movements.table_hint") %></p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("accounting.treasury_movements.table.treasury") %></th>
+              <% %w[opening in out transfers closing].each do |key| %>
+                <th class="p-3 text-end last:pe-5"><%= t("accounting.treasury_movements.table.#{key}") %></th>
+              <% end %>
+            </tr>
+          </thead>
+          <% @result.groups.each do |type, rows| %>
+            <tbody class="divide-y divide-gray-100 border-b border-gray-200">
+              <tr class="bg-gray-50">
+                <td class="p-2 ps-5 text-xs font-bold text-gray-700 uppercase tracking-wide" colspan="6"><%= accounting_treasury_type(type) %></td>
+              </tr>
+              <% rows.each do |row| %>
+                <tr>
+                  <td class="p-3 ps-5 font-medium text-gray-900">
+                    <%= link_to row.treasury.name, admin_accounting_treasury_path(row.treasury, start_date: @start_date, end_date: @end_date),
+                          class: "hover:text-amber-700 hover:underline" %>
+                  </td>
+                  <td class="<%= cell %> text-gray-600"><%= format_amount(row.opening_cents) %></td>
+                  <td class="<%= cell %> text-green-700"><%= signed.(row.in_cents) %></td>
+                  <td class="<%= cell %> text-red-700"><%= signed.(row.out_cents) %></td>
+                  <td class="<%= cell %> text-gray-600"><%= signed.(row.transfer_cents) %></td>
+                  <td class="<%= cell %> pe-5 font-semibold text-gray-900"><%= format_amount(row.closing_cents) %></td>
+                </tr>
+              <% end %>
+              <% if rows.size > 1 %>
+                <tr class="bg-gray-50/60 font-semibold text-gray-800">
+                  <td class="p-3 ps-5"><%= t("accounting.treasury_movements.subtotal", type: accounting_treasury_type(type)) %></td>
+                  <% %i[opening_cents in_cents out_cents transfer_cents closing_cents].each do |attr| %>
+                    <td class="<%= cell %> last:pe-5"><%= format_amount(rows.sum(&attr)) %></td>
+                  <% end %>
+                </tr>
+              <% end %>
+            </tbody>
+          <% end %>
+          <tfoot class="border-t-2 border-gray-300 font-bold text-gray-900">
+            <tr>
+              <td class="p-3 ps-5"><%= t("accounting.treasury_movements.table.total") %></td>
+              <% %i[opening_cents in_cents out_cents transfer_cents closing_cents].each do |attr| %>
+                <td class="<%= cell %> last:pe-5"><%= format_amount(@result.public_send(attr)) %></td>
+              <% end %>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+
+    <% if @result.kinds.any? %>
+      <section class="print-flow rounded-2xl border border-gray-200 bg-white overflow-hidden print:rounded-none">
+        <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.treasury_movements.by_kind") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.treasury_movements.by_kind_hint") %></p>
+        </div>
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("accounting.treasury_movements.table.kind") %></th>
+              <th class="p-3 text-end"><%= t("accounting.treasury_movements.table.count") %></th>
+              <th class="p-3 text-end"><%= t("accounting.treasury_movements.table.in") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("accounting.treasury_movements.table.out") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @result.kinds.each do |kind| %>
+              <tr>
+                <td class="p-3 ps-5 text-gray-900"><%= accounting_treasury_transaction_kind(kind.kind) %></td>
+                <td class="<%= cell %> text-gray-600"><%= kind.count %></td>
+                <td class="<%= cell %> text-green-700"><%= signed.(kind.in_cents) %></td>
+                <td class="<%= cell %> pe-5 text-red-700"><%= signed.(kind.out_cents) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </section>
+    <% end %>
+  <% end %>
+</div>

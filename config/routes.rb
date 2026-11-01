@@ -283,6 +283,7 @@ Rails.application.routes.draw do
       resources :treasury_transfers, only: %i[new create]
       resources :payment_method_treasuries, only: %i[index create destroy]
       resources :chart_of_accounts, only: [:index]
+      resources :treasury_movements, only: [:index]
       resource :kpi_scorecard, only: [:show]
       resources :labour_cost_reports, only: [:index]
       resources :ledger_reports, only: [] do

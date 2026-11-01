@@ -10,17 +10,27 @@ module Accounting
     KINDS = %w[both expense income].freeze
 
     Row = Struct.new(:category, :kind, :total_cents, :entry_count, :amounts,
-                     :share_pct, keyword_init: true) do
+                     :share_pct, :previous_cents, keyword_init: true) do
       def average_cents
         entry_count.zero? ? 0 : (total_cents.to_f / entry_count).round
       end
+
+      def change_cents = total_cents - previous_cents.to_i
+
+      # nil when there was nothing before: a new category has no % change.
+      def change_pct = previous_cents.to_i.zero? ? nil : change_cents * 100.0 / previous_cents
     end
 
     Result = Struct.new(:rows, :periods, :period_labels, :period_bounds, :granularity,
                         :series, :expense_cents, :income_cents, :entry_count,
-                        :categories, keyword_init: true) do
+                        :categories, :previous_start, :previous_end, keyword_init: true) do
       def net_cents
         income_cents - expense_cents
+      end
+
+      # The expense categories that grew most against the previous period.
+      def biggest_increases(limit = 3)
+        rows.select { |row| row.kind == :expense && row.change_cents.positive? }.max_by(limit, &:change_cents)
       end
     end
 
@@ -53,7 +63,9 @@ module Accounting
         expense_cents: expense_cents,
         income_cents: income_cents,
         entry_count: rows.sum(&:entry_count),
-        categories: available_categories
+        categories: available_categories,
+        previous_start: previous_range.first,
+        previous_end: previous_range.last
       )
     end
 
@@ -93,8 +105,37 @@ module Accounting
           total_cents: bucket[:amounts].values.sum,
           entry_count: bucket[:count],
           amounts: bucket[:amounts],
-          share_pct: 0
+          share_pct: 0,
+          previous_cents: previous_totals(kind).fetch(category_id, 0)
         )
+      end
+    end
+
+    # The same categories over the period just before, for the change columns.
+    def previous_totals(kind)
+      @previous_totals ||= {}
+      @previous_totals[kind] ||= begin
+        model = kind == :expense ? Expense : Income
+        date_column = kind == :expense ? :expense_date : :income_date
+        category_key = kind == :expense ? :expense_category_id : :income_category_id
+        scope = model.where(date_column => previous_range)
+        scope = scope.where(category_key => @category_ids) if @category_ids
+        scope.group(category_key).sum(:amount_cents).transform_values(&:to_i)
+      end
+    end
+
+    # Whole calendar months compare with the same number of months before
+    # (October with September, a quarter with the quarter before); any other
+    # range with the same number of days just before it.
+    def previous_range
+      @previous_range ||= begin
+        if @start_date == @start_date.beginning_of_month && @end_date == @end_date.end_of_month
+          months = (@end_date.year * 12 + @end_date.month) - (@start_date.year * 12 + @start_date.month) + 1
+          (@start_date << months)..(@start_date - 1)
+        else
+          finish = @start_date - 1
+          (finish - (@end_date - @start_date))..finish
+        end
       end
     end
 

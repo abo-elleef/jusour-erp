@@ -219,6 +219,26 @@
            params = { category_id: row.category.id, start_date: from, end_date: to, transient_range: 1 }
            row.kind == :expense ? admin_accounting_expenses_path(params) : admin_accounting_incomes_path(params)
          } %>
+      <% previous_label = t("accounting.shared.date_range_value", start: l(@analysis.previous_start, format: :long), end: l(@analysis.previous_end, format: :long)) %>
+      <% increases = @analysis.biggest_increases %>
+      <% if increases.any? %>
+        <section class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4 mb-6">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.category_analysis.biggest_increases") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5 mb-3"><%= t("accounting.category_analysis.compared_with", period: previous_label) %></p>
+          <div class="grid sm:grid-cols-3 gap-3">
+            <% increases.each do |row| %>
+              <%= link_to drill_url.(row, @start_date, @end_date), class: "block rounded-xl border border-amber-200 bg-white p-3 hover:border-amber-400 transition-colors" do %>
+                <p class="text-sm font-medium text-gray-900 truncate"><%= row.category.name %></p>
+                <p class="text-lg font-bold text-red-700 tabular-nums">+<%= format_amount(row.change_cents) %></p>
+                <p class="text-xs text-gray-500 tabular-nums">
+                  <%= format_amount(row.previous_cents) %> → <%= format_amount(row.total_cents) %>
+                  <% if row.change_pct %>(+<%= number_with_precision(row.change_pct, precision: 0) %>%)<% else %>· <%= t("accounting.category_analysis.new") %><% end %>
+                </p>
+              <% end %>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
       <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
         <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
           <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.category_analysis.table_heading") %></h2>
@@ -233,6 +253,8 @@
                 <th class="<%= cell %> text-start"><%= t("accounting.category_analysis.type") %></th>
                 <th class="<%= cell %> text-end"><%= t("accounting.category_analysis.entries") %></th>
                 <th class="<%= cell %> text-end font-bold"><%= t("accounting.category_analysis.total") %></th>
+                <th class="<%= cell %> text-end" title="<%= previous_label %>"><%= t("accounting.category_analysis.previous") %></th>
+                <th class="<%= cell %> text-end"><%= t("accounting.category_analysis.change") %></th>
                 <th class="<%= cell %> text-end"><%= t("accounting.category_analysis.share") %></th>
                 <th class="<%= cell %> text-end"><%= t("accounting.category_analysis.average") %></th>
                 <% @analysis.period_labels.each do |label| %>
@@ -263,6 +285,23 @@
                           class: "hover:text-amber-700 hover:underline",
                           title: t("accounting.category_analysis.open_entries") %>
                   </td>
+                  <td class="<%= cell %> text-end tabular-nums text-gray-600">
+                    <% if row.previous_cents.to_i.zero? %>
+                      <span class="text-gray-300">—</span>
+                    <% else %>
+                      <%= link_to format_amount(row.previous_cents), drill_url.(row, @analysis.previous_start, @analysis.previous_end),
+                            class: "hover:text-amber-700 hover:underline", title: t("accounting.category_analysis.open_entries") %>
+                    <% end %>
+                  </td>
+                  <% worse = row.kind == :expense ? row.change_cents.positive? : row.change_cents.negative? %>
+                  <td class="<%= cell %> text-end tabular-nums whitespace-nowrap <%= row.change_cents.zero? ? 'text-gray-400' : (worse ? 'text-red-700' : 'text-green-700') %>">
+                    <% if row.previous_cents.to_i.zero? %>
+                      <span class="text-xs font-semibold text-gray-500"><%= t("accounting.category_analysis.new") %></span>
+                    <% else %>
+                      <%= row.change_cents.positive? ? "+" : "" %><%= format_amount(row.change_cents) %>
+                      <span class="text-xs">(<%= row.change_pct.positive? ? "+" : "" %><%= number_with_precision(row.change_pct, precision: 0) %>%)</span>
+                    <% end %>
+                  </td>
                   <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= number_with_precision(row.share_pct, precision: 1) %>%</td>
                   <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= format_money(row.average_cents) %></td>
                   <% @analysis.periods.each do |period| %>
@@ -283,7 +322,7 @@
               <% end %>
               <%# Every category can be unticked, and an empty table body reads as a bug. %>
               <tr data-chart-series-target="tableEmpty" hidden>
-                <td colspan="<%= 7 + @analysis.periods.size %>" class="p-6 text-center text-sm text-gray-500">
+                <td colspan="<%= 9 + @analysis.periods.size %>" class="p-6 text-center text-sm text-gray-500">
                   <%= t("accounting.category_analysis.nothing_selected") %>
                 </td>
               </tr>

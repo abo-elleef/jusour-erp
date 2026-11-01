@@ -46,6 +46,8 @@ module AccountingNav
           description: "accounting.category_analysis.description" },
         { controller: "budgets",              label: "accounting.nav.budgets",       path: :admin_accounting_budgets_path,                             permission: "accounting:reports",
           description: "accounting.budgets.description" },
+        { controller: "treasury_movements", label: "accounting.nav.treasury_movements", path: :admin_accounting_treasury_movements_path, permission: "accounting:ledgers",
+          description: "accounting.treasury_movements.description" },
         { controller: "kpi_scorecards", label: "accounting.nav.kpi_scorecard", path: :admin_accounting_kpi_scorecard_path, permission: "accounting:reports",
           description: "accounting.kpi.description" },
         { controller: "labour_cost_reports", label: "accounting.nav.labour_cost", path: :admin_accounting_labour_cost_reports_path, permission: "payroll:view",

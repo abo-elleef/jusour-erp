@@ -253,7 +253,7 @@ RSpec.describe "Accounting category analysis report", type: :request do
       get admin_accounting_category_analysis_index_path(format: :csv, start_date: 30.days.ago.to_date,
         end_date: Date.current, granularity: "month")
 
-      expect(response.body).to include("Type,Category,Entries,Total,Share %,Average")
+      expect(response.body).to include("Type,Category,Entries,Total,Previous period,Change,Change %,Share %,Average")
       expect(response.body).to include("Rent")
       expect(response.body).to include("Catering")
     end
