@@ -209,7 +209,12 @@
                   <div class="text-[11px] font-normal text-gray-400 whitespace-nowrap"><%= days_label %></div>
                 <% end %>
               </td>
-              <td class="p-3 text-end tabular-nums text-red-700">−<%= format_money(row.penalties_cents) %></td>
+              <td class="p-3 text-end tabular-nums text-red-700">
+                −<%= format_money(row.penalties_cents) %>
+                <% if row.penalties_waived_cents.to_i.positive? %>
+                  <div class="text-[11px] font-normal text-emerald-700 whitespace-nowrap"><%= t("staff.payroll.waiver.waived", amount: format_amount(row.penalties_waived_cents)) %></div>
+                <% end %>
+              </td>
               <td class="p-3 text-end tabular-nums text-emerald-700">+<%= format_money(row.bonuses_cents) %></td>
               <td class="p-3 text-end tabular-nums text-blue-700">−<%= format_money(row.paid_cents) %></td>
               <% if row.remaining_pay_cents.negative? %>

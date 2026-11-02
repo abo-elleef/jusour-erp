@@ -27,7 +27,7 @@ class PayrollSnapshot < ApplicationRecord
   validates :payroll_month, presence: true
   validates :user_id, uniqueness: { scope: :payroll_month }
   validates :base_salary_cents, :daily_rate_cents, :penalties_cents, :bonuses_cents, :net_pay_cents,
-    :remaining_pay_cents,
+    :remaining_pay_cents, :penalties_waived_cents,
     numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   validates :advances_cents, :staff_meals_cents, numericality: { only_integer: true }
   validates :finalized_at, presence: true

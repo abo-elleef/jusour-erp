@@ -107,7 +107,7 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       expect(payout_cell.text).to include(I18n.t("accounting.monthly_payroll.payout_deduction", amount: "500.00"))
     end
 
-    it "shows a negative remaining pay as owed to the company when penalties exceed salary" do
+    it "waives penalties beyond the month's pay instead of showing them as owed" do
       payroll_month = Date.current.beginning_of_month
       staff = create(:user, company: company, name: "Over Penalized", role: "cashier",
                      monthly_salary_cents: 300_000)
@@ -125,15 +125,10 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
 
       expect(response).to have_http_status(:ok)
       row_doc = Nokogiri::HTML(response.body).at_css("td.font-medium", text: "Over Penalized").parent
+      expect(row_doc.text).to include(I18n.t("staff.payroll.waiver.waived", amount: "500.00"))
       remaining_pay_cell = row_doc.css("td")[7]
-      expect(remaining_pay_cell.text).to include("500.00")
-      expect(remaining_pay_cell.text).not_to include("-500.00")
-      expect(remaining_pay_cell.text).to include(I18n.t("staff.wages_ledger.they_owe"))
-      expect(remaining_pay_cell["class"]).to include("text-red-700")
-
-      total_row = Nokogiri::HTML(response.body).at_css("tfoot tr")
-      totals_remaining_cell = total_row.css("td")[7]
-      expect(totals_remaining_cell.text).to include("-500.00")
+      expect(remaining_pay_cell.text).to include("0.00")
+      expect(remaining_pay_cell.text).not_to include(I18n.t("staff.wages_ledger.they_owe"))
     end
   end
 
@@ -151,7 +146,7 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       expect(response.body).to include(I18n.t("accounting.monthly_payroll.attendance_pay"))
     end
 
-    it "exports the real negative remaining pay when penalties exceed salary" do
+    it "exports zero remaining pay when penalties beyond the month's pay are waived" do
       payroll_month = Date.current.beginning_of_month
       staff = create(:user, company: company, name: "Over Penalized", role: "cashier",
                      monthly_salary_cents: 300_000)
@@ -172,8 +167,8 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       row = rows.find { |r| r[0] == "Over Penalized" }
       totals_row = rows.last
 
-      expect(row[8]).to eq("-500.00")
-      expect(totals_row[8]).to eq("-500.00")
+      expect(row[8]).to eq("0.00")
+      expect(totals_row[8]).to eq("0.00")
     end
 
     it "includes the location slug in the filename when filtered" do

@@ -15,7 +15,8 @@ module Admin
           finalized_by: current_user,
           treasury: resolve_treasury,
           paid_on: snapshot_params[:paid_on],
-          deduction_cents: requested_deduction_cents
+          deduction_cents: requested_deduction_cents,
+          waive_penalties: snapshot_params[:waive_penalties] != "0"
         ).call
 
         redirect_to redirect_path(payroll_month), notice: t("flash.payroll_snapshot.recorded")
@@ -55,7 +56,7 @@ module Admin
       end
 
       def snapshot_params
-        params.fetch(:payroll_snapshot, {}).permit(:treasury_id, :paid_on, :deduction_pounds)
+        params.fetch(:payroll_snapshot, {}).permit(:treasury_id, :paid_on, :deduction_pounds, :waive_penalties)
       end
 
       # Blank means "use the default" (their plan, or all of it), not zero.

@@ -671,6 +671,10 @@ en:
         no_plan: "No standing plan: the whole month's pay goes to the debt until it's cleared. Set a monthly amount on the staff form to spread it out."
         plan_field: "Monthly deduction from what they owe"
         plan_field_hint: "For a large advance repaid over several months. Leave blank to take the whole month's pay until the debt is cleared."
+      waiver:
+        field: "Waive %{amount} of penalties"
+        field_hint: "This month's advances and meals leave too little for the full penalties. Untick to carry them as debt to next month."
+        waived: "%{amount} waived"
     payroll_portal:
       title: "Salary preview"
       pin_title: "Enter your PIN"

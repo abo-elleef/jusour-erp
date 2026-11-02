@@ -20,6 +20,7 @@ module Accounting
       :penalty_days,
       :daily_rate_cents,
       :penalties_cents,
+      :penalties_waived_cents,
       :bonuses_cents,
       :net_pay_cents,
       :paid_cents,
@@ -65,7 +66,20 @@ module Accounting
                  payout_cents: [balance_before_cents.to_i, 0].max + net - deduction)
     end
 
-    def initialize(user, payroll_month, sort: nil, direction: nil)
+    # Penalties come out of what the month leaves after its own payments —
+    # advances and staff meals — and never push the account below zero. The
+    # rest is waived: a month already spent in advance isn't turned into debt
+    # by penalties. Only this month's payments count, so someone repaying an
+    # old advance over several months is still penalized as normal.
+    #
+    #   applied = min(penalties, max(attendance + bonuses − month's payments, 0))
+    def self.penalties_waived_for(penalties_cents:, earned_cents:, month_payments_cents:)
+      room = [earned_cents.to_i - month_payments_cents.to_i, 0].max
+      [penalties_cents.to_i - room, 0].max
+    end
+
+    def initialize(user, payroll_month, sort: nil, direction: nil, waive_penalties: true)
+      @waive_penalties = waive_penalties
       @user = user
       @payroll_month = payroll_month.to_date.beginning_of_month
       @sort = PayrollAdjustment::SORTABLE_COLUMNS.include?(sort.to_s) ? sort.to_s : PayrollAdjustment::DEFAULT_SORT
@@ -94,8 +108,16 @@ module Accounting
 
       penalties      = adjustments.penalties.sum(:amount_cents)
       bonuses        = adjustments.bonuses.sum(:amount_cents)
-      gross_net      = attendance_pay - penalties + bonuses
       meals_total    = staff_meals_for_month
+      paid           = payments.sum(&:signed_amount_cents) * -1
+      waived         = if @waive_penalties
+                         self.class.penalties_waived_for(penalties_cents: penalties,
+                                                         earned_cents: attendance_pay + bonuses,
+                                                         month_payments_cents: paid + meals_total)
+                       else
+                         0
+                       end
+      gross_net      = attendance_pay - penalties + waived + bonuses
       # As of the month's last day: later months' payments and accruals don't
       # belong to this month's figures — except this month's own salary
       # payout, which counts here even when it went out early next month.
@@ -112,9 +134,10 @@ module Accounting
         penalty_days: attendance.penalty_days,
         daily_rate_cents: @user.daily_rate_cents,
         penalties_cents: penalties,
+        penalties_waived_cents: waived,
         bonuses_cents: bonuses,
         net_pay_cents: gross_net,
-        paid_cents: payments.sum(&:signed_amount_cents) * -1,
+        paid_cents: paid,
         staff_meals_cents: meals_total,
         balance_cents: balance,
         # Not finalized yet, so this month's earnings aren't on the account:
@@ -214,6 +237,7 @@ module Accounting
         penalty_days: snapshot.penalty_days,
         daily_rate_cents: snapshot.daily_rate_cents,
         penalties_cents: snapshot.penalties_cents,
+        penalties_waived_cents: snapshot.penalties_waived_cents,
         bonuses_cents: snapshot.bonuses_cents,
         net_pay_cents: snapshot.net_pay_cents,
         paid_cents: calculated.paid_cents,

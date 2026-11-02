@@ -12,8 +12,10 @@ module Accounting
   # amount, else their standing plan, else all of it). Without a treasury it
   # only records the month, and the balance waits for a voucher.
   class FinalizePayrollService
-    def initialize(user, payroll_month, finalized_by:, treasury: nil, paid_on: nil, deduction_cents: nil)
+    def initialize(user, payroll_month, finalized_by:, treasury: nil, paid_on: nil, deduction_cents: nil,
+                   waive_penalties: true)
       @deduction_cents = deduction_cents
+      @waive_penalties = waive_penalties
       @user = user
       @payroll_month = payroll_month.to_date.beginning_of_month
       @finalized_by = finalized_by
@@ -29,7 +31,7 @@ module Accounting
         JournalEntryService.destroy_for_source!(snapshot) if snapshot.persisted?
         # After the old payout is voided, so re-finalizing doesn't count it as
         # paid during the month.
-        summary = MonthlyPayrollService.new(@user, @payroll_month).build_calculated
+        summary = MonthlyPayrollService.new(@user, @payroll_month, waive_penalties: @waive_penalties).build_calculated
         balance_before = @user.staff_balance_cents(as_of: @payroll_month.end_of_month)
 
         snapshot.assign_attributes(
@@ -40,6 +42,7 @@ module Accounting
           penalty_days: summary.penalty_days,
           daily_rate_cents: summary.daily_rate_cents,
           penalties_cents: summary.penalties_cents,
+          penalties_waived_cents: summary.penalties_waived_cents,
           bonuses_cents: summary.bonuses_cents,
           # Penalties can exceed the month's pay. The employee doesn't end up
           # owing for a month's work, so the accrual floors at zero.

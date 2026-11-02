@@ -121,6 +121,9 @@
     <div class="rounded-2xl border border-red-100 bg-red-50/80 p-4 shadow-sm">
       <p class="text-[0.65rem] font-semibold text-red-600 uppercase tracking-wide leading-tight"><%= t("staff.payroll.penalties") %></p>
       <p class="text-base sm:text-lg font-bold text-red-700 tabular-nums mt-1.5 break-all">−<%= format_amount(payroll_summary.penalties_cents) %></p>
+      <% if payroll_summary.penalties_waived_cents.to_i.positive? %>
+        <p class="text-[11px] text-emerald-700 mt-1"><%= t("staff.payroll.waiver.waived", amount: format_amount(payroll_summary.penalties_waived_cents)) %></p>
+      <% end %>
     </div>
     <div class="rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4 shadow-sm">
       <p class="text-[0.65rem] font-semibold text-emerald-600 uppercase tracking-wide leading-tight"><%= t("staff.payroll.bonuses") %></p>

@@ -101,6 +101,21 @@
           <% end %>
         </div>
       <% end %>
+      <%# Ticked by default; unticked, the waived part carries as debt. %>
+      <% if payroll_summary&.penalties_waived_cents.to_i.positive? %>
+        <div class="<%= compact ? '' : 'self-center' %>">
+          <%= hidden_field_tag "payroll_snapshot[waive_penalties]", "0", id: nil %>
+          <label class="inline-flex items-center gap-1.5 <%= compact ? 'text-xs' : 'text-sm' %> text-gray-700 cursor-pointer"
+                 title="<%= t("staff.payroll.waiver.field_hint") %>">
+            <%= check_box_tag "payroll_snapshot[waive_penalties]", "1", true, id: "waive_penalties_#{user.id}",
+                  class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500" %>
+            <%= t("staff.payroll.waiver.field", amount: format_amount(payroll_summary.penalties_waived_cents)) %>
+          </label>
+          <% unless compact %>
+            <p class="text-[11px] text-gray-500 mt-1 max-w-xs"><%= t("staff.payroll.waiver.field_hint") %></p>
+          <% end %>
+        </div>
+      <% end %>
       <% unless compact %>
         <div>
           <label class="block text-xs font-semibold text-gray-600 mb-1"><%= t("staff.payroll.happened_at") %></label>
