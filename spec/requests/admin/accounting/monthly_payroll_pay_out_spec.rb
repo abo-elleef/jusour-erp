@@ -101,6 +101,44 @@ RSpec.describe "Paying out recorded payroll", type: :request do
     expect(sara.staff_balance_cents).to eq(0)
   end
 
+  describe "with a deduction plan smaller than the debt" do
+    let(:karim) do
+      create(:user, company: company, role: "cashier", name: "Karim", monthly_salary_cents: 200_000,
+                    balance_deduction_cents: 100_000)
+    end
+
+    before do
+      # Karim took 4,000 in October, to be repaid 1,000 a month.
+      Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: safe, user: owner,
+                                           amount_cents: 400_000, voucher_date: Date.new(2026, 10, 10),
+                                           party_type: "User", party_id: karim.id).call
+      Accounting::FinalizePayrollService.new(karim, october, finalized_by: owner).call
+    end
+
+    it "pays the month less the plan, leaving the rest of the debt owed" do
+      expect(snapshot_for(karim).payout_due_cents(on: paid_on)).to eq(100_000)
+
+      pay_out(user_id: karim.id)
+
+      expect(snapshot_for(karim).payout_voucher.amount_cents).to eq(100_000)
+      expect(karim.staff_balance_cents).to eq(-300_000)
+    end
+
+    it "shows the payout on the payroll page" do
+      row = Accounting::MonthlyPayrollService.new(karim, october).call
+
+      expect(row.payout_cents).to eq(100_000)
+    end
+
+    it "takes off what was paid by hand after the month ended" do
+      Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: safe, user: owner,
+                                           amount_cents: 40_000, voucher_date: Date.new(2026, 11, 2),
+                                           party_type: "User", party_id: karim.id).call
+
+      expect(snapshot_for(karim).payout_due_cents(on: paid_on)).to eq(60_000)
+    end
+  end
+
   it "needs a treasury" do
     post admin_accounting_monthly_payroll_pay_out_path(payroll_month: "2026-10"),
          params: { payroll_snapshot: { treasury_id: "", paid_on: paid_on } }

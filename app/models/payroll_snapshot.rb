@@ -51,17 +51,20 @@ class PayrollSnapshot < ApplicationRecord
   # have paid it: everything owed to them before the month (if anything), plus
   # the month's pay, less the deduction kept back.
   #
-  # Capped at what's left on the account once anything since the month ended
-  # is counted — vouchers and staff meals, but not later months' salaries — so
-  # a month already paid by hand is never paid twice. An advance or meal early
-  # in the new month, before payday, comes off this payout too.
+  # Less anything paid to them since the month ended — vouchers and staff
+  # meals, but not later months' salaries — so a month already paid by hand is
+  # never paid twice, and an advance or meal early in the new month, before
+  # payday, comes off this payout too. Not capped at the account balance: with
+  # a deduction plan smaller than the debt, the payout is meant to leave them
+  # still owing the rest.
   def payout_due_cents(on: Date.current)
     return 0 if paid_out?
 
     month_end = payroll_month.end_of_month
     balance_after = user.staff_balance_cents(as_of: month_end)
     due = [balance_after - net_pay_cents, 0].max + net_pay_cents - deduction_cents.to_i
-    [due, balance_after + movement_since_month_end_cents(month_end, on.to_date)].min.clamp(0..)
+    paid_since = [movement_since_month_end_cents(month_end, on.to_date), 0].min
+    (due + paid_since).clamp(0..)
   end
 
   scope :for_month, ->(month) { where(payroll_month: month.to_date.beginning_of_month) }
