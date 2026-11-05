@@ -30,11 +30,13 @@ module Pos
       @order.with_lock do
         item = @order.order_items.find(params[:id])
         if params[:quantity_delta]
-          item.update!(quantity: [item.quantity + params[:quantity_delta].to_i, 1].max)
+          new_quantity = item.quantity + params[:quantity_delta].to_i
+          # Minus on the last unit removes the line, as cashiers expect.
+          new_quantity <= 0 ? item.destroy! : item.update!(quantity: new_quantity)
         else
           item.update!(order_item_params)
         end
-        Promos::SyncOrderItemDiscount.call(order_item: item) if item.menu_item_id.present?
+        Promos::SyncOrderItemDiscount.call(order_item: item) if item.persisted? && item.menu_item_id.present?
         @order.recalculate_totals!
       end
       respond_to do |format|
@@ -111,6 +113,12 @@ module Pos
         raise ItemUnavailableAtLocation
       end
 
+      existing = @order.order_items.find_by(combo_id: combo.id, unit_price_cents: combo.price_cents, notes: [nil, ""])
+      if existing
+        existing.update!(quantity: existing.quantity + 1)
+        return
+      end
+
       @order.order_items.create!(
         combo: combo,
         quantity: 1,
@@ -126,9 +134,25 @@ module Pos
 
       modifier_ids = Array(params[:modifier_ids]) + Array(params[:modifier_group_selections]&.values)
       unit_price = menu_item.price_cents_at(@order.location)
+      quantity = params[:quantity].to_i.positive? ? params[:quantity].to_i : 1
+
+      # The same item, same modifiers and no per-item note is the same line: bump the
+      # count instead of stacking identical rows.
+      if params[:notes].blank?
+        wanted = Modifier.where(id: modifier_ids).pluck(:id).sort
+        existing = @order.order_items.includes(:order_item_modifiers)
+                         .where(menu_item_id: menu_item.id, unit_price_cents: unit_price, notes: [nil, ""])
+                         .detect { |line| line.order_item_modifiers.map(&:modifier_id).compact.sort == wanted }
+        if existing
+          existing.update!(quantity: existing.quantity + quantity)
+          Promos::SyncOrderItemDiscount.call(order_item: existing)
+          return
+        end
+      end
+
       item = @order.order_items.create!(
         menu_item: menu_item,
-        quantity: params[:quantity].to_i.positive? ? params[:quantity].to_i : 1,
+        quantity: quantity,
         unit_price_cents: unit_price,
         notes: params[:notes]
       )
