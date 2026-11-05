@@ -52,6 +52,7 @@ module Pos
     def order_params
       params.require(:order).permit(
         :client_uuid, :offline_number, :created_at, :order_type, :table_number, :notes,
+        :customer_name, :customer_phone, :delivery_address,
         :user_id, :location_id, :workstation_id, :drawer_session_id, :tendered_cents,
         items: [
           :menu_item_id, :combo_id, :quantity, :unit_price_cents, :notes,

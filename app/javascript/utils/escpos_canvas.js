@@ -282,6 +282,7 @@ export function fulfillmentText(order, labels) {
       ? fill(labels.fulfillment.table_number, { number: order.table_number })
       : labels.fulfillment.table
   }
+  if (order.order_type === "delivery") return labels.fulfillment.delivery
   return labels.fulfillment.pickup
 }
 
@@ -319,6 +320,13 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   doc.text(`${labels.order_type}: ${fulfillmentText(order, labels)}`)
   doc.doubleHeight(false)
   doc.bold(false)
+  if (order.order_type === "delivery") {
+    // Who it is going to and where — what the courier needs from the bag's receipt.
+    doc.blank()
+    if (order.customer_name) doc.text(order.customer_name)
+    doc.text(order.customer_phone)
+    doc.text(order.delivery_address)
+  }
   doc.blank()
 
   doc.align("left")

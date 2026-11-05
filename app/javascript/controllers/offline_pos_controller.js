@@ -227,6 +227,7 @@ export default class extends Controller {
     const totals = this.cartTotals()
     const empty = lines.length === 0
     const isTable = this.cart.order_type === "table"
+    const isDelivery = this.cart.order_type === "delivery"
     const toggle = (type, label) => {
       const active = this.cart.order_type === type
       const classes = active ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-200"
@@ -242,7 +243,8 @@ export default class extends Controller {
         ${empty ? `<p class="text-center text-sm text-gray-500 py-10 px-4">${esc(this.t("cart_empty"))}</p>` : lines.map((line) => this.lineHtml(line)).join("")}
       </div>
       <div class="px-3 py-3 space-y-2.5 shrink-0 bg-white border-t border-stone-200/80">
-        <div class="flex gap-2">${toggle("pickup", this.t("order_type_pickup"))}${toggle("table", this.t("order_type_table"))}</div>
+        <div class="flex gap-2">${toggle("pickup", this.t("order_type_pickup"))}${toggle("table", this.t("order_type_table"))}${toggle("delivery", this.t("order_type_delivery"))}</div>
+        ${isDelivery ? this.deliveryFieldsHtml() : ""}
         ${isTable ? `<input type="text" inputmode="numeric" data-field="table_number" value="${esc(this.cart.table_number)}" placeholder="${esc(this.t("table_number"))}" class="${INPUT}" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">` : ""}
         <input type="text" data-field="notes" value="${esc(this.cart.notes)}" placeholder="${esc(this.t("order_notes"))}" class="${INPUT}">
         <dl class="text-sm space-y-1 tabular-nums">
@@ -253,6 +255,14 @@ export default class extends Controller {
         </dl>
         <button type="button" data-act="open-payment" class="w-full ${BTN_DARK} !rounded-full !py-3" ${empty ? "disabled" : ""}>${esc(this.t("charge", { amount: formatMoney(totals.total_cents) }))}</button>
       </div>`
+  }
+
+  deliveryFieldsHtml() {
+    const { customer_name: name, customer_phone: phone, delivery_address: address } = this.cart
+    return `
+      <input type="text" data-field="customer_name" value="${esc(name)}" placeholder="${esc(this.t("customer_name"))}" class="${INPUT}">
+      <input type="text" inputmode="tel" data-field="customer_phone" value="${esc(phone)}" placeholder="${esc(this.t("customer_phone"))}" class="${INPUT}" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">
+      <input type="text" data-field="delivery_address" value="${esc(address)}" placeholder="${esc(this.t("delivery_address"))}" class="${INPUT}">`
   }
 
   lineHtml(line) {
@@ -425,13 +435,16 @@ export default class extends Controller {
     const field = event.target.dataset.field
     if (field === "table_number") this.cart.table_number = event.target.value
     if (field === "notes") this.cart.notes = event.target.value
+    if (field === "customer_name") this.cart.customer_name = event.target.value
+    if (field === "customer_phone") this.cart.customer_phone = event.target.value
+    if (field === "delivery_address") this.cart.delivery_address = event.target.value
     if (field === "tendered") this.updateChangeDue()
   }
 
   // ── Cart ──────────────────────────────────────────────────────────────────
 
   emptyCart() {
-    return { lines: [], order_type: "pickup", table_number: "", notes: "" }
+    return { lines: [], order_type: "pickup", table_number: "", notes: "", customer_name: "", customer_phone: "", delivery_address: "" }
   }
 
   cartTotals() {
@@ -550,9 +563,20 @@ export default class extends Controller {
       this.toast(this.t("table_required"), "alert")
       return
     }
+    if (this.cart.order_type === "delivery" && (!this.cleanPhone() || !this.cart.delivery_address.trim())) {
+      this.toast(this.t("delivery_required"), "alert")
+      return
+    }
     this.modal = { kind: "payment" }
     this.draw("modal")
     this.updateChangeDue()
+  }
+
+  // Digits are already ASCII (the arabic-numerals controller sees to that while
+  // typing); spaces and dashes in a phone number would stop it matching the customer
+  // the system already has.
+  cleanPhone() {
+    return this.cart.customer_phone.replace(/[\s-]+/g, "")
   }
 
   tenderedInput() {
@@ -610,6 +634,9 @@ export default class extends Controller {
       drawer_session_id: snapshot.drawer_session_id || null,
       order_type: cart.order_type,
       table_number: cart.order_type === "table" ? cart.table_number.trim() : null,
+      customer_name: cart.order_type === "delivery" ? cart.customer_name.trim() || null : null,
+      customer_phone: cart.order_type === "delivery" ? this.cleanPhone() : null,
+      delivery_address: cart.order_type === "delivery" ? cart.delivery_address.trim() : null,
       notes: cart.notes.trim() || null,
       items: cart.lines.map(({ uid: _uid, ...line }) => line),
       totals: this.cartTotals(),

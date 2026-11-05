@@ -49,10 +49,14 @@ module Orders
       lines = Array(@payload[:items])
       raise ArgumentError, "Order has no items" if lines.empty?
       raise ArgumentError, I18n.t("order.submit.errors.table_number_required") if order_type == "table" && @payload[:table_number].blank?
+      validate_delivery! if order_type == "delivery"
 
       Order.transaction do
+        customer = delivery_customer if order_type == "delivery"
         order = Order.create!(
           user: cashier,
+          customer: customer,
+          delivery_address: (@payload[:delivery_address].to_s.strip if order_type == "delivery"),
           location: location,
           workstation: workstation,
           order_type: order_type,
@@ -182,11 +186,48 @@ module Orders
       @workstation ||= Workstation.find_by(id: @payload[:workstation_id])
     end
 
-    # The offline register only rings table and pickup orders; delivery needs an
-    # address and a customer, which it does not collect.
     def order_type
       type = @payload[:order_type].to_s
-      %w[table pickup].include?(type) ? type : "pickup"
+      Order::ORDER_TYPES.include?(type) ? type : "pickup"
+    end
+
+    # Delivery has to be reachable: a phone to call and an address to go to, the
+    # same two things the online POS will not submit a delivery without.
+    def validate_delivery!
+      raise ArgumentError, I18n.t("order.submit.errors.delivery_address_required") if @payload[:delivery_address].to_s.strip.blank?
+      raise ArgumentError, I18n.t("customers.errors.email_or_phone_required") if customer_phone.blank?
+    end
+
+    def customer_phone
+      @payload[:customer_phone].to_s.gsub(/[\s-]+/, "")
+    end
+
+    # Matched by phone exactly as the online POS does (primary or secondary), so a
+    # regular who phones in during an outage is the same customer as the one in the
+    # system, not a second record. Two registers can meet the same new number in the
+    # same minute; the loser of that race finds the winner's record instead of failing
+    # an order the customer has already paid for.
+    def delivery_customer
+      customer = Customer.find_by(phone: customer_phone) || Customer.find_by(phone_secondary: customer_phone)
+      customer ||= create_customer
+      remember_address(customer)
+      customer
+    end
+
+    def create_customer
+      Customer.transaction(requires_new: true) do
+        Customer.create!(name: @payload[:customer_name].to_s.strip.presence, phone: customer_phone)
+      end
+    rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
+      Customer.find_by(phone: customer_phone) || Customer.find_by(phone_secondary: customer_phone) || raise
+    end
+
+    # A new address goes on the customer's list (the first one becomes their default).
+    def remember_address(customer)
+      address = @payload[:delivery_address].to_s.strip
+      return if customer.addresses.exists?(address: address)
+
+      customer.addresses.create!(address: address)
     end
 
     # The cashier who rang the order owns it, and their drawer takes the cash —

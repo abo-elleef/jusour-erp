@@ -49,9 +49,11 @@ orders and printing.
   from a menu snapshot kept in IndexedDB. Opening `/pos` with no internet lands there
   too (the service worker serves the cached page). When the server answers again it
   syncs and returns to `/pos` by itself.
-- **What works offline:** items, modifiers, notes, table/pickup, cash payment with change,
-  customer receipt, kitchen/bar/expo tickets. Not offline: card, Instapay, Vodafone
-  Cash, gift cards, staff meals, customers, coupons, delivery.
+- **What works offline:** items, modifiers, notes, table/pickup/delivery, cash payment with change,
+  customer receipt, kitchen/bar/expo tickets. Delivery needs the customer's phone and an address
+  typed on the offline screen; on sync the customer is matched by phone (primary or secondary) or
+  created, and the address is added to their list. Not offline: card, Instapay, Vodafone Cash,
+  gift cards, staff meals, saved-customer lookup, coupons.
 - **Printing** is built in the browser (canvas → ESC/POS raster, so Arabic shapes
   correctly) and sent to the print agent on the same computer. The agent only needs the LAN.
 - **Sync:** `POST /pos/offline/orders`, one order at a time, idempotent on

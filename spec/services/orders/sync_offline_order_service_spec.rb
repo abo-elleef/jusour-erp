@@ -150,6 +150,69 @@ RSpec.describe Orders::SyncOfflineOrderService do
     expect(AuditLogEntry.where(action: "order.offline_price_differs")).to be_none
   end
 
+  describe "delivery" do
+    def delivery(overrides = {})
+      payload(order_type: "delivery", customer_name: "Mona", customer_phone: "01012345678",
+              delivery_address: "12 Nile St, Apt 4").merge(overrides)
+    end
+
+    it "creates the customer and their address, and puts both on the order" do
+      order = nil
+      expect { order = described_class.call(user: cashier, payload: delivery).order }
+        .to change(Customer, :count).by(1)
+
+      expect(order.order_type).to eq("delivery")
+      expect(order.delivery_address).to eq("12 Nile St, Apt 4")
+      expect(order.customer).to have_attributes(name: "Mona", phone: "01012345678")
+      expect(order.customer.addresses.sole.address).to eq("12 Nile St, Apt 4")
+    end
+
+    it "reuses a customer the system already has, matched by phone" do
+      existing = Customer.create!(name: "Mona K", phone: "01012345678")
+      existing.addresses.create!(address: "12 Nile St, Apt 4")
+
+      expect { @order = described_class.call(user: cashier, payload: delivery).order }.not_to change(Customer, :count)
+
+      expect(@order.customer).to eq(existing)
+      expect(existing.addresses.count).to eq(1)
+    end
+
+    it "matches the customer's second phone too, and ignores spaces and dashes" do
+      existing = Customer.create!(name: "Mona K", phone: "01099999999", phone_secondary: "01012345678")
+
+      order = described_class.call(user: cashier, payload: delivery(customer_phone: "010 1234-5678")).order
+
+      expect(order.customer).to eq(existing)
+      expect(existing.addresses.pluck(:address)).to eq(["12 Nile St, Apt 4"])
+    end
+
+    it "adds a new address to a known customer without replacing their default" do
+      existing = Customer.create!(name: "Mona K", phone: "01012345678")
+      existing.addresses.create!(address: "Old address")
+
+      described_class.call(user: cashier, payload: delivery)
+
+      expect(existing.addresses.ordered.map(&:address)).to eq(["Old address", "12 Nile St, Apt 4"])
+    end
+
+    it "refuses delivery without an address or without a phone, leaving no customer behind" do
+      no_address = described_class.call(user: cashier, payload: delivery(delivery_address: " "))
+      no_phone = described_class.call(user: cashier, payload: delivery(customer_phone: ""))
+
+      expect(no_address).not_to be_success
+      expect(no_phone).not_to be_success
+      expect(Customer.count).to eq(0)
+      expect(Order.where(client_uuid: uuid)).to be_none
+    end
+
+    it "does not attach a customer to table or pickup orders" do
+      order = described_class.call(user: cashier, payload: payload(customer_phone: "01012345678", delivery_address: "x")).order
+
+      expect(order.customer).to be_nil
+      expect(order.delivery_address).to be_nil
+    end
+  end
+
   it "refuses an order with no items" do
     result = described_class.call(user: cashier, payload: payload(items: []))
 

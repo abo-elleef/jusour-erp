@@ -94,6 +94,9 @@ function orderPayload(order) {
     drawer_session_id: order.drawer_session_id,
     order_type: order.order_type,
     table_number: order.table_number,
+    customer_name: order.customer_name,
+    customer_phone: order.customer_phone,
+    delivery_address: order.delivery_address,
     notes: order.notes,
     tendered_cents: order.tendered_cents,
     items: order.items.map((line) => ({
