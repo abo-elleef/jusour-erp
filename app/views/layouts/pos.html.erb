@@ -18,14 +18,15 @@
   </head>
   <body class="h-full overflow-hidden bg-gray-100 text-gray-900 pos-screen flex flex-col"
         data-turbo-cache="false"
-        data-controller="connectivity offline-order connection-monitor"
+        data-controller="connectivity connection-monitor offline-sync"
         data-connection-monitor-disconnected-message-value="<%= t("pos.connection.lost") %>"
         data-connection-monitor-reconnected-message-value="<%= t("pos.connection.restored") %>"
-        data-offline-order-csrf-token-value="<%= form_authenticity_token %>"
-        data-offline-order-saved-message-value="<%= t("pos.offline.saved") %>"
         data-offline-message="<%= t("pos.offline.banner_offline") %>"
         data-online-message="<%= t("pos.offline.banner_online") %>"
-        data-connectivity-online-value="true">
+        data-connectivity-online-value="true"
+        data-connectivity-offline-url-value="<%= current_user&.can_access_pos? ? pos_offline_path : "" %>"
+        data-offline-sync-queued-message-value="<%= t("pos.offline_mode.queued", count: "%{count}") %>"
+        data-offline-sync-synced-message-value="<%= t("pos.offline_mode.synced", count: "%{count}") %>">
     <div id="pos-fixed-banners" class="fixed top-0 start-0 end-0 z-[60]">
       <div data-connectivity-target="banner"
            data-controller="dismissible-banner"
@@ -42,6 +43,17 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
             </svg>
           </button>
+        </div>
+      </div>
+      <%# Orders rung up offline that the server does not have yet. Shown only while
+          some are waiting; the link opens the offline register, which lists them. %>
+      <div data-offline-sync-target="banner"
+           class="hidden border-b shadow-sm bg-amber-100 text-amber-900 border-amber-300"
+           role="alert">
+        <div class="flex items-center gap-3 px-4 py-2 max-w-5xl mx-auto text-sm font-medium">
+          <span data-offline-sync-target="message" class="flex-1 min-w-0"></span>
+          <%= link_to t("pos.offline_mode.orders_title"), pos_offline_path, data: { turbo: false },
+                class: "shrink-0 underline font-semibold" %>
         </div>
       </div>
       <% if current_user&.company_id && Printing::Config.client_routing? %>

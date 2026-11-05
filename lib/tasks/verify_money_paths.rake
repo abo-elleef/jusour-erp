@@ -316,9 +316,22 @@ class MoneyPathChecker
                                       tip_cents: 0, user: owner)
     check "POS — cash sale"
 
+    # An order rung up in the browser while the internet was down, delivered later.
+    offline = Orders::SyncOfflineOrderService.call(
+      user: owner,
+      payload: {
+        client_uuid: SecureRandom.uuid, offline_number: "OFF-V", location_id: location.id,
+        user_id: owner.id, drawer_session_id: session.id, order_type: "pickup",
+        items: [{ menu_item_id: item.id, quantity: 1, unit_price_cents: 3_000 }]
+      }
+    )
+    raise "offline order did not sync: #{offline.errors.to_sentence}" unless offline.success?
+
+    check "POS — offline order synced"
+
     reconciler = Accounting::CashReconciliationService.new(session)
     reconciler.compute_expected!
-    reconciler.reconcile!(15_000)
+    reconciler.reconcile!(15_000 + offline.order.payments.sum(:amount_cents))
     check "POS — drawer reconciled"
   rescue StandardError => e
     skip("POS", "could not exercise: #{e.class} #{e.message}")

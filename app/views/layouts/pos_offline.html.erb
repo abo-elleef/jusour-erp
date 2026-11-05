@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="<%= html_lang %>" dir="<%= html_dir %>" class="h-full">
+  <head>
+    <title><%= t("pos.offline_mode.title") %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="turbo-cache-control" content="no-cache">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#0b2a4a">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    <%= csrf_meta_tags %>
+    <%# No Stripe, no websocket: both need the internet, and a blocking script that
+        cannot load is exactly what would stall this page when the line is down. %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="h-full overflow-hidden bg-gray-100 text-gray-900 pos-screen flex flex-col"
+        data-turbo="false">
+    <%= yield %>
+  </body>
+</html>

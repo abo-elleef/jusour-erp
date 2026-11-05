@@ -74,6 +74,12 @@ Rails.application.routes.draw do
     end
 
     post "verify_manager_pin", to: "manager_pin#verify"
+
+    # Offline mode: a cached register that keeps taking cash orders and printing
+    # over the LAN while the internet is down, then pushes them here afterwards.
+    get "offline", to: "offline#show", as: :offline
+    get "offline/snapshot", to: "offline#snapshot", as: :offline_snapshot
+    post "offline/orders", to: "offline#create_order", as: :offline_orders
     get "modifier_form", to: "order_items#modifier_form", as: :modifier_form
     resources :orders, only: %i[index show destroy] do
       collection do

@@ -1,32 +1,55 @@
 import { Controller } from "@hotwired/stimulus"
 import { showToast } from "utils/toast"
+import { isOfflineReady, isReachable } from "utils/offline_sync"
 
+const HEARTBEAT_MS = 8000
+const FAILURES_BEFORE_OFFLINE = 2
+
+// Decides whether the internet is really there.
+//
+// The browser's own online/offline events are not enough: a router with a dead
+// uplink still reads as "online", which is exactly the restaurant's situation. So
+// this asks our own server every few seconds. After two misses in a row the POS
+// hands over to the offline register (which only needs this computer and the LAN)
+// and hands back when the server answers again.
 export default class extends Controller {
-  static targets = ["banner", "cardPaymentBtn", "syncStatus"]
-  static values = { online: Boolean }
+  static targets = ["banner", "cardPaymentBtn"]
+  static values = { online: Boolean, offlineUrl: String }
 
   connect() {
-    this.boundOnline = () => this.handleOnline()
-    this.boundOffline = () => this.handleOffline()
-    this.onlineValue = navigator.onLine
-    window.addEventListener("online", this.boundOnline)
-    window.addEventListener("offline", this.boundOffline)
+    this.failures = 0
+    this.onlineValue = true
+    this.boundCheck = () => this.check()
+    window.addEventListener("online", this.boundCheck)
+    window.addEventListener("offline", this.boundCheck)
+    this.timer = setInterval(this.boundCheck, HEARTBEAT_MS)
     this.updateUI()
   }
 
   disconnect() {
-    window.removeEventListener("online", this.boundOnline)
-    window.removeEventListener("offline", this.boundOffline)
+    window.removeEventListener("online", this.boundCheck)
+    window.removeEventListener("offline", this.boundCheck)
+    clearInterval(this.timer)
+  }
+
+  async check() {
+    if (await isReachable()) {
+      this.failures = 0
+      if (!this.onlineValue) this.handleOnline()
+    } else {
+      this.failures += 1
+      if (this.failures >= FAILURES_BEFORE_OFFLINE && this.onlineValue) this.handleOffline()
+    }
   }
 
   handleOnline() {
     this.onlineValue = true
     this.updateUI()
-    this.triggerSync()
     this.clearOfflineDismissal()
     this.showBanner(this.bannerOnlineMessage(), "success")
     setTimeout(() => this.hideBanner(), 4000)
     showToast(this.bannerOnlineMessage(), { type: "notice", dismissAfter: 5000 })
+    window.dispatchEvent(new CustomEvent("pos:online"))
   }
 
   handleOffline() {
@@ -34,6 +57,14 @@ export default class extends Controller {
     this.updateUI()
     this.showBanner(this.bannerOfflineMessage(), "offline")
     showToast(this.bannerOfflineMessage(), { type: "alert", dismissAfter: 0 })
+    this.enterOfflineMode()
+  }
+
+  // Switch to the cached offline register, if this computer has been prepared for
+  // it (it is, after any POS page has loaded online once).
+  async enterOfflineMode() {
+    if (!this.hasOfflineUrlValue || !this.offlineUrlValue) return
+    if (await isOfflineReady()) window.location.assign(this.offlineUrlValue)
   }
 
   bannerOfflineMessage() {
@@ -52,14 +83,6 @@ export default class extends Controller {
         btn.classList.toggle("opacity-50", !this.onlineValue)
         btn.classList.toggle("cursor-not-allowed", !this.onlineValue)
       })
-    }
-  }
-
-  triggerSync() {
-    if ("serviceWorker" in navigator && "SyncManager" in window) {
-      navigator.serviceWorker.ready.then((sw) => sw.sync.register("sync-offline-payments"))
-    } else {
-      this.dispatch("sync-requested", { bubbles: true })
     }
   }
 
