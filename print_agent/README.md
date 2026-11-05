@@ -8,60 +8,44 @@ The agent forwards raw ESC/POS bytes as-is. Character encoding, Arabic reshaping
 
 ## Installation on the restaurant Windows machine
 
-### Option A — Single EXE (recommended, no Node.js needed)
+### For restaurant staff — the installer (recommended)
 
-Download `SaqrPrintAgent.exe` from the latest release and place it anywhere (e.g. `C:\Saqr\`).
+1. Download **`SaqrPrintAgent-Setup.exe`** (from the GitHub release / Actions artifact).
+2. Double-click it and click **Next**.
+3. Paste the **agent token** from Saqr → Admin → Settings → Printing. Leave the port as `9310`.
+4. Click **Install**. When it finishes, a status page opens showing **Running**.
 
-**One-time setup — run as Administrator:**
+That's all — no terminal. The agent runs hidden in the background, starts automatically
+every time Windows logs in, and restarts itself if it crashes.
 
-```powershell
-# 1. Set your configuration (edit these values first)
-$env:SAQR_PRINT_AGENT_TOKEN = "your-secret-token"   # must match Admin → Settings → Printing
-$env:SAQR_PRINT_AGENT_PORT  = "9310"                 # default is fine for most installs
+- **Status page:** Start menu → *Saqr Print Agent Status* (or <http://127.0.0.1:9310/>)
+- **Config:** `C:\ProgramData\SaqrPrintAgent\config.json` (edit, then log out/in or reboot)
+- **Log:** `C:\ProgramData\SaqrPrintAgent\agent.log`
+- **Upgrade:** run the new installer over the old one; the existing config is kept.
+- **Uninstall:** Settings → Apps → Saqr Print Agent.
 
-# 2. Install as a Windows Service (auto-starts on boot)
-C:\Saqr\SaqrPrintAgent.exe install-service
+`config.json`:
+
+```json
+{ "port": 9310, "token": "your-secret-token" }
 ```
 
-The service starts immediately and survives reboots and crashes automatically.
+Optional keys: `host`, `origins`, `connect_timeout_ms`, `discover_timeout_ms`.
+Environment variables (below) still override the file.
 
-**Verify it's running:**
-
-```powershell
-curl http://127.0.0.1:9310/health
-```
-
----
-
-### Option B — Node.js (for development / IT teams)
+### For IT / development — Node.js
 
 Requires [Node.js 18+](https://nodejs.org/en/download).
 
 ```powershell
-cd C:\path\to\saqr-pos\print_agent
+cd print_agent
 npm install
+node index.js          # foreground, for testing
 ```
 
-**Run manually (foreground, for testing):**
-
-```powershell
-node index.js
-```
-
-**Install as a Windows Service (run as Administrator):**
-
-```powershell
-# Set env vars first if needed
-$env:SAQR_PRINT_AGENT_TOKEN = "your-secret-token"
-
-npm run install-service
-```
-
-**Uninstall the service:**
-
-```powershell
-npm run uninstall-service
-```
+`npm run install-service` / `uninstall-service` register a classic Windows Service
+via `node-windows` (needs Node installed and an Administrator shell). The installer
+above does not use it.
 
 ---
 
@@ -76,17 +60,19 @@ To find the USB port name: open **Devices & Printers** → right-click the print
 
 ---
 
-## Building the EXE (for release)
+## Building the installer (for release)
 
-Requires Node.js and `pkg`:
+Easiest: GitHub → Actions → **Print agent Windows installer** → Run workflow
+(or push a tag like `print-agent-v1.2.0` to attach it to a release). The job
+builds `SaqrPrintAgent.exe` with `pkg`, then wraps it with
+[Inno Setup](https://jrsoftware.org/isinfo.php) into `SaqrPrintAgent-Setup.exe`.
+
+Locally on Windows (needs Node.js and Inno Setup 6 on PATH):
 
 ```powershell
 npm install
-npm run build
-# Output: dist/SaqrPrintAgent.exe
+npm run installer      # → dist\SaqrPrintAgent-Setup.exe
 ```
-
-The EXE is self-contained — no Node.js installation needed on the restaurant machine.
 
 ---
 
@@ -101,7 +87,7 @@ The EXE is self-contained — no Node.js installation needed on the restaurant m
 | `SAQR_PRINT_CONNECT_TIMEOUT_MS` | `5000` | TCP connect timeout to network printer (ms) |
 | `SAQR_PRINT_DISCOVER_TIMEOUT_MS` | `4000` | mDNS browse timeout (ms) |
 
-When running as a Windows Service, set these before running `install-service` — they are baked into the service registration. To change them later, uninstall and reinstall the service.
+With the installer, prefer `config.json` (see above). With the legacy `install-service`, variables are baked in at install time.
 
 ---
 
@@ -140,7 +126,7 @@ When running as a Windows Service, set these before running `install-service` �
 
 | Symptom | Fix |
 |---------|-----|
-| `curl http://127.0.0.1:9310/health` fails | Service not running — check `Services.msc` → SaqrPrintAgent |
+| Status page does not open | Agent not running — open Task Scheduler → `SaqrPrintAgent` → Run; check `agent.log` |
 | `401 Unauthorized` | Token mismatch — check `SAQR_PRINT_AGENT_TOKEN` vs Admin → Settings |
 | Network printer times out | Verify IP with `Test-NetConnection -ComputerName PRINTER_IP -Port 9100` |
 | USB printer fails to open | Wrong port name — check Devices & Printers → Ports tab |

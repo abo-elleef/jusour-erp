@@ -1,6 +1,6 @@
 {
   "name": "saqr-print-agent",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "description": "Local ESC/POS print bridge for Saqr POS (network & USB printers)",
   "main": "index.js",
@@ -8,11 +8,14 @@
     "start": "node index.js",
     "install-service": "node install-service.js",
     "uninstall-service": "node uninstall-service.js",
-    "build": "pkg index.js --target node18-win-x64 --output dist/SaqrPrintAgent.exe --compress GZip"
+    "build": "pkg index.js --target node18-win-x64 --output dist/SaqrPrintAgent.exe --compress GZip",
+    "installer": "npm run build && iscc installer/SaqrPrintAgent.iss"
   },
   "pkg": {
     "assets": [],
-    "targets": ["node18-win-x64"]
+    "targets": [
+      "node18-win-x64"
+    ]
   },
   "engines": {
     "node": ">=18"

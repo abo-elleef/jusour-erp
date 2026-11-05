@@ -7,17 +7,72 @@ const fs = require("fs")
 const { execFile, spawn } = require("child_process")
 const { promisify } = require("util")
 
-const execFileAsync = promisify(execFile)
+const path = require("path")
+const os = require("os")
 
-const HOST = process.env.SAQR_PRINT_AGENT_HOST || "127.0.0.1"
-const PORT = parseInt(process.env.SAQR_PRINT_AGENT_PORT || "9310", 10)
-const TOKEN = process.env.SAQR_PRINT_AGENT_TOKEN || ""
-const ALLOWED_ORIGINS = (process.env.SAQR_PRINT_AGENT_ORIGINS || "*")
+const execFileAsync = promisify(execFile)
+const VERSION = "1.2.0"
+
+// ─── Config ───────────────────────────────────────────────────────────────────
+// Precedence: environment variable > config.json > default.
+// config.json lives in %ProgramData%\SaqrPrintAgent on Windows (written by the
+// installer), or next to the agent for dev use. Override with SAQR_PRINT_AGENT_CONFIG.
+
+const DATA_DIR =
+  process.env.SAQR_PRINT_AGENT_DIR ||
+  (process.platform === "win32"
+    ? path.join(process.env.PROGRAMDATA || "C:\\ProgramData", "SaqrPrintAgent")
+    : path.join(os.homedir(), ".saqr-print-agent"))
+
+const CONFIG_PATH = process.env.SAQR_PRINT_AGENT_CONFIG || path.join(DATA_DIR, "config.json")
+
+function loadConfig() {
+  try {
+    return JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"))
+  } catch (err) {
+    if (err.code !== "ENOENT") console.error(`Could not read ${CONFIG_PATH}: ${err.message}`)
+    return {}
+  }
+}
+
+const FILE_CONFIG = loadConfig()
+
+function setting(envName, key, fallback) {
+  const fromEnv = process.env[envName]
+  if (fromEnv !== undefined && fromEnv !== "") return fromEnv
+  if (FILE_CONFIG[key] !== undefined && FILE_CONFIG[key] !== "") return String(FILE_CONFIG[key])
+  return fallback
+}
+
+const HOST = setting("SAQR_PRINT_AGENT_HOST", "host", "127.0.0.1")
+const PORT = parseInt(setting("SAQR_PRINT_AGENT_PORT", "port", "9310"), 10)
+const TOKEN = setting("SAQR_PRINT_AGENT_TOKEN", "token", "")
+const ALLOWED_ORIGINS = setting("SAQR_PRINT_AGENT_ORIGINS", "origins", "*")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean)
-const CONNECT_TIMEOUT_MS = parseInt(process.env.SAQR_PRINT_CONNECT_TIMEOUT_MS || "5000", 10)
-const DISCOVER_TIMEOUT_MS = parseInt(process.env.SAQR_PRINT_DISCOVER_TIMEOUT_MS || "4000", 10)
+const CONNECT_TIMEOUT_MS = parseInt(setting("SAQR_PRINT_CONNECT_TIMEOUT_MS", "connect_timeout_ms", "5000"), 10)
+const DISCOVER_TIMEOUT_MS = parseInt(setting("SAQR_PRINT_DISCOVER_TIMEOUT_MS", "discover_timeout_ms", "4000"), 10)
+
+// ─── File logging (the installed agent has no console window) ─────────────────
+
+const LOG_PATH = path.join(DATA_DIR, "agent.log")
+const MAX_LOG_BYTES = 1024 * 1024
+const recentLines = []
+
+function appendLogFile(line) {
+  recentLines.push(line)
+  if (recentLines.length > 50) recentLines.shift()
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true })
+    try {
+      if (fs.statSync(LOG_PATH).size > MAX_LOG_BYTES) fs.renameSync(LOG_PATH, LOG_PATH + ".1")
+    } catch {}
+    fs.appendFileSync(LOG_PATH, line + "\n")
+  } catch {
+    // Logging must never crash the agent.
+  }
+}
 
 // ─── Logging ──────────────────────────────────────────────────────────────────
 
@@ -27,6 +82,7 @@ function ts() {
 
 function log(level, message) {
   const prefix = `[${ts()}] [${level.padEnd(5)}]`
+  appendLogFile(`${prefix} ${message}`)
   if (level === "ERROR") {
     console.error(`${prefix} ${message}`)
   } else {
@@ -205,6 +261,37 @@ async function readBody(req) {
   return JSON.parse(raw)
 }
 
+// ─── Status page ──────────────────────────────────────────────────────────────
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]))
+}
+
+function statusPage() {
+  const lines = escapeHtml(recentLines.slice(-30).join("\n") || "No activity yet.")
+  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="5">
+<title>Saqr Print Agent</title>
+<style>
+body{font-family:system-ui,Segoe UI,sans-serif;max-width:760px;margin:40px auto;padding:0 16px;color:#1f2937}
+.ok{display:inline-block;background:#16a34a;color:#fff;padding:4px 12px;border-radius:999px;font-weight:600}
+dl{display:grid;grid-template-columns:140px 1fr;gap:6px 12px}dt{color:#6b7280}
+pre{background:#111827;color:#d1d5db;padding:12px;border-radius:8px;overflow:auto;font-size:12px;max-height:340px}
+</style></head><body>
+<h1>Saqr Print Agent</h1>
+<p><span class="ok">&#9679; Running</span></p>
+<dl>
+<dt>Version</dt><dd>${VERSION}</dd>
+<dt>Address</dt><dd>http://${escapeHtml(HOST)}:${PORT}</dd>
+<dt>Token</dt><dd>${TOKEN ? "set" : "not set (open)"}</dd>
+<dt>Platform</dt><dd>${escapeHtml(process.platform)}</dd>
+<dt>Config file</dt><dd>${escapeHtml(CONFIG_PATH)}</dd>
+<dt>Log file</dt><dd>${escapeHtml(LOG_PATH)}</dd>
+</dl>
+<h3>Recent activity</h3><pre>${lines}</pre>
+<p style="color:#6b7280">This page refreshes every 5 seconds. Printers are configured in Saqr under Admin &rarr; Printers.</p>
+</body></html>`
+}
+
 // ─── HTTP server ──────────────────────────────────────────────────────────────
 
 const server = http.createServer(async (req, res) => {
@@ -213,6 +300,13 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, corsHeaders(origin))
     res.end()
+    return
+  }
+
+  // Human-friendly status page — no secrets, no auth, safe on localhost.
+  if (req.method === "GET" && (req.url === "/" || req.url === "/status")) {
+    res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" })
+    res.end(statusPage())
     return
   }
 
@@ -226,7 +320,7 @@ const server = http.createServer(async (req, res) => {
     // ── GET /health ──────────────────────────────────────────────────────────
     if (req.method === "GET" && req.url === "/health") {
       logInfo("Health check — OK")
-      sendJson(res, 200, { ok: true, version: "1.0.0", port: PORT }, origin)
+      sendJson(res, 200, { ok: true, version: VERSION, port: PORT }, origin)
       return
     }
 
@@ -307,11 +401,14 @@ server.listen(PORT, HOST, () => {
   console.log(`  Listening on : http://${HOST}:${PORT}`)
   console.log(`  Platform     : ${process.platform} (Node ${process.version})`)
   console.log(`  Auth token   : ${TOKEN ? "enabled" : "disabled (open)"}`)
+  console.log(`  Config file  : ${CONFIG_PATH}`)
+  console.log(`  Log file     : ${LOG_PATH}`)
   if (process.platform === "win32") {
     console.log("  Discovery    : Bonjour/dns-sd (install Bonjour for Windows if needed)")
   }
   console.log(divider)
   console.log("  Endpoints:")
+  console.log(`    GET  http://${HOST}:${PORT}/         — status page`)
   console.log(`    GET  http://${HOST}:${PORT}/health   — status check`)
   console.log(`    GET  http://${HOST}:${PORT}/discover — browse network printers`)
   console.log(`    POST http://${HOST}:${PORT}/print    — send ESC/POS bytes to printer`)
