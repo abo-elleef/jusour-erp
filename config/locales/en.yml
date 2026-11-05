@@ -3552,6 +3552,7 @@ en:
       add_note: "+ Add note"
       walk_in: "Walk-in"
       add_order_note: "+ Order note"
+      no_order_note: "No note"
       order_details: "Order details"
       order_notes_hint: "Visible to kitchen staff"
       item_note_placeholder: "Note for this item..."

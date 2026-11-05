@@ -1,5 +1,5 @@
-<%= turbo_stream.update "fulfillment-chip-label" do %>
-  <%= @order.fulfillment_summary %>
+<%= turbo_stream.replace "cart-chips" do %>
+  <%= render "pos/cart_chips", order: @order %>
 <% end %>
 <%= turbo_stream.update "drawer-fulfillment-body" do %>
   <%= render "pos/order_fulfillment", order: @order, embedded: true %>

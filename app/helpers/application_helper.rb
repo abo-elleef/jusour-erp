@@ -962,10 +962,6 @@ module ApplicationHelper
       "focus:border-amber-600 transition-shadow"
   end
 
-  def pos_cart_chip_class
-    "inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-900"
-  end
-
 
   def vendor_invoice_payment_badge(status)
     label = t("inventory.vendor_invoices.payment_statuses.#{status}", default: status.to_s.humanize)

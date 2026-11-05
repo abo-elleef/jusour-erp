@@ -3598,6 +3598,7 @@ ar:
       add_note: "+ إضافة ملاحظة"
       walk_in: "زبون عابر"
       add_order_note: "+ ملاحظة الطلب"
+      no_order_note: "بدون ملاحظة"
       order_details: "تفاصيل الطلب"
       order_notes_hint: "مرئية لطاقم المطبخ"
       item_note_placeholder: "ملاحظة لهذا الصنف..."
