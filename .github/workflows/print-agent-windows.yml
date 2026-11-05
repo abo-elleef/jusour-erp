@@ -2,6 +2,10 @@ name: Print agent Windows installer
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "print_agent/**"
+      - ".github/workflows/print-agent-windows.yml"
   push:
     tags: ["print-agent-v*"]
 
