@@ -44,7 +44,7 @@ Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: 
 ; Stop any old instance / old tasks first.
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\register-task.ps1"""; Flags: runhidden waituntilterminated; StatusMsg: "Preparing..."
 ; Start at Windows boot as SYSTEM (before any user logs in); run-hidden.vbs restarts the agent if it exits.
-Filename: "schtasks.exe"; Parameters: "/Create /TN SaqrPrintAgent /SC ONSTART /RU SYSTEM /RL HIGHEST /F /TR ""wscript.exe \""{app}\run-hidden.vbs\"""""""; Flags: runhidden waituntilterminated; StatusMsg: "Registering startup task..."
+Filename: "schtasks.exe"; Parameters: "/Create /TN SaqrPrintAgent /SC ONSTART /RU SYSTEM /RL HIGHEST /F /TR ""wscript.exe \""{app}\run-hidden.vbs\"""""; Flags: runhidden waituntilterminated; StatusMsg: "Registering startup task..."
 Filename: "schtasks.exe"; Parameters: "/Run /TN SaqrPrintAgent"; Flags: runhidden waituntilterminated; StatusMsg: "Starting the print agent..."
 ; Give the agent a few seconds to start before the browser opens.
 Filename: "cmd.exe"; Parameters: "/c ping -n 5 127.0.0.1 >nul"; Flags: runhidden waituntilterminated
