@@ -18,6 +18,7 @@ The agent forwards raw ESC/POS bytes as-is. Character encoding, Arabic reshaping
 That's all — no terminal. The agent runs hidden in the background, starts automatically
 every time Windows starts (even before anyone logs in), and restarts itself if it crashes (a small hidden loop restarts it).
 
+- **Tray icon:** a small dot near the clock — **green** = agent running, **red** = not running (a pop-up warns you). Double-click it to open the status page. If you don't see it, click the `^` arrow beside the clock and drag it out so it stays visible.
 - **Status page:** Start menu → *Saqr Print Agent Status* (or <http://127.0.0.1:9310/>)
 - **Config:** `C:\ProgramData\SaqrPrintAgent\config.json` (edit, then log out/in or reboot)
 - **Log:** `C:\ProgramData\SaqrPrintAgent\agent.log`

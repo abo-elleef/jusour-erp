@@ -11,7 +11,7 @@ const path = require("path")
 const os = require("os")
 
 const execFileAsync = promisify(execFile)
-const VERSION = "1.2.2"
+const VERSION = "1.2.3"
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 // Precedence: environment variable > config.json > default.

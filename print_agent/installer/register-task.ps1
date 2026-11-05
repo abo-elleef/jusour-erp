@@ -8,5 +8,8 @@ Unregister-ScheduledTask -TaskName "SaqrPrintAgent" -Confirm:$false
 Get-CimInstance Win32_Process -Filter "Name='wscript.exe'" |
   Where-Object { $_.CommandLine -like "*run-hidden.vbs*" } |
   ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" |
+  Where-Object { $_.CommandLine -like "*SaqrPrintAgent*tray.ps1*" } |
+  ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
 Get-Process -Name "SaqrPrintAgent" | Stop-Process -Force
 exit 0

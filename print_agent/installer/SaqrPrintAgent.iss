@@ -2,7 +2,7 @@
 ; Build: iscc installer\SaqrPrintAgent.iss   (expects dist\SaqrPrintAgent.exe from `npm run build`)
 
 #define AppName "Saqr Print Agent"
-#define AppVersion "1.2.2"
+#define AppVersion "1.2.3"
 
 [Setup]
 AppId={{6F1D3B52-8C57-4B0E-9E39-5A1C0E7D2A41}
@@ -26,6 +26,8 @@ UninstallDisplayName={#AppName}
 Source: "..\dist\SaqrPrintAgent.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "run-hidden.vbs";            DestDir: "{app}"; Flags: ignoreversion
 Source: "register-task.ps1";         DestDir: "{app}"; Flags: ignoreversion
+Source: "tray.ps1";                  DestDir: "{app}"; Flags: ignoreversion
+Source: "run-tray.vbs";              DestDir: "{app}"; Flags: ignoreversion
 
 [INI]
 Filename: "{autoprograms}\{#AppName} Status.url"; Section: "InternetShortcut"; Key: "URL"; String: "http://127.0.0.1:{code:GetPort}/"
@@ -37,6 +39,8 @@ Name: "{autoprograms}\{#AppName} Log folder"; Filename: "{commonappdata}\SaqrPri
 Name: "{commonappdata}\SaqrPrintAgent"; Permissions: users-modify
 
 [Registry]
+; Tray status icon for every user who logs in.
+Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "SaqrPrintAgentTray"; ValueType: string; ValueData: "wscript.exe ""{app}\run-tray.vbs"""; Flags: uninsdeletevalue
 ; Remove the logon Run entry from 1.2.1 (the task below replaces it).
 Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "SaqrPrintAgent"; ValueType: none; Flags: deletevalue
 
@@ -46,6 +50,8 @@ Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -Fil
 ; Start at Windows boot as SYSTEM (before any user logs in); run-hidden.vbs restarts the agent if it exits.
 Filename: "schtasks.exe"; Parameters: "/Create /TN SaqrPrintAgent /SC ONSTART /RU SYSTEM /RL HIGHEST /F /TR ""wscript.exe \""{app}\run-hidden.vbs\"""""; Flags: runhidden waituntilterminated; StatusMsg: "Registering startup task..."
 Filename: "schtasks.exe"; Parameters: "/Run /TN SaqrPrintAgent"; Flags: runhidden waituntilterminated; StatusMsg: "Starting the print agent..."
+; Show the tray icon for the user running setup.
+Filename: "wscript.exe"; Parameters: """{app}\run-tray.vbs"""; Flags: nowait runasoriginaluser runhidden
 ; Give the agent a few seconds to start before the browser opens.
 Filename: "cmd.exe"; Parameters: "/c ping -n 5 127.0.0.1 >nul"; Flags: runhidden waituntilterminated
 Filename: "http://127.0.0.1:{code:GetPort}/"; Description: "Open the agent status page"; Flags: shellexec postinstall skipifsilent nowait
