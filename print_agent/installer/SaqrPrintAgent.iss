@@ -2,7 +2,7 @@
 ; Build: iscc installer\SaqrPrintAgent.iss   (expects dist\SaqrPrintAgent.exe from `npm run build`)
 
 #define AppName "Saqr Print Agent"
-#define AppVersion "1.2.1"
+#define AppVersion "1.2.2"
 
 [Setup]
 AppId={{6F1D3B52-8C57-4B0E-9E39-5A1C0E7D2A41}
@@ -37,13 +37,15 @@ Name: "{autoprograms}\{#AppName} Log folder"; Filename: "{commonappdata}\SaqrPri
 Name: "{commonappdata}\SaqrPrintAgent"; Permissions: users-modify
 
 [Registry]
-; Start the agent (hidden, with restart loop) whenever any user logs in.
-Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "SaqrPrintAgent"; ValueType: string; ValueData: "wscript.exe ""{app}\run-hidden.vbs"""; Flags: uninsdeletevalue
+; Remove the logon Run entry from 1.2.1 (the task below replaces it).
+Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "SaqrPrintAgent"; ValueType: none; Flags: deletevalue
 
 [Run]
-; Clear any old instance / old scheduled task, then start the agent as the user who ran setup.
+; Stop any old instance / old tasks first.
 Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\register-task.ps1"""; Flags: runhidden waituntilterminated; StatusMsg: "Preparing..."
-Filename: "wscript.exe"; Parameters: """{app}\run-hidden.vbs"""; Flags: nowait runasoriginaluser runhidden; StatusMsg: "Starting the print agent..."
+; Start at Windows boot as SYSTEM (before any user logs in); run-hidden.vbs restarts the agent if it exits.
+Filename: "schtasks.exe"; Parameters: "/Create /TN SaqrPrintAgent /SC ONSTART /RU SYSTEM /RL HIGHEST /F /TR ""wscript.exe \""{app}\run-hidden.vbs\"""""""; Flags: runhidden waituntilterminated; StatusMsg: "Registering startup task..."
+Filename: "schtasks.exe"; Parameters: "/Run /TN SaqrPrintAgent"; Flags: runhidden waituntilterminated; StatusMsg: "Starting the print agent..."
 ; Give the agent a few seconds to start before the browser opens.
 Filename: "cmd.exe"; Parameters: "/c ping -n 5 127.0.0.1 >nul"; Flags: runhidden waituntilterminated
 Filename: "http://127.0.0.1:{code:GetPort}/"; Description: "Open the agent status page"; Flags: shellexec postinstall skipifsilent nowait

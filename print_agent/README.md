@@ -16,7 +16,7 @@ The agent forwards raw ESC/POS bytes as-is. Character encoding, Arabic reshaping
 4. Click **Install**. When it finishes, a status page opens showing **Running**.
 
 That's all — no terminal. The agent runs hidden in the background, starts automatically
-every time Windows logs in, and restarts itself if it crashes (a small hidden loop restarts it).
+every time Windows starts (even before anyone logs in), and restarts itself if it crashes (a small hidden loop restarts it).
 
 - **Status page:** Start menu → *Saqr Print Agent Status* (or <http://127.0.0.1:9310/>)
 - **Config:** `C:\ProgramData\SaqrPrintAgent\config.json` (edit, then log out/in or reboot)
@@ -63,7 +63,7 @@ To find the USB port name: open **Devices & Printers** → right-click the print
 ## Building the installer (for release)
 
 Easiest: GitHub → Actions → **Print agent Windows installer** → Run workflow
-(or push a tag like `print-agent-v1.2.1` to attach it to a release). The job
+(or push a tag like `print-agent-v1.2.2` to attach it to a release). The job
 builds `SaqrPrintAgent.exe` with `pkg`, then wraps it with
 [Inno Setup](https://jrsoftware.org/isinfo.php) into `SaqrPrintAgent-Setup.exe`.
 
