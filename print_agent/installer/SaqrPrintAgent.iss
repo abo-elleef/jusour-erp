@@ -2,7 +2,7 @@
 ; Build: iscc installer\SaqrPrintAgent.iss   (expects dist\SaqrPrintAgent.exe from `npm run build`)
 
 #define AppName "Saqr Print Agent"
-#define AppVersion "1.2.0"
+#define AppVersion "1.2.1"
 
 [Setup]
 AppId={{6F1D3B52-8C57-4B0E-9E39-5A1C0E7D2A41}
@@ -33,12 +33,23 @@ Filename: "{autoprograms}\{#AppName} Status.url"; Section: "InternetShortcut"; K
 [Icons]
 Name: "{autoprograms}\{#AppName} Log folder"; Filename: "{commonappdata}\SaqrPrintAgent"
 
+[Dirs]
+Name: "{commonappdata}\SaqrPrintAgent"; Permissions: users-modify
+
+[Registry]
+; Start the agent (hidden, with restart loop) whenever any user logs in.
+Root: HKLM; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueName: "SaqrPrintAgent"; ValueType: string; ValueData: "wscript.exe ""{app}\run-hidden.vbs"""; Flags: uninsdeletevalue
+
 [Run]
-Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\register-task.ps1"" -Action install -InstallDir ""{app}"""; Flags: runhidden; StatusMsg: "Starting the print agent..."
+; Clear any old instance / old scheduled task, then start the agent as the user who ran setup.
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\register-task.ps1"""; Flags: runhidden waituntilterminated; StatusMsg: "Preparing..."
+Filename: "wscript.exe"; Parameters: """{app}\run-hidden.vbs"""; Flags: nowait runasoriginaluser runhidden; StatusMsg: "Starting the print agent..."
+; Give the agent a few seconds to start before the browser opens.
+Filename: "cmd.exe"; Parameters: "/c ping -n 5 127.0.0.1 >nul"; Flags: runhidden waituntilterminated
 Filename: "http://127.0.0.1:{code:GetPort}/"; Description: "Open the agent status page"; Flags: shellexec postinstall skipifsilent nowait
 
 [UninstallRun]
-Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\register-task.ps1"" -Action remove"; Flags: runhidden; RunOnceId: "RemoveTask"
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\register-task.ps1"""; Flags: runhidden; RunOnceId: "StopAgent"
 
 [Code]
 var
@@ -128,9 +139,9 @@ var
   Json: String;
 begin
   if CurStep = ssInstall then
-    Exec('taskkill.exe', '/F /IM SaqrPrintAgent.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Exec('powershell.exe', '-NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process -Filter ""Name=''wscript.exe''"" | Where-Object { $_.CommandLine -like ''*run-hidden.vbs*'' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }; Get-Process SaqrPrintAgent -ErrorAction SilentlyContinue | Stop-Process -Force"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-  if (CurStep = ssPostInstall) and (not HasConfig) then
+  if (CurStep = ssInstall) and (not HasConfig) then
   begin
     Json := '{' + #13#10 +
             '  "port": ' + Trim(SettingsPage.Values[1]) + ',' + #13#10 +
