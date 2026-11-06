@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class CompanySetting < ApplicationRecord
+  include HasReceiptLogo
+
   belongs_to :company
 
   validates :company, presence: true

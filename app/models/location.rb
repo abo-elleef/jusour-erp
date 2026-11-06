@@ -2,6 +2,7 @@
 
 class Location < ApplicationRecord
   include Tenantable
+  include HasReceiptLogo
 
   TYPES = %w[central_kitchen branch].freeze
 
