@@ -23,9 +23,9 @@ RSpec.describe Accounting::StaffStatementService do
                                          voucher_date: date, party_type: "User", party_id: staff.id).call
   end
 
-  it "lists newest first with the running balance over the whole account" do
+  it "lists oldest first, as a statement reads, with the running balance over the whole account" do
     lines = described_class.new(staff).lines.to_a
-    expect(lines.map(&:running_balance_cents)).to eq([-130_000, -150_000, -100_000])
+    expect(lines.map(&:running_balance_cents)).to eq([-100_000, -150_000, -130_000])
   end
 
   it "keeps each row's running balance when a date range hides earlier rows" do
