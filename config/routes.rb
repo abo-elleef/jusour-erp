@@ -367,6 +367,7 @@ Rails.application.routes.draw do
       post "monthly_payroll/pay_out", to: "monthly_payroll#pay_out", as: :monthly_payroll_pay_out
       get "monthly_payroll/export", to: "monthly_payroll#export", as: :monthly_payroll_export
       resources :staff_payments_reports, only: [:index]
+      resources :staff_debts_reports, only: [:index]
 
       resources :tax_reports, only: [:index]
 

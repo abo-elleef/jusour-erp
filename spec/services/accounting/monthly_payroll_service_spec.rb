@@ -127,7 +127,7 @@ RSpec.describe Accounting::MonthlyPayrollService do
       # 5,000 advance less June's 3,000 pay: 2,000 owed at the end of June,
       # whatever was paid in July.
       expect(recorded_june.debt_cents).to eq(200_000)
-      expect(recorded_june.deduction_cents).to eq(300_000)
+      expect(recorded_june.deduction_cents).to eq(0)
       expect(staff.staff_balance_cents).to eq(-600_000)
     end
 

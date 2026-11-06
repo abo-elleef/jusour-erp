@@ -86,7 +86,7 @@ RSpec.describe "Paying out recorded payroll", type: :request do
     expect(snapshot_for(omar).paid_out?).to be(true)
   end
 
-  it "keeps back the deduction recorded when the month was locked" do
+  it "takes the month's own advance off the pay when the month was locked" do
     sara = create(:user, company: company, role: "cashier", name: "Sara", monthly_salary_cents: 200_000)
     Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: safe, user: owner,
                                          amount_cents: 100_000, voucher_date: Date.new(2026, 10, 10),
@@ -95,39 +95,39 @@ RSpec.describe "Paying out recorded payroll", type: :request do
 
     pay_out
 
-    # Sara took 1,000 early in October: 2,000 earned, 1,000 kept back.
-    expect(snapshot_for(sara).deduction_cents).to eq(100_000)
+    # Sara took 1,000 early in October: 2,000 earned, 1,000 already had.
+    expect(snapshot_for(sara).deduction_cents).to eq(0)
     expect(snapshot_for(sara).remaining_pay_cents).to eq(100_000)
     expect(sara.staff_balance_cents).to eq(0)
   end
 
-  describe "with a deduction plan smaller than the debt" do
+  describe "for someone who owes the company from an earlier month" do
     let(:karim) do
       create(:user, company: company, role: "cashier", name: "Karim", monthly_salary_cents: 200_000,
                     balance_deduction_cents: 100_000)
     end
 
     before do
-      # Karim took 4,000 in October, to be repaid 1,000 a month.
+      # Karim took 4,000 in September. His repayment plan is only a reminder.
       Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: safe, user: owner,
-                                           amount_cents: 400_000, voucher_date: Date.new(2026, 10, 10),
+                                           amount_cents: 400_000, voucher_date: Date.new(2026, 9, 10),
                                            party_type: "User", party_id: karim.id).call
       Accounting::FinalizePayrollService.new(karim, october, finalized_by: owner).call
     end
 
-    it "pays the month less the plan, leaving the rest of the debt owed" do
-      expect(snapshot_for(karim).payout_due_cents(on: paid_on)).to eq(100_000)
+    it "pays the whole month and leaves the debt owed" do
+      expect(snapshot_for(karim).payout_due_cents(on: paid_on)).to eq(200_000)
 
       pay_out(user_id: karim.id)
 
-      expect(snapshot_for(karim).payout_voucher.amount_cents).to eq(100_000)
-      expect(karim.staff_balance_cents).to eq(-300_000)
+      expect(snapshot_for(karim).payout_voucher.amount_cents).to eq(200_000)
+      expect(karim.staff_balance_cents).to eq(-400_000)
     end
 
     it "shows the payout on the payroll page" do
       row = Accounting::MonthlyPayrollService.new(karim, october).call
 
-      expect(row.payout_cents).to eq(100_000)
+      expect(row.payout_cents).to eq(200_000)
     end
 
     it "takes off what was paid by hand after the month ended" do
@@ -135,7 +135,7 @@ RSpec.describe "Paying out recorded payroll", type: :request do
                                            amount_cents: 40_000, voucher_date: Date.new(2026, 11, 2),
                                            party_type: "User", party_id: karim.id).call
 
-      expect(snapshot_for(karim).payout_due_cents(on: paid_on)).to eq(60_000)
+      expect(snapshot_for(karim).payout_due_cents(on: paid_on)).to eq(160_000)
     end
   end
 

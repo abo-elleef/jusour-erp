@@ -48,21 +48,25 @@ class PayrollSnapshot < ApplicationRecord
   end
 
   # What a month recorded with "pay later" still owes, as finalizing would
-  # have paid it: everything owed to them before the month (if anything), plus
-  # the month's pay, less the deduction kept back.
+  # have paid it (see MonthlyPayrollService.payout_for): the month's pay, plus
+  # anything owed to them from before, less what was paid to them or eaten
+  # during the month. Money they owe the company from earlier months is not
+  # kept back; it is repaid separately.
   #
   # Less anything paid to them since the month ended — vouchers and staff
   # meals, but not later months' salaries — so a month already paid by hand is
   # never paid twice, and an advance or meal early in the new month, before
-  # payday, comes off this payout too. Not capped at the account balance: with
-  # a deduction plan smaller than the debt, the payout is meant to leave them
-  # still owing the rest.
+  # payday, comes off this payout too.
   def payout_due_cents(on: Date.current)
     return 0 if paid_out?
 
     month_end = payroll_month.end_of_month
-    balance_after = user.staff_balance_cents(as_of: month_end)
-    due = [balance_after - net_pay_cents, 0].max + net_pay_cents - deduction_cents.to_i
+    balance_before = user.staff_balance_cents(as_of: month_end) - net_pay_cents
+    due = ::Accounting::MonthlyPayrollService.payout_for(
+      balance_before_cents: balance_before,
+      net_pay_cents: net_pay_cents,
+      month_payments_cents: advances_cents.to_i + staff_meals_cents.to_i
+    ).payout_cents
     paid_since = [movement_since_month_end_cents(month_end, on.to_date), 0].min
     (due + paid_since).clamp(0..)
   end

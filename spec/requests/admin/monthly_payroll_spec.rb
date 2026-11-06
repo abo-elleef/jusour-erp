@@ -89,22 +89,21 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       expect(response.body.index("Higher Paid")).to be < response.body.index("Lower Paid")
     end
 
-    it "shows what to pay this month, after the advance deduction" do
+    it "shows the whole month's pay to pay, with no deduction for an older advance" do
       payroll_month = Date.current.beginning_of_month
       staff = create(:user, company: company, name: "Advance Taker", role: "cashier",
                      monthly_salary_cents: 300_000, balance_deduction_cents: 50_000)
       safe = Treasury.create!(company: company, name: "Safe", treasury_type: "safe",
                               opening_balance_cents: 2_000_000, balance_cents: 2_000_000)
       Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: safe, user: owner,
-                                           amount_cents: 1_200_000, voucher_date: payroll_month,
+                                           amount_cents: 1_200_000, voucher_date: payroll_month - 1.month,
                                            party_type: "User", party_id: staff.id).call
 
       get admin_accounting_monthly_payroll_path, params: { payroll_month: payroll_month.strftime("%Y-%m") }
 
       row_doc = Nokogiri::HTML(response.body).at_css("td.font-medium", text: "Advance Taker").parent
-      payout_cell = row_doc.css("td")[8]
-      expect(payout_cell.text).to include("2,500.00")
-      expect(payout_cell.text).to include(I18n.t("accounting.monthly_payroll.payout_deduction", amount: "500.00"))
+      payout_cell = row_doc.css("td")[7]
+      expect(payout_cell.text).to include("3,000.00")
     end
 
     it "waives penalties beyond the month's pay instead of showing them as owed" do
@@ -126,9 +125,9 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
       expect(response).to have_http_status(:ok)
       row_doc = Nokogiri::HTML(response.body).at_css("td.font-medium", text: "Over Penalized").parent
       expect(row_doc.text).to include(I18n.t("staff.payroll.waiver.waived", amount: "500.00"))
-      remaining_pay_cell = row_doc.css("td")[7]
-      expect(remaining_pay_cell.text).to include("0.00")
-      expect(remaining_pay_cell.text).not_to include(I18n.t("staff.wages_ledger.they_owe"))
+      payout_cell = row_doc.css("td")[7]
+      expect(payout_cell.text).to include("0.00")
+      expect(payout_cell.text).not_to include(I18n.t("staff.wages_ledger.they_owe"))
     end
   end
 

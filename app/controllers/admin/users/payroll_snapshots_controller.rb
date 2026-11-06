@@ -15,7 +15,6 @@ module Admin
           finalized_by: current_user,
           treasury: resolve_treasury,
           paid_on: snapshot_params[:paid_on],
-          deduction_cents: requested_deduction_cents,
           waive_penalties: snapshot_params[:waive_penalties] != "0"
         ).call
 
@@ -56,14 +55,7 @@ module Admin
       end
 
       def snapshot_params
-        params.fetch(:payroll_snapshot, {}).permit(:treasury_id, :paid_on, :deduction_pounds, :waive_penalties)
-      end
-
-      # Blank means "use the default" (their plan, or all of it), not zero.
-      # Arabic-Indic digits arrive already normalized by arabic-numerals.
-      def requested_deduction_cents
-        raw = snapshot_params[:deduction_pounds].to_s.strip
-        raw.present? ? (raw.to_d * 100).round : nil
+        params.fetch(:payroll_snapshot, {}).permit(:treasury_id, :paid_on, :waive_penalties)
       end
 
       def resolve_treasury

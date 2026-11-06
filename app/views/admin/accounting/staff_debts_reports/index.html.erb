@@ -1,0 +1,125 @@
+<% content_for :title, t("accounting.staff_debts_report.title") %>
+<%
+  rows = @report.rows
+  can_record = policy(Voucher).create?
+  sort_link = lambda do |label, column, align: :start|
+    next_direction = @sort == column && @sort_direction == "asc" ? "desc" : "asc"
+    link_class = "inline-flex items-center gap-1 hover:text-gray-900 transition-colors #{@sort == column ? 'text-gray-900' : 'text-gray-500'}"
+    link_class += " justify-end w-full" if align == :end
+    link_to admin_accounting_staff_debts_reports_path(
+              request.query_parameters.merge(sort: column, direction: next_direction)
+            ), class: link_class do
+      safe_join([label, payroll_sort_indicator(@sort, @sort_direction, column)])
+    end
+  end
+%>
+
+<div class="max-w-full">
+  <div class="mb-6">
+    <%= link_to t("reports_hub.title"), admin_reports_path, class: "text-xs font-semibold text-gray-500 hover:text-gray-900" %>
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900 mt-1"><%= t("accounting.staff_debts_report.title") %></h1>
+    <p class="text-sm text-gray-600 mt-1"><%= t("accounting.staff_debts_report.subtitle") %></p>
+  </div>
+
+  <%= form_with url: admin_accounting_staff_debts_reports_path, method: :get, class: "flex flex-wrap gap-4 items-end mb-6" do %>
+    <%= hidden_field_tag :sort, @sort %>
+    <%= hidden_field_tag :direction, @sort_direction %>
+    <div>
+      <label class="block text-xs font-semibold text-gray-600 mb-1.5" for="payroll_month"><%= t("accounting.staff_debts_report.month") %></label>
+      <%= month_field_tag :payroll_month, @payroll_month.strftime("%Y-%m"), class: pos_input_class %>
+    </div>
+    <% if @filter_locations.size > 1 %>
+      <div>
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5" for="location_id"><%= t("accounting.attendance.location") %></label>
+        <%= select_tag :location_id,
+              options_for_select(
+                [
+                  [t("accounting.attendance.all_locations"), ""],
+                  [t("accounting.attendance.company_wide_staff"), StaffLocationFilter::COMPANY_WIDE_FILTER]
+                ] + @filter_locations.map { |l| [l.name, l.id] },
+                @location_filter
+              ),
+              class: "#{pos_input_class} appearance-none min-w-[12rem]",
+              id: "location_id" %>
+      </div>
+    <% end %>
+    <%= submit_tag t("actions.apply"), class: "bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-semibold" %>
+  <% end %>
+
+  <% if rows.empty? %>
+    <div class="rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+      <%= t("accounting.staff_debts_report.empty") %>
+    </div>
+  <% else %>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div class="rounded-2xl border border-red-200 bg-red-50/40 p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.staff_debts_report.total_owed") %></p>
+        <p class="text-2xl font-bold text-red-700 tabular-nums mt-1"><%= format_amount(@report.total(:owed_cents)) %></p>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.staff_debts_report.total_owed_hint", count: rows.size) %></p>
+      </div>
+      <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.staff_debts_report.total_due") %></p>
+        <p class="text-2xl font-bold text-amber-800 tabular-nums mt-1"><%= format_amount(@report.total(:due_cents)) %></p>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.staff_debts_report.total_due_hint") %></p>
+      </div>
+      <div class="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.staff_debts_report.total_repaid") %></p>
+        <p class="text-2xl font-bold text-emerald-700 tabular-nums mt-1"><%= format_amount(@report.total(:repaid_cents)) %></p>
+        <p class="text-xs text-gray-500 mt-1.5"><%= l(@payroll_month, format: "%B %Y") %></p>
+      </div>
+    </div>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold uppercase">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= sort_link.call(t("accounting.shift_logs.employee"), "name") %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_debts_report.owed"), "owed_cents", align: :end) %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_debts_report.plan"), "plan_cents", align: :end) %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_debts_report.repaid"), "repaid_cents", align: :end) %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_debts_report.due"), "due_cents", align: :end) %></th>
+              <th class="p-3 text-start"><%= sort_link.call(t("accounting.staff_debts_report.last_repaid"), "last_repaid_on") %></th>
+              <th class="p-3 pe-5"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% rows.each do |row| %>
+              <tr>
+                <td class="p-3 ps-5 font-semibold text-gray-900">
+                  <%= link_to row.user.name, admin_user_path(row.user, tab: "statement"), class: "hover:underline" %>
+                  <% unless row.user.active? %>
+                    <span class="text-[0.65rem] font-normal text-gray-400"><%= t("accounting.staff_debts_report.inactive") %></span>
+                  <% end %>
+                </td>
+                <td class="p-3 text-end tabular-nums font-semibold text-red-700"><%= format_amount(row.owed_cents) %></td>
+                <td class="p-3 text-end tabular-nums text-gray-600"><%= row.plan_cents ? format_amount(row.plan_cents) : t("accounting.shared.em_dash") %></td>
+                <td class="p-3 text-end tabular-nums text-emerald-700"><%= format_amount(row.repaid_cents) %></td>
+                <td class="p-3 text-end tabular-nums font-semibold text-amber-800"><%= row.due_cents ? format_amount(row.due_cents) : t("accounting.shared.em_dash") %></td>
+                <td class="p-3 text-gray-600 whitespace-nowrap tabular-nums"><%= row.last_repaid_on ? l(row.last_repaid_on, format: :long) : t("accounting.shared.em_dash") %></td>
+                <td class="p-3 pe-5 text-end">
+                  <% if can_record %>
+                    <%= link_to t("accounting.staff_debts_report.record_repayment"),
+                          new_admin_accounting_voucher_path(direction: Voucher::RECEIPT, party: "User:#{row.user.id}"),
+                          class: "inline-flex text-xs font-semibold px-3 py-1.5 rounded-xl border border-emerald-300 text-emerald-800 hover:bg-emerald-50 transition-colors" %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t border-gray-200 bg-gray-50 font-semibold">
+            <tr>
+              <td class="p-3 ps-5 text-gray-900"><%= t("accounting.monthly_payroll.totals") %></td>
+              <td class="p-3 text-end tabular-nums"><%= format_amount(@report.total(:owed_cents)) %></td>
+              <td class="p-3"></td>
+              <td class="p-3 text-end tabular-nums"><%= format_amount(@report.total(:repaid_cents)) %></td>
+              <td class="p-3 text-end tabular-nums"><%= format_amount(@report.total(:due_cents)) %></td>
+              <td class="p-3"></td>
+              <td class="p-3 pe-5"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+  <% end %>
+</div>

@@ -88,28 +88,21 @@
     </div>
     <div class="rounded-xl bg-amber-50 px-4 py-3">
       <p class="text-xs font-semibold text-amber-700 uppercase"><%= t("staff.payroll.still_owed") %></p>
-      <p class="text-lg font-bold tabular-nums mt-1 <%= payroll_summary.remaining_pay_cents.negative? ? 'text-red-700' : 'text-amber-800' %>"><%= format_money(payroll_summary.remaining_pay_cents) %></p>
+      <p class="text-lg font-bold tabular-nums mt-1 text-amber-800"><%= format_money(payroll_summary.still_to_pay_cents) %></p>
       <p class="text-[11px] text-gray-500 mt-0.5"><%= t(payroll_summary.finalized ? "staff.payroll.still_owed_hint_finalized" : "staff.payroll.still_owed_hint_open") %></p>
     </div>
   </div>
 
-  <% if payroll_summary.debt_cents.positive? || payroll_summary.deduction_cents.positive? %>
-    <div class="px-5 py-4 border-b border-gray-100 bg-red-50/40">
-      <p class="text-sm font-semibold text-red-800">
-        <%= t("staff.payroll.deduction.owes", amount: format_amount(payroll_summary.debt_cents)) %>
-      </p>
-      <p class="text-xs text-gray-700 mt-1">
-        <%= t(payroll_summary.finalized ? "staff.payroll.deduction.kept_back_finalized" : "staff.payroll.deduction.kept_back_open",
-              deduction: format_amount(payroll_summary.deduction_cents),
-              payout: format_amount([payroll_summary.payout_cents, 0].max)) %>
-      </p>
-      <p class="text-[11px] text-gray-500 mt-1">
-        <% if user.balance_deduction_cents %>
-          <%= t("staff.payroll.deduction.plan", amount: format_amount(user.balance_deduction_cents)) %>
-        <% else %>
-          <%= t("staff.payroll.deduction.no_plan") %>
-        <% end %>
-      </p>
+  <%# Money they owe the company is handled on its own report, not in payroll. %>
+  <% if payroll_summary.debt_after_cents.positive? %>
+    <div class="px-5 py-3 border-b border-gray-100 bg-red-50/40 text-xs text-red-800">
+      <% if !readonly && policy(Voucher).create? && current_user.can?("payroll:view") %>
+        <%= link_to t("staff.payroll.deduction.owes_link", amount: format_amount(payroll_summary.debt_after_cents)),
+              admin_accounting_staff_debts_reports_path,
+              class: "font-semibold hover:underline" %>
+      <% else %>
+        <%= t("staff.payroll.deduction.owes", amount: format_amount(payroll_summary.debt_after_cents)) %>
+      <% end %>
     </div>
   <% end %>
 

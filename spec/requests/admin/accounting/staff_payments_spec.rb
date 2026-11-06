@@ -55,26 +55,26 @@ RSpec.describe "Money to staff", type: :request do
 
     before do
       Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: safe, user: owner,
-                                           amount_cents: 1_200_000, voucher_date: month,
+                                           amount_cents: 1_200_000, voucher_date: month - 1.month,
                                            party_type: "User", party_id: staff.id).call
     end
 
-    it "shows the debt and the deduction field on the staff page" do
+    it "shows no deduction field, only a link to the Staff debts report" do
       get_user_tab(staff, "payroll", payroll_month: month.strftime("%Y-%m"))
-      expect(response.body).to include(I18n.t("staff.payroll.deduction.field"))
-      expect(response.body).to include("payroll_snapshot[deduction_pounds]")
+      expect(response.body).not_to include("payroll_snapshot[deduction_pounds]")
+      expect(response.body).to include(admin_accounting_staff_debts_reports_path)
     end
 
-    it "keeps back the amount typed and pays out the rest" do
+    it "pays the month in full" do
       post admin_user_payroll_snapshot_path(staff, payroll_month: month.strftime("%Y-%m")),
-           params: { payroll_snapshot: { treasury_id: safe.id, paid_on: month, deduction_pounds: "500" } }
+           params: { payroll_snapshot: { treasury_id: safe.id, paid_on: month } }
 
       snapshot = PayrollSnapshot.find_by!(user: staff, payroll_month: month)
-      expect(snapshot.deduction_cents).to eq(50_000)
-      expect(snapshot.payout_voucher.amount_cents).to eq(250_000)
+      expect(snapshot.deduction_cents).to eq(0)
+      expect(snapshot.payout_voucher.amount_cents).to eq(300_000)
     end
 
-    it "saves a standing plan from the staff form" do
+    it "saves a monthly repayment plan from the staff form" do
       patch admin_user_path(staff), params: { user: { balance_deduction_pounds: "750" } }
       expect(staff.reload.balance_deduction_cents).to eq(75_000)
     end

@@ -70,20 +70,21 @@ RSpec.describe StaffPayrollController, type: :request do
 
         html = Nokogiri::HTML(response.body)
         expect(response.body).to include(I18n.t("staff.payroll_portal.advances_title"))
-        # Open month: 3,000 pay less the 1,000 advance it will repay, not yet paid.
+        # Open month: 3,000 pay less the 1,000 advance already taken, not yet paid.
         expect(response.body).to include(format_amount(200_000))
         expect(response.body).to include(I18n.t("staff.payroll_portal.status_not_paid"))
-        expect(response.body).to include(I18n.t("staff.payroll_portal.debt_title"))
+        # The advance is inside the month, so it is fully taken off this month's pay.
+        expect(response.body).not_to include(I18n.t("staff.payroll_portal.debt_title"))
         expect(html.css("[data-payment-kind]").map { |e| e["data-payment-kind"] }).to eq(%w[advance])
       end
     end
 
     it "shows a recorded month as this month's pay, paid, with the advance balance apart" do
-      staff.update!(balance_deduction_cents: 50_000)
       travel_to Time.zone.local(2026, 6, 30, 10, 0, 0) do
+        # Taken in May: owed from before the month, so not kept back from June's pay.
         Accounting::RecordVoucherService.new(
           direction: Voucher::PAYMENT, treasury: treasury, user: owner, amount_cents: 200_000,
-          voucher_date: Date.new(2026, 6, 10), party_type: "User", party_id: staff.id
+          voucher_date: Date.new(2026, 5, 10), party_type: "User", party_id: staff.id
         ).call
         sign_in owner
         post admin_user_payroll_snapshot_path(staff, payroll_month: payroll_month.strftime("%Y-%m")),
@@ -94,17 +95,16 @@ RSpec.describe StaffPayrollController, type: :request do
 
         html = Nokogiri::HTML(response.body)
         hero = html.at_css("dl").ancestors("div").first.text
-        expect(hero).to include(format_amount(250_000))  # 3,000 − 500 kept back
+        expect(hero).to include(format_amount(300_000))  # the whole month's pay
         expect(hero).to include(I18n.t("staff.payroll_portal.status_paid", date: I18n.l(Date.new(2026, 6, 30), format: :long)))
-        expect(hero).to include(format_amount(50_000))
-        expect(hero).not_to include(format_amount(450_000))  # never "paid this month" = advance + salary
+        expect(hero).not_to include(format_amount(500_000))  # never "paid this month" = advance + salary
         expect(response.body).to include(I18n.t("staff.payroll_portal.debt_title"))
-        expect(response.body).to include(format_amount(150_000))  # 2,000 advance − 500 repaid
+        expect(response.body).to include(format_amount(200_000))  # the 2,000 advance, still owed
         expect(response.body).not_to include(format_money(250_000))  # amounts without the currency
-        expect(html.css("[data-payment-kind]").map { |e| e["data-payment-kind"] }).to match_array(%w[salary advance])
+        expect(html.css("[data-payment-kind]").map { |e| e["data-payment-kind"] }).to match_array(%w[salary])
         # Signed for the employee reading it: what they were paid is positive.
         expect(html.css("[data-payment-amount]").map { |e| e.text.strip }).to match_array(
-          ["+#{format_amount(250_000)}", "+#{format_amount(200_000)}"]
+          ["+#{format_amount(300_000)}"]
         )
       end
     end

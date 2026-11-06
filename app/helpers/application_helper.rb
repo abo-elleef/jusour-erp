@@ -1416,7 +1416,10 @@ module ApplicationHelper
 
     [{ label: t("accounting.staff_payments_report.title"),
        path: admin_accounting_staff_payments_reports_path,
-       description: t("accounting.staff_payments_report.description") }]
+       description: t("accounting.staff_payments_report.description") },
+     { label: t("accounting.staff_debts_report.title"),
+       path: admin_accounting_staff_debts_reports_path,
+       description: t("accounting.staff_debts_report.description") }]
   end
 
   def reports_any_access?

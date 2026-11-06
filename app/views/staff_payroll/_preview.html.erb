@@ -29,15 +29,20 @@
     </div>
   <% end %>
 
-  <%# This month only: what the month's pay comes to after any advance
-      deduction, and whether it has been paid. The account balance (an advance
-      still being repaid) is a separate box below. %>
+  <%# This month only: what the month's pay comes to after what they already
+      had during it, and whether it has been paid. The account balance (an
+      advance still being repaid) is a separate box below. %>
   <% snapshot = payroll_summary.snapshot %>
   <% payout_voucher = snapshot&.payout_voucher %>
   <% net_cents = [payroll_summary.net_pay_cents, 0].max %>
-  <% deduction_cents = payroll_summary.deduction_cents.to_i %>
+  <%# Paid to them or eaten during the month; a recorded month's own payout is not part of it. %>
+  <% taken_cents = if snapshot
+       snapshot.advances_cents.to_i + snapshot.staff_meals_cents.to_i
+     else
+       payroll_summary.paid_cents.to_i + payroll_summary.staff_meals_cents.to_i
+     end %>
   <% payout_cents = payroll_summary.payout_cents.to_i %>
-  <% carried_cents = payout_cents - net_cents + deduction_cents %>
+  <% carried_cents = payout_cents - net_cents + taken_cents %>
   <div class="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/80 p-5 shadow-sm">
     <p class="text-xs font-semibold text-amber-800 uppercase tracking-wide"><%= t("staff.payroll_portal.to_pay_title") %></p>
     <p class="text-3xl sm:text-4xl font-bold text-amber-950 tabular-nums mt-1"><%= format_amount(payout_cents) %></p>
@@ -71,10 +76,10 @@
           <dd class="tabular-nums">+<%= format_amount(carried_cents) %></dd>
         </div>
       <% end %>
-      <% if deduction_cents.positive? %>
+      <% if taken_cents.positive? %>
         <div class="flex justify-between gap-3 text-red-700">
           <dt><%= t("staff.payroll_portal.breakdown_deduction") %></dt>
-          <dd class="tabular-nums">−<%= format_amount(deduction_cents) %></dd>
+          <dd class="tabular-nums">−<%= format_amount(taken_cents) %></dd>
         </div>
       <% end %>
       <div class="flex justify-between gap-3 border-t border-amber-200 pt-1.5 font-semibold text-amber-950">
@@ -84,22 +89,11 @@
     </dl>
   </div>
 
-  <%# What they owe the company, apart from this month's pay. Open month:
-      debt_cents is before this month's deduction; recorded: after it. %>
-  <% debt_now_cents = payroll_summary.finalized ? payroll_summary.debt_cents.to_i : payroll_summary.debt_cents.to_i - deduction_cents %>
-  <% if payroll_summary.debt_cents.to_i.positive? %>
+  <%# What they owe the company, apart from this month's pay. %>
+  <% if payroll_summary.debt_after_cents.positive? %>
     <div class="rounded-2xl border border-red-200 bg-red-50/60 p-4">
       <p class="text-xs font-semibold text-red-700 uppercase tracking-wide"><%= t("staff.payroll_portal.debt_title") %></p>
-      <p class="text-2xl font-bold text-red-700 tabular-nums mt-1"><%= format_amount(payroll_summary.debt_cents) %></p>
-      <% if deduction_cents.positive? %>
-        <p class="text-xs text-red-900/80 mt-2">
-          <% if payroll_summary.finalized %>
-            <%= t("staff.payroll_portal.debt_deducted", deduction: format_amount(deduction_cents)) %>
-          <% else %>
-            <%= t("staff.payroll_portal.debt_will_deduct", deduction: format_amount(deduction_cents), after: format_amount(debt_now_cents)) %>
-          <% end %>
-        </p>
-      <% end %>
+      <p class="text-2xl font-bold text-red-700 tabular-nums mt-1"><%= format_amount(payroll_summary.debt_after_cents) %></p>
     </div>
   <% end %>
 

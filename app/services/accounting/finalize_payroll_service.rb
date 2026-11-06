@@ -7,14 +7,12 @@ module Accounting
   # account.
   #
   # Given a treasury, it also pays them out with an ordinary payment voucher:
-  # everything owed to them, less the deduction kept back against anything
-  # they owe the company (see MonthlyPayrollService.payout_for — a typed
-  # amount, else their standing plan, else all of it). Without a treasury it
-  # only records the month, and the balance waits for a voucher.
+  # the month's pay (see MonthlyPayrollService.payout_for). Nothing is kept
+  # back against money they owe the company; that is repaid separately by a
+  # receipt voucher. Without a treasury it only records the month, and the
+  # balance waits for a voucher.
   class FinalizePayrollService
-    def initialize(user, payroll_month, finalized_by:, treasury: nil, paid_on: nil, deduction_cents: nil,
-                   waive_penalties: true)
-      @deduction_cents = deduction_cents
+    def initialize(user, payroll_month, finalized_by:, treasury: nil, paid_on: nil, waive_penalties: true)
       @waive_penalties = waive_penalties
       @user = user
       @payroll_month = payroll_month.to_date.beginning_of_month
@@ -61,10 +59,9 @@ module Accounting
         JournalEntryService.record_payroll_accrual!(snapshot)
 
         payout = MonthlyPayrollService.payout_for(
-          user: @user, balance_before_cents: balance_before,
-          net_pay_cents: snapshot.net_pay_cents, requested_deduction_cents: @deduction_cents
+          balance_before_cents: balance_before, net_pay_cents: snapshot.net_pay_cents,
+          month_payments_cents: summary.paid_cents + summary.staff_meals_cents
         )
-        snapshot.update!(deduction_cents: payout.deduction_cents)
         pay_out!(snapshot, payout.payout_cents) if @treasury
       end
 
@@ -73,9 +70,7 @@ module Accounting
 
     private
 
-    # Pays what's left after the deduction. When they owe the company more
-    # than the deduction covers, this hands over part of the month's pay while
-    # the rest of the debt carries on to next month.
+    # Pays the month's pay less what they already had during the month.
     def pay_out!(snapshot, owed)
       return unless owed.positive?
 

@@ -4,7 +4,7 @@ module Accounting
   class MonthlyPayrollService
     INDEX_SORTABLE_COLUMNS = %w[
       name base_salary_cents attendance_pay_cents daily_rate_cents penalties_cents bonuses_cents
-      net_pay_cents paid_cents staff_meals_cents remaining_pay_cents payout_cents status
+      net_pay_cents paid_cents staff_meals_cents payout_cents status
     ].freeze
     INDEX_DEFAULT_SORT = "name"
     INDEX_DEFAULT_SORT_DIRECTION = "asc"
@@ -35,35 +35,52 @@ module Accounting
       :finalized,
       :snapshot,
       keyword_init: true
-    )
+    ) do
+      # What the company still has to hand over to this employee for the
+      # month, as salary: the payout while it is unpaid, otherwise whatever
+      # positive balance is left. The debt side of the account is on the
+      # Staff debts report, not here.
+      def still_to_pay_cents
+        return [payout_cents.to_i, 0].max unless finalized && snapshot&.paid_out?
+
+        [remaining_pay_cents.to_i, 0].max
+      end
+
+      # What they owe the company once this month's pay has gone out. The
+      # ledger balance, adjusted for a payout that hasn't been made yet.
+      def debt_after_cents
+        after = if finalized
+                  balance_cents.to_i - (snapshot&.paid_out? ? 0 : payout_cents.to_i)
+                else
+                  balance_cents.to_i + [net_pay_cents.to_i, 0].max - payout_cents.to_i
+                end
+        [-after, 0].max
+      end
+    end
 
     Payout = Struct.new(:debt_cents, :max_deduction_cents, :deduction_cents, :payout_cents, keyword_init: true)
 
     # What finalizing a month pays out, given where the account stood before
     # the month's earnings were credited (balance_before: + owed to them,
-    # − they owe the company).
+    # − they owe the company) and what was already paid to them or eaten
+    # during the month (month_payments: vouchers and staff meals).
     #
-    # With nothing owed by them, it's everything owed to them: the balance plus
-    # the month's pay. When they owe the company — paid ahead during the month,
-    # or a large advance being repaid over several months — part of the month's
-    # pay is kept back against that debt:
+    # Money they owed the company before the month began is not touched: it is
+    # repaid separately, by a receipt voucher (Staff debts report), after they
+    # have their full salary. Only the month's own payments come off the pay:
     #
-    #   payout = max(balance_before, 0) + net_pay − deduction
+    #   opening = balance_before + month_payments
+    #   payout  = max(max(opening, 0) + net_pay − month_payments, 0)
     #
-    # The deduction can't exceed the debt or the month's pay. It defaults to
-    # the employee's standing plan (User#balance_deduction_cents) when one is
-    # set, and to as much as possible otherwise — the old behaviour, where an
-    # advance always came off the next salary in full. A requested amount
-    # (typed when finalizing) overrides both, within the same limits.
-    def self.payout_for(user:, balance_before_cents:, net_pay_cents:, requested_deduction_cents: nil)
+    # If the month's payments exceed what they were owed, the excess stays on
+    # their account as a debt.
+    def self.payout_for(balance_before_cents:, net_pay_cents:, month_payments_cents: 0)
       net = [net_pay_cents.to_i, 0].max
-      debt = [-balance_before_cents.to_i, 0].max
-      max_deduction = [debt, net].min
-      wanted = requested_deduction_cents.presence&.to_i || user.balance_deduction_cents || max_deduction
-      deduction = wanted.clamp(0, max_deduction)
+      payments = month_payments_cents.to_i
+      opening = balance_before_cents.to_i + payments
 
-      Payout.new(debt_cents: debt, max_deduction_cents: max_deduction, deduction_cents: deduction,
-                 payout_cents: [balance_before_cents.to_i, 0].max + net - deduction)
+      Payout.new(debt_cents: [-balance_before_cents.to_i, 0].max, max_deduction_cents: 0, deduction_cents: 0,
+                 payout_cents: [[opening, 0].max + net - payments, 0].max)
     end
 
     # Penalties come out of what the month leaves after its own payments —
@@ -146,7 +163,8 @@ module Accounting
         # Not floored: penalties beyond the month's pay show as a real negative
         # here, even though finalizing will only ever accrue zero for it.
         remaining_pay_cents: balance + gross_net,
-        **payout_fields(self.class.payout_for(user: @user, balance_before_cents: balance, net_pay_cents: gross_net)),
+        **payout_fields(self.class.payout_for(balance_before_cents: balance, net_pay_cents: gross_net,
+                                              month_payments_cents: paid + meals_total)),
         adjustments: adjustments,
         payments: payments,
         finalized: false,

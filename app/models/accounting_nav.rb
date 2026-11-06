@@ -96,6 +96,7 @@ module AccountingNav
       "monthly_payroll" => "payroll:view",
       # Reports hub → Staff (ApplicationHelper#staff_report_items)
       "staff_payments_reports" => "payroll:view",
+      "staff_debts_reports" => "payroll:view",
       # live in the accounting namespace but are surfaced under Settings
       "integrations" => "integrations:manage",
       "payment_method_treasuries" => "payments:manage"

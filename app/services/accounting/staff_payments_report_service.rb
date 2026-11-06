@@ -8,11 +8,11 @@ module Accounting
   # Earned comes from MonthlyPayrollService, so it is the finalized figure
   # when the month is finalized and the live estimate when it isn't.
   class StaffPaymentsReportService
-    SORTABLE_COLUMNS = %w[name monthly_salary_cents earned_cents deduction_cents paid_out_cents received_cents
+    SORTABLE_COLUMNS = %w[name monthly_salary_cents earned_cents paid_out_cents received_cents
                           net_paid_cents staff_meals_cents balance_cents].freeze
     DEFAULT_SORT = "name"
 
-    Row = Struct.new(:user, :monthly_salary_cents, :earned_cents, :deduction_cents, :finalized, :paid_out_cents,
+    Row = Struct.new(:user, :monthly_salary_cents, :earned_cents, :finalized, :paid_out_cents,
                      :received_cents, :staff_meals_cents, :balance_cents, keyword_init: true) do
       def net_paid_cents = paid_out_cents - received_cents
     end
@@ -52,9 +52,6 @@ module Accounting
         user: user,
         monthly_salary_cents: user.monthly_salary_cents.to_i,
         earned_cents: [summary.net_pay_cents, 0].max,
-        # Kept back against what they owe: recorded when finalized, the
-        # default (plan or all of it) while the month is still open.
-        deduction_cents: summary.deduction_cents.to_i,
         finalized: summary.finalized,
         paid_out_cents: voucher_totals[[user.id, Voucher::PAYMENT]].to_i,
         received_cents: voucher_totals[[user.id, Voucher::RECEIPT]].to_i,
