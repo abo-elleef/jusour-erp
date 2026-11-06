@@ -20,7 +20,6 @@
           <%= f.label :name_or_phone_cont, t("sales.shipping_companies.search.label"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
           <%= f.search_field :name_or_phone_cont,
                 placeholder: t("sales.shipping_companies.search.placeholder"),
-                value: params.dig(:q, :name_or_phone_cont),
                 class: pos_input_class %>
         </div>
         <div class="min-w-[10rem]">

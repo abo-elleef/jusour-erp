@@ -31,8 +31,7 @@
         </span>
         <%= f.search_field :description_or_expense_category_name_cont,
               placeholder: t("accounting.shared.search_placeholder"),
-              class: "w-full border border-gray-200 rounded-xl ps-9 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400",
-              value: params.dig(:q, :description_or_expense_category_name_cont) %>
+              class: "w-full border border-gray-200 rounded-xl ps-9 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400" %>
       </div>
       <%= f.submit t("actions.search"), class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl cursor-pointer" %>
       <% if params[:q].present? %>
