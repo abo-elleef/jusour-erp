@@ -5472,6 +5472,7 @@ ar:
     vouchers:
       title: "السندات"
       subtitle: "سندات القبض والصرف — مستند حركة النقدية من الخزينة وإليها."
+      search_placeholder: "الرقم أو الطرف أو الفاتورة أو الملاحظات…"
       number: "رقم السند"
       direction: "النوع"
       directions:

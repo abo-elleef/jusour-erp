@@ -162,6 +162,33 @@ class Voucher < ApplicationRecord
     format("%s%05d", prefix, (max_seq || 0) + 1)
   end
 
+  # Free-text search for the vouchers list: the number, the notes, the typed
+  # counterparty, and the party's name — the voucher's own party, or the one
+  # behind an invoice it settled (that is what the list shows for most
+  # settlement vouchers, so searching by it has to work). Also matches the
+  # number of an invoice it settled.
+  def self.search_text(term)
+    term = term.to_s.strip
+    return all if term.blank?
+
+    like = "%#{sanitize_sql_like(term)}%"
+    named = ->(klass, column = :name) { klass.where("#{klass.table_name}.#{column} ILIKE ?", like).select(:id) }
+
+    own_party = Partyable::PARTY_TYPES.map do |type|
+      klass = type.constantize
+      where(party_type: type, party_id: named.call(klass))
+    end
+
+    settled = PaymentAllocation.where(payment_type: "Voucher").select(:payment_id)
+    via_vendor_invoice = where(id: settled.where(settles_type: "VendorInvoice", settles_id:
+      VendorInvoice.where(supplier_id: named.call(Supplier)).or(VendorInvoice.where("invoice_number ILIKE ?", like)).select(:id)))
+    via_customer_invoice = where(id: settled.where(settles_type: "CustomerInvoice", settles_id:
+      CustomerInvoice.where(customer_id: named.call(Customer)).or(CustomerInvoice.where("invoice_number ILIKE ?", like)).select(:id)))
+
+    text = where("vouchers.number ILIKE :q OR vouchers.notes ILIKE :q OR vouchers.counterparty ILIKE :q", q: like)
+    [*own_party, via_vendor_invoice, via_customer_invoice].inject(text) { |scope, other| scope.or(other) }
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     %w[number direction voucher_date amount_cents treasury_id counterparty]
   end

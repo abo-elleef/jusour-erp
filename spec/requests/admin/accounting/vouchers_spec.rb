@@ -60,6 +60,66 @@ RSpec.describe "Admin::Accounting::Vouchers", type: :request do
       expect(response.body).not_to include("PV-#{Date.current.year}-00001")
     end
 
+    describe "search" do
+      let(:range) { { start_date: Date.current.beginning_of_year, end_date: Date.current } }
+      let(:year)  { Date.current.year }
+
+      def issue(direction: Voucher::PAYMENT, **attrs)
+        ::Accounting::RecordVoucherService.new(direction: direction, treasury: cash,
+                                               user: owner, amount_cents: 5_000, **attrs).call
+      end
+
+      it "finds by counterparty and by notes, and hides the rest" do
+        cash
+        issue(counterparty: "Al Nour Trading")
+        issue(notes: "october delivery")
+
+        get admin_accounting_vouchers_path(range.merge(search: "nour"))
+        expect(response.body).to include("PV-#{year}-00001")
+        expect(response.body).not_to include("PV-#{year}-00002")
+
+        get admin_accounting_vouchers_path(range.merge(search: "DELIVERY"))
+        expect(response.body).to include("PV-#{year}-00002")
+        expect(response.body).not_to include("PV-#{year}-00001")
+      end
+
+      it "finds by the voucher's own party name" do
+        cash
+        supplier = Supplier.create!(name: "Delta Packaging", company: company)
+        issue(party_type: "Supplier", party_id: supplier.id)
+        issue(counterparty: "someone else")
+
+        get admin_accounting_vouchers_path(range.merge(search: "delta"))
+
+        expect(response.body).to include("PV-#{year}-00001")
+        expect(response.body).not_to include("PV-#{year}-00002")
+      end
+
+      it "finds by voucher number" do
+        cash
+        issue
+        issue
+
+        get admin_accounting_vouchers_path(range.merge(search: "00002"))
+
+        expect(response.body).to include("PV-#{year}-00002")
+        expect(response.body).not_to include("PV-#{year}-00001")
+      end
+
+      it "treats % and _ literally and keeps the other filters" do
+        cash
+        issue(counterparty: "plain name")
+        issue(direction: Voucher::RECEIPT, counterparty: "plain name")
+
+        get admin_accounting_vouchers_path(range.merge(search: "%"))
+        expect(response.body).not_to include("PV-#{year}-00001")
+
+        get admin_accounting_vouchers_path(range.merge(search: "plain", direction: Voucher::RECEIPT))
+        expect(response.body).to include("RV-#{year}-00001")
+        expect(response.body).not_to include("PV-#{year}-00001")
+      end
+    end
+
     it "exports CSV" do
       cash
       ::Accounting::RecordVoucherService.new(direction: Voucher::PAYMENT, treasury: cash,

@@ -23,6 +23,8 @@ module Admin
         scope = scope.on_date_range(@start_date, @end_date)
         scope = scope.where(direction: params[:direction]) if Voucher::DIRECTIONS.include?(params[:direction])
         scope = scope.where(treasury_id: params[:treasury_id]) if params[:treasury_id].present?
+        @search = params[:search].to_s.strip
+        scope = scope.search_text(@search) if @search.present?
 
         totals = scope.unscope(:includes).active
         @received_cents = totals.receipts.sum(:amount_cents)

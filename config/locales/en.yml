@@ -5420,6 +5420,7 @@ en:
     vouchers:
       title: "Vouchers"
       subtitle: "Receipt and payment vouchers — the document for money crossing a treasury."
+      search_placeholder: "Number, party, invoice or notes…"
       number: "Voucher no."
       direction: "Type"
       directions:
