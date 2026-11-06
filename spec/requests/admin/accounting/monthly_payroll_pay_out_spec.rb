@@ -139,6 +139,22 @@ RSpec.describe "Paying out recorded payroll", type: :request do
     end
   end
 
+  it "offers record and pay in one form, sharing one treasury and date" do
+    sara = create(:user, company: company, role: "cashier", name: "Sara", monthly_salary_cents: 200_000)
+    sara.update!(monthly_salary_cents: 200_000)
+
+    get admin_accounting_monthly_payroll_path(payroll_month: "2026-10")
+
+    doc = Nokogiri::HTML(response.body)
+    pay = doc.at_css("input[type=submit][formaction*='pay_out']")
+    panel = pay.ancestors("form").first
+    expect(panel.css("select[name='payroll_snapshot[treasury_id]']").size).to eq(1)
+    expect(panel.css("input[name='payroll_snapshot[paid_on]']").size).to eq(1)
+    record = doc.css("input[type=submit]").find { |i| i["value"] == I18n.t("accounting.monthly_payroll.record_all_count", count: 1) }
+    expect(pay).to be_present
+    expect(record).to be_present
+  end
+
   it "needs a treasury" do
     post admin_accounting_monthly_payroll_pay_out_path(payroll_month: "2026-10"),
          params: { payroll_snapshot: { treasury_id: "", paid_on: paid_on } }

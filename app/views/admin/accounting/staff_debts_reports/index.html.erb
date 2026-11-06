@@ -5,7 +5,8 @@
   sort_link = lambda do |label, column, align: :start|
     next_direction = @sort == column && @sort_direction == "asc" ? "desc" : "asc"
     link_class = "inline-flex items-center gap-1 hover:text-gray-900 transition-colors #{@sort == column ? 'text-gray-900' : 'text-gray-500'}"
-    link_class += " justify-end w-full" if align == :end
+    # No justify-end: the app's [dir=rtl] th/td rule makes th and td text-align:start, so
+    # a flex justify-end would push this header to the opposite side from its figures.
     link_to admin_accounting_staff_debts_reports_path(
               request.query_parameters.merge(sort: column, direction: next_direction)
             ), class: link_class do

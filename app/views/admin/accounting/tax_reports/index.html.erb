@@ -4,7 +4,7 @@
 
   <div class="rounded-2xl border border-gray-200 bg-white p-4 mb-6">
     <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("accounting.tax_reports.total_collected") %></p>
-    <p class="text-2xl font-bold tabular-nums"><%= format_money(@total_tax_cents) %></p>
+    <p class="text-2xl font-bold tabular-nums"><%= copyable_amount(@total_tax_cents, money: true) %></p>
   </div>
 
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -22,8 +22,8 @@
           <tr>
             <td class="p-3 ps-5"><%= row[:rate].name %> (<%= (row[:rate].rate * 100).round(2) %>%)</td>
             <td class="p-3"><%= row[:rate].tax_category %></td>
-            <td class="p-3 text-end tabular-nums"><%= format_money(row[:taxable_revenue_cents]) %></td>
-            <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= format_money(row[:tax_collected_cents]) %></td>
+            <td class="p-3 text-end tabular-nums"><%= copyable_amount(row[:taxable_revenue_cents], money: true) %></td>
+            <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= copyable_amount(row[:tax_collected_cents], money: true) %></td>
           </tr>
         <% end %>
       </tbody>

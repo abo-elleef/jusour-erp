@@ -90,8 +90,8 @@
                 <td class="<%= cell %> ps-5 tabular-nums"><%= l(@end_date, format: :long) %></td>
                 <td class="<%= cell %>"></td>
                 <td class="p-3"><%= t("accounting.ledger.general_ledger.closing_balance") %></td>
-                <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@ledger.debit_cents) %></td>
-                <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@ledger.credit_cents) %></td>
+                <td class="<%= cell %> text-end tabular-nums"><%= copyable_amount(@ledger.debit_cents) %></td>
+                <td class="<%= cell %> text-end tabular-nums"><%= copyable_amount(@ledger.credit_cents) %></td>
                 <td class="<%= cell %> pe-5 text-end tabular-nums"><%= ledger_balance(@ledger.closing_cents) %></td>
               </tr>
             </tfoot>

@@ -138,6 +138,7 @@ en:
     update_password_button: "Update password"
 
   actions:
+    copy_number: "Copy number"
     void: "Void"
     save: "Save"
     cancel: "Cancel"
@@ -5788,6 +5789,8 @@ en:
       status_draft: "Draft"
       salary_link: "Staff salary link"
       record_all: "Record all"
+      record_all_count: "Record all (%{count})"
+      actions_hint: "Record locks each month's figures. Pay sends the money to everyone already recorded, from the treasury and on the date chosen."
       pay_all:
         one: "Pay %{count} recorded salary"
         other: "Pay %{count} recorded salaries"
@@ -5999,7 +6002,6 @@ en:
       not_clocked_in: "Not clocked in"
       clock_in: "Clock in"
       clock_out: "Clock out"
-    staff_payments_report:
     staff_debts_report:
       title: "Staff debts"
       description: "Employees who owe the company money, what they have repaid this month, and what is due."
@@ -6021,6 +6023,7 @@ en:
       record_repayment: "Record repayment"
       inactive: "(inactive)"
 
+    staff_payments_report:
       title: "Money paid to staff"
       description: "Each employee's monthly pay against what actually went to them during the month."
       subtitle: "Monthly pay against every voucher to or from staff in the month."

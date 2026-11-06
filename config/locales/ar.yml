@@ -140,6 +140,7 @@ ar:
     update_password_button: "تحديث كلمة المرور"
 
   actions:
+    copy_number: "نسخ الرقم"
     void: "إلغاء"
     save: "حفظ"
     cancel: "إلغاء"
@@ -5846,6 +5847,8 @@ ar:
       status_draft: "مسودة"
       salary_link: "رابط راتب الموظف"
       record_all: "تسجيل الكل"
+      record_all_count: "تسجيل الكل (%{count})"
+      actions_hint: "التسجيل يثبّت أرقام كل شهر. الصرف يحوّل المبالغ لكل من تم تسجيله، من الخزنة وبالتاريخ المختارين."
       pay_all:
         one: "صرف %{count} راتب مسجّل"
         other: "صرف %{count} رواتب مسجّلة"
@@ -6057,7 +6060,6 @@ ar:
       not_clocked_in: "لا يوجد وردية مفتوحة"
       clock_in: "بداية الوردية"
       clock_out: "انهاء الوردية"
-    staff_payments_report:
     staff_debts_report:
       title: "مديونيات الموظفين"
       description: "الموظفون المدينون للشركة، وما سددوه هذا الشهر، وما يستحق عليهم."
@@ -6079,6 +6081,7 @@ ar:
       record_repayment: "تسجيل سداد"
       inactive: "(غير نشط)"
 
+    staff_payments_report:
       title: "المدفوع للموظفين"
       description: "الراتب الشهري لكل موظف مقابل ما وصله فعلاً خلال الشهر."
       subtitle: "الرواتب الشهرية مقابل كل سند صرف أو قبض مع الموظفين خلال الشهر."

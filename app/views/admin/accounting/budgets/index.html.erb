@@ -68,8 +68,8 @@
                 <% over = actual > budget_cents && budget_cents.positive? %>
                 <td class="p-2.5 text-center align-top <%= over ? 'bg-red-50/60' : '' %>">
                   <div class="space-y-0.5 mb-2">
-                    <div class="font-semibold tabular-nums text-gray-900"><%= format_money(actual) %></div>
-                    <div class="tabular-nums text-gray-400">/ <%= format_money(budget_cents) %></div>
+                    <div class="font-semibold tabular-nums text-gray-900"><%= copyable_amount(actual, money: true) %></div>
+                    <div class="tabular-nums text-gray-400">/ <%= copyable_amount(budget_cents, money: true) %></div>
                   </div>
                   <%= form_with url: admin_accounting_budgets_path, method: :patch,
                         class: "flex gap-1.5 items-center justify-center" do %>

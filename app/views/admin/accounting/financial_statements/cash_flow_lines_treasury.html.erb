@@ -64,9 +64,9 @@
                 </td>
                 <td class="px-5 py-2.5 text-end tabular-nums font-medium <%= tx.amount_cents >= 0 ? 'text-gray-900' : 'text-red-700' %>">
                   <% if tx.amount_cents >= 0 %>
-                    <%= format_amount(tx.amount_cents) %>
+                    <%= copyable_amount(tx.amount_cents) %>
                   <% else %>
-                    (<%= format_amount(tx.amount_cents.abs) %>)
+                    (<%= copyable_amount(tx.amount_cents, text: format_amount(tx.amount_cents.abs)) %>)
                   <% end %>
                 </td>
               </tr>

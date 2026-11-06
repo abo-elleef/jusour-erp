@@ -7,7 +7,7 @@ module LedgerReportsHelper
     amount = side == :debit ? cents : -cents
     return tag.span("–", class: "text-gray-300") unless amount.positive?
 
-    format_amount(amount)
+    copyable_amount(amount)
   end
 
   # A debit-positive running balance as one figure with its side spelled out.

@@ -130,10 +130,10 @@
         <tr class="bg-gray-50/60" title="<%= profit_formula %>">
           <td class="px-5 py-3 font-bold text-gray-900"><%= t("accounting.profit_vs_cash.net_profit") %></td>
           <td class="px-5 py-3 text-end tabular-nums font-bold text-gray-900">
-            <%= link_to net_profit >= 0 ? format_amount(net_profit) : "(#{format_amount(net_profit.abs)})",
+            <span class="group/copy inline-flex items-center whitespace-nowrap"><%= link_to net_profit >= 0 ? format_amount(net_profit) : "(#{format_amount(net_profit.abs)})",
                   profit_loss_admin_accounting_financial_statements_path(**range),
                   class: "hover:underline hover:text-blue-700",
-                  title: t("accounting.profit_vs_cash.drill_down_hint") %>
+                  title: t("accounting.profit_vs_cash.drill_down_hint") %><%= copy_amount_button(net_profit) %></span>
           </td>
         </tr>
 
@@ -160,12 +160,15 @@
               <% end %>
             </td>
             <td class="px-5 py-2.5 text-end tabular-nums font-medium whitespace-nowrap <%= line.amount_cents.negative? ? 'text-red-700' : 'text-emerald-700' %>">
-              <% if href %>
-                <%= link_to amount_text, href, class: "hover:underline hover:text-blue-700",
-                      title: t("accounting.profit_vs_cash.drill_down_hint") %>
-              <% else %>
-                <%= amount_text %>
-              <% end %>
+              <span class="group/copy inline-flex items-center whitespace-nowrap">
+                <% if href %>
+                  <%= link_to amount_text, href, class: "hover:underline hover:text-blue-700",
+                        title: t("accounting.profit_vs_cash.drill_down_hint") %>
+                <% else %>
+                  <%= amount_text %>
+                <% end %>
+                <%= copy_amount_button(line.amount_cents) %>
+              </span>
             </td>
           </tr>
         <% end %>
@@ -178,10 +181,10 @@
             </td>
             <td class="px-5 py-2.5 text-end tabular-nums font-semibold text-amber-800 whitespace-nowrap">
               <% r = @bridge.residual_cents %>
-              <%= link_to r.negative? ? "(#{format_amount(r.abs)})" : "+ #{format_amount(r)}",
+              <span class="group/copy inline-flex items-center whitespace-nowrap"><%= link_to r.negative? ? "(#{format_amount(r.abs)})" : "+ #{format_amount(r)}",
                     admin_accounting_journal_entries_path(**range),
                     class: "hover:underline",
-                    title: t("accounting.profit_vs_cash.drill_down_hint") %>
+                    title: t("accounting.profit_vs_cash.drill_down_hint") %><%= copy_amount_button(r) %></span>
             </td>
           </tr>
         <% end %>
@@ -194,10 +197,10 @@
             <%= t("accounting.profit_vs_cash.cash_change") %>
           </td>
           <td class="px-5 py-4 text-end tabular-nums text-lg font-black <%= cash_change >= 0 ? 'text-emerald-700' : 'text-orange-700' %>">
-            <%= link_to cash_change >= 0 ? format_amount(cash_change) : "(#{format_amount(cash_change.abs)})",
+            <span class="group/copy inline-flex items-center whitespace-nowrap"><%= link_to cash_change >= 0 ? format_amount(cash_change) : "(#{format_amount(cash_change.abs)})",
                   cash_flow_admin_accounting_financial_statements_path(**range),
                   class: "hover:underline hover:text-blue-700",
-                  title: t("accounting.profit_vs_cash.drill_down_hint") %>
+                  title: t("accounting.profit_vs_cash.drill_down_hint") %><%= copy_amount_button(cash_change) %></span>
           </td>
         </tr>
       </tfoot>

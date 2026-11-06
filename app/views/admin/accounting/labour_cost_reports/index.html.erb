@@ -70,8 +70,8 @@
                         admin_accounting_monthly_payroll_path(payroll_month: month.month.strftime("%Y-%m")),
                         class: "hover:text-amber-700 hover:underline" %>
                 </td>
-                <td class="<%= cell %>"><%= format_amount(month.revenue_cents) %></td>
-                <td class="<%= cell %>"><%= format_amount(month.cost_cents) %></td>
+                <td class="<%= cell %>"><%= copyable_amount(month.revenue_cents) %></td>
+                <td class="<%= cell %>"><%= copyable_amount(month.cost_cents) %></td>
                 <td class="<%= cell %> font-bold <%= muted ? 'text-gray-400' : 'text-gray-900' %>"><%= pct.(month.percent) %></td>
                 <td class="<%= cell %>"><%= month.headcount %></td>
                 <td class="<%= cell %>"><%= month.cost_per_head_cents ? format_amount(month.cost_per_head_cents) : t("sales.shared.em_dash") %></td>
@@ -91,8 +91,8 @@
           <tfoot class="border-t-2 border-gray-300 font-bold text-gray-900">
             <tr>
               <td class="p-3 ps-5"><%= t("accounting.labour_cost.table.total") %></td>
-              <td class="<%= cell %>"><%= format_amount(@result.revenue_cents) %></td>
-              <td class="<%= cell %>"><%= format_amount(@result.cost_cents) %></td>
+              <td class="<%= cell %>"><%= copyable_amount(@result.revenue_cents) %></td>
+              <td class="<%= cell %>"><%= copyable_amount(@result.cost_cents) %></td>
               <td class="<%= cell %>"><%= pct.(@result.percent) %></td>
               <td class="p-3 pe-5 text-xs font-normal text-gray-500" colspan="3"><%= t("accounting.labour_cost.stats.complete_only") %></td>
             </tr>

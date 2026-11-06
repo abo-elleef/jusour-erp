@@ -94,12 +94,12 @@
                 <% buckets.each do |bucket| %>
                   <% cents = row.buckets[bucket] %>
                   <% tone = if cents.zero? then "text-gray-300" elsif bucket == :days_90_plus then "text-red-700 font-semibold" else "text-gray-700" end %>
-                  <td class="<%= cell %> text-end tabular-nums <%= tone %>" data-sort-key="<%= bucket %>" data-sort-value="<%= cents %>"><%= format_amount(cents) %></td>
+                  <td class="<%= cell %> text-end tabular-nums <%= tone %>" data-sort-key="<%= bucket %>" data-sort-value="<%= cents %>"><%= copyable_amount(cents) %></td>
                 <% end %>
-                <td class="<%= cell %> text-end tabular-nums font-bold text-gray-900" data-sort-key="total" data-sort-value="<%= row.invoiced_cents %>"><%= format_amount(row.invoiced_cents) %></td>
+                <td class="<%= cell %> text-end tabular-nums font-bold text-gray-900" data-sort-key="total" data-sort-value="<%= row.invoiced_cents %>"><%= copyable_amount(row.invoiced_cents) %></td>
                 <td class="<%= cell %> text-end tabular-nums text-gray-600" data-sort-key="oldest" data-sort-value="<%= row.oldest_days %>"><%= row.oldest_days.positive? ? row.oldest_days : t("sales.shared.em_dash") %></td>
-                <td class="<%= cell %> text-end tabular-nums text-gray-700" data-sort-key="ledger" data-sort-value="<%= row.ledger_cents %>"><%= format_amount(row.ledger_cents) %></td>
-                <td class="<%= cell %> text-end pe-5 tabular-nums <%= row.unallocated_cents.zero? ? "text-gray-300" : "text-amber-700" %>" data-sort-key="unallocated" data-sort-value="<%= row.unallocated_cents %>"><%= format_amount(row.unallocated_cents) %></td>
+                <td class="<%= cell %> text-end tabular-nums text-gray-700" data-sort-key="ledger" data-sort-value="<%= row.ledger_cents %>"><%= copyable_amount(row.ledger_cents) %></td>
+                <td class="<%= cell %> text-end pe-5 tabular-nums <%= row.unallocated_cents.zero? ? "text-gray-300" : "text-amber-700" %>" data-sort-key="unallocated" data-sort-value="<%= row.unallocated_cents %>"><%= copyable_amount(row.unallocated_cents) %></td>
               </tr>
             <% end %>
           </tbody>
@@ -108,12 +108,12 @@
               <td class="<%= cell %> ps-5"><%= t("accounting.aging.table.grand_total") %></td>
               <td class="<%= cell %> text-end tabular-nums"><%= @result.invoice_count %></td>
               <% buckets.each do |bucket| %>
-                <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@result.bucket_cents(bucket)) %></td>
+                <td class="<%= cell %> text-end tabular-nums"><%= copyable_amount(@result.bucket_cents(bucket)) %></td>
               <% end %>
-              <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@result.invoiced_cents) %></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= copyable_amount(@result.invoiced_cents) %></td>
               <td class="<%= cell %>"></td>
-              <td class="<%= cell %> text-end tabular-nums"><%= format_amount(@result.ledger_cents) %></td>
-              <td class="<%= cell %> text-end pe-5 tabular-nums"><%= format_amount(@result.unallocated_cents) %></td>
+              <td class="<%= cell %> text-end tabular-nums"><%= copyable_amount(@result.ledger_cents) %></td>
+              <td class="<%= cell %> text-end pe-5 tabular-nums"><%= copyable_amount(@result.unallocated_cents) %></td>
             </tr>
           </tfoot>
         </table>

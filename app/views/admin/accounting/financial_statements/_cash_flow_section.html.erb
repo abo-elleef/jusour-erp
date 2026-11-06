@@ -16,9 +16,9 @@
             <td class="px-5 py-2.5 text-end tabular-nums <%= line.amount_cents >= 0 ? 'text-gray-900 font-medium' : 'text-red-700 font-medium' %>">
               <%= link_to detail_url, class: "hover:underline" do %>
                 <% if line.amount_cents >= 0 %>
-                  <%= format_amount(line.amount_cents) %>
+                  <%= copyable_amount(line.amount_cents) %>
                 <% else %>
-                  (<%= format_amount(line.amount_cents.abs) %>)
+                  (<%= copyable_amount(line.amount_cents, text: format_amount(line.amount_cents.abs)) %>)
                 <% end %>
               <% end %>
             </td>
@@ -34,9 +34,9 @@
     <span class="text-sm font-bold text-gray-900"><%= total_label %></span>
     <span class="text-sm font-bold tabular-nums <%= section.total_cents >= 0 ? 'text-emerald-700' : 'text-red-700' %>">
       <% if section.total_cents >= 0 %>
-        <%= format_amount(section.total_cents) %>
+        <%= copyable_amount(section.total_cents) %>
       <% else %>
-        (<%= format_amount(section.total_cents.abs) %>)
+        (<%= copyable_amount(section.total_cents, text: format_amount(section.total_cents.abs)) %>)
       <% end %>
     </span>
   </div>

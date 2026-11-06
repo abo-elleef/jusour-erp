@@ -36,7 +36,7 @@
             <th class="p-3"><%= sort_header_link(t("inventory.suppliers.show.invoices.date"), :date, **sort_opts) %></th>
             <th class="p-3"><%= sort_header_link(t("inventory.suppliers.show.invoices.status"), :status, **sort_opts) %></th>
             <th class="p-3 text-right">
-              <span class="inline-flex justify-end w-full"><%= sort_header_link(t("inventory.suppliers.show.invoices.total"), :total, **sort_opts) %></span>
+              <span class="inline-flex"><%= sort_header_link(t("inventory.suppliers.show.invoices.total"), :total, **sort_opts) %></span>
             </th>
             <th class="p-3 pr-5 text-right"><%= t("inventory.suppliers.show.invoices.balance_due") %></th>
           </tr>

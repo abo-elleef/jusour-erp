@@ -73,7 +73,7 @@
                   <td class="<%= cell %> font-semibold text-gray-900"><%= ledger_side_amount(row.closing_cents, :credit) %></td>
                   <td class="<%= cell %> pe-5 border-s border-gray-100">
                     <% if row.difference? %>
-                      <span class="text-amber-700 font-semibold"><%= format_amount(row.treasury_difference_cents) %></span>
+                      <span class="text-amber-700 font-semibold"><%= copyable_amount(row.treasury_difference_cents) %></span>
                     <% elsif row.treasury_cents %>
                       <span class="text-green-600" title="<%= t('accounting.ledger.trial_balance.matches_treasury') %>">✓</span>
                     <% end %>
@@ -84,12 +84,12 @@
               <% closing_dr, closing_cr = split.(rows, :closing_cents) %>
               <tr class="bg-gray-50/60 font-semibold text-gray-800">
                 <td class="p-3 ps-5" colspan="2"><%= t("accounting.ledger.table.subtotal", type: t("accounting.journal_entries.account_types.#{type}")) %></td>
-                <td class="<%= cell %> border-s border-gray-100"><%= format_amount(opening_dr) %></td>
-                <td class="<%= cell %>"><%= format_amount(opening_cr) %></td>
-                <td class="<%= cell %> border-s border-gray-100"><%= format_amount(rows.sum(&:debit_cents)) %></td>
-                <td class="<%= cell %>"><%= format_amount(rows.sum(&:credit_cents)) %></td>
-                <td class="<%= cell %> border-s border-gray-100"><%= format_amount(closing_dr) %></td>
-                <td class="<%= cell %>"><%= format_amount(closing_cr) %></td>
+                <td class="<%= cell %> border-s border-gray-100"><%= copyable_amount(opening_dr) %></td>
+                <td class="<%= cell %>"><%= copyable_amount(opening_cr) %></td>
+                <td class="<%= cell %> border-s border-gray-100"><%= copyable_amount(rows.sum(&:debit_cents)) %></td>
+                <td class="<%= cell %>"><%= copyable_amount(rows.sum(&:credit_cents)) %></td>
+                <td class="<%= cell %> border-s border-gray-100"><%= copyable_amount(closing_dr) %></td>
+                <td class="<%= cell %>"><%= copyable_amount(closing_cr) %></td>
                 <td class="<%= cell %> pe-5 border-s border-gray-100"></td>
               </tr>
             </tbody>
@@ -97,12 +97,12 @@
           <tfoot class="border-t-2 border-gray-300 font-bold text-gray-900">
             <tr>
               <td class="p-3 ps-5" colspan="2"><%= t("accounting.ledger.table.total") %></td>
-              <td class="<%= cell %> border-s border-gray-100"><%= format_amount(@result.opening_debit_cents) %></td>
-              <td class="<%= cell %>"><%= format_amount(@result.opening_credit_cents) %></td>
-              <td class="<%= cell %> border-s border-gray-100"><%= format_amount(@result.debit_cents) %></td>
-              <td class="<%= cell %>"><%= format_amount(@result.credit_cents) %></td>
-              <td class="<%= cell %> border-s border-gray-100"><%= format_amount(@result.closing_debit_cents) %></td>
-              <td class="<%= cell %>"><%= format_amount(@result.closing_credit_cents) %></td>
+              <td class="<%= cell %> border-s border-gray-100"><%= copyable_amount(@result.opening_debit_cents) %></td>
+              <td class="<%= cell %>"><%= copyable_amount(@result.opening_credit_cents) %></td>
+              <td class="<%= cell %> border-s border-gray-100"><%= copyable_amount(@result.debit_cents) %></td>
+              <td class="<%= cell %>"><%= copyable_amount(@result.credit_cents) %></td>
+              <td class="<%= cell %> border-s border-gray-100"><%= copyable_amount(@result.closing_debit_cents) %></td>
+              <td class="<%= cell %>"><%= copyable_amount(@result.closing_credit_cents) %></td>
               <td class="<%= cell %> pe-5 border-s border-gray-100"></td>
             </tr>
           </tfoot>

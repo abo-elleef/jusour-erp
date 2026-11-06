@@ -46,18 +46,18 @@
                     <%= link_to row.treasury.name, admin_accounting_treasury_path(row.treasury, start_date: @start_date, end_date: @end_date),
                           class: "hover:text-amber-700 hover:underline" %>
                   </td>
-                  <td class="<%= cell %> text-gray-600"><%= format_amount(row.opening_cents) %></td>
+                  <td class="<%= cell %> text-gray-600"><%= copyable_amount(row.opening_cents) %></td>
                   <td class="<%= cell %> text-green-700"><%= signed.(row.in_cents) %></td>
                   <td class="<%= cell %> text-red-700"><%= signed.(row.out_cents) %></td>
                   <td class="<%= cell %> text-gray-600"><%= signed.(row.transfer_cents) %></td>
-                  <td class="<%= cell %> pe-5 font-semibold text-gray-900"><%= format_amount(row.closing_cents) %></td>
+                  <td class="<%= cell %> pe-5 font-semibold text-gray-900"><%= copyable_amount(row.closing_cents) %></td>
                 </tr>
               <% end %>
               <% if rows.size > 1 %>
                 <tr class="bg-gray-50/60 font-semibold text-gray-800">
                   <td class="p-3 ps-5"><%= t("accounting.treasury_movements.subtotal", type: accounting_treasury_type(type)) %></td>
                   <% %i[opening_cents in_cents out_cents transfer_cents closing_cents].each do |attr| %>
-                    <td class="<%= cell %> last:pe-5"><%= format_amount(rows.sum(&attr)) %></td>
+                    <td class="<%= cell %> last:pe-5"><%= copyable_amount(rows.sum(&attr)) %></td>
                   <% end %>
                 </tr>
               <% end %>
@@ -67,7 +67,7 @@
             <tr>
               <td class="p-3 ps-5"><%= t("accounting.treasury_movements.table.total") %></td>
               <% %i[opening_cents in_cents out_cents transfer_cents closing_cents].each do |attr| %>
-                <td class="<%= cell %> last:pe-5"><%= format_amount(@result.public_send(attr)) %></td>
+                <td class="<%= cell %> last:pe-5"><%= copyable_amount(@result.public_send(attr)) %></td>
               <% end %>
             </tr>
           </tfoot>

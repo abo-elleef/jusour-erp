@@ -23,20 +23,20 @@
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
     <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.sales_reports.net_sales") %></p>
-      <p class="text-2xl font-bold mt-1 tabular-nums text-gray-900"><%= format_money(s[:net_sales_cents]) %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums text-gray-900"><%= copyable_amount(s[:net_sales_cents], money: true) %></p>
       <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.shared.orders_count", count: s[:order_count]) %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.sales_reports.gross_sales") %></p>
-      <p class="text-2xl font-bold mt-1 tabular-nums"><%= format_money(s[:gross_sales_cents]) %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums"><%= copyable_amount(s[:gross_sales_cents], money: true) %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.sales_reports.avg_ticket") %></p>
-      <p class="text-2xl font-bold mt-1 tabular-nums"><%= format_money(s[:average_ticket_cents]) %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums"><%= copyable_amount(s[:average_ticket_cents], money: true) %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.sales_reports.discounts") %></p>
-      <p class="text-2xl font-bold mt-1 tabular-nums text-red-700"><%= format_money(s[:discount_cents]) %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums text-red-700"><%= copyable_amount(s[:discount_cents], money: true) %></p>
       <% if s[:promo_cost_cents].to_i.positive? %>
         <p class="text-xs text-rose-700 mt-1.5"><%= t("accounting.sales_reports.promo_cost_line", amount: format_money(s[:promo_cost_cents])) %></p>
       <% end %>
@@ -55,27 +55,27 @@
       <% rev = @pnl[:revenue] %>
       <div class="flex justify-between gap-4 py-1">
         <span class="text-gray-600"><%= t("accounting.sales_reports.gross_sales") %></span>
-        <span class="tabular-nums font-medium text-gray-900"><%= format_money(rev[:gross_sales_cents]) %></span>
+        <span class="tabular-nums font-medium text-gray-900"><%= copyable_amount(rev[:gross_sales_cents], money: true) %></span>
       </div>
       <div class="flex justify-between gap-4 py-1 text-red-700">
         <span><%= t("accounting.sales_reports.discounts") %></span>
-        <span class="tabular-nums font-medium">-<%= format_money(rev[:discounts_cents]) %></span>
+        <span class="tabular-nums font-medium">-<%= copyable_amount(rev[:discounts_cents], money: true) %></span>
       </div>
       <% if rev[:refunds_cents].positive? %>
         <div class="flex justify-between gap-4 py-1 text-red-700">
           <span><%= t("accounting.sales_reports.refunds") %></span>
-          <span class="tabular-nums font-medium">-<%= format_money(rev[:refunds_cents]) %></span>
+          <span class="tabular-nums font-medium">-<%= copyable_amount(rev[:refunds_cents], money: true) %></span>
         </div>
       <% end %>
       <div class="flex justify-between gap-4 py-2 font-semibold border-t border-gray-100">
         <span class="text-gray-900"><%= t("accounting.sales_reports.net_sales") %></span>
-        <span class="tabular-nums"><%= format_money(rev[:net_sales_cents]) %></span>
+        <span class="tabular-nums"><%= copyable_amount(rev[:net_sales_cents], money: true) %></span>
       </div>
       <% if @pnl[:expenses].any? %>
         <% @pnl[:expenses].each do |row| %>
           <div class="flex justify-between gap-4 py-1 text-gray-600">
             <span><%= row[:category] %></span>
-            <span class="tabular-nums">-<%= format_money(row[:total_cents]) %></span>
+            <span class="tabular-nums">-<%= copyable_amount(row[:total_cents], money: true) %></span>
           </div>
         <% end %>
       <% else %>
@@ -84,7 +84,7 @@
       <div class="flex justify-between gap-4 py-3 font-bold border-t border-gray-200">
         <span class="text-gray-900"><%= t("accounting.sales_reports.net_profit") %></span>
         <span class="tabular-nums <%= @pnl[:net_profit_cents] >= 0 ? 'text-green-700' : 'text-red-700' %>">
-          <%= format_money(@pnl[:net_profit_cents]) %>
+          <%= copyable_amount(@pnl[:net_profit_cents], money: true) %>
         </span>
       </div>
     </div>
@@ -108,7 +108,7 @@
               <% @report[:by_category].each do |row| %>
                 <tr class="hover:bg-gray-100 transition-colors">
                   <td class="p-3 ps-5 font-medium text-gray-900"><%= row[:category] %></td>
-                  <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= format_money(row[:revenue_cents]) %></td>
+                  <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= copyable_amount(row[:revenue_cents], money: true) %></td>
                 </tr>
               <% end %>
             <% else %>
@@ -138,7 +138,7 @@
               <% @report[:by_payment_method].each do |method, cents| %>
                 <tr class="hover:bg-gray-100 transition-colors">
                   <td class="p-3 ps-5 font-medium text-gray-900"><%= payment_method_label(method) %></td>
-                  <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= format_money(cents) %></td>
+                  <td class="p-3 pe-5 text-end font-semibold tabular-nums"><%= copyable_amount(cents, money: true) %></td>
                 </tr>
               <% end %>
             <% else %>

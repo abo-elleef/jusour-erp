@@ -409,6 +409,39 @@ module ApplicationHelper
     Money.new(cents || 0).format(locale: I18n.locale, symbol: false)
   end
 
+  # Copy-to-clipboard icon for a figure on a financial report. Copies the plain
+  # number (no separators, no currency, minus sign for negatives) so it pastes
+  # into Google Sheets or a calculator as a real number. Hidden until the row's
+  # figure is hovered/focused, and never printed.
+  def copy_amount_button(cents)
+    plain = format("%.2f", Money.new(cents || 0).amount)
+    label = t("actions.copy_number")
+    tag.button type: "button",
+      class: "print:hidden ms-1 inline-flex align-middle text-gray-300 hover:text-blue-600 focus:text-blue-600 " \
+             "opacity-0 group-hover/copy:opacity-100 focus:opacity-100 transition-opacity cursor-pointer",
+      title: label, aria: { label: label },
+      data: { controller: "copy-number", copy_number_text_value: plain, action: "click->copy-number#copy" } do
+      safe_join([
+        tag.svg(tag.path(d: "M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2",
+                        "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-width": "2"),
+                class: "w-3.5 h-3.5", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24",
+                data: { copy_number_target: "copyIcon" }),
+        tag.svg(tag.path(d: "M5 13l4 4L19 7", "stroke-linecap": "round", "stroke-linejoin": "round", "stroke-width": "2.5"),
+                class: "w-3.5 h-3.5 hidden text-emerald-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24",
+                data: { copy_number_target: "doneIcon" })
+      ])
+    end
+  end
+
+  # format_amount plus a copy button. `text:` overrides the visible text when
+  # the figure is shown differently from what should be copied (e.g. "(1,200)").
+  def copyable_amount(cents, text: nil, money: false)
+    text ||= money ? format_money(cents) : format_amount(cents)
+    tag.span class: "group/copy inline-flex items-center whitespace-nowrap" do
+      safe_join([text, copy_amount_button(cents)])
+    end
+  end
+
   # Only for the few places the currency has to be explicit: printed/exported
   # documents, a lone figure with no column header to name it, and anywhere the
   # reader might not be looking at a page that already establishes the currency.

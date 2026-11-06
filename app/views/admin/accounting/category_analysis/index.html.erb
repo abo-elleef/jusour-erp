@@ -109,16 +109,16 @@
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
       <div class="rounded-2xl border border-gray-200 bg-white p-4">
         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.category_analysis.stats.expense") %></p>
-        <p class="text-xl font-bold mt-1 text-rose-600 tabular-nums"><%= format_money(@analysis.expense_cents) %></p>
+        <p class="text-xl font-bold mt-1 text-rose-600 tabular-nums"><%= copyable_amount(@analysis.expense_cents, money: true) %></p>
       </div>
       <div class="rounded-2xl border border-gray-200 bg-white p-4">
         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.category_analysis.stats.income") %></p>
-        <p class="text-xl font-bold mt-1 text-emerald-600 tabular-nums"><%= format_money(@analysis.income_cents) %></p>
+        <p class="text-xl font-bold mt-1 text-emerald-600 tabular-nums"><%= copyable_amount(@analysis.income_cents, money: true) %></p>
       </div>
       <div class="rounded-2xl border border-gray-200 bg-white p-4">
         <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.category_analysis.stats.net") %></p>
         <p class="text-xl font-bold mt-1 tabular-nums <%= @analysis.net_cents.negative? ? 'text-rose-600' : 'text-gray-900' %>">
-          <%= format_money(@analysis.net_cents) %>
+          <%= copyable_amount(@analysis.net_cents, money: true) %>
         </p>
       </div>
       <div class="rounded-2xl border border-gray-200 bg-white p-4">
@@ -200,7 +200,7 @@
                         data-chart-series-target="swatch" data-index="<%= index %>"></span>
                   <span class="text-sm text-gray-800 truncate flex-1"><%= entry[:row].category.name %></span>
                   <span class="text-xs tabular-nums shrink-0 <%= entry[:row].kind == :expense ? 'text-rose-500' : 'text-emerald-600' %>">
-                    <%= format_money(entry[:total_cents]) %>
+                    <%= copyable_amount(entry[:total_cents], money: true) %>
                   </span>
                 </label>
               <% end %>
@@ -229,9 +229,9 @@
             <% increases.each do |row| %>
               <%= link_to drill_url.(row, @start_date, @end_date), class: "block rounded-xl border border-amber-200 bg-white p-3 hover:border-amber-400 transition-colors" do %>
                 <p class="text-sm font-medium text-gray-900 truncate"><%= row.category.name %></p>
-                <p class="text-lg font-bold text-red-700 tabular-nums">+<%= format_amount(row.change_cents) %></p>
+                <p class="text-lg font-bold text-red-700 tabular-nums">+<%= copyable_amount(row.change_cents) %></p>
                 <p class="text-xs text-gray-500 tabular-nums">
-                  <%= format_amount(row.previous_cents) %> → <%= format_amount(row.total_cents) %>
+                  <%= copyable_amount(row.previous_cents) %> → <%= copyable_amount(row.total_cents) %>
                   <% if row.change_pct %>(+<%= number_with_precision(row.change_pct, precision: 0) %>%)<% else %>· <%= t("accounting.category_analysis.new") %><% end %>
                 </p>
               <% end %>
@@ -281,16 +281,16 @@
                   </td>
                   <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= row.entry_count %></td>
                   <td class="<%= cell %> text-end tabular-nums font-bold text-gray-900">
-                    <%= link_to format_money(row.total_cents), drill_url.(row, @start_date, @end_date),
+                    <span class="group/copy inline-flex items-center whitespace-nowrap"><%= link_to format_money(row.total_cents), drill_url.(row, @start_date, @end_date),
                           class: "hover:text-amber-700 hover:underline",
-                          title: t("accounting.category_analysis.open_entries") %>
+                          title: t("accounting.category_analysis.open_entries") %><%= copy_amount_button(row.total_cents) %></span>
                   </td>
                   <td class="<%= cell %> text-end tabular-nums text-gray-600">
                     <% if row.previous_cents.to_i.zero? %>
                       <span class="text-gray-300">—</span>
                     <% else %>
-                      <%= link_to format_amount(row.previous_cents), drill_url.(row, @analysis.previous_start, @analysis.previous_end),
-                            class: "hover:text-amber-700 hover:underline", title: t("accounting.category_analysis.open_entries") %>
+                      <span class="group/copy inline-flex items-center whitespace-nowrap"><%= link_to format_amount(row.previous_cents), drill_url.(row, @analysis.previous_start, @analysis.previous_end),
+                            class: "hover:text-amber-700 hover:underline", title: t("accounting.category_analysis.open_entries") %><%= copy_amount_button(row.previous_cents) %></span>
                     <% end %>
                   </td>
                   <% worse = row.kind == :expense ? row.change_cents.positive? : row.change_cents.negative? %>
@@ -298,12 +298,12 @@
                     <% if row.previous_cents.to_i.zero? %>
                       <span class="text-xs font-semibold text-gray-500"><%= t("accounting.category_analysis.new") %></span>
                     <% else %>
-                      <%= row.change_cents.positive? ? "+" : "" %><%= format_amount(row.change_cents) %>
+                      <%= row.change_cents.positive? ? "+" : "" %><%= copyable_amount(row.change_cents) %>
                       <span class="text-xs">(<%= row.change_pct.positive? ? "+" : "" %><%= number_with_precision(row.change_pct, precision: 0) %>%)</span>
                     <% end %>
                   </td>
                   <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= number_with_precision(row.share_pct, precision: 1) %>%</td>
-                  <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= format_money(row.average_cents) %></td>
+                  <td class="<%= cell %> text-end tabular-nums text-gray-600"><%= copyable_amount(row.average_cents, money: true) %></td>
                   <% @analysis.periods.each do |period| %>
                     <% cents = row.amounts[period] || 0 %>
                     <td class="<%= cell %> text-end tabular-nums <%= cents.zero? ? 'text-gray-300' : 'text-gray-700' %>">
@@ -312,9 +312,9 @@
                         —
                       <% else %>
                         <% from, to = @analysis.period_bounds[period] %>
-                        <%= link_to format_money(cents), drill_url.(row, from, to),
+                        <span class="group/copy inline-flex items-center whitespace-nowrap"><%= link_to format_money(cents), drill_url.(row, from, to),
                               class: "hover:text-amber-700 hover:underline",
-                              title: t("accounting.category_analysis.open_entries") %>
+                              title: t("accounting.category_analysis.open_entries") %><%= copy_amount_button(cents) %></span>
                       <% end %>
                     </td>
                   <% end %>
