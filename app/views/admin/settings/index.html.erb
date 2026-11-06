@@ -58,7 +58,7 @@
       <p class="text-xs text-gray-500 mt-0.5"><%= t("settings.printing.hint") %></p>
     </div>
     <div class="p-5">
-      <%= form_with url: admin_settings_path, method: :patch, class: "space-y-4" do %>
+      <%= form_with url: admin_settings_path, method: :patch, multipart: true, class: "space-y-4" do %>
         <div>
           <%= label_tag :print_routing, t("settings.printing.routing"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
           <%= select_tag :print_routing,
@@ -80,6 +80,12 @@
           </div>
         </div>
         <p class="text-xs text-gray-500"><%= t("settings.printing.agent_install", port: @print_agent_port) %></p>
+        <div>
+          <%= label_tag :receipt_logo, t("settings.printing.receipt_logo"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+          <%= render "shared/receipt_logo_field", attachment: @receipt_logo,
+                file_name: "receipt_logo", remove_name: "remove_receipt_logo" %>
+          <p class="text-xs text-gray-500 mt-1.5"><%= t("settings.printing.receipt_logo_hint") %></p>
+        </div>
         <div>
           <%= label_tag :receipt_footer_text, t("settings.printing.receipt_footer"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
           <%= text_area_tag :receipt_footer_text, @receipt_footer_text,

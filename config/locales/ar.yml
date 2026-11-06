@@ -206,6 +206,11 @@ ar:
       historical: "الإشعارات الدائنة التاريخية سجلات مستوردة ولا يمكن تعديلها."
       void: "هذا الإشعار الدائن ملغى، لذا لا يمكن تعديله."
   shared:
+    receipt_logo_field:
+      current: "الشعار الحالي"
+      choose: "رفع شعار جديد"
+      remove: "إزالة هذا الشعار"
+      formats: "PNG أو JPEG أو GIF أو WebP حتى 5 ميجابايت. استخدم صورة عالية التباين بعرض 576 بكسل على الأقل: الطابعات الحرارية تطبع بالأبيض والأسود فقط."
     row_index: "#"
     date: "التاريخ"
     notes: "ملاحظات"
@@ -829,6 +834,8 @@ ar:
       agent_install: "على كل كاشier شغّل: node print_agent/index.js — المنفذ الافتراضي %{port}"
       receipt_footer: "رسالة نهاية الإيصال"
       receipt_footer_hint: "تُطبع في أسفل كل إيصال. اتركها فارغة لاستخدام رسالة الشكر الافتراضية."
+      receipt_logo: "شعار الإيصال"
+      receipt_logo_hint: "يُطبع في أعلى كل إيصال. يمكن لكل فرع رفع شعاره الخاص؛ والفرع بدون شعار يستخدم هذا الشعار."
     tax_rate_form:
       back: "← الإعدادات"
       new: "معدل ضريبة جديد"
@@ -3922,6 +3929,8 @@ ar:
         deposit_treasury_blank: "الخزينة الافتراضية للشركة (غير مُستحسن)"
         deposit_treasury_hint: "الخزينة التي تُورَّد إليها أدراج هذا الفرع عند إغلاق الوردية. لا يستطيع الكاشير تغييرها؛ وإذا تُركت فارغة يظهر تحذير عند عدّ الدرج."
         whatsapp_number_hint: "أدخل رمز الدولة. يظهر في القائمة العامة مع رابط للمحادثة."
+        receipt_logo: "شعار الإيصال"
+        receipt_logo_hint: "يُطبع في أعلى إيصالات هذا الفرع. اتركه فارغاً لاستخدام شعار الشركة."
         business_day_start_hour: "يبدأ يوم العمل الساعة"
         business_day_start_hour_hint: "اختياري. اتركه فارغاً لاستخدام افتراضي الشركة (%{company_hour}:00) من الإعدادات → يوم التشغيل. يُستخدم فقط في الوضع التلقائي."
         active: "نشط"
@@ -6473,6 +6482,12 @@ ar:
   activerecord:
     errors:
       models:
+        location: &receipt_logo_errors
+          attributes:
+            receipt_logo:
+              invalid_image_type: "يجب أن تكون صورة PNG أو JPEG أو GIF أو WebP"
+              image_too_large: "يجب ألا تتجاوز 5 ميجابايت"
+        company_setting: *receipt_logo_errors
         storefront_section:
           attributes:
             base:

@@ -204,6 +204,11 @@ en:
       historical: "Historical credit notes are imported records and can't be edited."
       void: "This credit note is void, so it can no longer be edited."
   shared:
+    receipt_logo_field:
+      current: "Current logo"
+      choose: "Upload a new logo"
+      remove: "Remove this logo"
+      formats: "PNG, JPEG, GIF or WebP, up to 5 MB. Use a high-contrast image at least 576 px wide: thermal printers print black and white only."
     row_index: "#"
     date: "Date"
     notes: "Notes"
@@ -827,6 +832,8 @@ en:
       agent_install: "On each register run: node print_agent/index.js — default port %{port}"
       receipt_footer: "Receipt footer message"
       receipt_footer_hint: "Printed at the bottom of every receipt. Leave blank to use the default \"Thank you\" message."
+      receipt_logo: "Receipt logo"
+      receipt_logo_hint: "Printed at the top of every receipt. Branches can upload their own logo; a branch without one uses this."
     tax_rate_form:
       back: "← Settings"
       new: "New tax rate"
@@ -3876,6 +3883,8 @@ en:
         deposit_treasury_blank: "Company default (not recommended)"
         deposit_treasury_hint: "Where this branch's cash drawers are banked when a shift closes. Cashiers cannot change it; leave it blank and they are warned at count-down."
         whatsapp_number_hint: "Include country code. Shown on the public menu with a chat link."
+        receipt_logo: "Receipt logo"
+        receipt_logo_hint: "Printed at the top of this branch's receipts. Leave empty to use the company logo."
         business_day_start_hour: "Business day starts at"
         business_day_start_hour_hint: "Optional. Leave blank to use the company default (%{company_hour}:00) from Settings → Operations. Used only in automatic business-day mode."
         active: "Active"
@@ -6405,6 +6414,12 @@ en:
   activerecord:
     errors:
       models:
+        location: &receipt_logo_errors
+          attributes:
+            receipt_logo:
+              invalid_image_type: "must be a PNG, JPEG, GIF or WebP image"
+              image_too_large: "must be 5 MB or smaller"
+        company_setting: *receipt_logo_errors
         storefront_section:
           attributes:
             base:
