@@ -167,13 +167,45 @@ RSpec.describe Accounting::MonthlyPayrollService do
   end
 
   describe ".for_all_staff" do
-    it "includes only active staff" do
-      active = create(:user, company: company, name: "Active Staff", monthly_salary_cents: 300_000)
-      create(:user, company: company, name: "Former Staff", monthly_salary_cents: 300_000, active: false)
+    let(:oct) { Date.new(2026, 10, 1) }
+    let(:nov) { Date.new(2026, 11, 1) }
 
-      rows = described_class.for_all_staff(payroll_month)
+    def ids(month) = described_class.for_all_staff(month).map { |row| row.user.id }
 
-      expect(rows.map { |row| row.user.id }).to eq([active.id])
+    it "leaves out someone who started after the month" do
+      hired_in_nov = create(:user, company: company, monthly_salary_cents: 300_000,
+                                   employment_start_on: Date.new(2026, 11, 3))
+
+      expect(ids(oct)).not_to include(hired_in_nov.id)
+      expect(ids(nov)).to include(hired_in_nov.id)
+    end
+
+    it "keeps a leaver through their last month, not after" do
+      leaver = create(:user, company: company, monthly_salary_cents: 300_000,
+                             employment_start_on: Date.new(2026, 1, 1), active: false,
+                             employment_end_on: Date.new(2026, 11, 10))
+
+      expect(ids(oct)).to include(leaver.id)
+      expect(ids(nov)).to include(leaver.id)
+      expect(ids(Date.new(2026, 12, 1))).not_to include(leaver.id)
+    end
+
+    it "keeps a leaver who was finalized for the month even if the dates say otherwise" do
+      leaver = create(:user, company: company, monthly_salary_cents: 300_000, active: false,
+                             employment_start_on: Date.new(2026, 1, 1), employment_end_on: Date.new(2026, 9, 5))
+      Accounting::FinalizePayrollService.new(leaver, oct, finalized_by: owner).call
+
+      expect(ids(oct)).to include(leaver.id)
+    end
+  end
+
+  describe "User employment dates" do
+    it "sets the end date on deactivate and clears it on activate" do
+      user = create(:user, company: company)
+      user.deactivate!
+      expect(user.employment_end_on).to eq(Date.current)
+      user.activate!
+      expect(user.reload.employment_end_on).to be_nil
     end
   end
 

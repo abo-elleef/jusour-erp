@@ -172,7 +172,16 @@ module Accounting
       )
     end
 
-    def self.for_all_staff(payroll_month, users: User.active)
+    # Staff on payroll this month: employed in it, or already finalized for it
+    # (someone who left since still shows for the months they were paid).
+    def self.staff_scope(payroll_month, base: User.all)
+      finalized_ids = PayrollSnapshot.for_month(payroll_month).select(:user_id)
+      base.where(id: base.employed_in(payroll_month).select(:id))
+          .or(base.where(id: finalized_ids))
+    end
+
+    def self.for_all_staff(payroll_month, users: nil)
+      users ||= staff_scope(payroll_month)
       snapshots = PayrollSnapshot.for_month(payroll_month).index_by(&:user_id)
 
       users.order(:name).filter_map do |user|

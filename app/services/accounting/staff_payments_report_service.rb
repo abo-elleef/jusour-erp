@@ -69,7 +69,7 @@ module Accounting
         @users.order(:name).select do |user|
           next true if paid_ids.include?(user.id) || snapshots.key?(user.id)
 
-          user.active? && MonthlyPayrollService.payroll_row?(user, @month, nil)
+          user.employed_in?(@month) && MonthlyPayrollService.payroll_row?(user, @month, nil)
         end
       end
     end

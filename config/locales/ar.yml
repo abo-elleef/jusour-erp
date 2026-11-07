@@ -601,6 +601,10 @@ ar:
       voucher_payment: "سند صرف %{number}"
       voucher_receipt: "سند قبض %{number}"
     payroll:
+      employment_start_on: "تاريخ البدء"
+      employment_end_on: "تاريخ الانتهاء"
+      employment_hint: "تظهر كشوف الرواتب هذا الشخص فقط للأشهر بين هذين التاريخين. يُحدد تاريخ الانتهاء عند إيقاف الحساب."
+      left_on: "غادر %{date}"
       title: "الراتب الشهري"
       subtitle: "خصومات ومكافآت لهذا الشهر. كل شهر = %{days} يوم عمل."
       month: "الشهر"
@@ -6597,6 +6601,8 @@ ar:
               insufficient_balance: "يتجاوز الرصيد المتاح في خزينة المصدر"
         user:
           attributes:
+            employment_end_on:
+              before_start: "لا يمكن أن يكون قبل تاريخ البدء"
             assigned_treasury_id:
               blank: "يجب تخصيص خزينة"
               must_be_cash_drawer: "يجب أن تكون خزينة درج نقد نشطة"

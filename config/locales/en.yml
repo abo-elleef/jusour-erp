@@ -599,6 +599,10 @@ en:
       voucher_payment: "Payment voucher %{number}"
       voucher_receipt: "Receipt voucher %{number}"
     payroll:
+      employment_start_on: "Start date"
+      employment_end_on: "End date"
+      employment_hint: "Payroll lists this person only for months between these dates. The end date is set when the account is deactivated."
+      left_on: "Left %{date}"
       title: "Monthly payroll"
       subtitle: "Penalties and bonuses for this month. Each month counts as %{days} work days."
       month: "Month"
@@ -6539,6 +6543,8 @@ en:
               insufficient_balance: "exceeds available balance in the source treasury"
         user:
           attributes:
+            employment_end_on:
+              before_start: "can't be before the start date"
             assigned_treasury_id:
               blank: "must be assigned"
               must_be_cash_drawer: "must be an active cash drawer treasury"

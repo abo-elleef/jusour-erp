@@ -40,7 +40,8 @@ RSpec.describe "Admin::Accounting::MonthlyPayroll", type: :request do
     end
 
     it "renders staff salary portal links for the selected month" do
-      staff = create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000)
+      staff = create(:user, company: company, role: "cashier", monthly_salary_cents: 300_000,
+                            employment_start_on: Date.new(2026, 1, 1))
 
       get admin_accounting_monthly_payroll_path, params: { payroll_month: "2026-07" }
 

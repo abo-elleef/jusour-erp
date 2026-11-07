@@ -140,7 +140,8 @@ RSpec.describe "Paying out recorded payroll", type: :request do
   end
 
   it "offers record and pay in one form, sharing one treasury and date" do
-    sara = create(:user, company: company, role: "cashier", name: "Sara", monthly_salary_cents: 200_000)
+    sara = create(:user, company: company, role: "cashier", name: "Sara", monthly_salary_cents: 200_000,
+                  employment_start_on: Date.new(2026, 1, 1))
     sara.update!(monthly_salary_cents: 200_000)
 
     get admin_accounting_monthly_payroll_path(payroll_month: "2026-10")

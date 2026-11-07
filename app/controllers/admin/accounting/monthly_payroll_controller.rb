@@ -36,7 +36,7 @@ module Admin
         finalized = 0
 
         payroll_staff_rows.each do |row|
-          next unless row.user.active?
+          next unless row.user.employed_in?(@payroll_month)
           next if row.finalized
 
           ::Accounting::FinalizePayrollService.new(
@@ -72,7 +72,7 @@ module Admin
         end
 
         snapshots = PayrollSnapshot.for_month(@payroll_month)
-                                   .where(user: apply_staff_location_filter(User.active))
+                                   .where(user: apply_staff_location_filter(User.all))
                                    .includes(:user)
         snapshots = snapshots.where(user_id: params[:user_id]) if params[:user_id].present?
         paid = 0
@@ -118,7 +118,7 @@ module Admin
       def payroll_staff_rows
         ::Accounting::MonthlyPayrollService.for_all_staff(
           @payroll_month,
-          users: apply_staff_location_filter(User.active)
+          users: apply_staff_location_filter(::Accounting::MonthlyPayrollService.staff_scope(@payroll_month))
         )
       end
 

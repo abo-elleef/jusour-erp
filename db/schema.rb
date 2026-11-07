@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_05_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_08_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1856,11 +1856,15 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_05_100000) do
     t.integer "balance_deduction_cents"
     t.integer "payroll_pin_failed_attempts", default: 0, null: false
     t.datetime "payroll_pin_locked_until"
+    t.date "employment_start_on"
+    t.date "employment_end_on"
     t.index ["active"], name: "index_users_on_active"
     t.index ["assigned_treasury_id"], name: "index_users_on_assigned_treasury_id"
     t.index ["company_id", "email"], name: "index_users_on_company_id_and_email", unique: true
     t.index ["company_id", "wages_account_code"], name: "index_users_on_company_id_and_wages_account_code", unique: true
     t.index ["company_id"], name: "index_users_on_company_id"
+    t.index ["employment_end_on"], name: "index_users_on_employment_end_on"
+    t.index ["employment_start_on"], name: "index_users_on_employment_start_on"
     t.index ["payroll_access_token"], name: "index_users_on_payroll_access_token", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
     t.index ["role_id"], name: "index_users_on_role_id"

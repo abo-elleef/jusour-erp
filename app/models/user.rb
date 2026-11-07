@@ -50,11 +50,22 @@ class User < ApplicationRecord
   validates :balance_deduction_cents, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   before_validation :assign_payroll_access_token, on: :create
+  before_validation(on: :create) { self.employment_start_on ||= Date.current }
+  validate :employment_end_not_before_start
   before_validation :assign_wages_account_code, on: :create
   before_validation :sync_hourly_rate_from_monthly_salary
   before_validation { self.balance_deduction_cents = nil unless balance_deduction_cents.to_i.positive? }
 
   scope :active, -> { where(active: true) }
+
+  # On payroll at any point in the month: started on or before its last day
+  # and hadn't left before its first. Blank dates mean unbounded on that side.
+  scope :employed_in, lambda { |month|
+    first = month.to_date.beginning_of_month
+    last = first.end_of_month
+    where("users.employment_start_on IS NULL OR users.employment_start_on <= ?", last)
+      .where("users.employment_end_on IS NULL OR users.employment_end_on >= ?", first)
+  }
 
   has_many :orders, dependent: :restrict_with_error
   has_many :stock_adjustments, dependent: :nullify
@@ -314,11 +325,18 @@ class User < ApplicationRecord
   end
 
   def deactivate!
-    update!(active: false)
+    update!(active: false, employment_end_on: employment_end_on || Date.current)
   end
 
+  # Re-hiring: they are on payroll again, so the old leaving date goes.
   def activate!
-    update!(active: true)
+    update!(active: true, employment_end_on: nil)
+  end
+
+  def employed_in?(month)
+    first = month.to_date.beginning_of_month
+    (employment_start_on.nil? || employment_start_on <= first.end_of_month) &&
+      (employment_end_on.nil? || employment_end_on >= first)
   end
 
   def self.ransackable_attributes(_auth_object = nil)
@@ -447,6 +465,12 @@ class User < ApplicationRecord
 
   def password_required?
     !persisted? || password.present? || password_confirmation.present?
+  end
+
+  def employment_end_not_before_start
+    return unless employment_start_on && employment_end_on && employment_end_on < employment_start_on
+
+    errors.add(:employment_end_on, :before_start)
   end
 
   def assign_payroll_access_token

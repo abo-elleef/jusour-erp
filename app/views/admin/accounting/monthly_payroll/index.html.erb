@@ -166,6 +166,9 @@
               <td class="p-3 font-medium w-48">
                 <%= link_to row.user.name, admin_user_path(row.user, payroll_month: month_param),
                       class: "font-semibold text-gray-900 hover:text-amber-700 transition-colors" %>
+                <% if row.user.employment_end_on %>
+                  <span class="block text-xs font-normal text-gray-500"><%= t("staff.payroll.left_on", date: l(row.user.employment_end_on)) %></span>
+                <% end %>
               </td>
               <td class="p-3 text-end tabular-nums text-gray-700">
                 <%= format_money(row.base_salary_cents) %>
