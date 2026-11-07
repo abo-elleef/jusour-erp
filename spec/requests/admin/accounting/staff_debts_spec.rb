@@ -73,8 +73,8 @@ RSpec.describe "Staff debts report", type: :request do
 
       row = report_row("Karim Debtor")
       expect(row.text).to include("11,600.00") # 12,000 − 400
-      expect(row.css("td")[3].text).to include("400.00")   # repaid this month
-      expect(row.css("td")[4].text).to include("600.00")   # 1,000 plan − 400
+      expect(row.css("td")[4].text).to include("400.00")   # repaid this month
+      expect(row.css("td")[5].text).to include("600.00")   # 1,000 plan − 400
     end
 
     it "does not count a voided repayment" do
@@ -84,8 +84,8 @@ RSpec.describe "Staff debts report", type: :request do
       get admin_accounting_staff_debts_reports_path
 
       row = report_row("Karim Debtor")
-      expect(row.css("td")[1].text).to include("12,000.00")
-      expect(row.css("td")[3].text).to include("0.00")
+      expect(row.css("td")[2].text).to include("12,000.00")
+      expect(row.css("td")[4].text).to include("0.00")
     end
 
     it "shows nothing due without a plan" do
@@ -93,7 +93,7 @@ RSpec.describe "Staff debts report", type: :request do
 
       get admin_accounting_staff_debts_reports_path
 
-      expect(report_row("Karim Debtor").css("td")[4].text).to include(I18n.t("accounting.shared.em_dash"))
+      expect(report_row("Karim Debtor").css("td")[5].text).to include(I18n.t("accounting.shared.em_dash"))
     end
   end
 

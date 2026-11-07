@@ -7,6 +7,14 @@
       <dt class="text-gray-500"><%= t("staff.show.joined") %></dt>
       <dd class="font-medium text-gray-900 tabular-nums"><%= l(@user.created_at.to_date, format: :long) %></dd>
     </div>
+    <% { employment_start_on: @user.employment_start_on, employment_end_on: @user.employment_end_on }.each do |key, date| %>
+      <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
+        <dt class="text-gray-500"><%= t("staff.payroll.#{key}") %></dt>
+        <dd class="font-medium text-gray-900 tabular-nums">
+          <%= date ? l(date, format: :long) : t("accounting.shared.em_dash") %>
+        </dd>
+      </div>
+    <% end %>
     <div class="px-5 py-3 flex flex-wrap justify-between gap-2">
       <dt class="text-gray-500"><%= t("staff.show.pin_status") %></dt>
       <dd class="font-medium text-gray-900">

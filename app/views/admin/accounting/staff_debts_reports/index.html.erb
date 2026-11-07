@@ -75,7 +75,8 @@
         <table class="w-full text-sm">
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold uppercase">
             <tr>
-              <th class="p-3 ps-5 text-start"><%= sort_link.call(t("accounting.shift_logs.employee"), "name") %></th>
+              <th class="p-3 ps-5 text-start w-12 text-gray-400"><%= t("shared.row_index") %></th>
+              <th class="p-3 text-start"><%= sort_link.call(t("accounting.shift_logs.employee"), "name") %></th>
               <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_debts_report.owed"), "owed_cents", align: :end) %></th>
               <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_debts_report.plan"), "plan_cents", align: :end) %></th>
               <th class="p-3 text-end"><%= sort_link.call(t("accounting.staff_debts_report.repaid"), "repaid_cents", align: :end) %></th>
@@ -85,9 +86,10 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 table-zebra">
-            <% rows.each do |row| %>
+            <% rows.each_with_index do |row, index| %>
               <tr>
-                <td class="p-3 ps-5 font-semibold text-gray-900">
+                <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= table_row_number(index) %></td>
+                <td class="p-3 font-semibold text-gray-900">
                   <%= link_to row.user.name, admin_user_path(row.user, tab: "statement"), class: "hover:underline" %>
                   <% unless row.user.active? %>
                     <span class="text-[0.65rem] font-normal text-gray-400"><%= t("accounting.staff_debts_report.inactive") %></span>
@@ -110,7 +112,8 @@
           </tbody>
           <tfoot class="border-t border-gray-200 bg-gray-50 font-semibold">
             <tr>
-              <td class="p-3 ps-5 text-gray-900"><%= t("accounting.monthly_payroll.totals") %></td>
+              <td class="p-3 ps-5"></td>
+              <td class="p-3 text-gray-900"><%= t("accounting.monthly_payroll.totals") %></td>
               <td class="p-3 text-end tabular-nums"><%= format_amount(@report.total(:owed_cents)) %></td>
               <td class="p-3"></td>
               <td class="p-3 text-end tabular-nums"><%= format_amount(@report.total(:repaid_cents)) %></td>
