@@ -13,8 +13,18 @@ cloudinary:
   api_secret: <%= ENV["CLOUDINARY_API_SECRET"] %>
 
 <%
+  # Credentials come from, in order of preference:
+  #   1. GCS_CREDENTIALS_JSON - the service-account JSON itself (Heroku config var; nothing committed)
+  #   2. GCS_CREDENTIALS_PATH / GOOGLE_APPLICATION_CREDENTIALS - path to a key file
+  gcs_credentials_hash = nil
+  if ENV["GCS_CREDENTIALS_JSON"].present?
+    gcs_credentials_hash = JSON.parse(ENV["GCS_CREDENTIALS_JSON"])
+  end
   gcs_credentials_path = ENV["GCS_CREDENTIALS_PATH"].presence || ENV["GOOGLE_APPLICATION_CREDENTIALS"].presence
   gcs_project = ENV["GCS_PROJECT"].presence
+  if gcs_project.blank? && gcs_credentials_hash
+    gcs_project = gcs_credentials_hash["project_id"]
+  end
   if gcs_project.blank? && gcs_credentials_path.present? && File.exist?(gcs_credentials_path)
     gcs_project = JSON.parse(File.read(gcs_credentials_path)).fetch("project_id", nil)
   end
@@ -24,6 +34,8 @@ google:
   service: GCS
   project: <%= gcs_project %>
   bucket: <%= ENV.fetch("GCS_BUCKET", "saqr-pos-#{Rails.env}") %>
-  <% if gcs_credentials_path.present? %>
+  <% if gcs_credentials_hash %>
+  credentials: <%= gcs_credentials_hash.to_json %>
+  <% elsif gcs_credentials_path.present? %>
   credentials: <%= gcs_credentials_path %>
   <% end %>
