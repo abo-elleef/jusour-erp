@@ -6,17 +6,36 @@ module Admin
 
     before_action :set_order, only: %i[show void refund change_payment_method]
 
+    # Sortable columns -> the SQL they order by. Whitelisted: the sort key comes from
+    # the URL, so it must never reach the query as text. Cashier, customer and item
+    # count are subqueries so no join is added next to the eager loads.
+    INDEX_SORTS = {
+      "order_number" => "(CASE WHEN orders.order_number ~ '^[0-9]+$' THEN orders.order_number::integer END)",
+      "created_at"   => "orders.created_at",
+      "cashier"      => "(SELECT users.name FROM users WHERE users.id = orders.user_id)",
+      "customer"     => "(SELECT COALESCE(customers.name, customers.phone, customers.email) FROM customers WHERE customers.id = orders.customer_id)",
+      "order_type"   => "orders.order_type",
+      "status"       => "orders.status",
+      "items"        => "(SELECT COUNT(*) FROM order_items WHERE order_items.order_id = orders.id)",
+      "total"        => "orders.total_cents"
+    }.freeze
+    INDEX_DEFAULT_SORT = "created_at"
+    INDEX_DEFAULT_DIRECTION = "desc"
+
     def index
       authorize Order
 
       @focus = params[:focus].presence
       @filter_date = params[:date].presence
       @q = Order.ransack(params[:q])
-      scope = @q.result.includes(:user, :customer, :payments, :order_items).order(created_at: :desc)
+      scope = @q.result.includes(:user, :customer, :payments, :order_items)
       scope = scope.on_date(@filter_date) if @filter_date.present?
       scope = apply_focus_filter(scope)
+      @sort = INDEX_SORTS.key?(params[:sort].to_s) ? params[:sort].to_s : INDEX_DEFAULT_SORT
+      @direction = %w[asc desc].include?(params[:dir].to_s) ? params[:dir].to_s : INDEX_DEFAULT_DIRECTION
+      scope = apply_sort(scope)
 
-      @pagy, @orders = pagy(:offset, scope, limit: 30)
+      @pagy, @orders = pagy(:offset, scope, limit: 50)
       @filtered = @focus.present? || @filter_date.present? || params[:q].present?
       @cashiers = User.where(role: %w[cashier manager owner]).order(:name)
       @customers = Customer.order(Arel.sql("COALESCE(name, phone, email)")).limit(500)
@@ -81,6 +100,16 @@ module Admin
 
     def set_order
       @order = Order.find(params[:id])
+    end
+
+    # Empty values go last either way, and ties fall back to newest first so the page
+    # order is stable between clicks.
+    def apply_sort(scope)
+      scope.reorder(
+        Arel.sql("#{INDEX_SORTS.fetch(@sort)} #{@direction.upcase} NULLS LAST"),
+        Arel.sql("orders.created_at DESC"),
+        Arel.sql("orders.id DESC")
+      )
     end
 
     def apply_focus_filter(scope)

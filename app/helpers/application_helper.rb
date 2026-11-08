@@ -650,7 +650,7 @@ module ApplicationHelper
   end
 
   def admin_orders_filter_params
-    params.permit(:date, :focus, q: {}).to_h.compact_blank
+    params.permit(:date, :focus, :sort, :dir, q: {}).to_h.compact_blank
   end
 
   def admin_orders_filter_url(**extra)

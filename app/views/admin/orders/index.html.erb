@@ -53,6 +53,8 @@
       <%= search_form_for @q, url: admin_orders_path, method: :get, class: "space-y-4" do |f| %>
         <%= hidden_field_tag :date, @filter_date if @filter_date.present? %>
         <%= hidden_field_tag :focus, @focus if @focus.present? %>
+        <%= hidden_field_tag :sort, params[:sort] if params[:sort].present? %>
+        <%= hidden_field_tag :dir, params[:dir] if params[:dir].present? %>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <div>
             <%= label_tag :date, t("admin.orders.day"), class: label_class %>
@@ -133,14 +135,15 @@
         <table class="w-full text-left text-sm min-w-[960px]">
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
-              <th class="p-3 pl-5"><%= t("admin.orders.table.order") %></th>
-              <th class="p-3"><%= t("admin.orders.table.date_time") %></th>
-              <th class="p-3"><%= t("admin.orders.table.cashier") %></th>
-              <th class="p-3"><%= t("admin.orders.table.customer") %></th>
-              <th class="p-3"><%= t("admin.orders.table.type") %></th>
-              <th class="p-3"><%= t("admin.orders.table.status") %></th>
-              <th class="p-3 text-right"><%= t("admin.orders.table.items") %></th>
-              <th class="p-3 text-right"><%= t("admin.orders.table.total") %></th>
+              <% sort_opts = { sort: @sort, direction: @direction, base_params: request.query_parameters.except("page") } %>
+              <th class="p-3 pl-5"><%= sort_header_link(t("admin.orders.table.order"), :order_number, **sort_opts) %></th>
+              <th class="p-3"><%= sort_header_link(t("admin.orders.table.date_time"), :created_at, **sort_opts) %></th>
+              <th class="p-3"><%= sort_header_link(t("admin.orders.table.cashier"), :cashier, **sort_opts) %></th>
+              <th class="p-3"><%= sort_header_link(t("admin.orders.table.customer"), :customer, **sort_opts) %></th>
+              <th class="p-3"><%= sort_header_link(t("admin.orders.table.type"), :order_type, **sort_opts) %></th>
+              <th class="p-3"><%= sort_header_link(t("admin.orders.table.status"), :status, **sort_opts) %></th>
+              <th class="p-3 text-right"><%= sort_header_link(t("admin.orders.table.items"), :items, **sort_opts) %></th>
+              <th class="p-3 text-right"><%= sort_header_link(t("admin.orders.table.total"), :total, **sort_opts) %></th>
               <th class="p-3"><%= t("admin.orders.table.payment") %></th>
               <th class="p-3 pr-5 text-right"><%= t("admin.orders.table.actions") %></th>
             </tr>
@@ -188,21 +191,8 @@
           </tbody>
         </table>
       </div>
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
     </section>
-
-    <% if @pagy.pages > 1 %>
-      <nav class="mt-5 flex flex-wrap gap-2 text-sm items-center" aria-label="<%= t("admin.orders.pagination_aria") %>">
-        <% if @pagy.previous %>
-          <%= link_to t("actions.previous"), url_for(request.query_parameters.merge(page: @pagy.previous)),
-                class: "px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 transition-colors" %>
-        <% end %>
-        <span class="text-gray-600 px-2 tabular-nums"><%= t("accounting.shared.pagination", page: @pagy.page, pages: @pagy.pages) %></span>
-        <% if @pagy.next %>
-          <%= link_to t("actions.next"), url_for(request.query_parameters.merge(page: @pagy.next)),
-                class: "px-4 py-2 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 font-medium text-gray-700 transition-colors" %>
-        <% end %>
-      </nav>
-    <% end %>
   <% else %>
     <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
       <p class="text-gray-900 font-semibold mb-1"><%= t("admin.orders.empty_title") %></p>
