@@ -862,6 +862,9 @@ en:
       delete_confirm: "Delete this tax rate?"
 
   payment:
+    print_receipt: "Customer receipt"
+    print_production: "Kitchen / bar"
+    kitchen_sent_at: "sent %{time}"
     methods:
       cash: "Cash"
       card: "Card"

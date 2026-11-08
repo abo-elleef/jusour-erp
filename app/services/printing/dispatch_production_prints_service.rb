@@ -14,6 +14,10 @@ module Printing
     def call
       print_pick_station
       print_station_tickets
+      # Recorded so a later payment can offer not to print the same tickets again.
+      # update_column on purpose: no validations, no callbacks, nothing about the
+      # order's status or payments changes.
+      @order.update_column(:kitchen_sent_at, Time.current)
     end
 
     private

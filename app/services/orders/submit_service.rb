@@ -4,19 +4,22 @@ module Orders
   class SubmitService
     class InvalidFulfillment < StandardError; end
 
-    def self.call(order)
-      new(order).call
+    # dispatch_production: false submits the order without printing kitchen / bar
+    # tickets, for a cashier who chose not to (or who already sent them).
+    def self.call(order, dispatch_production: true)
+      new(order, dispatch_production: dispatch_production).call
     end
 
-    def initialize(order)
+    def initialize(order, dispatch_production: true)
       @order = order
+      @dispatch_production = dispatch_production
     end
 
     def call
       validate_fulfillment!
       @order.recalculate_totals!
       @order.submit!
-      Printing::DispatchProductionPrintsJob.perform_later(@order.id)
+      Printing::DispatchProductionPrintsJob.perform_later(@order.id) if @dispatch_production
       @order
     end
 

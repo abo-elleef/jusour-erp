@@ -132,12 +132,18 @@ module Pos
     def finalize_if_paid
       return unless @order.fully_paid?
 
-      Orders::FinalizePaidService.call(@order)
+      Orders::FinalizePaidService.call(@order, dispatch_production: print_choice?(:print_production))
       # The receipt follows the money, not the order's status — a paid order is not
       # closed until a cashier closes it, and the customer is not waiting for that.
-      Printing::PrintReceiptJob.perform_later(@order.id)
+      Printing::PrintReceiptJob.perform_later(@order.id) if print_choice?(:print_receipt)
       clear_cart_sessions
       Receipts::SendReceiptJob.perform_later(@order.id, params[:receipt_method], params[:receipt_recipient]) if params[:receipt_method].present?
+    end
+
+    # The payment modal sends "1" / "0" for each print. Absent means on, so every
+    # other caller prints exactly as it always has.
+    def print_choice?(key)
+      params[key].to_s != "0"
     end
 
     def clear_cart_sessions

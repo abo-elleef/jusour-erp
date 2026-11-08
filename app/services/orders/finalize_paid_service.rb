@@ -9,12 +9,13 @@ module Orders
   # finished are different things, and only the person at the counter knows when
   # the second one is true.
   class FinalizePaidService
-    def self.call(order)
-      new(order).call
+    def self.call(order, dispatch_production: true)
+      new(order, dispatch_production: dispatch_production).call
     end
 
-    def initialize(order)
+    def initialize(order, dispatch_production: true)
       @order = order
+      @dispatch_production = dispatch_production
     end
 
     def call
@@ -31,7 +32,7 @@ module Orders
       return unless @order.draft?
       return if @order.order_items.empty?
 
-      SubmitService.call(@order)
+      SubmitService.call(@order, dispatch_production: @dispatch_production)
     end
   end
 end

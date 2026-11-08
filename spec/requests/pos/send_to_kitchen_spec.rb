@@ -30,4 +30,18 @@ RSpec.describe "Sending a draft order to the kitchen", type: :request do
     expect(response).to redirect_to(pos_path)
     expect(flash[:notice]).to eq(I18n.t("flash.pos.kitchen_queued"))
   end
+
+  it "records when the tickets went out, without touching the order's status or payments" do
+    order = create(:order, user: cashier, company: company, location: branch, status: "draft")
+    create(:order_item, order: order)
+    order.recalculate_totals!
+    allow_any_instance_of(Printing::DispatchProductionPrintsService).to receive(:print_pick_station)
+    allow_any_instance_of(Printing::DispatchProductionPrintsService).to receive(:print_station_tickets)
+
+    expect { post send_to_kitchen_pos_order_path(order, from: "pos") }.not_to change(Payment, :count)
+
+    order.reload
+    expect(order.kitchen_sent_at).to be_within(1.minute).of(Time.current)
+    expect(order.status).to eq("draft")
+  end
 end

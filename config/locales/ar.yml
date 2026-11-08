@@ -864,6 +864,9 @@ ar:
       delete_confirm: "حذف معدل الضريبة هذا؟"
 
   payment:
+    print_receipt: "إيصال العميل"
+    print_production: "المطبخ / البار"
+    kitchen_sent_at: "أُرسل %{time}"
     methods:
       cash: "نقدي"
       card: "بطاقة"
