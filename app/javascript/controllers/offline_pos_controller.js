@@ -245,7 +245,7 @@ export default class extends Controller {
       <div class="px-3 py-3 space-y-2.5 shrink-0 bg-white border-t border-stone-200/80">
         <div class="flex gap-2">${toggle("pickup", this.t("order_type_pickup"))}${toggle("table", this.t("order_type_table"))}${toggle("delivery", this.t("order_type_delivery"))}</div>
         ${isDelivery ? this.deliveryFieldsHtml() : ""}
-        ${isTable ? `<input type="text" inputmode="numeric" data-field="table_number" value="${esc(this.cart.table_number)}" placeholder="${esc(this.t("table_number"))}" class="${INPUT}" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">` : ""}
+        ${isTable ? this.tableFieldHtml() : ""}
         <input type="text" data-field="notes" value="${esc(this.cart.notes)}" placeholder="${esc(this.t("order_notes"))}" class="${INPUT}">
         <dl class="text-sm space-y-1 tabular-nums">
           <div class="flex justify-between text-gray-600"><dt>${esc(this.t("subtotal"))}</dt><dd>${formatMoney(totals.subtotal_cents)}</dd></div>
@@ -255,6 +255,21 @@ export default class extends Controller {
         </dl>
         <button type="button" data-act="open-payment" class="w-full ${BTN_DARK} !rounded-full !py-3" ${empty ? "disabled" : ""}>${esc(this.t("charge", { amount: formatMoney(totals.total_cents) }))}</button>
       </div>`
+  }
+
+  // Numbered buttons when the branch has a table count (one tap, no typing in a
+  // rush); the old free-text box when it does not.
+  tableFieldHtml() {
+    const count = parseInt(this.snapshot.location?.table_count, 10)
+    if (count > 0) {
+      const buttons = Array.from({ length: count }, (_, i) => {
+        const n = String(i + 1)
+        const on = String(this.cart.table_number) === n
+        return `<button type="button" data-act="pick-table" data-value="${n}" class="min-h-10 rounded-xl border text-sm font-semibold tabular-nums transition-colors ${on ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-700 border-stone-200 hover:bg-stone-100"}">${n}</button>`
+      }).join("")
+      return `<div class="grid grid-cols-5 gap-1.5 max-h-40 overflow-y-auto">${buttons}</div>`
+    }
+    return `<input type="text" inputmode="numeric" data-field="table_number" value="${esc(this.cart.table_number)}" placeholder="${esc(this.t("table_number"))}" class="${INPUT}" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">`
   }
 
   deliveryFieldsHtml() {
@@ -418,6 +433,7 @@ export default class extends Controller {
       case "add-combo": this.addCombo(id); break
       case "qty": this.changeQuantity(uid, parseInt(delta, 10)); break
       case "remove": this.removeLine(uid); break
+      case "pick-table": this.cart.table_number = value; this.draw("cart"); break
       case "order-type": this.cart.order_type = type; this.draw("cart"); break
       case "clear-cart": this.cart = this.emptyCart(); this.draw("cart"); break
       case "open-payment": this.openPayment(); break

@@ -10,9 +10,8 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_08_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_08_130000) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
 
@@ -797,6 +796,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_08_120000) do
     t.string "business_day_mode", default: "automatic", null: false
     t.uuid "deposit_treasury_id"
     t.boolean "default_production_location", default: false, null: false
+    t.integer "table_count"
     t.index ["active"], name: "index_locations_on_active"
     t.index ["company_id", "name"], name: "index_locations_on_company_id_and_name", unique: true
     t.index ["company_id", "slug"], name: "index_locations_on_company_id_and_slug", unique: true

@@ -5,6 +5,7 @@ module Pos
     before_action :require_pos_access!
     before_action :set_order
     before_action :authorize_payment!
+    before_action :require_open_drawer_for_cash!, only: :create
 
     def create
       tip_cents = if params[:tip_pounds].present?
@@ -65,6 +66,17 @@ module Pos
 
       flash[:alert] = t("flash.pos_access")
       redirect_to root_path
+    end
+
+    # Cash lands in a till, and a till is only accountable while a drawer session is
+    # open for it: a payment taken without one belongs to no count and silently
+    # skews the drawer's expected cash at close. (Fixing one afterwards is an
+    # admin job — Admin::Accounting::CashDrawerController#attach_payments.)
+    def require_open_drawer_for_cash!
+      return unless params[:payment_method].to_s == "cash"
+      return if current_user.open_cash_drawer_session
+
+      redirect_to payment_return_path, alert: t("flash.pos.shift.no_open_drawer_for_cash")
     end
 
     def set_order

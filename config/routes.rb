@@ -387,6 +387,8 @@ Rails.application.routes.draw do
         member do
           get :count
           patch :reconcile
+          get :payments
+          patch :attach_payments
         end
       end
 

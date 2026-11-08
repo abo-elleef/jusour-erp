@@ -26,6 +26,14 @@ RSpec.describe "POS order completion", type: :request do
     order
   end
 
+  def open_drawer_for(user)
+    treasury = Treasury.create!(company: company, name: "Till", treasury_type: "cash_drawer",
+                                balance_cents: 0, opening_balance_cents: 0)
+    CashDrawerSession.create!(company: company, user: user, treasury: treasury, location: branch,
+                              session_date: BusinessDay.today(location: branch),
+                              opening_float_cents: 0, status: "open")
+  end
+
   describe "POST /pos/orders/:id/complete" do
     it "completes an order the cashier marks done" do
       order = open_order
@@ -168,6 +176,7 @@ RSpec.describe "POS order completion", type: :request do
   describe "the receipt" do
     it "prints when the order is paid off, not when it is completed" do
       order = open_order
+      open_drawer_for(cashier)
 
       expect {
         post pos_payments_path, params: {

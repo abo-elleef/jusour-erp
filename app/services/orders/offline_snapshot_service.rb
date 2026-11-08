@@ -27,7 +27,7 @@ module Orders
         generated_at: Time.current.iso8601,
         csrf_token: @csrf_token,
         user: { id: @user.id, name: @user.name },
-        location: @location && { id: @location.id, name: @location.name },
+        location: @location && { id: @location.id, name: @location.name, table_count: @location.table_count },
         workstation: @workstation && { id: @workstation.id, name: @workstation.name },
         drawer_session_id: drawer_session&.id,
         company: { receipt_name: @user.company.receipt_name },

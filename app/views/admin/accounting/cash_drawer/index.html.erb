@@ -168,6 +168,9 @@
               <% end %>
             </td>
             <td class="p-3 pe-5 text-end">
+              <% if session.status == "open" %>
+                <%= link_to t("accounting.cash_drawer.attach_payments"), payments_admin_accounting_cash_drawer_path(session), class: "text-gray-700 text-xs font-semibold me-3" %>
+              <% end %>
               <%= link_to t("actions.count"), count_admin_accounting_cash_drawer_path(session), class: "text-amber-700 text-xs font-semibold" %>
             </td>
           </tr>

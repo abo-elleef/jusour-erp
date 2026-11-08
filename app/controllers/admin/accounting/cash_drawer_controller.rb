@@ -3,7 +3,7 @@
 module Admin
   module Accounting
     class CashDrawerController < BaseController
-      before_action :set_session, only: %i[count reconcile]
+      before_action :set_session, only: %i[count reconcile payments attach_payments]
 
       def index
         @locations = Location.active.branches.ordered
@@ -61,6 +61,27 @@ module Admin
         ::Accounting::CashReconciliationService.new(@session).reconcile!(counted_cents)
         redirect_to admin_accounting_cash_drawer_index_path,
               notice: t("flash.accounting.drawer_reconciled_to_treasury", treasury: @session.treasury.name)
+      end
+
+      # Payments taken before this drawer was opened (so they belong to no drawer),
+      # for an admin to pull into it.
+      def payments
+        @attacher = ::Accounting::DrawerPaymentAttacher.new(@session)
+        @payments = @attacher.candidates
+      end
+
+      def attach_payments
+        result = ::Accounting::DrawerPaymentAttacher.attach!(
+          session: @session, payment_ids: params[:payment_ids], by: current_user
+        )
+
+        if result.ok?
+          redirect_to payments_admin_accounting_cash_drawer_path(@session),
+                      notice: t("flash.accounting.drawer_payments_attached", count: result.attached.size)
+        else
+          redirect_to payments_admin_accounting_cash_drawer_path(@session),
+                      alert: t("flash.accounting.drawer_attach_#{result.error}")
+        end
       end
 
       private

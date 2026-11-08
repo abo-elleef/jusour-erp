@@ -69,6 +69,11 @@
   </div>
 
   <% if location.branch? %>
+    <div>
+      <%= f.label :table_count, t("admin.locations.fields.table_count"), class: "block text-sm font-semibold text-gray-700 mb-1" %>
+      <%= f.number_field :table_count, min: 1, max: 200, class: "w-32 rounded-xl border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none" %>
+      <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.fields.table_count_hint") %></p>
+    </div>
     <div class="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/80 p-4">
       <%= f.check_box :public_menu_enabled, class: "w-4 h-4 mt-0.5 text-amber-600 border-gray-300 rounded" %>
       <div>
