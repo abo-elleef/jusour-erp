@@ -1,0 +1,17 @@
+<% content_for :title, t("subscription.locked.title") %>
+
+<div class="rounded-2xl bg-white border border-gray-200 shadow-sm p-8 text-center space-y-4">
+  <h1 class="text-xl font-bold text-gray-900"><%= t("subscription.locked.title") %></h1>
+  <p class="text-sm text-gray-600 leading-relaxed">
+    <%= t("subscription.locked.body.#{@status}", company: @company.name, date: (@company.paid_until && l(@company.paid_until, format: :long))) %>
+  </p>
+
+  <% if @support_whatsapp %>
+    <%= link_to t("subscription.locked.contact"), "https://wa.me/#{@support_whatsapp}",
+          target: "_blank", rel: "noopener",
+          class: "inline-block bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold px-6 py-2.5 rounded-xl" %>
+  <% end %>
+
+  <%= button_to t("actions.sign_out"), destroy_user_session_path, method: :delete,
+        class: "block mx-auto text-sm text-gray-500 hover:text-gray-800 underline" %>
+</div>

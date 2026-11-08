@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_08_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_08_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -214,6 +214,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_08_100000) do
     t.datetime "updated_at", null: false
     t.string "business_type", default: "restaurant", null: false
     t.jsonb "feature_overrides", default: {}, null: false
+    t.date "paid_until"
+    t.string "plan_name"
+    t.index ["paid_until"], name: "index_companies_on_paid_until"
     t.index ["slug"], name: "index_companies_on_slug", unique: true
   end
 

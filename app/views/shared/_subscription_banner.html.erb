@@ -1,0 +1,23 @@
+<%# Renewal nag for the signed-in company: shown for the last week before
+    paid_until and during the grace period after it. %>
+<% company = Current.company %>
+<% status = company&.subscription_status %>
+<% if %i[expiring grace].include?(status) %>
+  <% days = company.days_until_expiry %>
+  <% message =
+       if status == :grace
+         t("subscription.banner.grace", date: l(company.paid_until, format: :long), until: l(company.grace_ends_on, format: :long))
+       elsif days.zero?
+         t("subscription.banner.expiring_today", date: l(company.paid_until, format: :long))
+       else
+         t("subscription.banner.expiring", count: days, date: l(company.paid_until, format: :long))
+       end %>
+  <% support = ENV["SUPPORT_WHATSAPP"].to_s.gsub(/\D/, "").presence %>
+  <div role="alert"
+       class="shrink-0 px-4 py-2 text-sm font-medium text-center <%= status == :grace ? "bg-red-600 text-white" : "bg-amber-100 text-amber-900 border-b border-amber-300" %>">
+    <%= message %>
+    <% if support %>
+      <%= link_to t("subscription.banner.contact"), "https://wa.me/#{support}", target: "_blank", rel: "noopener", class: "underline font-semibold ms-2" %>
+    <% end %>
+  </div>
+<% end %>

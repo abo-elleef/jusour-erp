@@ -4,6 +4,7 @@ module SuperAdmin
   class BaseController < ApplicationController
     skip_before_action :authenticate_user!
     skip_before_action :set_current_company
+    skip_before_action :enforce_subscription!
 
     before_action :authenticate_super_admin_user!
 

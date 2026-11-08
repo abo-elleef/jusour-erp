@@ -43,6 +43,50 @@ class Company < ApplicationRecord
   after_create :seed_default_attendance_statuses
   after_create :seed_default_roles
 
+  # Subscription. `paid_until` NULL = no expiry (internal / demo / legacy).
+  # After the date passes the company keeps working for a grace period, with
+  # the owner nagged by a banner; after that sign-in is locked until renewed.
+  SUBSCRIPTION_GRACE_DAYS = 7
+  SUBSCRIPTION_WARNING_DAYS = 7
+
+  # :suspended (switched off by us), :expired (past grace), :grace (past the
+  # date, still working), :expiring (date within the warning window), :ok.
+  def subscription_status(today = subscription_today)
+    return :suspended unless active?
+    return :ok if paid_until.nil?
+
+    if today > paid_until + SUBSCRIPTION_GRACE_DAYS
+      :expired
+    elsif today > paid_until
+      :grace
+    elsif today >= paid_until - SUBSCRIPTION_WARNING_DAYS
+      :expiring
+    else
+      :ok
+    end
+  end
+
+  def access_blocked?
+    %i[suspended expired].include?(subscription_status)
+  end
+
+  # Whole days until paid_until (negative once passed); nil when there is no expiry.
+  def days_until_expiry(today = subscription_today)
+    paid_until && (paid_until - today).to_i
+  end
+
+  # Last day of work before the lock, for the "grace" banner.
+  def grace_ends_on
+    paid_until && paid_until + SUBSCRIPTION_GRACE_DAYS
+  end
+
+  # Record a payment: extend from the later of today and the current expiry, so
+  # renewing early never loses the days already paid for.
+  def extend_subscription!(months:)
+    base = [paid_until, subscription_today].compact.max
+    update!(paid_until: base >> months)
+  end
+
   # Names of units this company can use (built-in + custom, active only).
   def unit_names
     units.active.pluck(:name)
@@ -77,6 +121,10 @@ class Company < ApplicationRecord
   end
 
   private
+
+  def subscription_today
+    Time.find_zone(timezone)&.today || Date.current
+  end
 
   def seed_default_units
     Unit.seed_defaults!(self)

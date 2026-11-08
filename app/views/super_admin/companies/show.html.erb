@@ -3,11 +3,11 @@
     <%= link_to "← Dashboard", super_admin_root_path, class: "text-sm text-gray-400 hover:text-gray-200" %>
     <div class="flex items-center gap-3 mt-2">
       <h1 class="text-xl font-bold text-white"><%= @company.name %></h1>
-      <% if @company.active? %>
-        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-300">Active</span>
-      <% else %>
-        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-gray-400">Inactive</span>
-      <% end %>
+      <% status = @company.subscription_status %>
+      <% badge = { ok: ["Active", "bg-green-900 text-green-300"], expiring: ["Expiring soon", "bg-amber-900 text-amber-300"],
+                   grace: ["Grace period", "bg-orange-900 text-orange-300"], expired: ["Expired — locked", "bg-red-900 text-red-300"],
+                   suspended: ["Suspended", "bg-gray-800 text-gray-400"] }[status] %>
+      <span class="px-2 py-0.5 rounded-full text-xs font-medium <%= badge[1] %>"><%= badge[0] %></span>
     </div>
     <p class="text-sm text-gray-400 mt-1 font-mono"><%= @company.slug %> · <%= @company.currency %> · <%= @company.timezone %></p>
     <p class="text-xs mt-1">
@@ -22,6 +22,30 @@
     <%= link_to "Impersonate →", impersonate_super_admin_company_path(@company),
           target: "_blank", rel: "noopener", data: { turbo: false },
           class: "text-sm bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors" %>
+  </div>
+</div>
+
+<%# Subscription %>
+<div class="mb-8 rounded-2xl border border-gray-800 bg-gray-900 px-5 py-4 flex flex-wrap items-center justify-between gap-4">
+  <div class="text-sm">
+    <p class="text-xs text-gray-500 uppercase tracking-wide">Subscription</p>
+    <p class="text-white mt-1">
+      <%= @company.plan_name.presence || "No plan set" %> ·
+      <% if @company.paid_until %>
+        paid until <span class="font-semibold"><%= @company.paid_until %></span>
+        (<%= @company.days_until_expiry %> days)
+      <% else %>
+        no expiry
+      <% end %>
+    </p>
+  </div>
+  <div class="flex items-center gap-2">
+    <span class="text-xs text-gray-500">Record payment:</span>
+    <% [[1, "+1 month"], [3, "+3 months"], [6, "+6 months"], [12, "+1 year"]].each do |months, label| %>
+      <%= button_to label, extend_subscription_super_admin_company_path(@company, months: months),
+            method: :post, form: { data: { turbo_confirm: "Extend #{@company.name} by #{label.delete('+')}?" } },
+            class: "text-xs border border-gray-700 hover:border-indigo-500 text-gray-300 hover:text-white px-3 py-1.5 rounded-lg cursor-pointer" %>
+    <% end %>
   </div>
 </div>
 

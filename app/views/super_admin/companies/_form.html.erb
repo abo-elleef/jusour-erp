@@ -43,9 +43,18 @@
             {}, class: field_class %>
       <p class="text-xs text-gray-500 mt-1.5">Sets which modules the company sees — restaurants get manufacturing &amp; attendance; distributors get credit sales &amp; pricing tiers.</p>
     </div>
+    <div>
+      <%= f.label :plan_name, "Plan (label only)", class: label_class %>
+      <%= f.text_field :plan_name, class: field_class, placeholder: "Growth — 3 branches" %>
+    </div>
+    <div>
+      <%= f.label :paid_until, "Paid until", class: label_class %>
+      <%= f.date_field :paid_until, class: field_class %>
+      <p class="text-xs text-gray-500 mt-1.5">Leave blank for no expiry (internal / demo). After this date there is a <%= Company::SUBSCRIPTION_GRACE_DAYS %>-day grace period, then sign-in is locked.</p>
+    </div>
     <div class="flex items-center gap-3 pt-6">
       <%= f.check_box :active, class: "rounded border-gray-600 bg-gray-800 text-indigo-600 focus:ring-indigo-500/40" %>
-      <%= f.label :active, "Active (company can sign in)", class: "text-sm text-gray-300" %>
+      <%= f.label :active, "Active (untick to suspend immediately)", class: "text-sm text-gray-300" %>
     </div>
   </div>
 

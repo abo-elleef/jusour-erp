@@ -29,7 +29,10 @@ Rails.application.routes.draw do
   namespace :super_admin do
     root to: "dashboard#index"
     resources :companies do
-      member { get :impersonate }
+      member do
+        get :impersonate
+        post :extend_subscription
+      end
       resources :locations, only: %i[new create edit update]
       resources :users, only: %i[new create]
       resource :storefront_domain, only: %i[edit update]
@@ -39,6 +42,9 @@ Rails.application.routes.draw do
   root "home#index"
 
   patch "locale", to: "locales#update", as: :locale
+
+  # Where signed-in users of a suspended / expired company land.
+  get "subscription/locked", to: "subscriptions#locked", as: :subscription_locked
 
   # Self-service password change — every signed-in role reaches this, not just
   # the owners/accountants who can open /admin/users.

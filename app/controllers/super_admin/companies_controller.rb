@@ -2,7 +2,7 @@
 
 module SuperAdmin
   class CompaniesController < BaseController
-    before_action :set_company, only: %i[show edit update impersonate]
+    before_action :set_company, only: %i[show edit update impersonate extend_subscription]
 
     def show
       @locations = Location.unscoped.where(company_id: @company.id).order(:name)
@@ -45,7 +45,21 @@ module SuperAdmin
       end
 
       sign_in(:user, owner)
+      session[:impersonating] = true
       redirect_to admin_root_path
+    end
+
+    # Record a payment: push paid_until forward by 1/3/6/12 months.
+    def extend_subscription
+      months = params[:months].to_i
+      unless [1, 3, 6, 12].include?(months)
+        redirect_to super_admin_company_path(@company), alert: "Invalid period."
+        return
+      end
+
+      @company.extend_subscription!(months: months)
+      redirect_to super_admin_company_path(@company),
+                  notice: "Subscription extended to #{@company.paid_until}."
     end
 
     private
@@ -55,7 +69,7 @@ module SuperAdmin
     end
 
     def company_params
-      params.require(:company).permit(:name, :slug, :timezone, :currency, :locale, :active, :business_type)
+      params.require(:company).permit(:name, :slug, :timezone, :currency, :locale, :active, :business_type, :paid_until, :plan_name)
     end
 
     # Turn the per-feature Inherit/On/Off selects into the jsonb overrides hash:

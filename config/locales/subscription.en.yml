@@ -1,0 +1,13 @@
+en:
+  subscription:
+    locked:
+      title: "Your account is paused"
+      contact: "Contact support on WhatsApp"
+      body:
+        suspended: "%{company} has been paused. Please contact us to reactivate it."
+        expired: "The subscription for %{company} ended on %{date}. Please renew to continue; all your data is safe."
+    banner:
+      expiring: "Your subscription ends in %{count} days (%{date}). Please renew to avoid interruption."
+      expiring_today: "Your subscription ends today (%{date}). Please renew to avoid interruption."
+      grace: "Your subscription ended on %{date}. The system will be paused on %{until}. Please renew now."
+      contact: "Contact support"

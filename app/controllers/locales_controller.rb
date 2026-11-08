@@ -2,6 +2,7 @@
 
 class LocalesController < ApplicationController
   skip_before_action :authenticate_user!
+  skip_before_action :enforce_subscription!
 
   def update
     locale = params[:locale].to_sym

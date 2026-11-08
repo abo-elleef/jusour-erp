@@ -7,6 +7,7 @@ class ApplicationController < ActionController::Base
 
   before_action :authenticate_user!, unless: :devise_controller?
   before_action :set_current_company, if: :user_signed_in?
+  before_action :enforce_subscription!, if: :user_signed_in?, unless: :devise_controller?
   before_action :configure_permitted_parameters, if: :devise_controller?
 
   rescue_from Pundit::NotAuthorizedError, with: :user_not_authorized
@@ -15,6 +16,21 @@ class ApplicationController < ActionController::Base
 
   def set_current_company
     Current.company = current_user.company
+  end
+
+  # Lock out companies we switched off or whose subscription ran past its grace
+  # period. Signed-in users land on a plain explanation page (with sign-out)
+  # rather than a broken screen. A super admin impersonating a company bypasses
+  # the lock so they can still help a customer who is locked out.
+  def enforce_subscription!
+    company = Current.company
+    return if company.nil? || session[:impersonating]
+    return unless company.access_blocked?
+
+    respond_to do |format|
+      format.html { redirect_to subscription_locked_path }
+      format.any  { head :payment_required }
+    end
   end
 
   def configure_permitted_parameters

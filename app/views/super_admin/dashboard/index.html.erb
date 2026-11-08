@@ -13,6 +13,7 @@
         <th class="px-5 py-3 text-center">Branches</th>
         <th class="px-5 py-3 text-center">Orders</th>
         <th class="px-5 py-3 text-right">Revenue</th>
+        <th class="px-5 py-3 text-center">Paid until</th>
         <th class="px-5 py-3 text-center">Status</th>
         <th class="px-5 py-3"></th>
       </tr>
@@ -29,12 +30,12 @@
           <td class="px-5 py-4 text-right text-gray-300">
             <%= number_to_currency(company.revenue_cents / 100.0, unit: company.currency, format: "%n %u") %>
           </td>
+          <td class="px-5 py-4 text-center text-gray-300 text-xs"><%= company.paid_until || "—" %></td>
           <td class="px-5 py-4 text-center">
-            <% if company.active? %>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-900 text-green-300">Active</span>
-            <% else %>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-800 text-gray-400">Inactive</span>
-            <% end %>
+            <% badge = { ok: ["Active", "bg-green-900 text-green-300"], expiring: ["Expiring soon", "bg-amber-900 text-amber-300"],
+                         grace: ["Grace", "bg-orange-900 text-orange-300"], expired: ["Expired", "bg-red-900 text-red-300"],
+                         suspended: ["Suspended", "bg-gray-800 text-gray-400"] }[company.subscription_status] %>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium <%= badge[1] %>"><%= badge[0] %></span>
           </td>
           <td class="px-5 py-4 text-right">
             <%= link_to "Impersonate →", impersonate_super_admin_company_path(company),
@@ -45,7 +46,7 @@
       <% end %>
       <% if @companies.empty? %>
         <tr>
-          <td colspan="7" class="px-5 py-10 text-center text-gray-500">No companies yet.</td>
+          <td colspan="8" class="px-5 py-10 text-center text-gray-500">No companies yet.</td>
         </tr>
       <% end %>
     </tbody>
