@@ -54,6 +54,8 @@ module Printing
           doc.text(@order.customer.display_name) if @order.customer.name.present?
           @order.customer.contact_phones.each { |p| doc.text(p) }
         end
+        # Where the courier has to go — the order's own address, not the customer's list.
+        doc.text(@order.delivery_address) if @order.delivery? && @order.delivery_address.present?
         doc.blank
 
         # ── Items table ────────────────────────────────────────────────────

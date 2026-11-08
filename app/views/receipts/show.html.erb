@@ -5,6 +5,9 @@
 <h1 class="text-center text-lg font-bold mb-2"><%= @order.company.receipt_name %></h1>
 <p class="text-center text-gray-600 mb-1"><%= @order.order_number %> · <%= @order.created_at.strftime("%d/%m/%Y %I:%M %p") %></p>
 <p class="text-center text-gray-600 mb-1"><%= t("order.labels.order_type") %>: <%= @order.fulfillment_summary %></p>
+<% if @order.delivery? && @order.delivery_address.present? %>
+  <p class="text-center text-gray-600 mb-1"><%= t("order.labels.delivery_address") %>: <%= @order.delivery_address %></p>
+<% end %>
 <hr class="mb-4">
 <% @order.order_items.each do |item| %>
   <div class="flex justify-between mb-1">

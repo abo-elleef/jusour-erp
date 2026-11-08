@@ -54,7 +54,7 @@ Done in the super-admin area first, then as the customer's owner in the admin ar
 | 10 | Menu: categories, items, modifiers | Admin → Menu items / Modifiers / Combos | Biggest manual step today. Tick availability per branch. | | |
 | 11 | Recipes | Menu item → Recipes | Needed for food cost and stock deduction. | | |
 | 12 | Staff accounts + roles | Admin → Users / Roles | Cashier, kitchen, manager. Assign branches. Set PINs for manager approvals. | | |
-| 13 | Opening stock | Admin → Inventory → Stock takes (per branch) | Count sheet on go-live day sets starting quantities. | | |
+| 13 | Opening stock | Admin → Inventory → Stock takes (per branch) | Count on go-live day. Completing a count applies the difference as `cycle_count_correction` adjustments **valued at each ingredient's cost, so do step 8 first**. It runs as a background job (the Sidekiq worker must be up). Expect these to appear as positive corrections in the adjustments/shrinkage reports; tell the owner, or filter that first take out when reading them. | | |
 | 14 | Opening balances for suppliers/customers | Vendor invoices / customers | Only if needed; mark old invoices as historical rather than recreating them. | | |
 | 15 | Receipt settings | Admin → Settings | Restaurant name, logo, footer, business-day settings. | | |
 
@@ -62,7 +62,7 @@ Done in the super-admin area first, then as the customer's owner in the admin ar
 
 | Step | Done | Time |
 |---|---|---|
-| Add each register as a workstation (Admin → Workstations) and link its receipt printer | | |
+| Add each register as a workstation (Admin → Workstations) and link its receipt printer, so receipts print on the right device | | |
 | Add printers (receipt, kitchen) and set print routing | | |
 | **Test-print an Arabic receipt on the real printer**, including a long item name and a modifier | | |
 | Test the kitchen ticket / KDS flow | | |
@@ -110,6 +110,6 @@ Ordered by how much time each would save:
 1. **No menu import.** Menu items, categories and prices are entered one by one (or via a seed script written per customer, as for SAQR). A CSV menu importer (dry run, like `products:import`) is the biggest saving.
 2. **The demo starter is a US-style fried-chicken template.** `demo:fried_chicken` seeds a US "State Food Tax" (8%), "Beverage Tax" (8.5%) and a "Federal Standard" overtime rule. Use it for demos only; never copy it to a real customer without replacing those.
 3. **`products:import` is rake-only and expects a legacy-system layout** (`code,name,unit_raw,cost,selling_price`, Arabic piece names mapped to `pieces`). A generic ingredient CSV import in the admin UI would remove the console step.
-4. **No workstation in the starter data.** The demo bootstrap creates printers but no workstation; each register needs one linked to its printer (step in section 3).
+4. **No workstation in the starter data.** The demo bootstrap creates printers but no workstation; each register needs one linked to its receipt printer (section 3).
 5. **No "new customer" wizard.** Steps 1–5 and 15 are separate screens; a short guided flow after "New company" would cut mistakes.
 6. **Opening stock and balances are manual** (stock take per branch; treasury opening balances). Fine for 1–3 branches; revisit if you onboard bigger chains.
