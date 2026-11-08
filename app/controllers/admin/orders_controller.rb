@@ -94,7 +94,10 @@ module Admin
     def load_order_stats
       today = BusinessDay.today
       @today_count = Order.on_date(today).count
-      @today_revenue_cents = Order.on_date(today).where(status: "completed").sum(:total_cents)
+      # Net of refunds: a refunded order stays "completed" at its full total.
+      completed_today = Order.on_date(today).where(status: "completed")
+      @today_revenue_cents = completed_today.sum(:total_cents) -
+                             ::Accounting::RevenueCalculator.refunds_cents(completed_today.pluck(:id))
       @open_count = Order.open_orders.count
       @unpaid_count = Order.unpaid.count
     end

@@ -3935,7 +3935,7 @@ en:
       open_pos: "Open POS"
       stats_today: "Today"
       stats_revenue_today: "Revenue today"
-      stats_completed_orders: "Completed orders"
+      stats_completed_orders: "Completed orders · net of refunds"
       stats_open: "Open"
       stats_open_hint: "Submitted · In progress · Ready"
       stats_unpaid: "Unpaid"

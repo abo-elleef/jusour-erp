@@ -17,13 +17,17 @@ class Order < ApplicationRecord
 
   # Refunds are not deducted: a refunded payment settled the order when it was
   # taken, and re-opening a balance for it would send the cashier chasing money
-  # the customer has already been given back.
+  # the customer has already been given back. That includes a payment refunded in
+  # full — its status is "refunded", and leaving it out made a fully refunded order
+  # look as if it still owed its whole total.
+  SETTLING_PAYMENT_STATUSES = %w[completed partially_refunded refunded].freeze
+
   BALANCE_DUE_SQL = <<~SQL.squish.freeze
     orders.total_cents > COALESCE((
       SELECT SUM(payments.amount_cents)
       FROM payments
       WHERE payments.order_id = orders.id
-      AND payments.status IN ('completed', 'partially_refunded')
+      AND payments.status IN ('completed', 'partially_refunded', 'refunded')
     ), 0)
   SQL
 
@@ -167,12 +171,18 @@ class Order < ApplicationRecord
     payments.where(status: %w[completed partially_refunded]).sum(:amount_cents)
   end
 
+  # What the customer has paid toward this bill, refunds or not. This — not
+  # paid_cents, which is the money actually kept — decides whether anything is owed.
+  def settled_cents
+    payments.where(status: SETTLING_PAYMENT_STATUSES).sum(:amount_cents)
+  end
+
   def fully_paid?
-    total_cents.present? && paid_cents >= total_cents
+    total_cents.present? && settled_cents >= total_cents
   end
 
   def amount_due_cents
-    [(total_cents || 0) - paid_cents, 0].max
+    [(total_cents || 0) - settled_cents, 0].max
   end
 
   def delivery?

@@ -3981,7 +3981,7 @@ ar:
       open_pos: "فتح نقطة البيع"
       stats_today: "اليوم"
       stats_revenue_today: "إيرادات اليوم"
-      stats_completed_orders: "طلبات مكتملة"
+      stats_completed_orders: "طلبات مكتملة · بعد خصم المرتجعات"
       stats_open: "مفتوحة"
       stats_open_hint: "مُرسَل · قيد التحضير · جاهز"
       stats_unpaid: "غير مدفوعة"
