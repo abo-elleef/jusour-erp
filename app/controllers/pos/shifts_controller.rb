@@ -199,7 +199,7 @@ module Pos
       # what is holding their shift open.
       unfinalized = unfinalized_orders_for(current_user)
       @open_orders_count = unfinalized.count
-      @shift_time_range = current_user.shift_orders_time_range
+      @shift_time_range = widen_to_business_day(current_user.shift_orders_time_range)
 
       # Unfinished orders always show, even when they were rung on an earlier
       # shift. They are what is holding this shift open, and listing only the
@@ -214,6 +214,15 @@ module Pos
       @shift_orders = Order.where(id: ids)
         .includes(:customer, :payments)
         .order(created_at: :desc)
+    end
+
+    # Orders rung before the drawer was opened or the clock was punched still belong
+    # to the cashier's day, so the list reaches back to the start of the business day.
+    def widen_to_business_day(range)
+      return range unless range
+
+      day_start = BusinessDay.range(BusinessDay.today(location: @pos_location)).begin
+      [[range.first, day_start].min, range.last]
     end
 
     def manager_approved_reconcile?(drawer_session)

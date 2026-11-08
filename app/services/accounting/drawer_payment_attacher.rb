@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Accounting
-  # Puts payments that were taken before any drawer was open into one that is.
+  # Puts payments that were taken before any drawer was open into one that is
+  # (cash, InstaPay and Vodafone Cash alike).
   #
   # A cashier can ring up and take payment on orders before opening their drawer for
   # the day. Those payments carry no cash_drawer_session_id, and because they
@@ -12,9 +13,12 @@ module Accounting
   # banked and posted to the ledger, and attaching afterwards would change a closed
   # figure without moving the money.
   class DrawerPaymentAttacher
-    # Cash only: it is the money that physically sits in the till. Instapay and
-    # Vodafone Cash never pass through the drawer, so attaching them gains nothing.
-    METHODS = %w[cash].freeze
+    # Cash is the money that physically sits in the till, so it moves the drawer's
+    # expected cash. InstaPay and Vodafone Cash never touch the till, but they are
+    # still the drawer's: the session's digital totals are built from the payments
+    # attached to it, and closing the drawer posts those totals to the wallets. One
+    # left unattached is missing from the cashier's totals and from the wallet.
+    METHODS = %w[cash instapay vodafone_cash].freeze
     # How far back orphaned payments are looked for — a day boundary can sit hours
     # off the calendar date, so the window is wider than one day and the business
     # day itself does the filtering.

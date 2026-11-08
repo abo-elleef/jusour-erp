@@ -5864,7 +5864,7 @@ en:
       all_closed: "All drawers closed"
       attach_payments: "Attach payments"
       attach_title: "Attach payments to drawer"
-      attach_hint: "Payments taken before this drawer was opened. Attaching them adds them to this drawer's expected cash."
+      attach_hint: "Payments taken before this drawer was opened. Attaching cash adds it to this drawer's expected cash; attaching InstaPay or Vodafone Cash adds it to this cashier's wallet totals, which post to the wallets when the drawer is closed."
       attach_closed: "This drawer is already counted. Payments can only be attached to an open drawer."
       attach_none: "No unassigned payments from this branch on this business day."
       attach_order: "Order"

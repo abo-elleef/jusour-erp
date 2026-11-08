@@ -33,19 +33,32 @@ RSpec.describe "Attaching earlier payments to a drawer", type: :request do
                      processed_by_user: cashier, cash_drawer_session: nil, created_at: at)
   end
 
-  it "lists only unassigned, completed cash payments from this branch and day" do
+  it "lists only unassigned, completed payments from this branch and day" do
     mine = orphan_payment
+    wallet = orphan_payment(method: "vodafone_cash")
+    insta = orphan_payment(method: "instapay")
     orphan_payment(location: other_branch)
     orphan_payment(at: 2.days.ago)
     orphan_payment(status: "failed")
-    orphan_payment(method: "instapay")
-    orphan_payment(method: "vodafone_cash")
+    orphan_payment(method: "staff_deduction")
 
     get payments_admin_accounting_cash_drawer_path(drawer)
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("payment_#{mine.id}")
-    expect(response.body.scan(/name="payment_ids\[\]"/).size).to eq(1)
+    expect(response.body).to include("payment_#{mine.id}", "payment_#{wallet.id}", "payment_#{insta.id}")
+    expect(response.body.scan(/name="payment_ids\[\]"/).size).to eq(3)
+  end
+
+  it "brings an earlier Vodafone Cash payment into the drawer's totals without touching expected cash" do
+    payment = orphan_payment(amount: 7_500, method: "vodafone_cash")
+    before_expected = ::Accounting::CashReconciliationService.new(drawer).compute_expected!
+    expect(::Accounting::SessionSalesSummary.for_session(drawer).vodafone_cash_cents).to eq(0)
+
+    patch attach_payments_admin_accounting_cash_drawer_path(drawer), params: { payment_ids: [payment.id] }
+
+    expect(payment.reload.cash_drawer_session).to eq(drawer)
+    expect(::Accounting::SessionSalesSummary.for_session(drawer).vodafone_cash_cents).to eq(7_500)
+    expect(drawer.reload.expected_cash_cents).to eq(before_expected)
   end
 
   it "attaches the selected payments and brings them into expected cash" do
