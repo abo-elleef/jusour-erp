@@ -27,17 +27,19 @@ RSpec.describe "Attaching earlier payments to a drawer", type: :request do
     sign_in manager
   end
 
-  def orphan_payment(amount: 5_000, location: branch, at: 3.hours.ago, status: "completed")
+  def orphan_payment(amount: 5_000, location: branch, at: 3.hours.ago, status: "completed", method: "cash")
     order = create(:order, user: cashier, company: company, location: location, status: "completed")
-    create(:payment, order: order, amount_cents: amount, status: status, payment_method: "cash",
+    create(:payment, order: order, amount_cents: amount, status: status, payment_method: method,
                      processed_by_user: cashier, cash_drawer_session: nil, created_at: at)
   end
 
-  it "lists only unassigned, completed payments from this branch and day" do
+  it "lists only unassigned, completed cash payments from this branch and day" do
     mine = orphan_payment
     orphan_payment(location: other_branch)
     orphan_payment(at: 2.days.ago)
     orphan_payment(status: "failed")
+    orphan_payment(method: "instapay")
+    orphan_payment(method: "vodafone_cash")
 
     get payments_admin_accounting_cash_drawer_path(drawer)
 

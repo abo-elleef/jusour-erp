@@ -19,7 +19,9 @@ module Pos
       @today_session = current_user.todays_cash_drawer_session(location: @pos_location)
       @assigned_treasury = current_user.assigned_treasury
       @business_day = BusinessDay.today(location: @pos_location)
-      @unpaid_orders_count = unpaid_orders_for(current_user).size
+      unpaid_orders = unpaid_orders_for(current_user)
+      @unpaid_orders_count = unpaid_orders.size
+      @unpaid_orders_due_cents = unpaid_orders.sum(&:amount_due_cents)
       @unfinalized_orders_count = unfinalized_orders_for(current_user).count
       @has_draft_cart = draft_order_for(current_user).present?
       if @today_session

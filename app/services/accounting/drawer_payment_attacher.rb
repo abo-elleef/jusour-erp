@@ -12,7 +12,9 @@ module Accounting
   # banked and posted to the ledger, and attaching afterwards would change a closed
   # figure without moving the money.
   class DrawerPaymentAttacher
-    METHODS = (%w[cash] + Payment::DIGITAL_WALLET_METHODS).freeze
+    # Cash only: it is the money that physically sits in the till. Instapay and
+    # Vodafone Cash never pass through the drawer, so attaching them gains nothing.
+    METHODS = %w[cash].freeze
     # How far back orphaned payments are looked for — a day boundary can sit hours
     # off the calendar date, so the window is wider than one day and the business
     # day itself does the filtering.

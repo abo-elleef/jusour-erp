@@ -1,0 +1,29 @@
+<%# locals: summary:, unpaid_count:, unpaid_due_cents: — what the cashier should be holding right now, per channel. %>
+<section class="mb-4">
+  <h2 class="text-sm font-semibold text-gray-900"><%= t("pos.shift.orders.expected_title") %></h2>
+  <p class="text-xs text-gray-500 mt-0.5 mb-3"><%= t("pos.shift.orders.expected_hint") %></p>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= payment_method_label("cash") %></p>
+      <p class="text-2xl font-bold text-gray-900 tabular-nums mt-1"><%= format_amount(summary.expected_cash_cents) %></p>
+      <p class="text-xs text-gray-500 mt-1">
+        <%= t("pos.shift.orders.expected_cash_breakdown",
+              float: format_amount(summary.opening_float_cents),
+              sales: format_amount(summary.cash_net_cents)) %>
+      </p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= payment_method_label("vodafone_cash") %></p>
+      <p class="text-2xl font-bold text-gray-900 tabular-nums mt-1"><%= format_amount(summary.vodafone_cash_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= payment_method_label("instapay") %></p>
+      <p class="text-2xl font-bold text-gray-900 tabular-nums mt-1"><%= format_amount(summary.instapay_cents) %></p>
+    </div>
+    <div class="rounded-2xl border <%= unpaid_count.positive? ? "border-amber-200 bg-amber-50/70" : "border-gray-200 bg-white" %> p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("pos.shift.orders.unpaid_title") %></p>
+      <p class="text-2xl font-bold text-gray-900 tabular-nums mt-1"><%= format_amount(unpaid_due_cents) %></p>
+      <p class="text-xs text-gray-500 mt-1"><%= t("pos.shift.orders.unpaid_count", count: unpaid_count) %></p>
+    </div>
+  </div>
+</section>

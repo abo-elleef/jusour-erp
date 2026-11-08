@@ -1,3 +1,8 @@
+<% if @today_sales_summary %>
+  <%= render "pos/shifts/expected_totals", summary: @today_sales_summary,
+        unpaid_count: @unpaid_orders_count.to_i, unpaid_due_cents: @unpaid_orders_due_cents.to_i %>
+<% end %>
+
 <% if @open_orders_count.to_i.positive? %>
   <div class="rounded-2xl border border-green-200 bg-green-50/70 p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
     <div>

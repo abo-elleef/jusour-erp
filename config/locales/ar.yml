@@ -3701,6 +3701,13 @@ ar:
         shift: "الوردية"
         orders: "الطلبات"
       orders:
+        unpaid_title: "غير مدفوع بعد"
+        unpaid_count:
+          one: "%{count} طلب غير مدفوع"
+          other: "%{count} طلبات غير مدفوعة"
+        expected_title: "الإجماليات المتوقعة"
+        expected_hint: "المبالغ التي يجب أن تكون معك في هذه الوردية حسب القناة."
+        expected_cash_breakdown: "العهدة %{float} + مبيعات النقد %{sales}"
         description: "راجع طلبات ورديتك الحالية لأسئلة العملاء أو الشكاوى."
         title: "طلبات الوردية"
         count:

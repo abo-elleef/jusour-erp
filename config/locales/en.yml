@@ -3655,6 +3655,13 @@ en:
         shift: "Shift"
         orders: "Orders"
       orders:
+        unpaid_title: "Not paid yet"
+        unpaid_count:
+          one: "%{count} unpaid order"
+          other: "%{count} unpaid orders"
+        expected_title: "Expected totals"
+        expected_hint: "What you should have for this shift, by channel."
+        expected_cash_breakdown: "Float %{float} + cash sales %{sales}"
         description: "Review orders from your current shift for customer questions or complaints."
         title: "Shift orders"
         count:
