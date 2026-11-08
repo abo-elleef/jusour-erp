@@ -1,0 +1,82 @@
+<% content_for :title, t("legal.terms_title") %>
+<% grace = Company::SUBSCRIPTION_GRACE_DAYS %>
+
+<article class="rounded-2xl bg-white border border-gray-200 shadow-sm p-6 sm:p-10 space-y-6 text-sm leading-relaxed text-gray-700">
+  <header>
+    <h1 class="text-2xl font-bold text-gray-900">Terms of service</h1>
+    <p class="mt-1 text-xs text-gray-500">Last updated: November 2026</p>
+  </header>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">1. The service</h2>
+    <p>Jusour ("we", "us") provides a cloud system for running a business: sales and point of sale, inventory and purchasing, accounts and treasuries, staff and payroll, and online menus or catalogs. "You" means the business that subscribes, and its users.</p>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">2. Accounts</h2>
+    <p>You are responsible for the people you give access to, for keeping passwords and PINs private, and for what is done under your accounts. Tell us promptly if you suspect unauthorised access.</p>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">3. Subscription and payment</h2>
+    <ul class="list-disc ps-5 space-y-1">
+      <li>The subscription term, price and number of branches are those we agreed with you when you signed up. A one-time setup fee may apply.</li>
+      <li>Fees are paid in advance for the term. They are not refunded for time already used.</li>
+      <li>We will show a reminder in the system in the last week before your term ends.</li>
+      <li>If the term ends without renewal, the system keeps working for a grace period of <%= grace %> days. After that, sign-in is paused until you renew. Renewing restores access with all your data as it was.</li>
+      <li>Prices for a renewal may change; we will tell you before the term ends.</li>
+    </ul>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">4. Your data</h2>
+    <ul class="list-disc ps-5 space-y-1">
+      <li>The business data you enter (sales, stock, accounts, staff, customers) belongs to you.</li>
+      <li>We use it only to provide and support the service. We do not sell it or share it with other customers.</li>
+      <li>You are responsible for having the right to enter personal data about your staff and customers.</li>
+      <li>We take regular backups of the system to protect against loss.</li>
+      <li>If you leave, you can ask us for an export of your data. We keep your data for 90 days after your subscription ends so you can come back or collect it, and then delete it.</li>
+    </ul>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">5. Your records and compliance</h2>
+    <p>Jusour is a tool. You remain responsible for the accuracy of your records and for your own tax, accounting and legal obligations. Nothing in the system is accounting, tax or legal advice. Please check reports and balances against your own records.</p>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">6. Support and availability</h2>
+    <p>We provide support through WhatsApp during working hours and answer as quickly as we can. We work to keep the service available, but we do not guarantee uninterrupted service. We may perform maintenance and will try to do it outside your trading hours. Some features (such as the offline register) are designed to keep you selling through short connection problems.</p>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">7. Acceptable use</h2>
+    <p>Do not use the service for anything unlawful, try to access other customers' data, interfere with the system's operation, or resell access without our written agreement.</p>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">8. Limits of liability</h2>
+    <p>To the extent the law allows, we are not liable for indirect or consequential losses such as lost profit, and our total liability for any claim is limited to the fees you paid for the 12 months before it arose.</p>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">9. Ending the agreement</h2>
+    <p>You may stop renewing at any time. We may suspend or end access if these terms are seriously breached or fees remain unpaid after the grace period; where reasonable we will tell you first.</p>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">10. Changes and governing law</h2>
+    <p>We may update these terms and will show the new date above; for material changes we will tell you in advance. These terms are governed by the laws of the Arab Republic of Egypt.</p>
+  </section>
+
+  <section class="space-y-2">
+    <h2 class="text-base font-semibold text-gray-900">Contact</h2>
+    <p>
+      <% if support_whatsapp_url %>
+        <%= link_to t("legal.support_link"), support_whatsapp_url, target: "_blank", rel: "noopener", class: "text-teal-700 underline" %>
+      <% else %>
+        Contact us through your account manager.
+      <% end %>
+    </p>
+  </section>
+</article>

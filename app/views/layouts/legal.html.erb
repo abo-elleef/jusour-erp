@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="<%= html_lang %>" dir="<%= html_dir %>" class="h-full">
+  <head>
+    <title><%= content_for?(:title) ? yield(:title) : t("brand.name") %> — <%= t("brand.name") %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b2a4a">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+  <body class="min-h-full bg-slate-50 text-gray-900">
+    <header class="border-b border-gray-200 bg-white">
+      <div class="max-w-3xl mx-auto flex items-center justify-between gap-4 px-4 py-3">
+        <%= link_to root_path, class: "flex items-center gap-2.5" do %>
+          <%= render "shared/brand_mark", size: "w-9 h-9" %>
+          <span class="text-lg font-bold tracking-tight text-slate-900"><%= t("brand.name") %></span>
+        <% end %>
+        <%= render "shared/locale_switcher" %>
+      </div>
+    </header>
+
+    <main class="max-w-3xl mx-auto px-4 py-8">
+      <%= yield %>
+    </main>
+
+    <footer class="max-w-3xl mx-auto px-4 pb-10 text-center text-xs text-gray-500 space-y-1">
+      <%= render "shared/legal_links" %>
+      <p><%= t("brand.rights", year: Date.current.year) %></p>
+    </footer>
+
+    <%= render "shared/toasts" %>
+  </body>
+</html>

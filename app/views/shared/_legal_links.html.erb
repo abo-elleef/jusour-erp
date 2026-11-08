@@ -1,0 +1,11 @@
+<%# Terms + support links, shared by the sign-in page, legal pages and the admin sidebar.
+    css: link classes, so each surface can match its own theme. %>
+<% css = local_assigns[:css] || "hover:text-gray-800 underline underline-offset-2" %>
+<% justify = local_assigns[:justify] || "justify-center" %>
+<p class="flex items-center <%= justify %> gap-3 flex-wrap">
+  <%= link_to t("legal.terms_link"), terms_path, class: css %>
+  <% if support_whatsapp_url %>
+    <span aria-hidden="true">·</span>
+    <%= link_to t("legal.support_link"), support_whatsapp_url, target: "_blank", rel: "noopener", class: css %>
+  <% end %>
+</p>

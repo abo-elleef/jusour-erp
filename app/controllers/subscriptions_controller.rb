@@ -12,6 +12,5 @@ class SubscriptionsController < ApplicationController
 
     @status = company.subscription_status
     @company = company
-    @support_whatsapp = ENV["SUPPORT_WHATSAPP"].to_s.gsub(/\D/, "").presence
   end
 end

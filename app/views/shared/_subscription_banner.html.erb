@@ -12,12 +12,11 @@
        else
          t("subscription.banner.expiring", count: days, date: l(company.paid_until, format: :long))
        end %>
-  <% support = ENV["SUPPORT_WHATSAPP"].to_s.gsub(/\D/, "").presence %>
   <div role="alert"
        class="shrink-0 px-4 py-2 text-sm font-medium text-center <%= status == :grace ? "bg-red-600 text-white" : "bg-amber-100 text-amber-900 border-b border-amber-300" %>">
     <%= message %>
-    <% if support %>
-      <%= link_to t("subscription.banner.contact"), "https://wa.me/#{support}", target: "_blank", rel: "noopener", class: "underline font-semibold ms-2" %>
+    <% if support_whatsapp_url %>
+      <%= link_to t("subscription.banner.contact"), support_whatsapp_url, target: "_blank", rel: "noopener", class: "underline font-semibold ms-2" %>
     <% end %>
   </div>
 <% end %>

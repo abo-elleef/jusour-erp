@@ -1,0 +1,6 @@
+en:
+  legal:
+    terms_link: "Terms of service"
+    support_link: "Support on WhatsApp"
+    sign_in_notice_html: "By signing in you agree to the %{terms}."
+    terms_title: "Terms of service"

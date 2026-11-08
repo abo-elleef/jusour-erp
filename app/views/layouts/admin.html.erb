@@ -63,6 +63,9 @@
               class: "mt-3 block text-sm text-gray-300 hover:text-white text-start" %>
         <%= button_to t("actions.sign_out"), destroy_user_session_path, method: :delete,
               class: "mt-3 text-sm text-gray-300 hover:text-white w-full text-start" %>
+        <div class="mt-3 pt-3 border-t border-gray-800 text-xs text-gray-400 text-start">
+          <%= render "shared/legal_links", css: "hover:text-white underline underline-offset-2", justify: "justify-start" %>
+        </div>
       </div>
     </aside>
 

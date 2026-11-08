@@ -1,0 +1,6 @@
+ar:
+  legal:
+    terms_link: "شروط الخدمة"
+    support_link: "الدعم عبر واتساب"
+    sign_in_notice_html: "بتسجيل الدخول فإنك توافق على %{terms}."
+    terms_title: "شروط الخدمة"

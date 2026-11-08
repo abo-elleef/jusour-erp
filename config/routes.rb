@@ -43,6 +43,9 @@ Rails.application.routes.draw do
 
   patch "locale", to: "locales#update", as: :locale
 
+  # Public terms of service (reachable signed out, e.g. from the sign-in page).
+  get "terms", to: "legal#terms", as: :terms
+
   # Where signed-in users of a suspended / expired company land.
   get "subscription/locked", to: "subscriptions#locked", as: :subscription_locked
 

@@ -15,6 +15,17 @@ module ApplicationHelper
     I18n.locale.to_s
   end
 
+  # Digits-only WhatsApp number for support, from SUPPORT_WHATSAPP (nil when unset).
+  def support_whatsapp_number
+    ENV["SUPPORT_WHATSAPP"].to_s.gsub(/\D/, "").presence
+  end
+
+  # wa.me link to support, or nil when no number is configured.
+  def support_whatsapp_url
+    number = support_whatsapp_number
+    number && "https://wa.me/#{number}"
+  end
+
   # Clickable table header that toggles sort on `key`, preserving all other
   # query params (search, filters). Shows an arrow on the active column.
   # `path` and `base_params` default to the request's own, which is right for a

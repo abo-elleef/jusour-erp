@@ -58,8 +58,10 @@
           </div>
         </main>
 
-        <footer class="pb-6 text-center text-xs text-gray-500 lg:hidden">
-          <%= t("brand.rights", year: Date.current.year) %>
+        <footer class="pb-6 text-center text-xs text-gray-500 space-y-1">
+          <p><%= t("legal.sign_in_notice_html", terms: link_to(t("legal.terms_link"), terms_path, class: "underline underline-offset-2 hover:text-gray-800")) %></p>
+          <%= render "shared/legal_links" %>
+          <p class="lg:hidden"><%= t("brand.rights", year: Date.current.year) %></p>
         </footer>
       </div>
     </div>

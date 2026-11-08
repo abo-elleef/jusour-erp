@@ -6,8 +6,8 @@
     <%= t("subscription.locked.body.#{@status}", company: @company.name, date: (@company.paid_until && l(@company.paid_until, format: :long))) %>
   </p>
 
-  <% if @support_whatsapp %>
-    <%= link_to t("subscription.locked.contact"), "https://wa.me/#{@support_whatsapp}",
+  <% if support_whatsapp_url %>
+    <%= link_to t("subscription.locked.contact"), support_whatsapp_url,
           target: "_blank", rel: "noopener",
           class: "inline-block bg-teal-700 hover:bg-teal-800 text-white text-sm font-semibold px-6 py-2.5 rounded-xl" %>
   <% end %>
