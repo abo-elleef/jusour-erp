@@ -394,6 +394,7 @@ en:
     reports: "Reports"
     pos: "POS"
     register: "Register"
+    tables: "Tables"
     collect_payment: "Collect Payment"
     my_shift: "My shift"
     kitchen: "Kitchen"
@@ -424,6 +425,8 @@ en:
     staff: "Staff"
 
   order:
+    errors:
+      table_busy: "Table %{table} already has an open order (#%{number})."
     types:
       delivery: "Delivery"
       pickup: "Pickup"
@@ -3547,6 +3550,20 @@ en:
       saved_addresses: "Saved address"
       custom_address: "Enter address manually"
       customer_required_for_delivery: "Select a customer first to enter a delivery address."
+    tables:
+      title: "Tables"
+      summary: "%{busy} busy · %{free} free"
+      free: "Free"
+      paid: "Paid"
+      unpaid: "Open"
+      open: "Open table"
+      clear: "Clear table"
+      clear_confirm: "Mark table %{table}'s order as done and free the table?"
+      busy_hint: "Open order #%{number}"
+      due: "%{amount} due"
+      items:
+        one: "%{count} item"
+        other: "%{count} items"
     cart:
       current_order: "Current order"
       empty: "No items yet"
@@ -3886,6 +3903,8 @@ en:
         slug_hint: "Used in the customer menu link. Auto-generated from the name if left blank."
         table_count: "Number of tables"
         table_count_hint: "The cashier picks a table from numbered buttons (1 to this number). Leave blank to type the table number by hand."
+        table_service: "Table service (open table orders)"
+        table_service_hint: "Table orders stay open and unpaid while customers sit. Adds the Tables screen and allows only one open order per table. Needs a table count. Leave off for pay-first branches."
         public_menu_enabled: "Public menu"
         public_menu_enabled_hint: "When enabled, customers can browse this branch's menu at the public link."
         default_production_location: "Default production location"
@@ -6171,6 +6190,8 @@ en:
       print_queued: "Receipt sent to printer."
       kitchen_queued: "Kitchen / bar tickets sent to printers."
       order_resumed: "Order loaded in cart."
+      tables:
+        not_enabled: "Table service is not turned on for this branch."
       order_completed: "Order completed."
       order_discarded: "Cart %{number} discarded."
       order_not_completable: "That order could not be completed. Check it has items, and a table number or delivery address if it needs one."

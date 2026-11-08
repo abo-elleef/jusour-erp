@@ -10,10 +10,17 @@ module Pos
     def create
       authorize @order, :update?
       @order.with_lock do
+        first_item = @order.order_items.none?
         if params[:combo_id]
           add_combo
         else
           add_menu_item
+        end
+        # An empty cart doesn't hold its table, so another register may have taken it
+        # since the cashier picked it. The first item is where that shows up. Once the
+        # order has items it already holds the table, so later adds are never blocked.
+        if first_item && (other = @order.table_conflict)
+          raise TableBusy, t("order.errors.table_busy", table: @order.table_number, number: other.order_number)
         end
         @order.recalculate_totals!
       end
@@ -23,6 +30,8 @@ module Pos
       end
     rescue ItemUnavailableAtLocation
       redirect_to pos_path, alert: t("flash.pos.item_unavailable_at_location")
+    rescue TableBusy => e
+      redirect_to pos_path, alert: e.message, status: :see_other
     end
 
     def update
@@ -69,6 +78,7 @@ module Pos
     private
 
     class ItemUnavailableAtLocation < StandardError; end
+    class TableBusy < StandardError; end
 
     def require_pos_access!
       return if current_user&.can_access_pos?

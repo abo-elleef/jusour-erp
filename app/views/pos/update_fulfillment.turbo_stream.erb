@@ -7,3 +7,6 @@
 <%= turbo_stream.replace "order-summary" do %>
   <%= render "pos/order_summary", order: @order %>
 <% end %>
+<% if @fulfillment_error.present? %>
+  <%= turbo_stream.append "toast-container", partial: "shared/toast", locals: { message: @fulfillment_error, type: :alert } %>
+<% end %>

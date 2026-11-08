@@ -130,6 +130,8 @@ class PosController < ApplicationController
         format.html { redirect_to pos_path }
       end
     else
+      @fulfillment_error = @order.errors.full_messages.to_sentence
+      @order.restore_attributes # show the table the order really has, not the rejected one
       respond_to do |format|
         format.turbo_stream { render :update_fulfillment, status: :unprocessable_entity }
         format.html { redirect_to pos_path, alert: @order.errors.full_messages.to_sentence }

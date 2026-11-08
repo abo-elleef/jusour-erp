@@ -81,7 +81,9 @@ module Pos
     def resume
       order = Order.find(params[:id])
       authorize order, :show?
-      raise Pundit::NotAuthorizedError unless order.draft? && order.user == current_user
+      unless order.draft? && order.user == current_user
+        authorize order, :resume_table?
+      end
 
       session[:current_order_id] = order.id
       redirect_to pos_path, notice: t("flash.pos.order_resumed")
@@ -113,7 +115,9 @@ module Pos
       authorize @order, :complete?
 
       if Orders::CompleteService.call(@order)
-        redirect_to pos_order_path(@order, from: params[:from]), notice: t("flash.pos.order_completed")
+        # Clearing a table from the board goes back to the board.
+        destination = params[:from] == "tables" ? pos_tables_path : pos_order_path(@order, from: params[:from])
+        redirect_to destination, notice: t("flash.pos.order_completed")
       else
         redirect_to pos_order_path(@order, from: params[:from]), alert: t("flash.pos.order_not_completable")
       end

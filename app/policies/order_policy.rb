@@ -39,6 +39,12 @@ class OrderPolicy < ApplicationPolicy
     create? && record.draft?
   end
 
+  # Table-service branches hand a table over between cashiers (shift change, someone
+  # covering the floor), so any POS cashier may pick up a table's open draft there.
+  def resume_table?
+    record.draft? && record.table? && record.location&.table_service? && user.can_access_pos?
+  end
+
   def submit?
     update?
   end

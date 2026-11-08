@@ -13,6 +13,7 @@ class Order < ApplicationRecord
   # Advisory-lock namespace, so order numbering can never contend with another
   # part of the app that reaches for an advisory lock of its own.
   ORDER_NUMBER_LOCK_NAMESPACE = 8_301
+  TABLE_LOCK_NAMESPACE = 8_302
 
   # Refunds are not deducted: a refunded payment settled the order when it was
   # taken, and re-opening a balance for it would send the cashier chasing money
@@ -52,6 +53,7 @@ class Order < ApplicationRecord
   before_validation :assign_business_date, on: :create
   before_validation :assign_order_number, on: :create
   before_save :clear_fulfillment_fields_for_type
+  validate :table_must_be_free, if: :table_slot_changed?
   before_create :generate_receipt_token
 
   aasm column: :status do
@@ -107,6 +109,9 @@ class Order < ApplicationRecord
       .where("EXISTS (SELECT 1 FROM order_items WHERE order_items.order_id = orders.id)")
       .order(created_at: :asc)
   }
+  # A table is busy from the first item until its order is completed or cancelled.
+  # Only meaningful at branches with table service on; see Location#table_service.
+  scope :open_table_orders, -> { not_finalized.where(order_type: "table").where.not(table_number: [nil, ""]) }
   scope :kitchen_queue, -> { where(status: %w[submitted in_progress ready]) }
   scope :awaiting_payment, -> {
     where.not(status: %w[draft cancelled]).order(created_at: :desc)
@@ -129,6 +134,15 @@ class Order < ApplicationRecord
       .where(BALANCE_DUE_SQL)
       .order(created_at: :desc)
   }
+
+  # { "5" => order } for every busy table at the branch.
+  def self.busy_tables(location)
+    return {} unless location&.table_service?
+
+    open_table_orders.where(location_id: location.id).includes(:user, :order_items).each_with_object({}) do |order, busy|
+      busy[order.table_number.to_s] ||= order
+    end
+  end
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[status order_number order_type created_at user_id customer_id total_cents subtotal_cents]
@@ -192,6 +206,17 @@ class Order < ApplicationRecord
     end
   end
 
+  # The other open order holding this order's table, or nil. Public because an empty
+  # cart doesn't hold its table: the first item added has to ask again.
+  def table_conflict
+    return unless table? && table_number.present? && location&.table_service?
+    return if FINAL_STATUSES.include?(status)
+
+    lock_table!
+    Order.open_table_orders.where(location_id: location_id, table_number: table_number.to_s)
+         .where.not(id: id).first
+  end
+
   def broadcast_to_kds
     Turbo::StreamsChannel.broadcast_refresh_to("kitchen_#{company_id}")
   end
@@ -228,6 +253,25 @@ class Order < ApplicationRecord
     self.class.connection.execute(
       "SELECT pg_advisory_xact_lock(#{ORDER_NUMBER_LOCK_NAMESPACE}, #{key})"
     )
+  end
+
+  def table_slot_changed?
+    new_record? || will_save_change_to_table_number? || will_save_change_to_order_type? || will_save_change_to_location_id?
+  end
+
+  def table_must_be_free
+    other = table_conflict
+    return unless other
+
+    errors.add(:table_number, I18n.t("order.errors.table_busy", table: table_number, number: other.order_number))
+  end
+
+  # Two registers claiming the same free table at the same moment would both pass
+  # the check; serialising on the table closes that. Released when the transaction ends.
+  def lock_table!
+    key = Zlib.crc32("#{location_id}:#{table_number}")
+    key -= 2**32 if key >= 2**31
+    self.class.connection.execute("SELECT pg_advisory_xact_lock(#{TABLE_LOCK_NAMESPACE}, #{key})")
   end
 
   def generate_receipt_token

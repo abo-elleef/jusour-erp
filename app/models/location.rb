@@ -35,6 +35,7 @@ class Location < ApplicationRecord
   validates :business_day_start_hour,
             numericality: { only_integer: true, in: 0..23, allow_nil: true }
   validates :table_count, numericality: { only_integer: true, in: 1..200, allow_nil: true }
+  validates :table_count, presence: true, if: :table_service?
   validates :business_day_mode, inclusion: { in: BusinessDay::MODES }
 
   before_validation :generate_slug, if: -> { slug.blank? && name.present? }

@@ -75,6 +75,13 @@
       <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.fields.table_count_hint") %></p>
     </div>
     <div class="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/80 p-4">
+      <%= f.check_box :table_service, class: "w-4 h-4 mt-0.5 text-amber-600 border-gray-300 rounded" %>
+      <div>
+        <%= f.label :table_service, t("admin.locations.fields.table_service"), class: "text-sm font-semibold text-gray-700" %>
+        <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.fields.table_service_hint") %></p>
+      </div>
+    </div>
+    <div class="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/80 p-4">
       <%= f.check_box :public_menu_enabled, class: "w-4 h-4 mt-0.5 text-amber-600 border-gray-300 rounded" %>
       <div>
         <%= f.label :public_menu_enabled, t("admin.locations.fields.public_menu_enabled"), class: "text-sm font-semibold text-gray-700" %>

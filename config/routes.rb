@@ -82,6 +82,9 @@ Rails.application.routes.draw do
       patch :clock_out
     end
 
+    get "tables", to: "tables#index", as: :tables
+    post "tables/:number/open", to: "tables#open", as: :open_table
+
     post "verify_manager_pin", to: "manager_pin#verify"
 
     # Offline mode: a cached register that keeps taking cash orders and printing
