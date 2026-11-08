@@ -17,6 +17,8 @@ module Pos
                      .where(orders: { company_id: current_user.company_id })
       logs = logs.where(orders: { location_id: location_id }) if location_id.present?
       logs = logs.where("print_logs.created_at > ?", 2.hours.ago)
+      # Not the ones another register is printing right now.
+      logs = logs.unclaimed
 
       # Receipts are workstation-scoped when a register is selected; production
       # tickets stay shared across the branch.
@@ -30,8 +32,15 @@ module Pos
       render json: logs.map { |l| { id: l.id, order_id: l.order_id } }
     end
 
+    # Handing out the payload is what claims the job: the first register to ask gets
+    # it, everyone else gets 409 and must not print. Asking again with the same
+    # client id (a retry) is fine.
     def payload
       authorize @print_log, :payload?
+
+      unless PrintLog.claim!(@print_log.id, params[:client_id])
+        return render json: { error: "already_claimed" }, status: :conflict
+      end
 
       printer = @print_log.printer
       unless printer
@@ -51,6 +60,10 @@ module Pos
 
     def confirm
       authorize @print_log, :confirm?
+
+      # A finished job stays as it was: a late "failed" from a retrying page must not
+      # overwrite a "sent".
+      return head :ok unless @print_log.status == "pending"
 
       status = params[:status].presence_in(PrintLog::STATUSES) || "failed"
       @print_log.update!(

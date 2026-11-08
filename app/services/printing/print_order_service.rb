@@ -16,6 +16,7 @@ module Printing
     def call
       printer = @printer || resolve_printer
       return log_skipped(nil, "no_active_#{@print_type}_printer") unless printer
+      return if repeated_request?(printer)
 
       payload = build_payload(printer)
 
@@ -34,6 +35,18 @@ module Printing
     end
 
     private
+
+    # The same ticket asked for twice within seconds is a double tap (or a double
+    # submit), not two wishes. A deliberate reprint a moment later still goes through.
+    DUPLICATE_WINDOW = 5.seconds
+
+    def repeated_request?(printer)
+      repeated = PrintLog.where(order_id: @order.id, printer_id: printer.id, print_type: @print_type,
+                                status: %w[pending sent])
+                         .where("created_at > ?", DUPLICATE_WINDOW.ago).exists?
+      Rails.logger.info("[Printing] ignored repeated #{@print_type} print for order #{@order.order_number}") if repeated
+      repeated
+    end
 
     def resolve_printer
       if @print_type == "receipt"

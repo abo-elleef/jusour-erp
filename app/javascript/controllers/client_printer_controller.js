@@ -59,27 +59,67 @@ export default class extends Controller {
     this._queue = this._queue.then(() => this.processJob(printLogId, element))
   }
 
+  // Stable for this browser tab, so a retry (or a page change mid-print) is recognised
+  // by the server as the same register that already holds the job.
+  get clientId() {
+    try {
+      let id = sessionStorage.getItem("saqr_print_client")
+      if (!id) {
+        id = (crypto.randomUUID && crypto.randomUUID()) || `${Date.now()}-${Math.random()}`
+        sessionStorage.setItem("saqr_print_client", id)
+      }
+      return id
+    } catch (_e) {
+      return this._fallbackClientId ||= `${Date.now()}-${Math.random()}`
+    }
+  }
+
+  // Every register at the branch hears about a shared job, but only one may print it.
+  // Fetching the payload is what claims it; losing the claim means another register
+  // is printing it, so stand down quietly — no retry, no "failed" report.
   async processJob(printLogId, element) {
+    const done = () => {
+      element?.remove()
+      this._inFlight.delete(printLogId)
+    }
+
+    let payload
+    for (let attempt = 1; ; attempt++) {
+      try {
+        payload = await this.fetchPayload(printLogId)
+        break
+      } catch (error) {
+        if (error.claimedElsewhere) return done()
+        if (error instanceof TypeError) {
+          // The server could not be reached: nothing printed. Retry, and if it stays
+          // down leave the job pending so a later page load recovers it.
+          if (attempt >= MAX_RETRIES) return done()
+          await this.sleep(RETRY_DELAY_MS * attempt)
+          continue
+        }
+        await this.confirmPrint(printLogId, "failed", error?.message)
+        return done()
+      }
+    }
+
+    // Retry only when the agent could not be reached at all (fetch itself failed):
+    // then nothing was printed. Once the agent has answered — even with an error —
+    // another attempt could print a second copy, so report it and stop.
     let lastError = null
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const payload = await this.fetchPayload(printLogId)
         await this.sendToAgent(payload)
         await this.confirmPrint(printLogId, "sent")
-        element?.remove()
-        this._inFlight.delete(printLogId)
-        return
+        return done()
       } catch (error) {
         lastError = error
-        if (attempt < MAX_RETRIES) {
-          await this.sleep(RETRY_DELAY_MS * attempt)
-        }
+        const unreachable = error instanceof TypeError
+        if (!unreachable || attempt === MAX_RETRIES) break
+        await this.sleep(RETRY_DELAY_MS * attempt)
       }
     }
-    // All retries exhausted
     await this.confirmPrint(printLogId, "failed", lastError?.message)
-    element?.remove()
-    this._inFlight.delete(printLogId)
+    done()
   }
 
   // Fetch any pending PrintLogs the browser missed while disconnected
@@ -157,6 +197,11 @@ export default class extends Controller {
       headers: { Accept: "application/json" },
       credentials: "same-origin"
     })
+    if (response.status === 409) {
+      const claimed = new Error("already_claimed")
+      claimed.claimedElsewhere = true
+      throw claimed
+    }
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
       throw new Error(body.error || "Failed to load print payload")
@@ -166,11 +211,12 @@ export default class extends Controller {
 
   payloadUrl(printLogId, register) {
     let url = this.payloadUrlTemplateValue.replace(":id", printLogId)
+    const params = new URLSearchParams({ client_id: this.clientId })
     if (register?.host) {
-      const params = new URLSearchParams({ host: register.host, port: register.port || "9100" })
-      url += `?${params}`
+      params.set("host", register.host)
+      params.set("port", register.port || "9100")
     }
-    return url
+    return `${url}?${params}`
   }
 
   confirmUrl(printLogId) {

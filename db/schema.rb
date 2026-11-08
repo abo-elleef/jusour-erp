@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_09_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_09_110000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1234,6 +1234,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_100000) do
     t.text "error_message"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "claimed_at"
+    t.string "claimed_by"
     t.index ["order_id"], name: "index_print_logs_on_order_id"
     t.index ["print_type"], name: "index_print_logs_on_print_type"
     t.index ["printer_id"], name: "index_print_logs_on_printer_id"
