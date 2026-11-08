@@ -161,7 +161,19 @@ module Pos
       @order = Order.find(params[:id])
       authorize @order, :show?
       Printing::PrintReceiptService.call(order: @order)
-      redirect_to pos_order_path(@order, from: params[:from]), notice: t("flash.pos.print_queued")
+      # From the register itself, stay on the register: the cart is still being built.
+      destination = params[:from] == "pos" ? pos_path : pos_order_path(@order, from: params[:from])
+      redirect_to destination, notice: t("flash.pos.print_queued")
+    end
+
+    # Sends the tickets to the kitchen / bar / expo printers ahead of payment.
+    # Print-only: the order, its items and its payments are not touched.
+    def send_to_kitchen
+      @order = Order.find(params[:id])
+      authorize @order, :show?
+      Printing::DispatchProductionPrintsService.call(order: @order)
+      destination = params[:from] == "pos" ? pos_path : pos_order_path(@order, from: params[:from])
+      redirect_to destination, notice: t("flash.pos.kitchen_queued")
     end
 
     def print_all

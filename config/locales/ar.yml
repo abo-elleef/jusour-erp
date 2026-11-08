@@ -3613,6 +3613,8 @@ ar:
       redeem_points: "استبدال النقاط (%{points})"
       send_to_kitchen: "إرسال للمطبخ"
       charge: "تحصيل %{amount}"
+      print_receipt: "طباعة الإيصال"
+      send_to_kitchen_bar: "إرسال للمطبخ / البار"
       note_prefix: "ملاحظة:"
     modifier:
       add_to_order: "إضافة للطلب"
@@ -6225,6 +6227,7 @@ ar:
       orders_merged: "تم دمج الطلبات."
       payment_recorded: "تم تسجيل الدفع."
       print_queued: "تم إرسال الإيصال إلى الطابعة."
+      kitchen_queued: "تم إرسال تذاكر المطبخ / البار إلى الطابعات."
       order_resumed: "تم تحميل الطلب في السلة."
       order_completed: "تم إنهاء الطلب."
       order_discarded: "تم حذف السلة %{number}."

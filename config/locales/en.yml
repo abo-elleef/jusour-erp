@@ -3567,6 +3567,8 @@ en:
       redeem_points: "Redeem Points (%{points})"
       send_to_kitchen: "Send to Kitchen"
       charge: "Charge %{amount}"
+      print_receipt: "Print receipt"
+      send_to_kitchen_bar: "Send to kitchen / bar"
       note_prefix: "Note:"
     modifier:
       add_to_order: "Add to order"
@@ -6167,6 +6169,7 @@ en:
       orders_merged: "Orders merged."
       payment_recorded: "Payment recorded."
       print_queued: "Receipt sent to printer."
+      kitchen_queued: "Kitchen / bar tickets sent to printers."
       order_resumed: "Order loaded in cart."
       order_completed: "Order completed."
       order_discarded: "Cart %{number} discarded."

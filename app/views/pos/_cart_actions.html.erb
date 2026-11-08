@@ -23,6 +23,21 @@
       <%= t("pos.cart.charge", amount: format_money(order.amount_due_cents)) %>
     </button>
 
+    <%# Prints the order as it stands (unpaid or part-paid included) without charging. %>
+    <% if order.persisted? && order.order_items.any? %>
+      <div class="grid grid-cols-2 gap-2">
+        <%= button_to t("pos.cart.print_receipt"), print_receipt_pos_order_path(order, from: "pos"),
+              method: :post,
+              form: { data: { turbo_frame: "_top" }, class: "contents" },
+              class: pos_cart_outlined_btn_class %>
+        <%# Print-only, ahead of payment: does not change the order or its payments. %>
+        <%= button_to t("pos.cart.send_to_kitchen_bar"), send_to_kitchen_pos_order_path(order, from: "pos"),
+              method: :post,
+              form: { data: { turbo_frame: "_top" }, class: "contents" },
+              class: pos_cart_outlined_btn_class %>
+      </div>
+    <% end %>
+
     <%# form_with url: pos_submit_path, method: :patch, data: { turbo_frame: "_top" } do %>
       <%# submit_tag t("pos.cart.send_to_kitchen"),
             class: pos_cart_outlined_btn_class,

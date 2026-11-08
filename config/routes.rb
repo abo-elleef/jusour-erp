@@ -98,6 +98,7 @@ Rails.application.routes.draw do
       end
       member do
         post :print_receipt
+        post :send_to_kitchen
         post :print_all
         post :resume
         post :complete
