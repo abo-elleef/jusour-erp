@@ -147,7 +147,9 @@
             <% if @location.nil? %>
               <td class="p-3 ps-5 font-medium text-gray-900"><%= session.location&.name %></td>
             <% end %>
-            <td class="p-3 <%= "ps-5" if @location %>"><%= session.user.name %></td>
+            <td class="p-3 <%= "ps-5" if @location %>">
+              <%= link_to session.user.name, admin_accounting_cash_drawer_path(session), class: "font-medium text-amber-700 hover:text-amber-800" %>
+            </td>
             <td class="p-3 text-gray-600"><%= session.treasury.name %></td>
             <td class="p-3 tabular-nums"><%= l(session.created_at, format: :short_time) %></td>
             <td class="p-3"><%= accounting_drawer_status(session.status) %></td>
@@ -167,7 +169,8 @@
                 <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
               <% end %>
             </td>
-            <td class="p-3 pe-5 text-end">
+            <td class="p-3 pe-5 text-end whitespace-nowrap">
+              <%= link_to t("accounting.cash_drawer.details"), admin_accounting_cash_drawer_path(session), class: "text-gray-700 text-xs font-semibold me-3" %>
               <% if session.status == "open" %>
                 <%= link_to t("accounting.cash_drawer.attach_payments"), payments_admin_accounting_cash_drawer_path(session), class: "text-gray-700 text-xs font-semibold me-3" %>
               <% end %>

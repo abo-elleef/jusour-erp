@@ -1,0 +1,195 @@
+<% session = @session %>
+<% money = ->(cents) { format_amount(cents) } %>
+<div class="max-w-6xl">
+  <div class="flex flex-wrap items-start justify-between gap-4 mb-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.cash_drawer.details_title") %></h1>
+      <p class="text-sm text-gray-600 mt-1">
+        <%= link_to session.user.name, admin_user_path(session.user), class: "font-semibold text-amber-700 hover:text-amber-800" %>
+        ·
+        <% if session.location %>
+          <%= link_to session.location.name, admin_location_path(session.location), class: "text-amber-700 hover:text-amber-800" %> ·
+        <% end %>
+        <%= link_to session.treasury.name, admin_accounting_treasury_path(session.treasury), class: "text-amber-700 hover:text-amber-800" %>
+        · <%= l(session.session_date, format: :long) %>
+        · <%= t("accounting.cash_drawer.opened_at") %> <%= l(session.created_at, format: :short_time) %>
+        · <%= accounting_drawer_status(session.status) %>
+      </p>
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <% if session.status == "open" %>
+        <%= link_to t("accounting.cash_drawer.attach_payments"), payments_admin_accounting_cash_drawer_path(session),
+              class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200" %>
+        <%= link_to t("actions.count"), count_admin_accounting_cash_drawer_path(session),
+              class: "text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-xl" %>
+      <% end %>
+      <%= link_to t("actions.back"), admin_accounting_cash_drawer_index_path(date: session.session_date, location_id: session.location_id),
+            class: "text-sm font-medium text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-xl" %>
+    </div>
+  </div>
+
+  <%# The drawer's own figures, as stored — nothing on this page recomputes them. %>
+  <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+    <% variance = session.variance_cents %>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.opening_float") %></p>
+      <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= money.(session.opening_float_cents) %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.expected") %></p>
+      <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= session.expected_cash_cents ? money.(session.expected_cash_cents) : t("accounting.shared.em_dash") %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.counted") %></p>
+      <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= session.counted_cash_cents ? money.(session.counted_cash_cents) : t("accounting.shared.em_dash") %></p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.variance") %></p>
+      <p class="text-xl font-bold mt-1 tabular-nums <%= variance.to_i.negative? ? "text-red-700" : "text-green-700" %>">
+        <%= variance ? money.(variance) : t("accounting.shared.em_dash") %>
+      </p>
+    </div>
+    <div class="rounded-2xl border border-gray-200 bg-white p-4">
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.banked_to") %></p>
+      <% if session.deposit_treasury && session.counted_cash_cents %>
+        <p class="text-base font-bold mt-1 text-gray-900">
+          <%= link_to session.deposit_treasury.name, admin_accounting_treasury_path(session.deposit_treasury), class: "text-amber-700 hover:text-amber-800" %>
+        </p>
+        <p class="text-xs text-gray-500 tabular-nums"><%= money.(session.deposit_cents) %></p>
+      <% else %>
+        <p class="text-xl font-bold mt-1 text-gray-400"><%= t("accounting.shared.em_dash") %></p>
+      <% end %>
+    </div>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.cash_drawer.takings_title") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.cash_drawer.takings_hint") %></p>
+    </div>
+    <table class="w-full text-sm">
+      <tbody class="divide-y divide-gray-100">
+        <% [["cash", @summary.cash_cents], ["instapay", @summary.instapay_cents], ["vodafone_cash", @summary.vodafone_cash_cents]].each do |method, cents| %>
+          <tr>
+            <td class="p-3 ps-5 text-gray-700"><%= payment_method_label(method) %></td>
+            <td class="p-3 pe-5 text-end tabular-nums font-medium text-gray-900"><%= money.(cents) %></td>
+          </tr>
+        <% end %>
+        <tr class="bg-gray-50/60">
+          <td class="p-3 ps-5 font-semibold text-gray-900"><%= t("accounting.cash_drawer.total_sales") %></td>
+          <td class="p-3 pe-5 text-end tabular-nums font-bold text-gray-900"><%= money.(@summary.cash_cents + @summary.instapay_cents + @summary.vodafone_cash_cents) %></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.cash_drawer.payments_title") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.cash_drawer.payments_hint") %></p>
+    </div>
+    <% if @payments.empty? %>
+      <p class="p-6 text-center text-gray-400 text-sm"><%= t("accounting.cash_drawer.no_payments") %></p>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm min-w-[820px]">
+          <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("accounting.cash_drawer.attach_order") %></th>
+              <th class="p-3 text-start"><%= t("accounting.cash_drawer.attach_taken_at") %></th>
+              <th class="p-3 text-start"><%= t("accounting.cash_drawer.attach_method") %></th>
+              <th class="p-3 text-start"><%= t("accounting.cash_drawer.taken_by") %></th>
+              <th class="p-3 text-start"><%= t("accounting.cash_drawer.status") %></th>
+              <th class="p-3 text-end"><%= t("accounting.cash_drawer.attach_amount") %></th>
+              <th class="p-3 text-end"><%= t("accounting.cash_drawer.refunded") %></th>
+              <th class="p-3 pe-5 text-start"><%= t("accounting.cash_drawer.note") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% @payments.each do |payment| %>
+              <% taker = payment.processed_by_user || payment.order.user %>
+              <% entry = @attached[payment.id] %>
+              <tr>
+                <td class="p-3 ps-5 font-medium">
+                  <%= link_to "##{payment.order.order_number}", admin_order_path(payment.order), class: "text-amber-700 hover:text-amber-800" %>
+                </td>
+                <td class="p-3 tabular-nums"><%= l(payment.created_at, format: :short_time) %></td>
+                <td class="p-3 text-gray-700"><%= payment_method_label(payment.payment_method) %></td>
+                <td class="p-3 text-gray-600">
+                  <% if taker %>
+                    <%= link_to taker.name, admin_user_path(taker), class: "text-amber-700 hover:text-amber-800" %>
+                  <% else %>
+                    <%= t("accounting.shared.em_dash") %>
+                  <% end %>
+                </td>
+                <td class="p-3">
+                  <% tone = { "completed" => "bg-green-50 text-green-800 border-green-200",
+                              "refunded" => "bg-red-50 text-red-800 border-red-200",
+                              "partially_refunded" => "bg-amber-50 text-amber-900 border-amber-200" }.fetch(payment.status, "bg-gray-50 text-gray-700 border-gray-200") %>
+                  <span class="text-xs font-semibold px-2 py-0.5 rounded-full border <%= tone %>">
+                    <%= t("payment.statuses.#{payment.status}", default: payment.status.humanize) %>
+                  </span>
+                </td>
+                <td class="p-3 text-end tabular-nums font-medium text-gray-900"><%= money.(payment.amount_cents) %></td>
+                <td class="p-3 text-end tabular-nums <%= payment.refunded_amount_cents.positive? ? "text-red-700" : "text-gray-400" %>">
+                  <%= payment.refunded_amount_cents.positive? ? money.(payment.refunded_amount_cents) : t("accounting.shared.em_dash") %>
+                </td>
+                <td class="p-3 pe-5 text-xs text-gray-500">
+                  <% if entry %>
+                    <%= t("accounting.cash_drawer.attached_note", name: entry.user&.name || t("accounting.shared.em_dash"), time: l(entry.created_at, format: :short_time)) %>
+                  <% end %>
+                  <% if payment.refund_reason.present? %>
+                    <span class="block"><%= payment.refund_reason %></span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t border-gray-200 bg-gray-50/60 text-sm">
+            <tr>
+              <td colspan="5" class="p-3 ps-5 font-semibold text-gray-900"><%= t("accounting.cash_drawer.counted_in_totals") %></td>
+              <td class="p-3 text-end tabular-nums font-bold text-gray-900"><%= money.(@counted_in_totals.values.sum) %></td>
+              <td class="p-3 text-end tabular-nums font-semibold text-red-700"><%= @refunded_cents.positive? ? money.(@refunded_cents) : t("accounting.shared.em_dash") %></td>
+              <td class="p-3 pe-5"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    <% end %>
+  </section>
+
+  <% if @invoices.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+      <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.cash_drawer.invoices_title") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.cash_drawer.invoices_hint") %></p>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= t("accounting.cash_drawer.invoice") %></th>
+            <th class="p-3 text-start"><%= t("accounting.cash_drawer.attach_taken_at") %></th>
+            <th class="p-3 text-start"><%= t("accounting.cash_drawer.customer") %></th>
+            <th class="p-3 text-start"><%= t("accounting.cash_drawer.attach_method") %></th>
+            <th class="p-3 pe-5 text-end"><%= t("accounting.cash_drawer.attach_amount") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 table-zebra">
+          <% @invoices.each do |invoice| %>
+            <tr>
+              <td class="p-3 ps-5 font-medium">
+                <%= link_to invoice.invoice_number, admin_sales_customer_invoice_path(invoice), class: "text-amber-700 hover:text-amber-800" %>
+              </td>
+              <td class="p-3 tabular-nums"><%= l(invoice.confirmed_at, format: :short_time) %></td>
+              <td class="p-3">
+                <%= link_to invoice.customer.display_name, admin_customer_path(invoice.customer), class: "text-amber-700 hover:text-amber-800" %>
+              </td>
+              <td class="p-3 text-gray-700"><%= payment_method_label(invoice.payment_method) %></td>
+              <td class="p-3 pe-5 text-end tabular-nums font-medium text-gray-900"><%= money.(invoice.total_cents) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </section>
+  <% end %>
+</div>

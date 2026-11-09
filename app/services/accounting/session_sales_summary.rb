@@ -63,7 +63,29 @@ module Accounting
       )
     end
 
+    # What the totals are made of, for a page that wants to show the rows. Read-only,
+    # and built from the same scopes as the figures, so the list always adds up to them.
+    #
+    # Every status is returned: a payment refunded in full is not in the totals, but
+    # a manager reading the drawer needs to see it was taken and given back.
+    def payments
+      window_scope.includes(:processed_by_user, order: :user).order("payments.created_at")
+    end
+
+    # Counter sales settled on the invoice itself, which are not payments.
+    def invoices
+      return CustomerInvoice.none if @user_id.blank?
+
+      CustomerInvoice.confirmed
+        .where(payment_method: INVOICE_METHODS, user_id: @user_id)
+        .where(confirmed_at: range_start..range_end)
+        .includes(:customer)
+        .order(:confirmed_at)
+    end
+
     private
+
+    INVOICE_METHODS = %w[cash instapay vodafone_cash].freeze
 
     def range_start
       @start_time || @session&.created_at
@@ -76,8 +98,13 @@ module Accounting
       @session.updated_at
     end
 
+    # Only completed payments count toward the totals.
     def base_scope
-      scope = Payment.joins(:order).where(status: "completed")
+      window_scope.where(status: "completed")
+    end
+
+    def window_scope
+      scope = Payment.joins(:order)
 
       if @session
         scope.where(

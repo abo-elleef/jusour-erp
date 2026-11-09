@@ -3,7 +3,7 @@
 module Admin
   module Accounting
     class CashDrawerController < BaseController
-      before_action :set_session, only: %i[count reconcile payments attach_payments]
+      before_action :set_session, only: %i[show count reconcile payments attach_payments]
 
       def index
         @locations = Location.active.branches.ordered
@@ -25,6 +25,20 @@ module Admin
         @default_treasury_id = current_user.assigned_treasury_id ||
           Treasury.default_treasury&.id ||
           @drawer_treasuries.first&.id
+      end
+
+      # Read-only: what this drawer took, row by row, so its figures can be traced to
+      # the orders behind them. Nothing here recomputes or saves anything.
+      def show
+        authorize @session, :show?
+        calculator = ::Accounting::SessionSalesSummary.new(@session)
+        @summary = calculator.call
+        @payments = calculator.payments.to_a
+        @invoices = calculator.invoices.to_a
+        @attached = attach_history(@payments)
+        @counted_in_totals = @payments.select { |p| p.status == "completed" }
+                                      .group_by(&:payment_method).transform_values { |ps| ps.sum(&:amount_cents) }
+        @refunded_cents = @payments.sum(&:refunded_amount_cents)
       end
 
       def open_session
@@ -85,6 +99,16 @@ module Admin
       end
 
       private
+
+      # payment id => the audit entry that moved it into this drawer, if one did.
+      def attach_history(payments)
+        entries = AuditLogEntry.includes(:user)
+                               .where(action: "payment.attached_to_drawer", record_type: "Payment",
+                                      record_id: payments.map(&:id))
+                               .order(:created_at)
+        entries.select { |e| e.changes_snapshot["cash_drawer_session_id"] == @session.id }
+               .index_by(&:record_id)
+      end
 
       def set_session
         @session = CashDrawerSession.find(params[:id])
