@@ -305,6 +305,25 @@ en:
       edit: "Edit register"
 
   printing:
+    drawer_close:
+      title: "Drawer closing"
+      reprint: "REPRINT"
+      branch: "Branch"
+      cashier: "Cashier"
+      drawer: "Drawer"
+      date: "Date"
+      opened: "Opened"
+      closed: "Closed"
+      opening_float: "Opening float"
+      total_sales: "Total takings"
+      refunded_cash: "Cash refunded"
+      expected: "Expected cash"
+      counted: "Counted cash"
+      variance: "Variance"
+      banked_to: "Banked to"
+      cashier_signature: "Cashier signature"
+      manager_signature: "Shift manager signature"
+      printed: "Printed"
     actions:
       print_receipt: "Print Receipt"
       print_all: "Print All"
@@ -3661,6 +3680,7 @@ en:
       digital_payment_no_treasury: "No treasury configured — won't be recorded"
       close_title: "Close drawer"
       sales_summary_title: "My sales this shift"
+      print_closing_slip: "Print closing slip"
       sales_summary_hint: "InstaPay and Vodafone Cash totals are yours alone. They post to the shared company wallets when you close."
       expected_cash_line: "Cash to count (float + cash sales): %{amount}"
       total_sales: "Total sales"
@@ -5858,6 +5878,7 @@ en:
         open: "Open"
         reconciled: "Reconciled"
       details: "Details"
+      print_slip: "Print closing slip"
       details_title: "Drawer details"
       takings_title: "What this drawer took"
       takings_hint: "The same figures the cashier sees when counting: cash, InstaPay and Vodafone Cash, with refunded payments left out."
@@ -6233,6 +6254,8 @@ en:
       customer_required: "Enter a phone or email for the new customer."
       customer_not_found: "Customer not found."
       shift:
+        closing_slip_queued: "Closing slip sent to the printer."
+        closing_slip_unavailable: "The closing slip is only available for a drawer that has been counted."
         select_branch_first: "Select a branch before opening the drawer."
         drawer_already_open: "Your drawer is already open for today."
         finish_orders_first:
@@ -6431,6 +6454,8 @@ en:
         one: "%{source} consolidated into %{target} — stock moved across 1 location."
         other: "%{source} consolidated into %{target} — stock moved across %{count} locations."
     accounting:
+      drawer_slip_queued: "Closing slip sent to the branch printer."
+      drawer_slip_unavailable: "The closing slip is only available for a drawer that has been counted."
       owner_only: "Owner access only."
       expense_recorded: "Expense recorded."
       voucher_recorded: "Voucher %{number} issued."

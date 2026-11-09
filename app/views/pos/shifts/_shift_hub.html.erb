@@ -74,6 +74,9 @@
             <%= t("accounting.cash_drawer.variance") %>: <%= format_money(@today_session.variance_cents) %>
           </p>
         </div>
+        <%= button_to t("pos.shift.print_closing_slip"), print_closing_slip_pos_shift_path(session_id: @today_session.id),
+              method: :post,
+              class: "w-full text-center border border-green-300 bg-white hover:bg-green-50 text-green-900 text-sm font-semibold px-5 py-2.5 rounded-xl" %>
       </div>
     </section>
   <% end %>

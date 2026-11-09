@@ -3,7 +3,7 @@
 module Admin
   module Accounting
     class CashDrawerController < BaseController
-      before_action :set_session, only: %i[show count reconcile payments attach_payments]
+      before_action :set_session, only: %i[show count reconcile payments attach_payments print_slip]
 
       def index
         @locations = Location.active.branches.ordered
@@ -73,8 +73,20 @@ module Admin
       def reconcile
         counted_cents = (params[:counted_cash].to_f * 100).to_i
         ::Accounting::CashReconciliationService.new(@session).reconcile!(counted_cents)
+        # No register is known here, so it goes to the branch for whichever is open.
+        Printing::PrintDrawerCloseService.call(session: @session.reload)
         redirect_to admin_accounting_cash_drawer_index_path,
               notice: t("flash.accounting.drawer_reconciled_to_treasury", treasury: @session.treasury.name)
+      end
+
+      # Reprint the closing slip. Printed at the branch (on an open register's
+      # printer), not in the browser that asked.
+      def print_slip
+        authorize @session, :print_slip?
+        Printing::PrintDrawerCloseService.call(session: @session)
+        redirect_to admin_accounting_cash_drawer_path(@session), notice: t("flash.accounting.drawer_slip_queued")
+      rescue Pundit::NotAuthorizedError
+        redirect_to admin_accounting_cash_drawer_path(@session), alert: t("flash.accounting.drawer_slip_unavailable")
       end
 
       # Payments taken before this drawer was opened (so they belong to no drawer),

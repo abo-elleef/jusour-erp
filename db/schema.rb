@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_09_110000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_09_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -1227,7 +1227,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_110000) do
   end
 
   create_table "print_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "order_id", null: false
+    t.uuid "order_id"
     t.uuid "printer_id"
     t.string "print_type", default: "receipt", null: false
     t.string "status", null: false
@@ -1236,10 +1236,14 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_110000) do
     t.datetime "updated_at", null: false
     t.datetime "claimed_at"
     t.string "claimed_by"
+    t.uuid "cash_drawer_session_id"
+    t.uuid "workstation_id"
+    t.index ["cash_drawer_session_id"], name: "index_print_logs_on_cash_drawer_session_id"
     t.index ["order_id"], name: "index_print_logs_on_order_id"
     t.index ["print_type"], name: "index_print_logs_on_print_type"
     t.index ["printer_id"], name: "index_print_logs_on_printer_id"
     t.index ["status"], name: "index_print_logs_on_status"
+    t.index ["workstation_id"], name: "index_print_logs_on_workstation_id"
   end
 
   create_table "printer_menu_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2176,8 +2180,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_110000) do
   add_foreign_key "payroll_snapshots", "users"
   add_foreign_key "payroll_snapshots", "users", column: "finalized_by_id"
   add_foreign_key "payroll_snapshots", "vouchers", column: "payout_voucher_id"
+  add_foreign_key "print_logs", "cash_drawer_sessions"
   add_foreign_key "print_logs", "orders"
   add_foreign_key "print_logs", "printers"
+  add_foreign_key "print_logs", "workstations"
   add_foreign_key "printer_menu_items", "menu_items"
   add_foreign_key "printer_menu_items", "printers"
   add_foreign_key "printers", "companies"

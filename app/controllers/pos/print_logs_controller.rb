@@ -11,21 +11,28 @@ module Pos
       authorize PrintLog, :pending?
       location_id = session[:pos_location_id]
       workstation_id = session[:pos_workstation_id]
-      logs = PrintLog.includes(:order, :printer)
+      company_id = current_user.company_id
+
+      # A job belongs to an order or to a drawer session; either one places it in a
+      # company and a branch.
+      logs = PrintLog.left_joins(:order, :cash_drawer_session)
                      .where(status: "pending")
-                     .joins(:order)
-                     .where(orders: { company_id: current_user.company_id })
-      logs = logs.where(orders: { location_id: location_id }) if location_id.present?
+                     .where("orders.company_id = :c OR cash_drawer_sessions.company_id = :c", c: company_id)
+      if location_id.present?
+        logs = logs.where("orders.location_id = :l OR cash_drawer_sessions.location_id = :l", l: location_id)
+      end
       logs = logs.where("print_logs.created_at > ?", 2.hours.ago)
       # Not the ones another register is printing right now.
       logs = logs.unclaimed
 
-      # Receipts are workstation-scoped when a register is selected; production
-      # tickets stay shared across the branch.
+      # Receipts are workstation-scoped when a register is selected, and so are drawer
+      # slips that name a register; production tickets stay shared across the branch.
       if workstation_id.present?
         logs = logs.where(
-          "(print_logs.print_type = 'receipt' AND orders.workstation_id = ?) OR print_logs.print_type != 'receipt'",
-          workstation_id
+          "(print_logs.print_type = 'receipt' AND orders.workstation_id = :w) OR " \
+          "(print_logs.print_type = 'drawer_close' AND (print_logs.workstation_id IS NULL OR print_logs.workstation_id = :w)) OR " \
+          "print_logs.print_type NOT IN ('receipt', 'drawer_close')",
+          w: workstation_id
         )
       end
 
@@ -49,6 +56,8 @@ module Pos
 
       data = Printing::BuildPayloadService.call(
         order: @print_log.order,
+        drawer_session: @print_log.cash_drawer_session,
+        reprint: Printing::PrintDrawerCloseService.reprint?(@print_log),
         printer: printer,
         print_type: @print_log.print_type,
         host: params[:host],
@@ -82,7 +91,7 @@ module Pos
     end
 
     def set_print_log
-      @print_log = PrintLog.includes(:order, :printer).find(params[:id])
+      @print_log = PrintLog.includes(:order, :cash_drawer_session, :printer).find(params[:id])
     end
   end
 end

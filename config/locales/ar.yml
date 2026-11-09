@@ -307,6 +307,25 @@ ar:
       edit: "تعديل الكاشير"
 
   printing:
+    drawer_close:
+      title: "إغلاق الدرج"
+      reprint: "إعادة طباعة"
+      branch: "الفرع"
+      cashier: "الكاشير"
+      drawer: "الدرج"
+      date: "التاريخ"
+      opened: "الفتح"
+      closed: "الإغلاق"
+      opening_float: "رصيد الافتتاح"
+      total_sales: "إجمالي التحصيل"
+      refunded_cash: "نقد مسترد"
+      expected: "النقد المتوقع"
+      counted: "النقد المعدود"
+      variance: "الفرق"
+      banked_to: "تم التوريد إلى"
+      cashier_signature: "توقيع الكاشير"
+      manager_signature: "توقيع مسؤول الوردية"
+      printed: "طُبع"
     actions:
       print_receipt: "طباعة الإيصال"
       print_all: "طباعة الكل"
@@ -3707,6 +3726,7 @@ ar:
       digital_payment_no_treasury: "لم تُحدد خزينة — لن تُسجَّل"
       close_title: "إغلاق الدرج"
       sales_summary_title: "مبيعاتي في هذه الوردية"
+      print_closing_slip: "طباعة إيصال الإغلاق"
       sales_summary_hint: "مبالغ إنستاباي وفودافون كاش تخصك وحدك. تُرحَّل إلى المحافظ المشتركة للشركة عند الإغلاق."
       expected_cash_line: "النقد المطلوب عدّه (رصيد الافتتاح + مبيعات النقد): %{amount}"
       total_sales: "إجمالي المبيعات"
@@ -5916,6 +5936,7 @@ ar:
         open: "مفتوح"
         reconciled: "مُسوّى"
       details: "التفاصيل"
+      print_slip: "طباعة إيصال الإغلاق"
       details_title: "تفاصيل الدرج"
       takings_title: "ما حصّله هذا الدرج"
       takings_hint: "نفس الأرقام التي يراها الكاشير عند العدّ: نقدي وإنستاباي وفودافون كاش، دون المدفوعات المستردة."
@@ -6291,6 +6312,8 @@ ar:
       customer_required: "أدخل هاتفًا أو بريدًا للعميل الجديد."
       customer_not_found: "العميل غير موجود."
       shift:
+        closing_slip_queued: "تم إرسال إيصال الإغلاق إلى الطابعة."
+        closing_slip_unavailable: "إيصال الإغلاق متاح فقط للدرج الذي تم عدّه."
         select_branch_first: "اختر فرعاً قبل فتح الصندوق."
         drawer_already_open: "صندوقك مفتوح بالفعل لهذا اليوم."
         finish_orders_first:
@@ -6493,6 +6516,8 @@ ar:
         many: "تم دمج %{source} في %{target} — نُقل المخزون في %{count} موقعاً."
         other: "تم دمج %{source} في %{target} — نُقل المخزون في %{count} موقع."
     accounting:
+      drawer_slip_queued: "تم إرسال إيصال الإغلاق إلى طابعة الفرع."
+      drawer_slip_unavailable: "إيصال الإغلاق متاح فقط للدرج الذي تم عدّه."
       owner_only: "للمالك فقط."
       expense_recorded: "تم تسجيل المصروف."
       voucher_recorded: "تم إصدار السند %{number}."

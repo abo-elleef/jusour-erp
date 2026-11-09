@@ -5,6 +5,11 @@ class CashDrawerSessionPolicy < ApplicationPolicy
     own_session? || admin?
   end
 
+  # The slip is the record of a count, so only a drawer that has been counted has one.
+  def print_slip?
+    show? && record.counted_cash_cents.present?
+  end
+
   def count?
     own_session? && record.status == "open"
   end

@@ -23,6 +23,11 @@
         <%= link_to t("actions.count"), count_admin_accounting_cash_drawer_path(session),
               class: "text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-xl" %>
       <% end %>
+      <% if policy(session).print_slip? %>
+        <%= button_to t("accounting.cash_drawer.print_slip"), print_slip_admin_accounting_cash_drawer_path(session),
+              method: :post,
+              class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200" %>
+      <% end %>
       <%= link_to t("actions.back"), admin_accounting_cash_drawer_index_path(date: session.session_date, location_id: session.location_id),
             class: "text-sm font-medium text-gray-600 hover:bg-gray-100 px-4 py-2 rounded-xl" %>
     </div>

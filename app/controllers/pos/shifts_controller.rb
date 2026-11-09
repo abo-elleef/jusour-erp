@@ -114,6 +114,9 @@ module Pos
 
       service.reconcile!(counted_cents)
 
+      # The slip the cashier and the shift manager sign. Never blocks closing.
+      Printing::PrintDrawerCloseService.call(session: @open_session.reload, workstation: @pos_workstation)
+
       deposit = @open_session.reload.deposit_treasury
       notice = if deposit
         t("flash.accounting.drawer_banked_to_treasury", treasury: deposit.name)
@@ -121,6 +124,18 @@ module Pos
         t("flash.accounting.drawer_reconciled_to_treasury", treasury: @open_session.treasury.name)
       end
       redirect_to pos_shift_path, notice: notice
+    end
+
+    # Reprint the closing slip of a drawer that has been counted. The cashier's own,
+    # or any when an admin asks.
+    def print_closing_slip
+      drawer = CashDrawerSession.find(params[:session_id])
+      authorize drawer, :print_slip?
+
+      Printing::PrintDrawerCloseService.call(session: drawer, workstation: @pos_workstation)
+      redirect_to pos_shift_path, notice: t("flash.pos.shift.closing_slip_queued")
+    rescue Pundit::NotAuthorizedError
+      redirect_to pos_shift_path, alert: t("flash.pos.shift.closing_slip_unavailable")
     end
 
     def clock_out

@@ -15,13 +15,14 @@ class PrintLogPolicy < ApplicationPolicy
 
   class Scope < Scope
     def resolve
-      scope.joins(:order).where(orders: { company_id: user.company_id })
+      scope.left_joins(:order, :cash_drawer_session)
+           .where("orders.company_id = :c OR cash_drawer_sessions.company_id = :c", c: user.company_id)
     end
   end
 
   private
 
   def pos_access_same_company?
-    user.can_access_pos? && record.order.company_id == user.company_id
+    user.can_access_pos? && record.company_id == user.company_id
   end
 end

@@ -16,6 +16,7 @@ class CashDrawerSession < ApplicationRecord
   # goes into. Optional: a drawer can be counted without being banked yet.
   belongs_to :deposit_treasury, class_name: "Treasury", optional: true
   has_many :payments, dependent: :nullify
+  has_many :print_logs, dependent: :destroy
 
   monetize :opening_float_cents
   monetize :expected_cash_cents, allow_nil: true

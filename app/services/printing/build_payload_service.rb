@@ -2,11 +2,14 @@
 
 module Printing
   class BuildPayloadService
-    def self.call(order:, printer:, print_type: "receipt", host: nil, port: nil)
-      new(order: order, printer: printer, print_type: print_type, host: host, port: port).call
+    def self.call(printer:, order: nil, drawer_session: nil, reprint: false, print_type: "receipt", host: nil, port: nil)
+      new(order: order, drawer_session: drawer_session, reprint: reprint, printer: printer,
+          print_type: print_type, host: host, port: port).call
     end
 
-    def initialize(order:, printer:, print_type: "receipt", host: nil, port: nil)
+    def initialize(printer:, order: nil, drawer_session: nil, reprint: false, print_type: "receipt", host: nil, port: nil)
+      @drawer_session = drawer_session
+      @reprint = reprint
       @order = order
       @printer = printer
       @print_type = print_type
@@ -16,6 +19,8 @@ module Printing
 
     def call
       payload = case @print_type
+                when "drawer_close"
+                  Escpos::DrawerCloseBuilder.new(@drawer_session, printer: @printer, reprint: @reprint).build
                 when "kitchen"
                   Escpos::KitchenTicketBuilder.new(@order, printer: @printer).build
                 when "pick_station", "station"

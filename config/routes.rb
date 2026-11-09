@@ -76,6 +76,7 @@ Rails.application.routes.draw do
   namespace :pos do
     resource :shift, only: [:show] do
       post :open_drawer
+      post :print_closing_slip
       post :clock_in
       get :count
       patch :reconcile
@@ -393,6 +394,7 @@ Rails.application.routes.draw do
           patch :reconcile
           get :payments
           patch :attach_payments
+          post :print_slip
         end
       end
 
