@@ -67,7 +67,7 @@ module Pos
       authorize @order, :show?
 
       @from_shift = params[:from] == "shift"
-      @order_items = @order.order_items
+      @order_items = @order.order_items.order(:created_at, :id)
       @payments = @order.payments.order(created_at: :desc)
 
       if @from_shift || @order.amount_due_cents.zero?

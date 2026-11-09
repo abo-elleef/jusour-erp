@@ -1,5 +1,6 @@
 <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
-  <div class="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 min-h-0 overscroll-contain">
+  <div class="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 min-h-0 overscroll-contain"
+       data-controller="cart-scroll" data-cart-scroll-lines-value="<%= order.order_items.size %>">
     <% if order.order_items.empty? %>
       <div class="flex flex-col items-center justify-center py-10 px-4 text-center">
         <div class="w-12 h-12 rounded-full bg-stone-200/70 flex items-center justify-center mb-3">
@@ -11,7 +12,8 @@
         <p class="text-xs text-stone-500 mt-1"><%= t("pos.cart.empty_hint") %></p>
       </div>
     <% end %>
-    <% order.order_items.includes(:menu_item, :combo, :order_item_modifiers).each do |item| %>
+    <%# Oldest first, like the receipt: an edited line must not change position. %>
+    <% order.order_items.includes(:menu_item, :combo, :order_item_modifiers).order(:created_at, :id).each do |item| %>
       <article class="<%= pos_cart_line_item_class %>">
         <div class="flex justify-between items-start gap-2">
           <h3 class="text-sm font-medium leading-snug text-stone-900 min-w-0"><%= item.display_name %></h3>
