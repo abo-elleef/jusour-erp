@@ -23,6 +23,7 @@ RSpec.describe "Customer standing notes", type: :request do
     # to be switched on there before the register will take it.
     LocationMenuItem.create!(location: branch, menu_item: menu_item, available: true)
     sign_in cashier
+    open_drawer_for(cashier, location: branch)
   end
 
   # Drives the real register flow: adding the first item is what creates the order

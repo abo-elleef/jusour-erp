@@ -2,6 +2,7 @@
 
 class PosController < ApplicationController
   include PosLocationScoped
+  include OpenDrawerGate
 
   layout "pos"
 
@@ -225,6 +226,9 @@ class PosController < ApplicationController
   # changes fulfillment type or attaches a customer before adding any items).
   def ensure_order_persisted!
     return if @order.persisted?
+    # Saving the cart is placing the order.
+    require_open_drawer_to_order!(location: current_pos_location)
+    return if performed?
 
     pending = session.delete(:pending_order_params) || {}
     @order = Orders::CreateService.call(

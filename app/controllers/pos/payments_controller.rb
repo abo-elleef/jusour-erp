@@ -2,10 +2,12 @@
 
 module Pos
   class PaymentsController < ApplicationController
+    include OpenDrawerGate
+
     before_action :require_pos_access!
     before_action :set_order
     before_action :authorize_payment!
-    before_action :require_open_drawer_for_cash!, only: :create
+    before_action :require_open_drawer_for_payment!, only: :create
 
     def create
       tip_cents = if params[:tip_pounds].present?
@@ -53,7 +55,7 @@ module Pos
         stripe_payment_intent_id: intent.id,
         stripe_charge_id: intent.latest_charge,
         processed_by_user: current_user,
-        cash_drawer_session: current_user.open_cash_drawer_session
+        cash_drawer_session: current_user.open_cash_drawer_session(location: @order.location)
       )
       finalize_if_paid
       render json: { success: true, redirect_url: payment_return_path }
@@ -68,15 +70,22 @@ module Pos
       redirect_to root_path
     end
 
-    # Cash lands in a till, and a till is only accountable while a drawer session is
-    # open for it: a payment taken without one belongs to no count and silently
-    # skews the drawer's expected cash at close. (Fixing one afterwards is an
-    # admin job — Admin::Accounting::CashDrawerController#attach_payments.)
-    def require_open_drawer_for_cash!
-      return unless params[:payment_method].to_s == "cash"
-      return if current_user.open_cash_drawer_session
+    # Money of any kind is taken against a shift. Cash lands in a till, and a till is
+    # only accountable while a drawer session is open for it: a payment taken without
+    # one belongs to no count and silently skews the drawer's expected cash at close.
+    # InstaPay and Vodafone Cash never touch the till, but the drawer's digital totals
+    # are built from its payments and posted to the wallets when it closes, so one
+    # taken without a drawer never reaches them. (Fixing one afterwards is an admin
+    # job — Admin::Accounting::CashDrawerController#attach_payments.)
+    def require_open_drawer_for_payment!
+      return if current_user.open_cash_drawer_session(location: @order.location)
 
-      redirect_to payment_return_path, alert: t("flash.pos.shift.no_open_drawer_for_cash")
+      alert = if params[:payment_method].to_s == "cash"
+                t("flash.pos.shift.no_open_drawer_for_cash")
+              else
+                t("flash.pos.shift.no_open_drawer_to_order")
+              end
+      refuse_without_drawer(alert)
     end
 
     def set_order
@@ -118,7 +127,7 @@ module Pos
         amount_cents: amount,
         status: "completed",
         processed_by_user: current_user,
-        cash_drawer_session: current_user.open_cash_drawer_session
+        cash_drawer_session: current_user.open_cash_drawer_session(location: @order.location)
       )
     end
 

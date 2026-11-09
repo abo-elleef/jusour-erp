@@ -6,6 +6,7 @@ module Pos
   # is on; everywhere else the register stays pay-first.
   class TablesController < ApplicationController
     include PosLocationScoped
+    include OpenDrawerGate
 
     layout "pos"
 
@@ -31,6 +32,10 @@ module Pos
         session[:current_order_id] = holder.id
         return redirect_to pos_path, notice: t("flash.pos.order_resumed")
       end
+
+      # Picking up a table already open is allowed; starting one places an order.
+      require_open_drawer_to_order!(location: @pos_location)
+      return if performed?
 
       order = Orders::CreateService.call(
         user: current_user, location: @pos_location, workstation: @pos_workstation,

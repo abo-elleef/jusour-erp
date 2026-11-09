@@ -9,7 +9,7 @@ module Payments
         tip_cents: tip_cents,
         status: "completed",
         processed_by_user: user,
-        cash_drawer_session: user.open_cash_drawer_session
+        cash_drawer_session: user.open_cash_drawer_session(location: order.location)
       )
       order.update!(tip_cents: order.tip_cents + tip_cents) if tip_cents.positive?
     end

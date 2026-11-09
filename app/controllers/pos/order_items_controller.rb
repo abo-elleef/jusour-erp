@@ -3,8 +3,12 @@
 module Pos
   class OrderItemsController < ApplicationController
     include PosLocationScoped
+    include OpenDrawerGate
 
     before_action :require_pos_access!
+    # Before set_order, which would otherwise create the order this is meant to stop.
+    # Taking a line off (destroy) is never blocked.
+    before_action(only: %i[create update]) { require_open_drawer_to_order!(location: current_pos_location) }
     before_action :set_order
 
     def create
@@ -31,7 +35,15 @@ module Pos
     rescue ItemUnavailableAtLocation
       redirect_to pos_path, alert: t("flash.pos.item_unavailable_at_location")
     rescue TableBusy => e
-      redirect_to pos_path, alert: e.message, status: :see_other
+      # The add buttons post from inside the register, where a redirect is lost.
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.append("toast-container", partial: "shared/toast",
+                                                                        locals: { message: e.message, type: :alert }),
+                 status: :unprocessable_entity
+        end
+        format.any { redirect_to pos_path, alert: e.message, status: :see_other }
+      end
     end
 
     def update

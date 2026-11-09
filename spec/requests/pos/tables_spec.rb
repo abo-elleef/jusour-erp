@@ -13,6 +13,7 @@ RSpec.describe "POS tables board", type: :request do
   before do
     Current.company = company
     sign_in cashier
+    open_drawer_for(cashier, location: cafe)
   end
 
   def table_order(owner: cashier, table: "3", status: "draft")

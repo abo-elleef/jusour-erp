@@ -16,6 +16,7 @@ RSpec.describe "POS cart quantities", type: :request do
   before do
     Current.company = company
     sign_in cashier
+    open_drawer_for(cashier, location: branch)
     allow_any_instance_of(MenuItem).to receive(:available_at_location?).and_return(true)
     get pos_path
     post pos_order_items_path(menu_item_id: menu_item.id), as: :turbo_stream

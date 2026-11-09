@@ -6263,6 +6263,7 @@ en:
           other: "Finish your open orders before closing the shift — %{count} are still waiting."
         no_open_drawer: "No open drawer session. Open your drawer first."
         no_open_drawer_for_cash: "Open your drawer before accepting cash payments."
+        no_open_drawer_to_order: "Open your drawer before placing orders."
         no_assigned_treasury: "No treasury is assigned to you. Ask an accountant or owner to assign a cash drawer treasury before opening."
         count_required: "Enter a counted cash amount greater than zero."
         manager_pin_required: "Manager PIN required for this variance."

@@ -72,11 +72,11 @@ export default class extends Controller {
         credentials: "same-origin",
       })
 
-      if (resp.ok) {
-        const contentType = resp.headers.get("content-type") || ""
-        if (contentType.includes("turbo-stream")) {
-          window.Turbo.renderStreamMessage(await resp.text())
-        }
+      // A stream is applied whatever the status: a refusal (no open drawer, table
+      // already taken) comes back as a stream carrying the message for the cashier.
+      const contentType = resp.headers.get("content-type") || ""
+      if (contentType.includes("turbo-stream")) {
+        window.Turbo.renderStreamMessage(await resp.text())
       }
     } catch (_err) {
       // Network error — re-enable button so cashier can retry.
