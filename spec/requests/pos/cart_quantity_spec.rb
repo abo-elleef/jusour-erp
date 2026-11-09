@@ -47,4 +47,28 @@ RSpec.describe "POS cart quantities", type: :request do
     expect { patch pos_order_item_path(item), params: { quantity_delta: -1 }, as: :turbo_stream }
       .to change { order.order_items.count }.by(-1)
   end
+
+  describe "typing an exact count" do
+    let(:item) { order.order_items.first }
+
+    def type_count(value)
+      patch pos_order_item_path(item), params: { order_item: { quantity: value } }, as: :turbo_stream
+    end
+
+    it "sets the count to the typed number" do
+      type_count("50")
+      expect(item.reload.quantity).to eq(50)
+    end
+
+    it "removes the line when zero is typed" do
+      expect { type_count("0") }.to change { order.order_items.count }.by(-1)
+    end
+
+    it "leaves the line alone for blank or non-numeric input" do
+      type_count("")
+      type_count("abc")
+      expect(response).to have_http_status(:ok)
+      expect(item.reload.quantity).to eq(1)
+    end
+  end
 end

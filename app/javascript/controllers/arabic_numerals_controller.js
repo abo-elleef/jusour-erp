@@ -16,6 +16,18 @@ const DIGIT_MAP = {
 const PATTERN = new RegExp(Object.keys(DIGIT_MAP).join("|"), "g")
 
 export default class extends Controller {
+  // Tapping a count field selects it, so typing replaces the number.
+  select() {
+    this.element.select()
+  }
+
+  // Enter inside a self-submitting field: let the `change` event do the one submit
+  // (on blur) instead of also triggering the form's own implicit submit.
+  commit(event) {
+    event.preventDefault()
+    this.element.blur()
+  }
+
   normalize() {
     const input = this.element
     if (!input.value || !PATTERN.test(input.value)) return

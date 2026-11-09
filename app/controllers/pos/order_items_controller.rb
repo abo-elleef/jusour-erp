@@ -54,6 +54,13 @@ module Pos
           new_quantity = item.quantity + params[:quantity_delta].to_i
           # Minus on the last unit removes the line, as cashiers expect.
           new_quantity <= 0 ? item.destroy! : item.update!(quantity: new_quantity)
+        elsif params[:order_item].respond_to?(:keys) && params[:order_item].keys == ["quantity"]
+          # A typed count. Zero (or less) removes the line, like minus on the last unit;
+          # junk text leaves the line as it was and the re-rendered cart shows the old count.
+          typed = params[:order_item][:quantity].to_s.strip
+          if typed.match?(/\A-?\d+\z/)
+            typed.to_i <= 0 ? item.destroy! : item.update!(quantity: typed.to_i)
+          end
         else
           item.update!(order_item_params)
         end
