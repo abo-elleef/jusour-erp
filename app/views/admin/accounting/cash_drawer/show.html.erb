@@ -33,6 +33,22 @@
     </div>
   </div>
 
+  <% if policy(session).reopen? %>
+    <details class="mb-4 rounded-2xl border border-amber-200 bg-amber-50/60 px-4 py-3">
+      <summary class="cursor-pointer text-sm font-semibold text-amber-900"><%= t("accounting.cash_drawer.reopen") %></summary>
+      <%= form_with url: reopen_admin_accounting_cash_drawer_path(session), method: :post, class: "mt-3 space-y-3",
+            data: { turbo_confirm: t("accounting.cash_drawer.reopen_confirm") } do |f| %>
+        <p class="text-xs text-gray-600"><%= t("accounting.cash_drawer.reopen_hint") %></p>
+        <%= f.text_field :reason, required: true, autocomplete: "off",
+              placeholder: t("accounting.cash_drawer.reopen_reason"),
+              aria: { label: t("accounting.cash_drawer.reopen_reason") },
+              class: "w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm" %>
+        <%= f.submit t("accounting.cash_drawer.reopen"),
+              class: "text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 px-4 py-2 rounded-xl cursor-pointer" %>
+      <% end %>
+    </details>
+  <% end %>
+
   <%# The drawer's own figures, as stored — nothing on this page recomputes them. %>
   <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
     <% variance = session.variance_cents %>

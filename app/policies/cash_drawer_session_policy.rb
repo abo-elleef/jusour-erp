@@ -18,6 +18,12 @@ class CashDrawerSessionPolicy < ApplicationPolicy
     count?
   end
 
+  # Takes a count and its ledger entries back off the books, so it is not for
+  # whoever can merely see the drawer.
+  def reopen?
+    (user.owner? || user.super_manager?) && record.status != "open"
+  end
+
   def open_drawer?
     user.can_access_pos?
   end

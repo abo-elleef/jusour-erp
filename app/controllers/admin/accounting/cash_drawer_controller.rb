@@ -3,7 +3,7 @@
 module Admin
   module Accounting
     class CashDrawerController < BaseController
-      before_action :set_session, only: %i[show count reconcile payments attach_payments print_slip]
+      before_action :set_session, only: %i[show count reconcile payments attach_payments print_slip reopen]
 
       def index
         @locations = Location.active.branches.ordered
@@ -87,6 +87,23 @@ module Admin
         redirect_to admin_accounting_cash_drawer_path(@session), notice: t("flash.accounting.drawer_slip_queued")
       rescue Pundit::NotAuthorizedError
         redirect_to admin_accounting_cash_drawer_path(@session), alert: t("flash.accounting.drawer_slip_unavailable")
+      end
+
+      # Undo a close, same business day only. Owner / super manager, with a reason.
+      def reopen
+        authorize @session, :reopen?
+        result = ::Accounting::ReopenCashDrawer.call(
+          session: @session, user: current_user, reason: params[:reason]
+        )
+
+        if result.success?
+          redirect_to admin_accounting_cash_drawer_path(@session), notice: t("flash.accounting.drawer_reopened")
+        else
+          redirect_to admin_accounting_cash_drawer_path(@session),
+                      alert: t("flash.accounting.drawer_reopen_#{result.error}")
+        end
+      rescue Pundit::NotAuthorizedError
+        redirect_to admin_accounting_cash_drawer_path(@session), alert: t("flash.accounting.drawer_reopen_forbidden")
       end
 
       # Payments taken before this drawer was opened (so they belong to no drawer),

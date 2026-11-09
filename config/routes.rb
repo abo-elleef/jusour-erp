@@ -395,6 +395,7 @@ Rails.application.routes.draw do
           get :payments
           patch :attach_payments
           post :print_slip
+          post :reopen
         end
       end
 
