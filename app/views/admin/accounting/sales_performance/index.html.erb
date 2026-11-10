@@ -1,0 +1,216 @@
+<% tab_path = ->(tab, extra = {}) { admin_accounting_sales_performance_index_path(request.query_parameters.except("sort", "dir", "page", "kind").merge(tab: tab).merge(extra)) } %>
+<% th = "p-3 text-end" %>
+<% sort_link = ->(label, key, default_dir: "desc") {
+     active = @sort == key
+     next_dir = active ? (@direction == "asc" ? "desc" : "asc") : default_dir
+     link_to admin_accounting_sales_performance_index_path(request.query_parameters.except("page").merge("sort" => key, "dir" => next_dir)),
+             class: "inline-flex items-center gap-1 hover:text-gray-900 #{active ? 'text-gray-900' : 'text-gray-500'}" do
+       safe_join([label, tag.span(active ? (@direction == "asc" ? "↑" : "↓") : "", class: "text-amber-600")])
+     end
+   } %>
+
+<div class="max-w-full">
+  <div class="mb-4">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("accounting.sales_performance.title") %></h1>
+    <p class="text-gray-600 text-sm mt-1"><%= t("accounting.sales_performance.description") %></p>
+  </div>
+
+  <%# Date range + branch filter. Sort and tab are kept so applying a filter does not reset the view. %>
+  <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6">
+    <%= form_with url: admin_accounting_sales_performance_index_path, method: :get, class: "flex flex-wrap items-end gap-4", data: { turbo: false } do %>
+      <%= hidden_field_tag :tab, @tab %>
+      <div class="min-w-[10rem]">
+        <%= label_tag :start_date, t("accounting.shared.start"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= date_field_tag :start_date, @start_date, class: pos_input_class %>
+      </div>
+      <div class="min-w-[10rem]">
+        <%= label_tag :end_date, t("accounting.shared.end"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= date_field_tag :end_date, @end_date, class: pos_input_class %>
+      </div>
+      <div class="min-w-[12rem]">
+        <%= label_tag :location_id, t("accounting.sales_performance.branch"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= select_tag :location_id,
+              options_for_select([[t("accounting.sales_performance.all_branches"), ""]] + @locations.map { |l| [l.name, l.id] }, @location_id),
+              class: pos_input_class %>
+      </div>
+      <%= submit_tag t("accounting.sales_performance.apply"),
+            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
+    <% end %>
+  </section>
+
+  <nav class="flex flex-wrap gap-2 mb-6">
+    <% Admin::Accounting::SalesPerformanceController::TABS.each do |tab| %>
+      <%= link_to t("accounting.sales_performance.tabs.#{tab}"), tab_path.call(tab),
+            class: "px-4 py-2 rounded-xl text-sm font-semibold border transition-colors #{@tab == tab ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}" %>
+    <% end %>
+  </nav>
+
+  <% if @tab == "branch" %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= sort_link.call(t("accounting.sales_performance.branch"), "name", default_dir: "asc") %></th>
+              <% ::Accounting::SalesPerformanceService::ORDER_TYPES.each do |type| %>
+                <th class="<%= th %> text-gray-500"><%= t("accounting.sales_performance.order_type.#{type}") %></th>
+              <% end %>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.orders"), "orders") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.net_sales"), "net_sales") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.avg_ticket"), "avg_ticket") %></th>
+              <th class="<%= th %> pe-5 text-gray-500"><%= t("accounting.sales_performance.discounts") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @rows.each do |row| %>
+              <tr>
+                <td class="p-3 ps-5 font-medium text-gray-900">
+                  <% if row.location_id %>
+                    <%= link_to row.name, admin_location_path(row.location_id), class: "hover:underline" %>
+                  <% else %>
+                    <span class="text-gray-500"><%= t("accounting.sales_performance.no_branch") %></span>
+                  <% end %>
+                </td>
+                <% ::Accounting::SalesPerformanceService::ORDER_TYPES.each do |type| %>
+                  <td class="<%= th %> tabular-nums">
+                    <%= format_amount(row.by_type[type][:net_cents]) %>
+                    <span class="block text-xs text-gray-400"><%= row.by_type[type][:orders] %></span>
+                  </td>
+                <% end %>
+                <td class="<%= th %> tabular-nums"><%= row.orders %></td>
+                <td class="<%= th %> tabular-nums font-semibold"><%= format_amount(row.net_cents) %></td>
+                <td class="<%= th %> tabular-nums"><%= format_amount(row.avg_ticket_cents) %></td>
+                <td class="<%= th %> pe-5 tabular-nums text-red-700"><%= format_amount(row.discount_cents) %></td>
+              </tr>
+            <% end %>
+            <% if @rows.empty? %>
+              <tr><td colspan="8" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_performance.empty") %></td></tr>
+            <% end %>
+          </tbody>
+          <% if @rows.any? %>
+            <tfoot class="bg-gray-50 font-semibold">
+              <tr>
+                <td class="p-3 ps-5"><%= t("accounting.sales_performance.total") %></td>
+                <% ::Accounting::SalesPerformanceService::ORDER_TYPES.each do |type| %>
+                  <td class="<%= th %> tabular-nums">
+                    <%= format_amount(@totals[:by_type][type][:net_cents]) %>
+                    <span class="block text-xs text-gray-400 font-normal"><%= @totals[:by_type][type][:orders] %></span>
+                  </td>
+                <% end %>
+                <td class="<%= th %> tabular-nums"><%= @totals[:orders] %></td>
+                <td class="<%= th %> tabular-nums"><%= format_amount(@totals[:net_cents]) %></td>
+                <td class="<%= th %> tabular-nums"><%= format_amount(@totals[:orders].positive? ? @totals[:net_cents] / @totals[:orders] : 0) %></td>
+                <td class="<%= th %> pe-5 tabular-nums text-red-700"><%= format_amount(@totals[:discount_cents]) %></td>
+              </tr>
+            </tfoot>
+          <% end %>
+        </table>
+      </div>
+    </section>
+
+  <% elsif @tab == "cashier" %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= sort_link.call(t("accounting.sales_performance.cashier"), "name", default_dir: "asc") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.orders"), "orders") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.net_sales"), "net_sales") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.avg_ticket"), "avg_ticket") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.discount_rate"), "discount_rate") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.voids"), "voids") %></th>
+              <th class="<%= th %> pe-5"><%= sort_link.call(t("accounting.sales_performance.refunds"), "refunds") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @rows.each do |row| %>
+              <tr>
+                <td class="p-3 ps-5 font-medium text-gray-900"><%= link_to row.name.presence || "—", admin_user_path(row.user_id), class: "hover:underline" %></td>
+                <td class="<%= th %> tabular-nums"><%= row.orders %></td>
+                <td class="<%= th %> tabular-nums font-semibold"><%= format_amount(row.net_cents) %></td>
+                <td class="<%= th %> tabular-nums"><%= format_amount(row.avg_ticket_cents) %></td>
+                <td class="<%= th %> tabular-nums"><%= number_with_precision(row.discount_rate, precision: 1) %>%</td>
+                <td class="<%= th %> tabular-nums">
+                  <% if row.voids.positive? %>
+                    <%= link_to row.voids, tab_path.call("exceptions", kind: "void"), class: "text-red-700 hover:underline" %>
+                  <% else %>0<% end %>
+                </td>
+                <td class="<%= th %> pe-5 tabular-nums">
+                  <% if row.refunds.positive? %>
+                    <%= link_to row.refunds, tab_path.call("exceptions", kind: "refund"), class: "text-red-700 hover:underline" %>
+                  <% else %>0<% end %>
+                </td>
+              </tr>
+            <% end %>
+            <% if @rows.empty? %>
+              <tr><td colspan="7" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_performance.empty") %></td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  <% else %>
+    <% s = @summary %>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <% [[:void, "void_summary"], [:refund, "refund_summary"]].each do |key, label| %>
+        <div class="rounded-2xl border border-gray-200 bg-white p-4">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.sales_performance.#{label}") %></p>
+          <p class="text-2xl font-bold mt-1 tabular-nums text-red-700"><%= format_amount(s[key][:cents]) %></p>
+          <p class="text-xs text-gray-500 mt-1.5"><%= s[key][:count] %></p>
+        </div>
+      <% end %>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.sales_performance.share_of_gross") %></p>
+        <p class="text-2xl font-bold mt-1 tabular-nums"><%= s[:lost_pct] ? "#{number_with_precision(s[:lost_pct], precision: 1)}%" : "—" %></p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-2 mb-4 text-sm">
+      <% [nil, "void", "refund"].each do |k| %>
+        <%= link_to t("accounting.sales_performance.kinds.#{k || 'all'}"),
+              admin_accounting_sales_performance_index_path(request.query_parameters.except("page", "kind").merge(k ? { kind: k } : {})),
+              class: "px-3 py-1.5 rounded-lg border #{@kind == k ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}" %>
+      <% end %>
+    </div>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= sort_link.call(t("accounting.sales_performance.when"), "created_at") %></th>
+              <th class="p-3 text-start"><%= sort_link.call(t("accounting.sales_performance.kind"), "kind", default_dir: "asc") %></th>
+              <th class="p-3 text-start text-gray-500"><%= t("accounting.sales_performance.order") %></th>
+              <th class="p-3 text-start text-gray-500"><%= t("accounting.sales_performance.branch") %></th>
+              <th class="p-3 text-start text-gray-500"><%= t("accounting.sales_performance.rang_up_by") %></th>
+              <th class="p-3 text-start text-gray-500"><%= t("accounting.sales_performance.done_by") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.amount"), "amount") %></th>
+              <th class="p-3 pe-5 text-start text-gray-500"><%= t("accounting.sales_performance.reason") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @events.each do |event| %>
+              <% order = event.order %>
+              <tr>
+                <td class="p-3 ps-5 whitespace-nowrap tabular-nums"><%= l(event.created_at, format: :short) %></td>
+                <td class="p-3"><%= t("accounting.sales_performance.kinds.#{event.event_type}") %></td>
+                <td class="p-3"><%= link_to "##{order.order_number}", admin_order_path(order), class: "text-amber-700 hover:underline" %></td>
+                <td class="p-3"><%= order.location&.name || "—" %></td>
+                <td class="p-3"><%= order.user&.name %></td>
+                <td class="p-3"><%= event.user&.name || "—" %></td>
+                <td class="<%= th %> tabular-nums text-red-700"><%= format_amount(event.amount_cents) %></td>
+                <td class="p-3 pe-5 text-gray-600"><%= event.description.to_s.sub(/\ARefunded \d+ cents:\s*/, "") %></td>
+              </tr>
+            <% end %>
+            <% if @pagy.count.zero? %>
+              <tr><td colspan="8" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_performance.empty_exceptions") %></td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
+    </section>
+  <% end %>
+</div>

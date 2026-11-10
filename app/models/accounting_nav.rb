@@ -36,6 +36,8 @@ module AccountingNav
           description: "accounting.dashboard.description" },
         { controller: "sales_reports",        label: "accounting.nav.sales",         path: :admin_accounting_sales_reports_path,                       permission: "accounting:reports", feature: :menu,
           description: "accounting.sales_reports.description" },
+        { controller: "sales_performance",   label: "accounting.nav.sales_performance", path: :admin_accounting_sales_performance_index_path, permission: "accounting:reports", feature: :menu,
+          description: "accounting.sales_performance.description" },
         { controller: "food_costs",           label: "accounting.nav.food_cost",     path: :admin_accounting_food_costs_path,                          permission: "accounting:reports", feature: :menu,
           description: "accounting.food_costs.description" },
         { controller: "usage_reports",        label: "accounting.nav.usage",         path: :admin_accounting_usage_reports_path,                       permission: "accounting:reports", feature: :menu,

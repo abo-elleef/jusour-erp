@@ -285,6 +285,7 @@ Rails.application.routes.draw do
       root to: "dashboard#index"
 
       resources :sales_reports, only: [:index]
+      resources :sales_performance, only: [:index]
       resources :food_costs, only: [:index]
       resources :usage_reports, only: [:index]
       resources :category_analysis, only: [:index]
