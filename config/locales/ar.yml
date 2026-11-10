@@ -490,6 +490,7 @@ ar:
       due: "متبقي %{amount}"
     labels:
       order_number: "رقم الطلب"
+      cashier: "الكاشير"
       order_type: "نوع الطلب"
       subtotal: "المجموع الفرعي"
       discount: "الخصم"

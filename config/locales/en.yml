@@ -488,6 +488,7 @@ en:
       due: "%{amount} due"
     labels:
       order_number: "Order #"
+      cashier: "Cashier"
       order_type: "Order type"
       subtotal: "Subtotal"
       discount: "Discount"
