@@ -65,6 +65,17 @@
             support_url: Printing::Config.support_whatsapp_url,
             support_label: t("printing.agent.banner_support_link") %>
     <% end %>
+    <% if current_user&.company_id && Printing::Config.client_routing? %>
+      <%# Failed prints stay on screen until someone retries them or they get printed. %>
+      <div id="print-failed-pill" role="alert"
+           class="hidden fixed bottom-16 start-4 z-[60] max-w-[min(22rem,calc(100vw-2rem))] flex items-center gap-3 rounded-2xl border border-red-300 bg-red-50 text-red-900 shadow-lg ps-3 pe-2 py-2">
+        <span class="text-sm font-semibold"><%= t("printing.status.pill", count: "__COUNT__").sub("__COUNT__", '<span data-count>0</span>').html_safe %></span>
+        <button type="button" data-retry-all
+                class="shrink-0 rounded-lg bg-red-700 hover:bg-red-800 disabled:opacity-60 text-white text-xs font-semibold px-3 py-1.5 min-h-9">
+          <%= t("printing.status.retry_all") %>
+        </button>
+      </div>
+    <% end %>
     <%= render "shared/toasts" %>
     <span class="sr-only" data-connectivity-target="syncStatus"></span>
     <% if current_user&.company_id && Printing::Config.client_routing? %>
@@ -83,7 +94,9 @@
            data-client-printer-config-value="<%= print_agent_config_json %>"
            data-client-printer-payload-url-template-value="<%= payload_pos_print_log_path(":id") %>"
            data-client-printer-confirm-url-template-value="<%= confirm_pos_print_log_path(":id") %>"
-           data-client-printer-pending-url-value="<%= pending_pos_print_logs_path %>">
+           data-client-printer-pending-url-value="<%= pending_pos_print_logs_path %>"
+           data-client-printer-failed-url-value="<%= failed_pos_print_logs_path %>"
+           data-client-printer-retry-url-template-value="<%= retry_pos_print_log_path(":id") %>">
       </div>
     <% end %>
     <div id="pos-main" class="pos-main overflow-hidden<%= " pos-main--with-banner" if Printing::Config.client_routing? %>">

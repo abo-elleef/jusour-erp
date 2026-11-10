@@ -2,32 +2,36 @@
 
 module Printing
   class PrintOrderService
-    def self.call(order:, print_type:, printer: nil, order_items: nil)
-      new(order: order, print_type: print_type, printer: printer, order_items: order_items).call
+    # manual: true is a cashier deliberately asking again (Print receipt, Print all,
+    # Send to kitchen). Those are never swallowed by the repeated-request guard.
+    def self.call(order:, print_type:, printer: nil, order_items: nil, manual: false)
+      new(order: order, print_type: print_type, printer: printer, order_items: order_items, manual: manual).call
     end
 
-    def initialize(order:, print_type:, printer: nil, order_items: nil)
+    def initialize(order:, print_type:, printer: nil, order_items: nil, manual: false)
       @order = order
       @print_type = print_type
       @printer = printer
       @order_items = order_items
+      @manual = manual
     end
 
     def call
       printer = @printer || resolve_printer
       return log_skipped(nil, "no_active_#{@print_type}_printer") unless printer
-      return if repeated_request?(printer)
-
-      payload = build_payload(printer)
+      return if !@manual && repeated_request?(printer)
 
       # USB and network both go through the local POS print agent in client mode,
-      # so each register talks to the printer attached to that machine.
+      # so each register talks to the printer attached to that machine. The bytes
+      # are built when the register fetches the job (BuildPayloadService), not here:
+      # building twice doubled the render cost and let a build error stop the job
+      # from being queued at all.
       if Config.client_routing?
-        queue_client_print(printer, payload)
+        queue_client_print(printer)
       elsif printer.usb?
-        print_via_agent_usb(printer, payload)
+        print_via_agent_usb(printer, build_payload(printer))
       else
-        print_via_server(printer, payload)
+        print_via_server(printer, build_payload(printer))
       end
     rescue Drivers::Network::Error, Drivers::PrintAgent::Error, StandardError => e
       log_failure(printer, e.message)
@@ -116,7 +120,7 @@ module Printing
       log_success(printer)
     end
 
-    def queue_client_print(printer, payload)
+    def queue_client_print(printer)
       log = log_pending(printer)
       Turbo::StreamsChannel.broadcast_append_to(
         pos_print_stream_name,

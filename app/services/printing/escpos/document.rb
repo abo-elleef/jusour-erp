@@ -10,7 +10,10 @@ module Printing
 
       def initialize(width: 42, charset: nil)
         @width = width
-        @buffer = +""
+        # Binary from the start: raster image bytes and Windows-1256/UTF-8 text are
+        # appended to the same buffer, and a UTF-8 buffer that picks up high bytes
+        # turns BINARY and then rejects the next non-ASCII text line.
+        @buffer = String.new(encoding: Encoding::BINARY)
         @charset_config = Charset.resolve(charset)
         @rtl = @charset_config[:rtl]
         # Image rendering is used when Arabic font is available (always preferred
@@ -157,7 +160,7 @@ module Printing
       end
 
       def write_line(line)
-        @buffer << encode_text(line) << "\n"
+        @buffer << encode_text(line).b << "\n"
       end
 
       def encode_text(value)

@@ -9,6 +9,14 @@ class PrintLogPolicy < ApplicationPolicy
     pos_access_same_company?
   end
 
+  def failed?
+    user.can_access_pos?
+  end
+
+  def retry?
+    pos_access_same_company?
+  end
+
   def confirm?
     pos_access_same_company?
   end

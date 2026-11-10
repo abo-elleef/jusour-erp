@@ -79,6 +79,40 @@ RSpec.describe Printing::Escpos::Document do
     end
   end
 
+  # Regression: raster bytes made the buffer BINARY, and the next non-ASCII text line
+  # raised Encoding::CompatibilityError, so the whole receipt was never printed.
+  describe "mixing image bytes and non-ASCII text" do
+    around do |example|
+      I18n.with_locale(:ar) { example.run }
+    end
+
+    %w[windows-1256 utf-8].each do |charset|
+      it "does not raise after image bytes (#{charset})" do
+        allow(Printing::Escpos::ArabicImageRenderer).to receive(:render_logo).and_return("\xFF\xFE\x80".b)
+        allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return(nil)
+
+        doc = described_class.new(charset: charset)
+        doc.logo("logo.png")
+        expect { doc.text("شكراً ⁩ عنوان") }.not_to raise_error
+        doc.cut
+
+        bytes = doc.to_bytes
+        expect(bytes.encoding).to eq(Encoding::BINARY)
+        expect(bytes).to include("\xFF\xFE\x80".b)
+      end
+    end
+
+    it "falls back to text when the Arabic image render returns nil" do
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("/f.ttf")
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:render_logo).and_return("\xFF\x80".b)
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:render_line).and_return(nil)
+
+      doc = described_class.new
+      doc.logo("logo.png")
+      expect { doc.text("النورده") }.not_to raise_error
+    end
+  end
+
   describe "Latin encoding" do
     around do |example|
       I18n.with_locale(:en) { example.run }

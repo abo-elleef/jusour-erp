@@ -1,0 +1,28 @@
+<%# locals: order: — every print this order has been sent to, with a retry on failures. %>
+<% logs = order.print_logs.includes(:printer).order(created_at: :desc).to_a %>
+<div class="border-t border-gray-200 px-5 py-4 bg-white">
+  <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2"><%= t("printing.status.title") %></h3>
+  <% if logs.empty? %>
+    <p class="text-sm text-gray-500"><%= t("printing.status.empty") %></p>
+  <% else %>
+    <ul class="text-sm space-y-2">
+      <% logs.each do |log| %>
+        <% tone = { "sent" => "text-emerald-700", "failed" => "text-red-700", "pending" => "text-amber-700" }.fetch(log.status, "text-gray-500") %>
+        <li class="flex items-center justify-between gap-2 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2">
+          <div class="min-w-0">
+            <span class="font-medium text-gray-900"><%= t("printing.status.t_#{log.print_type}", default: log.print_type) %></span>
+            <% if log.printer %><span class="text-gray-500"> · <%= log.printer.name %></span><% end %>
+            <div class="text-xs text-gray-500"><%= l(log.created_at, format: :short_time) %><% if log.error_message.present? %> · <%= log.error_message.truncate(80) %><% end %></div>
+          </div>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="font-semibold <%= tone %>"><%= t("printing.status.s_#{log.status}") %></span>
+            <% if log.status == "failed" %>
+              <%= button_to t("printing.status.retry"), retry_pos_print_log_path(log), method: :post,
+                    class: "text-xs font-semibold text-white bg-red-700 hover:bg-red-800 rounded-lg px-3 py-1.5" %>
+            <% end %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  <% end %>
+</div>

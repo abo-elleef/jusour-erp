@@ -2,6 +2,15 @@ import { Controller } from "@hotwired/stimulus"
 
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 2000
+const POLL_INTERVAL_MS = 10000
+const OUTBOX_KEY = "saqr_print_outbox"
+
+// Module scope on purpose. Turbo replaces the page body on every navigation, which
+// builds a fresh controller; if the queue and the in-flight set lived on the
+// instance, the new page could pick up a job the old page is still printing and
+// print it a second time.
+const inFlight = new Set()
+let jobQueue = Promise.resolve()
 
 export default class extends Controller {
   static targets = ["queue", "job"]
@@ -9,17 +18,15 @@ export default class extends Controller {
     config: Object,
     payloadUrlTemplate: String,
     confirmUrlTemplate: String,
-    pendingUrl: String
+    pendingUrl: String,
+    failedUrl: String,
+    retryUrlTemplate: String
   }
 
   connect() {
     this.storageKey = "saqr_register_printer"
     this.boundBannerDismissed = () => this.hideBanner()
     this.bannerElement = () => document.getElementById("print-agent-banner")
-    // Serial queue: process one job at a time to avoid concurrent TCP conflicts
-    this._queue = Promise.resolve()
-    // Track in-flight job IDs to avoid double-processing
-    this._inFlight = new Set()
 
     const banner = this.bannerElement()
     if (banner) {
@@ -29,8 +36,81 @@ export default class extends Controller {
     if (this.configValue?.client_routing) {
       this.clearPrintAgentDismissalOnReload()
       this.checkAgentHealth()
-      // Re-deliver any pending jobs that were missed while browser was offline
-      this.recoverPendingJobs()
+      this.startSafetyNet()
+    }
+  }
+
+  // The Turbo broadcast is the fast path; this is the guarantee. A broadcast that
+  // lands while the page is changing, or before the stream has subscribed, is simply
+  // gone, so the register also asks the server for outstanding jobs: right away,
+  // shortly after, then every few seconds, and whenever it wakes or reconnects.
+  startSafetyNet() {
+    this.boundWake = () => { if (!document.hidden) this.sweep() }
+    document.addEventListener("visibilitychange", this.boundWake)
+    window.addEventListener("online", this.boundWake)
+    this.bindFailedPill()
+    this.sweep()
+    this._earlySweeps = [1000, 4000].map(ms => setTimeout(() => this.sweep(), ms))
+    this._poll = setInterval(() => this.sweep(), POLL_INTERVAL_MS)
+  }
+
+  stopSafetyNet() {
+    clearInterval(this._poll)
+    ;(this._earlySweeps || []).forEach(clearTimeout)
+    if (this.boundWake) {
+      document.removeEventListener("visibilitychange", this.boundWake)
+      window.removeEventListener("online", this.boundWake)
+    }
+    const pill = this.failedPill()
+    if (pill && this.boundRetryAll) pill.querySelector("[data-retry-all]")?.removeEventListener("click", this.boundRetryAll)
+  }
+
+  async sweep() {
+    await this.flushOutbox()
+    await this.recoverPendingJobs()
+    await this.refreshFailedPill()
+  }
+
+  failedPill() {
+    return document.getElementById("print-failed-pill")
+  }
+
+  bindFailedPill() {
+    const button = this.failedPill()?.querySelector("[data-retry-all]")
+    if (!button) return
+    this.boundRetryAll = () => this.retryAllFailed(button)
+    button.addEventListener("click", this.boundRetryAll)
+  }
+
+  async refreshFailedPill() {
+    const pill = this.failedPill()
+    if (!pill || !this.hasFailedUrlValue) return
+    try {
+      const response = await fetch(this.failedUrlValue, { headers: { Accept: "application/json" }, credentials: "same-origin" })
+      if (!response.ok) return
+      const { count, jobs } = await response.json()
+      this._failedJobs = jobs
+      pill.querySelector("[data-count]").textContent = count
+      pill.classList.toggle("hidden", count === 0)
+      this.notifyBannerOffsetChange()
+    } catch (_e) {
+      // Best-effort; the next sweep tries again.
+    }
+  }
+
+  async retryAllFailed(button) {
+    button.disabled = true
+    try {
+      for (const job of this._failedJobs || []) {
+        await fetch(this.retryUrlTemplateValue.replace(":id", job.id), {
+          method: "POST",
+          headers: { Accept: "application/json", "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content },
+          credentials: "same-origin"
+        })
+      }
+    } finally {
+      button.disabled = false
+      this.sweep()
     }
   }
 
@@ -41,6 +121,7 @@ export default class extends Controller {
   }
 
   disconnect() {
+    this.stopSafetyNet()
     const banner = this.bannerElement()
     if (banner) {
       banner.removeEventListener("banner:dismissed", this.boundBannerDismissed)
@@ -54,9 +135,9 @@ export default class extends Controller {
 
   // Serial queue: each job waits for the previous to finish
   enqueueJob(printLogId, element) {
-    if (!printLogId || this._inFlight.has(printLogId)) return
-    this._inFlight.add(printLogId)
-    this._queue = this._queue.then(() => this.processJob(printLogId, element))
+    if (!printLogId || inFlight.has(printLogId)) return
+    inFlight.add(printLogId)
+    jobQueue = jobQueue.then(() => this.processJob(printLogId, element))
   }
 
   // Stable for this browser tab, so a retry (or a page change mid-print) is recognised
@@ -80,7 +161,7 @@ export default class extends Controller {
   async processJob(printLogId, element) {
     const done = () => {
       element?.remove()
-      this._inFlight.delete(printLogId)
+      inFlight.delete(printLogId)
     }
 
     let payload
@@ -97,7 +178,8 @@ export default class extends Controller {
           await this.sleep(RETRY_DELAY_MS * attempt)
           continue
         }
-        await this.confirmPrint(printLogId, "failed", error?.message)
+        await this.confirmReliably(printLogId, "failed", error?.message)
+        this.refreshFailedPill()
         return done()
       }
     }
@@ -109,16 +191,20 @@ export default class extends Controller {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         await this.sendToAgent(payload)
-        await this.confirmPrint(printLogId, "sent")
-        return done()
       } catch (error) {
         lastError = error
         const unreachable = error instanceof TypeError
         if (!unreachable || attempt === MAX_RETRIES) break
         await this.sleep(RETRY_DELAY_MS * attempt)
+        continue
       }
+      // The agent has the job. From here on it is never sent again, whatever happens
+      // to the confirmation: a lost "sent" must not turn into a second ticket.
+      await this.confirmReliably(printLogId, "sent")
+      return done()
     }
-    await this.confirmPrint(printLogId, "failed", lastError?.message)
+    await this.confirmReliably(printLogId, "failed", lastError?.message)
+    this.refreshFailedPill()
     done()
   }
 
@@ -126,7 +212,8 @@ export default class extends Controller {
   async recoverPendingJobs() {
     if (!this.hasPendingUrlValue) return
     try {
-      const response = await fetch(this.pendingUrlValue, {
+      const url = `${this.pendingUrlValue}?${new URLSearchParams({ client_id: this.clientId })}`
+      const response = await fetch(url, {
         headers: { Accept: "application/json" },
         credentials: "same-origin"
       })
@@ -247,9 +334,26 @@ export default class extends Controller {
     }
   }
 
+  // Tell the server how the job ended, and keep trying: a job left "pending" gets
+  // printed again by the next register that recovers it. If the server stays out of
+  // reach, park the answer in localStorage and deliver it on a later sweep.
+  async confirmReliably(printLogId, status, errorMessage = null) {
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      try {
+        const response = await this.confirmPrint(printLogId, status, errorMessage)
+        // 2xx: recorded. 4xx: the server will never accept it, retrying is pointless.
+        if (response.ok || (response.status >= 400 && response.status < 500)) return
+      } catch (_e) {
+        // network error: fall through to retry
+      }
+      await this.sleep(500 * attempt)
+    }
+    this.saveToOutbox({ printLogId, status, errorMessage })
+  }
+
   async confirmPrint(printLogId, status, errorMessage = null) {
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content
-    await fetch(this.confirmUrl(printLogId), {
+    return fetch(this.confirmUrl(printLogId), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -259,6 +363,42 @@ export default class extends Controller {
       credentials: "same-origin",
       body: JSON.stringify({ status, error_message: errorMessage })
     })
+  }
+
+  readOutbox() {
+    try {
+      return JSON.parse(localStorage.getItem(OUTBOX_KEY) || "[]")
+    } catch {
+      return []
+    }
+  }
+
+  writeOutbox(entries) {
+    try {
+      localStorage.setItem(OUTBOX_KEY, JSON.stringify(entries))
+    } catch (_e) {
+      // storage unavailable: nothing more we can do
+    }
+  }
+
+  saveToOutbox(entry) {
+    const entries = this.readOutbox().filter(e => e.printLogId !== entry.printLogId)
+    this.writeOutbox([...entries, entry])
+  }
+
+  async flushOutbox() {
+    const entries = this.readOutbox()
+    if (entries.length === 0) return
+    const remaining = []
+    for (const entry of entries) {
+      try {
+        const response = await this.confirmPrint(entry.printLogId, entry.status, entry.errorMessage)
+        if (!(response.ok || (response.status >= 400 && response.status < 500))) remaining.push(entry)
+      } catch (_e) {
+        remaining.push(entry)
+      }
+    }
+    this.writeOutbox(remaining)
   }
 
   async agentFetch(path, options = {}) {

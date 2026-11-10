@@ -30,14 +30,16 @@
         <% icon_btn = "relative shrink-0 w-12 min-h-11 inline-flex items-center justify-center bg-transparent hover:bg-stone-100 active:bg-stone-200 text-stone-800 border border-stone-300 rounded-full transition-colors" %>
         <%= button_to print_receipt_pos_order_path(order, from: "pos"),
               method: :post,
-              form: { data: { turbo_frame: "_top" }, class: "contents" },
+              form: { data: { turbo_frame: "_top", controller: "submit-once", action: "submit->submit-once#guard" }, class: "contents" },
+              data: { submit_once_target: "submit" },
               class: icon_btn, title: t("pos.cart.print_receipt"), "aria-label": t("pos.cart.print_receipt") do %>
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9V3h12v6M6 18H4a1 1 0 0 1-1-1v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-2M6 14h12v7H6z"/></svg>
         <% end %>
         <% kitchen_title = order.kitchen_sent_at.present? ? "#{t("pos.cart.send_to_kitchen_bar")} · #{t("payment.kitchen_sent_at", time: l(order.kitchen_sent_at, format: :short_time))}" : t("pos.cart.send_to_kitchen_bar") %>
         <%= button_to send_to_kitchen_pos_order_path(order, from: "pos"),
               method: :post,
-              form: { data: { turbo_frame: "_top" }, class: "contents" },
+              form: { data: { turbo_frame: "_top", controller: "submit-once", action: "submit->submit-once#guard" }, class: "contents" },
+              data: { submit_once_target: "submit" },
               class: icon_btn, title: kitchen_title, "aria-label": kitchen_title do %>
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.75" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 9.18 0A4 4 0 0 1 18 13.87V21H6zM6 17h12"/></svg>
           <% if order.kitchen_sent_at.present? %>

@@ -175,7 +175,7 @@ module Pos
     def print_receipt
       @order = Order.find(params[:id])
       authorize @order, :show?
-      Printing::PrintReceiptService.call(order: @order)
+      Printing::PrintReceiptService.call(order: @order, manual: true)
       # From the register itself, stay on the register: the cart is still being built.
       destination = params[:from] == "pos" ? pos_path : pos_order_path(@order, from: params[:from])
       redirect_to destination, notice: t("flash.pos.print_queued")
@@ -186,7 +186,7 @@ module Pos
     def send_to_kitchen
       @order = Order.find(params[:id])
       authorize @order, :show?
-      Printing::DispatchProductionPrintsService.call(order: @order)
+      Printing::DispatchProductionPrintsService.call(order: @order, manual: true)
       destination = params[:from] == "pos" ? pos_path : pos_order_path(@order, from: params[:from])
       redirect_to destination, notice: t("flash.pos.kitchen_queued")
     end
@@ -194,8 +194,8 @@ module Pos
     def print_all
       @order = Order.find(params[:id])
       authorize @order, :show?
-      Printing::PrintReceiptService.call(order: @order)
-      Printing::DispatchProductionPrintsService.call(order: @order)
+      Printing::PrintReceiptService.call(order: @order, manual: true)
+      Printing::DispatchProductionPrintsService.call(order: @order, manual: true)
       redirect_to pos_order_path(@order, from: params[:from]), notice: t("flash.pos.print_all_queued")
     end
 

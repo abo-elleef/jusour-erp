@@ -5,38 +5,40 @@ module Pos
     layout "pos"
 
     before_action :require_pos_access!
-    before_action :set_print_log, except: :pending
+    before_action :set_print_log, except: %i[pending failed]
 
     def pending
       authorize PrintLog, :pending?
-      location_id = session[:pos_location_id]
-      workstation_id = session[:pos_workstation_id]
-      company_id = current_user.company_id
-
-      # A job belongs to an order or to a drawer session; either one places it in a
-      # company and a branch.
-      logs = PrintLog.left_joins(:order, :cash_drawer_session)
-                     .where(status: "pending")
-                     .where("orders.company_id = :c OR cash_drawer_sessions.company_id = :c", c: company_id)
-      if location_id.present?
-        logs = logs.where("orders.location_id = :l OR cash_drawer_sessions.location_id = :l", l: location_id)
-      end
-      logs = logs.where("print_logs.created_at > ?", 2.hours.ago)
-      # Not the ones another register is printing right now.
-      logs = logs.unclaimed
-
-      # Receipts are workstation-scoped when a register is selected, and so are drawer
-      # slips that name a register; production tickets stay shared across the branch.
-      if workstation_id.present?
-        logs = logs.where(
-          "(print_logs.print_type = 'receipt' AND orders.workstation_id = :w) OR " \
-          "(print_logs.print_type = 'drawer_close' AND (print_logs.workstation_id IS NULL OR print_logs.workstation_id = :w)) OR " \
-          "print_logs.print_type NOT IN ('receipt', 'drawer_close')",
-          w: workstation_id
-        )
-      end
+      # Recent by last touch, so a retried job is recovered too. A pending job is only
+      # ever touched when it is queued or requeued.
+      logs = branch_logs.where(status: "pending")
+                        .where("print_logs.updated_at > ?", 2.hours.ago)
+                        .claimable_by(params[:client_id])
 
       render json: logs.map { |l| { id: l.id, order_id: l.order_id } }
+    end
+
+    # Jobs that failed and still need a person: feeds the "N prints failed" pill.
+    def failed
+      authorize PrintLog, :failed?
+      logs = branch_logs.needs_attention.includes(:order).order("print_logs.updated_at DESC").limit(20)
+
+      render json: {
+        count: logs.size,
+        jobs: logs.map do |l|
+          { id: l.id, print_type: l.print_type, order_number: l.order&.order_number, error: l.error_message }
+        end
+      }
+    end
+
+    def retry
+      authorize @print_log, :retry?
+
+      @print_log.requeue!
+      respond_to do |format|
+        format.json { head :ok }
+        format.html { redirect_back fallback_location: pos_path, notice: t("flash.pos.print_queued") }
+      end
     end
 
     # Handing out the payload is what claims the job: the first register to ask gets
@@ -83,6 +85,32 @@ module Pos
     end
 
     private
+
+    # Print jobs this register is responsible for: its company and branch; receipts
+    # (and drawer slips that name a register) only for the register in use, production
+    # tickets for the whole branch.
+    def branch_logs
+      location_id = session[:pos_location_id]
+      workstation_id = session[:pos_workstation_id]
+      company_id = current_user.company_id
+
+      # A job belongs to an order or to a drawer session; either one places it in a
+      # company and a branch.
+      logs = PrintLog.left_joins(:order, :cash_drawer_session)
+                     .where("orders.company_id = :c OR cash_drawer_sessions.company_id = :c", c: company_id)
+      if location_id.present?
+        logs = logs.where("orders.location_id = :l OR cash_drawer_sessions.location_id = :l", l: location_id)
+      end
+      if workstation_id.present?
+        logs = logs.where(
+          "(print_logs.print_type = 'receipt' AND orders.workstation_id = :w) OR " \
+          "(print_logs.print_type = 'drawer_close' AND (print_logs.workstation_id IS NULL OR print_logs.workstation_id = :w)) OR " \
+          "print_logs.print_type NOT IN ('receipt', 'drawer_close')",
+          w: workstation_id
+        )
+      end
+      logs
+    end
 
     def require_pos_access!
       return if current_user&.can_access_pos?

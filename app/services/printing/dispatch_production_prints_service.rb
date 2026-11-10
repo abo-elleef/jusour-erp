@@ -2,12 +2,13 @@
 
 module Printing
   class DispatchProductionPrintsService
-    def self.call(order:)
-      new(order: order).call
+    def self.call(order:, manual: false)
+      new(order: order, manual: manual).call
     end
 
-    def initialize(order:)
+    def initialize(order:, manual: false)
       @order = order
+      @manual = manual
       @items = load_items
     end
 
@@ -36,7 +37,8 @@ module Printing
         order: @order,
         print_type: "pick_station",
         printer: printer,
-        order_items: @items
+        order_items: @items,
+        manual: @manual
       )
     end
 
@@ -51,7 +53,8 @@ module Printing
           order: @order,
           print_type: "station",
           printer: printer,
-          order_items: matching
+          order_items: matching,
+          manual: @manual
         )
       end
     end

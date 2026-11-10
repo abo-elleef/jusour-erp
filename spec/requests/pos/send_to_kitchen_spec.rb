@@ -21,7 +21,7 @@ RSpec.describe "Sending a draft order to the kitchen", type: :request do
     create(:order_item, order: order)
     order.recalculate_totals!
 
-    expect(Printing::DispatchProductionPrintsService).to receive(:call).with(order: order)
+    expect(Printing::DispatchProductionPrintsService).to receive(:call).with(order: order, manual: true)
 
     before_state = order.reload.attributes
     expect { post send_to_kitchen_pos_order_path(order, from: "pos") }.not_to change(Payment, :count)

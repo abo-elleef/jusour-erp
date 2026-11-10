@@ -79,4 +79,39 @@ RSpec.describe Printing::PrintOrderService do
       expect(PrintLog.last.status).to eq("sent")
     end
   end
+  describe "client routing queueing" do
+    let!(:receipt_printer) do
+      Printer.create!(company: company, location: branch, name: "Receipt", printer_type: "receipt",
+                      connection_type: "network", host: "192.168.1.50", port: 9100, paper_width: "80mm",
+                      active: true, is_default: true)
+    end
+    let(:order) do
+      create(:order, user: user, company: company, location: branch, status: "completed",
+                     subtotal_cents: 1000, tax_cents: 0, total_cents: 1000).tap do |o|
+        create(:order_item, order: o, unit_price_cents: 1000)
+      end
+    end
+
+    before do
+      Setting.set("print_routing", Printing::Config::ROUTING_CLIENT)
+      allow(Turbo::StreamsChannel).to receive(:broadcast_append_to)
+    end
+
+    it "queues the job without building the bytes (the register's payload fetch does that)" do
+      expect(Printing::Escpos::ReceiptBuilder).not_to receive(:new)
+      described_class.call(order: order, print_type: "receipt")
+      expect(PrintLog.last.status).to eq("pending")
+    end
+
+    it "swallows an automatic repeat within seconds" do
+      described_class.call(order: order, print_type: "receipt")
+      expect { described_class.call(order: order, print_type: "receipt") }.not_to change(PrintLog, :count)
+    end
+
+    it "never swallows a deliberate reprint" do
+      described_class.call(order: order, print_type: "receipt")
+      expect { described_class.call(order: order, print_type: "receipt", manual: true) }
+        .to change(PrintLog, :count).by(1)
+    end
+  end
 end

@@ -114,10 +114,12 @@ Rails.application.routes.draw do
     resources :print_logs, only: [] do
       collection do
         get :pending
+        get :failed
       end
       member do
         get :payload
         patch :confirm
+        post :retry
       end
     end
     resources :payments, only: [:create] do

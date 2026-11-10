@@ -6,14 +6,16 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
         </svg>
       <% end %>
-      <%= form_with url: print_receipt_pos_order_path(@order, from: params[:from]), method: :post do |f| %>
-        <%= f.button type: "submit",
+      <%= form_with url: print_receipt_pos_order_path(@order, from: params[:from]), method: :post,
+                data: { controller: "submit-once", action: "submit->submit-once#guard" } do |f| %>
+        <%= f.button type: "submit", data: { submit_once_target: "submit" },
               class: "flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors" do %>
           <%= print_icon %><%= t("printing.actions.print_receipt") %>
         <% end %>
       <% end %>
-      <%= form_with url: print_all_pos_order_path(@order, from: params[:from]), method: :post do |f| %>
-        <%= f.button type: "submit",
+      <%= form_with url: print_all_pos_order_path(@order, from: params[:from]), method: :post,
+                data: { controller: "submit-once", action: "submit->submit-once#guard" } do |f| %>
+        <%= f.button type: "submit", data: { submit_once_target: "submit" },
               class: "flex items-center gap-1.5 text-sm font-semibold text-white bg-gray-800 hover:bg-gray-900 px-3 py-1.5 rounded-xl transition-colors" do %>
           <%= print_icon %><%= t("printing.actions.print_all") %>
         <% end %>
@@ -117,6 +119,7 @@
           </ul>
         </div>
       <% end %>
+      <%= render "pos/orders/prints", order: @order %>
       <% if @order.notes.present? %>
         <div class="border-t border-gray-200 px-5 py-4 bg-amber-50/60">
           <h3 class="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1"><%= t("pos.cart.order_notes") %></h3>
