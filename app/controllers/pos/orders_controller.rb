@@ -128,8 +128,18 @@ module Pos
     # off the pass.
     def complete_all
       authorize Order, :complete_all?
+      complete_and_redirect(open_orders_for(current_user))
+    end
 
-      result = Orders::CompleteService.call_all(open_orders_for(current_user))
+    # The safe version of the above: only the open orders whose payment is already
+    # fully collected. Unpaid or part-paid ones stay open for Collect Payment.
+    def complete_paid
+      authorize Order, :complete_all?
+      complete_and_redirect(open_orders_for(current_user).includes(:payments).select(&:fully_paid?))
+    end
+
+    def complete_and_redirect(orders)
+      result = Orders::CompleteService.call_all(orders)
 
       # Three outcomes, not two. "Nothing was completed" and "there was nothing to
       # complete" are different things, and telling a cashier the second when the
@@ -146,6 +156,7 @@ module Pos
         redirect_to pos_shift_path(tab: "orders"), alert: t("flash.pos.no_orders_to_complete")
       end
     end
+    private :complete_and_redirect
 
     def destroy
       @order = Order.find(params[:id])

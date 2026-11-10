@@ -98,6 +98,7 @@ Rails.application.routes.draw do
       collection do
         post :sync_offline
         post :complete_all
+        post :complete_paid
         post :collect_all_cash
       end
       member do

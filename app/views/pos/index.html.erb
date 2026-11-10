@@ -29,8 +29,20 @@
   <aside class="flex flex-col min-h-0 shrink-0 h-[60dvh] lg:h-full lg:flex-none lg:w-1/4 bg-stone-50 border-t lg:border-t-0 lg:border-s border-stone-200/80 z-40 shadow-[0_-4px_24px_rgba(0,0,0,0.08)] lg:shadow-[0_0_24px_rgba(0,0,0,0.06)]">
     <div class="px-4 py-3 flex justify-between items-center gap-3 shrink-0 bg-white border-b border-stone-200/80">
       <%= render "pos/order_summary", order: @order %>
-      <%= button_to t("pos.cart.new_order"), pos_new_order_path, method: :post,
-            class: pos_cart_tonal_btn_class %>
+      <div class="flex items-center gap-2 shrink-0">
+        <%# Secondary: leaves the register for the shift's order list. %>
+        <%= link_to pos_shift_path(tab: "orders"), data: { turbo_frame: "_top" },
+              class: "#{pos_cart_tonal_btn_class} inline-flex items-center gap-1.5" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+          <%= t("pos.cart.all_orders") %>
+        <% end %>
+        <%# Primary: the action the cashier repeats all day. %>
+        <%= button_to pos_new_order_path, method: :post,
+              class: "inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-stone-900 hover:bg-stone-800 active:bg-stone-950 px-4 py-2 rounded-full transition-colors shadow-sm shrink-0" do %>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
+          <%= t("pos.cart.new_order") %>
+        <% end %>
+      </div>
     </div>
 
     <%= render "pos/cart_panel", order: @order %>

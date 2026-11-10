@@ -28,6 +28,13 @@ module Printing
       "http://127.0.0.1:#{agent_port}"
     end
 
+    # WhatsApp link cashiers can tap when the agent is down. Set SUPPORT_WHATSAPP_NUMBER
+    # (digits, with country code). Nil when unset, so no link is shown.
+    def support_whatsapp_url
+      digits = ENV["SUPPORT_WHATSAPP_NUMBER"].to_s.gsub(/\D/, "")
+      "https://wa.me/#{digits}" if digits.present?
+    end
+
     def agent_token
       Setting.get("print_agent_token", "")
     end

@@ -214,6 +214,7 @@ module Pos
       # what is holding their shift open.
       unfinalized = unfinalized_orders_for(current_user)
       @open_orders_count = unfinalized.count
+      @paid_open_orders_count = unfinalized.includes(:payments).count(&:fully_paid?)
       @shift_time_range = widen_to_business_day(current_user.shift_orders_time_range)
 
       # Unfinished orders always show, even when they were rung on an earlier
@@ -226,9 +227,15 @@ module Pos
         ids |= Order.where(user: current_user, created_at: start_time..end_time).pluck(:id)
       end
 
-      @shift_orders = Order.where(id: ids)
+      # One list, two views: "open" is what the cashier came here to clear and is
+      # the default whenever anything is open; "all" is the day's history, open
+      # orders included.
+      @filter = params[:filter].presence_in(%w[open all]) || (@open_orders_count.positive? ? "open" : "all")
+      shown_ids = @filter == "open" ? unfinalized.pluck(:id) : ids
+      @shift_orders = Order.where(id: shown_ids)
         .includes(:customer, :payments)
         .order(created_at: :desc)
+      @all_orders_count = ids.size
     end
 
     # Orders rung before the drawer was opened or the clock was punched still belong

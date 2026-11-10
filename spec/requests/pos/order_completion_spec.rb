@@ -99,7 +99,7 @@ RSpec.describe "POS order completion", type: :request do
       get pos_shift_path(tab: "orders")
 
       expect(response.body).to include(complete_all_pos_orders_path)
-      expect(response.body).to include(I18n.t("pos.shift.orders.open_count", count: 2))
+      expect(response.body).to include(I18n.t("pos.shift.orders.complete_all_confirm", count: 2))
     end
 
     it "hides the bulk close when nothing is open" do
@@ -117,6 +117,21 @@ RSpec.describe "POS order completion", type: :request do
 
       expect(response).to redirect_to(pos_shift_path(tab: "orders"))
       expect(mine.map { |o| o.reload.status }).to all(eq("completed"))
+    end
+
+    it "complete_paid closes only the fully paid open orders" do
+      paid = open_order
+      create(:payment, order: paid, amount_cents: paid.total_cents)
+      part = open_order
+      create(:payment, order: part, amount_cents: part.total_cents - 1)
+      unpaid = open_order
+
+      post complete_paid_pos_orders_path
+
+      expect(response).to redirect_to(pos_shift_path(tab: "orders"))
+      expect(paid.reload.status).to eq("completed")
+      expect(part.reload.status).to eq("submitted")
+      expect(unpaid.reload.status).to eq("submitted")
     end
 
     it "leaves another cashier's orders alone" do

@@ -1,0 +1,41 @@
+<%# Compact floating alert shown when the local print agent can't be reached.
+    Bottom-corner pill instead of a full-width top banner, so it never covers the
+    POS navigation. Shown/hidden by client-printer (via dismissible-banner);
+    the hint is revealed by clicking the pill (native <details>, no JS).
+    locals: message:, hint:, support_url: nil, support_label: nil %>
+<div id="print-agent-banner"
+     role="alert"
+     data-controller="dismissible-banner"
+     data-dismissible-banner-id-value="print-agent"
+     class="hidden fixed bottom-4 start-4 z-[60] max-w-[min(22rem,calc(100vw-2rem))]">
+  <div class="flex items-start gap-1 rounded-2xl border border-amber-300 bg-amber-50 text-amber-900 shadow-lg">
+    <details class="group flex-1 min-w-0">
+      <summary class="flex items-center gap-2 cursor-pointer list-none px-3 py-2 [&::-webkit-details-marker]:hidden">
+        <span class="relative flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
+          <span class="absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-60 animate-ping"></span>
+          <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-600"></span>
+        </span>
+        <span class="flex-1 min-w-0 text-sm font-medium leading-snug"><%= message %></span>
+        <svg class="w-4 h-4 shrink-0 opacity-60 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="px-3 pb-2.5 space-y-2">
+        <p class="text-xs leading-relaxed opacity-90"><%= hint %></p>
+        <% if local_assigns[:support_url].present? %>
+          <%= link_to support_label, support_url, target: "_blank", rel: "noopener",
+                data: { turbo: false },
+                class: "inline-flex items-center rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-3 py-1.5 min-h-9" %>
+        <% end %>
+      </div>
+    </details>
+    <button type="button"
+            data-action="dismissible-banner#dismiss"
+            class="shrink-0 rounded-lg p-1.5 m-1 opacity-70 hover:opacity-100 hover:bg-black/5 transition-colors min-h-9 min-w-9 flex items-center justify-center"
+            aria-label="<%= t("actions.close") %>">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+  </div>
+</div>

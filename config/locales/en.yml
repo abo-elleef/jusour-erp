@@ -364,7 +364,8 @@ en:
       show_hint: "Install and run the print agent on this register (port %{port})."
       routing_client: "Print jobs are sent from this computer to the store printer, not from the cloud server."
       banner: "Print agent not running on this register."
-      banner_hint: "Start it with: node print_agent/index.js (port %{port})"
+      banner_hint: "Contact support to get it running again."
+      banner_support_link: "Contact support on WhatsApp"
       checkout_blocked: "Payment is unavailable until the print agent is running on this register."
       discover_button: "Scan local network"
       discover_hint: "Discovers printers on this computer's network via the local print agent."
@@ -3591,6 +3592,7 @@ en:
       empty: "No items yet"
       empty_hint: "Tap a menu item to start the order"
       new_order: "New Order"
+      all_orders: "All orders"
       order_notes: "Order Notes"
       notes_placeholder: "Add a note for the kitchen..."
       add_note: "+ Add note"
@@ -3718,6 +3720,13 @@ en:
         open_count:
           one: "%{count} order still open"
           other: "%{count} orders still open"
+        filter_open: "Open"
+        filter_all: "All orders"
+        no_open: "No open orders. Everything is finished."
+        complete_paid: "Complete paid orders (%{count})"
+        complete_paid_confirm:
+          one: "Complete the %{count} open order that is fully paid? Unpaid orders stay open."
+          other: "Complete the %{count} open orders that are fully paid? Unpaid orders stay open."
         complete_all: "Complete all open orders"
         complete_all_hint: "Closes every order you have left open, paid or not. Unpaid ones stay on Collect Payment."
         complete_all_confirm:

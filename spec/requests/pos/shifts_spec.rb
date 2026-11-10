@@ -49,7 +49,25 @@ RSpec.describe "POS shift flow", type: :request do
       get pos_shift_path(tab: "orders")
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(order.order_number)
-      expect(response.body).to include(I18n.t("pos.shift.orders.title"))
+      expect(response.body).to include(I18n.t("pos.shift.orders.filter_open"))
+      expect(response.body).to include(I18n.t("pos.shift.orders.filter_all"))
+    end
+
+    it "defaults to the open orders and hides finished ones; ?filter=all shows both" do
+      done = create(:order, user: cashier, company: company, status: "completed",
+        subtotal_cents: 1000, tax_cents: 0, total_cents: 1000, created_at: 1.hour.ago)
+      create(:order_item, order: done, unit_price_cents: 1000)
+      open_order = create(:order, user: cashier, company: company, status: "in_progress",
+        subtotal_cents: 500, tax_cents: 0, total_cents: 500, created_at: 30.minutes.ago)
+      create(:order_item, order: open_order, unit_price_cents: 500)
+
+      get pos_shift_path(tab: "orders")
+      expect(response.body).to include(pos_order_path(open_order, from: "shift"))
+      expect(response.body).not_to include(pos_order_path(done, from: "shift"))
+
+      get pos_shift_path(tab: "orders", filter: "all")
+      expect(response.body).to include(pos_order_path(open_order, from: "shift"))
+      expect(response.body).to include(pos_order_path(done, from: "shift"))
     end
 
     it "lists orders from an open drawer session" do

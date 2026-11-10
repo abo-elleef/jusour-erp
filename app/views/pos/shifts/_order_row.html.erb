@@ -1,0 +1,45 @@
+<tr class="hover:bg-gray-100 transition-colors">
+  <td class="p-3 ps-5">
+    <span class="font-bold text-gray-900"><%= order.order_number %></span>
+  </td>
+  <td class="p-3 text-gray-600 tabular-nums whitespace-nowrap">
+    <%= l(order.created_at, format: :short_time) %>
+  </td>
+  <td class="p-3">
+    <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= order_type_class(order.order_type) %> <%= order_type_border_class(order.order_type) %>">
+      <%= order.order_type_label %>
+    </span>
+  </td>
+  <td class="p-3">
+    <span class="text-xs font-semibold px-2.5 py-1 rounded-full border <%= order_status_class(order.status) %> <%= order_status_border_class(order.status) %>">
+      <%= order_status_label(order.status) %>
+    </span>
+  </td>
+  <td class="p-3 text-gray-600">
+    <%= order.customer&.display_name || order.fulfillment_summary %>
+  </td>
+  <td class="p-3 text-gray-700">
+    <%= order_payment_methods_label(order) %>
+  </td>
+  <td class="p-3 text-end font-bold text-gray-900 tabular-nums"><%= format_money(order.total_cents) %></td>
+  <td class="p-3 pe-5 text-end">
+    <% if order.draft? %>
+      <div class="inline-flex items-center gap-2">
+        <%= button_to t("pos.shift.orders.resume"), resume_pos_order_path(order),
+              method: :post,
+              form: { data: { turbo: false } },
+              class: "inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+        <%# Only an untouched cart of the cashier's own — see OrderPolicy#destroy?. %>
+        <% if policy(order).destroy? %>
+          <%= button_to t("actions.delete"), pos_order_path(order),
+                method: :delete,
+                form: { data: { turbo_confirm: t("pos.shift.orders.discard_confirm", number: order.order_number) } },
+                class: "inline-flex items-center border border-red-200 text-red-700 hover:bg-red-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+        <% end %>
+      </div>
+    <% else %>
+      <%= link_to t("actions.view"), pos_order_path(order, from: "shift"),
+            class: "inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+    <% end %>
+  </td>
+</tr>

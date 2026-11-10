@@ -56,16 +56,15 @@
                 class: "shrink-0 underline font-semibold" %>
         </div>
       </div>
-      <% if current_user&.company_id && Printing::Config.client_routing? %>
-        <%= render "shared/dismissible_banner",
-              id: "print-agent",
-              html_id: "print-agent-banner",
-              message: t("printing.agent.banner"),
-              hint: t("printing.agent.banner_hint", port: Printing::Config.agent_port),
-              variant: "warning",
-              hidden: true %>
-      <% end %>
     </div>
+    <% if current_user&.company_id && Printing::Config.client_routing? %>
+      <%# Floating pill, deliberately outside #pos-fixed-banners so it never covers the top nav. %>
+      <%= render "pos/print_agent_alert",
+            message: t("printing.agent.banner"),
+            hint: t("printing.agent.banner_hint"),
+            support_url: Printing::Config.support_whatsapp_url,
+            support_label: t("printing.agent.banner_support_link") %>
+    <% end %>
     <%= render "shared/toasts" %>
     <span class="sr-only" data-connectivity-target="syncStatus"></span>
     <% if current_user&.company_id && Printing::Config.client_routing? %>
