@@ -817,6 +817,20 @@ module ApplicationHelper
     Current.company.units.active.ordered.map { |u| [ingredient_unit_label(u.name), u.id] }
   end
 
+  # Options for the promo form's menu-item picker. Names collide across categories,
+  # so the category and item code are searchable and shown under the name.
+  def menu_item_search_options(menu_items)
+    menu_items.map do |item|
+      hints = [item.category&.name, item.code].compact_blank.uniq
+      option = { value: item.id, label: item.name }
+      if hints.any?
+        option[:keywords] = hints.join(" ")
+        option[:aliases] = hints
+      end
+      option
+    end.to_json
+  end
+
   def ingredient_search_options(ingredients, vendor_aliases: false)
     ingredients.map do |ingredient|
       option = { value: ingredient.id, label: ingredient.name }

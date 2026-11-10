@@ -4249,7 +4249,7 @@ en:
       empty_description: "Create a short-window price for an item. Cashiers still ring the list price; the markdown is recorded as a discount."
       form_heading: "Promo details"
       form_hint: "Customers see the promo price; sales reports keep list price and promo cost."
-      select_menu_item: "Select menu item"
+      select_menu_item: "Search menu items…"
       starts_at: "Starts at"
       ends_at: "Ends at"
       highlight_label: "Highlight on menus"

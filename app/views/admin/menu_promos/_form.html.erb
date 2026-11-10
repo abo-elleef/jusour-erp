@@ -2,7 +2,8 @@
 <% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
-<%= form_with model: [:admin, menu_promo], class: "space-y-6" do |f| %>
+<%= form_with model: [:admin, menu_promo], class: "space-y-6",
+      data: { searchable_select_options: menu_item_search_options(@menu_items) } do |f| %>
   <% if menu_promo.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
       <%= menu_promo.errors.full_messages.to_sentence %>
@@ -21,9 +22,10 @@
       </div>
       <div>
         <%= f.label :menu_item_id, t("admin.menu_promos.menu_item"), class: label_class %>
-        <%= f.collection_select :menu_item_id, @menu_items, :id, :name,
-              { prompt: t("admin.menu_promos.select_menu_item") },
-              class: "#{input_class} appearance-none", required: true %>
+        <%= render "shared/searchable_select", form: f, field: :menu_item_id,
+              selected: menu_promo.menu_item_id,
+              placeholder: t("admin.menu_promos.select_menu_item"),
+              input_class: input_class %>
       </div>
       <div>
         <%= f.label :location_id, t("admin.menu_promos.location"), class: label_class %>
