@@ -63,21 +63,27 @@ module Accounting
       rows.sort_by { |r| -r[:revenue_cents] }
     end
 
+    # One row per menu item or combo (grouped by id, so two items that share a
+    # name stay separate), with its category for the items table's filter.
     def by_item
       return [] if order_ids.empty?
 
+      combos_label = I18n.t("accounting.sales_reports.combos_category")
       rows = OrderItem.joins("LEFT JOIN menu_items ON menu_items.id = order_items.menu_item_id")
         .joins("LEFT JOIN combos ON combos.id = order_items.combo_id")
+        .joins("LEFT JOIN categories ON categories.id = menu_items.category_id")
         .where(order_id: order_ids)
-        .group(Arel.sql("COALESCE(menu_items.name, combos.name)"))
+        .group("order_items.menu_item_id", "order_items.combo_id", "menu_items.name", "combos.name", "categories.name")
         .pluck(
           Arel.sql("COALESCE(menu_items.name, combos.name)"),
+          Arel.sql("categories.name"),
+          Arel.sql("order_items.combo_id"),
           Arel.sql("SUM(order_items.quantity)"),
           Arel.sql("SUM(#{RevenueCalculator::ORDER_ITEM_LINE_REVENUE})")
         )
 
-      rows.map do |name, units, revenue|
-        { name: name, units_sold: units.to_i, revenue_cents: revenue.to_i }
+      rows.map do |name, category, combo_id, units, revenue|
+        { name: name, category: combo_id ? combos_label : category, units_sold: units.to_i, revenue_cents: revenue.to_i }
       end.sort_by { |r| -r[:revenue_cents] }
     end
 

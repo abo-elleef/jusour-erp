@@ -87,5 +87,19 @@ RSpec.describe Accounting::SalesReportService do
 
       expect(mains[:revenue_cents]).to eq(1200)
     end
+
+    it "lists each item with its category, units and revenue" do
+      other = create(:menu_item, company: company, category: category, base_price_cents: 500, name: "Fries")
+      order = create(:order, user: user, company: company, status: "completed",
+        subtotal_cents: 2500, total_cents: 2500, created_at: today.noon)
+      create(:order_item, order: order, menu_item: menu_item, quantity: 2, unit_price_cents: 1000)
+      create(:order_item, order: order, menu_item: other, quantity: 1, unit_price_cents: 500)
+
+      items = described_class.new(today, today).call[:by_item]
+
+      expect(items.map { |r| r[:name] }).to eq([menu_item.name, "Fries"])
+      expect(items.first).to include(category: "Mains", units_sold: 2, revenue_cents: 2000)
+      expect(items.last).to include(units_sold: 1, revenue_cents: 500)
+    end
   end
 end

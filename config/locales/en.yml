@@ -5397,6 +5397,11 @@ en:
       count_value: "%{count} · %{amount}"
       showing: "%{count} records"
     sales_reports:
+      by_item: "Items sold"
+      all_categories: "All categories"
+      item: "Item"
+      units_sold: "Units sold"
+      share: "Share"
       title: "Sales reports"
       description: "Revenue, payment mix, and profit & loss for the selected period."
       net_sales: "Net sales"

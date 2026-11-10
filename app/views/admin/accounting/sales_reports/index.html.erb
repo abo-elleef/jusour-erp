@@ -152,6 +152,62 @@
     </section>
   </div>
 
+  <%# Items sold. Anchor so sorting/filtering returns the user to this table rather than the page top. %>
+  <section id="items-sold" class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-center justify-between gap-3">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.sales_reports.by_item") %></h2>
+      <% if @item_categories.any? %>
+        <%= form_with url: admin_accounting_sales_reports_path(anchor: "items-sold"), method: :get, data: { turbo: false },
+                      class: "flex items-center gap-2" do %>
+          <% request.query_parameters.except("item_category").each do |key, value| %>
+            <%= hidden_field_tag key, value %>
+          <% end %>
+          <%= select_tag :item_category,
+                options_for_select([[t("accounting.sales_reports.all_categories"), ""]] + @item_categories, @item_category),
+                class: "text-sm rounded-lg border border-gray-200 bg-white px-3 py-1.5", onchange: "this.form.requestSubmit()" %>
+        <% end %>
+      <% end %>
+    </div>
+    <% item_sort = ->(label, key, default_dir: "desc") {
+         active = @item_sort == key
+         next_dir = active ? (@item_dir == "asc" ? "desc" : "asc") : default_dir
+         link_to admin_accounting_sales_reports_path(request.query_parameters.symbolize_keys.merge(sort: key, dir: next_dir, anchor: "items-sold")),
+                 class: "inline-flex items-center gap-1 hover:text-gray-900 #{active ? 'text-gray-900' : 'text-gray-500'}" do
+           safe_join([label, tag.span(active ? (@item_dir == "asc" ? "↑" : "↓") : "", class: "text-amber-600")])
+         end
+       } %>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="border-b border-gray-100 text-xs font-semibold uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= item_sort.call(t("accounting.sales_reports.item"), "name", default_dir: "asc") %></th>
+            <th class="p-3 text-start"><%= item_sort.call(t("accounting.shared.category"), "category", default_dir: "asc") %></th>
+            <th class="p-3 text-end"><%= item_sort.call(t("accounting.sales_reports.units_sold"), "units") %></th>
+            <th class="p-3 text-end"><%= item_sort.call(t("accounting.sales_reports.revenue"), "revenue") %></th>
+            <th class="p-3 pe-5 text-end text-gray-500"><%= t("accounting.sales_reports.share") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 table-zebra">
+          <% if @items.any? %>
+            <% @items.each do |row| %>
+              <tr class="hover:bg-gray-100 transition-colors">
+                <td class="p-3 ps-5 font-medium text-gray-900"><%= row[:name] %></td>
+                <td class="p-3 text-gray-600"><%= row[:category] || "—" %></td>
+                <td class="p-3 text-end tabular-nums"><%= row[:units_sold] %></td>
+                <td class="p-3 text-end font-semibold tabular-nums"><%= copyable_amount(row[:revenue_cents], money: true) %></td>
+                <td class="p-3 pe-5 text-end tabular-nums text-gray-500">
+                  <%= @item_total_cents.positive? ? "#{number_with_precision(row[:revenue_cents] * 100.0 / @item_total_cents, precision: 1)}%" : "—" %>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr><td colspan="5" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_reports.no_sales") %></td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <section class="rounded-2xl border border-gray-200 bg-white p-5">
       <h2 class="text-sm font-semibold text-gray-900 mb-1"><%= t("accounting.sales_reports.daily_totals_chart") %></h2>
