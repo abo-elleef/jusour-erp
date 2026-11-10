@@ -19,12 +19,11 @@ export default class extends Controller {
     }
   }
 
-  syncHidden(event) {
+  // Only refreshes the hidden total. A zero count is a real answer (nothing sold,
+  // no float), so it is the server that decides whether it is acceptable and says
+  // why when it is not — blocking here made the button look dead.
+  syncHidden() {
     this.recalculate()
-    const amount = parseFloat(this.hiddenTarget?.value || "0")
-    if (!amount || amount <= 0) {
-      event.preventDefault()
-    }
   }
 
   formatCents(cents) {

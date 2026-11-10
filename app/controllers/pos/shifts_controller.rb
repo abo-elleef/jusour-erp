@@ -91,14 +91,17 @@ module Pos
       authorize @open_session, :reconcile?
 
       counted_cents = (params[:counted_cash].to_f * 100).to_i
-      if counted_cents <= 0
-        return redirect_to count_pos_shift_path, alert: t("flash.pos.shift.count_required")
-      end
 
       assign_deposit_treasury!
 
       service = ::Accounting::CashReconciliationService.new(@open_session)
       expected = service.compute_expected!
+
+      # An empty count is only believable when the drawer should be empty too (no
+      # float, no cash sales). Otherwise it is almost certainly a form left blank.
+      if counted_cents <= 0 && expected.positive?
+        return redirect_to count_pos_shift_path, alert: t("flash.pos.shift.count_required")
+      end
       variance = counted_cents - expected
 
       if variance.abs > ::Accounting::CashReconciliationService::VARIANCE_ALERT_THRESHOLD_CENTS &&
