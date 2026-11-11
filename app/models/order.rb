@@ -212,21 +212,19 @@ class Order < ApplicationRecord
   # The customer pays the fee with the order, but it is the driver's money, not
   # the restaurant's. On a cash order the driver keeps it out of what they
   # collected; on an InstaPay / Vodafone Cash order the cashier hands it over from
-  # the drawer. Either way the drawer that takes the payment ends up short by the
-  # fee, so it is recorded as paid out of that drawer (see
-  # Accounting::SessionSalesSummary#driver_payout_cents).
+  # the drawer. Either way the drawer that takes the first payment ends up short
+  # by the fee, so it is recorded as paid out of that drawer when the payment is
+  # taken (Payment#charge_delivery_fee_to_drawer, read by
+  # Accounting::SessionSalesSummary#driver_payout_cents). The fee can be saved
+  # ahead of any payment, so an order out for delivery shows its full amount due.
   #
   # Returns false when the fee can no longer be changed (see above).
-  def apply_delivery_fee!(cents, drawer_session: nil)
+  def apply_delivery_fee!(cents)
     return false unless delivery_fee_editable?
+    return true if cents == delivery_fee_cents
 
-    self.delivery_fee_drawer_session = cents.positive? ? drawer_session : nil
-    if cents == delivery_fee_cents
-      save!
-    else
-      self.delivery_fee_cents = cents
-      recalculate_totals!
-    end
+    self.delivery_fee_cents = cents
+    recalculate_totals!
     true
   end
 

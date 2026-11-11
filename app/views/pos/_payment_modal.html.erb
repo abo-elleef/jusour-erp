@@ -28,13 +28,27 @@
     <section class="rounded-2xl border border-sky-200 bg-sky-50/60 p-4 mb-4">
       <label for="delivery_fee_pounds_input" class="block text-xs font-semibold text-sky-800 mb-1.5"><%= t("payment.delivery_fee") %></label>
       <% if fee_editable %>
-        <%= text_field_tag :delivery_fee_pounds_input,
-              (order.delivery_fee_cents.positive? ? format("%.2f", order.delivery_fee_cents / 100.0) : ""),
-              inputmode: "decimal", autocomplete: "off", placeholder: "0.00",
-              class: "#{pos_input_class} text-2xl text-center min-h-14",
-              data: { controller: "arabic-numerals", payment_target: "deliveryFee",
-                      action: "input->arabic-numerals#normalize input->payment#updateDeliveryFee focus->arabic-numerals#select" } %>
-        <p class="text-xs text-sky-800/80 mt-1.5"><%= t("payment.delivery_fee_hint") %></p>
+        <%# Its own form, so the fee can be saved before any money is taken — for an
+            order that goes out before it is paid. %>
+        <%= form_with url: delivery_fee_pos_order_path(order), method: :patch, class: "flex gap-2" do %>
+          <% if local_assigns[:checkout] %>
+            <%= hidden_field_tag :checkout, "1" %>
+          <% end %>
+          <%= text_field_tag :delivery_fee_pounds,
+                (order.delivery_fee_cents.positive? ? format("%.2f", order.delivery_fee_cents / 100.0) : ""),
+                id: "delivery_fee_pounds_input",
+                inputmode: "decimal", autocomplete: "off", placeholder: "0.00",
+                class: "#{pos_input_class} flex-1 min-w-0 text-2xl text-center min-h-14",
+                data: { controller: "arabic-numerals", payment_target: "deliveryFee",
+                        action: "input->arabic-numerals#normalize input->payment#updateDeliveryFee focus->arabic-numerals#select" } %>
+          <%= submit_tag t("payment.save_delivery_fee"),
+                class: "shrink-0 min-h-14 px-4 rounded-xl border border-sky-300 bg-white text-sky-800 font-semibold hover:bg-sky-100 transition-colors" %>
+        <% end %>
+        <% if local_assigns[:saved_delivery_fee] %>
+          <p class="text-xs font-semibold text-sky-800 mt-1.5" role="status"><%= t("payment.delivery_fee_saved") %></p>
+        <% else %>
+          <p class="text-xs text-sky-800/80 mt-1.5"><%= t("payment.delivery_fee_hint") %></p>
+        <% end %>
       <% else %>
         <p class="text-2xl font-bold tabular-nums text-center text-gray-900"><%= format_money(order.delivery_fee_cents) %></p>
         <p class="text-xs text-sky-800/80 mt-1.5"><%= t("payment.delivery_fee_locked") %></p>

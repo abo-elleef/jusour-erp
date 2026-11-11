@@ -110,6 +110,32 @@ module Pos
       end
     end
 
+    # Saves the delivery fee without taking a payment, so an order that goes out
+    # before it is paid shows what the driver should bring back. The payment modal
+    # sends it from the POS screen (answered with a Turbo Stream that re-renders the
+    # cart and the modal) or from an order's checkout page (answered with a redirect).
+    def delivery_fee
+      @order = Order.find(params[:id])
+      authorize @order, @order.draft? ? :update? : :record_payment?
+
+      cents = (params[:delivery_fee_pounds].to_s.strip.presence.to_f * 100).round
+      alert = if cents.negative?
+                t("flash.pos.negative_delivery_fee")
+              elsif !@order.apply_delivery_fee!(cents)
+                t("flash.pos.delivery_fee_locked")
+              end
+
+      if params[:checkout].present? || alert
+        redirect_back fallback_location: pos_order_path(@order, from: params[:from]),
+                      **(alert ? { alert: alert } : { notice: t("flash.pos.delivery_fee_saved") })
+      else
+        respond_to do |format|
+          format.turbo_stream
+          format.html { redirect_to pos_path, notice: t("flash.pos.delivery_fee_saved") }
+        end
+      end
+    end
+
     # A customer who paid one way and wants to pay another (cash → InstaPay, say),
     # while the drawer that took the payment is still open.
     def change_payment_method

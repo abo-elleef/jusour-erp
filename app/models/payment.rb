@@ -29,8 +29,19 @@ class Payment < ApplicationRecord
       user: processed_by_user
     )
   end
+  after_create :charge_delivery_fee_to_drawer
 
   private
+
+  # The driver's delivery fee leaves through the drawer that takes the order's
+  # first payment (see Order#apply_delivery_fee!), whichever screen took it — the
+  # payment modal, bulk cash collection, or anything else.
+  def charge_delivery_fee_to_drawer
+    return if cash_drawer_session_id.blank?
+    return unless order.delivery_fee_cents.positive? && order.delivery_fee_drawer_session_id.nil?
+
+    order.update_columns(delivery_fee_drawer_session_id: cash_drawer_session_id, updated_at: Time.current)
+  end
 
   def assign_company_from_order
     self.company ||= order&.company

@@ -95,6 +95,61 @@ RSpec.describe "Delivery fee on POS orders", type: :request do
     expect(order).to be_fully_paid
   end
 
+  describe "saving the fee before any payment" do
+    def save_fee(fee, **extra)
+      patch delivery_fee_pos_order_path(order), params: { delivery_fee_pounds: fee }.merge(extra),
+                                                as: :turbo_stream
+    end
+
+    it "adds it to the amount due without taking money" do
+      expect { save_fee("30") }.not_to change(Payment, :count)
+
+      order.reload
+      expect(order.delivery_fee_cents).to eq(3_000)
+      expect(order.amount_due_cents).to eq(food_total + 3_000)
+      expect(order.delivery_fee_drawer_session).to be_nil
+      expect(response.media_type).to eq(Mime[:turbo_stream])
+      expect(response.body).to include("payment-modal-content")
+    end
+
+    it "redirects back from the checkout page" do
+      patch delivery_fee_pos_order_path(order), params: { delivery_fee_pounds: "30", checkout: "1" }
+
+      expect(response).to redirect_to(pos_order_path(order))
+      expect(order.reload.delivery_fee_cents).to eq(3_000)
+    end
+
+    it "is charged to the drawer that later takes the payment" do
+      save_fee("30")
+      pay(amount_cents: food_total + 3_000, fee: "30")
+
+      drawer = cashier.open_cash_drawer_session(location: branch)
+      expect(order.reload.delivery_fee_drawer_session).to eq(drawer)
+      expect(order).to be_fully_paid
+    end
+
+    it "is charged to the drawer even when the payment comes without a fee (bulk cash collection)" do
+      save_fee("30")
+      pay(amount_cents: food_total + 3_000)
+
+      expect(order.reload.delivery_fee_drawer_session).to eq(cashier.open_cash_drawer_session(location: branch))
+    end
+
+    it "refuses to change it once money has been taken" do
+      save_fee("30")
+      pay(amount_cents: 1_000)
+      save_fee("50")
+
+      expect(order.reload.delivery_fee_cents).to eq(3_000)
+      expect(flash[:alert]).to be_present
+    end
+
+    it "refuses a negative fee" do
+      save_fee("-5")
+      expect(order.reload.delivery_fee_cents).to eq(0)
+    end
+  end
+
   context "when the order is not a delivery" do
     let(:order_type) { "pickup" }
 

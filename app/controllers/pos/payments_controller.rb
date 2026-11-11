@@ -12,10 +12,7 @@ module Pos
     def create
       return refuse_negative_delivery_fee if delivery_fee_cents_param&.negative?
 
-      unless delivery_fee_cents_param.nil?
-        @order.apply_delivery_fee!(delivery_fee_cents_param,
-                                   drawer_session: current_user.open_cash_drawer_session(location: @order.location))
-      end
+      @order.apply_delivery_fee!(delivery_fee_cents_param) unless delivery_fee_cents_param.nil?
 
       tip_cents = if params[:tip_pounds].present?
         (params[:tip_pounds].to_f * 100).round

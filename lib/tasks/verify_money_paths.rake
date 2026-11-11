@@ -323,7 +323,7 @@ class MoneyPathChecker
                              order_number: "V#{SecureRandom.hex(3)}")
     delivery.order_items.create!(menu_item: item, quantity: 1, unit_price_cents: 4_000)
     delivery.update!(subtotal_cents: 4_000, total_cents: 4_000)
-    delivery.apply_delivery_fee!(1_500, drawer_session: session)
+    delivery.apply_delivery_fee!(1_500)
     Payments::CashPaymentService.call(order: delivery, amount_cents: delivery.total_cents,
                                       tip_cents: 0, user: owner)
     check "POS — delivery, driver keeps the fee"

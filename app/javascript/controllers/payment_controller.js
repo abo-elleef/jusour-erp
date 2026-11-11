@@ -43,6 +43,8 @@ export default class extends Controller {
   addPrintChoices(event) {
     const form = event.target
     if (!(form instanceof HTMLFormElement)) return
+    // Only payments print; saving the delivery fee on its own is not one.
+    if (!form.querySelector('input[name="payment_method"]')) return
     form.querySelectorAll("input[data-print-choice]").forEach((el) => el.remove())
     const add = (name, target) => {
       if (!target) return
