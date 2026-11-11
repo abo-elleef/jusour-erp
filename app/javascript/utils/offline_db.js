@@ -87,3 +87,14 @@ export async function nextCounter(dayKey) {
   })
   return next
 }
+
+// A short code made up once per browser, used in offline order numbers when no
+// workstation is chosen, so two registers without one still print different numbers.
+export async function deviceCode() {
+  const existing = await getMeta("device_code")
+  if (existing) return existing
+  const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+  const code = Array.from(crypto.getRandomValues(new Uint8Array(2)), (n) => letters[n % letters.length]).join("")
+  await setMeta("device_code", code)
+  return code
+}

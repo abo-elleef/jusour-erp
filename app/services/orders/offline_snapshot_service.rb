@@ -28,7 +28,7 @@ module Orders
         csrf_token: @csrf_token,
         user: { id: @user.id, name: @user.name },
         location: @location && { id: @location.id, name: @location.name, table_count: @location.table_count },
-        workstation: @workstation && { id: @workstation.id, name: @workstation.name },
+        workstation: @workstation && { id: @workstation.id, name: @workstation.name, code: register_code },
         drawer_session_id: drawer_session&.id,
         company: { receipt_name: @user.company.receipt_name(location: @location) },
         agent: agent,
@@ -40,6 +40,22 @@ module Orders
     end
 
     private
+
+    # A letter per register at the branch (A, B, C, ... then AA, AB, ...) so
+    # offline order numbers from two registers never read the same in the
+    # kitchen. Ordered by creation, inactive ones included, so a register keeps
+    # its letter when another is added or switched off.
+    def register_code
+      ids = Workstation.where(location_id: @workstation.location_id).order(:created_at, :id).pluck(:id)
+      index = ids.index(@workstation.id) || 0
+      code = +""
+      loop do
+        code.prepend(("A".ord + (index % 26)).chr)
+        index = (index / 26) - 1
+        break if index.negative?
+      end
+      code
+    end
 
     def drawer_session
       return @drawer_session if defined?(@drawer_session)

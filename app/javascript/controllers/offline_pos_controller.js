@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { allOrders, getMeta, getOrder, nextCounter, putOrder } from "utils/offline_db"
+import { allOrders, deviceCode, getMeta, getOrder, nextCounter, putOrder } from "utils/offline_db"
 import { computeTotals, formatMoney, lineTotal, parseAmountToCents } from "utils/offline_totals"
 import { groupShowsPrices } from "utils/modifier_pricing"
 import { buildProductionTicket, buildReceipt, toBase64, widthCharsFor } from "utils/escpos_canvas"
@@ -668,10 +668,12 @@ export default class extends Controller {
     const dayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
     const number = await nextCounter(dayKey)
     const { snapshot, cart } = this
+    // Every register counts from 1, so the register's code keeps the numbers apart.
+    const register = snapshot.workstation?.code || (await deviceCode())
 
     const order = {
       client_uuid: uuid(),
-      offline_number: `OFF-${number}`,
+      offline_number: `OFF-${register}${number}`,
       created_at: now.toISOString(),
       user_id: snapshot.user.id,
       location_id: snapshot.location?.id || null,
