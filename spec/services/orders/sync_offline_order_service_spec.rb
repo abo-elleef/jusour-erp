@@ -237,4 +237,38 @@ RSpec.describe Orders::SyncOfflineOrderService do
     expect(result).not_to be_success
     expect(Order.where(client_uuid: uuid)).to be_none
   end
+
+  describe "an order carried over from the online register" do
+    let(:draft) do
+      Order.create!(user: cashier, location: branch, order_type: "pickup").tap do |order|
+        order.order_items.create!(menu_item: burger, quantity: 2, unit_price_cents: 1000)
+      end
+    end
+
+    it "discards the draft it replaces, with an audit entry, so the sale is not left behind unpaid" do
+      result = described_class.call(user: cashier, payload: payload(replaces_order_id: draft.id))
+
+      expect(result).to be_success
+      expect(Order.exists?(draft.id)).to be(false)
+      entry = AuditLogEntry.find_by(action: "order.discard", record_id: draft.id)
+      expect(entry.changes_snapshot).to include("replaced_by_order_id" => result.order.id)
+    end
+
+    it "leaves a draft that was paid or sent to the kitchen in the meantime" do
+      draft.payments.create!(payment_method: "cash", amount_cents: 100, tip_cents: 0, status: "completed", processed_by_user: cashier)
+      sent = Order.create!(user: cashier, location: branch, order_type: "pickup", kitchen_sent_at: Time.current)
+
+      described_class.call(user: cashier, payload: payload(replaces_order_id: draft.id))
+      described_class.call(user: cashier, payload: payload(client_uuid: SecureRandom.uuid, replaces_order_id: sent.id))
+
+      expect(Order.exists?(draft.id)).to be(true)
+      expect(Order.exists?(sent.id)).to be(true)
+    end
+
+    it "still syncs when the draft is already gone" do
+      result = described_class.call(user: cashier, payload: payload(replaces_order_id: SecureRandom.uuid))
+
+      expect(result).to be_success
+    end
+  end
 end

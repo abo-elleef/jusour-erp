@@ -1,7 +1,7 @@
 // Everything that moves data between the browser's offline store and the server:
 // keeping the menu snapshot fresh while online, caching the offline register page,
 // and pushing queued orders once the internet is back.
-import { allOrders, deleteOrder, getMeta, putOrder, setMeta } from "utils/offline_db"
+import { allOrders, deleteMeta, deleteOrder, getMeta, putOrder, setMeta } from "utils/offline_db"
 
 // These mirror config/routes.rb (pos/offline*). They are constants rather than
 // data attributes because the same code runs on the online POS and the cached
@@ -26,6 +26,29 @@ export async function isReachable(timeoutMs = 4000) {
     return false
   } finally {
     clearTimeout(timer)
+  }
+}
+
+// The order that was on the online register when the internet dropped. The page
+// renders it (pos/_offline_handoff) in two places that refresh at different times,
+// so the copy rendered last is the true one. Saved under meta "handoff" for the
+// offline register to open with; nothing saved means the register starts empty.
+export async function saveHandoff(root = document) {
+  let latest = null
+  root.querySelectorAll("script[data-offline-handoff]").forEach((el) => {
+    try {
+      const data = JSON.parse(el.textContent)
+      if (data && (!latest || data.rendered_at > latest.rendered_at)) latest = data
+    } catch {
+      // A half-rendered copy is no worse than none.
+    }
+  })
+
+  try {
+    if (latest?.order) await setMeta("handoff", { ...latest.order, saved_at: Date.now() })
+    else await deleteMeta("handoff")
+  } catch {
+    // Without IndexedDB there is no offline register to hand it to anyway.
   }
 }
 
@@ -98,6 +121,7 @@ function orderPayload(order) {
     customer_phone: order.customer_phone,
     delivery_address: order.delivery_address,
     notes: order.notes,
+    replaces_order_id: order.replaces_order_id || null,
     tendered_cents: order.tendered_cents,
     items: order.items.map((line) => ({
       menu_item_id: line.menu_item_id,

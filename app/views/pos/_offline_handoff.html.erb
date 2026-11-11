@@ -1,0 +1,7 @@
+<%# locals: order
+
+    What the offline register picks up if the internet drops mid-order (see
+    PosOfflineHelper#offline_handoff_json). Rendered in both the cart frame and
+    the chips, because item changes refresh one and type/notes/customer changes
+    refresh the other; the browser takes whichever copy was rendered last. %>
+<script type="application/json" data-offline-handoff><%= raw(json_escape(offline_handoff_json(order))) %></script>

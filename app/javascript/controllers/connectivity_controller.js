@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 import { showToast } from "utils/toast"
-import { isOfflineReady, isReachable } from "utils/offline_sync"
+import { isOfflineReady, isReachable, saveHandoff } from "utils/offline_sync"
 
 const HEARTBEAT_MS = 8000
 const FAILURES_BEFORE_OFFLINE = 2
@@ -61,10 +61,14 @@ export default class extends Controller {
   }
 
   // Switch to the cached offline register, if this computer has been prepared for
-  // it (it is, after any POS page has loaded online once).
+  // it (it is, after any POS page has loaded online once). The order on screen goes
+  // with it, so the cashier carries on instead of ringing it up again.
   async enterOfflineMode() {
     if (!this.hasOfflineUrlValue || !this.offlineUrlValue) return
-    if (await isOfflineReady()) window.location.assign(this.offlineUrlValue)
+    if (!(await isOfflineReady())) return
+
+    await saveHandoff()
+    window.location.assign(this.offlineUrlValue)
   }
 
   bannerOfflineMessage() {

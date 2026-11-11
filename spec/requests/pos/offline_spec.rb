@@ -82,6 +82,53 @@ RSpec.describe "POS offline mode", type: :request do
       expect(response.parsed_body).to include("duplicate" => true, "order_id" => first["order_id"])
     end
 
+    describe "carrying the open order over when the internet drops" do
+      before { open_drawer_for(cashier, location: branch) }
+
+      def handoffs
+        Nokogiri::HTML(response.body).css("script[data-offline-handoff]").map { |el| JSON.parse(el.text) }
+      end
+
+      it "renders the order on the register, unpriced, wherever the page refreshes" do
+        post pos_order_items_path, params: { menu_item_id: burger.id, quantity: 2, notes: "no onions" }
+        get pos_path
+
+        copies = handoffs
+        expect(copies.size).to eq(2)
+        order = copies.first["order"]
+        draft = Order.find(order["server_order_id"])
+        expect(order).to include("order_number" => draft.order_number, "user_id" => cashier.id, "order_type" => draft.order_type)
+        expect(order["items"]).to eq([{ "menu_item_id" => burger.id, "combo_id" => nil, "quantity" => 2,
+                                        "notes" => "no onions", "modifier_ids" => [] }])
+        expect(copies.first["rendered_at"]).to be_a(Integer)
+      end
+
+      it "hands nothing over for an empty cart or an order already paid toward" do
+        get pos_path
+        expect(handoffs.map { |copy| copy["order"] }.uniq).to eq([nil])
+
+        post pos_order_items_path, params: { menu_item_id: burger.id }
+        Order.draft.sole.payments.create!(payment_method: "cash", amount_cents: 100, tip_cents: 0,
+                                          status: "completed", processed_by_user: cashier)
+        get pos_path
+        expect(handoffs.map { |copy| copy["order"] }.uniq).to eq([nil])
+      end
+
+      it "discards the online draft once the offline sale reaches the server" do
+        post pos_order_items_path, params: { menu_item_id: burger.id }
+        draft = Order.draft.sole
+
+        post pos_offline_orders_path, params: { order: {
+          client_uuid: SecureRandom.uuid, offline_number: "OFF-2", user_id: cashier.id, location_id: branch.id,
+          order_type: "pickup", tendered_cents: 2000, replaces_order_id: draft.id,
+          items: [{ menu_item_id: burger.id, quantity: 1, unit_price_cents: 1200 }]
+        } }, as: :json
+
+        expect(response).to have_http_status(:created)
+        expect(Order.exists?(draft.id)).to be(false)
+      end
+    end
+
     it "explains a refusal instead of failing silently" do
       post pos_offline_orders_path, params: { order: { client_uuid: SecureRandom.uuid, items: [] } }, as: :json
 

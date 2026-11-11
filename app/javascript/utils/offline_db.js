@@ -52,6 +52,12 @@ export function setMeta(key, value) {
   })
 }
 
+export function deleteMeta(key) {
+  return transact("meta", "readwrite", (store) => {
+    store.delete(key)
+  })
+}
+
 export function putOrder(order) {
   return transact("orders", "readwrite", (store) => {
     store.put(order)

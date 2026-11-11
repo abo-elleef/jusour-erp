@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { allOrders, deviceCode, getMeta, getOrder, nextCounter, putOrder } from "utils/offline_db"
+import { allOrders, deleteMeta, deviceCode, getMeta, getOrder, nextCounter, putOrder } from "utils/offline_db"
 import { computeTotals, formatMoney, lineTotal, parseAmountToCents } from "utils/offline_totals"
 import { groupShowsPrices } from "utils/modifier_pricing"
 import { buildProductionTicket, buildReceipt, toBase64, widthCharsFor } from "utils/escpos_canvas"
@@ -15,6 +15,9 @@ import { isReachable, syncQueuedOrders } from "utils/offline_sync"
 // internet is back and utils/offline_sync pushes it to Rails.
 
 const HEARTBEAT_MS = 6000
+// An order handed over from the online register is taken up only this soon after
+// the switch; past that it is someone's forgotten cart, not the customer at the till.
+const HANDOFF_MAX_AGE_MS = 6 * 60 * 60 * 1000
 const AGENT_CHECK_MS = 15000
 const PRINT_ATTEMPTS = 3
 
@@ -60,8 +63,10 @@ export default class extends Controller {
 
     this.snapshot = await getMeta("snapshot")
     this.orders = await allOrders()
+    const carried = this.snapshot ? await this.takeHandoff() : null
     this.renderShell()
     if (!this.snapshot) return
+    if (carried) this.announceHandoff(carried)
 
     this.heartbeatTimer = setInterval(() => this.heartbeat(), HEARTBEAT_MS)
     this.agentTimer = setInterval(() => this.checkAgent(), AGENT_CHECK_MS)
@@ -454,7 +459,7 @@ export default class extends Controller {
       case "remove": this.removeLine(uid); break
       case "pick-table": this.cart.table_number = value; this.draw("cart"); break
       case "order-type": this.cart.order_type = type; this.draw("cart"); break
-      case "clear-cart": this.cart = this.emptyCart(); this.draw("cart"); break
+      case "clear-cart": this.forgetHandoff(); this.cart = this.emptyCart(); this.draw("cart"); break
       case "open-payment": this.openPayment(); break
       case "quick-cash": this.setTendered(parseInt(cents, 10)); break
       case "confirm-payment": this.confirmPayment(); break
@@ -479,7 +484,97 @@ export default class extends Controller {
   // ── Cart ──────────────────────────────────────────────────────────────────
 
   emptyCart() {
-    return { lines: [], order_type: "pickup", table_number: "", notes: "", customer_name: "", customer_phone: "", delivery_address: "" }
+    return { lines: [], order_type: "pickup", table_number: "", notes: "", customer_name: "", customer_phone: "", delivery_address: "", server_order_id: null, server_order_number: null }
+  }
+
+  // ── Order carried over from the online register ──────────────────────────
+
+  // Fills the cart with the order that was on the online register when the
+  // internet dropped (saved by utils/offline_sync#saveHandoff). Each line is
+  // priced from this register's own snapshot, exactly as if it had been tapped
+  // here; a line whose item or combo the snapshot does not know is left out and
+  // counted. The server draft's id rides along so the sync can discard it.
+  async takeHandoff() {
+    let handoff
+    try {
+      handoff = await getMeta("handoff")
+    } catch {
+      return null
+    }
+    if (!handoff) return null
+
+    const stale = Date.now() - (handoff.saved_at || 0) > HANDOFF_MAX_AGE_MS
+    if (stale || handoff.user_id !== this.snapshot.user?.id) {
+      await deleteMeta("handoff").catch(() => {})
+      return null
+    }
+
+    const cart = this.emptyCart()
+    let missing = 0
+    for (const row of handoff.items || []) {
+      const line = this.handoffLine(row)
+      if (line) cart.lines.push(line)
+      else missing += 1
+    }
+    if (cart.lines.length === 0) {
+      await deleteMeta("handoff").catch(() => {})
+      return null
+    }
+
+    const type = ["pickup", "table", "delivery"].includes(handoff.order_type) ? handoff.order_type : "pickup"
+    Object.assign(cart, {
+      order_type: type,
+      table_number: handoff.table_number || "",
+      notes: handoff.notes || "",
+      customer_name: handoff.customer_name || "",
+      customer_phone: handoff.customer_phone || "",
+      delivery_address: handoff.delivery_address || "",
+      server_order_id: handoff.server_order_id,
+      server_order_number: handoff.order_number
+    })
+    this.cart = cart
+    return { number: handoff.order_number, missing }
+  }
+
+  handoffLine(row) {
+    const quantity = Math.max(1, parseInt(row.quantity, 10) || 1)
+    const { items, combos } = this.snapshot.menu
+
+    if (row.combo_id) {
+      const combo = combos.find((candidate) => candidate.id === row.combo_id)
+      if (!combo) return null
+      return {
+        uid: uuid(), menu_item_id: null, combo_id: combo.id, name: combo.name, quantity,
+        unit_price_cents: combo.price_cents, tax_category: "food", notes: row.notes || null, modifiers: [],
+        promo_id: null, promo_label: null, promo_discount_cents: 0, routing_ids: combo.menu_item_ids
+      }
+    }
+
+    const item = items.find((candidate) => candidate.id === row.menu_item_id)
+    if (!item) return null
+    const choices = item.modifier_groups.flatMap((group) => group.modifiers)
+    const modifiers = (row.modifier_ids || [])
+      .map((id) => choices.find((modifier) => modifier.id === id))
+      .filter(Boolean)
+      .map((modifier) => ({ id: modifier.id, name: modifier.name, price_adjustment_cents: modifier.price_adjustment_cents }))
+    const promo = this.promoFor(item, modifiers)
+    return {
+      uid: uuid(), menu_item_id: item.id, combo_id: null, name: item.name, quantity,
+      unit_price_cents: item.price_cents, tax_category: item.tax_category, notes: row.notes || null, modifiers,
+      promo_id: promo?.id || null, promo_label: promo?.label || null, promo_discount_cents: promo?.discount_cents || 0,
+      routing_ids: [item.id]
+    }
+  }
+
+  announceHandoff({ number, missing }) {
+    this.toast(this.t("carried_over", { number }))
+    if (missing) this.toast(this.t("carried_over_missing", { count: missing, number }), "alert")
+  }
+
+  // The carried-over order is done with (paid here, or thrown away by the cashier).
+  forgetHandoff() {
+    if (!this.cart.server_order_id) return
+    deleteMeta("handoff").catch(() => {})
   }
 
   cartTotals() {
@@ -656,6 +751,7 @@ export default class extends Controller {
     }
 
     const order = await this.saveOrder(tendered)
+    this.forgetHandoff()
     this.cart = this.emptyCart()
     this.modal = null
     ;["cart", "modal", "header"].forEach((name) => this.draw(name))
@@ -685,6 +781,9 @@ export default class extends Controller {
       customer_phone: cart.order_type === "delivery" ? this.cleanPhone() : null,
       delivery_address: cart.order_type === "delivery" ? cart.delivery_address.trim() : null,
       notes: cart.notes.trim() || null,
+      // The online draft this order replaces, if it was carried over; the server
+      // discards that draft when this order arrives so it is not sold twice.
+      replaces_order_id: cart.server_order_id || null,
       items: cart.lines.map(({ uid: _uid, ...line }) => line),
       totals: this.cartTotals(),
       tendered_cents: tenderedCents,

@@ -3604,6 +3604,8 @@ en:
       select_branch: "No branch is set. Open the POS while online and choose a branch first."
       cart_title: "Current order"
       cart_empty: "Tap an item to add it."
+      carried_over: "Order %{number} was carried over from the online register. Check it, then take payment."
+      carried_over_missing: "%{count} item(s) from order %{number} are not in the offline menu and were left out."
       new_order: "New order"
       clear: "Clear"
       subtotal: "Subtotal"

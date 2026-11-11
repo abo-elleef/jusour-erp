@@ -75,6 +75,7 @@ module Orders
 
         # `submit!` rather than SubmitService: same state change, no print job.
         order.submit!
+        discard_replaced_draft(order)
         order.reload
       end
     end
@@ -149,6 +150,28 @@ module Orders
       missing = Array(line[:modifiers]).map(&:with_indifferent_access).reject { |m| Modifier.exists?(id: m[:id]) }
       extra = missing.map { |m| "+ #{m[:name]}" }
       [line[:notes].presence, *extra].compact.join(" · ").presence
+    end
+
+    # The order was started on the online register and carried over when the
+    # internet dropped, so the draft it started as is still on the server. This
+    # order is that sale, now paid, so the draft goes — the same discard a cashier
+    # does by hand, with the same audit entry. Only a draft nobody has paid for or
+    # sent to the kitchen in the meantime: anything else is real work, and a
+    # duplicate a person sorts out beats an order silently lost.
+    def discard_replaced_draft(order)
+      id = @payload[:replaces_order_id].presence
+      return unless id
+
+      draft = Order.lock.find_by(id: id, status: "draft", kitchen_sent_at: nil)
+      return if draft.nil? || draft.payments.exists?
+
+      AuditLogEntry.record!(
+        action: "order.discard",
+        record: draft,
+        user: cashier,
+        changes_snapshot: { replaced_by_order_id: order.id, offline_number: order.offline_number }
+      )
+      draft.destroy!
     end
 
     def record_payment(order)

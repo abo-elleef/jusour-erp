@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { showToast } from "utils/toast"
 import { prepareOffline, queuedCount, isReachable, syncQueuedOrders } from "utils/offline_sync"
+import { deleteMeta } from "utils/offline_db"
 
 const REFRESH_MS = 5 * 60 * 1000
 
@@ -12,6 +13,10 @@ export default class extends Controller {
   static values = { queuedMessage: String, syncedMessage: String }
 
   connect() {
+    // Back on the online register, the order it shows is the live one again. A
+    // handoff saved for the offline register is stale from here on (it may get
+    // paid online), so it must not reappear the next time the offline page opens.
+    deleteMeta("handoff").catch(() => {})
     this.onOnline = () => this.run()
     window.addEventListener("pos:online", this.onOnline)
     this.timer = setInterval(() => this.run(), REFRESH_MS)
