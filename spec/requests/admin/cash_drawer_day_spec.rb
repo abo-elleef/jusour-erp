@@ -77,6 +77,38 @@ RSpec.describe "The admin drawer day view", type: :request do
     expect(response.body).to include(I18n.t("accounting.cash_drawer.statuses.open", locale: :ar))
   end
 
+  describe "the table's totals row" do
+    def totals_row
+      Nokogiri::HTML(response.body).at_css("table tfoot tr")
+    end
+
+    it "sums the shifts of every branch when no branch is chosen" do
+      shift(treasury: till_one, cash: 5_000)
+      shift(treasury: till_two, cash: 3_000, location: other_branch)
+
+      get admin_accounting_cash_drawer_index_path(date: Date.current)
+
+      expect(totals_row.text).to include(I18n.t("accounting.cash_drawer.table_total"))
+      expect(totals_row.text).to include(ApplicationController.helpers.format_money(8_000))
+    end
+
+    it "sums only the chosen branch's shifts" do
+      shift(treasury: till_one, cash: 5_000)
+      shift(treasury: till_two, cash: 3_000, location: other_branch)
+
+      get admin_accounting_cash_drawer_index_path(date: Date.current, location_id: branch.id)
+
+      expect(totals_row.text).to include(ApplicationController.helpers.format_money(5_000))
+      expect(totals_row.text).not_to include(ApplicationController.helpers.format_money(8_000))
+    end
+
+    it "is left out when there are no shifts" do
+      get admin_accounting_cash_drawer_index_path(date: Date.current)
+
+      expect(totals_row).to be_nil
+    end
+  end
+
   describe "across every branch" do
     it "defaults to all branches rather than whichever comes first" do
       shift(treasury: till_one, cash: 5_000)

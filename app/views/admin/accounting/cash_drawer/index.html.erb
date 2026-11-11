@@ -119,8 +119,8 @@
     <% end %>
   </section>
 
-  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-    <table class="w-full text-sm">
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-x-auto">
+    <table class="w-full min-w-max whitespace-nowrap text-sm">
       <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase">
         <tr>
           <% if @location.nil? %>
@@ -179,6 +179,27 @@
           </tr>
         <% end %>
       </tbody>
+      <%# Sums of the rows above, so they follow the branch / drawer filters. %>
+      <% if @rows.any? %>
+        <tfoot class="border-t-2 border-gray-200 bg-gray-50/80 font-semibold text-gray-900">
+          <tr>
+            <td class="p-3 ps-5" colspan="<%= @location.nil? ? 5 : 4 %>">
+              <%= t("accounting.cash_drawer.table_total") %>
+              <span class="text-xs font-normal text-gray-500">(<%= t("accounting.cash_drawer.shifts") %>: <%= @totals.shifts %>)</span>
+            </td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(@totals.cash_cents) %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(@totals.instapay_cents) %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(@totals.vodafone_cash_cents) %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(@totals.expected_cents) %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_money(@totals.counted_cents) %></td>
+            <td class="p-3 text-end tabular-nums <%= @totals.variance_cents.negative? ? 'text-red-700' : 'text-green-700' %>">
+              <%= format_money(@totals.variance_cents) %>
+            </td>
+            <td class="p-3 tabular-nums"><%= format_money(@totals.deposited_cents) %></td>
+            <td class="p-3 pe-5"></td>
+          </tr>
+        </tfoot>
+      <% end %>
     </table>
   </section>
 </div>

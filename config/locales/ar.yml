@@ -6115,6 +6115,7 @@ ar:
       tax_collected: "الضريبة المحصّلة"
     cash_drawer:
       title: "درج النقد"
+      table_total: "الإجمالي"
       statuses:
         open: "مفتوح"
         reconciled: "مُسوّى"

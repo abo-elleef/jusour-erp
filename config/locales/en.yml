@@ -6049,6 +6049,7 @@ en:
       tax_collected: "Tax collected"
     cash_drawer:
       title: "Cash drawer"
+      table_total: "Total"
       statuses:
         open: "Open"
         reconciled: "Reconciled"
