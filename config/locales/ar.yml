@@ -3878,6 +3878,18 @@ ar:
           other: "%{count} طلبات ما زالت مفتوحة"
         filter_open: "المفتوحة"
         filter_all: "كل الطلبات"
+        all_order_types: "كل أنواع الطلبات"
+        all_payment_methods: "كل طرق الدفع"
+        no_match: "لا توجد طلبات تطابق هذه الفلاتر."
+        clear_filters: "مسح الفلاتر"
+        total_row:
+          zero: "الإجمالي (لا طلبات)"
+          one: "الإجمالي (طلب واحد)"
+          two: "الإجمالي (طلبان)"
+          few: "الإجمالي (%{count} طلبات)"
+          many: "الإجمالي (%{count} طلبًا)"
+          other: "الإجمالي (%{count} طلب)"
+        total_excludes_cancelled: "الطلبات الملغاة لا تُحتسب."
         no_open: "لا توجد طلبات مفتوحة. كل شيء منتهٍ."
         complete_paid: "إنهاء الطلبات المدفوعة (%{count})"
         complete_paid_confirm:

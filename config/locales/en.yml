@@ -3828,6 +3828,14 @@ en:
           other: "%{count} orders still open"
         filter_open: "Open"
         filter_all: "All orders"
+        all_order_types: "All order types"
+        all_payment_methods: "All payment methods"
+        no_match: "No orders match these filters."
+        clear_filters: "Clear filters"
+        total_row:
+          one: "Total (%{count} order)"
+          other: "Total (%{count} orders)"
+        total_excludes_cancelled: "Cancelled orders are not counted."
         no_open: "No open orders. Everything is finished."
         complete_paid: "Complete paid orders (%{count})"
         complete_paid_confirm:

@@ -22,12 +22,12 @@
   <% chip = ->(active) { "inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition-colors #{active ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}" } %>
   <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
     <div class="flex items-center gap-2">
-      <%= link_to pos_shift_path(tab: "orders", filter: "open"), data: { turbo_frame: "shift_orders", turbo_action: "advance" },
+      <%= link_to pos_shift_path(tab: "orders", filter: "open", **shift_orders_filter_params), data: { turbo_frame: "shift_orders", turbo_action: "advance" },
             class: chip.call(@filter == "open") do %>
         <%= t("pos.shift.orders.filter_open") %>
         <span class="tabular-nums text-xs px-2 py-0.5 rounded-full <%= @filter == "open" ? "bg-white/20" : "bg-green-100 text-green-800" %>"><%= @open_orders_count %></span>
       <% end %>
-      <%= link_to pos_shift_path(tab: "orders", filter: "all"), data: { turbo_frame: "shift_orders", turbo_action: "advance" },
+      <%= link_to pos_shift_path(tab: "orders", filter: "all", **shift_orders_filter_params), data: { turbo_frame: "shift_orders", turbo_action: "advance" },
             class: chip.call(@filter == "all") do %>
         <%= t("pos.shift.orders.filter_all") %>
         <span class="tabular-nums text-xs px-2 py-0.5 rounded-full <%= @filter == "all" ? "bg-white/20" : "bg-gray-100 text-gray-700" %>"><%= @all_orders_count %></span>
@@ -49,13 +49,45 @@
     <% end %>
   </div>
 
+  <%# Narrows the list above; Open/All counts and Complete-all still cover every open order. %>
+  <%= form_with url: pos_shift_path, method: :get,
+        data: { controller: "auto-submit", turbo_frame: "shift_orders", turbo_action: "advance" },
+        class: "flex flex-wrap items-end gap-3 mb-4" do %>
+    <%= hidden_field_tag :tab, "orders", id: nil %>
+    <%= hidden_field_tag :filter, @filter, id: nil %>
+    <div class="min-w-[10rem]">
+      <%= label_tag :order_type, t("order.labels.order_type"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+      <%= select_tag :order_type,
+            options_for_select(Order::ORDER_TYPES.map { |type| [t("order.types.#{type}"), type] }, @order_type_filter),
+            include_blank: t("pos.shift.orders.all_order_types"),
+            class: pos_input_class,
+            data: { action: "change->auto-submit#submit" } %>
+    </div>
+    <div class="min-w-[10rem]">
+      <%= label_tag :payment_method, t("order.labels.payment_method"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+      <% method_options = (@payment_method_options | [@payment_method_filter].compact) %>
+      <%= select_tag :payment_method,
+            options_for_select(method_options.map { |method| [payment_method_label(method), method] }, @payment_method_filter),
+            include_blank: t("pos.shift.orders.all_payment_methods"),
+            class: pos_input_class,
+            data: { action: "change->auto-submit#submit" } %>
+    </div>
+    <% if @order_type_filter || @payment_method_filter %>
+      <%= link_to t("pos.shift.orders.clear_filters"), pos_shift_path(tab: "orders", filter: @filter),
+            data: { turbo_frame: "shift_orders", turbo_action: "advance" },
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 underline py-2" %>
+    <% end %>
+  <% end %>
+
   <% if @shift_orders.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
-      <%= render "pos/shifts/orders_table", orders: @shift_orders %>
+      <%= render "pos/shifts/orders_table", orders: @shift_orders,
+            total_cents: @shift_orders_total_cents, total_count: @shift_orders_total_count,
+            delivery_fee_cents: @shift_orders_delivery_fee_cents %>
     </section>
   <% elsif @shift_time_range %>
     <section class="rounded-2xl border border-gray-200 bg-white p-10 text-center">
-      <p class="text-gray-600 font-medium"><%= t(@filter == "open" ? "pos.shift.orders.no_open" : "pos.shift.orders.empty") %></p>
+      <p class="text-gray-600 font-medium"><%= t(if @order_type_filter || @payment_method_filter then "pos.shift.orders.no_match" elsif @filter == "open" then "pos.shift.orders.no_open" else "pos.shift.orders.empty" end) %></p>
     </section>
   <% end %>
 <% end %>

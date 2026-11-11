@@ -6,6 +6,9 @@ module Pos
 
     layout "pos"
 
+    # The payment-method column shows completed payments only; the filter matches it.
+    SHIFT_PAYMENT_STATUS = "completed"
+
     before_action :require_pos_access!
     before_action :set_open_session, only: %i[count reconcile]
     # Both of these end the shift, and neither may happen over an order that was
@@ -226,12 +229,35 @@ module Pos
       # One list, two views: "open" is what the cashier came here to clear and is
       # the default whenever anything is open; "all" is the session's history.
       @filter = params[:filter].presence_in(%w[open all]) || (@open_orders_count.positive? ? "open" : "all")
-      shown = @filter == "open" ? unfinalized : session_orders
-      @shift_orders = Order.where(id: shown.select(:id))
-        .includes(:customer, :payments)
-        .order(created_at: :desc)
+      shown = Order.where(id: (@filter == "open" ? unfinalized : session_orders).select(:id))
+
+      # Methods actually taken in this list, so the dropdown never offers an empty choice.
+      @payment_method_options = Payment.where(order_id: shown.select(:id), status: SHIFT_PAYMENT_STATUS)
+        .distinct.pluck(:payment_method)
+        .sort_by { |method| Payment::METHODS.index(method) || Payment::METHODS.size }
+
+      @order_type_filter = params[:order_type].presence_in(Order::ORDER_TYPES)
+      @payment_method_filter = params[:payment_method].presence_in(Payment::METHODS)
+      shown = shown.where(order_type: @order_type_filter) if @order_type_filter
+      if @payment_method_filter
+        shown = shown.where(id: Payment.where(payment_method: @payment_method_filter, status: SHIFT_PAYMENT_STATUS)
+                                       .select(:order_id))
+      end
+
+      @shift_orders = shown.includes(:customer, :payments).order(created_at: :desc)
+      # A cancelled order earned nothing, so it is listed but not added up.
+      filtered_live = shown.where.not(status: "cancelled")
+      @shift_orders_total_cents = filtered_live.sum(:total_cents)
+      @shift_orders_total_count = filtered_live.count
+      @shift_orders_delivery_fee_cents = filtered_live.sum(:delivery_fee_cents)
       @all_orders_count = session_orders.count
     end
+
+    # Keeps the order-type / payment-method filters when switching Open ↔ All.
+    def shift_orders_filter_params
+      { order_type: @order_type_filter, payment_method: @payment_method_filter }.compact
+    end
+    helper_method :shift_orders_filter_params
 
     def manager_approved_reconcile?(drawer_session)
       return true if current_user.admin_access?
