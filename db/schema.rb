@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_09_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_11_052531) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -918,11 +918,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_120000) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "modifier_id"
     t.index ["company_id", "starts_at", "ends_at"], name: "index_menu_promos_on_company_id_and_starts_at_and_ends_at"
     t.index ["company_id"], name: "index_menu_promos_on_company_id"
     t.index ["location_id"], name: "index_menu_promos_on_location_id"
     t.index ["menu_item_id", "starts_at", "ends_at"], name: "index_menu_promos_on_menu_item_id_and_starts_at_and_ends_at"
     t.index ["menu_item_id"], name: "index_menu_promos_on_menu_item_id"
+    t.index ["modifier_id"], name: "index_menu_promos_on_modifier_id"
   end
 
   create_table "modifier_groups", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2135,6 +2137,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_09_120000) do
   add_foreign_key "menu_promos", "companies"
   add_foreign_key "menu_promos", "locations"
   add_foreign_key "menu_promos", "menu_items"
+  add_foreign_key "menu_promos", "modifiers", on_delete: :cascade
   add_foreign_key "modifier_groups", "companies"
   add_foreign_key "modifier_recipes", "ingredients"
   add_foreign_key "modifier_recipes", "modifiers"

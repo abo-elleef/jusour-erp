@@ -21,7 +21,8 @@ module Promos
 
       promo = Menus::ActivePromo.for(
         menu_item: @order_item.menu_item,
-        location: @order.location
+        location: @order.location,
+        modifier_ids: @order_item.order_item_modifiers.pluck(:modifier_id)
       )
 
       if promo.blank? || promo.discount_cents <= 0

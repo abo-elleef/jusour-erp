@@ -15,7 +15,8 @@ module PosOfflineHelper
       all: I18n.t("actions.all"),
       combos: I18n.t("pos.categories.combos"),
       close: I18n.t("actions.close"),
-      cancel: I18n.t("actions.cancel")
+      cancel: I18n.t("actions.cancel"),
+      only_choice: I18n.t("promos.only_choice")
     ).to_json
   end
 end

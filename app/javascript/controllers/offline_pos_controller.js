@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 import { allOrders, getMeta, getOrder, nextCounter, putOrder } from "utils/offline_db"
 import { computeTotals, formatMoney, lineTotal, parseAmountToCents } from "utils/offline_totals"
+import { groupShowsPrices } from "utils/modifier_pricing"
 import { buildProductionTicket, buildReceipt, toBase64, widthCharsFor } from "utils/escpos_canvas"
 import { isReachable, syncQueuedOrders } from "utils/offline_sync"
 
@@ -201,7 +202,7 @@ export default class extends Controller {
   itemCardHtml(item) {
     const promo = item.promo
     const price = promo
-      ? `<p class="mt-1 flex items-baseline gap-1.5 tabular-nums"><span class="text-xs text-gray-400 line-through">${formatMoney(item.price_cents)}</span><span class="text-rose-700 font-bold">${formatMoney(item.price_cents - promo.discount_cents)}</span></p>`
+      ? `<p class="mt-1 flex items-baseline gap-1.5 tabular-nums"><span class="text-xs text-gray-400 line-through">${formatMoney(promo.list_price_cents ?? item.price_cents)}</span><span class="text-rose-700 font-bold">${formatMoney(promo.promo_price_cents ?? item.price_cents - promo.discount_cents)}</span>${promo.modifier_name ? `<span class="text-[11px] font-semibold text-rose-700">${esc(this.t("only_choice", { choice: promo.modifier_name }))}</span>` : ""}</p>`
       : `<p class="text-amber-700 font-bold mt-1 tabular-nums">${formatMoney(item.price_cents)}</p>`
     const label = item.modifier_groups.length ? this.t("customize") : this.t("add")
 
@@ -315,20 +316,36 @@ export default class extends Controller {
     return ""
   }
 
+  // Same layout and live prices as the online modal (pos/_modifier_modal):
+  // every choice shows the full item price, via modifier-pricing.
   modifierModalHtml(item) {
+    const config = {
+      base_cents: item.price_cents,
+      groups: item.modifier_groups.map((group) => ({
+        id: group.id,
+        multi_select: group.multi_select,
+        modifiers: group.modifiers.map((m) => ({ id: m.id, price_adjustment_cents: m.price_adjustment_cents }))
+      })),
+      promos: (item.promos || (item.promo ? [item.promo] : [])).map((promo) => ({
+        modifier_id: promo.modifier_id || null,
+        discount_cents: promo.discount_cents
+      }))
+    }
+
     const groups = item.modifier_groups
       .map((group) => {
+        const showsPrices = groupShowsPrices(group, config.promos)
         const options = group.modifiers
           .map((m) => {
             const input = group.multi_select
-              ? `<input type="checkbox" data-group="${esc(group.id)}" value="${esc(m.id)}" class="rounded border-gray-300 text-amber-600">`
-              : `<input type="radio" name="group-${esc(group.id)}" data-group="${esc(group.id)}" value="${esc(m.id)}" class="border-gray-300 text-amber-600">`
-            const price = m.price_adjustment_cents ? `<span class="text-gray-500 tabular-nums">${formatMoney(m.price_adjustment_cents)}</span>` : ""
-            return `<label class="flex items-center gap-2 py-2 text-sm cursor-pointer">${input}<span class="flex-1">${esc(m.name)}</span>${price}</label>`
+              ? `<input type="checkbox" data-modifier-option data-group="${esc(group.id)}" value="${esc(m.id)}" class="rounded border-gray-300 text-amber-600">`
+              : `<input type="radio" data-modifier-option name="group-${esc(group.id)}" data-group="${esc(group.id)}" value="${esc(m.id)}" class="border-gray-300 text-amber-600">`
+            const price = showsPrices ? `<span class="flex items-baseline gap-1.5 tabular-nums" data-modifier-price="${esc(m.id)}"></span>` : ""
+            return `<label class="flex items-center gap-3 min-h-12 px-3 text-sm cursor-pointer rounded-xl border border-transparent hover:bg-white has-[:checked]:bg-amber-50 has-[:checked]:border-amber-400">${input}<span class="flex-1 font-medium">${esc(m.name)}</span>${price}</label>`
           })
           .join("")
         return `
-          <fieldset class="mb-4 rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
+          <fieldset class="mb-4 rounded-2xl border border-gray-200 bg-gray-50/80 p-3 space-y-1.5">
             <legend class="text-sm font-semibold px-1">${esc(group.name)}${group.required ? ' <span class="text-red-600">*</span>' : ""}</legend>
             ${options}
           </fieldset>`
@@ -336,14 +353,16 @@ export default class extends Controller {
       .join("")
 
     return `
-      <h3 class="text-xl font-bold tracking-tight">${esc(item.name)}</h3>
-      <p class="text-amber-700 font-bold mt-1 mb-4 tabular-nums">${formatMoney(item.price_cents)}</p>
-      ${groups}
-      <input type="text" data-modal-notes placeholder="${esc(this.t("kitchen_notes"))}" class="${INPUT} mb-2">
-      <p data-modal-error class="text-sm text-red-600 mb-2 hidden"></p>
-      <div class="flex gap-2">
-        <button type="button" data-act="confirm-modifiers" class="flex-1 ${BTN_ACCENT}">${esc(this.t("add_to_order"))}</button>
-        <button type="button" data-act="close-modal" class="flex-1 ${BTN_PLAIN}">${esc(this.t("cancel"))}</button>
+      <div data-controller="modifier-pricing" data-modifier-pricing-config-value="${esc(JSON.stringify(config))}" data-action="change->modifier-pricing#refresh">
+        <h3 class="text-xl font-bold tracking-tight">${esc(item.name)}</h3>
+        <p class="mt-1 mb-4 flex items-baseline gap-2 tabular-nums" data-modifier-pricing-target="total"></p>
+        ${groups}
+        <input type="text" data-modal-notes placeholder="${esc(this.t("kitchen_notes"))}" class="${INPUT} mb-2">
+        <p data-modal-error class="text-sm text-red-600 mb-2 hidden"></p>
+        <div class="flex gap-2">
+          <button type="button" data-act="confirm-modifiers" class="flex-1 ${BTN_ACCENT}">${esc(this.t("add_to_order"))} · <span class="tabular-nums" data-modifier-pricing-target="buttonTotal"></span></button>
+          <button type="button" data-act="close-modal" class="flex-1 ${BTN_PLAIN}">${esc(this.t("cancel"))}</button>
+        </div>
       </div>`
   }
 
@@ -478,7 +497,17 @@ export default class extends Controller {
     this.addLine(item, [], null)
   }
 
+  // Same rule as Menus::ActivePromo: `promos` arrives in priority order, the
+  // first that covers the whole item or a choice on this line wins. Older
+  // snapshots only carry `promo` (whole-item).
+  promoFor(item, modifiers) {
+    if (!item.promos) return item.promo || null
+    const chosen = new Set(modifiers.map((modifier) => modifier.id))
+    return item.promos.find((promo) => !promo.modifier_id || chosen.has(promo.modifier_id)) || null
+  }
+
   addLine(item, modifiers, notes) {
+    const promo = this.promoFor(item, modifiers)
     const plain = modifiers.length === 0 && !notes
     const existing = plain && this.cart.lines.find((line) => line.menu_item_id === item.id && !line.notes && (line.modifiers || []).length === 0)
     if (existing) {
@@ -494,9 +523,9 @@ export default class extends Controller {
         tax_category: item.tax_category,
         notes,
         modifiers,
-        promo_id: item.promo?.id || null,
-        promo_label: item.promo?.label || null,
-        promo_discount_cents: item.promo?.discount_cents || 0,
+        promo_id: promo?.id || null,
+        promo_label: promo?.label || null,
+        promo_discount_cents: promo?.discount_cents || 0,
         routing_ids: [item.id]
       })
     }

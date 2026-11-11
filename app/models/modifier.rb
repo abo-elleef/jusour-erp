@@ -9,6 +9,7 @@ class Modifier < ApplicationRecord
   belongs_to :modifier_group
   has_many :order_item_modifiers, dependent: :restrict_with_error
   has_many :modifier_recipes, dependent: :destroy
+  has_many :menu_promos, dependent: :destroy
   has_many :ingredients, through: :modifier_recipes
 
   monetize :price_adjustment_cents, allow_nil: false

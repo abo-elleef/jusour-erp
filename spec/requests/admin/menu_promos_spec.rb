@@ -35,4 +35,24 @@ RSpec.describe "Admin menu promos", type: :request do
       )
     )
   end
+
+  it "saves a promo that applies only to one choice of the item" do
+    category = create(:category, company: company)
+    item = create(:menu_item, company: company, category: category, name: "Chicken Run", base_price_cents: 12_000)
+    group = ModifierGroup.create!(company: company, name: "Size")
+    double = group.modifiers.create!(name: "Double", price_adjustment_cents: 2_000)
+    item.menu_item_modifier_groups.create!(modifier_group: group, position: 1)
+
+    get new_admin_menu_promo_path
+    choices = JSON.parse(Nokogiri::HTML(response.body).at("form[data-controller='promo-modifier']")["data-promo-modifier-choices-value"])
+    expect(choices[item.id]).to contain_exactly(a_hash_including("id" => double.id, "label" => a_string_including("Double")))
+
+    post admin_menu_promos_path, params: { menu_promo: {
+      name: "Double deal", menu_item_id: item.id, modifier_id: double.id, promo_price_pounds: "130",
+      starts_at: 1.hour.ago, ends_at: 1.day.from_now, active: "1", highlight: "1"
+    } }
+
+    expect(response).to redirect_to(admin_menu_promos_path)
+    expect(MenuPromo.last.modifier).to eq(double)
+  end
 end

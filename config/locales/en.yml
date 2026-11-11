@@ -107,6 +107,7 @@ en:
   promos:
     badge: "Promo"
     deal_badge: "Deal"
+    only_choice: "Only %{choice}"
     order_discount_description: "Promo: %{name}"
 
   auth:
@@ -4250,6 +4251,9 @@ en:
       form_heading: "Promo details"
       form_hint: "Customers see the promo price; sales reports keep list price and promo cost."
       select_menu_item: "Search menu items…"
+      modifier: "Only with this choice"
+      any_modifier: "Any choice (whole item)"
+      modifier_hint: "Pick a choice such as Double to run the promo on that variation only. The promo price is then the full price of the item with that choice."
       starts_at: "Starts at"
       ends_at: "Ends at"
       highlight_label: "Highlight on menus"
@@ -6675,6 +6679,8 @@ en:
               must_be_after_starts: "must be after the start time"
             promo_price_cents:
               must_be_below_list: "must be below the item list price"
+            modifier_id:
+              not_on_item: "is not one of this item's choices"
         combo:
           attributes:
             ends_at:

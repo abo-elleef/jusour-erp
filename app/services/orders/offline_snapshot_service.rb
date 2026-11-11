@@ -67,28 +67,46 @@ module Orders
 
       {
         categories: result.categories.map { |category| { id: category.id, name: category.name } },
-        items: result.menu_items.map { |item| item_json(item, result.promos_by_item_id[item.id]) },
+        items: result.menu_items.map do |item|
+          item_json(item, result.promos_by_item_id[item.id], promo_finder.all_for_item(item))
+        end,
         combos: result.combos.includes(:combo_items).map { |combo| combo_json(combo) }
       }
     end
 
-    def item_json(item, promo)
+    def promo_finder
+      @promo_finder ||= Menus::ActivePromo.new(location: @location)
+    end
+
+    # `promo` is the one shown on the card; `promos` lists every live promo in
+    # Menus::ActivePromo's priority order, and the register applies the first
+    # whose choice (modifier_id) is on the line, or that has none.
+    def item_json(item, promo, promos)
       {
         id: item.id,
         name: item.name,
         category_id: item.category_id,
         price_cents: item.price_cents_at(@location),
         tax_category: item.tax_category.presence || "food",
-        promo: promo && {
-          id: promo.promo.id,
-          label: promo.label,
-          discount_cents: promo.discount_cents
-        },
+        promo: promo && promo_json(promo),
+        promos: promos.map { |row| promo_json(row) },
         modifier_groups: item.modifier_groups.map { |group| group_json(group) }
       }
     end
 
-    def group_json(group)
+    def promo_json(row)
+      {
+        id: row.promo.id,
+        label: row.label,
+        modifier_id: row.modifier_id,
+        modifier_name: row.modifier_name,
+        list_price_cents: row.list_price_cents,
+        promo_price_cents: row.promo_price_cents,
+        discount_cents: row.discount_cents
+      }
+    end
+
+        def group_json(group)
       {
         id: group.id,
         name: group.name,

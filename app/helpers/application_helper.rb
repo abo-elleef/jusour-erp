@@ -831,6 +831,20 @@ module ApplicationHelper
     end.to_json
   end
 
+  # { menu_item_id => [{ id:, label: }] } for the promo form's choice select.
+  def menu_item_choice_options(menu_items)
+    menu_items.each_with_object({}) do |item, map|
+      choices = item.modifier_groups.flat_map do |group|
+        group.modifiers.map do |modifier|
+          label = "#{group.name} – #{modifier.name}"
+          label += " (+#{format_amount(modifier.price_adjustment_cents)})" if modifier.price_adjustment_cents.positive?
+          { id: modifier.id, label: label }
+        end
+      end
+      map[item.id] = choices if choices.any?
+    end
+  end
+
   def ingredient_search_options(ingredients, vendor_aliases: false)
     ingredients.map do |ingredient|
       option = { value: ingredient.id, label: ingredient.name }

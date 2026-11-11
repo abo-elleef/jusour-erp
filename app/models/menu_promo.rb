@@ -8,6 +8,9 @@ class MenuPromo < ApplicationRecord
 
   belongs_to :menu_item
   belongs_to :location, optional: true
+  # Optional: the promo applies only when this choice is on the line (e.g. the
+  # "Double" size). Blank means it applies whatever was chosen.
+  belongs_to :modifier, optional: true
   has_many :order_discounts, dependent: :nullify
 
   monetize :promo_price_cents
@@ -16,6 +19,7 @@ class MenuPromo < ApplicationRecord
   validates :promo_price_cents, numericality: { greater_than_or_equal_to: 0 }
   validates :starts_at, :ends_at, presence: true
   validate :ends_after_starts
+  validate :modifier_belongs_to_item
   validate :promo_below_list_price
 
   scope :active, -> { where(active: true) }
@@ -33,9 +37,20 @@ class MenuPromo < ApplicationRecord
     active? && starts_at <= at && ends_at >= at
   end
 
+  # The price the promo replaces: the item's price at the branch plus the
+  # targeted choice's adjustment, so "Double for 150" is measured against the
+  # Double's own price.
+  def list_price_cents_at(location)
+    base = location.present? ? menu_item.price_cents_at(location) : menu_item.base_price_cents
+    base + modifier_adjustment_cents
+  end
+
   def markdown_cents_at(location)
-    list = menu_item.price_cents_at(location)
-    [list - promo_price_cents, 0].max
+    [list_price_cents_at(location) - promo_price_cents, 0].max
+  end
+
+  def modifier_adjustment_cents
+    modifier&.price_adjustment_cents.to_i
   end
 
   private
@@ -47,15 +62,16 @@ class MenuPromo < ApplicationRecord
     errors.add(:ends_at, :must_be_after_starts)
   end
 
+  def modifier_belongs_to_item
+    return if modifier.blank? || menu_item.blank?
+    return if menu_item.modifier_group_ids.include?(modifier.modifier_group_id)
+
+    errors.add(:modifier_id, :not_on_item)
+  end
+
   def promo_below_list_price
     return if menu_item.blank? || promo_price_cents.blank?
-
-    list = if location.present?
-             menu_item.price_cents_at(location)
-           else
-             menu_item.base_price_cents
-           end
-    return if promo_price_cents < list
+    return if promo_price_cents < list_price_cents_at(location)
 
     errors.add(:promo_price_cents, :must_be_below_list)
   end

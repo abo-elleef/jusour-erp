@@ -45,7 +45,12 @@
             <% @menu_promos.each do |promo| %>
               <tr class="hover:bg-gray-50 transition-colors">
                 <td class="p-3 ps-5 font-semibold text-gray-900"><%= promo.name %></td>
-                <td class="p-3 text-gray-700"><%= promo.menu_item.name %></td>
+                <td class="p-3 text-gray-700">
+                  <%= link_to promo.menu_item.name, edit_admin_menu_item_path(promo.menu_item), class: "hover:text-amber-700 hover:underline" %>
+                  <% if promo.modifier %>
+                    <span class="block text-xs text-rose-700"><%= t("promos.only_choice", choice: promo.modifier.name) %></span>
+                  <% end %>
+                </td>
                 <td class="p-3 text-gray-700"><%= promo.location&.name || t("admin.menu_promos.all_branches") %></td>
                 <td class="p-3 text-gray-900 tabular-nums"><%= format_money(promo.promo_price_cents) %></td>
                 <td class="p-3 text-gray-600 text-xs">

@@ -109,6 +109,7 @@ ar:
   promos:
     badge: "عرض"
     deal_badge: "صفقة"
+    only_choice: "%{choice} فقط"
     order_discount_description: "عرض: %{name}"
 
   auth:
@@ -4296,6 +4297,9 @@ ar:
       form_heading: "تفاصيل العرض"
       form_hint: "يرى العملاء سعر العرض؛ تقارير المبيعات تحتفظ بالسعر الأصلي وتكلفة العرض."
       select_menu_item: "ابحث عن صنف…"
+      modifier: "فقط مع هذا الاختيار"
+      any_modifier: "أي اختيار (الصنف كله)"
+      modifier_hint: "اختر مثلاً «دبل» ليطبَّق العرض على هذا الاختيار فقط. سعر العرض يكون حينها السعر الكامل للصنف بهذا الاختيار."
       starts_at: "يبدأ في"
       ends_at: "ينتهي في"
       highlight_label: "إبراز في القوائم"
@@ -6737,6 +6741,14 @@ ar:
           attributes:
             code:
               alphanumeric_only: "يجب أن يحتوي على أحرف وأرقام فقط"
+        menu_promo:
+          attributes:
+            ends_at:
+              must_be_after_starts: "يجب أن يكون بعد وقت البداية"
+            promo_price_cents:
+              must_be_below_list: "يجب أن يكون أقل من السعر الأصلي للصنف"
+            modifier_id:
+              not_on_item: "ليس من اختيارات هذا الصنف"
         ingredient:
           attributes:
             unit:

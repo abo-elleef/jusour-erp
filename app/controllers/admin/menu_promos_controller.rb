@@ -8,7 +8,7 @@ module Admin
       scope = policy_scope(MenuPromo)
       @active_now_count = scope.active_at.count
       @upcoming_count = scope.active.where("starts_at > ?", Time.current).count
-      @menu_promos = scope.includes(:menu_item, :location).ordered
+      @menu_promos = scope.includes(:menu_item, :location, :modifier).ordered
       authorize MenuPromo
     end
 
@@ -62,13 +62,13 @@ module Admin
     end
 
     def load_form_data
-      @menu_items = MenuItem.ordered.includes(:category)
+      @menu_items = MenuItem.ordered.includes(:category, modifier_groups: :modifiers)
       @locations = Location.active.branches.ordered
     end
 
     def menu_promo_params
       params.require(:menu_promo).permit(
-        :name, :menu_item_id, :location_id, :promo_price_pounds,
+        :name, :menu_item_id, :modifier_id, :location_id, :promo_price_pounds,
         :starts_at, :ends_at, :highlight, :active
       )
     end

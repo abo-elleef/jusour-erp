@@ -35,6 +35,7 @@
         <p class="mt-2 flex items-baseline gap-2 tabular-nums">
           <span class="text-sm text-stone-400 line-through"><%= format_money(promo.list_price_cents) %></span>
           <span class="text-rose-700 font-bold"><%= format_money(promo.promo_price_cents) %></span>
+          <% if promo.modifier_name.present? %><span class="text-[11px] font-semibold text-rose-700"><%= t("promos.only_choice", choice: promo.modifier_name) %></span><% end %>
         </p>
       <% else %>
         <p class="text-amber-700 font-bold mt-2 tabular-nums"><%= format_money(item.price_cents_at(location)) %></p>
