@@ -25,7 +25,7 @@ module Pos
     # Both of these end the shift, and neither may happen over an order that was
     # never finished. Checked on the writes rather than on `count`, so a cashier can
     # still see what the drawer should hold while they clear the backlog.
-    before_action :block_unfinalized_orders!, only: %i[reconcile clock_out]
+    before_action :block_open_orders!, only: %i[reconcile clock_out]
 
     def show
       @open_session = current_user.open_cash_drawer_session(location: @pos_location)
@@ -197,12 +197,20 @@ module Pos
       @open_session.update!(deposit_treasury: @deposit_treasury)
     end
 
-    def block_unfinalized_orders!
+    # An order is done with when it is finished and paid. Unfinished ones go to
+    # the shift's orders tab; finished-but-unpaid ones to Collect Payment, which
+    # lists only this cashier's orders — nobody else will collect them.
+    def block_open_orders!
       count = unfinalized_orders_for(current_user).count
-      return if count.zero?
+      if count.positive?
+        return redirect_to pos_shift_path(tab: "orders"),
+                           alert: t("flash.pos.shift.finish_orders_first", count: count)
+      end
 
-      redirect_to pos_shift_path(tab: "orders"),
-                  alert: t("flash.pos.shift.finish_orders_first", count: count)
+      unpaid = current_user.unpaid_shift_orders(location: @pos_location).size
+      return if unpaid.zero?
+
+      redirect_to pos_orders_path, alert: t("flash.pos.shift.collect_payment_first", count: unpaid)
     end
 
     def unfinalized_orders_for(user)

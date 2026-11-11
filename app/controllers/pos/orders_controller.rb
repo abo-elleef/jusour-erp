@@ -18,8 +18,8 @@ module Pos
     end
 
     # Settles everything currently listed, in cash, in one press. Scoped to the
-    # same filters as the page: what the cashier is looking at is what they are
-    # collecting, which is the only version of this they can check before pressing.
+    # same filters as the page — the user's own orders, of the chosen type: what
+    # they are looking at is what they are collecting.
     def collect_all_cash
       authorize Order, :collect_all_cash?
 
@@ -251,6 +251,10 @@ module Pos
       @q ||= Order.ransack(params[:q])
       scope = @q.result.not_fully_paid.includes(:customer, :user, :payments)
       scope = scope.where(order_type: @filter_type) if @filter_type.present?
+      # A cashier collects only on their own orders, and must before closing the
+      # shift (Pos::ShiftsController#block_open_orders!), so nobody needs anyone
+      # else's here.
+      scope = scope.where(user: current_user)
       scope.limit(100).to_a.select { |order| order.amount_due_cents.positive? }
     end
 

@@ -6452,6 +6452,9 @@ en:
         finish_orders_first:
           one: "Finish your open order before closing the shift — %{count} is still waiting."
           other: "Finish your open orders before closing the shift — %{count} are still waiting."
+        collect_payment_first:
+          one: "Collect payment for your unpaid order before closing the shift."
+          other: "Collect payment for your %{count} unpaid orders before closing the shift."
         no_open_drawer: "No open drawer session. Open your drawer first."
         no_open_drawer_for_cash: "Open your drawer before accepting cash payments."
         no_open_drawer_to_order: "Open your drawer before placing orders."

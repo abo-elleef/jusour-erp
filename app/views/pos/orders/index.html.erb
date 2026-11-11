@@ -105,7 +105,6 @@
                 <th class="p-3 text-start"><%= t("order.labels.type") %></th>
                 <th class="p-3 text-start"><%= t("order.labels.status") %></th>
                 <th class="p-3 text-start"><%= t("order.labels.customer") %></th>
-                <th class="p-3 text-start"><%= t("order.labels.cashier") %></th>
                 <th class="p-3 text-end"><%= t("order.labels.due") %></th>
                 <th class="p-3 pe-5 text-end"></th>
               </tr>
@@ -129,7 +128,6 @@
                   <td class="p-3 text-gray-600">
                     <%= order.customer&.display_name || order.fulfillment_summary %>
                   </td>
-                  <td class="p-3 text-gray-600"><%= order.user&.name || "—" %></td>
                   <td class="p-3 text-end font-bold text-green-700 tabular-nums"><%= format_money(order.amount_due_cents) %></td>
                   <td class="p-3 pe-5 text-end">
                     <%= link_to t("actions.pay"), pos_order_path(order),

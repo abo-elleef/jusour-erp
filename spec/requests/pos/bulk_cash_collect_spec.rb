@@ -18,9 +18,9 @@ RSpec.describe "Collecting outstanding orders in cash", type: :request do
 
   before { Current.company = company }
 
-  def outstanding(order_type: "pickup", total_cents: 5_000)
+  def outstanding(order_type: "pickup", total_cents: 5_000, owner: manager)
     Current.company = company
-    order = create(:order, user: cashier, company: company, location: branch,
+    order = create(:order, user: owner, company: company, location: branch,
                            status: "submitted", order_type: order_type)
     create(:order_item, order: order, quantity: 1, unit_price_cents: total_cents)
     order.recalculate_totals!
@@ -111,7 +111,7 @@ RSpec.describe "Collecting outstanding orders in cash", type: :request do
 
   it "is not offered to a plain cashier" do
     sign_in_with_drawer(cashier)
-    outstanding
+    outstanding(owner: cashier)
 
     get pos_orders_path
     expect(response.body).not_to include(collect_all_cash_pos_orders_path)

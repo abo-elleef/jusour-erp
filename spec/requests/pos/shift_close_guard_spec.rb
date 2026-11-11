@@ -2,9 +2,10 @@
 
 require "rails_helper"
 
-# `completed` and `cancelled` are the only endings an order has. A cashier who
-# still owns anything else has not finished their shift, whatever the drawer says.
-RSpec.describe "Closing a shift over unfinished orders", type: :request do
+# `completed` and `cancelled` are the only endings an order has, and a completed
+# order is only done with once it is paid. A cashier who still owns anything else
+# has not finished their shift, whatever the drawer says.
+RSpec.describe "Closing a shift over unfinished or unpaid orders", type: :request do
   include Devise::Test::IntegrationHelpers
 
   let(:company) { create(:company) }
@@ -35,6 +36,14 @@ RSpec.describe "Closing a shift over unfinished orders", type: :request do
     order
   end
 
+  # Paid by card, so the drawer's expected cash does not move.
+  def pay!(order)
+    Current.company = company
+    create(:payment, order: order, amount_cents: order.amount_due_cents, status: "completed",
+                     payment_method: "instapay")
+    order
+  end
+
   def clock_in!
     Current.company = company
     ShiftLog.create!(user: cashier, clocked_in_at: 1.hour.ago,
@@ -60,8 +69,8 @@ RSpec.describe "Closing a shift over unfinished orders", type: :request do
       expect(flash[:alert]).to be_present
     end
 
-    it "goes through once every order has an ending" do
-      completed = order_for(cashier)
+    it "goes through once every order has an ending and is paid" do
+      completed = pay!(order_for(cashier))
       cancelled = order_for(cashier)
       Orders::CompleteService.call(completed)
       cancelled.update!(status: "cancelled")
@@ -87,6 +96,36 @@ RSpec.describe "Closing a shift over unfinished orders", type: :request do
 
       expect(response).to redirect_to(pos_shift_path)
     end
+
+    it "is refused over a finished order nobody has paid for, and sends them to collect it" do
+      Orders::CompleteService.call(order_for(cashier))
+
+      patch reconcile_pos_shift_path, params: { counted_cash: "100.00" }
+
+      expect(response).to redirect_to(pos_orders_path)
+      expect(flash[:alert]).to eq(I18n.t("flash.pos.shift.collect_payment_first", count: 1))
+      expect(cashier.open_cash_drawer_session(location: branch)).to be_present
+    end
+
+    it "is refused over a part-paid order" do
+      order = order_for(cashier)
+      Current.company = company
+      create(:payment, order: order, amount_cents: order.amount_due_cents / 2, status: "completed",
+                       payment_method: "instapay")
+      Orders::CompleteService.call(order)
+
+      patch reconcile_pos_shift_path, params: { counted_cash: "100.00" }
+
+      expect(flash[:alert]).to eq(I18n.t("flash.pos.shift.collect_payment_first", count: 1))
+    end
+
+    it "ignores another cashier's unpaid orders" do
+      Orders::CompleteService.call(order_for(other_cashier))
+
+      patch reconcile_pos_shift_path, params: { counted_cash: "100.00" }
+
+      expect(response).to redirect_to(pos_shift_path)
+    end
   end
 
   describe "clocking out" do
@@ -100,9 +139,19 @@ RSpec.describe "Closing a shift over unfinished orders", type: :request do
       expect(cashier.reload).to be_clocked_in
     end
 
-    it "goes through once the order is closed" do
+    it "is refused while a finished order is unpaid" do
       clock_in!
       Orders::CompleteService.call(order_for(cashier))
+
+      patch clock_out_pos_shift_path
+
+      expect(flash[:alert]).to eq(I18n.t("flash.pos.shift.collect_payment_first", count: 1))
+      expect(cashier.reload).to be_clocked_in
+    end
+
+    it "goes through once the order is closed and paid" do
+      clock_in!
+      Orders::CompleteService.call(pay!(order_for(cashier)))
 
       patch clock_out_pos_shift_path
 
@@ -121,9 +170,9 @@ RSpec.describe "Closing a shift over unfinished orders", type: :request do
       expect(response.body).to include(I18n.t("pos.shift.unfinalized_orders_warning", count: 1))
     end
 
-    it "clears the block in one press of Complete all" do
-      order_for(cashier)
-      order_for(cashier, status: "draft")
+    it "clears the block in one press of Complete all once the money is in" do
+      pay!(order_for(cashier))
+      pay!(order_for(cashier, status: "draft"))
 
       post complete_all_pos_orders_path
       patch reconcile_pos_shift_path, params: { counted_cash: "100.00" }

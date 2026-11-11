@@ -149,6 +149,18 @@ class User < ApplicationRecord
     Order.not_finalized.merge(drawer.orders)
   end
 
+  # This cashier's orders in the current drawer session that still owe money,
+  # finished or not. A cashier collects on their own orders before the shift can
+  # close; nobody else's register will collect them. Same "owes money" test as
+  # Collect Payment, which is where the close guard sends them.
+  def unpaid_shift_orders(location: nil)
+    drawer = current_drawer_session(location: location)
+    return [] unless drawer
+
+    Order.not_fully_paid.merge(drawer.orders).includes(:payments).to_a
+         .select { |order| order.amount_due_cents.positive? }
+  end
+
   def owner?
     role == "owner"
   end
