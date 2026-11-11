@@ -32,6 +32,23 @@ class CashDrawerSession < ApplicationRecord
 
   scope :open, -> { where(status: "open") }
 
+  def open?
+    status == "open"
+  end
+
+  # No order is rung without an open drawer, so the drawer's lifetime is the
+  # cashier's shift: from opening until now, or until it was counted. There is no
+  # closed_at, so a counted drawer ends at its last update.
+  def order_window
+    created_at..(open? ? Time.current : updated_at)
+  end
+
+  # The cashier's orders from this drawer session. There is no FK from orders to
+  # the drawer, so they are matched by cashier, branch and time.
+  def orders
+    Order.where(user_id: user_id, location_id: location_id, created_at: order_window)
+  end
+
   # Cash actually taken during the session: everything counted at close beyond the
   # float that was already in the drawer when it opened.
   def cash_collected_cents

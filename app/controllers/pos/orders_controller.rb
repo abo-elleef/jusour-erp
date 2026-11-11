@@ -258,7 +258,7 @@ module Pos
     # always clears the blocker rather than leaving a remainder the cashier cannot
     # see. Drafts are in it: a cart with food in it is an unfinished sale.
     def open_orders_for(user)
-      Order.not_finalized.where(user: user).includes(:order_items)
+      user.unfinalized_shift_orders(location: @pos_location).includes(:order_items)
     end
 
     def require_pos_access!

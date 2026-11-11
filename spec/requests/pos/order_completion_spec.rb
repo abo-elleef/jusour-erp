@@ -76,6 +76,8 @@ RSpec.describe "POS order completion", type: :request do
   # completed order contains the button's own text, so matching on words would
   # pass whether or not the button is there.
   describe "the buttons that reach those actions" do
+    before { open_drawer_for(cashier) }
+
     it "offers Mark completed on an open order" do
       order = open_order
 
@@ -110,6 +112,8 @@ RSpec.describe "POS order completion", type: :request do
   end
 
   describe "POST /pos/orders/complete_all" do
+    before { open_drawer_for(cashier) }
+
     it "closes everything this cashier still has open" do
       mine = [open_order, open_order(status: "ready")]
 
@@ -178,13 +182,17 @@ RSpec.describe "POS order completion", type: :request do
       end
     end
 
-    it "lists an unfinished order from an earlier shift, so it can be reached" do
+    # The cashier works their current drawer session only. An order left open in
+    # an earlier one is the admin's to handle, so it is neither listed nor closed.
+    it "leaves an unfinished order from an earlier session out of the list and the bulk close" do
       stale = open_order(status: "draft")
-      stale.update!(order_type: "table", table_number: nil, created_at: 5.days.ago)
+      stale.update!(created_at: 5.days.ago)
 
       get pos_shift_path(tab: "orders")
+      expect(response.body).not_to include(resume_pos_order_path(stale))
 
-      expect(response.body).to include(resume_pos_order_path(stale))
+      post complete_all_pos_orders_path
+      expect(stale.reload.status).to eq("draft")
     end
   end
 

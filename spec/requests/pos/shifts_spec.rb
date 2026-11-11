@@ -34,30 +34,33 @@ RSpec.describe "POS shift flow", type: :request do
       expect(response.body).to include(I18n.t("pos.shift.tabs.orders"))
     end
 
-    it "lists orders from the current clocked-in shift" do
+    # The drawer session is the shift: no order is rung without one. Being
+    # clocked in alone is not a window of orders.
+    it "lists no orders while clocked in without a drawer" do
       ShiftLog.create!(
         user: cashier,
         clocked_in_at: 2.hours.ago,
         hourly_rate_cents: 1500,
         status: "active"
       )
-      order = create(:order, user: cashier, company: company, status: "completed",
+      order = create(:order, user: cashier, company: company, location: branch, status: "completed",
         subtotal_cents: 1000, tax_cents: 0, total_cents: 1000, created_at: 1.hour.ago)
       create(:order_item, order: order, unit_price_cents: 1000)
-      create(:payment, order: order, amount_cents: 1000)
 
-      get pos_shift_path(tab: "orders")
+      get pos_shift_path(tab: "orders", filter: "all")
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(order.order_number)
-      expect(response.body).to include(I18n.t("pos.shift.orders.filter_open"))
-      expect(response.body).to include(I18n.t("pos.shift.orders.filter_all"))
+      expect(response.body).to include(I18n.t("pos.shift.orders.no_shift"))
+      expect(response.body).not_to include(pos_order_path(order, from: "shift"))
     end
 
     it "defaults to the open orders and hides finished ones; ?filter=all shows both" do
-      done = create(:order, user: cashier, company: company, status: "completed",
+      CashDrawerSession.create!(user: cashier, treasury: treasury, location: branch,
+        session_date: BusinessDay.today(location: branch), opening_float_cents: 0,
+        status: "open", created_at: 2.hours.ago)
+      done = create(:order, user: cashier, company: company, location: branch, status: "completed",
         subtotal_cents: 1000, tax_cents: 0, total_cents: 1000, created_at: 1.hour.ago)
       create(:order_item, order: done, unit_price_cents: 1000)
-      open_order = create(:order, user: cashier, company: company, status: "in_progress",
+      open_order = create(:order, user: cashier, company: company, location: branch, status: "in_progress",
         subtotal_cents: 500, tax_cents: 0, total_cents: 500, created_at: 30.minutes.ago)
       create(:order_item, order: open_order, unit_price_cents: 500)
 

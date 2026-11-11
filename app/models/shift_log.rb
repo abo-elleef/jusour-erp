@@ -34,7 +34,7 @@ class ShiftLog < ApplicationRecord
 
   # Orders placed by this cashier during the shift. There is no FK from orders
   # to shifts, so association is by user + creation time window (mirrors
-  # User#shift_orders_time_range used by the POS shift screen).
+  # CashDrawerSession#orders used by the POS shift screen).
   def orders
     Order.where(user_id: user_id, created_at: clocked_in_at..orders_ended_at)
   end

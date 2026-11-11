@@ -192,7 +192,7 @@ module Pos
     end
 
     def unfinalized_orders_for(user)
-      Order.not_finalized.where(user: user)
+      user.unfinalized_shift_orders(location: @pos_location)
     end
 
     def unpaid_orders_for(user)
@@ -212,42 +212,25 @@ module Pos
     end
 
     def load_shift_orders
-      # Counted over everything this cashier still has open, not just the current
-      # shift window, so the button's number matches both what it will close and
-      # what is holding their shift open.
+      # The cashier sees their current drawer session and nothing older: no order
+      # is rung without an open drawer, so the session is the shift. Orders left
+      # open from an earlier session are the admin's to handle, not the cashier's.
+      @shift_drawer = current_user.current_drawer_session(location: @pos_location)
       unfinalized = unfinalized_orders_for(current_user)
       @open_orders_count = unfinalized.count
       @paid_open_orders_count = unfinalized.includes(:payments).count(&:fully_paid?)
-      @shift_time_range = widen_to_business_day(current_user.shift_orders_time_range)
 
-      # Unfinished orders always show, even when they were rung on an earlier
-      # shift. They are what is holding this shift open, and listing only the
-      # current window left the cashier told "2 still open" above a table of
-      # finished ones, with no way to reach them.
-      ids = unfinalized.pluck(:id)
-      if @shift_time_range
-        start_time, end_time = @shift_time_range
-        ids |= Order.where(user: current_user, created_at: start_time..end_time).pluck(:id)
-      end
+      session_orders = @shift_drawer ? @shift_drawer.orders : Order.none
+      @shift_time_range = @shift_drawer && [@shift_drawer.order_window.begin, @shift_drawer.order_window.end]
 
       # One list, two views: "open" is what the cashier came here to clear and is
-      # the default whenever anything is open; "all" is the day's history, open
-      # orders included.
+      # the default whenever anything is open; "all" is the session's history.
       @filter = params[:filter].presence_in(%w[open all]) || (@open_orders_count.positive? ? "open" : "all")
-      shown_ids = @filter == "open" ? unfinalized.pluck(:id) : ids
-      @shift_orders = Order.where(id: shown_ids)
+      shown = @filter == "open" ? unfinalized : session_orders
+      @shift_orders = Order.where(id: shown.select(:id))
         .includes(:customer, :payments)
         .order(created_at: :desc)
-      @all_orders_count = ids.size
-    end
-
-    # Orders rung before the drawer was opened or the clock was punched still belong
-    # to the cashier's day, so the list reaches back to the start of the business day.
-    def widen_to_business_day(range)
-      return range unless range
-
-      day_start = BusinessDay.range(BusinessDay.today(location: @pos_location)).begin
-      [[range.first, day_start].min, range.last]
+      @all_orders_count = session_orders.count
     end
 
     def manager_approved_reconcile?(drawer_session)

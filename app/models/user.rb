@@ -133,34 +133,20 @@ class User < ApplicationRecord
     scope.where(session_date: BusinessDay.today(location: location)).order(created_at: :desc).first
   end
 
-  def shift_orders_time_range
-    ranges = []
+  # The drawer the POS shift screen is about: the open one, else the one closed
+  # last today. Orders from earlier sessions are the admin's to deal with.
+  def current_drawer_session(location: nil)
+    open_cash_drawer_session(location: location) || todays_cash_drawer_session(location: location)
+  end
 
-    # Active shift: clock-in to now
-    if clocked_in?
-      ranges << [current_shift.clocked_in_at, Time.current]
-    end
+  # This cashier's orders that have no ending yet, limited to the current drawer
+  # session. One definition for the shift tab, the close/clock-out guard and
+  # Complete all, so the cashier is never blocked by an order they cannot see.
+  def unfinalized_shift_orders(location: nil)
+    drawer = current_drawer_session(location: location)
+    return Order.none unless drawer
 
-    # Recently completed shift within the last 36 hours (covers overnight shifts)
-    recent_completed = shift_logs.where.not(clocked_out_at: nil)
-                                  .where(clocked_out_at: 36.hours.ago..)
-                                  .order(clocked_in_at: :desc).first
-    if recent_completed && !clocked_in?
-      ranges << [recent_completed.clocked_in_at, recent_completed.clocked_out_at]
-    end
-
-    # Cash drawer sessions from the current or previous operating day (overnight
-    # shifts open on a previous date)
-    cash_drawer_sessions.where(session_date: [BusinessDay.today, BusinessDay.today - 1]).find_each do |drawer|
-      end_time = drawer.status == "open" ? Time.current : drawer.updated_at
-      ranges << [drawer.created_at, end_time]
-    end
-
-    if ranges.any?
-      [ranges.map(&:first).min, ranges.map(&:last).max]
-    else
-      [BusinessDay.range(BusinessDay.today).begin, Time.current]
-    end
+    Order.not_finalized.merge(drawer.orders)
   end
 
   def owner?

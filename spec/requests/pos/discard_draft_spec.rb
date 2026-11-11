@@ -36,6 +36,11 @@ RSpec.describe "Discarding a draft cart", type: :request do
   end
 
   it "offers the button on the shift screen" do
+    till = Treasury.create!(company: company, name: "Till", treasury_type: "cash_drawer",
+                            balance_cents: 0, opening_balance_cents: 0)
+    CashDrawerSession.create!(company: company, user: cashier, treasury: till, location: branch,
+                              session_date: BusinessDay.today(location: branch),
+                              opening_float_cents: 0, status: "open")
     order = cart
     get pos_shift_path(tab: "orders")
     expect(response.body).to include(pos_order_path(order))
