@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
+require "csv"
+
 module Admin
   module Accounting
     class CashDrawerController < BaseController
       before_action :set_session, only: %i[show count reconcile payments attach_payments print_slip reopen]
+      helper_method :print_mode?
 
       def index
         @locations = Location.active.branches.ordered
@@ -25,6 +28,13 @@ module Admin
         @default_treasury_id = current_user.assigned_treasury_id ||
           Treasury.default_treasury&.id ||
           @drawer_treasuries.first&.id
+
+        respond_to do |format|
+          format.html
+          format.csv do
+            send_data "\uFEFF#{day_csv}", filename: "cash-drawer-#{@date}.csv", type: "text/csv; charset=utf-8"
+          end
+        end
       end
 
       # Read-only: what this drawer took, row by row, so its figures can be traced to
@@ -129,6 +139,47 @@ module Admin
       end
 
       private
+
+      # ?print=1 opens a clean copy (no filters, forms or row actions) and the
+      # print dialog, like the ledger reports.
+      def print_mode?
+        params[:print].present?
+      end
+
+      # The same rows and totals the table shows, so it follows the same filters.
+      def day_csv
+        CSV.generate do |csv|
+          csv << [t("accounting.cash_drawer.title"), @date.to_s,
+                  @location&.name || t("accounting.cash_drawer.all_locations"),
+                  @treasury&.name || t("accounting.cash_drawer.all_drawers")]
+          csv << [t("admin.locations.type_branch"), t("accounting.cash_drawer.cashier"), t("accounting.shared.treasury"),
+                  t("accounting.cash_drawer.opened_at"), t("accounting.cash_drawer.status"),
+                  t("payment.methods.cash"), t("payment.methods.instapay"), t("payment.methods.vodafone_cash"),
+                  t("accounting.cash_drawer.expected"), t("accounting.cash_drawer.counted"),
+                  t("accounting.cash_drawer.variance"), t("accounting.cash_drawer.banked_to"),
+                  t("accounting.cash_drawer.banked")]
+          @rows.each do |row|
+            session = row.session
+            csv << [session.location&.name, session.user.name, session.treasury.name,
+                    I18n.l(session.created_at, format: :short_time), helpers.accounting_drawer_status(session.status),
+                    csv_amount(row.cash_cents), csv_amount(row.instapay_cents), csv_amount(row.vodafone_cash_cents),
+                    csv_amount(session.expected_cash_cents), csv_amount(session.counted_cash_cents),
+                    csv_amount(session.variance_cents),
+                    (row.deposit_treasury.name if row.deposit_treasury && row.deposited_cents.positive?),
+                    csv_amount(row.deposited_cents)]
+          end
+          csv << [t("accounting.cash_drawer.table_total"), nil, nil, nil, nil,
+                  csv_amount(@totals.cash_cents), csv_amount(@totals.instapay_cents),
+                  csv_amount(@totals.vodafone_cash_cents), csv_amount(@totals.expected_cents),
+                  csv_amount(@totals.counted_cents), csv_amount(@totals.variance_cents), nil,
+                  csv_amount(@totals.deposited_cents)]
+        end
+      end
+
+      # Blank, not 0.00, for a drawer nobody has counted yet — same as the em dash on screen.
+      def csv_amount(cents)
+        cents.nil? ? nil : format("%.2f", cents.to_d / 100)
+      end
 
       # payment id => the audit entry that moved it into this drawer, if one did.
       def attach_history(payments)

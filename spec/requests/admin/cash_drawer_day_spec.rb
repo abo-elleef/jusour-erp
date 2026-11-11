@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rails_helper"
+require "csv"
 
 RSpec.describe "The admin drawer day view", type: :request do
   include Devise::Test::IntegrationHelpers
@@ -75,6 +76,53 @@ RSpec.describe "The admin drawer day view", type: :request do
     get admin_accounting_cash_drawer_index_path(date: Date.current, location_id: branch.id, locale: :ar)
 
     expect(response.body).to include(I18n.t("accounting.cash_drawer.statuses.open", locale: :ar))
+  end
+
+  describe "exports" do
+    it "downloads the filtered shifts as CSV with a totals line" do
+      shift(treasury: till_one, cash: 5_000)
+      shift(treasury: till_two, cash: 3_000, location: other_branch)
+
+      get admin_accounting_cash_drawer_index_path(date: Date.current, location_id: branch.id, format: :csv)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq("text/csv")
+      expect(response.headers["Content-Disposition"]).to include("cash-drawer-#{Date.current}.csv")
+      rows = CSV.parse(response.body.delete_prefix("\uFEFF"))
+      expect(rows.first).to include("Branch A")
+      expect(rows.size).to eq(4) # title, header, one shift, totals
+      expect(rows[2]).to include("Branch A", "Till 1", "50.00")
+      expect(rows.last.first).to eq(I18n.t("accounting.cash_drawer.table_total"))
+      expect(rows.last).to include("50.00")
+      expect(rows.flatten).not_to include("Till 2")
+    end
+
+    it "leaves an uncounted drawer's counted and variance blank rather than zero" do
+      shift(treasury: till_one, cash: 5_000)
+
+      get admin_accounting_cash_drawer_index_path(date: Date.current, format: :csv)
+
+      shift_row = CSV.parse(response.body.delete_prefix("\uFEFF"))[2]
+      expect(shift_row[9]).to be_nil
+      expect(shift_row[10]).to be_nil
+    end
+
+    it "offers CSV and Print links that keep the filters" do
+      get admin_accounting_cash_drawer_index_path(date: Date.current, location_id: branch.id)
+
+      page = Nokogiri::HTML(response.body)
+      csv_link = page.at_css("a[href*='.csv']")
+      print_link = page.at_css("a[href*='print=1']")
+      expect(csv_link["href"]).to include("location_id=#{branch.id}")
+      expect(print_link["href"]).to include("location_id=#{branch.id}")
+      expect(print_link["target"]).to eq("_blank")
+    end
+
+    it "opens the print dialog in print mode" do
+      get admin_accounting_cash_drawer_index_path(date: Date.current, print: 1)
+
+      expect(response.body).to include('data-controller="auto-print"')
+    end
   end
 
   describe "the table's totals row" do
