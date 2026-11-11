@@ -155,7 +155,13 @@ export default class extends Controller {
         },
         body: body
       })
-      if (!response.ok) throw new Error("Stripe unavailable")
+      if (!response.ok) {
+        // The server refuses with a reason the cashier can act on (e.g. missing table number).
+        const refusal = await response.json().catch(() => ({}))
+        const error = new Error(refusal.error || "Stripe unavailable")
+        error.refusal = Boolean(refusal.error)
+        throw error
+      }
       const data = await response.json()
       if (this.hasTerminalStatusTarget) {
         this.terminalStatusTarget.textContent = "Processing card payment..."
@@ -182,7 +188,7 @@ export default class extends Controller {
       }
     } catch (e) {
       if (this.hasTerminalStatusTarget) {
-        this.terminalStatusTarget.textContent = "Terminal unavailable. Check Stripe keys or use cash."
+        this.terminalStatusTarget.textContent = e.refusal ? e.message : "Terminal unavailable. Check Stripe keys or use cash."
       }
     }
   }

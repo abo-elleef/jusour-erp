@@ -8,6 +8,8 @@ module Pos
     before_action :set_order
     before_action :authorize_payment!
     before_action :require_open_drawer_for_payment!, only: :create
+    # Not on capture_stripe: by then the card is charged, and refusing would lose it.
+    before_action :require_submittable_order!, only: %i[create stripe_intent]
 
     def create
       return refuse_negative_delivery_fee if delivery_fee_cents_param&.negative?
@@ -90,6 +92,31 @@ module Pos
                 t("flash.pos.shift.no_open_drawer_to_order")
               end
       refuse_without_drawer(alert)
+    end
+
+    # A draft is submitted the moment it is paid off. Check that it can be (a table
+    # order has its table number, a delivery its address) before any money is taken:
+    # otherwise the payment is saved, the submit fails, and the order sits paid in the
+    # cart while the kitchen never gets a ticket. Orders already submitted were
+    # checked when they went to the kitchen.
+    def require_submittable_order!
+      return unless @order.draft?
+
+      Orders::SubmitService.validate_fulfillment!(@order)
+    rescue Orders::SubmitService::InvalidFulfillment => e
+      refuse_unsubmittable_order(e.message)
+    end
+
+    def refuse_unsubmittable_order(message)
+      respond_to do |format|
+        format.json { render json: { success: false, error: message }, status: :unprocessable_entity }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.append("toast-container", partial: "shared/toast",
+                                                                      locals: { message: message, type: :alert }),
+                 status: :unprocessable_entity
+        end
+        format.any { redirect_back fallback_location: pos_path, alert: message, status: :see_other }
+      end
     end
 
     def set_order
