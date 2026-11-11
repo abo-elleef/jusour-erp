@@ -23,6 +23,10 @@ module Printing
       # the font is bundled.
       BOLD_VALUE_PT     = 32
       BOLD_STROKE_WIDTH = "1.2"
+      # Image line height as a multiple of the point size. 2 is the receipt's airy
+      # default; kitchen/station tickets use COMPACT_LINE_FACTOR to save paper.
+      DEFAULT_LINE_FACTOR = 2
+      COMPACT_LINE_FACTOR = 1.5
 
       CANDIDATE_FONTS = [
         # Bundled fallback — drop NotoNaskhArabic-Regular.ttf into vendor/fonts/
@@ -46,13 +50,14 @@ module Printing
       # align: :left | :center | :right
       # font_scale: 2 doubles the point size — the printer's double-size command
       # only enlarges built-in text, never a raster image.
-      def render_line(text, doc_width: 42, align: :right, font_scale: 1)
+      def render_line(text, doc_width: 42, align: :right, font_scale: 1, line_factor: DEFAULT_LINE_FACTOR)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
 
         gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
-        pbm     = render_pbm_single(text.to_s.strip, gravity, px_width, font, pt: (FONT_SIZE_PT * font_scale).to_i)
+        pt      = (FONT_SIZE_PT * font_scale).to_i
+        pbm     = render_pbm_single(text.to_s.strip, gravity, px_width, font, pt: pt, height: line_height(pt, line_factor))
         pbm ? pbm_to_escpos(pbm) : nil
       end
 
@@ -60,17 +65,20 @@ module Printing
       # Arabic label on the right, LTR value (price/qty) on the left.
       # pad: distance in dots from each paper edge. bold_value: draw the value bolder
       # and larger (ticket quantities).
-      def render_row(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false)
+      # value_center_x: centre the value on this x (dots from the left) instead of
+      # pinning it to the edge — the quantity column on kitchen tickets.
+      def render_row(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false,
+                     line_factor: DEFAULT_LINE_FACTOR, value_center_x: nil)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
 
         pbm = render_pbm_multi(
           [
-            { gravity: "West", offset: "+#{pad}+0", text: ltr_value.to_s, bold: bold_value },
+            value_annotation(ltr_value, px_width, pad, bold_value, value_center_x),
             { gravity: "East", offset: "+#{pad}+0", text: arabic_label.to_s.strip }
           ],
-          px_width, font
+          px_width, font, height: line_height(FONT_SIZE_PT, line_factor)
         )
         pbm ? pbm_to_escpos(pbm) : nil
       end
@@ -140,7 +148,7 @@ module Printing
 
       # Same as render_line but returns a Base64-encoded PNG string.
       # font_scale: 2 doubles the point size (used for ESC/POS double-height text preview).
-      def render_png(text, doc_width: 42, align: :right, font_scale: 1)
+      def render_png(text, doc_width: 42, align: :right, font_scale: 1, line_factor: DEFAULT_LINE_FACTOR)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
@@ -149,23 +157,24 @@ module Printing
         gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
         run_to_png([
           im_command,
-          "-size", "#{px_width}x#{pt * 2}", "xc:white",
+          "-size", "#{px_width}x#{line_height(pt, line_factor)}", "xc:white",
           "-font", font, "-pointsize", pt.to_s, "-fill", "black",
           "-gravity", gravity, "-annotate", "+0+0", text.to_s.strip
         ])
       end
 
       # Same as render_row but returns a Base64-encoded PNG string.
-      def render_row_png(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false)
+      def render_row_png(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false,
+                         line_factor: DEFAULT_LINE_FACTOR, value_center_x: nil)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
 
         run_to_png([
           im_command,
-          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}", "xc:white",
+          "-size", "#{px_width}x#{line_height(FONT_SIZE_PT, line_factor)}", "xc:white",
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
-          *annotate_args({ gravity: "West", offset: "+#{pad}+0", text: ltr_value.to_s, bold: bold_value }),
+          *annotate_args(value_annotation(ltr_value, px_width, pad, bold_value, value_center_x)),
           *annotate_args({ gravity: "East", offset: "+#{pad}+0", text: arabic_label.to_s.strip })
         ])
       end
@@ -196,9 +205,9 @@ module Printing
 
       # Modifier/notes continuation row: text in the item-name column only,
       # with the same vertical column separators as a regular row3 image.
-      def render_modifier_row(visual_text, doc_width: 42, columns: 3, pad: 8)
+      def render_modifier_row(visual_text, doc_width: 42, columns: 3, pad: 8, line_factor: DEFAULT_LINE_FACTOR)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        h        = FONT_SIZE_PT * 2
+        h        = line_height(FONT_SIZE_PT, line_factor)
         font     = arabic_font
         return nil unless font
 
@@ -211,14 +220,14 @@ module Printing
           draws << { draw: "line #{sep2},0 #{sep2},#{h}" }
         end
 
-        pbm = render_pbm_multi(draws, px_width, font)
+        pbm = render_pbm_multi(draws, px_width, font, height: h)
         pbm ? pbm_to_escpos(pbm) : nil
       end
 
       # Same as render_modifier_row but returns a Base64-encoded PNG string.
-      def render_modifier_row_png(visual_text, doc_width: 42, columns: 3, pad: 8)
+      def render_modifier_row_png(visual_text, doc_width: 42, columns: 3, pad: 8, line_factor: DEFAULT_LINE_FACTOR)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        h        = FONT_SIZE_PT * 2
+        h        = line_height(FONT_SIZE_PT, line_factor)
         font     = arabic_font
         return nil unless font
 
@@ -277,10 +286,10 @@ module Printing
       end
 
       # Single text annotation → PBM binary.
-      def render_pbm_single(text, gravity, px_width, font, pt: FONT_SIZE_PT)
+      def render_pbm_single(text, gravity, px_width, font, pt: FONT_SIZE_PT, height: pt * 2)
         cmd = [
           im_command,
-          "-size", "#{px_width}x#{pt * 2}", "xc:white",
+          "-size", "#{px_width}x#{height}", "xc:white",
           "-font", font, "-pointsize", pt.to_s, "-fill", "black",
           "-gravity", gravity, "-annotate", "+0+0", text,
           "-type", "Bilevel", "pbm:-"
@@ -292,10 +301,10 @@ module Printing
       # Each entry is either:
       #   { gravity:, offset:, text: }  — text annotation
       #   { draw: "line x1,y1 x2,y2" } — raw ImageMagick -draw primitive
-      def render_pbm_multi(annotations, px_width, font)
+      def render_pbm_multi(annotations, px_width, font, height: FONT_SIZE_PT * 2)
         cmd = [
           im_command,
-          "-size", "#{px_width}x#{FONT_SIZE_PT * 2}", "xc:white",
+          "-size", "#{px_width}x#{height}", "xc:white",
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black"
         ]
         annotations.each do |ann|
@@ -308,6 +317,19 @@ module Printing
         cmd += ["-type", "Bilevel", "pbm:-"]
 
         capture_pbm(cmd)
+      end
+
+      # Image height for one line of `pt`-point text. The default factor gives exactly
+      # the heights receipts always had, so their cached images stay valid.
+      def line_height(pt, line_factor)
+        (pt * line_factor).round
+      end
+
+      # The value side of a row: pinned `pad` dots from the left edge, or centred on
+      # value_center_x (Center gravity offsets are measured from the middle).
+      def value_annotation(value, px_width, pad, bold, value_center_x)
+        offset = value_center_x ? format("%+d+0", value_center_x - (px_width / 2)) : "+#{pad}+0"
+        { gravity: value_center_x ? "Center" : "West", offset: offset, text: value.to_s, bold: bold }
       end
 
       # One text annotation. bold: a thicker, larger glyph, then the defaults are put

@@ -12,8 +12,9 @@ module Printing
 
       attr_reader :entries, :config_summary
 
-      def initialize(width: 42, charset: nil)
+      def initialize(width: 42, charset: nil, compact: false)
         @width        = width
+        @line_factor  = compact ? ArabicImageRenderer::COMPACT_LINE_FACTOR : ArabicImageRenderer::DEFAULT_LINE_FACTOR
         @charset_config = Charset.resolve(charset)
         @rtl          = @charset_config[:reshape]
         @use_images   = @rtl && ArabicImageRenderer.arabic_font.present?
@@ -38,7 +39,8 @@ module Printing
         str = line.to_s
         if @use_images && str.match?(ARABIC_PATTERN)
           visual = Printing::Escpos::Bidi.visual_for_print(str, reshape: true)
-          png = ArabicImageRenderer.render_png(visual, doc_width: @width, align: @current_align, font_scale: @current_dh ? 2 : 1)
+          png = ArabicImageRenderer.render_png(visual, doc_width: @width, align: @current_align, font_scale: @current_dh ? 2 : 1,
+                                               line_factor: @line_factor)
           push kind: :image, content: str, png_b64: png
         else
           push kind: :text, content: str
@@ -49,12 +51,14 @@ module Printing
         lines.times { push kind: :blank, content: "" }
       end
 
-      def row(left, right = "", padded: false, bold_value: false)
+      def row(left, right = "", padded: false, bold_value: false, value_column: false)
         if @use_images && (left.to_s.match?(ARABIC_PATTERN) || right.to_s.match?(ARABIC_PATTERN))
           visual_label = Printing::Escpos::Bidi.visual_for_print(left.to_s, reshape: true)
           visual_right = right.to_s.match?(ARABIC_PATTERN) ? Printing::Escpos::Bidi.visual_for_print(right.to_s, reshape: true) : right.to_s
+          center_x = value_column ? Document.value_column_center(@width) : nil
           png = ArabicImageRenderer.render_row_png(visual_label, visual_right, doc_width: @width,
-                                                   pad: padded ? Document::PAD_DOTS : 8, bold_value: bold_value)
+                                                   pad: padded ? Document::PAD_DOTS : 8, bold_value: bold_value,
+                                                   line_factor: @line_factor, value_center_x: center_x)
           push kind: :image_row, left: left.to_s, right: right.to_s, png_b64: png
         else
           left_str  = left.to_s
@@ -83,7 +87,8 @@ module Printing
         if @use_images
           visual = Printing::Escpos::Bidi.visual_for_print(str, reshape: true)
           png = ArabicImageRenderer.render_modifier_row_png(visual, doc_width: @width, columns: columns,
-                                                            pad: padded ? Document::PAD_DOTS : 8)
+                                                            pad: padded ? Document::PAD_DOTS : 8,
+                                                            line_factor: @line_factor)
           push kind: :image, content: str, png_b64: png
         else
           push kind: :text, content: @rtl ? str : "  #{str}"

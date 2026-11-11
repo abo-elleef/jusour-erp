@@ -17,6 +17,14 @@ const LINE_GAP = 8
 // bold and larger — Document::PAD_DOTS / ArabicImageRenderer::BOLD_VALUE_PT.
 const TICKET_PAD_PX = 32
 const BOLD_VALUE_PX = 32
+// Line height as a multiple of the text size: 2 for receipts, 1.5 for compact
+// kitchen tickets — ArabicImageRenderer::DEFAULT/COMPACT_LINE_FACTOR.
+const DEFAULT_LINE_FACTOR = 2
+const COMPACT_LINE_FACTOR = 1.5
+// Quantity column: this share of the paper on the value side, quantity centred in
+// it; the item name gets the rest — Document::VALUE_COLUMN_SHARE.
+const VALUE_COLUMN_SHARE = 0.35
+const WRAP_SEPARATORS = ["+", "•", "|"]
 const FONT_FAMILY = '"Noto Naskh Arabic", "Segoe UI", Tahoma, Arial, "Arial Unicode MS", sans-serif'
 const BLACK_BELOW = 150 // 0–255 luminance; anything darker prints
 const ARABIC_SCRIPT = /[֐-ࣿיִ-﷿ﹰ-﻿]/
@@ -35,9 +43,10 @@ export function toBase64(bytes) {
 }
 
 export class EscposDocument {
-  constructor({ widthChars = 42, rtl = false } = {}) {
+  constructor({ widthChars = 42, rtl = false, compact = false } = {}) {
     this.px = PAPER_PX[widthChars] || 576
     this.rtl = rtl
+    this.lineFactor = compact ? COMPACT_LINE_FACTOR : DEFAULT_LINE_FACTOR
     this.chunks = []
     this.alignment = "left"
     this.scale = 1
@@ -75,7 +84,7 @@ export class EscposDocument {
   }
 
   // Label on the reading-start side, value on the other (mirrored for RTL).
-  row(label, value = "", { padded = false, boldValue = false } = {}) {
+  row(label, value = "", { padded = false, boldValue = false, valueColumn = false } = {}) {
     const size = BASE_PX
     const pad = padded ? TICKET_PAD_PX : 8
     const valueSize = boldValue ? BOLD_VALUE_PX : size
@@ -89,6 +98,15 @@ export class EscposDocument {
     }
     this.drawBlock(1, size, (ctx, y) => {
       const valueWidth = asValue(() => this.measure(String(value), valueSize))
+      if (valueColumn) {
+        // Value centred in its column (35% of the paper); the label gets the other 65%.
+        const split = Math.round(this.px * VALUE_COLUMN_SHARE)
+        const valueBox = this.rtl ? { x0: 0, x1: split } : { x0: this.px - split, x1: this.px }
+        asValue(() => this.fill(ctx, value, { ...valueBox, align: "center", y, size: valueSize }))
+        const labelBox = this.rtl ? { x0: split + 12, x1: this.px - pad } : { x0: pad, x1: this.px - split - 12 }
+        this.fill(ctx, label, { ...labelBox, align: this.rtl ? "right" : "left", y, size })
+        return
+      }
       const labelBox = this.px - 2 * pad - valueWidth - 12
       if (this.rtl) {
         asValue(() => this.fill(ctx, value, { x0: pad, x1: this.px - pad, align: "left", y, size: valueSize }))
@@ -200,7 +218,13 @@ export class EscposDocument {
   wrap(text, maxWidth, size) {
     const ctx = this.scratch()
     ctx.font = this.font(size)
-    const words = text.split(/\s+/).filter(Boolean)
+    // A separator ("+", "•", "|") travels with the word after it, so a wrapped line
+    // never ends on one — TicketItemsTable.wrap on the Rails side.
+    const words = text.split(/\s+/).filter(Boolean).reduce((acc, word) => {
+      if (acc.length && WRAP_SEPARATORS.includes(acc[acc.length - 1])) acc[acc.length - 1] += ` ${word}`
+      else acc.push(word)
+      return acc
+    }, [])
     if (words.length === 0) return [""]
 
     const lines = []
@@ -222,7 +246,9 @@ export class EscposDocument {
   // `paint(ctx, y, lineIndex, height)` is called per line with its vertical centre.
   drawBlock(lineCount, size, paint, rules = []) {
     const lineHeight = size + LINE_GAP
-    const height = lineCount === 1 ? size * 2 : lineCount * lineHeight + size
+    // Space above and below the text: a full line on receipts, less when compact.
+    const margin = size * (this.lineFactor - 1)
+    const height = lineCount === 1 ? Math.round(size * this.lineFactor) : Math.round(lineCount * lineHeight + margin)
     const canvas = document.createElement("canvas")
     canvas.width = this.px
     canvas.height = height
@@ -237,7 +263,7 @@ export class EscposDocument {
 
     for (let i = 0; i < lineCount; i++) {
       // One line sits in the middle; several stack with half a line of margin.
-      const y = lineCount === 1 ? height / 2 : size / 2 + i * lineHeight + lineHeight / 2
+      const y = lineCount === 1 ? height / 2 : margin / 2 + i * lineHeight + lineHeight / 2
       paint(ctx, y, i, height)
     }
     rules.forEach((x) => {
@@ -351,8 +377,9 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   order.items.forEach((line) => {
     const unit = (line.unit_price_cents || 0) + (line.modifiers || []).reduce((s, m) => s + m.price_adjustment_cents, 0)
     doc.row3(line.name, String(line.quantity), money(unit * line.quantity))
-    ;(line.modifiers || []).forEach((m) => doc.modifier(`+ ${m.name}`))
-    if (line.notes) doc.modifier(line.notes)
+    // Every modifier and the note on one line, like the station tickets.
+    const detail = ticketDetail(line)
+    if (detail) doc.modifier(detail)
     doc.separator()
   })
 
@@ -388,10 +415,20 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   return doc.toBytes()
 }
 
+// "+ Double • Extra cheese | no sauce" — TicketItemsTable on the Rails side.
+// doc.modifier wraps it when it is wider than the paper.
+function ticketDetail(line) {
+  const modifiers = (line.modifiers || []).map((m) => m.name).filter(Boolean)
+  const parts = []
+  if (modifiers.length) parts.push(`+ ${modifiers.join(" • ")}`)
+  if (line.notes && String(line.notes).trim()) parts.push(String(line.notes).trim().replace(/\s+/g, " "))
+  return parts.join(" | ")
+}
+
 // Kitchen / bar / expo ticket — ProductionTicketBuilder.
 export function buildProductionTicket(order, items, title, { labels, rtl, widthChars, cashier, station }) {
   const r = labels.receipt
-  const doc = new EscposDocument({ widthChars, rtl })
+  const doc = new EscposDocument({ widthChars, rtl, compact: true })
 
   doc.align("center")
   doc.bold()
@@ -412,16 +449,16 @@ export function buildProductionTicket(order, items, title, { labels, rtl, widthC
   const ticketLabels = labels.ticket || {}
   doc.row(ticketLabels.cashier || "Cashier", cashier || "-", { padded: true })
   doc.row(ticketLabels.station || "Station", station || "-", { padded: true })
-  doc.blank()
 
   doc.align("left")
   doc.separator()
-  doc.row(r.item, r.qty, { padded: true })
+  doc.row(r.item, r.qty, { padded: true, valueColumn: true })
   doc.separator()
   items.forEach((line) => {
-    doc.row(line.name, String(line.quantity), { padded: true, boldValue: true })
-    ;(line.modifiers || []).forEach((m) => doc.modifier(`+ ${m.name}`, { columns: 2, padded: true }))
-    if (line.notes) doc.modifier(line.notes, { columns: 2, padded: true })
+    doc.row(line.name, String(line.quantity), { padded: true, boldValue: true, valueColumn: true })
+    // Every modifier and the note on one line — TicketItemsTable#detail_lines.
+    const detail = ticketDetail(line)
+    if (detail) doc.modifier(detail, { columns: 2, padded: true })
     doc.separator()
   })
 
@@ -435,7 +472,8 @@ export function buildProductionTicket(order, items, title, { labels, rtl, widthC
     doc.separator()
   }
 
-  doc.blank(4)
+  // The cut command already feeds the last line past the cutter.
+  doc.blank()
   doc.cut()
   return doc.toBytes()
 }

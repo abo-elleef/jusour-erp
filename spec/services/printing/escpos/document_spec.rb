@@ -154,10 +154,24 @@ RSpec.describe Printing::Escpos::Document do
     it "asks for padding and a bold value in image mode" do
       allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("font.ttf")
       allow(Printing::Escpos::ArabicImageRenderer).to receive(:render_row).and_return("IMG".b)
-      described_class.new(charset: "windows-1256").row("برجر", "2", padded: true, bold_value: true)
+      described_class.new(charset: "windows-1256", compact: true)
+                     .row("برجر", "2", padded: true, bold_value: true, value_column: true)
 
       expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_row)
-        .with(anything, "2", doc_width: 42, pad: described_class::PAD_DOTS, bold_value: true)
+        .with(anything, "2", doc_width: 42, pad: described_class::PAD_DOTS, bold_value: true,
+                             line_factor: Printing::Escpos::ArabicImageRenderer::COMPACT_LINE_FACTOR,
+                             value_center_x: (576 * 0.35 / 2).round)
+    end
+
+    it "draws receipt rows exactly as before, so their cached images stay valid" do
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("font.ttf")
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:capture_pbm).and_return(nil)
+      Printing::Escpos::ArabicImageRenderer.render_row("label", "9", doc_width: 42)
+
+      expect(Printing::Escpos::ArabicImageRenderer).to have_received(:capture_pbm) do |cmd|
+        expect(cmd).to include("576x52")
+        expect(cmd.each_cons(4).to_a).to include(["-gravity", "West", "-annotate", "+8+0"])
+      end
     end
   end
 end

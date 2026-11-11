@@ -4,6 +4,7 @@ module Printing
   module Escpos
     class ProductionTicketBuilder
       include IssuedBy
+      include TicketItemsTable
 
       def initialize(order, printer:, order_items:, title:)
         @order = order
@@ -13,11 +14,11 @@ module Printing
       end
 
       def build
-        compose(Document.new(width: line_width)).to_bytes
+        compose(Document.new(width: line_width, compact: true)).to_bytes
       end
 
       def build_debug
-        doc = DebugDocument.new(width: line_width)
+        doc = DebugDocument.new(width: line_width, compact: true)
         compose(doc)
         doc
       end
@@ -27,7 +28,7 @@ module Printing
       def compose(doc)
         # Same branch/company logo as the customer receipt.
         doc.align(:center)
-        doc.blank if doc.receipt_logo(location: @order.location, company: @order.company)
+        doc.receipt_logo(location: @order.location, company: @order.company)
 
         doc.align(:center)
         doc.bold
@@ -43,7 +44,6 @@ module Printing
         doc.double_height(false)
         doc.bold(false)
         compose_issued_by(doc, cashier: @order.user&.name.to_s, station: @order.workstation&.name.to_s)
-        doc.blank
 
         compose_items_table(doc, @order_items)
 
@@ -57,25 +57,10 @@ module Printing
           doc.rule
         end
 
-        doc.blank(4)
+        # The cut command already feeds the last line past the cutter.
+        doc.blank
         doc.cut
         doc
-      end
-
-      def compose_items_table(doc, items)
-        doc.align(:left)
-        doc.separator
-        doc.row(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.qty"), padded: true)
-        doc.separator
-
-        items.each do |item|
-          doc.row(item.display_name, item.quantity.to_s, padded: true, bold_value: true)
-          item.order_item_modifiers.each do |modifier|
-            doc.modifier_text("+ #{modifier.name}", columns: 2, padded: true)
-          end
-          doc.modifier_text(item.notes, columns: 2, padded: true) if item.notes.present?
-          doc.separator
-        end
       end
 
       def line_width
