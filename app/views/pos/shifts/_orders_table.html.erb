@@ -1,16 +1,21 @@
+<%# Sort headers reload only the shift_orders frame, so the page keeps its scroll. %>
+<% sort_link = ->(label, key) {
+     sort_header_link(label, key, sort: @sort, direction: @direction, path: pos_shift_path,
+                      data: { turbo_frame: "shift_orders", turbo_action: "advance" })
+   } %>
     <div class="overflow-x-auto">
       <table class="w-full text-left text-sm min-w-[720px]">
         <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
           <tr>
             <th class="p-3 ps-5 text-start w-10">#</th>
-            <th class="p-3 text-start"><%= t("order.labels.order_number") %></th>
-            <th class="p-3 text-start"><%= t("order.labels.time") %></th>
-            <th class="p-3 text-start"><%= t("order.labels.type") %></th>
-            <th class="p-3 text-start"><%= t("order.labels.status") %></th>
+            <th class="p-3 text-start"><%= sort_link.call(t("order.labels.order_number"), "number") %></th>
+            <th class="p-3 text-start"><%= sort_link.call(t("order.labels.time"), "time") %></th>
+            <th class="p-3 text-start"><%= sort_link.call(t("order.labels.type"), "type") %></th>
+            <th class="p-3 text-start"><%= sort_link.call(t("order.labels.status"), "status") %></th>
             <th class="p-3 text-start"><%= t("order.labels.customer") %></th>
             <th class="p-3 text-start"><%= t("order.labels.payment_method") %></th>
-            <th class="p-3 text-end"><%= t("order.labels.delivery_fee") %></th>
-            <th class="p-3 text-end"><%= t("order.labels.total") %></th>
+            <th class="p-3 text-end"><%= sort_link.call(t("order.labels.delivery_fee"), "delivery_fee") %></th>
+            <th class="p-3 text-end"><%= sort_link.call(t("order.labels.total"), "total") %></th>
             <th class="p-3 pe-5 text-end"></th>
           </tr>
         </thead>

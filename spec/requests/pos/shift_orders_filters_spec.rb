@@ -80,6 +80,43 @@ RSpec.describe "Shift orders filters and total", type: :request do
     expect(footer_delivery_fee).to eq(view.format_money(1500))
   end
 
+  def listed_in_order(*orders)
+    orders.map { |o| response.body.index(pos_order_path(o, from: "shift")) }
+  end
+
+  it "sorts by total in either direction" do
+    get pos_shift_path(tab: "orders", filter: "all", sort: "total", dir: "asc")
+    positions = listed_in_order(cash_pickup, cash_delivery, card_delivery)
+    expect(positions).to eq(positions.sort)
+
+    get pos_shift_path(tab: "orders", filter: "all", sort: "total", dir: "desc")
+    positions = listed_in_order(card_delivery, cash_delivery, cash_pickup)
+    expect(positions).to eq(positions.sort)
+  end
+
+  it "sorts order numbers as numbers, so 10 comes after 9" do
+    cash_pickup.update_columns(order_number: "9")
+    card_delivery.update_columns(order_number: "10")
+
+    get pos_shift_path(tab: "orders", filter: "all", sort: "number", dir: "asc")
+    positions = listed_in_order(cash_pickup, card_delivery)
+    expect(positions).to eq(positions.sort)
+  end
+
+  it "keeps the sort when a filter is applied" do
+    get pos_shift_path(tab: "orders", filter: "all", sort: "total", dir: "asc")
+
+    form = Nokogiri::HTML(response.body).at_css("form[action='#{pos_shift_path}']")
+    expect(form.at_css("input[name='sort']")["value"]).to eq("total")
+    expect(form.at_css("input[name='dir']")["value"]).to eq("asc")
+  end
+
+  it "falls back to newest first for an unknown sort" do
+    get pos_shift_path(tab: "orders", filter: "all", sort: "id; DROP TABLE orders", dir: "sideways")
+
+    expect(response).to have_http_status(:ok)
+  end
+
   it "ignores unknown filter values" do
     get pos_shift_path(tab: "orders", filter: "all", order_type: "bogus", payment_method: "bitcoin")
 

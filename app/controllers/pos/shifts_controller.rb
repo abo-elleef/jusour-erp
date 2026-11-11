@@ -9,6 +9,17 @@ module Pos
     # The payment-method column shows completed payments only; the filter matches it.
     SHIFT_PAYMENT_STATUS = "completed"
 
+    # Sortable columns of the orders table → SQL columns (fixed strings, never user input).
+    # Order numbers are digit strings, so length first makes "10" come after "9".
+    SHIFT_ORDER_SORTS = {
+      "number" => %w[LENGTH(orders.order_number) orders.order_number],
+      "time" => %w[orders.created_at],
+      "type" => %w[orders.order_type],
+      "status" => %w[orders.status],
+      "delivery_fee" => %w[orders.delivery_fee_cents],
+      "total" => %w[orders.total_cents]
+    }.freeze
+
     before_action :require_pos_access!
     before_action :set_open_session, only: %i[count reconcile]
     # Both of these end the shift, and neither may happen over an order that was
@@ -244,7 +255,11 @@ module Pos
                                        .select(:order_id))
       end
 
-      @shift_orders = shown.includes(:customer, :payments).order(created_at: :desc)
+      @sort = params[:sort].presence_in(SHIFT_ORDER_SORTS.keys) || "time"
+      @direction = params[:dir] == "asc" ? "asc" : "desc"
+      @shift_orders = shown.includes(:customer, :payments)
+        .order(Arel.sql(SHIFT_ORDER_SORTS.fetch(@sort).map { |column| "#{column} #{@direction}" }.join(", ")))
+        .order(created_at: :desc)
       # A cancelled order earned nothing, so it is listed but not added up.
       filtered_live = shown.where.not(status: "cancelled")
       @shift_orders_total_cents = filtered_live.sum(:total_cents)
@@ -253,9 +268,10 @@ module Pos
       @all_orders_count = session_orders.count
     end
 
-    # Keeps the order-type / payment-method filters when switching Open ↔ All.
+    # Keeps the order-type / payment-method filters and the sort when switching Open ↔ All.
     def shift_orders_filter_params
-      { order_type: @order_type_filter, payment_method: @payment_method_filter }.compact
+      { order_type: @order_type_filter, payment_method: @payment_method_filter,
+        sort: params[:sort].presence && @sort, dir: params[:dir].presence && @direction }.compact
     end
     helper_method :shift_orders_filter_params
 

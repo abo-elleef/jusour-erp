@@ -31,12 +31,13 @@ module ApplicationHelper
   # `path` and `base_params` default to the request's own, which is right for a
   # table rendered by a GET. Pass them explicitly where the table also re-renders
   # in response to a POST or PATCH — there the request carries neither.
-  def sort_header_link(label, key, sort:, direction:, path: request.path, base_params: request.query_parameters)
+  # `data` is passed to the link, e.g. to keep a Turbo-frame table in its frame.
+  def sort_header_link(label, key, sort:, direction:, path: request.path, base_params: request.query_parameters, data: {})
     active = sort.to_s == key.to_s
     next_dir = (active && direction == "asc") ? "desc" : "asc"
     indicator = active ? (direction == "asc" ? "↑" : "↓") : ""
     query = base_params.stringify_keys.merge("sort" => key.to_s, "dir" => next_dir)
-    link_to "#{path}?#{query.to_query}",
+    link_to "#{path}?#{query.to_query}", data: data,
       class: "inline-flex items-center gap-1 hover:text-gray-900 #{'text-gray-900' if active}" do
       safe_join([label, tag.span(indicator, class: "text-amber-600")])
     end
