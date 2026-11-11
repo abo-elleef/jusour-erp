@@ -316,6 +316,18 @@ class MoneyPathChecker
                                       tip_cents: 0, user: owner)
     check "POS — cash sale"
 
+    # A cash delivery: the customer pays food + fee, and the driver keeps the fee,
+    # so it is paid out of this drawer rather than counted into it.
+    delivery = Order.create!(company: @company, location: location, user: owner,
+                             order_type: "delivery", delivery_address: "verify", status: "completed",
+                             order_number: "V#{SecureRandom.hex(3)}")
+    delivery.order_items.create!(menu_item: item, quantity: 1, unit_price_cents: 4_000)
+    delivery.update!(subtotal_cents: 4_000, total_cents: 4_000)
+    delivery.apply_delivery_fee!(1_500, drawer_session: session)
+    Payments::CashPaymentService.call(order: delivery, amount_cents: delivery.total_cents,
+                                      tip_cents: 0, user: owner)
+    check "POS — delivery, driver keeps the fee"
+
     # An order rung up in the browser while the internet was down, delivered later.
     offline = Orders::SyncOfflineOrderService.call(
       user: owner,
@@ -330,8 +342,12 @@ class MoneyPathChecker
     check "POS — offline order synced"
 
     reconciler = Accounting::CashReconciliationService.new(session)
-    reconciler.compute_expected!
-    reconciler.reconcile!(15_000 + offline.order.payments.sum(:amount_cents))
+    expected = reconciler.compute_expected!
+    # Float + cash sale + delivery food (the fee went to the driver) + offline order.
+    counted = 15_000 + 4_000 + offline.order.payments.sum(:amount_cents)
+    raise "drawer expected #{expected}, but #{counted} is in it" unless expected == counted
+
+    reconciler.reconcile!(counted)
     check "POS — drawer reconciled"
   rescue StandardError => e
     skip("POS", "could not exercise: #{e.class} #{e.message}")

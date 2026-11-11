@@ -50,6 +50,14 @@ RSpec.describe "Delivery fee on POS orders", type: :request do
     expect(order.status).to eq("submitted")
   end
 
+  it "records the fee as paid out of the cashier's drawer" do
+    pay(amount_cents: food_total + 2_500, fee: "25")
+
+    drawer = cashier.open_cash_drawer_session(location: branch)
+    expect(order.reload.delivery_fee_drawer_session).to eq(drawer)
+    expect(Accounting::SessionSalesSummary.for_session(drawer).expected_cash_cents).to eq(food_total)
+  end
+
   it "leaves the order owing the fee when only the food is paid" do
     pay(amount_cents: food_total, fee: "25")
 

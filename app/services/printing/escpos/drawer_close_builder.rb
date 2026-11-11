@@ -65,6 +65,9 @@ module Printing
         doc.row(I18n.t("printing.drawer_close.refunded_cash"), money(refunded_cash)) if refunded_cash.positive?
         doc.separator
 
+        if summary.driver_payout_cents.to_i.positive?
+          doc.row(I18n.t("printing.drawer_close.driver_payouts"), "-#{money(summary.driver_payout_cents)}")
+        end
         doc.row(I18n.t("printing.drawer_close.expected"), money(@session.expected_cash_cents))
         doc.bold
         doc.row(I18n.t("printing.drawer_close.counted"), money(@session.counted_cash_cents))

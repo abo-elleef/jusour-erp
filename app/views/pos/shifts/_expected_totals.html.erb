@@ -11,6 +11,11 @@
               float: format_amount(summary.opening_float_cents),
               sales: format_amount(summary.cash_net_cents)) %>
       </p>
+      <% if summary.driver_payout_cents.to_i.positive? %>
+        <p class="text-xs text-sky-800 mt-0.5">
+          <%= t("pos.shift.orders.expected_cash_driver_payouts", amount: format_amount(summary.driver_payout_cents)) %>
+        </p>
+      <% end %>
     </div>
     <div class="rounded-xl border border-gray-200 bg-white px-3 py-2.5">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= payment_method_label("vodafone_cash") %></p>

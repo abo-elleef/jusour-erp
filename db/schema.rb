@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_11_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_11_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1055,6 +1055,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_11_120000) do
     t.string "offline_number"
     t.datetime "kitchen_sent_at"
     t.integer "delivery_fee_cents", default: 0, null: false
+    t.uuid "delivery_fee_drawer_session_id"
     t.index "company_id, COALESCE(location_id, '00000000-0000-0000-0000-000000000000'::uuid), business_date, order_number", name: "index_orders_on_branch_day_order_number", unique: true, where: "(business_date IS NOT NULL)"
     t.index ["company_id", "business_date"], name: "index_orders_on_company_id_and_business_date"
     t.index ["company_id", "client_uuid"], name: "index_orders_on_company_id_and_client_uuid", unique: true, where: "(client_uuid IS NOT NULL)"
@@ -1062,6 +1063,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_11_120000) do
     t.index ["company_id"], name: "index_orders_on_company_id"
     t.index ["created_at"], name: "index_orders_on_created_at"
     t.index ["customer_id"], name: "index_orders_on_customer_id"
+    t.index ["delivery_fee_drawer_session_id"], name: "index_orders_on_delivery_fee_drawer_session_id"
     t.index ["location_id"], name: "index_orders_on_location_id"
     t.index ["order_type"], name: "index_orders_on_order_type"
     t.index ["receipt_token"], name: "index_orders_on_receipt_token", unique: true
@@ -2157,6 +2159,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_11_120000) do
   add_foreign_key "order_items", "combos"
   add_foreign_key "order_items", "menu_items"
   add_foreign_key "order_items", "orders"
+  add_foreign_key "orders", "cash_drawer_sessions", column: "delivery_fee_drawer_session_id"
   add_foreign_key "orders", "companies"
   add_foreign_key "orders", "customers"
   add_foreign_key "orders", "locations"

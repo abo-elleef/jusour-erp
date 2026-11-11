@@ -79,14 +79,14 @@ RSpec.describe "POS revenue reaches the ledger" do
         .to eq(entry.lines.sum(:credit_cents))
     end
 
-    it "recognises delivery fees as sales revenue, so the clearing account empties when they are paid" do
+    it "does not recognise delivery fees — they are the driver's money" do
       Order.create!(company: company, user: user, location: location, order_type: "delivery",
         status: "completed", subtotal_cents: 40_000, discount_cents: 0, tax_cents: 0, tip_cents: 0,
         delivery_fee_cents: 2_500, total_cents: 42_500)
       post_day!
 
-      expect(ledger(Accounting::JournalEntryService::SALES_REVENUE_CODE)).to eq(-42_500)
-      expect(ledger(Accounting::JournalEntryService::SALES_CLEARING_CODE)).to eq(42_500)
+      expect(ledger(Accounting::JournalEntryService::SALES_REVENUE_CODE)).to eq(-40_000)
+      expect(ledger(Accounting::JournalEntryService::SALES_CLEARING_CODE)).to eq(40_000)
     end
 
     it "is idempotent — re-posting the same day replaces it" do
@@ -158,6 +158,32 @@ RSpec.describe "POS revenue reaches the ledger" do
       Accounting::TreasuryLedgerService.sync_drawer_reconcile!(session)
 
       expect(ledger(Accounting::JournalEntryService::SALES_CLEARING_CODE)).to eq(10_000)
+    end
+  end
+
+  describe "a delivery paid in cash, the driver keeping the fee" do
+    it "clears to zero, with the fee in neither revenue nor the drawer" do
+      session = CashDrawerSession.create!(company: company, user: user, treasury: drawer,
+        float_source_treasury: safe, location: location, session_date: business_date,
+        opening_float_cents: 10_000, status: "open")
+      Accounting::TreasuryLedgerService.sync_drawer_open!(session)
+
+      order = Order.create!(company: company, user: user, location: location, order_type: "delivery",
+        delivery_address: "12 Nile St", status: "completed", subtotal_cents: 40_000, discount_cents: 0,
+        tax_cents: 0, tip_cents: 0, delivery_fee_cents: 2_500, total_cents: 42_500,
+        delivery_fee_drawer_session: session)
+      create(:payment, order: order, payment_method: "cash", amount_cents: 42_500, cash_drawer_session: session)
+      post_day!
+
+      expected = Accounting::CashReconciliationService.new(session).compute_expected!
+      expect(expected).to eq(50_000) # float + the food; the driver kept the 25.00
+
+      session.update!(counted_cash_cents: expected, status: "reconciled")
+      Accounting::TreasuryLedgerService.sync_drawer_reconcile!(session)
+
+      expect(ledger(Accounting::JournalEntryService::SALES_CLEARING_CODE)).to eq(0)
+      expect(ledger(Accounting::JournalEntryService::SALES_REVENUE_CODE)).to eq(-40_000)
+      expect(drawer.reload.balance_cents).to eq(50_000)
     end
   end
 

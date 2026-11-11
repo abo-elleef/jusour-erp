@@ -36,6 +36,8 @@ class Order < ApplicationRecord
   belongs_to :location, optional: true
   belongs_to :workstation, optional: true
   belongs_to :staff_meal_user, class_name: "User", optional: true
+  # The drawer the delivery fee was paid out of to the driver — see #apply_delivery_fee!.
+  belongs_to :delivery_fee_drawer_session, class_name: "CashDrawerSession", optional: true
   has_many :order_items, dependent: :destroy
   has_many :order_discounts, dependent: :destroy
   has_many :payments, dependent: :destroy
@@ -207,13 +209,24 @@ class Order < ApplicationRecord
     delivery? && settled_cents.zero?
   end
 
+  # The customer pays the fee with the order, but it is the driver's money, not
+  # the restaurant's. On a cash order the driver keeps it out of what they
+  # collected; on an InstaPay / Vodafone Cash order the cashier hands it over from
+  # the drawer. Either way the drawer that takes the payment ends up short by the
+  # fee, so it is recorded as paid out of that drawer (see
+  # Accounting::SessionSalesSummary#driver_payout_cents).
+  #
   # Returns false when the fee can no longer be changed (see above).
-  def apply_delivery_fee!(cents)
+  def apply_delivery_fee!(cents, drawer_session: nil)
     return false unless delivery_fee_editable?
-    return true if cents == delivery_fee_cents
 
-    self.delivery_fee_cents = cents
-    recalculate_totals!
+    self.delivery_fee_drawer_session = cents.positive? ? drawer_session : nil
+    if cents == delivery_fee_cents
+      save!
+    else
+      self.delivery_fee_cents = cents
+      recalculate_totals!
+    end
     true
   end
 
@@ -326,6 +339,7 @@ class Order < ApplicationRecord
     if delivery_fee_cents.positive?
       self.total_cents = total_cents.to_i - delivery_fee_cents
       self.delivery_fee_cents = 0
+      self.delivery_fee_drawer_session_id = nil
     end
   end
 end

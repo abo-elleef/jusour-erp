@@ -29,6 +29,13 @@
     <span class="tabular-nums text-gray-900"><%= format_money(summary.total_sales_cents) %></span>
   </div>
 
+  <% if summary.driver_payout_cents.to_i.positive? %>
+    <div class="flex justify-between gap-3 text-sky-800">
+      <span><%= t("pos.shift.driver_payouts") %></span>
+      <span class="tabular-nums font-medium">-<%= format_money(summary.driver_payout_cents) %></span>
+    </div>
+  <% end %>
+
   <% unless compact %>
     <p class="text-xs text-gray-500 pt-1"><%= t("pos.shift.sales_summary_hint") %></p>
     <p class="text-xs text-gray-500"><%= t("pos.shift.expected_cash_line", amount: format_money(summary.expected_cash_cents)) %></p>

@@ -43,7 +43,8 @@ module Accounting
         delivery_fee_cents: completed_orders.sum(:delivery_fee_cents).to_i,
         refunds_cents: refunds,
         net_sales_cents: gross - discounts - refunds,
-        average_ticket_cents: count.positive? ? (completed_orders.average(:total_cents) || 0).to_i : 0
+        # Delivery fees are the driver's, not the restaurant's takings.
+        average_ticket_cents: count.positive? ? (completed_orders.average(Arel.sql("orders.total_cents - orders.delivery_fee_cents")) || 0).to_i : 0
       }
     end
 

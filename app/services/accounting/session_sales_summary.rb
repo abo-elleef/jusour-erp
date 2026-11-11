@@ -15,6 +15,7 @@ module Accounting
       :cash_refunds_cents,
       :instapay_cents,
       :vodafone_cash_cents,
+      :driver_payout_cents,
       keyword_init: true
     ) do
       # Every method figure is already net of refunds (see #sum_for), so the cash
@@ -34,8 +35,11 @@ module Accounting
         }
       end
 
+      # Delivery fees belong to the driver: kept out of the cash they collected, or
+      # handed over from the drawer for an order paid by wallet. Either way they are
+      # not in the till.
       def expected_cash_cents
-        opening_float_cents + cash_net_cents
+        opening_float_cents + cash_net_cents - driver_payout_cents.to_i
       end
     end
 
@@ -61,8 +65,23 @@ module Accounting
         cash_cents: sum_for("cash") + invoice_sales_for("cash"),
         cash_refunds_cents: refunds_for("cash"),
         instapay_cents: sum_for("instapay") + invoice_sales_for("instapay"),
-        vodafone_cash_cents: sum_for("vodafone_cash") + invoice_sales_for("vodafone_cash")
+        vodafone_cash_cents: sum_for("vodafone_cash") + invoice_sales_for("vodafone_cash"),
+        driver_payout_cents: driver_payout_cents
       )
+    end
+
+    # The delivery orders whose fee this drawer paid out to the driver (see
+    # Order#apply_delivery_fee!). A voided order never went out, so its fee is not
+    # a payout: the whole payment is refunded instead.
+    def delivery_orders
+      scope = Order.where.not(status: "cancelled").where("orders.delivery_fee_cents > 0")
+      if @session
+        scope.where(delivery_fee_drawer_session_id: @session.id)
+      elsif @user_id.present?
+        scope.where(user_id: @user_id, created_at: range_start..range_end)
+      else
+        Order.none
+      end
     end
 
     # What the totals are made of, for a page that wants to show the rows. Read-only,
@@ -141,6 +160,10 @@ module Accounting
         .where(payment_method: method, user_id: @user_id)
         .where(confirmed_at: range_start..range_end)
         .sum(:total_cents).to_i
+    end
+
+    def driver_payout_cents
+      delivery_orders.sum(:delivery_fee_cents).to_i
     end
 
     def refunds_for(method)

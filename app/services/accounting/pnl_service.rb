@@ -58,8 +58,7 @@ module Accounting
         refunds_cents: refunds_cents,
         net_sales_cents: net_revenue_cents,
         tax_collected_cents: completed_orders.sum(:tax_cents).to_i,
-        tips_cents: completed_orders.sum(:tip_cents).to_i,
-        delivery_fees_cents: completed_orders.sum(:delivery_fee_cents).to_i
+        tips_cents: completed_orders.sum(:tip_cents).to_i
       }
     end
 

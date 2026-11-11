@@ -306,7 +306,7 @@ module Accounting
       # One entry per location per business day recognising the day's takings:
       #
       #   DR Sales clearing (1160)   everything sold
-      #     CR Sales revenue (4001)  net of tax, with tips and delivery fees
+      #     CR Sales revenue (4001)  net of tax
       #     CR Tax payable   (2100)  tax collected
       #
       # Posted per day rather than per ticket: at a few hundred orders a day the
@@ -324,8 +324,11 @@ module Accounting
         net_sales_cents = orders.sum(:subtotal_cents).to_i - orders.sum(:discount_cents).to_i
         tax_cents       = orders.sum(:tax_cents).to_i
         tip_cents       = orders.sum(:tip_cents).to_i
-        delivery_cents  = orders.sum(:delivery_fee_cents).to_i
-        total_cents     = net_sales_cents + tax_cents + tip_cents + delivery_cents
+        # Delivery fees are not recognised: they are the driver's money. The payments
+        # that carried them still credit 1160, and the drawer that paid them out
+        # counts short by the same amount (SessionSalesSummary#expected_cash_cents),
+        # so the clearing account nets to zero without them.
+        total_cents     = net_sales_cents + tax_cents + tip_cents
         return if total_cents.zero?
 
         create! source: location, date: business_date, user: user,
@@ -334,7 +337,7 @@ module Accounting
                                     default: "Sales — #{location.name} #{business_date}"),
                 source_tag: :daily_sales do |lines|
           lines << debit(SystemAccount::SALES_CLEARING, total_cents)
-          lines << credit(SystemAccount::SALES_REVENUE, net_sales_cents + tip_cents + delivery_cents)
+          lines << credit(SystemAccount::SALES_REVENUE, net_sales_cents + tip_cents)
           lines << credit(SystemAccount::TAX_PAYABLE, tax_cents) if tax_cents.positive?
         end
       end

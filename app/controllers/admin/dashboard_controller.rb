@@ -25,7 +25,8 @@ module Admin
       today_orders = Order.completed.on_date(Date.current)
       @today_order_count   = today_orders.count
       # Net of refunds: a refunded order stays "completed" at its full total.
-      @today_revenue_cents = today_orders.sum(:total_cents) -
+      # Delivery fees are the driver's money, not revenue.
+      @today_revenue_cents = today_orders.sum(:total_cents) - today_orders.sum(:delivery_fee_cents) -
                              ::Accounting::RevenueCalculator.refunds_cents(today_orders.pluck(:id))
       @today_avg_cents     = @today_order_count.positive? ? (@today_revenue_cents / @today_order_count) : 0
     end
