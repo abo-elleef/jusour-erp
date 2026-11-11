@@ -122,6 +122,7 @@ Rails.application.routes.draw do
         get :payload
         patch :confirm
         post :retry
+        post :handle
       end
     end
     resources :payments, only: [:create] do

@@ -21,14 +21,11 @@ module Pos
     # Jobs that failed and still need a person: feeds the "N prints failed" pill.
     def failed
       authorize PrintLog, :failed?
-      logs = branch_logs.needs_attention.includes(:order).order("print_logs.updated_at DESC").limit(20)
+      logs = branch_logs.needs_attention.includes(:order, :printer).order("print_logs.updated_at DESC").limit(50)
 
-      render json: {
-        count: logs.size,
-        jobs: logs.map do |l|
-          { id: l.id, print_type: l.print_type, order_number: l.order&.order_number, error: l.error_message }
-        end
-      }
+      render json: Printing::FailedPrintsSummary.new(
+        logs, context: report_context, support_url: Printing::Config.support_whatsapp_url
+      ).as_json
     end
 
     def retry
@@ -39,6 +36,16 @@ module Pos
         format.json { head :ok }
         format.html { redirect_back fallback_location: pos_path, notice: t("flash.pos.print_queued") }
       end
+    end
+
+    # The cashier dealt with a failed ticket by hand (read it to the kitchen, wrote it
+    # down). It leaves the failed list without printing a second copy. Only a failed
+    # ticket can be marked: a pending one may still print.
+    def handle
+      authorize @print_log, :handle?
+
+      @print_log.update!(status: "handled") if @print_log.status == "failed"
+      head :ok
     end
 
     # Handing out the payload is what claims the job: the first register to ask gets
@@ -85,6 +92,15 @@ module Pos
     end
 
     private
+
+    # Names for the support report: which branch, which register, who was on it.
+    def report_context
+      {
+        branch: Location.find_by(id: session[:pos_location_id])&.name,
+        register: Workstation.find_by(id: session[:pos_workstation_id])&.name,
+        cashier: current_user.name
+      }
+    end
 
     # Print jobs this register is responsible for: its company and branch; receipts
     # (and drawer slips that name a register) only for the register in use, production

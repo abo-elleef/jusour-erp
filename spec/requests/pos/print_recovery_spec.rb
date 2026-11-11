@@ -56,7 +56,37 @@ RSpec.describe "Print recovery and retry", type: :request do
       get failed_pos_print_logs_path
       body = JSON.parse(response.body)
       expect(body["count"]).to eq(1)
-      expect(body["jobs"].first).to include("id" => log.id, "error" => "Failed to fetch")
+      group = body["groups"].first
+      expect(group).to include("reason_key" => "agent_unreachable", "production" => true)
+      expect(group["jobs"].first).to include("id" => log.id, "error" => "Failed to fetch", "printer" => "Grill",
+                                             "order_number" => order.order_number)
+    end
+
+    it "groups failures by printer and cause, kitchen first" do
+      receipt_printer = Printer.create!(company: company, location: branch, name: "Front", printer_type: "receipt",
+                                        connection_type: "network", host: "192.168.1.61", port: 9100,
+                                        paper_width: "80mm", active: true)
+      other = create(:order, user: cashier, company: company, location: branch, status: "submitted")
+      PrintLog.create!(order: other, printer: printer, print_type: "station", status: "failed",
+                       error_message: "Failed to fetch")
+      PrintLog.create!(order: other, printer: receipt_printer, print_type: "receipt", status: "failed",
+                       error_message: "Connection timed out after 5000ms")
+      PrintLog.create!(order: other, printer: printer, print_type: "station", status: "failed",
+                       error_message: "Connection timed out after 5000ms")
+
+      get failed_pos_print_logs_path
+      groups = JSON.parse(response.body)["groups"]
+
+      # Kitchen problems first (newest first), the receipt printer last. A dead print
+      # agent is one card whatever printer it was printing to.
+      agent_label = I18n.t("printing.status.agent_group")
+      expect(groups.map { |g| [g["printer"], g["reason_key"], g["jobs"].size] }).to eq(
+        [["Grill", "printer_timeout", 1], [agent_label, "agent_unreachable", 2], ["Front", "printer_timeout", 1]]
+      )
+      expect(groups.first["host"]).to eq("192.168.1.60:9100")
+      agent_group = groups.find { |g| g["reason_key"] == "agent_unreachable" }
+      expect(agent_group["checks"]).not_to be_empty
+      expect(agent_group["report"]).to include("Grill", "192.168.1.60", "##{order.order_number}", "Failed to fetch")
     end
 
     it "drops a failure once the same ticket has since been printed" do
@@ -71,6 +101,35 @@ RSpec.describe "Print recovery and retry", type: :request do
 
       get failed_pos_print_logs_path
       expect(JSON.parse(response.body)["count"]).to eq(0)
+    end
+  end
+
+  describe "handle (printed by hand)" do
+    it "clears a failed ticket without queuing it again" do
+      log.update!(status: "failed", error_message: "Failed to fetch")
+      expect(Turbo::StreamsChannel).not_to receive(:broadcast_append_to)
+
+      post handle_pos_print_log_path(log), as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(log.reload.status).to eq("handled")
+      get failed_pos_print_logs_path
+      expect(JSON.parse(response.body)["count"]).to eq(0)
+    end
+
+    it "leaves a ticket that is not failed alone" do
+      post handle_pos_print_log_path(log), as: :json
+      expect(log.reload.status).to eq("pending")
+    end
+
+    it "refuses another company's ticket" do
+      other_company = create(:company)
+      stranger = create(:user, company: other_company, role: "cashier")
+      log.update!(status: "failed")
+      sign_in stranger
+
+      post handle_pos_print_log_path(log), as: :json
+      expect(log.reload.status).to eq("failed")
     end
   end
 

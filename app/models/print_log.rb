@@ -2,7 +2,9 @@
 
 class PrintLog < ApplicationRecord
   PRINT_TYPES = %w[receipt kitchen bar expo pick_station station drawer_close].freeze
-  STATUSES = %w[pending sent failed skipped].freeze
+  # handled: a failed ticket the cashier dealt with by hand (read out, written down).
+  # It clears the failure without printing a second copy.
+  STATUSES = %w[pending sent failed skipped handled].freeze
 
   # A job is either an order's ticket or a drawer's closing slip.
   belongs_to :order, optional: true
@@ -52,6 +54,25 @@ class PrintLog < ApplicationRecord
       "AND later.created_at > print_logs.created_at)"
     )
   }
+
+  # The raw error says what broke in technical terms ("Failed to fetch", "Connection
+  # timed out after 5000ms"). This says it in words a cashier can act on.
+  FAILURE_REASONS = [
+    [/failed to fetch|networkerror|load failed/i, :agent_unreachable],
+    [/timed? ?out|etimedout/i, :printer_timeout],
+    [/refused|econnrefused/i, :printer_refused],
+    [/ehostunreach|enetunreach|no route|unreachable/i, :printer_unreachable],
+    [/usb_printer_missing_device_name/, :usb_device_missing],
+    [/no_active_|no printer/i, :no_printer]
+  ].freeze
+
+  def failure_reason_key
+    message = error_message.to_s
+    FAILURE_REASONS.each { |pattern, key| return key if message.match?(pattern) }
+    return :no_printer if printer_id.nil?
+
+    :unknown
+  end
 
   # The Turbo stream the job is announced on. Receipts for a named register go to
   # that register only; everything else is shared across the branch.
