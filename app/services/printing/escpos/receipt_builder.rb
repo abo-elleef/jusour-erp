@@ -24,7 +24,7 @@ module Printing
       private
 
       def compose(doc)
-        restaurant = @order.company.receipt_name
+        restaurant = @order.company.receipt_name(location: @order.location)
 
         # ── Logo ───────────────────────────────────────────────────────────
         Printing::ReceiptLogo.with_source(location: @order.location, company: @order.company) do |logo_source|

@@ -32,7 +32,7 @@ module Printing
 
         doc.align(:center)
         doc.bold
-        doc.text(@session.company.receipt_name)
+        doc.text(@session.company.receipt_name(location: @session.location))
         doc.double_height
         doc.text(I18n.t("printing.drawer_close.title"))
         doc.double_height(false)

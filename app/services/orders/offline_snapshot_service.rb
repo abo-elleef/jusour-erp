@@ -30,7 +30,7 @@ module Orders
         location: @location && { id: @location.id, name: @location.name, table_count: @location.table_count },
         workstation: @workstation && { id: @workstation.id, name: @workstation.name },
         drawer_session_id: drawer_session&.id,
-        company: { receipt_name: @user.company.receipt_name },
+        company: { receipt_name: @user.company.receipt_name(location: @location) },
         agent: agent,
         print: print_settings,
         menu: menu,

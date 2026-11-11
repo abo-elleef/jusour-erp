@@ -54,6 +54,22 @@ RSpec.describe Printing::Escpos::ReceiptBuilder do
     end
   end
 
+  it "prints the branch name, and the company name when the order has no branch" do
+    company.update!(name: "SAQR Co")
+    branch.update!(name: "SAQR Cafe")
+    CompanySetting.where(company: company).first_or_create!.update!(restaurant_name: "SAQR Fried Chicken")
+
+    heading = ->(record) {
+      described_class.new(record, printer: printer).build_debug.entries.map { |e| e[:content] }
+    }
+
+    expect(heading.call(order)).to include("SAQR Cafe")
+    expect(heading.call(order)).not_to include("SAQR Fried Chicken")
+
+    order.update!(location: nil)
+    expect(heading.call(order.reload)).to include("SAQR Co")
+  end
+
   it "includes translated order type and payment method" do
     I18n.with_locale(:en) do
       entries = described_class.new(order, printer: printer).build_debug.entries.map { |e| e[:content] || e[:left] }.compact

@@ -100,10 +100,10 @@ class Company < ApplicationRecord
     business_type == "distribution"
   end
 
-  # The name printed on this company's receipts: the restaurant_name setting
-  # when one is set, otherwise the company's own name — never the product's.
-  def receipt_name
-    company_setting&.restaurant_name.presence || name
+  # The name printed on a receipt. The branch's own name when the slip belongs
+  # to a branch, otherwise this company's name — never the product's.
+  def receipt_name(location: nil)
+    location&.name.presence || name
   end
 
   # Is a toggleable module on for this company? A per-company override wins;
