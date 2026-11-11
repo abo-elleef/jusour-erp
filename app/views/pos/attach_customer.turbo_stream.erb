@@ -11,6 +11,11 @@
         edit_customer_errors: nil,
         embedded: true %>
 <% end %>
+<%# The delivery section depends on the customer: attaching one fills its default
+    address (and unlocks the address field); clearing it removes both. %>
+<%= turbo_stream.update "drawer-fulfillment-body" do %>
+  <%= render "pos/order_fulfillment", order: @order, embedded: true %>
+<% end %>
 <%= turbo_stream.update "drawer-notes-body" do %>
   <%= render "pos/order_notes_form", order: @order %>
 <% end %>
