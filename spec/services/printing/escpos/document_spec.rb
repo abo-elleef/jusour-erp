@@ -133,4 +133,31 @@ RSpec.describe Printing::Escpos::Document do
       expect(bytes).to start_with("\x1B\x40\x1B\x74\x10".b)
     end
   end
+
+  describe "ticket rows" do
+    before { allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return(nil) }
+
+    it "keeps a padded row off the paper edges and prints the quantity bold" do
+      doc = described_class.new(width: 20, charset: "latin")
+      doc.row("Burger", "2", padded: true, bold_value: true)
+      line = doc.to_bytes.split("\n".b).last
+
+      expect(line).to end_with("  Burger         \x1BE\x012\x1BE\x00  ".b)
+    end
+
+    it "leaves a plain row as it was" do
+      doc = described_class.new(width: 20, charset: "latin")
+      doc.row("Total", "9")
+      expect(doc.to_bytes.split("\n".b).last).to end_with("\x10Total#{" " * 14}9".b)
+    end
+
+    it "asks for padding and a bold value in image mode" do
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("font.ttf")
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:render_row).and_return("IMG".b)
+      described_class.new(charset: "windows-1256").row("برجر", "2", padded: true, bold_value: true)
+
+      expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_row)
+        .with(anything, "2", doc_width: 42, pad: described_class::PAD_DOTS, bold_value: true)
+    end
+  end
 end

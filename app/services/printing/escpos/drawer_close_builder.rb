@@ -7,8 +7,9 @@ module Printing
     # the drawer details page, and from the numbers stored on the drawer at close, so
     # the slip, the screen and the books cannot disagree.
     class DrawerCloseBuilder
-      def initialize(session, printer:, reprint: false)
+      def initialize(session, printer:, reprint: false, workstation: nil)
         @session = session
+        @workstation = workstation
         @printer = printer
         @reprint = reprint
       end
@@ -30,6 +31,10 @@ module Printing
         summary = calculator.call
         refunded_cash = calculator.payments.select { |p| p.payment_method == "cash" }.sum(&:refunded_amount_cents)
 
+        # Same branch/company logo as the customer receipt.
+        doc.align(:center)
+        doc.blank if doc.receipt_logo(location: @session.location, company: @session.company)
+
         doc.align(:center)
         doc.bold
         doc.text(@session.company.receipt_name(location: @session.location))
@@ -47,6 +52,7 @@ module Printing
         doc.align(:left)
         doc.row(I18n.t("printing.drawer_close.branch"), @session.location&.name.to_s)
         doc.row(I18n.t("printing.drawer_close.cashier"), @session.user.name.to_s)
+        doc.row(I18n.t("printing.ticket.station"), @workstation&.name.presence || "-")
         doc.row(I18n.t("printing.drawer_close.drawer"), @session.treasury&.name.to_s)
         doc.row(I18n.t("printing.drawer_close.date"), @session.session_date.strftime("%d/%m/%Y"))
         doc.row(I18n.t("printing.drawer_close.opened"), time(@session.created_at))

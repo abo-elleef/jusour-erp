@@ -700,9 +700,10 @@ export default class extends Controller {
   // ── Printing ──────────────────────────────────────────────────────────────
 
   buildJobs(order) {
-    const { printers, print, company } = this.snapshot
+    const { printers, print, company, user, workstation } = this.snapshot
     const labels = this.labelsValue
     const base = { labels, rtl: print.rtl }
+    const issuedBy = { cashier: user?.name, station: workstation?.name }
     const jobs = []
     const target = (printer) => ({ name: printer.name, connection: printer.connection, host: printer.host, port: printer.port })
 
@@ -719,12 +720,12 @@ export default class extends Controller {
     printers.stations.forEach((printer) => {
       const items = order.items.filter((line) => (line.routing_ids || []).some((id) => printer.menu_item_ids.includes(id)))
       if (items.length === 0) return
-      const bytes = buildProductionTicket(order, items, printer.station, { ...base, widthChars: widthCharsFor(printer.paper_width) })
+      const bytes = buildProductionTicket(order, items, printer.station, { ...base, ...issuedBy, widthChars: widthCharsFor(printer.paper_width) })
       jobs.push({ key: `station:${printer.id}`, kind: "tickets", printer: target(printer), data: toBase64(bytes), status: "pending", attempts: 0 })
     })
 
     if (printers.expo) {
-      const bytes = buildProductionTicket(order, order.items, labels.pick_title, { ...base, widthChars: widthCharsFor(printers.expo.paper_width) })
+      const bytes = buildProductionTicket(order, order.items, labels.pick_title, { ...base, ...issuedBy, widthChars: widthCharsFor(printers.expo.paper_width) })
       jobs.push({ key: "expo", kind: "tickets", printer: target(printers.expo), data: toBase64(bytes), status: "pending", attempts: 0 })
     }
 

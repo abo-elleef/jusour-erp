@@ -18,6 +18,11 @@ module Printing
     module ArabicImageRenderer
       PAPER_PX_WIDTH = { 42 => 576, 32 => 384 }.freeze
       FONT_SIZE_PT   = 26
+      # Kitchen/station tickets: a bolder, slightly larger quantity so the cook reads
+      # it at a glance. Drawn with a thin outline because only the regular weight of
+      # the font is bundled.
+      BOLD_VALUE_PT     = 32
+      BOLD_STROKE_WIDTH = "1.2"
 
       CANDIDATE_FONTS = [
         # Bundled fallback — drop NotoNaskhArabic-Regular.ttf into vendor/fonts/
@@ -53,15 +58,17 @@ module Printing
 
       # Returns raw ESC/POS bytes for a receipt row as a single image:
       # Arabic label on the right, LTR value (price/qty) on the left.
-      def render_row(arabic_label, ltr_value, doc_width: 42)
+      # pad: distance in dots from each paper edge. bold_value: draw the value bolder
+      # and larger (ticket quantities).
+      def render_row(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
 
         pbm = render_pbm_multi(
           [
-            { gravity: "West", offset: "+8+0", text: ltr_value.to_s },
-            { gravity: "East", offset: "+8+0", text: arabic_label.to_s.strip }
+            { gravity: "West", offset: "+#{pad}+0", text: ltr_value.to_s, bold: bold_value },
+            { gravity: "East", offset: "+#{pad}+0", text: arabic_label.to_s.strip }
           ],
           px_width, font
         )
@@ -149,7 +156,7 @@ module Printing
       end
 
       # Same as render_row but returns a Base64-encoded PNG string.
-      def render_row_png(arabic_label, ltr_value, doc_width: 42)
+      def render_row_png(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
@@ -158,8 +165,8 @@ module Printing
           im_command,
           "-size", "#{px_width}x#{FONT_SIZE_PT * 2}", "xc:white",
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
-          "-gravity", "West", "-annotate", "+8+0", ltr_value.to_s,
-          "-gravity", "East", "-annotate", "+8+0", arabic_label.to_s.strip
+          *annotate_args({ gravity: "West", offset: "+#{pad}+0", text: ltr_value.to_s, bold: bold_value }),
+          *annotate_args({ gravity: "East", offset: "+#{pad}+0", text: arabic_label.to_s.strip })
         ])
       end
 
@@ -189,13 +196,13 @@ module Printing
 
       # Modifier/notes continuation row: text in the item-name column only,
       # with the same vertical column separators as a regular row3 image.
-      def render_modifier_row(visual_text, doc_width: 42, columns: 3)
+      def render_modifier_row(visual_text, doc_width: 42, columns: 3, pad: 8)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         h        = FONT_SIZE_PT * 2
         font     = arabic_font
         return nil unless font
 
-        draws = [{ gravity: "East", offset: "+8+0", text: visual_text }]
+        draws = [{ gravity: "East", offset: "+#{pad}+0", text: visual_text }]
         if columns == 3
           qty_x = (px_width * 0.26).to_i
           sep1  = qty_x - 12
@@ -209,7 +216,7 @@ module Printing
       end
 
       # Same as render_modifier_row but returns a Base64-encoded PNG string.
-      def render_modifier_row_png(visual_text, doc_width: 42, columns: 3)
+      def render_modifier_row_png(visual_text, doc_width: 42, columns: 3, pad: 8)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         h        = FONT_SIZE_PT * 2
         font     = arabic_font
@@ -219,7 +226,7 @@ module Printing
           im_command,
           "-size", "#{px_width}x#{h}", "xc:white",
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
-          "-gravity", "East", "-annotate", "+8+0", visual_text
+          "-gravity", "East", "-annotate", "+#{pad}+0", visual_text
         ]
         if columns == 3
           qty_x = (px_width * 0.26).to_i
@@ -295,12 +302,24 @@ module Printing
           if ann[:draw]
             cmd += ["-draw", ann[:draw]]
           else
-            cmd += ["-gravity", ann[:gravity], "-annotate", ann.fetch(:offset, "+0+0"), ann[:text]]
+            cmd += annotate_args(ann)
           end
         end
         cmd += ["-type", "Bilevel", "pbm:-"]
 
         capture_pbm(cmd)
+      end
+
+      # One text annotation. bold: a thicker, larger glyph, then the defaults are put
+      # back so later annotations draw as before. A plain annotation produces exactly
+      # the arguments it always did, so receipt images keep their cache keys.
+      def annotate_args(ann)
+        args = ["-gravity", ann[:gravity], "-annotate", ann.fetch(:offset, "+0+0"), ann[:text]]
+        return args unless ann[:bold]
+
+        ["-pointsize", BOLD_VALUE_PT.to_s, "-stroke", "black", "-strokewidth", BOLD_STROKE_WIDTH,
+         *args,
+         "-stroke", "none", "-strokewidth", "1", "-pointsize", FONT_SIZE_PT.to_s]
       end
 
       # Runs an ImageMagick command that writes a PBM to stdout; returns the PBM or nil.

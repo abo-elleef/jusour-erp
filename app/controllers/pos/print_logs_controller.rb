@@ -69,6 +69,7 @@ module Pos
         reprint: Printing::PrintDrawerCloseService.reprint?(@print_log),
         printer: printer,
         print_type: @print_log.print_type,
+        workstation: @print_log.workstation,
         host: params[:host],
         port: params[:port]
       )

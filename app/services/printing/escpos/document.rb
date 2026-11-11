@@ -7,6 +7,10 @@ module Printing
       GS  = "\x1D"
 
       ARABIC_PATTERN = /\p{Arabic}/
+      # Side margin for padded rows: in dots for image rows (~4 mm at 203 dpi) and in
+      # characters for plain-text rows.
+      PAD_DOTS  = 32
+      PAD_CHARS = 2
 
       def initialize(width: 42, charset: nil)
         @width = width
@@ -37,20 +41,14 @@ module Printing
         lines.times { write_line("") }
       end
 
-      def row(left, right = "")
+      # padded: keep the row away from the paper edges (kitchen/station tickets).
+      # bold_value: print the value (right-hand argument, e.g. a quantity) bold.
+      def row(left, right = "", padded: false, bold_value: false)
         if @use_images && (left.to_s.match?(ARABIC_PATTERN) || right.to_s.match?(ARABIC_PATTERN))
           # Single image: Arabic label on right, LTR value (price) on left.
-          write_arabic_row_image(left.to_s, right.to_s)
+          write_arabic_row_image(left.to_s, right.to_s, padded: padded, bold_value: bold_value)
         else
-          left_str  = prepare_text(left)
-          right_str = prepare_text(right)
-          left_str, right_str = right_str, left_str if @rtl
-
-          left_len  = display_width(left_str)
-          right_len = display_width(right_str)
-          space     = @width - left_len - right_len
-          space     = 1 if space < 1
-          write_line("#{left_str}#{' ' * space}#{right_str}")
+          write_text_row(left, right, padded: padded, bold_value: bold_value)
         end
       end
 
@@ -72,15 +70,17 @@ module Printing
       end
 
       # Render a modifier/add-on line inside the item-name column with column borders.
-      def modifier_text(line = "", columns: 3)
+      def modifier_text(line = "", columns: 3, padded: false)
         str = line.to_s
         if @use_images
           visual = Bidi.visual_for_print(str, reshape: true)
-          bytes  = ArabicImageRenderer.render_modifier_row(visual, doc_width: @width, columns: columns)
+          bytes  = ArabicImageRenderer.render_modifier_row(visual, doc_width: @width, columns: columns,
+                                                                   pad: padded ? PAD_DOTS : 8)
           return @buffer << bytes.b if bytes
         end
         # Text fallback
-        @rtl ? (align(:right); text(str); align(:left)) : text("  #{str}")
+        margin = padded ? " " * PAD_CHARS : ""
+        @rtl ? (align(:right); text("#{str}#{margin}"); align(:left)) : text("#{margin}  #{str}")
       end
 
       # Full-width horizontal line rendered as an image (used between table rows).
@@ -111,10 +111,16 @@ module Printing
 
       # Print the receipt logo for this branch (see ReceiptLogo.escpos). Returns
       # whether a logo was printed.
+      # A logo problem (storage unreachable, ImageMagick error) never stops the print:
+      # kitchen and station tickets carry the logo too, and a ticket without it is
+      # far better than no ticket.
       def receipt_logo(location:, company:)
         bytes = Printing::ReceiptLogo.escpos(location: location, company: company, doc_width: @width)
         @buffer << bytes.b if bytes
         bytes.present?
+      rescue StandardError => e
+        Rails.logger.warn("[Printing] logo skipped: #{e.class}: #{e.message}")
+        false
       end
 
       # Print a logo image from a file path or URL.
@@ -202,18 +208,28 @@ module Printing
       # Render a receipt row as a single image: Arabic label on the right,
       # LTR value (price) on the left — both on the same baseline.
       # Only the Arabic label is reshaped/reordered; the price is passed as-is.
-      def write_arabic_row_image(arabic_label, ltr_value)
+      def write_arabic_row_image(arabic_label, ltr_value, padded: false, bold_value: false)
         visual_label = Bidi.visual_for_print(arabic_label, reshape: true)
         visual_value = ltr_value.to_s.match?(ARABIC_PATTERN) ? Bidi.visual_for_print(ltr_value.to_s, reshape: true) : ltr_value.to_s
-        bytes = ArabicImageRenderer.render_row(visual_label, visual_value, doc_width: @width)
+        bytes = ArabicImageRenderer.render_row(visual_label, visual_value, doc_width: @width,
+                                                                          pad: padded ? PAD_DOTS : 8,
+                                                                          bold_value: bold_value)
         if bytes
           @buffer << bytes.b
         else
-          left_str  = @rtl ? prepare_text(arabic_label) : prepare_text(ltr_value.to_s)
-          right_str = @rtl ? prepare_text(ltr_value.to_s) : prepare_text(arabic_label)
-          space     = [@width - display_width(left_str) - display_width(right_str), 1].max
-          write_line("#{left_str}#{' ' * space}#{right_str}")
+          write_text_row(arabic_label, ltr_value, padded: padded, bold_value: bold_value)
         end
+      end
+
+      # Label on the reading side, value on the other; in RTL the value sits on the left.
+      def write_text_row(label, value, padded: false, bold_value: false)
+        margin    = padded ? " " * PAD_CHARS : ""
+        label_str = prepare_text(label)
+        value_str = prepare_text(value)
+        space     = [@width - (2 * margin.length) - display_width(label_str) - display_width(value_str), 1].max
+        value_out = bold_value ? "#{ESC}E\x01#{value_str}#{ESC}E\x00" : value_str
+        left_out, right_out = @rtl ? [value_out, label_str] : [label_str, value_out]
+        write_line("#{margin}#{left_out}#{' ' * space}#{right_out}#{margin}")
       end
 
       def display_width(value)
