@@ -79,6 +79,16 @@ RSpec.describe "POS revenue reaches the ledger" do
         .to eq(entry.lines.sum(:credit_cents))
     end
 
+    it "recognises delivery fees as sales revenue, so the clearing account empties when they are paid" do
+      Order.create!(company: company, user: user, location: location, order_type: "delivery",
+        status: "completed", subtotal_cents: 40_000, discount_cents: 0, tax_cents: 0, tip_cents: 0,
+        delivery_fee_cents: 2_500, total_cents: 42_500)
+      post_day!
+
+      expect(ledger(Accounting::JournalEntryService::SALES_REVENUE_CODE)).to eq(-42_500)
+      expect(ledger(Accounting::JournalEntryService::SALES_CLEARING_CODE)).to eq(42_500)
+    end
+
     it "is idempotent — re-posting the same day replaces it" do
       create_order(subtotal: 100_000)
       post_day!

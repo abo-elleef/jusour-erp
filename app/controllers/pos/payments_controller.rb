@@ -10,6 +10,10 @@ module Pos
     before_action :require_open_drawer_for_payment!, only: :create
 
     def create
+      return refuse_negative_delivery_fee if delivery_fee_cents_param&.negative?
+
+      @order.apply_delivery_fee!(delivery_fee_cents_param) unless delivery_fee_cents_param.nil?
+
       tip_cents = if params[:tip_pounds].present?
         (params[:tip_pounds].to_f * 100).round
       else
@@ -99,6 +103,19 @@ module Pos
       else
         authorize @order, :record_payment?
       end
+    end
+
+    # Sent by the payment modal on delivery orders; nil when absent, so every
+    # other caller leaves the fee alone.
+    def delivery_fee_cents_param
+      return @delivery_fee_cents_param if defined?(@delivery_fee_cents_param)
+
+      raw = params[:delivery_fee_pounds]
+      @delivery_fee_cents_param = raw.nil? ? nil : (raw.to_s.strip.presence.to_f * 100).round
+    end
+
+    def refuse_negative_delivery_fee
+      redirect_back fallback_location: payment_return_path, alert: t("flash.pos.negative_delivery_fee")
     end
 
     def process_card_payment

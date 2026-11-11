@@ -10,8 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_11_052531) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_11_120000) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
 
@@ -1053,6 +1054,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_11_052531) do
     t.string "client_uuid"
     t.string "offline_number"
     t.datetime "kitchen_sent_at"
+    t.integer "delivery_fee_cents", default: 0, null: false
     t.index "company_id, COALESCE(location_id, '00000000-0000-0000-0000-000000000000'::uuid), business_date, order_number", name: "index_orders_on_branch_day_order_number", unique: true, where: "(business_date IS NOT NULL)"
     t.index ["company_id", "business_date"], name: "index_orders_on_company_id_and_business_date"
     t.index ["company_id", "client_uuid"], name: "index_orders_on_company_id_and_client_uuid", unique: true, where: "(client_uuid IS NOT NULL)"

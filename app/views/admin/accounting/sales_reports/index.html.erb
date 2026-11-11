@@ -43,6 +43,9 @@
       <% if s[:tip_cents].positive? %>
         <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.sales_reports.tips_line", amount: format_money(s[:tip_cents])) %></p>
       <% end %>
+      <% if s[:delivery_fee_cents].positive? %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("accounting.sales_reports.delivery_fees_line", amount: format_money(s[:delivery_fee_cents])) %></p>
+      <% end %>
     </div>
   </div>
 

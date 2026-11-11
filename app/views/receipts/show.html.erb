@@ -24,6 +24,9 @@
   <div class="flex justify-between"><span><%= t("order.labels.discount") %></span><span>-<%= format_money(@order.discount_cents) %></span></div>
 <% end %>
 <div class="flex justify-between"><span><%= t("order.labels.tax") %></span><span><%= format_money(@order.tax_cents) %></span></div>
+<% if @order.delivery_fee_cents.positive? %>
+  <div class="flex justify-between"><span><%= t("order.labels.delivery_fee") %></span><span><%= format_money(@order.delivery_fee_cents) %></span></div>
+<% end %>
 <% if @order.tip_cents.positive? %>
   <div class="flex justify-between"><span><%= t("order.labels.tip") %></span><span><%= format_money(@order.tip_cents) %></span></div>
 <% end %>

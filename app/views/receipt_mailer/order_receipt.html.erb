@@ -12,6 +12,9 @@
 <p>Subtotal: <%= format_money(@order.subtotal_cents) %></p>
 <p>Discount: <%= format_money(@order.discount_cents) %></p>
 <p>Tax: <%= format_money(@order.tax_cents) %></p>
+<% if @order.delivery_fee_cents.positive? %>
+<p><%= t("order.labels.delivery_fee") %>: <%= format_money(@order.delivery_fee_cents) %></p>
+<% end %>
 <p>Tip: <%= format_money(@order.tip_cents) %></p>
 <p><strong>Total: <%= format_money(@order.total_cents) %></strong></p>
 <% if @order.customer %>

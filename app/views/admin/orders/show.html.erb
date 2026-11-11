@@ -261,6 +261,12 @@
             <span><%= t("order.labels.tax") %></span>
             <span class="tabular-nums"><%= format_money(@order.tax_cents) %></span>
           </div>
+          <% if @order.delivery_fee_cents.positive? %>
+            <div class="flex justify-between text-gray-600">
+              <span><%= t("order.labels.delivery_fee") %></span>
+              <span class="tabular-nums"><%= format_money(@order.delivery_fee_cents) %></span>
+            </div>
+          <% end %>
           <% if @order.tip_cents.positive? %>
             <div class="flex justify-between text-gray-600">
               <span><%= t("order.labels.tip") %></span>

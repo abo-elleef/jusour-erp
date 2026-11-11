@@ -109,4 +109,47 @@ RSpec.describe Order, type: :model do
       expect(order.fully_paid?).to be true
     end
   end
+
+  describe "delivery fee" do
+    let(:order) do
+      o = create(:order, order_type: "delivery")
+      create(:order_item, order: o)
+      o.recalculate_totals!
+      o
+    end
+
+    it "is part of the total" do
+      food = order.total_cents
+      expect(order.apply_delivery_fee!(2_500)).to be true
+      expect(order.reload.total_cents).to eq(food + 2_500)
+    end
+
+    it "is fixed once any money is taken" do
+      order.apply_delivery_fee!(2_500)
+      create(:payment, order: order, amount_cents: 1_000, status: "completed")
+
+      expect(order.apply_delivery_fee!(4_000)).to be false
+      expect(order.reload.delivery_fee_cents).to eq(2_500)
+    end
+
+    it "cannot be set on a pickup order" do
+      order.update!(order_type: "pickup")
+      expect(order.apply_delivery_fee!(2_500)).to be false
+    end
+
+    it "comes off the total when the order stops being a delivery" do
+      food = order.total_cents
+      order.apply_delivery_fee!(2_500)
+      order.update!(order_type: "pickup")
+
+      order.reload
+      expect(order.delivery_fee_cents).to eq(0)
+      expect(order.total_cents).to eq(food)
+    end
+
+    it "cannot be negative" do
+      order.delivery_fee_cents = -1
+      expect(order).not_to be_valid
+    end
+  end
 end

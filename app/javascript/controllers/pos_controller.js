@@ -69,6 +69,11 @@ export default class extends Controller {
             const paymentEl = modal.querySelector("[data-controller='payment']")
             if (paymentEl) paymentEl.dataset.paymentOrderTotalValue = totalCents
           }
+
+          // A delivery fee typed before the modal was last closed still counts.
+          const feeEl = modal.querySelector("[data-controller='payment']")
+          const payment = feeEl && this.application.getControllerForElementAndIdentifier(feeEl, "payment")
+          payment?.updateDeliveryFee()
         }
       }
     }

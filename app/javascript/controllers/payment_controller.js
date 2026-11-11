@@ -1,8 +1,9 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["tipInput", "tipHidden", "terminalStatus", "printReceipt", "printProduction"]
-  static values = { orderTotal: Number, kitchenSent: Boolean }
+  static targets = ["tipInput", "tipHidden", "terminalStatus", "printReceipt", "printProduction",
+                    "deliveryFee", "due", "amount"]
+  static values = { orderTotal: Number, kitchenSent: Boolean, baseDue: Number, dueTemplate: String }
 
   // The modal is re-rendered on every cart change, so the print choices are restored
   // from this device's storage each time it connects.
@@ -54,6 +55,36 @@ export default class extends Controller {
     }
     add("print_receipt", this.hasPrintReceiptTarget ? this.printReceiptTarget : null)
     add("print_production", this.hasPrintProductionTarget ? this.printProductionTarget : null)
+
+    // The delivery fee is typed once at the top and rides along with whichever
+    // payment is submitted. A staff meal is charged the order as it stands.
+    const method = form.querySelector('input[name="payment_method"]')?.value
+    if (this.hasDeliveryFeeTarget && method !== "staff_deduction") {
+      const input = document.createElement("input")
+      input.type = "hidden"
+      input.name = "delivery_fee_pounds"
+      input.value = (this.deliveryFeeCents() / 100).toFixed(2)
+      input.dataset.printChoice = "1"
+      form.appendChild(input)
+    }
+  }
+
+  deliveryFeeCents() {
+    if (!this.hasDeliveryFeeTarget) return 0
+    const pounds = parseFloat(this.deliveryFeeTarget.value)
+    return Number.isFinite(pounds) && pounds > 0 ? Math.round(pounds * 100) : 0
+  }
+
+  // Re-prices the amount due and refills every payment amount as the fee is typed.
+  updateDeliveryFee() {
+    if (!this.hasDeliveryFeeTarget) return
+    const dueCents = this.baseDueValue + this.deliveryFeeCents()
+    const pounds = dueCents / 100
+    this.amountTargets.forEach((input) => { input.value = pounds.toFixed(2) })
+    if (this.hasDueTarget && this.dueTemplateValue) {
+      const formatted = pounds.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      this.dueTarget.textContent = this.dueTemplateValue.replace("__N__", formatted)
+    }
   }
 
   setTip(event) {

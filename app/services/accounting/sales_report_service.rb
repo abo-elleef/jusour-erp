@@ -40,6 +40,7 @@ module Accounting
         promo_cost_cents: promo_cost,
         tax_cents: completed_orders.sum(:tax_cents).to_i,
         tip_cents: completed_orders.sum(:tip_cents).to_i,
+        delivery_fee_cents: completed_orders.sum(:delivery_fee_cents).to_i,
         refunds_cents: refunds,
         net_sales_cents: gross - discounts - refunds,
         average_ticket_cents: count.positive? ? (completed_orders.average(:total_cents) || 0).to_i : 0

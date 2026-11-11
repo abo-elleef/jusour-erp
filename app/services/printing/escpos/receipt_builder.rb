@@ -74,6 +74,9 @@ module Printing
         if @order.discount_cents.positive?
           doc.row(I18n.t("printing.receipt.discount"), "-#{format_money(@order.discount_cents)}")
         end
+        if @order.delivery_fee_cents.positive?
+          doc.row(I18n.t("printing.receipt.delivery_fee"), format_money(@order.delivery_fee_cents))
+        end
         doc.row(I18n.t("printing.receipt.tip"), format_money(@order.tip_cents)) if @order.tip_cents.positive?
 
         doc.bold

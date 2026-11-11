@@ -107,6 +107,12 @@
           <dd class="tabular-nums font-medium text-stone-800"><%= format_money(order.tax_cents) %></dd>
         </div>
       <% end %>
+      <% if order.delivery_fee_cents.positive? %>
+        <div class="flex justify-between text-stone-600">
+          <dt class="font-normal"><%= t("order.labels.delivery_fee") %></dt>
+          <dd class="tabular-nums font-medium text-stone-800"><%= format_money(order.delivery_fee_cents) %></dd>
+        </div>
+      <% end %>
       <% if order.tip_cents.positive? %>
         <div class="flex justify-between text-stone-600">
           <dt class="font-normal"><%= t("order.labels.tip") %></dt>

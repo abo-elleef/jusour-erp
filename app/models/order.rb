@@ -48,11 +48,13 @@ class Order < ApplicationRecord
   monetize :discount_cents, allow_nil: false
   monetize :tax_cents, allow_nil: true
   monetize :tip_cents, allow_nil: false
+  monetize :delivery_fee_cents, allow_nil: false
   monetize :total_cents, allow_nil: true
 
   validates :order_number, presence: true,
                            uniqueness: { scope: %i[company_id location_id business_date] }
   validates :order_type, presence: true, inclusion: { in: ORDER_TYPES }
+  validates :delivery_fee_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   before_validation :assign_business_date, on: :create
   before_validation :assign_order_number, on: :create
@@ -166,7 +168,7 @@ class Order < ApplicationRecord
     self.subtotal_cents = subtotal
     self.discount_cents = discount
     Tax::CalculateService.call(self)
-    self.total_cents = (subtotal_cents || 0) - discount_cents + (tax_cents || 0) + tip_cents
+    self.total_cents = (subtotal_cents || 0) - discount_cents + (tax_cents || 0) + tip_cents + delivery_fee_cents
     save!
   end
 
@@ -196,6 +198,23 @@ class Order < ApplicationRecord
 
   def delivery?
     order_type == "delivery"
+  end
+
+  # Delivery fees vary too much to price in advance, so the cashier types this
+  # order's fee when collecting payment. It is fixed once any money is taken:
+  # moving it afterwards would shift a total that payments were counted against.
+  def delivery_fee_editable?
+    delivery? && settled_cents.zero?
+  end
+
+  # Returns false when the fee can no longer be changed (see above).
+  def apply_delivery_fee!(cents)
+    return false unless delivery_fee_editable?
+    return true if cents == delivery_fee_cents
+
+    self.delivery_fee_cents = cents
+    recalculate_totals!
+    true
   end
 
   def pickup?
@@ -299,6 +318,14 @@ class Order < ApplicationRecord
 
   def clear_fulfillment_fields_for_type
     self.table_number = nil unless table?
-    self.delivery_address = nil unless delivery?
+    return if delivery?
+
+    self.delivery_address = nil
+    # An order switched away from delivery stops owing its fee. The total is
+    # adjusted here rather than recalculated, since this runs inside a save.
+    if delivery_fee_cents.positive?
+      self.total_cents = total_cents.to_i - delivery_fee_cents
+      self.delivery_fee_cents = 0
+    end
   end
 end
