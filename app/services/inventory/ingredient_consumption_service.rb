@@ -21,7 +21,9 @@ module Inventory
         theoretical = theoretical_usage(ingredient, order_ids)
         actual = ingredient.stock_adjustments
           .where(adjustment_type: "consumption", created_at: range)
-          .sum("ABS(quantity_delta)")
+          # Netted, not ABS: a voided completed order puts its stock back as a
+          # positive consumption row, and that must cancel the draw-down.
+          .sum("-quantity_delta")
           .to_d
         variance = actual - theoretical
         variance_pct = theoretical.positive? ? ((variance / theoretical) * 100).round(1) : 0

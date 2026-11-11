@@ -287,7 +287,7 @@
         <section class="rounded-2xl border border-red-200 bg-red-50/30 overflow-hidden">
           <div class="px-5 py-4 border-b border-red-100 bg-red-50/80">
             <h2 class="text-sm font-semibold text-red-900"><%= t("admin.orders.void_heading") %></h2>
-            <p class="text-xs text-red-800/80 mt-0.5"><%= t("admin.orders.void_hint") %></p>
+            <p class="text-xs text-red-800/80 mt-0.5"><%= t(@order.completed? ? "admin.orders.void_completed_hint" : "admin.orders.void_hint") %></p>
           </div>
           <div class="p-5">
             <%= form_with url: void_admin_order_path(@order), method: :post, class: "space-y-4" do %>

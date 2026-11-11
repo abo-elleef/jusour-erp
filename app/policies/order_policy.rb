@@ -81,8 +81,13 @@ class OrderPolicy < ApplicationPolicy
     user.can_access_pos? || user.owner? || user.manager?
   end
 
+  # A completed order only while nobody has paid for it (a cart swept up by
+  # Complete all); once money came in, it is a refund.
   def void?
-    (user.owner? || user.manager?) && !record.completed? && !record.cancelled?
+    return false unless user.owner? || user.manager?
+    return false if record.cancelled?
+
+    !record.completed? || record.never_paid?
   end
 
   def refund?

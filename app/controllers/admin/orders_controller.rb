@@ -76,7 +76,7 @@ module Admin
       end
       refunded_cents = 0
       @order.with_lock do
-        @order.cancel!
+        @order.cancel!(by: current_user)
         # A paid order that is voided gives its money back. Leaving the payments as
         # they were kept them in the drawer's expected cash after the cashier had
         # handed the cash back, so the till read short by the whole order.

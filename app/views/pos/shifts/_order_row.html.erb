@@ -4,7 +4,7 @@
     <span class="font-bold text-gray-900"><%= order.order_number %></span>
   </td>
   <td class="p-3 text-gray-600 tabular-nums whitespace-nowrap">
-    <%= l(order.created_at, format: :short_time) %>
+    <%= l(order.created_at, format: :long_with_time) %>
   </td>
   <td class="p-3">
     <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= order_type_class(order.order_type) %> <%= order_type_border_class(order.order_type) %>">

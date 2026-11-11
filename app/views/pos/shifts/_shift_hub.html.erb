@@ -119,7 +119,7 @@
       <% if current_user.clocked_in? %>
         <p class="text-sm text-gray-700 mt-2">
           <%= t("accounting.clock_widget.on_shift") %>
-          · <%= t("accounting.clock_widget.since", time: l(current_user.current_shift.clocked_in_at, format: :short_time)) %>
+          · <%= t("accounting.clock_widget.since", time: l(current_user.current_shift.clocked_in_at, format: :long_with_time)) %>
         </p>
       <% end %>
     </div>

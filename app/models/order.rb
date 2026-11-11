@@ -105,7 +105,14 @@ class Order < ApplicationRecord
     # the pass. Missing it here made a void of a ready order silently do nothing.
     event :cancel do
       transitions from: %i[draft submitted in_progress ready], to: :cancelled
-      after do
+      # A completed order can be voided only if no money ever came in: a cart left
+      # open and swept up by Complete all. A paid one is refunded, not voided.
+      transitions from: :completed, to: :cancelled, guard: :never_paid?
+      after do |*args|
+        if aasm.from_state == :completed
+          voided_by = args.first.is_a?(Hash) ? args.first[:by] : nil
+          Orders::UndoCompletionService.call(self, user: voided_by || user)
+        end
         AuditLogEntry.record!(action: "order.void", record: self, user: user)
         broadcast_to_kds
       end
@@ -192,6 +199,12 @@ class Order < ApplicationRecord
 
   def fully_paid?
     total_cents.present? && settled_cents >= total_cents
+  end
+
+  # No payment ever reached this order. Failed attempts don't count; a pending or
+  # refunded one does, because money moved (or may yet), and that is a refund's job.
+  def never_paid?
+    payments.where.not(status: "failed").none?
   end
 
   def amount_due_cents

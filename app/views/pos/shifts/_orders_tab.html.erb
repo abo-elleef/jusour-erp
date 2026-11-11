@@ -7,9 +7,8 @@
   <% start_time, end_time = @shift_time_range %>
   <p class="text-sm text-gray-600 mb-4">
     <%= t("pos.shift.orders.range",
-          from: l(start_time, format: :short_time),
-          to: l(end_time, format: :short_time),
-          date: l(start_time.to_date, format: :long)) %>
+          from: l(start_time, format: :long_with_time),
+          to: l(end_time, format: :long_with_time)) %>
   </p>
 <% else %>
   <div class="rounded-2xl border border-gray-200 bg-white p-8 text-center mb-6">
