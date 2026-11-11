@@ -108,6 +108,7 @@ Rails.application.routes.draw do
         post :resume
         post :complete
         patch :update_fulfillment
+        patch :change_payment_method
       end
     end
     resources :order_items, only: %i[create update destroy]

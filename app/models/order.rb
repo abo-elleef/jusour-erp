@@ -97,10 +97,13 @@ class Order < ApplicationRecord
       end
     end
 
+    # Ready is cancellable too: a customer can walk away while the food waits on
+    # the pass. Missing it here made a void of a ready order silently do nothing.
     event :cancel do
-      transitions from: %i[draft submitted in_progress], to: :cancelled
+      transitions from: %i[draft submitted in_progress ready], to: :cancelled
       after do
         AuditLogEntry.record!(action: "order.void", record: self, user: user)
+        broadcast_to_kds
       end
     end
   end
@@ -169,6 +172,12 @@ class Order < ApplicationRecord
 
   def paid_cents
     payments.where(status: %w[completed partially_refunded]).sum(:amount_cents)
+  end
+
+  # Money taken on this order and not yet given back — what a refund can still return.
+  def refundable_cents
+    payments.where(status: %w[completed partially_refunded])
+            .sum(Arel.sql("payments.amount_cents - payments.refunded_amount_cents")).to_i
   end
 
   # What the customer has paid toward this bill, refunds or not. This — not

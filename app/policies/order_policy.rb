@@ -75,12 +75,14 @@ class OrderPolicy < ApplicationPolicy
     user.owner? || user.manager?
   end
 
+  # Any cashier: which payments they may move, and until when, is decided per
+  # payment by Payments::ChangeMethodService (open drawer, their own drawer).
   def change_payment_method?
-    user.owner? || user.manager?
+    user.can_access_pos? || user.owner? || user.manager?
   end
 
   def void?
-    (user.owner? || user.manager?) && !record.completed?
+    (user.owner? || user.manager?) && !record.completed? && !record.cancelled?
   end
 
   def refund?

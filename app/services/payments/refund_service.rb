@@ -13,9 +13,15 @@ module Payments
       @user = user
     end
 
+    # Returns the amount actually refunded. Never more than the order still holds:
+    # asking for more used to log a refund of the full figure while only part of it
+    # could be given back.
     def call
+      @amount_cents = [@amount_cents.to_i, @order.refundable_cents].min
+      return 0 unless @amount_cents.positive?
+
       remaining = @amount_cents
-      @order.payments.where(status: %w[completed partially_refunded]).find_each do |payment|
+      @order.payments.where(status: %w[completed partially_refunded]).order(:id).find_each do |payment|
         break if remaining <= 0
 
         refund_amount = [remaining, payment.amount_cents - payment.refunded_amount_cents].min
@@ -42,6 +48,7 @@ module Payments
         user: @user,
         description: "Refunded #{@amount_cents} cents: #{@reason}"
       )
+      @amount_cents
     end
   end
 end

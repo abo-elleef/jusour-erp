@@ -53,46 +53,54 @@ module Admin
       authorize @order, :change_payment_method?
 
       payment = @order.payments.find(params[:payment_id])
-      new_method = params[:payment_method].to_s
+      result = ::Payments::ChangeMethodService.call(payment: payment, new_method: params[:payment_method], user: current_user)
 
-      unless Payment::METHODS.include?(new_method)
-        return redirect_to admin_order_path(@order), alert: t("flash.pos.invalid_payment_method")
+      if result.success?
+        redirect_to admin_order_path(@order), notice: t("flash.pos.payment_method_changed")
+      else
+        redirect_to admin_order_path(@order), alert: helpers.payment_method_change_error(result.error)
       end
-
-      old_method = payment.payment_method
-      payment.update!(payment_method: new_method)
-
-      AuditLogEntry.record!(
-        action: "payment.change_method",
-        record: payment,
-        user: current_user,
-        changes_snapshot: { from: old_method, to: new_method }
-      )
-
-      redirect_to admin_order_path(@order), notice: t("flash.pos.payment_method_changed")
     end
 
     def void
       authorize @order, :void?
       reason = params[:reason].presence || "Voided by manager"
+      unless @order.may_cancel?
+        return redirect_to admin_order_path(@order), alert: t("flash.order.cannot_void")
+      end
+
       @order.payments.where(status: "pending").find_each do |payment|
         if payment.stripe_payment_intent_id
           Payments::StripeTerminalService.cancel_payment_intent(payment.stripe_payment_intent_id)
         end
       end
-      @order.cancel! if @order.may_cancel?
-      @order.order_events.create!(event_type: "void", user: current_user, description: reason)
-      redirect_to admin_order_path(@order), notice: t("flash.order.voided")
+      refunded_cents = 0
+      @order.with_lock do
+        @order.cancel!
+        # A paid order that is voided gives its money back. Leaving the payments as
+        # they were kept them in the drawer's expected cash after the cashier had
+        # handed the cash back, so the till read short by the whole order.
+        refunded_cents = ::Payments::RefundService.call(order: @order, amount_cents: @order.refundable_cents,
+                                                        reason: reason, user: current_user)
+        @order.order_events.create!(event_type: "void", user: current_user, description: reason)
+      end
+      notice = if refunded_cents.positive?
+                 t("flash.order.voided_and_refunded", amount: helpers.format_money(refunded_cents))
+               else
+                 t("flash.order.voided")
+               end
+      redirect_to admin_order_path(@order), notice: notice
     end
 
     def refund
       authorize @order, :refund?
-      Payments::RefundService.call(
-        order: @order,
-        amount_cents: (params[:amount_pounds].to_f * 100).round,
-        reason: params[:reason],
-        user: current_user
-      )
+      amount_cents = (params[:amount_pounds].to_s.tr("٠١٢٣٤٥٦٧٨٩٫", "0123456789.").to_f * 100).round
+      if amount_cents <= 0 || amount_cents > @order.refundable_cents
+        return redirect_to admin_order_path(@order),
+                           alert: t("flash.order.refund_out_of_range", max: helpers.format_money(@order.refundable_cents))
+      end
+
+      ::Payments::RefundService.call(order: @order, amount_cents: amount_cents, reason: params[:reason], user: current_user)
       redirect_to admin_order_path(@order), notice: t("flash.order.refunded")
     end
 

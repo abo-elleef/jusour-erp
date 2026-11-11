@@ -680,6 +680,12 @@ module ApplicationHelper
     I18n.t("payment.methods.#{method}", default: method.to_s.humanize)
   end
 
+  def payment_method_change_error(error)
+    return I18n.t("flash.pos.invalid_payment_method") if error == :invalid_method
+
+    I18n.t("flash.pos.payment_method_change_errors.#{error}")
+  end
+
   def order_payment_methods_label(order)
     methods = order.payments
       .select { |payment| payment.status == "completed" }

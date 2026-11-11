@@ -30,7 +30,7 @@
           <%= t("pos.orders.mark_completed") %>
         <% end %>
       <% end %>
-      <% unless @order.cancelled? || @order.status == "voided" %>
+      <% unless @order.cancelled? %>
         <button type="button"
                 onclick="document.getElementById('edit-fulfillment-dialog').showModal()"
                 class="flex items-center gap-1.5 text-sm font-semibold text-gray-700 hover:text-gray-900 px-3 py-1.5 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-colors">
@@ -110,7 +110,13 @@
           <ul class="text-sm space-y-2">
             <% @payments.each do |payment| %>
               <li class="flex items-center justify-between text-gray-600 rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2 gap-2">
-                <span class="font-medium text-gray-900"><%= payment_method_label(payment.payment_method) %></span>
+                <span class="font-medium text-gray-900">
+                  <%= payment_method_label(payment.payment_method) %>
+                  <% if Payments::ChangeMethodService.changeable?(payment, user: current_user) %>
+                    <%= render "shared/change_payment_method", payment: payment,
+                          url: change_payment_method_pos_order_path(@order, from: params[:from]) %>
+                  <% end %>
+                </span>
                 <div class="flex items-center gap-2 shrink-0">
                   <span class="tabular-nums font-semibold"><%= format_money(payment.amount_cents) %></span>
                 </div>
@@ -138,7 +144,7 @@
 </div>
 
 <%# ── Edit fulfillment dialog ──────────────────────────────────────────── %>
-<% unless @order.cancelled? || @order.status == "voided" %>
+<% unless @order.cancelled? %>
   <dialog id="edit-fulfillment-dialog"
           class="m-auto rounded-[28px] shadow-2xl border-0 p-0 w-[22rem] max-w-[95vw] backdrop:bg-black/50 backdrop:backdrop-blur-sm"
           onclick="if(event.target===this)this.close()">

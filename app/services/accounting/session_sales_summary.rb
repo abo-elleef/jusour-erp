@@ -17,8 +17,10 @@ module Accounting
       :vodafone_cash_cents,
       keyword_init: true
     ) do
+      # Every method figure is already net of refunds (see #sum_for), so the cash
+      # figure is the net one. cash_refunds_cents is there to be shown, not subtracted.
       def cash_net_cents
-        cash_cents - cash_refunds_cents
+        cash_cents
       end
 
       def total_sales_cents
@@ -98,9 +100,13 @@ module Accounting
       @session.updated_at
     end
 
-    # Only completed payments count toward the totals.
+    # Money taken and not given back. A refunded payment still counts for whatever
+    # part of it the customer kept: leaving partly refunded payments out altogether
+    # dropped the kept part from the drawer, and the till then read over by it.
+    KEPT_STATUSES = %w[completed partially_refunded refunded].freeze
+
     def base_scope
-      window_scope.where(status: "completed")
+      window_scope.where(status: KEPT_STATUSES)
     end
 
     def window_scope
@@ -122,7 +128,8 @@ module Accounting
     end
 
     def sum_for(method)
-      base_scope.where(payment_method: method).sum(:amount_cents).to_i
+      base_scope.where(payment_method: method)
+                .sum(Arel.sql("payments.amount_cents - payments.refunded_amount_cents")).to_i
     end
 
     # Counter sales settled on the invoice itself, taken by this cashier during the
@@ -137,7 +144,7 @@ module Accounting
     end
 
     def refunds_for(method)
-      base_scope.where(payment_method: method).sum(:refunded_amount_cents).to_i
+      base_scope.where(payment_method: method).sum(:"payments.refunded_amount_cents").to_i
     end
   end
 end

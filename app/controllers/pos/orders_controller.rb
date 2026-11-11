@@ -92,7 +92,7 @@ module Pos
     def update_fulfillment
       @order = Order.find(params[:id])
       authorize @order, :update?
-      raise Pundit::NotAuthorizedError if @order.cancelled? || @order.voided?
+      raise Pundit::NotAuthorizedError if @order.cancelled?
 
       attrs = params.permit(:order_type, :table_number, :delivery_address).to_h
       attrs[:delivery_address] = nil if @order.customer.blank?
@@ -107,6 +107,22 @@ module Pos
       else
         redirect_to pos_order_path(@order, from: params[:from]),
                     alert: @order.errors.full_messages.to_sentence
+      end
+    end
+
+    # A customer who paid one way and wants to pay another (cash → InstaPay, say),
+    # while the drawer that took the payment is still open.
+    def change_payment_method
+      @order = Order.find(params[:id])
+      authorize @order, :change_payment_method?
+
+      payment = @order.payments.find(params[:payment_id])
+      result = Payments::ChangeMethodService.call(payment: payment, new_method: params[:payment_method], user: current_user)
+
+      if result.success?
+        redirect_to pos_order_path(@order, from: params[:from]), notice: t("flash.pos.payment_method_changed")
+      else
+        redirect_to pos_order_path(@order, from: params[:from]), alert: helpers.payment_method_change_error(result.error)
       end
     end
 

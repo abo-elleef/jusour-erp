@@ -36,8 +36,9 @@ module Admin
         @payments = calculator.payments.to_a
         @invoices = calculator.invoices.to_a
         @attached = attach_history(@payments)
-        @counted_in_totals = @payments.select { |p| p.status == "completed" }
-                                      .group_by(&:payment_method).transform_values { |ps| ps.sum(&:amount_cents) }
+        @counted_in_totals = @payments.select { |p| ::Accounting::SessionSalesSummary::KEPT_STATUSES.include?(p.status) }
+                                      .group_by(&:payment_method)
+                                      .transform_values { |ps| ps.sum { |p| p.amount_cents - p.refunded_amount_cents } }
         @refunded_cents = @payments.sum(&:refunded_amount_cents)
       end
 
