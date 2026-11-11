@@ -15,6 +15,28 @@ module Printing
       nil
     end
 
+    # The logo as printer bytes, or nil when there is none. Drawn once per process and
+    # reused: the key is the upload's storage key (a new upload is a new key) or the
+    # legacy URL, so a cached logo also skips the storage download.
+    def escpos(location:, company:, doc_width:)
+      key = cache_key(location: location, company: company)
+      return nil unless key
+
+      Printing::RasterCache.fetch("logo:#{key}:#{doc_width}") do
+        with_source(location: location, company: company) do |source|
+          source.present? ? Escpos::ArabicImageRenderer.render_logo(source, doc_width: doc_width) : nil
+        end
+      end
+    end
+
+    def cache_key(location:, company:)
+      attachment = attachment_for(location: location, company: company)
+      return "blob:#{attachment.blob.key}" if attachment
+
+      url = Printing::Config.receipt_logo_url.presence
+      url && "url:#{url}"
+    end
+
     # Yields something ImageMagick can read (a local file path or a URL), or nil
     # when there is no logo. The file exists only for the duration of the block.
     # A missing or unreadable upload never stops a receipt from printing.

@@ -233,12 +233,10 @@ module Printing
       # Full-width 1px horizontal rule as ESC/POS bytes — used between table rows.
       def render_separator(doc_width: 42)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        cmd = [im_command, "-size", "#{px_width}x2", "xc:white",
-               "-draw", "line 0,0 #{px_width},0",
-               "-type", "Bilevel", "pbm:-"]
-        stdout, _stderr, status = Open3.capture3(*cmd)
-        stdout = stdout.b
-        status.success? && stdout.start_with?("P4".b) ? pbm_to_escpos(stdout) : nil
+        pbm = capture_pbm([im_command, "-size", "#{px_width}x2", "xc:white",
+                           "-draw", "line 0,0 #{px_width},0",
+                           "-type", "Bilevel", "pbm:-"])
+        pbm ? pbm_to_escpos(pbm) : nil
       end
 
       # Same as render_separator but returns a Base64-encoded PNG string.
@@ -280,9 +278,7 @@ module Printing
           "-gravity", gravity, "-annotate", "+0+0", text,
           "-type", "Bilevel", "pbm:-"
         ]
-        stdout, _stderr, status = Open3.capture3(*cmd)
-        stdout = stdout.b
-        status.success? && stdout.start_with?("P4".b) ? stdout : nil
+        capture_pbm(cmd)
       end
 
       # Multiple text annotations (and optional draw commands) in one image → PBM binary.
@@ -304,9 +300,95 @@ module Printing
         end
         cmd += ["-type", "Bilevel", "pbm:-"]
 
-        stdout, _stderr, status = Open3.capture3(*cmd)
-        stdout = stdout.b
-        status.success? && stdout.start_with?("P4".b) ? stdout : nil
+        capture_pbm(cmd)
+      end
+
+      # Runs an ImageMagick command that writes a PBM to stdout; returns the PBM or nil.
+      # The command is the cache key: it holds the text, the font, the size and the
+      # layout, so the same command always draws the same picture.
+      #
+      # Inside `prefetch` nothing is drawn: the command is noted and a blank stand-in
+      # comes back, so the document takes the same path it will take for real.
+      def capture_pbm(cmd)
+        key = cmd.join("\u0000")
+        if (pending = Thread.current[:escpos_prefetch])
+          pending[key] ||= cmd unless Printing::RasterCache.key?(key)
+          return PREFETCH_STAND_IN
+        end
+
+        Printing::RasterCache.fetch(key) do
+          stdout, _stderr, status = Open3.capture3(*cmd)
+          stdout = stdout.b
+          status.success? && stdout.start_with?("P4".b) ? stdout : nil
+        end
+      end
+
+      PREFETCH_STAND_IN = "P4\n8 1\n\x00".b.freeze
+      BATCH_SUFFIX      = %w[-type Bilevel pbm:-].freeze
+      BATCH_SIZE        = 40
+
+      # Draws every image a document needs in one ImageMagick run instead of one run
+      # per line (each run costs ~0.3s on a Heroku dyno). The block composes the
+      # document once with drawing switched off, which lists the images that are not
+      # cached yet; those are drawn together and cached, so composing the document
+      # again afterwards only reads the cache. The block's own result is thrown away.
+      #
+      # Anything the batch cannot account for is simply left uncached, and the real
+      # build draws it one by one exactly as before, failures and fallbacks included.
+      def prefetch
+        return unless Printing::RasterCache.enabled && Thread.current[:escpos_prefetch].nil?
+
+        pending = {}
+        begin
+          Thread.current[:escpos_prefetch] = pending
+          yield
+        ensure
+          Thread.current[:escpos_prefetch] = nil
+        end
+        pending.each_slice(BATCH_SIZE) { |slice| draw_batch(slice.to_h) }
+      rescue StandardError => e
+        Rails.logger.warn("[Printing] image prefetch skipped: #{e.class}: #{e.message}")
+      end
+
+      # pending: { cache key => single-image command }. Every command ends with
+      # BATCH_SUFFIX; each one's settings sit in its own parentheses, and
+      # -respect-parentheses keeps them from leaking into the next image, so the
+      # output is the same bytes the separate runs would give, one PBM after another.
+      def draw_batch(pending)
+        cmds = pending.select { |_key, cmd| cmd.last(3) == BATCH_SUFFIX && cmd.first == im_command }
+        return if cmds.size < 2
+
+        batch = [im_command, "-respect-parentheses"]
+        cmds.each_value { |cmd| batch += ["(", *cmd[1...-3], ")"] }
+        batch += BATCH_SUFFIX
+
+        stdout, _stderr, status = Open3.capture3(*batch)
+        return unless status.success?
+
+        images = split_pbm_stream(stdout.b)
+        return unless images && images.size == cmds.size
+
+        cmds.keys.zip(images).each { |key, pbm| Printing::RasterCache.fetch(key) { pbm } }
+      end
+
+      # Splits concatenated binary PBMs ("P4\n<w> <h>\n<rows>"…). Nil if the stream
+      # does not parse cleanly, so a surprise never puts a wrong picture in the cache.
+      def split_pbm_stream(stream)
+        images = []
+        pos = 0
+        while pos < stream.bytesize
+          header = stream.byteslice(pos, 64).match(/\AP4\n(\d+) (\d+)\n/n)
+          return nil unless header
+
+          w = header[1].to_i
+          h = header[2].to_i
+          length = header[0].bytesize + ((w + 7) / 8) * h
+          return nil if pos + length > stream.bytesize
+
+          images << stream.byteslice(pos, length)
+          pos += length
+        end
+        images
       end
 
       # Runs an ImageMagick command with `png:-` output; returns Base64 string.

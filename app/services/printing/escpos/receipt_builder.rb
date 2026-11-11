@@ -27,13 +27,8 @@ module Printing
         restaurant = @order.company.receipt_name(location: @order.location)
 
         # ── Logo ───────────────────────────────────────────────────────────
-        Printing::ReceiptLogo.with_source(location: @order.location, company: @order.company) do |logo_source|
-          if logo_source.present?
-            doc.align(:center)
-            doc.logo(logo_source)
-            doc.blank
-          end
-        end
+        doc.align(:center)
+        doc.blank if doc.receipt_logo(location: @order.location, company: @order.company)
 
         # ── Header ─────────────────────────────────────────────────────────
         doc.align(:center)

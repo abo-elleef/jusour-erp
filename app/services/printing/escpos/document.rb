@@ -109,6 +109,14 @@ module Printing
         @buffer << GS << "!" << (on ? "\x11" : "\x00")
       end
 
+      # Print the receipt logo for this branch (see ReceiptLogo.escpos). Returns
+      # whether a logo was printed.
+      def receipt_logo(location:, company:)
+        bytes = Printing::ReceiptLogo.escpos(location: location, company: company, doc_width: @width)
+        @buffer << bytes.b if bytes
+        bytes.present?
+      end
+
       # Print a logo image from a file path or URL.
       # Falls back silently if ImageMagick or the source is unavailable.
       def logo(source)

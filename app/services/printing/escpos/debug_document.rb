@@ -109,6 +109,14 @@ module Printing
         @current_dh = on ? true : false
       end
 
+      # The preview draws the logo as a PNG every time; only real printing is cached.
+      def receipt_logo(location:, company:)
+        Printing::ReceiptLogo.with_source(location: location, company: company) do |source|
+          logo(source)
+          source.present?
+        end
+      end
+
       def logo(source)
         return if source.blank?
         png = ArabicImageRenderer.render_logo_png(source, doc_width: @width)
