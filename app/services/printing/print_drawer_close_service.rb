@@ -66,7 +66,7 @@ module Printing
     end
 
     def payload(printer)
-      Escpos::DrawerCloseBuilder.new(@session, printer: printer, reprint: reprint?).build
+      Escpos::DrawerCloseBuilder.new(@session, printer: printer, reprint: reprint?, workstation: @workstation).build
     end
 
     def queue_client_print(printer)

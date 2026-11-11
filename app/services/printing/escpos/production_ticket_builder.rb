@@ -3,6 +3,8 @@
 module Printing
   module Escpos
     class ProductionTicketBuilder
+      include IssuedBy
+
       def initialize(order, printer:, order_items:, title:)
         @order = order
         @printer = printer
@@ -23,6 +25,10 @@ module Printing
       private
 
       def compose(doc)
+        # Same branch/company logo as the customer receipt.
+        doc.align(:center)
+        doc.blank if doc.receipt_logo(location: @order.location, company: @order.company)
+
         doc.align(:center)
         doc.bold
         doc.double_height(true)
@@ -36,6 +42,7 @@ module Printing
         doc.text(@order.fulfillment_summary)
         doc.double_height(false)
         doc.bold(false)
+        compose_issued_by(doc, cashier: @order.user&.name.to_s, station: @order.workstation&.name.to_s)
         doc.blank
 
         compose_items_table(doc, @order_items)
@@ -58,15 +65,15 @@ module Printing
       def compose_items_table(doc, items)
         doc.align(:left)
         doc.separator
-        doc.row(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.qty"))
+        doc.row(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.qty"), padded: true)
         doc.separator
 
         items.each do |item|
-          doc.row(item.display_name, item.quantity.to_s)
+          doc.row(item.display_name, item.quantity.to_s, padded: true, bold_value: true)
           item.order_item_modifiers.each do |modifier|
-            doc.modifier_text("+ #{modifier.name}", columns: 2)
+            doc.modifier_text("+ #{modifier.name}", columns: 2, padded: true)
           end
-          doc.modifier_text(item.notes, columns: 2) if item.notes.present?
+          doc.modifier_text(item.notes, columns: 2, padded: true) if item.notes.present?
           doc.separator
         end
       end

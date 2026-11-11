@@ -8,6 +8,7 @@ module PosOfflineHelper
     I18n.t("pos.offline_mode").merge(
       receipt: I18n.t("printing.receipt"),
       pick_title: I18n.t("printing.production_ticket.pick_title"),
+      ticket: I18n.t("printing.ticket"),
       order_notes: I18n.t("printing.receipt.order_notes"),
       fulfillment: I18n.t("order.fulfillment"),
       order_type: I18n.t("order.labels.order_type"),

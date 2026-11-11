@@ -13,6 +13,10 @@
 const PAPER_PX = { 42: 576, 32: 384 }
 const BASE_PX = 26
 const LINE_GAP = 8
+// Kitchen/station tickets: rows sit further from the paper edge and the quantity is
+// bold and larger — Document::PAD_DOTS / ArabicImageRenderer::BOLD_VALUE_PT.
+const TICKET_PAD_PX = 32
+const BOLD_VALUE_PX = 32
 const FONT_FAMILY = '"Noto Naskh Arabic", "Segoe UI", Tahoma, Arial, "Arial Unicode MS", sans-serif'
 const BLACK_BELOW = 150 // 0–255 luminance; anything darker prints
 const ARABIC_SCRIPT = /[֐-ࣿיִ-﷿ﹰ-﻿]/
@@ -71,17 +75,27 @@ export class EscposDocument {
   }
 
   // Label on the reading-start side, value on the other (mirrored for RTL).
-  row(label, value = "") {
+  row(label, value = "", { padded = false, boldValue = false } = {}) {
     const size = BASE_PX
+    const pad = padded ? TICKET_PAD_PX : 8
+    const valueSize = boldValue ? BOLD_VALUE_PX : size
+    // The value is drawn bold by switching emphasis on just for it.
+    const asValue = (fn) => {
+      const was = this.emphasis
+      if (boldValue) this.emphasis = true
+      const result = fn()
+      this.emphasis = was
+      return result
+    }
     this.drawBlock(1, size, (ctx, y) => {
-      const valueWidth = this.measure(String(value), size)
-      const labelBox = this.px - 16 - valueWidth - 12
+      const valueWidth = asValue(() => this.measure(String(value), valueSize))
+      const labelBox = this.px - 2 * pad - valueWidth - 12
       if (this.rtl) {
-        this.fill(ctx, value, { x0: 8, x1: this.px - 8, align: "left", y, size })
-        this.fill(ctx, label, { x0: this.px - 8 - labelBox, x1: this.px - 8, align: "right", y, size })
+        asValue(() => this.fill(ctx, value, { x0: pad, x1: this.px - pad, align: "left", y, size: valueSize }))
+        this.fill(ctx, label, { x0: this.px - pad - labelBox, x1: this.px - pad, align: "right", y, size })
       } else {
-        this.fill(ctx, label, { x0: 8, x1: 8 + labelBox, align: "left", y, size })
-        this.fill(ctx, value, { x0: 8, x1: this.px - 8, align: "right", y, size })
+        this.fill(ctx, label, { x0: pad, x1: pad + labelBox, align: "left", y, size })
+        asValue(() => this.fill(ctx, value, { x0: pad, x1: this.px - pad, align: "right", y, size: valueSize }))
       }
     })
   }
@@ -102,10 +116,11 @@ export class EscposDocument {
   }
 
   // A continuation line inside the item column (modifiers, notes).
-  modifier(text, { columns = 3 } = {}) {
+  modifier(text, { columns = 3, padded = false } = {}) {
     const size = BASE_PX
     const { labelBox, rules } = this.columns()
-    const box = columns === 3 ? labelBox : { x0: 8, x1: this.px - 8 }
+    const pad = padded ? TICKET_PAD_PX : 8
+    const box = columns === 3 ? labelBox : { x0: pad, x1: this.px - pad }
     const lines = this.wrap(String(text), box.x1 - box.x0, size)
     this.drawBlock(lines.length, size, (ctx, y, i) => {
       this.fill(ctx, lines[i], { ...box, align: this.rtl ? "right" : "left", y, size })
@@ -374,7 +389,7 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
 }
 
 // Kitchen / bar / expo ticket — ProductionTicketBuilder.
-export function buildProductionTicket(order, items, title, { labels, rtl, widthChars }) {
+export function buildProductionTicket(order, items, title, { labels, rtl, widthChars, cashier, station }) {
   const r = labels.receipt
   const doc = new EscposDocument({ widthChars, rtl })
 
@@ -391,16 +406,22 @@ export function buildProductionTicket(order, items, title, { labels, rtl, widthC
   doc.text(fulfillmentText(order, labels))
   doc.doubleHeight(false)
   doc.bold(false)
+  // Who sent it and from which register — IssuedBy on the Rails side.
+  doc.align("left")
+  // labels.ticket is missing on an offline page cached before this was added.
+  const ticketLabels = labels.ticket || {}
+  doc.row(ticketLabels.cashier || "Cashier", cashier || "-", { padded: true })
+  doc.row(ticketLabels.station || "Station", station || "-", { padded: true })
   doc.blank()
 
   doc.align("left")
   doc.separator()
-  doc.row(r.item, r.qty)
+  doc.row(r.item, r.qty, { padded: true })
   doc.separator()
   items.forEach((line) => {
-    doc.row(line.name, String(line.quantity))
-    ;(line.modifiers || []).forEach((m) => doc.modifier(`+ ${m.name}`, { columns: 2 }))
-    if (line.notes) doc.modifier(line.notes, { columns: 2 })
+    doc.row(line.name, String(line.quantity), { padded: true, boldValue: true })
+    ;(line.modifiers || []).forEach((m) => doc.modifier(`+ ${m.name}`, { columns: 2, padded: true }))
+    if (line.notes) doc.modifier(line.notes, { columns: 2, padded: true })
     doc.separator()
   })
 
