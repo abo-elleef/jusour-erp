@@ -21,6 +21,11 @@ class PrintLogPolicy < ApplicationPolicy
     pos_access_same_company?
   end
 
+  # Marking a failed ticket as dealt with by hand (no reprint).
+  def handle?
+    pos_access_same_company?
+  end
+
   class Scope < Scope
     def resolve
       scope.left_joins(:order, :cash_drawer_session)
