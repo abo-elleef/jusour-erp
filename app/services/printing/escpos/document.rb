@@ -11,9 +11,19 @@ module Printing
       # characters for plain-text rows.
       PAD_DOTS  = 32
       PAD_CHARS = 2
+      # Kitchen ticket rows: the quantity column takes this share of the paper on the
+      # value side, with the quantity centred in it; the item name gets the rest (65%).
+      VALUE_COLUMN_SHARE = 0.35
 
-      def initialize(width: 42, charset: nil)
+      # Centre of the quantity column, in dots from the value-side edge.
+      def self.value_column_center(width)
+        (ArabicImageRenderer::PAPER_PX_WIDTH.fetch(width, 576) * VALUE_COLUMN_SHARE / 2).round
+      end
+
+      # compact: tighter image lines (kitchen/station tickets), see COMPACT_LINE_FACTOR.
+      def initialize(width: 42, charset: nil, compact: false)
         @width = width
+        @line_factor = compact ? ArabicImageRenderer::COMPACT_LINE_FACTOR : ArabicImageRenderer::DEFAULT_LINE_FACTOR
         # Binary from the start: raster image bytes and Windows-1256/UTF-8 text are
         # appended to the same buffer, and a UTF-8 buffer that picks up high bytes
         # turns BINARY and then rejects the next non-ASCII text line.
@@ -43,12 +53,14 @@ module Printing
 
       # padded: keep the row away from the paper edges (kitchen/station tickets).
       # bold_value: print the value (right-hand argument, e.g. a quantity) bold.
-      def row(left, right = "", padded: false, bold_value: false)
+      # value_column: centre the value in a column set in from the edge (quantities).
+      def row(left, right = "", padded: false, bold_value: false, value_column: false)
+        opts = { padded: padded, bold_value: bold_value, value_column: value_column }
         if @use_images && (left.to_s.match?(ARABIC_PATTERN) || right.to_s.match?(ARABIC_PATTERN))
           # Single image: Arabic label on right, LTR value (price) on left.
-          write_arabic_row_image(left.to_s, right.to_s, padded: padded, bold_value: bold_value)
+          write_arabic_row_image(left.to_s, right.to_s, **opts)
         else
-          write_text_row(left, right, padded: padded, bold_value: bold_value)
+          write_text_row(left, right, **opts)
         end
       end
 
@@ -75,7 +87,8 @@ module Printing
         if @use_images
           visual = Bidi.visual_for_print(str, reshape: true)
           bytes  = ArabicImageRenderer.render_modifier_row(visual, doc_width: @width, columns: columns,
-                                                                   pad: padded ? PAD_DOTS : 8)
+                                                                   pad: padded ? PAD_DOTS : 8,
+                                                                   line_factor: @line_factor)
           return @buffer << bytes.b if bytes
         end
         # Text fallback
@@ -197,7 +210,8 @@ module Printing
       def write_arabic_image(text, align: :right)
         visual = Bidi.visual_for_print(text, reshape: true)
         bytes  = ArabicImageRenderer.render_line(visual, doc_width: @width, align: align,
-                                                         font_scale: @double_height ? 2 : 1)
+                                                         font_scale: @double_height ? 2 : 1,
+                                                         line_factor: @line_factor)
         if bytes
           @buffer << bytes.b
         else
@@ -208,24 +222,33 @@ module Printing
       # Render a receipt row as a single image: Arabic label on the right,
       # LTR value (price) on the left — both on the same baseline.
       # Only the Arabic label is reshaped/reordered; the price is passed as-is.
-      def write_arabic_row_image(arabic_label, ltr_value, padded: false, bold_value: false)
+      def write_arabic_row_image(arabic_label, ltr_value, padded: false, bold_value: false, value_column: false)
         visual_label = Bidi.visual_for_print(arabic_label, reshape: true)
         visual_value = ltr_value.to_s.match?(ARABIC_PATTERN) ? Bidi.visual_for_print(ltr_value.to_s, reshape: true) : ltr_value.to_s
         bytes = ArabicImageRenderer.render_row(visual_label, visual_value, doc_width: @width,
                                                                           pad: padded ? PAD_DOTS : 8,
-                                                                          bold_value: bold_value)
+                                                                          bold_value: bold_value,
+                                                                          line_factor: @line_factor,
+                                                                          value_center_x: value_center_x(value_column))
         if bytes
           @buffer << bytes.b
         else
-          write_text_row(arabic_label, ltr_value, padded: padded, bold_value: bold_value)
+          write_text_row(arabic_label, ltr_value, padded: padded, bold_value: bold_value, value_column: value_column)
         end
       end
 
+      def value_center_x(value_column)
+        return nil unless value_column
+
+        self.class.value_column_center(@width)
+      end
+
       # Label on the reading side, value on the other; in RTL the value sits on the left.
-      def write_text_row(label, value, padded: false, bold_value: false)
+      def write_text_row(label, value, padded: false, bold_value: false, value_column: false)
         margin    = padded ? " " * PAD_CHARS : ""
         label_str = prepare_text(label)
         value_str = prepare_text(value)
+        value_str = value_str.center((@width * VALUE_COLUMN_SHARE).round - margin.length) if value_column
         space     = [@width - (2 * margin.length) - display_width(label_str) - display_width(value_str), 1].max
         value_out = bold_value ? "#{ESC}E\x01#{value_str}#{ESC}E\x00" : value_str
         left_out, right_out = @rtl ? [value_out, label_str] : [label_str, value_out]

@@ -87,4 +87,23 @@ RSpec.describe Printing::Escpos::ReceiptBuilder do
       expect(entries.join(" ")).to match(/نقدي/)
     end
   end
+
+  describe "item details" do
+    it "prints every modifier and the note on one line, like the station tickets" do
+      item = order.order_items.first
+      item.update_column(:notes, "no sauce")
+      group = ModifierGroup.create!(company: company, name: "Extras")
+      modifier = Modifier.create!(modifier_group: group, name: "Double", price_adjustment_cents: 0)
+      %w[Double Cheese].each { |name| item.order_item_modifiers.create!(modifier: modifier, name: name) }
+
+      lines = described_class.new(order.reload, printer: printer).build_debug.entries
+                             .filter_map { |e| e[:content] }
+
+      # The receipt's item column is narrow, so this wraps — at a separator, never
+      # leaving one dangling at a line end.
+      details = lines.map(&:strip)
+      expect(details).to include("+ Double • Cheese", "| no sauce")
+      expect(details).not_to include("+ Double")
+    end
+  end
 end

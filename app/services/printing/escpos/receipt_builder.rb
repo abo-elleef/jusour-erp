@@ -61,10 +61,8 @@ module Printing
 
         @order.order_items.includes(:order_item_modifiers, :menu_item, :combo).each do |item|
           doc.row3(item.display_name, item.quantity.to_s, format_money(item.line_total_cents))
-          item.order_item_modifiers.each do |modifier|
-            doc.modifier_text("+ #{modifier.name}")
-          end
-          doc.modifier_text(item.notes) if item.notes.present?
+          # Every modifier and the note on one line, like the station tickets.
+          TicketItemsTable.detail_lines(item, limit: detail_chars).each { |line| doc.modifier_text(line) }
           doc.separator
         end
 
@@ -110,6 +108,14 @@ module Printing
         doc.blank(4)
         doc.cut
         doc
+      end
+
+      # The item column is the right 54% of the paper (price and quantity take the
+      # rest), so the detail line wraps sooner than on a kitchen ticket.
+      RECEIPT_DETAIL_CHARS_RATIO = 0.5
+
+      def detail_chars
+        (line_width * RECEIPT_DETAIL_CHARS_RATIO).floor
       end
 
       def line_width
