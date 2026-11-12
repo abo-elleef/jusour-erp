@@ -3808,6 +3808,7 @@ ar:
         one: "سطر واحد"
         other: "%{count} أسطر"
     categories:
+      label: "التصنيفات"
       offers: "العروض"
       combos: "الوجبات المركبة"
     shift:

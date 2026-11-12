@@ -968,7 +968,7 @@ module ApplicationHelper
   end
 
   def pos_category_pill_class(active: false)
-    base = "pos-category-btn px-4 py-2 rounded-xl text-sm font-semibold border shrink-0 transition-colors"
+    base = "pos-category-btn px-4 py-2 rounded-xl text-sm font-semibold border shrink-0 transition-colors md:w-full md:text-start md:py-3 md:leading-snug"
     if active
       "#{base} bg-gray-900 text-white border-gray-900 hover:bg-gray-800 hover:text-white"
     else

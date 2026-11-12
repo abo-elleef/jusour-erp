@@ -15,6 +15,7 @@ module PosOfflineHelper
       cash: I18n.t("payment.methods.cash"),
       all: I18n.t("actions.all"),
       combos: I18n.t("pos.categories.combos"),
+      categories: I18n.t("pos.categories.label"),
       close: I18n.t("actions.close"),
       cancel: I18n.t("actions.cancel"),
       only_choice: I18n.t("promos.only_choice")

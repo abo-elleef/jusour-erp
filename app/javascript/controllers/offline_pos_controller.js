@@ -184,7 +184,7 @@ export default class extends Controller {
       const classes = active
         ? "bg-gray-900 text-white border-gray-900"
         : "bg-white text-gray-700 border-gray-200 hover:bg-stone-100"
-      return `<button type="button" data-act="category" data-value="${esc(value)}" class="shrink-0 min-h-10 px-4 rounded-full border text-sm font-medium transition-colors ${classes}">${esc(label)}</button>`
+      return `<button type="button" data-act="category" data-value="${esc(value)}" class="shrink-0 min-h-10 px-4 rounded-xl border text-sm font-semibold transition-colors md:w-full md:text-start md:py-3 md:leading-snug ${classes}">${esc(label)}</button>`
     }
 
     const pills = [pill("all", this.t("all"))]
@@ -194,12 +194,17 @@ export default class extends Controller {
     const items = menu.items.filter((item) => this.category === "all" || this.category === item.category_id)
     const combos = menu.combos.filter(() => this.category === "all" || this.category === "combos")
 
+    // Same layout as the online register: a category rail beside the items from md
+    // up (every category visible, nothing scrolls sideways), wrapping chips on phones.
     return `
-      <div class="flex gap-2 px-4 py-3 border-b border-gray-200 bg-white overflow-x-auto shrink-0">${pills.join("")}</div>
-      <div class="overflow-y-auto flex-1 touch-manipulation p-4">
-        <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
-          ${items.map((item) => this.itemCardHtml(item)).join("")}
-          ${combos.map((combo) => this.comboCardHtml(combo)).join("")}
+      <div class="flex flex-col md:flex-row flex-1 min-h-0">
+        <nav data-category-rail aria-label="${esc(this.t("categories"))}"
+             class="flex flex-wrap gap-2 px-4 py-3 border-b border-gray-200 bg-white shrink-0 max-h-36 overflow-y-auto md:flex-col md:flex-nowrap md:w-44 md:max-h-none md:px-2 md:py-2 md:border-b-0 md:border-e">${pills.join("")}</nav>
+        <div class="overflow-y-auto flex-1 min-w-0 touch-manipulation p-4">
+          <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+            ${items.map((item) => this.itemCardHtml(item)).join("")}
+            ${combos.map((combo) => this.comboCardHtml(combo)).join("")}
+          </div>
         </div>
       </div>`
   }
@@ -452,7 +457,16 @@ export default class extends Controller {
 
     const { act, id, uid, value, type, delta, cents, uuid: orderUuid, kind } = target.dataset
     switch (act) {
-      case "category": this.category = value; this.draw("menu"); break
+      case "category": {
+        // The menu redraws from scratch; keep the rail where the cashier left it,
+        // or picking a category low in a long list jumps the rail back to the top.
+        const railTop = this.region("menu")?.querySelector("[data-category-rail]")?.scrollTop || 0
+        this.category = value
+        this.draw("menu")
+        const rail = this.region("menu")?.querySelector("[data-category-rail]")
+        if (rail) rail.scrollTop = railTop
+        break
+      }
       case "add-item": this.addItem(id); break
       case "add-combo": this.addCombo(id); break
       case "qty": this.changeQuantity(uid, parseInt(delta, 10)); break

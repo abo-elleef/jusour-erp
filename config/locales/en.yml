@@ -3758,6 +3758,7 @@ en:
         one: "%{count} line"
         other: "%{count} lines"
     categories:
+      label: "Categories"
       offers: "Offers"
       combos: "Combos"
     shift:
