@@ -17,6 +17,12 @@ module Accounting
       }
     end
 
+    # Public so the report can fetch just the headline numbers for the
+    # previous period (the comparison), without the per-item breakdowns.
+    def summary
+      @summary ||= build_summary
+    end
+
     private
 
     def completed_orders
@@ -27,7 +33,7 @@ module Accounting
       @order_ids ||= completed_orders.pluck(:id)
     end
 
-    def summary
+    def build_summary
       count = completed_orders.count
       gross = completed_orders.sum(:subtotal_cents).to_i
       discounts = completed_orders.sum(:discount_cents).to_i
@@ -53,13 +59,14 @@ module Accounting
         scope = OrderItem.joins(:order, :menu_item)
           .where(orders: { id: order_ids })
           .where(menu_items: { category_id: cat.id })
-        { category: cat.name, revenue_cents: RevenueCalculator.order_item_revenue(scope) }
+        { category: cat.name, units_sold: scope.sum(:quantity).to_i, revenue_cents: RevenueCalculator.order_item_revenue(scope) }
       end
 
       combo_scope = OrderItem.joins(:order).where(orders: { id: order_ids }).where.not(combo_id: nil)
       combo_revenue = RevenueCalculator.order_item_revenue(combo_scope)
       if combo_revenue.positive?
-        rows << { category: I18n.t("accounting.sales_reports.combos_category"), revenue_cents: combo_revenue }
+        rows << { category: I18n.t("accounting.sales_reports.combos_category"),
+                  units_sold: combo_scope.sum(:quantity).to_i, revenue_cents: combo_revenue }
       end
 
       rows.sort_by { |r| -r[:revenue_cents] }

@@ -35,6 +35,19 @@ export default class extends Controller {
     })
 
     this.writeStoredTab(name)
+    this.resizeCharts()
+  }
+
+  // A chart drawn while its panel was hidden has no width and stays blank when
+  // the panel is shown; Chart.js does not notice on its own. Resize after the
+  // panel is laid out.
+  resizeCharts() {
+    requestAnimationFrame(() => {
+      window.Chartkick?.eachChart((chart) => {
+        if (!this.element.contains(chart.element)) return
+        chart.getChartObject()?.resize?.()
+      })
+    })
   }
 
   readStoredTab() {
