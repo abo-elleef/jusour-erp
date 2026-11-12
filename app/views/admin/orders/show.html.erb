@@ -1,4 +1,4 @@
-<% content_for :title, @order.order_number %>
+<% content_for :title, @order.display_number %>
 <% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
@@ -10,7 +10,7 @@
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900">
-        <%= @order.order_number %>
+        <%= @order.display_number %>
         <% if ENV["PRINT_DEBUG"] == "true" %>
           <%= link_to "🖨 Preview Print",
                 admin_print_debug_path(order_id: @order.id),

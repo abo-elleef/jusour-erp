@@ -43,7 +43,7 @@ module PosOfflineHelper
 
     {
       server_order_id: order.id,
-      order_number: order.order_number,
+      order_number: order.display_number,
       user_id: order.user_id,
       order_type: order.order_type,
       table_number: order.table_number.to_s,

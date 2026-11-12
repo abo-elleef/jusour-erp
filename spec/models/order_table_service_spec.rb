@@ -24,7 +24,7 @@ RSpec.describe Order, "table service", type: :model do
     second = build(:order, user: user, company: company, location: cafe, order_type: "table", table_number: "5")
 
     expect(second).not_to be_valid
-    expect(second.errors[:table_number].first).to include(first.order_number)
+    expect(second.errors[:table_number].first).to include(first.display_reference)
   end
 
   it "allows a different table" do

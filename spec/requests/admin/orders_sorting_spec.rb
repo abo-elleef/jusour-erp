@@ -19,8 +19,11 @@ RSpec.describe "Admin orders table sorting", type: :request do
   end
 
   def make(user:, total:, items: 1, customer: nil, status: "completed", type: "pickup", at: Time.current)
+    # Placed first (which numbers it), then moved to the status under test: a
+    # cancelled order in this table was voided after it was placed.
     order = create(:order, user: user, customer: customer, company: company, location: branch,
-                           status: status, order_type: type, created_at: at)
+                           status: "submitted", order_type: type, created_at: at)
+    order.update!(status: status)
     items.times { create(:order_item, order: order, unit_price_cents: total / items) }
     order.recalculate_totals!
     order

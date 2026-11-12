@@ -34,7 +34,7 @@ module Printing
         doc.bold
         doc.double_height(true)
         doc.text(@title)
-        doc.text(@order.order_number)
+        doc.text(@order.display_number)
         # A placed order changed after the PIN: the whole order prints again, and this
         # tells the station it replaces the earlier ticket rather than adds to it.
         if @order.edit_count.to_i.positive?

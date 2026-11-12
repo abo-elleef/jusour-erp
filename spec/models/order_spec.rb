@@ -6,38 +6,81 @@ RSpec.describe Order, type: :model do
   let(:user) { create(:user) }
 
   describe "validations" do
-    it "requires order_number" do
-      order = build(:order, user: user, order_number: nil)
+    it "lets a draft go without a number" do
+      expect(build(:order, user: user, order_number: nil)).to be_valid
+    end
+
+    it "lets several drafts on one branch-day go without a number" do
+      branch = create(:location)
+      create(:order, user: user, location: branch)
+
+      expect(build(:order, user: user, location: branch)).to be_valid
+    end
+
+    it "numbers an order created already past draft" do
+      order = build(:order, user: user, status: "completed", order_number: nil)
       order.valid?
       expect(order.order_number).to be_present
     end
   end
 
+  # The number is taken when the order is placed or paid (the submit event), not
+  # when the first item goes in, so the daily count follows the kitchen's queue.
   describe "order numbering" do
     let(:branch) { create(:location) }
     let(:other_branch) { create(:location) }
 
+    def place(order)
+      order.submit!
+      order
+    end
+
+    it "gives a draft no number until it is placed" do
+      draft = create(:order, user: user, location: branch)
+
+      expect(draft.order_number).to be_nil
+      expect(draft.placed_at).to be_nil
+    end
+
+    it "numbers orders in the order they are placed, not started" do
+      started_first  = create(:order, user: user, location: branch)
+      started_second = create(:order, user: user, location: branch)
+
+      place(started_second)
+      place(started_first)
+
+      expect(started_second.reload.order_number).to eq("1")
+      expect(started_first.reload.order_number).to eq("2")
+      expect(started_first.placed_at).to be > started_second.placed_at
+    end
+
     it "restarts at 1 for each branch on each business day" do
-      first  = create(:order, user: user, location: branch)
-      second = create(:order, user: user, location: branch)
+      first  = place(create(:order, user: user, location: branch))
+      second = place(create(:order, user: user, location: branch))
 
       expect([first.order_number, second.order_number]).to eq(%w[1 2])
       expect(first.business_date).to eq(BusinessDay.for(Time.current, location: branch))
     end
 
     it "numbers each branch independently on the same day" do
-      create(:order, user: user, location: branch)
-      elsewhere = create(:order, user: user, location: other_branch)
+      place(create(:order, user: user, location: branch))
+      elsewhere = place(create(:order, user: user, location: other_branch))
 
       expect(elsewhere.order_number).to eq("1")
     end
 
     it "starts over on the next business day" do
-      create(:order, user: user, location: branch)
-      tomorrow = create(:order, user: user, location: branch,
-                                business_date: BusinessDay.for(Time.current, location: branch) + 1)
+      place(create(:order, user: user, location: branch))
+      tomorrow = place(create(:order, user: user, location: branch,
+                                      business_date: BusinessDay.for(Time.current, location: branch) + 1))
 
       expect(tomorrow.order_number).to eq("1")
+    end
+
+    it "keeps a number that was set by hand" do
+      order = place(create(:order, user: user, location: branch, order_number: "7"))
+
+      expect(order.order_number).to eq("7")
     end
 
     it "allows the same number on another branch-day" do
@@ -53,6 +96,16 @@ RSpec.describe Order, type: :model do
                                 business_date: first.business_date, order_number: "7")
 
       expect(duplicate).not_to be_valid
+    end
+  end
+
+  describe "#display_number" do
+    it "shows the number once placed and a Draft label before" do
+      order = create(:order, user: user)
+      expect(order.display_number).to eq(I18n.t("order.labels.draft_number"))
+
+      order.submit!
+      expect(order.display_number).to eq(order.order_number)
     end
   end
 

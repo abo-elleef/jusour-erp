@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_12_160000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_13_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1034,7 +1034,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_12_160000) do
   create_table "orders", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "customer_id"
     t.uuid "user_id", null: false
-    t.string "order_number", null: false
+    t.string "order_number"
     t.string "status", default: "draft", null: false
     t.integer "subtotal_cents"
     t.integer "discount_cents", default: 0, null: false
@@ -1062,6 +1062,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_12_160000) do
     t.datetime "unlocked_for_edit_at"
     t.uuid "unlocked_for_edit_by_id"
     t.integer "edit_count", default: 0, null: false
+    t.datetime "placed_at"
     t.index "company_id, COALESCE(location_id, '00000000-0000-0000-0000-000000000000'::uuid), business_date, order_number", name: "index_orders_on_branch_day_order_number", unique: true, where: "(business_date IS NOT NULL)"
     t.index ["company_id", "business_date"], name: "index_orders_on_company_id_and_business_date"
     t.index ["company_id", "client_uuid"], name: "index_orders_on_company_id_and_client_uuid", unique: true, where: "(client_uuid IS NOT NULL)"
@@ -1070,6 +1071,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_12_160000) do
     t.index ["created_at"], name: "index_orders_on_created_at"
     t.index ["customer_id"], name: "index_orders_on_customer_id"
     t.index ["delivery_fee_drawer_session_id"], name: "index_orders_on_delivery_fee_drawer_session_id"
+    t.index ["location_id", "placed_at"], name: "index_orders_on_location_id_and_placed_at"
     t.index ["location_id"], name: "index_orders_on_location_id"
     t.index ["order_type"], name: "index_orders_on_order_type"
     t.index ["receipt_token"], name: "index_orders_on_receipt_token", unique: true

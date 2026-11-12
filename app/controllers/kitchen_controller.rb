@@ -9,7 +9,7 @@ class KitchenController < ApplicationController
 
   def index
     authorize :kds, :view?, policy_class: KdsPolicy
-    @orders = Order.kitchen_queue.includes(order_items: [:menu_item, :combo, :order_item_modifiers]).order(:created_at)
+    @orders = Order.kitchen_queue.includes(order_items: [:menu_item, :combo, :order_item_modifiers]).order(:placed_at, :created_at)
   end
 
   def start

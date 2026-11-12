@@ -6,7 +6,7 @@ module Payments
       intent = Stripe::PaymentIntent.create(
         amount: order.total_cents,
         currency: "usd",
-        metadata: { order_id: order.id, order_number: order.order_number },
+        metadata: { order_id: order.id, order_number: order.display_number },
         capture_method: "manual"
       )
       {

@@ -24,6 +24,15 @@ RSpec.describe Orders::FinalizePaidService do
     expect(order.reload.status).to eq("submitted")
   end
 
+  it "gives a paid-first order its number when the money lands" do
+    expect(order.order_number).to be_nil
+
+    described_class.call(order)
+
+    expect(order.reload.order_number).to be_present
+    expect(order.placed_at).to be_present
+  end
+
   # The change that this spec exists to pin down: being paid for is not being
   # finished. A cashier closes the order, through Orders::CompleteService.
   it "does not complete the order" do

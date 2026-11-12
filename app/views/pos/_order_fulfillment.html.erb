@@ -28,13 +28,13 @@
           <% (1..table_count).each do |n| %>
             <% holder = busy_tables[n.to_s] %>
             <% busy = holder.present? && holder.id != order.id %>
-            <%= tag.label class: (busy ? "cursor-not-allowed" : "cursor-pointer"), title: (busy ? t("pos.tables.busy_hint", number: holder.order_number) : nil) do %>
+            <%= tag.label class: (busy ? "cursor-not-allowed" : "cursor-pointer"), title: (busy ? t("pos.tables.busy_hint", number: holder.display_reference) : nil) do %>
               <%= f.radio_button :table_number, n, checked: order.table_number.to_s == n.to_s, disabled: busy, class: "sr-only peer",
                     data: { action: "change->order-type#submitForm" } %>
               <% if busy %>
                 <span class="block text-center py-1.5 rounded-xl border border-red-200 bg-red-50 text-red-800 tabular-nums leading-tight">
                   <span class="block text-sm font-semibold"><%= n %></span>
-                  <span class="block text-[10px]">#<%= holder.order_number %></span>
+                  <span class="block text-[10px]"><%= holder.display_reference %></span>
                 </span>
               <% else %>
                 <span class="block text-center py-2.5 rounded-xl border border-stone-200 bg-white text-sm font-semibold text-stone-700 tabular-nums transition peer-checked:bg-stone-900 peer-checked:text-white peer-checked:border-stone-900 hover:bg-stone-100 peer-checked:hover:bg-stone-900"><%= n %></span>

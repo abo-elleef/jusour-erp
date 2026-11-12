@@ -544,7 +544,7 @@ en:
 
   order:
     errors:
-      table_busy: "Table %{table} already has an open order (#%{number})."
+      table_busy: "Table %{table} already has an open order (%{number})."
     types:
       delivery: "Delivery"
       pickup: "Pickup"
@@ -569,6 +569,7 @@ en:
       due: "%{amount} due"
     labels:
       order_number: "Order #"
+      draft_number: "Draft"
       cashier: "Cashier"
       order_type: "Order type"
       subtotal: "Subtotal"
@@ -3691,7 +3692,7 @@ en:
       open: "Open table"
       clear: "Clear table"
       clear_confirm: "Mark table %{table}'s order as done and free the table?"
-      busy_hint: "Open order #%{number}"
+      busy_hint: "Open order %{number}"
       due: "%{amount} due"
       items:
         one: "%{count} item"

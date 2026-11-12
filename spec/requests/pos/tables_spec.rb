@@ -29,7 +29,7 @@ RSpec.describe "POS tables board", type: :request do
     get pos_tables_path
 
     expect(response).to have_http_status(:ok)
-    expect(response.body).to include("##{order.order_number}")
+    expect(response.body).to include(order.display_reference)
     expect(response.body).to include(I18n.t("pos.tables.summary", busy: 1, free: 5))
   end
 
@@ -87,7 +87,7 @@ RSpec.describe "POS tables board", type: :request do
     patch "/pos/fulfillment", params: { order_type: "table", table_number: "3" }, as: :turbo_stream
 
     expect(response).to have_http_status(:unprocessable_content)
-    expect(response.body).to include(I18n.t("order.errors.table_busy", table: "3", number: Order.busy_tables(cafe)["3"].order_number))
+    expect(response.body).to include(I18n.t("order.errors.table_busy", table: "3", number: Order.busy_tables(cafe)["3"].display_reference))
     expect(mine.reload.table_number).to eq("4")
   end
 
@@ -102,7 +102,7 @@ RSpec.describe "POS tables board", type: :request do
     expect { post pos_order_items_path, params: { menu_item_id: item.id } }.not_to change(OrderItem, :count)
 
     expect(response).to redirect_to(pos_path)
-    expect(flash[:alert]).to include(other.order_number)
+    expect(flash[:alert]).to include(other.display_reference)
   end
 
   it "keeps adding items to an order that already holds a table, even if a duplicate exists" do

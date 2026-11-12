@@ -51,6 +51,8 @@ RSpec.describe Orders::SyncOfflineOrderService do
     expect(order.client_uuid).to eq(uuid)
     expect(order.offline_number).to eq("OFF-7")
     expect(order.status).to eq("submitted")
+    expect(order.order_number).to be_present
+    expect(order.placed_at).to be_present
     expect(order.order_items.first.quantity).to eq(2)
     expect(order.order_items.first.order_item_modifiers.map(&:name)).to eq(["Cheese"])
     # (1000 + 200) × 2 = 2400, + 14% tax rounded per line = 336
