@@ -37,4 +37,15 @@ RSpec.describe Orders::OfflineSnapshotService do
   it "leaves the workstation out when none is chosen" do
     expect(described_class.call(user: cashier, location: branch, workstation: nil, csrf_token: "t")[:workstation]).to be_nil
   end
+
+  it "lists the tables holding an open order so the offline register can warn" do
+    branch.update!(table_service: true, table_count: 6)
+    order = create(:order, user: cashier, company: company, location: branch, order_type: "table",
+                           table_number: "5", status: "submitted")
+    create(:order_item, order: order)
+
+    snapshot = described_class.call(user: cashier, location: branch, workstation: nil, csrf_token: "t")
+
+    expect(snapshot[:busy_tables]).to eq("5" => { id: order.id, number: order.order_number })
+  end
 end

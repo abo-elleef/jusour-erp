@@ -64,7 +64,8 @@ module Orders
           notes: @payload[:notes].presence,
           client_uuid: uuid,
           offline_number: @payload[:offline_number].presence,
-          created_at: created_at
+          created_at: created_at,
+          allow_table_clash: true
         )
 
         @price_differences = []
@@ -76,6 +77,7 @@ module Orders
         # `submit!` rather than SubmitService: same state change, no print job.
         order.submit!
         discard_replaced_draft(order)
+        flag_table_clash(order)
         order.reload
       end
     end
@@ -128,6 +130,28 @@ module Orders
         record: order,
         user: cashier,
         changes_snapshot: { lines: @price_differences, offline_number: order.offline_number }
+      )
+    end
+
+    # Registers cannot see each other with the internet down, so two of them can
+    # seat different customers at the same table, or one can seat a table that the
+    # online register filled after the snapshot. Both orders are real and paid; the
+    # table now holds two, the floor plan shows both, and this entry tells a
+    # manager why.
+    def flag_table_clash(order)
+      other = order.table_conflict
+      return unless other
+
+      AuditLogEntry.record!(
+        action: "order.offline_table_clash",
+        record: order,
+        user: cashier,
+        changes_snapshot: {
+          table_number: order.table_number,
+          offline_number: order.offline_number,
+          other_order_id: other.id,
+          other_order_number: other.order_number
+        }
       )
     end
 

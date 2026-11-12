@@ -268,14 +268,50 @@ export default class extends Controller {
   tableFieldHtml() {
     const count = parseInt(this.snapshot.location?.table_count, 10)
     if (count > 0) {
+      const busy = this.busyTables()
       const buttons = Array.from({ length: count }, (_, i) => {
         const n = String(i + 1)
         const on = String(this.cart.table_number) === n
-        return `<button type="button" data-act="pick-table" data-value="${n}" class="min-h-10 rounded-xl border text-sm font-semibold tabular-nums transition-colors ${on ? "bg-stone-900 text-white border-stone-900" : "bg-white text-stone-700 border-stone-200 hover:bg-stone-100"}">${n}</button>`
+        const holder = busy[n]
+        const look = on
+          ? "bg-stone-900 text-white border-stone-900"
+          : holder
+            ? "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
+            : "bg-white text-stone-700 border-stone-200 hover:bg-stone-100"
+        const title = holder ? ` title="${esc(this.t("table_busy_hint", { number: holder }))}"` : ""
+        const dot = holder ? `<span class="block mx-auto mt-0.5 w-1.5 h-1.5 rounded-full ${on ? "bg-amber-300" : "bg-amber-500"}"></span>` : ""
+        return `<button type="button" data-act="pick-table" data-value="${n}"${title} class="min-h-10 rounded-xl border text-sm font-semibold tabular-nums transition-colors ${look}">${n}${dot}</button>`
       }).join("")
       return `<div class="grid grid-cols-5 gap-1.5 max-h-40 overflow-y-auto">${buttons}</div>`
     }
     return `<input type="text" inputmode="numeric" data-field="table_number" value="${esc(this.cart.table_number)}" placeholder="${esc(this.t("table_number"))}" class="${INPUT}" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">`
+  }
+
+  // { "5" => "#12" } for every table that already holds an order, as far as this
+  // register can know: what was open on the server at the last snapshot, plus what
+  // this register has seated offline and not yet synced. Other registers seating
+  // tables during the outage cannot be seen, which is why this only warns; the
+  // server accepts a clash on sync and shows both orders on the floor plan.
+  busyTables() {
+    const busy = {}
+    const handoffId = this.cart.server_order_id ? String(this.cart.server_order_id) : null
+    for (const [n, holder] of Object.entries(this.snapshot.busy_tables || {})) {
+      // The online draft this cart was carried over from is this same sale.
+      if (handoffId && String(holder.id) === handoffId) continue
+      busy[String(n)] = `#${holder.number}`
+    }
+    for (const order of this.orders) {
+      if (order.order_type === "table" && order.table_number) busy[String(order.table_number)] = order.offline_number
+    }
+    return busy
+  }
+
+  pickTable(value) {
+    const changed = String(this.cart.table_number) !== value
+    this.cart.table_number = value
+    this.draw("cart")
+    const holder = this.busyTables()[value]
+    if (changed && holder) this.toast(this.t("table_busy_warning", { table: value, number: holder }), "alert")
   }
 
   deliveryFieldsHtml() {
@@ -457,7 +493,7 @@ export default class extends Controller {
       case "add-combo": this.addCombo(id); break
       case "qty": this.changeQuantity(uid, parseInt(delta, 10)); break
       case "remove": this.removeLine(uid); break
-      case "pick-table": this.cart.table_number = value; this.draw("cart"); break
+      case "pick-table": this.pickTable(value); break
       case "order-type": this.cart.order_type = type; this.draw("cart"); break
       case "clear-cart": this.forgetHandoff(); this.cart = this.emptyCart(); this.draw("cart"); break
       case "open-payment": this.openPayment(); break

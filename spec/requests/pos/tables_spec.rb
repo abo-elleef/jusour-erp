@@ -33,6 +33,19 @@ RSpec.describe "POS tables board", type: :request do
     expect(response.body).to include(I18n.t("pos.tables.summary", busy: 1, free: 5))
   end
 
+  it "shows both orders when an offline sync put a second one on the table" do
+    first = table_order(status: "submitted")
+    second = create(:order, user: other_cashier, company: company, location: cafe, order_type: "table",
+                            table_number: "3", status: "submitted", offline_number: "OFF-B4", allow_table_clash: true)
+    create(:order_item, order: second)
+
+    get pos_tables_path
+
+    expect(response.body).to include("##{first.order_number}", "##{second.order_number}", "OFF-B4")
+    expect(response.body).to include(I18n.t("pos.tables.clash", count: 2))
+    expect(response.body).to include(I18n.t("pos.tables.summary", busy: 1, free: 5))
+  end
+
   it "is not available at a branch without table service" do
     cafe.update!(table_service: false)
     get pos_tables_path

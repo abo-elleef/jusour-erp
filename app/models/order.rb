@@ -64,7 +64,12 @@ class Order < ApplicationRecord
   before_validation :assign_business_date, on: :create
   before_validation :assign_order_number, on: :create
   before_save :clear_fulfillment_fields_for_type
-  validate :table_must_be_free, if: :table_slot_changed?
+  validate :table_must_be_free, if: :table_slot_changed?, unless: :allow_table_clash
+
+  # Set only by Orders::SyncOfflineOrderService. An order rung up while the
+  # internet was down has already been paid for and sent to the kitchen, so a
+  # table taken in the meantime cannot refuse it; the clash is flagged instead.
+  attr_accessor :allow_table_clash
   before_create :generate_receipt_token
 
   aasm column: :status do
@@ -161,13 +166,18 @@ class Order < ApplicationRecord
       .order(created_at: :desc)
   }
 
-  # { "5" => order } for every busy table at the branch.
+  # { "5" => order } for every busy table at the branch: the oldest open order on it.
   def self.busy_tables(location)
+    table_orders(location).transform_values(&:first)
+  end
+
+  # { "5" => [order, ...] } for every busy table at the branch, oldest first.
+  # Normally one per table; two only when an offline order synced onto a table
+  # someone else had taken while the internet was down.
+  def self.table_orders(location)
     return {} unless location&.table_service?
 
-    open_table_orders.where(location_id: location.id).includes(:user, :order_items).each_with_object({}) do |order, busy|
-      busy[order.table_number.to_s] ||= order
-    end
+    open_table_orders.where(location_id: location.id).includes(:user, :order_items).group_by { |order| order.table_number.to_s }
   end
 
   def self.ransackable_attributes(_auth_object = nil)

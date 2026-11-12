@@ -3672,6 +3672,8 @@ ar:
       delivery_required: "أدخل هاتف العميل وعنوان الدليفري."
       table_number: "رقم الطاولة"
       table_required: "أدخل رقم الطاولة."
+      table_busy_hint: "مشغولة — %{number}"
+      table_busy_warning: "الطاولة %{table} عليها الطلب %{number} بالفعل. تأكد أنها فاضية قبل الإجلاس — هذا الجهاز لا يرى الأجهزة الأخرى أثناء انقطاع الإنترنت."
       order_notes: "ملاحظات الطلب"
       add: "إضافة"
       customize: "تخصيص"
@@ -3738,6 +3740,7 @@ ar:
       clear: "إخلاء الطاولة"
       clear_confirm: "إنهاء طلب الطاولة %{table} وإخلاء الطاولة؟"
       busy_hint: "طلب مفتوح #%{number}"
+      clash: "%{count} طلبات على هذه الطاولة — تم الحجز مرتين أثناء انقطاع الإنترنت"
       due: "المتبقي %{amount}"
       items:
         one: "%{count} صنف"
