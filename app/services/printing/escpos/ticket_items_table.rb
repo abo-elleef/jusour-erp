@@ -11,6 +11,11 @@ module Printing
       # Characters per detail line before wrapping; Arabic glyphs at the ticket size
       # are a little narrower than a text-mode column, minus the side padding.
       DETAIL_CHARS_RATIO = 0.95
+      # Characters of an item name per line at the ticket's bold item size before it
+      # wraps, as a share of the text-mode width: the name column is 65% of the paper
+      # and the glyphs are larger (ArabicImageRenderer::BOLD_LABEL_PT). 42 columns
+      # gives 29; a 30-character Arabic name is about the most that fits.
+      ITEM_NAME_CHARS_RATIO = 0.7
 
       # "+ Double • Extra cheese | no sauce", wrapped at word boundaries to `limit`
       # characters so a long list never runs off the paper. [] for a plain item.
@@ -56,10 +61,18 @@ module Printing
         doc.separator
 
         items.each do |item|
-          doc.row(item.display_name, item.quantity.to_s, padded: true, bold_value: true, value_column: true)
+          # Name and quantity bold and large; a long name wraps, the quantity stays on
+          # its first line.
+          first, *rest = TicketItemsTable.wrap(item.display_name.to_s, item_name_chars)
+          doc.row(first, item.quantity.to_s, padded: true, bold_value: true, bold_label: true, value_column: true)
+          rest.each { |line| doc.row(line, "", padded: true, bold_label: true, value_column: true) }
           detail_lines(item).each { |line| doc.modifier_text(line, columns: 2, padded: true) }
           doc.separator
         end
+      end
+
+      def item_name_chars
+        (line_width * ITEM_NAME_CHARS_RATIO).floor
       end
 
       def detail_lines(item)

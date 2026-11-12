@@ -158,9 +158,33 @@ RSpec.describe Printing::Escpos::Document do
                      .row("برجر", "2", padded: true, bold_value: true, value_column: true)
 
       expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_row)
-        .with(anything, "2", doc_width: 42, pad: described_class::PAD_DOTS, bold_value: true,
+        .with(anything, "2", doc_width: 42, pad: described_class::PAD_DOTS, bold_value: true, bold_label: false,
                              line_factor: Printing::Escpos::ArabicImageRenderer::COMPACT_LINE_FACTOR,
                              value_center_x: (576 * 0.35 / 2).round)
+    end
+
+    it "draws a ticket item row bold and larger, in an image tall enough for it" do
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("font.ttf")
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:capture_pbm).and_return(nil)
+      Printing::Escpos::ArabicImageRenderer.render_row("label", "2", doc_width: 42, bold_value: true, bold_label: true,
+                                                       line_factor: 1.5)
+
+      renderer = Printing::Escpos::ArabicImageRenderer
+      expect(renderer).to have_received(:capture_pbm) do |cmd|
+        expect(cmd).to include("576x#{(renderer::BOLD_VALUE_PT * 1.5).round}")
+        expect(cmd.each_cons(2).to_a).to include(["-pointsize", renderer::BOLD_LABEL_PT.to_s],
+                                                 ["-pointsize", renderer::BOLD_VALUE_PT.to_s])
+        expect(cmd.count("-stroke")).to be >= 4
+      end
+    end
+
+    it "prints a ticket item line bold and double height in text mode" do
+      doc = described_class.new(width: 20, charset: "latin")
+      doc.row("Burger", "2", padded: true, bold_value: true, bold_label: true)
+      line = doc.to_bytes.split("\n".b).last
+
+      expect(line).to include("\x1D!\x11\x1BE\x01  Burger".b)
+      expect(line).to end_with("\x1BE\x00\x1D!\x00".b)
     end
 
     it "draws receipt rows exactly as before, so their cached images stay valid" do
