@@ -3,8 +3,14 @@
 require "rails_helper"
 
 RSpec.describe Company, "subscription", type: :model do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:today) { Date.new(2026, 11, 8) }
   let(:company) { build(:company) }
+
+  # access_blocked? reads the real clock, so pin it to the same day as `today`
+  # (noon, so the company's time zone can't tip it into a different date).
+  around { |example| travel_to(today.noon) { example.run } }
 
   def status_for(paid_until, active: true)
     company.assign_attributes(paid_until: paid_until, active: active)
