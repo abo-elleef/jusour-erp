@@ -4,8 +4,9 @@ require "rails_helper"
 
 RSpec::Matchers.define_negated_matcher :not_have_enqueued_job, :have_enqueued_job
 
-# What a payment prints is the cashier's call: receipt and kitchen/bar are chosen
-# separately, and neither choice may change whether the payment itself goes through.
+# An order prints once, when it is placed. A payment that places a cart (paid
+# straight away) prints the receipt and the kitchen / bar tickets; a payment on an
+# order placed earlier prints nothing. There is no opting out at the till.
 RSpec.describe "Printing when a payment settles the bill", type: :request do
   include ActiveJob::TestHelper
   include Devise::Test::IntegrationHelpers
@@ -39,33 +40,46 @@ RSpec.describe "Printing when a payment settles the bill", type: :request do
     }.merge(choices)
   end
 
-  it "prints the receipt and the kitchen / bar tickets by default" do
+  it "prints the receipt and the kitchen / bar tickets" do
     expect { pay }
+      .to have_enqueued_job(Printing::PrintReceiptJob).with(order.id)
+      .and have_enqueued_job(Printing::DispatchProductionPrintsJob).with(order.id)
+    expect(order.reload.status).to eq("submitted")
+  end
+
+  it "ignores the old opt-out fields from a register still running the previous page" do
+    expect { pay(print_receipt: "0", print_production: "0") }
       .to have_enqueued_job(Printing::PrintReceiptJob).with(order.id)
       .and have_enqueued_job(Printing::DispatchProductionPrintsJob).with(order.id)
   end
 
-  it "prints only the receipt when kitchen / bar is unticked" do
-    expect { pay(print_production: "0") }
-      .to have_enqueued_job(Printing::PrintReceiptJob)
+  it "does not send a cart's tickets to the kitchen a second time" do
+    order.update_column(:kitchen_sent_at, 5.minutes.ago)
+
+    expect { pay }
+      .to have_enqueued_job(Printing::PrintReceiptJob).with(order.id)
       .and not_have_enqueued_job(Printing::DispatchProductionPrintsJob)
     expect(order.reload.status).to eq("submitted")
   end
 
-  it "prints only the kitchen / bar tickets when the receipt is unticked" do
-    expect { pay(print_receipt: "0") }
-      .to have_enqueued_job(Printing::DispatchProductionPrintsJob)
-      .and not_have_enqueued_job(Printing::PrintReceiptJob)
-  end
+  context "when the order was placed before it was paid" do
+    before do
+      Orders::PlaceService.call(order, user: cashier)
+      clear_enqueued_jobs
+    end
 
-  it "prints nothing, but still takes the payment and submits the order, when both are unticked" do
-    expect { pay(print_receipt: "0", print_production: "0") }
-      .to change(Payment, :count).by(1)
-      .and not_have_enqueued_job(Printing::PrintReceiptJob)
-      .and not_have_enqueued_job(Printing::DispatchProductionPrintsJob)
+    it "only takes the money: no receipt and no tickets" do
+      expect { pay }
+        .to change(Payment, :count).by(1)
+        .and not_have_enqueued_job(Printing::PrintReceiptJob)
+        .and not_have_enqueued_job(Printing::DispatchProductionPrintsJob)
+      expect(order.reload).to be_fully_paid
+    end
 
-    expect(order.reload.status).to eq("submitted")
-    expect(order).to be_fully_paid
+    it "still lets the cashier reprint the receipt from the order page" do
+      post print_receipt_pos_order_path(order)
+      expect(PrintLog.where(order: order, print_type: "receipt")).to exist
+    end
   end
 
   it "prints nothing for a part payment" do
@@ -75,18 +89,9 @@ RSpec.describe "Printing when a payment settles the bill", type: :request do
       .and not_have_enqueued_job(Printing::DispatchProductionPrintsJob)
   end
 
-  describe "the payment modal" do
-    it "starts Kitchen / bar unticked, with the time, once the tickets have gone out" do
-      order.update_column(:kitchen_sent_at, Time.zone.local(2026, 11, 9, 14, 32))
-      get pos_order_path(order)
-
-      expect(response.body).to include('data-payment-kitchen-sent-value="true"')
-      expect(response.body).to include(I18n.t("payment.kitchen_sent_at", time: I18n.l(order.reload.kitchen_sent_at, format: :short_time)))
-    end
-
-    it "carries no sent marker for an order never sent" do
-      get pos_order_path(order)
-      expect(response.body).to include('data-payment-kitchen-sent-value="false"')
-    end
+  it "offers no print choices in the payment modal" do
+    get pos_order_path(order)
+    expect(response.body).not_to include("printReceipt")
+    expect(response.body).not_to include("printProduction")
   end
 end

@@ -40,6 +40,17 @@ RSpec.describe "Print recovery and retry", type: :request do
       expect(ids).not_to include(log.id)
     end
 
+    # A register with a dead print agent leaves shared tickets to the others for a
+    # while; it needs to know which jobs are shared and how long they have waited.
+    it "says whether a job is shared across the branch and how long it has waited" do
+      log.update_columns(updated_at: 50.seconds.ago)
+
+      get pending_pos_print_logs_path(client_id: "register-a")
+      job = JSON.parse(response.body).find { |j| j["id"] == log.id }
+      expect(job).to include("shared" => true)
+      expect(job["age"]).to be_between(49, 60)
+    end
+
     it "offers a retried job even when it was first created long ago" do
       log.update_columns(status: "failed", created_at: 5.hours.ago, updated_at: 5.hours.ago)
       log.requeue!

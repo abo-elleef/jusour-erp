@@ -13,10 +13,12 @@
 const PAPER_PX = { 42: 576, 32: 384 }
 const BASE_PX = 26
 const LINE_GAP = 8
-// Kitchen/station tickets: rows sit further from the paper edge and the quantity is
-// bold and larger — Document::PAD_DOTS / ArabicImageRenderer::BOLD_VALUE_PT.
+// Kitchen/station tickets: rows sit further from the paper edge, the item name is
+// bold and larger and the quantity larger still — Document::PAD_DOTS and
+// ArabicImageRenderer::BOLD_LABEL_PT / BOLD_VALUE_PT.
 const TICKET_PAD_PX = 32
-const BOLD_VALUE_PX = 32
+const BOLD_LABEL_PX = 32
+const BOLD_VALUE_PX = 40
 // Line height as a multiple of the text size: 2 for receipts, 1.5 for compact
 // kitchen tickets — ArabicImageRenderer::DEFAULT/COMPACT_LINE_FACTOR.
 const DEFAULT_LINE_FACTOR = 2
@@ -84,35 +86,49 @@ export class EscposDocument {
   }
 
   // Label on the reading-start side, value on the other (mirrored for RTL).
-  row(label, value = "", { padded = false, boldValue = false, valueColumn = false } = {}) {
+  // boldLabel / boldValue: that side bold and larger (ticket item rows). A bold label
+  // in the value column wraps onto further rows, the value staying on the first —
+  // TicketItemsTable#compose_items_table on the Rails side.
+  row(label, value = "", { padded = false, boldValue = false, boldLabel = false, valueColumn = false } = {}) {
     const size = BASE_PX
     const pad = padded ? TICKET_PAD_PX : 8
+    const labelSize = boldLabel ? BOLD_LABEL_PX : size
     const valueSize = boldValue ? BOLD_VALUE_PX : size
-    // The value is drawn bold by switching emphasis on just for it.
-    const asValue = (fn) => {
+    // Each side is drawn bold by switching emphasis on just for it.
+    const emphasised = (on, fn) => {
       const was = this.emphasis
-      if (boldValue) this.emphasis = true
+      if (on) this.emphasis = true
       const result = fn()
       this.emphasis = was
       return result
     }
-    this.drawBlock(1, size, (ctx, y) => {
+    const asValue = (fn) => emphasised(boldValue, fn)
+    const asLabel = (fn) => emphasised(boldLabel, fn)
+    const heightFor = (text) => Math.max(labelSize, boldValue && String(text) !== "" ? valueSize : size)
+
+    if (valueColumn) {
+      // Value centred in its column (35% of the paper); the label gets the other 65%.
+      const split = Math.round(this.px * VALUE_COLUMN_SHARE)
+      const valueBox = this.rtl ? { x0: 0, x1: split } : { x0: this.px - split, x1: this.px }
+      const labelBox = this.rtl ? { x0: split + 12, x1: this.px - pad } : { x0: pad, x1: this.px - split - 12 }
+      const lines = boldLabel ? asLabel(() => this.wrap(String(label), labelBox.x1 - labelBox.x0, labelSize)) : [label]
+      lines.forEach((line, i) => {
+        const rowValue = i === 0 ? value : ""
+        this.drawBlock(1, heightFor(rowValue), (ctx, y) => {
+          asValue(() => this.fill(ctx, rowValue, { ...valueBox, align: "center", y, size: valueSize }))
+          asLabel(() => this.fill(ctx, line, { ...labelBox, align: this.rtl ? "right" : "left", y, size: labelSize }))
+        })
+      })
+      return
+    }
+    this.drawBlock(1, heightFor(value), (ctx, y) => {
       const valueWidth = asValue(() => this.measure(String(value), valueSize))
-      if (valueColumn) {
-        // Value centred in its column (35% of the paper); the label gets the other 65%.
-        const split = Math.round(this.px * VALUE_COLUMN_SHARE)
-        const valueBox = this.rtl ? { x0: 0, x1: split } : { x0: this.px - split, x1: this.px }
-        asValue(() => this.fill(ctx, value, { ...valueBox, align: "center", y, size: valueSize }))
-        const labelBox = this.rtl ? { x0: split + 12, x1: this.px - pad } : { x0: pad, x1: this.px - split - 12 }
-        this.fill(ctx, label, { ...labelBox, align: this.rtl ? "right" : "left", y, size })
-        return
-      }
       const labelBox = this.px - 2 * pad - valueWidth - 12
       if (this.rtl) {
         asValue(() => this.fill(ctx, value, { x0: pad, x1: this.px - pad, align: "left", y, size: valueSize }))
-        this.fill(ctx, label, { x0: this.px - pad - labelBox, x1: this.px - pad, align: "right", y, size })
+        asLabel(() => this.fill(ctx, label, { x0: this.px - pad - labelBox, x1: this.px - pad, align: "right", y, size: labelSize }))
       } else {
-        this.fill(ctx, label, { x0: pad, x1: pad + labelBox, align: "left", y, size })
+        asLabel(() => this.fill(ctx, label, { x0: pad, x1: pad + labelBox, align: "left", y, size: labelSize }))
         asValue(() => this.fill(ctx, value, { x0: pad, x1: this.px - pad, align: "right", y, size: valueSize }))
       }
     })
@@ -455,7 +471,7 @@ export function buildProductionTicket(order, items, title, { labels, rtl, widthC
   doc.row(r.item, r.qty, { padded: true, valueColumn: true })
   doc.separator()
   items.forEach((line) => {
-    doc.row(line.name, String(line.quantity), { padded: true, boldValue: true, valueColumn: true })
+    doc.row(line.name, String(line.quantity), { padded: true, boldValue: true, boldLabel: true, valueColumn: true })
     // Every modifier and the note on one line — TicketItemsTable#detail_lines.
     const detail = ticketDetail(line)
     if (detail) doc.modifier(detail, { columns: 2, padded: true })

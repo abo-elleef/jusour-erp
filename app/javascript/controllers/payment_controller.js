@@ -1,62 +1,16 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["tipInput", "tipHidden", "terminalStatus", "printReceipt", "printProduction",
-                    "deliveryFee", "due", "amount"]
-  static values = { orderTotal: Number, kitchenSent: Boolean, baseDue: Number, dueTemplate: String }
-
-  // The modal is re-rendered on every cart change, so the print choices are restored
-  // from this device's storage each time it connects.
-  connect() {
-    if (this.hasPrintReceiptTarget) {
-      this.printReceiptTarget.checked = this.readChoice("receipt")
-    }
-    if (this.hasPrintProductionTarget) {
-      // Tickets already went to the kitchen: default to not sending them again.
-      this.printProductionTarget.checked = this.kitchenSentValue ? false : this.readChoice("production")
-    }
-  }
-
-  readChoice(name) {
-    try {
-      return window.localStorage.getItem(`pos.print.${name}`) !== "0"
-    } catch (_e) {
-      return true
-    }
-  }
-
-  writeChoice(name, on) {
-    try {
-      window.localStorage.setItem(`pos.print.${name}`, on ? "1" : "0")
-    } catch (_e) { /* storage unavailable: the choice still applies to this sale */ }
-  }
-
-  rememberPrintChoices() {
-    if (this.hasPrintReceiptTarget) this.writeChoice("receipt", this.printReceiptTarget.checked)
-    // For an already-sent order the kitchen tick is a one-off, not a new default.
-    if (this.hasPrintProductionTarget && !this.kitchenSentValue) {
-      this.writeChoice("production", this.printProductionTarget.checked)
-    }
-  }
+  static targets = ["tipInput", "tipHidden", "terminalStatus", "deliveryFee", "due", "amount"]
+  static values = { orderTotal: Number, baseDue: Number, dueTemplate: String }
 
   // Runs for any of the payment forms (submit events bubble to the modal root).
-  addPrintChoices(event) {
+  addDeliveryFee(event) {
     const form = event.target
     if (!(form instanceof HTMLFormElement)) return
-    // Only payments print; saving the delivery fee on its own is not one.
+    // The form that saves the fee on its own has its own fee field.
     if (!form.querySelector('input[name="payment_method"]')) return
-    form.querySelectorAll("input[data-print-choice]").forEach((el) => el.remove())
-    const add = (name, target) => {
-      if (!target) return
-      const input = document.createElement("input")
-      input.type = "hidden"
-      input.name = name
-      input.value = target.checked ? "1" : "0"
-      input.dataset.printChoice = "1"
-      form.appendChild(input)
-    }
-    add("print_receipt", this.hasPrintReceiptTarget ? this.printReceiptTarget : null)
-    add("print_production", this.hasPrintProductionTarget ? this.printProductionTarget : null)
+    form.querySelectorAll("input[data-delivery-fee]").forEach((el) => el.remove())
 
     // The delivery fee is typed once at the top and rides along with whichever
     // payment is submitted. A staff meal is charged the order as it stands.
@@ -66,7 +20,7 @@ export default class extends Controller {
       input.type = "hidden"
       input.name = "delivery_fee_pounds"
       input.value = (this.deliveryFeeCents() / 100).toFixed(2)
-      input.dataset.printChoice = "1"
+      input.dataset.deliveryFee = "1"
       form.appendChild(input)
     }
   }

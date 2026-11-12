@@ -79,11 +79,17 @@ class PrintLog < ApplicationRecord
   def stream_name
     company = company_id
     location = order&.location_id || cash_drawer_session&.location_id
-    register = order&.workstation_id if print_type == "receipt"
-    register = workstation_id if print_type == "drawer_close"
+    register = addressed_register_id
     return "pos_prints_#{company}" if location.blank?
 
     register.present? ? "pos_prints_#{company}_#{location}_#{register}" : "pos_prints_#{company}_#{location}"
+  end
+
+  # A shared job (kitchen, bar, expo tickets, a drawer slip that names no register)
+  # is announced to every register at the branch and any one of them may print it.
+  # A register whose print agent is down must leave these to the others.
+  def shared?
+    addressed_register_id.blank?
   end
 
   # Put a failed job back in the queue and tell the registers. The bytes are rebuilt
@@ -113,6 +119,13 @@ class PrintLog < ApplicationRecord
   end
 
   private
+
+  def addressed_register_id
+    case print_type
+    when "receipt" then order&.workstation_id
+    when "drawer_close" then workstation_id
+    end
+  end
 
   def belongs_to_one_subject
     return if order_id.present? ^ cash_drawer_session_id.present?

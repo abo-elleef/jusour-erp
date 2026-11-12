@@ -15,7 +15,12 @@ module Pos
                         .where("print_logs.updated_at > ?", 2.hours.ago)
                         .claimable_by(params[:client_id])
 
-      render json: logs.map { |l| { id: l.id, order_id: l.order_id } }
+      # age: seconds since it was queued (a pending job is only touched when queued),
+      # measured here so a register's own clock doesn't matter.
+      jobs = logs.includes(:order).map do |l|
+        { id: l.id, order_id: l.order_id, shared: l.shared?, age: (Time.current - l.updated_at).to_i }
+      end
+      render json: jobs
     end
 
     # Jobs that failed and still need a person: feeds the "N prints failed" pill.

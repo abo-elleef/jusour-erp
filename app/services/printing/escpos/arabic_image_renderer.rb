@@ -18,10 +18,13 @@ module Printing
     module ArabicImageRenderer
       PAPER_PX_WIDTH = { 42 => 576, 32 => 384 }.freeze
       FONT_SIZE_PT   = 26
-      # Kitchen/station tickets: a bolder, slightly larger quantity so the cook reads
-      # it at a glance. Drawn with a thin outline because only the regular weight of
-      # the font is bundled.
-      BOLD_VALUE_PT     = 32
+      # Kitchen/station item rows: the item name bold and larger than receipt text,
+      # the quantity larger still, so the cook reads both at a glance. Drawn with a
+      # thin outline because only the regular weight of the font is bundled. At
+      # BOLD_LABEL_PT a 30-character name still clears the quantity column; longer
+      # names are wrapped by TicketItemsTable.
+      BOLD_LABEL_PT     = 32
+      BOLD_VALUE_PT     = 40
       BOLD_STROKE_WIDTH = "1.2"
       # Image line height as a multiple of the point size. 2 is the receipt's airy
       # default; kitchen/station tickets use COMPACT_LINE_FACTOR to save paper.
@@ -64,10 +67,11 @@ module Printing
       # Returns raw ESC/POS bytes for a receipt row as a single image:
       # Arabic label on the right, LTR value (price/qty) on the left.
       # pad: distance in dots from each paper edge. bold_value: draw the value bolder
-      # and larger (ticket quantities).
+      # and larger (ticket quantities); bold_label: the same for the label (ticket
+      # item names). The image grows to fit the larger text.
       # value_center_x: centre the value on this x (dots from the left) instead of
       # pinning it to the edge — the quantity column on kitchen tickets.
-      def render_row(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false,
+      def render_row(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false, bold_label: false,
                      line_factor: DEFAULT_LINE_FACTOR, value_center_x: nil)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
@@ -76,9 +80,9 @@ module Printing
         pbm = render_pbm_multi(
           [
             value_annotation(ltr_value, px_width, pad, bold_value, value_center_x),
-            { gravity: "East", offset: "+#{pad}+0", text: arabic_label.to_s.strip }
+            label_annotation(arabic_label, pad, bold_label)
           ],
-          px_width, font, height: line_height(FONT_SIZE_PT, line_factor)
+          px_width, font, height: row_height(ltr_value, bold_value, bold_label, line_factor)
         )
         pbm ? pbm_to_escpos(pbm) : nil
       end
@@ -164,7 +168,7 @@ module Printing
       end
 
       # Same as render_row but returns a Base64-encoded PNG string.
-      def render_row_png(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false,
+      def render_row_png(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false, bold_label: false,
                          line_factor: DEFAULT_LINE_FACTOR, value_center_x: nil)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
@@ -172,10 +176,10 @@ module Printing
 
         run_to_png([
           im_command,
-          "-size", "#{px_width}x#{line_height(FONT_SIZE_PT, line_factor)}", "xc:white",
+          "-size", "#{px_width}x#{row_height(ltr_value, bold_value, bold_label, line_factor)}", "xc:white",
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
           *annotate_args(value_annotation(ltr_value, px_width, pad, bold_value, value_center_x)),
-          *annotate_args({ gravity: "East", offset: "+#{pad}+0", text: arabic_label.to_s.strip })
+          *annotate_args(label_annotation(arabic_label, pad, bold_label))
         ])
       end
 
@@ -329,17 +333,33 @@ module Printing
       # value_center_x (Center gravity offsets are measured from the middle).
       def value_annotation(value, px_width, pad, bold, value_center_x)
         offset = value_center_x ? format("%+d+0", value_center_x - (px_width / 2)) : "+#{pad}+0"
-        { gravity: value_center_x ? "Center" : "West", offset: offset, text: value.to_s, bold: bold }
+        { gravity: value_center_x ? "Center" : "West", offset: offset, text: value.to_s, bold: bold,
+          pt: BOLD_VALUE_PT }
       end
 
-      # One text annotation. bold: a thicker, larger glyph, then the defaults are put
-      # back so later annotations draw as before. A plain annotation produces exactly
-      # the arguments it always did, so receipt images keep their cache keys.
+      # The label side of a row, pinned `pad` dots from the right edge.
+      def label_annotation(label, pad, bold)
+        { gravity: "East", offset: "+#{pad}+0", text: label.to_s.strip, bold: bold, pt: BOLD_LABEL_PT }
+      end
+
+      # Tall enough for the largest text on the row. A plain row keeps the height it
+      # always had.
+      def row_height(value, bold_value, bold_label, line_factor)
+        pt = FONT_SIZE_PT
+        pt = BOLD_LABEL_PT if bold_label
+        pt = BOLD_VALUE_PT if bold_value && value.to_s.strip.present?
+        line_height(pt, line_factor)
+      end
+
+      # One text annotation. bold: a thicker glyph at the annotation's own size (pt),
+      # then the defaults are put back so later annotations draw as before. A plain
+      # annotation produces exactly the arguments it always did, so receipt images
+      # keep their cache keys.
       def annotate_args(ann)
         args = ["-gravity", ann[:gravity], "-annotate", ann.fetch(:offset, "+0+0"), ann[:text]]
         return args unless ann[:bold]
 
-        ["-pointsize", BOLD_VALUE_PT.to_s, "-stroke", "black", "-strokewidth", BOLD_STROKE_WIDTH,
+        ["-pointsize", ann.fetch(:pt, BOLD_VALUE_PT).to_s, "-stroke", "black", "-strokewidth", BOLD_STROKE_WIDTH,
          *args,
          "-stroke", "none", "-strokewidth", "1", "-pointsize", FONT_SIZE_PT.to_s]
       end
