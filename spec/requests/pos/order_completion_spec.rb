@@ -197,8 +197,10 @@ RSpec.describe "POS order completion", type: :request do
   end
 
   describe "the receipt" do
-    it "prints when the order is paid off, not when it is completed" do
-      order = open_order
+    # Paid straight from the cart: the payment places the order and prints. (An
+    # order placed earlier printed then; its payment prints nothing.)
+    it "prints when a cart is paid off, not when it is completed" do
+      order = open_order(status: "draft")
       open_drawer_for(cashier)
 
       expect {

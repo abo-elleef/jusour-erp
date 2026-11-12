@@ -1,5 +1,6 @@
 <%# locals: print_log:, order: nil — a drawer slip has no order %>
 <div data-client-printer-target="job"
      data-print-log-id="<%= print_log.id %>"
+     data-shared="<%= print_log.shared? %>"
      <% if local_assigns[:order] %>data-order-id="<%= order.id %>"<% end %>>
 </div>

@@ -4,6 +4,13 @@ const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 2000
 const POLL_INTERVAL_MS = 10000
 const OUTBOX_KEY = "saqr_print_outbox"
+// A register whose print agent does not answer leaves shared tickets (kitchen, bar,
+// expo) to the registers that can print them. Only once a ticket has waited this
+// long with nobody printing it does such a register take it, and fail it, so the
+// failure shows up for a cashier instead of the ticket waiting silently.
+const SHARED_GRACE_SECONDS = 45
+const HEALTH_TTL_MS = 5000
+const HEALTH_TIMEOUT_MS = 2000
 
 // Module scope on purpose. Turbo replaces the page body on every navigation, which
 // builds a fresh controller; if the queue and the in-flight set lived on the
@@ -11,6 +18,7 @@ const OUTBOX_KEY = "saqr_print_outbox"
 // print it a second time.
 const inFlight = new Set()
 let jobQueue = Promise.resolve()
+let agentHealth = null // { ok, at }
 
 export default class extends Controller {
   static targets = ["queue", "job"]
@@ -370,14 +378,15 @@ export default class extends Controller {
 
   jobTargetConnected(element) {
     if (!this.configValue?.client_routing) return
-    this.enqueueJob(element.dataset.printLogId, element)
+    // A broadcast job has only just been queued.
+    this.enqueueJob(element.dataset.printLogId, element, { shared: element.dataset.shared === "true", age: 0 })
   }
 
   // Serial queue: each job waits for the previous to finish
-  enqueueJob(printLogId, element) {
+  enqueueJob(printLogId, element, meta = {}) {
     if (!printLogId || inFlight.has(printLogId)) return
     inFlight.add(printLogId)
-    jobQueue = jobQueue.then(() => this.processJob(printLogId, element))
+    jobQueue = jobQueue.then(() => this.processJob(printLogId, element, meta))
   }
 
   // Stable for this browser tab, so a retry (or a page change mid-print) is recognised
@@ -398,11 +407,16 @@ export default class extends Controller {
   // Every register at the branch hears about a shared job, but only one may print it.
   // Fetching the payload is what claims it; losing the claim means another register
   // is printing it, so stand down quietly — no retry, no "failed" report.
-  async processJob(printLogId, element) {
+  async processJob(printLogId, element, { shared = false, age = 0 } = {}) {
     const done = () => {
       element?.remove()
       inFlight.delete(printLogId)
     }
+
+    // Without a working agent this register would claim the ticket and then fail
+    // it, while a register next to it could have printed it. Stand aside; the
+    // job stays pending and the next sweep offers it again.
+    if (shared && age < SHARED_GRACE_SECONDS && !(await this.agentHealthy())) return done()
 
     let payload
     for (let attempt = 1; ; attempt++) {
@@ -460,11 +474,29 @@ export default class extends Controller {
       if (!response.ok) return
       const jobs = await response.json()
       for (const job of jobs) {
-        this.enqueueJob(job.id, null)
+        this.enqueueJob(job.id, null, { shared: job.shared === true, age: job.age || 0 })
       }
     } catch (_e) {
       // Recovery is best-effort; silent fail
     }
+  }
+
+  // Is the print agent on this machine answering? Cached briefly, and bounded by a
+  // timeout so a dead agent cannot stall the print queue.
+  async agentHealthy() {
+    if (agentHealth && Date.now() - agentHealth.at < HEALTH_TTL_MS) return agentHealth.ok
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS)
+    let ok = false
+    try {
+      ok = Boolean(await this.agentFetch("/health", { signal: controller.signal }))
+    } catch (_e) {
+      ok = false
+    } finally {
+      clearTimeout(timer)
+    }
+    agentHealth = { ok, at: Date.now() }
+    return ok
   }
 
   sleep(ms) {

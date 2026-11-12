@@ -7,10 +7,9 @@
 <% due_template = t("payment.due", amount: format_money(0).sub(format_amount(0), "__N__")) %>
 <div class="bg-white rounded-2xl border border-gray-200 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto text-gray-900"
      data-controller="payment" data-payment-order-total-value="<%= total %>"
-     data-payment-kitchen-sent-value="<%= order.kitchen_sent_at.present? %>"
      data-payment-base-due-value="<%= fee_editable ? due - order.delivery_fee_cents : due %>"
      data-payment-due-template-value="<%= due_template %>"
-     data-action="submit->payment#addPrintChoices">
+     data-action="submit->payment#addDeliveryFee">
   <div class="flex justify-between items-center mb-4">
     <h3 class="text-xl font-bold tracking-tight text-gray-900"><%= t("payment.title") %></h3>
     <% if local_assigns[:checkout] %>
@@ -24,7 +23,7 @@
 
   <% if order.delivery? %>
     <%# Delivery fees vary order to order, so the cashier types this one's here.
-        Every payment form carries it (see payment#addPrintChoices). %>
+        Every payment form carries it (see payment#addDeliveryFee). %>
     <section class="rounded-2xl border border-sky-200 bg-sky-50/60 p-4 mb-4">
       <label for="delivery_fee_pounds_input" class="block text-xs font-semibold text-sky-800 mb-1.5"><%= t("payment.delivery_fee") %></label>
       <% if fee_editable %>
@@ -55,28 +54,6 @@
       <% end %>
     </section>
   <% end %>
-
-  <%# What to print once this payment settles the bill. Both are remembered on this
-      device; the choice rides along with whichever payment form is submitted. %>
-  <div class="flex flex-wrap gap-x-5 gap-y-2 mb-4 text-sm text-gray-800">
-    <label class="inline-flex items-center gap-2 cursor-pointer">
-      <input type="checkbox" checked class="w-4 h-4 rounded border-gray-300 text-green-700"
-             data-payment-target="printReceipt" data-action="change->payment#rememberPrintChoices">
-      <%= t("payment.print_receipt") %>
-    </label>
-    <%# Only an order not yet placed goes to the kitchen when paid; a placed one
-        already has its tickets (FinalizePaidService submits drafts only). %>
-    <% if order.draft? %>
-    <label class="inline-flex items-center gap-2 cursor-pointer">
-      <input type="checkbox" checked class="w-4 h-4 rounded border-gray-300 text-green-700"
-             data-payment-target="printProduction" data-action="change->payment#rememberPrintChoices">
-      <%= t("payment.print_production") %>
-      <% if order.kitchen_sent_at.present? %>
-        <span class="text-xs text-gray-500"><%= t("payment.kitchen_sent_at", time: l(order.kitchen_sent_at, format: :short_time)) %></span>
-      <% end %>
-    </label>
-    <% end %>
-  </div>
 
   <%# Tips hidden — not accepted currently %>
 
