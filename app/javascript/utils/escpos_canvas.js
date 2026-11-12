@@ -380,14 +380,18 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   doc.text(stamp(order.created_at))
   doc.bold()
   doc.doubleHeight()
-  doc.text(`${labels.order_type}: ${fulfillmentText(order, labels)}`)
+  doc.text(fulfillmentText(order, labels))
   doc.doubleHeight(false)
   doc.bold(false)
   if (order.order_type === "delivery") {
     // Who it is going to and where — what the courier needs from the bag's receipt.
     doc.blank()
     if (order.customer_name) doc.text(order.customer_name)
+    doc.bold()
+    doc.doubleHeight()
     doc.text(order.customer_phone)
+    doc.doubleHeight(false)
+    doc.bold(false)
     doc.text(order.delivery_address)
   }
   doc.blank()
@@ -414,7 +418,7 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   doc.bold(false)
 
   doc.text(r.payments)
-  doc.row(`  ${labels.cash}`, money(order.tendered_cents))
+  doc.row(`  ${labels.cash}`, money(order.tendered_cents), { boldLabel: true })
   const change = order.tendered_cents - totals.total_cents
   if (change > 0) doc.row(r.change, money(change))
   doc.separator()

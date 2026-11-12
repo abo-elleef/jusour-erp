@@ -41,13 +41,18 @@ module Printing
         doc.text(@order.created_at.strftime("%d/%m/%Y %I:%M %p"))
         doc.bold
         doc.double_height
-        doc.text(order_type_line)
+        doc.text(@order.fulfillment_summary)
         doc.double_height(false)
         doc.bold(false)
         if @order.customer
           doc.blank
           doc.text(@order.customer.display_name) if @order.customer.name.present?
+          # Bold and double height so the courier/dispatcher reads the number at a glance.
+          doc.bold
+          doc.double_height
           @order.customer.contact_phones.each { |p| doc.text(p) }
+          doc.double_height(false)
+          doc.bold(false)
         end
         # Where the courier has to go — the order's own address, not the customer's list.
         doc.text(@order.delivery_address) if @order.delivery? && @order.delivery_address.present?
@@ -137,10 +142,6 @@ module Printing
         Money.new(cents.to_i).format(symbol: false)
       end
 
-      def order_type_line
-        "#{I18n.t('order.labels.order_type')}: #{@order.fulfillment_summary}"
-      end
-
       def compose_payments(doc)
         payments = @order.payments.where(status: "completed").order(:created_at)
         return if payments.none?
@@ -148,7 +149,7 @@ module Printing
         doc.text(I18n.t("printing.receipt.payments"))
         payments.each do |payment|
           label = I18n.t("payment.methods.#{payment.payment_method}", default: payment.payment_method.humanize)
-          doc.row("  #{label}", format_money(payment.amount_cents))
+          doc.row("  #{label}", format_money(payment.amount_cents), bold_label: true)
         end
       end
 

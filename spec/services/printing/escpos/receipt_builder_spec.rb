@@ -73,7 +73,8 @@ RSpec.describe Printing::Escpos::ReceiptBuilder do
   it "includes translated order type and payment method" do
     I18n.with_locale(:en) do
       entries = described_class.new(order, printer: printer).build_debug.entries.map { |e| e[:content] || e[:left] }.compact
-      expect(entries).to include(a_string_matching(/Order type:.*Delivery/i))
+      expect(entries).to include(a_string_matching(/\ADelivery/i))
+      expect(entries.join(" ")).not_to match(/Order type/i)
       expect(entries).to include(a_string_matching(/Payments/i))
       expect(entries.join(" ")).to match(/Cash/)
     end
@@ -82,7 +83,8 @@ RSpec.describe Printing::Escpos::ReceiptBuilder do
   it "translates order type and payment method for Arabic locale" do
     I18n.with_locale(:ar) do
       entries = described_class.new(order, printer: printer).build_debug.entries.map { |e| e[:content] || e[:left] }.compact
-      expect(entries).to include(a_string_matching(/نوع الطلب:.*دليفري/))
+      expect(entries).to include(a_string_matching(/\Aدليفري/))
+      expect(entries.join(" ")).not_to match(/نوع الطلب/)
       expect(entries).to include(a_string_matching(/المدفوعات/))
       expect(entries.join(" ")).to match(/نقدي/)
     end

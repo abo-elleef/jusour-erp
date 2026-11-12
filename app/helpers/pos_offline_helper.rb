@@ -11,7 +11,6 @@ module PosOfflineHelper
       ticket: I18n.t("printing.ticket"),
       order_notes: I18n.t("printing.receipt.order_notes"),
       fulfillment: I18n.t("order.fulfillment"),
-      order_type: I18n.t("order.labels.order_type"),
       cash: I18n.t("payment.methods.cash"),
       all: I18n.t("actions.all"),
       combos: I18n.t("pos.categories.combos"),
