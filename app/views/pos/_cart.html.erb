@@ -1,6 +1,12 @@
 <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
   <div class="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 min-h-0 overscroll-contain"
        data-controller="cart-scroll" data-cart-scroll-lines-value="<%= order.order_items.size %>">
+    <% if order.editing_placed? %>
+      <div class="rounded-2xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+        <p class="font-semibold"><%= t("pos.cart.editing_placed_title", number: order.order_number) %></p>
+        <p class="text-xs mt-0.5"><%= t("pos.cart.editing_placed_hint") %></p>
+      </div>
+    <% end %>
     <% if order.order_items.empty? %>
       <div class="flex flex-col items-center justify-center py-10 px-4 text-center">
         <div class="w-12 h-12 rounded-full bg-stone-200/70 flex items-center justify-center mb-3">

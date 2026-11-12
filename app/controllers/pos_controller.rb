@@ -91,14 +91,21 @@ class PosController < ApplicationController
     redirect_to pos_path, notice: t("flash.pos.workstation_changed", name: workstation.name), status: :see_other
   end
 
+  # Place order (or, for an order a manager unlocked, place it again): prints the
+  # receipt and every station ticket, locks the items and clears the register.
   def submit
     order = current_draft_order
     return redirect_to pos_path, alert: t("flash.pos.no_active_order"), status: :see_other unless order
+    if order.order_items.empty?
+      return redirect_to pos_path, alert: t("pos.cart.empty"), status: :see_other
+    end
 
     authorize order, :submit?
-    Orders::SubmitService.call(order)
+    replacing = order.editing_placed?
+    Orders::PlaceService.call(order, user: current_user)
     session.delete(:current_order_id)
-    redirect_to pos_path, notice: t("flash.pos.sent_to_kitchen"), status: :see_other
+    notice = replacing ? t("flash.pos.order_replaced", number: order.order_number) : t("flash.pos.order_placed", number: order.order_number)
+    redirect_to pos_path, notice: notice, status: :see_other
   rescue Orders::SubmitService::InvalidFulfillment => e
     redirect_to pos_path, alert: e.message, status: :see_other
   end
@@ -219,7 +226,7 @@ class PosController < ApplicationController
   def current_draft_order
     return unless session[:current_order_id]
 
-    Order.find_by(id: session[:current_order_id], status: "draft")
+    Order.cart_editable.find_by(id: session[:current_order_id])
   end
 
   # Persists the pending order if it hasn't been saved yet (e.g. when the cashier

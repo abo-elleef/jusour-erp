@@ -49,6 +49,12 @@ class OrderPolicy < ApplicationPolicy
     update?
   end
 
+  # The branch PIN is the real gate (Pos::OrdersController#unlock_edit); this only
+  # keeps the button to the people at the register.
+  def unlock_edit?
+    user.can_access_pos? && (record.editing_placed? || record.unlockable_for_edit?)
+  end
+
   # Deliberately not conditional on payment: an order handed over now and settled
   # later is exactly what this is for. It stays on Collect Payment either way.
   def complete?

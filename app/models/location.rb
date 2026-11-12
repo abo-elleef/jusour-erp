@@ -37,6 +37,7 @@ class Location < ApplicationRecord
   validates :table_count, numericality: { only_integer: true, in: 1..200, allow_nil: true }
   validates :table_count, presence: true, if: :table_service?
   validates :business_day_mode, inclusion: { in: BusinessDay::MODES }
+  validate :edit_orders_pin_is_four_digits
 
   before_validation :generate_slug, if: -> { slug.blank? && name.present? }
   before_validation :normalize_business_day_start_hour
@@ -57,6 +58,50 @@ class Location < ApplicationRecord
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[name location_type active]
+  end
+
+  # One PIN per branch unlocks a placed order for changes at the register. Shared by
+  # whoever runs the floor, so it is checked against the branch, not a person; the
+  # audit log records which signed-in user typed it.
+  EDIT_ORDERS_PIN_MAX_ATTEMPTS = 5
+  EDIT_ORDERS_PIN_LOCKOUT = 5.minutes
+
+  # Write-only: the form field always comes back empty.
+  attr_reader :edit_orders_pin
+
+  def edit_orders_pin=(raw)
+    return if raw.blank?
+
+    @edit_orders_pin_raw = raw
+    self.edit_orders_pin_digest = BCrypt::Password.create(raw.to_s)
+  end
+
+  def edit_orders_pin_configured?
+    edit_orders_pin_digest.present?
+  end
+
+  def edit_orders_pin_locked?
+    edit_orders_pin_locked_until.present? && edit_orders_pin_locked_until.future?
+  end
+
+  # Counts failures like the payroll PIN: the fifth wrong one locks the PIN for a
+  # few minutes, during which every PIN is refused without being checked.
+  def verify_edit_orders_pin(raw)
+    return false unless edit_orders_pin_configured?
+    return false if edit_orders_pin_locked?
+
+    if edit_orders_pin_matches?(raw)
+      update_columns(edit_orders_pin_failed_attempts: 0, edit_orders_pin_locked_until: nil) if edit_orders_pin_failed_attempts.positive?
+      return true
+    end
+
+    attempts = edit_orders_pin_failed_attempts + 1
+    if attempts >= EDIT_ORDERS_PIN_MAX_ATTEMPTS
+      update_columns(edit_orders_pin_failed_attempts: 0, edit_orders_pin_locked_until: EDIT_ORDERS_PIN_LOCKOUT.from_now)
+    else
+      update_columns(edit_orders_pin_failed_attempts: attempts)
+    end
+    false
   end
 
   # The central kitchen production forms should default to. Falls back to the
@@ -119,6 +164,18 @@ class Location < ApplicationRecord
   end
 
   private
+
+  def edit_orders_pin_is_four_digits
+    return if @edit_orders_pin_raw.blank?
+
+    errors.add(:edit_orders_pin, :invalid) unless @edit_orders_pin_raw.to_s.match?(/\A\d{4}\z/)
+  end
+
+  def edit_orders_pin_matches?(raw)
+    BCrypt::Password.new(edit_orders_pin_digest) == raw.to_s
+  rescue BCrypt::Errors::InvalidHash
+    false
+  end
 
   def clear_public_menu_for_non_branches
     self.public_menu_enabled = false unless branch?

@@ -100,6 +100,9 @@ module Pos
     # cart while the kitchen never gets a ticket. Orders already submitted were
     # checked when they went to the kitchen.
     def require_submittable_order!
+      # An unlocked placed order is mid-edit: the kitchen has the old version. It is
+      # placed again first, so the money and the tickets agree.
+      return refuse_unsubmittable_order(t("flash.pos.finish_editing_first")) if @order.editing_placed?
       return unless @order.draft?
 
       Orders::SubmitService.validate_fulfillment!(@order)
