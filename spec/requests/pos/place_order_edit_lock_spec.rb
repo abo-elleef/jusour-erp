@@ -139,6 +139,49 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
     end
   end
 
+  describe "unlocking from the orders list" do
+    it "shows Edit items on each placed, unpaid row" do
+      order = place_new_order
+
+      get pos_orders_path(all: 1)
+
+      expect(response.body).to include(%(id="unlock-edit-dialog-#{order.id}"))
+      expect(response.body).to include(unlock_edit_pos_order_path(order))
+    end
+
+    it "shows Continue editing for a row already reopened, and nothing for one with a payment" do
+      reopened = place_new_order
+      reopened.update_columns(unlocked_for_edit_at: Time.current, unlocked_for_edit_by_id: cashier.id)
+      paid = place_new_order
+      create(:payment, order: paid, amount_cents: 100, status: "completed")
+
+      get pos_orders_path(all: 1)
+
+      expect(response.body).to include(I18n.t("pos.orders.continue_editing"))
+      expect(response.body).not_to include(%(id="unlock-edit-dialog-#{paid.id}"))
+    end
+
+    it "sends a wrong PIN back to the list, filters kept" do
+      order = place_new_order
+      list = pos_orders_path(order_type: order.order_type)
+
+      post unlock_edit_pos_order_path(order), params: { pin: "0000" }, headers: { "HTTP_REFERER" => list }
+
+      expect(response).to redirect_to(list)
+      expect(flash[:alert]).to eq(I18n.t("flash.pos.unlock.wrong_pin"))
+    end
+
+    it "opens the order in the register with the right PIN" do
+      order = place_new_order
+
+      post unlock_edit_pos_order_path(order), params: { pin: "4321" },
+                                              headers: { "HTTP_REFERER" => pos_orders_path }
+
+      expect(response).to redirect_to(pos_path)
+      expect(session[:current_order_id]).to eq(order.id)
+    end
+  end
+
   describe "placing an edited order again" do
     it "relocks it, counts the edit, and prints everything again" do
       order = place_new_order

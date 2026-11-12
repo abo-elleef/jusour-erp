@@ -212,6 +212,9 @@ class Order < ApplicationRecord
   # No payment ever reached this order. Failed attempts don't count; a pending or
   # refunded one does, because money moved (or may yet), and that is a refund's job.
   def never_paid?
+    # The orders list preloads payments; use them rather than one query per row.
+    return payments.none? { |p| p.status != "failed" } if payments.loaded?
+
     payments.where.not(status: "failed").none?
   end
 

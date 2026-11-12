@@ -100,8 +100,10 @@ module Pos
         error = @order.with_lock do
           unlock_error(@order.location).tap { |reason| unlock! unless reason }
         end
+        # Back to wherever the PIN was typed: the order page, or the orders list
+        # (with its filters) when unlocking straight from a row.
         if error
-          return redirect_to pos_order_path(@order, from: params[:from]), alert: error, status: :see_other
+          return redirect_back_or_to pos_order_path(@order, from: params[:from]), alert: error, status: :see_other
         end
       end
 

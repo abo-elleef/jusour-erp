@@ -1,0 +1,49 @@
+<%# Items lock once the order is placed. The branch's edit-orders PIN reopens it
+    in the register; an order already reopened just goes back there.
+    Used on the order page and on every row of the orders list, so the dialog id
+    carries the order id. %>
+<% from = local_assigns[:from] %>
+<% if policy(order).unlock_edit? %>
+  <% if order.editing_placed? %>
+    <%= button_to unlock_edit_pos_order_path(order, from: from), method: :post,
+          form_class: "inline-flex",
+          class: "inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 px-3 py-1.5 rounded-xl transition-colors" do %>
+      <%= t("pos.orders.continue_editing") %>
+    <% end %>
+  <% else %>
+    <% dialog_id = "unlock-edit-dialog-#{order.id}" %>
+    <button type="button"
+            onclick="document.getElementById('<%= dialog_id %>').showModal()"
+            class="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800 hover:text-amber-900 px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 transition-colors">
+      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+      </svg>
+      <%= t("pos.orders.edit_items") %>
+    </button>
+    <dialog id="<%= dialog_id %>"
+            class="m-auto rounded-[28px] shadow-2xl border-0 p-0 w-[22rem] max-w-[95vw] backdrop:bg-black/50 backdrop:backdrop-blur-sm text-start"
+            onclick="if(event.target===this)this.close()">
+      <%= form_with url: unlock_edit_pos_order_path(order, from: from), method: :post,
+            class: "p-6 space-y-3", data: { turbo_frame: "_top" } do %>
+        <h3 class="text-lg font-bold text-gray-900"><%= t("pos.orders.unlock_title") %></h3>
+        <p class="text-sm text-gray-600">
+          <span class="font-semibold text-gray-900"><%= order.order_number %></span> ·
+          <%= t("pos.orders.unlock_hint") %>
+        </p>
+        <%= password_field_tag :pin, nil, maxlength: 4, pattern: "[0-9]{4}", inputmode: "numeric",
+              autocomplete: "off", required: true, autofocus: true,
+              id: "#{dialog_id}-pin",
+              placeholder: t("pos.manager_pin.placeholder"),
+              class: "#{pos_input_class} text-center text-2xl tracking-widest min-h-14" %>
+        <div class="flex gap-2">
+          <%= submit_tag t("pos.orders.unlock_confirm"),
+                class: "flex-1 min-h-11 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl" %>
+          <button type="button" onclick="this.closest('dialog').close()"
+                  class="min-h-11 px-4 rounded-xl border border-gray-200 font-semibold text-gray-700">
+            <%= t("pos.manager_pin.cancel") %>
+          </button>
+        </div>
+      <% end %>
+    </dialog>
+  <% end %>
+<% end %>

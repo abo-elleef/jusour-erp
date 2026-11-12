@@ -130,8 +130,11 @@
                   </td>
                   <td class="p-3 text-end font-bold text-green-700 tabular-nums"><%= format_money(order.amount_due_cents) %></td>
                   <td class="p-3 pe-5 text-end">
-                    <%= link_to t("actions.pay"), pos_order_path(order),
-                          class: "inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+                    <div class="inline-flex items-center justify-end gap-2">
+                      <%= render "pos/orders/edit_items_button", order: order %>
+                      <%= link_to t("actions.pay"), pos_order_path(order),
+                            class: "inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+                    </div>
                   </td>
                 </tr>
               <% end %>
