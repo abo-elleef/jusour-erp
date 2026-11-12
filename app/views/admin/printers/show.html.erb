@@ -135,8 +135,10 @@
 
   <% if @recent_print_logs&.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6">
-      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex items-center justify-between gap-4">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("printing.logs.title") %></h2>
+        <%= link_to t("printing.logs.view_all"), admin_print_logs_path(printer_id: @printer.id, status: "all"),
+              class: "text-xs font-semibold text-amber-700 hover:text-amber-800" %>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left text-sm min-w-[480px]">

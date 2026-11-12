@@ -220,6 +220,62 @@ en:
     searchable_select:
       no_results: "No matches"
 
+  print_logs:
+    index:
+      description: "Print jobs from every branch. Starts on failed tickets nobody has reprinted since."
+    stats:
+      unresolved: "Still failed"
+      failed: "All failed"
+      handled: "Printed by hand"
+      all: "All jobs"
+    status_filters:
+      unresolved: "Still failed (not reprinted)"
+      failed: "All failed"
+      handled: "Printed by hand"
+      pending: "Pending"
+      sent: "Printed"
+      skipped: "Skipped"
+      all: "All statuses"
+    filters:
+      title: "Filters"
+      from: "From"
+      to: "To"
+      all_branches: "All branches"
+      all_printers: "All printers"
+      all_types: "All ticket types"
+    fields:
+      time: "Time"
+      branch: "Branch"
+      subject: "Order / drawer"
+      type: "Ticket"
+      printer: "Printer"
+      status: "Status"
+      error: "Error"
+      actions: "Actions"
+    types:
+      receipt: "Receipt"
+      kitchen: "Kitchen"
+      bar: "Bar"
+      expo: "Expo"
+      pick_station: "Pick station"
+      station: "Station"
+      drawer_close: "Drawer closing slip"
+    subjects:
+      drawer: "Drawer closing"
+    no_printer: "No printer"
+    reprinted_later: "Reprinted later"
+    actions:
+      retry: "Retry"
+      retry_confirm: "Send this ticket back to the branch? It prints on the branch's open register."
+      handle: "Mark handled"
+      handle_confirm: "Mark this ticket as dealt with by hand? It will not be printed again."
+    flash:
+      retried: "Queued again. It prints when a register at the branch is open."
+      handled: "Marked as printed by hand."
+      not_failed: "This job is no longer failed."
+    empty:
+      title: "No print jobs match"
+      description: "Try a wider date range or another status."
   printers:
     index:
       description: "Receipt, kitchen, and bar printers used across the restaurant."
@@ -480,6 +536,7 @@ en:
       no_route: "No network route to %{host}:%{port}. Put the server and printer on the same LAN, disable guest-network isolation, and turn off VPN while testing."
     logs:
       title: "Recent print jobs"
+      view_all: "All print jobs for this printer"
       time: "Time"
       order: "Order"
       status: "Status"
@@ -503,6 +560,7 @@ en:
     staff: "Staff"
     settings: "Settings"
     printers: "Printers"
+    print_jobs: "Print jobs"
     workstations: "Registers"
     inventory: "Inventory"
     locations: "Locations"
@@ -4406,6 +4464,8 @@ en:
         edit: "Edit staff member"
       settings:
         title: "Settings"
+      print_logs:
+        title: "Print jobs"
       printers:
         title: "Printers"
         new: "New printer"

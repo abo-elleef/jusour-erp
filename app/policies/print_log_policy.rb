@@ -26,6 +26,16 @@ class PrintLogPolicy < ApplicationPolicy
     pos_access_same_company?
   end
 
+  # Admin "Print jobs" page: every branch's jobs, failed ones first.
+  def index?
+    admin?
+  end
+
+  # Retry or mark-as-handled from the admin page.
+  def manage?
+    admin? && record.company_id == user.company_id
+  end
+
   class Scope < Scope
     def resolve
       scope.left_joins(:order, :cash_drawer_session)
