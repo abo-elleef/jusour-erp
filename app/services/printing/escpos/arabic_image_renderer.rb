@@ -96,6 +96,10 @@ module Printing
         cmd = [
           im_command, source.to_s,
           "-resize", "#{px_width}x#{px_width / 2}>",
+          # Then cut away the white border in the uploaded file: it printed as blank
+          # paper above and below the logo. Trimming after the resize keeps the logo
+          # the size it always printed at; only the empty margin goes.
+          "-trim", "+repage",
           "-gravity", "Center",
           "-background", "white",
           "-extent", "#{px_width}x",
@@ -279,6 +283,10 @@ module Printing
         run_to_png([
           im_command, source.to_s,
           "-resize", "#{px_width}x#{px_width / 2}>",
+          # Then cut away the white border in the uploaded file: it printed as blank
+          # paper above and below the logo. Trimming after the resize keeps the logo
+          # the size it always printed at; only the empty margin goes.
+          "-trim", "+repage",
           "-gravity", "Center",
           "-background", "white",
           "-extent", "#{px_width}x"

@@ -56,8 +56,7 @@ module Printing
           doc.rule
         end
 
-        # The cut command already feeds the last line past the cutter.
-        doc.blank
+        # The cut command feeds the last line to the cutter itself; no blank lines.
         doc.cut
         doc
       end

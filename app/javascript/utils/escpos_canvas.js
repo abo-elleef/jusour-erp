@@ -72,9 +72,10 @@ export class EscposDocument {
     for (let i = 0; i < lines; i++) this.raw([0x0a])
   }
 
-  // Feed past the cutter, then cut — the same GS V 66 150 the server sends.
+  // Feed the last line to the cutter, then cut, with no extra blank paper — the
+  // same GS V 66 0 the server sends (Document#cut, CUT_EXTRA_FEED_DOTS).
   cut() {
-    this.raw([0x1d, 0x56, 0x42, 150])
+    this.raw([0x1d, 0x56, 0x42, 0])
   }
 
   text(line = "") {
@@ -431,7 +432,6 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   doc.blank()
   doc.align("center")
   doc.text(footer)
-  doc.blank(4)
   doc.cut()
   return doc.toBytes()
 }
@@ -493,8 +493,7 @@ export function buildProductionTicket(order, items, title, { labels, rtl, widthC
     doc.separator()
   }
 
-  // The cut command already feeds the last line past the cutter.
-  doc.blank()
+  // The cut command feeds the last line to the cutter itself; no blank lines.
   doc.cut()
   return doc.toBytes()
 }

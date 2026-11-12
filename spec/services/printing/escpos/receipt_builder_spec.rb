@@ -82,7 +82,7 @@ RSpec.describe Printing::Escpos::ReceiptBuilder do
   it "translates order type and payment method for Arabic locale" do
     I18n.with_locale(:ar) do
       entries = described_class.new(order, printer: printer).build_debug.entries.map { |e| e[:content] || e[:left] }.compact
-      expect(entries).to include(a_string_matching(/نوع الطلب:.*توصيل/))
+      expect(entries).to include(a_string_matching(/نوع الطلب:.*دليفري/))
       expect(entries).to include(a_string_matching(/المدفوعات/))
       expect(entries.join(" ")).to match(/نقدي/)
     end

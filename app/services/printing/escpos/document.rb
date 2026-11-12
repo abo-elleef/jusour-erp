@@ -155,11 +155,16 @@ module Printing
         @buffer << bytes.b if bytes
       end
 
-      # Feed enough paper to clear the print head → cutter gap (~20 mm),
-      # then perform a full cut. GS V 66 n feeds n × (paper motion unit) dots
-      # before cutting; 150 dots ≈ 19 mm at 203 dpi (8 dots/mm).
+      # Extra paper fed past the cutting position before the cut, in dots (8 dots/mm).
+      # GS V 66 n already moves the last printed line to the cutter on its own and
+      # only then feeds n more, so anything here is blank paper at the bottom of the
+      # ticket. It was 150 (~19 mm) and wasted paper on every print.
+      CUT_EXTRA_FEED_DOTS = 0
+
+      # Feed the last printed line to the cutter, then cut (GS V 66 n).
+      # Keep in step with cut() in app/javascript/utils/escpos_canvas.js.
       def cut
-        @buffer << GS << "V" << "\x42" << 150.chr
+        @buffer << GS << "V" << "\x42" << CUT_EXTRA_FEED_DOTS.chr
       end
 
       def to_bytes

@@ -89,7 +89,6 @@ module Printing
 
         doc.align(:center)
         doc.text("#{I18n.t('printing.drawer_close.printed')} #{time(Time.current)}")
-        doc.blank(4)
         doc.cut
         doc
       end
