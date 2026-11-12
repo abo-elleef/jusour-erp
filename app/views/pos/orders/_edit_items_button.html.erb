@@ -1,12 +1,12 @@
 <%# Items lock once the order is placed. The branch's edit-orders PIN reopens it
     in the register; an order already reopened just goes back there.
-    Used on the order page and on every row of the orders list, so the dialog id
-    carries the order id. %>
+    Used on the order page and on every row of Collect Payment and My Shift's
+    orders tab, so the dialog id carries the order id. %>
 <% from = local_assigns[:from] %>
 <% if policy(order).unlock_edit? %>
   <% if order.editing_placed? %>
     <%= button_to unlock_edit_pos_order_path(order, from: from), method: :post,
-          form_class: "inline-flex",
+          form_class: "inline-flex", form: { data: { turbo_frame: "_top" } },
           class: "inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 px-3 py-1.5 rounded-xl transition-colors" do %>
       <%= t("pos.orders.continue_editing") %>
     <% end %>

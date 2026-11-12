@@ -46,8 +46,11 @@
         <% end %>
       </div>
     <% else %>
-      <%= link_to t("actions.view"), pos_order_path(order, from: "shift"),
-            class: "inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+      <div class="inline-flex items-center justify-end gap-2">
+        <%= render "pos/orders/edit_items_button", order: order, from: "shift" %>
+        <%= link_to t("actions.view"), pos_order_path(order, from: "shift"),
+              class: "inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+      </div>
     <% end %>
   </td>
 </tr>

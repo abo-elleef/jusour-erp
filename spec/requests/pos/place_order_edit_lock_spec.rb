@@ -161,6 +161,18 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
       expect(response.body).not_to include(%(id="unlock-edit-dialog-#{paid.id}"))
     end
 
+    it "shows Edit items on My Shift's orders tab too, but not on a paid order" do
+      order = place_new_order
+      paid = place_new_order
+      create(:payment, order: paid, amount_cents: 100, status: "completed")
+
+      get pos_shift_path(tab: "orders", filter: "all")
+
+      expect(response.body).to include(%(id="unlock-edit-dialog-#{order.id}"))
+      expect(response.body).to include(unlock_edit_pos_order_path(order, from: "shift"))
+      expect(response.body).not_to include(%(id="unlock-edit-dialog-#{paid.id}"))
+    end
+
     it "sends a wrong PIN back to the list, filters kept" do
       order = place_new_order
       list = pos_orders_path(order_type: order.order_type)
