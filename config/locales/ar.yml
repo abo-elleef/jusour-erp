@@ -341,6 +341,7 @@ ar:
       tip: "الإكرامية"
       delivery_fee: "رسوم الدليفري"
       total: "الإجمالي"
+      total_without_delivery: "صافي الدفع"
       payments: "المدفوعات:"
       change: "الباقي"
       loyalty: "الولاء: %{points} نقطة"

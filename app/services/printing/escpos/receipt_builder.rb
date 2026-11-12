@@ -72,10 +72,22 @@ module Printing
         if @order.discount_cents.positive?
           doc.row(I18n.t("printing.receipt.discount"), "-#{format_money(@order.discount_cents)}")
         end
+        doc.row(I18n.t("printing.receipt.tip"), format_money(@order.tip_cents)) if @order.tip_cents.positive?
+
         if @order.delivery_fee_cents.positive?
+          # What the dispatcher takes from the driver on a cash delivery: the driver
+          # keeps the delivery fee out of what they collected (see
+          # Order#apply_delivery_fee!). It comes before the fee and the total, big and
+          # boxed in, so it is the first number the dispatcher's eye lands on.
+          if @order.delivery?
+            doc.separator
+            doc.row(I18n.t("printing.receipt.total_without_delivery"),
+                    format_money(@order.total_cents - @order.delivery_fee_cents),
+                    bold_label: true, bold_value: true)
+            doc.separator
+          end
           doc.row(I18n.t("printing.receipt.delivery_fee"), format_money(@order.delivery_fee_cents))
         end
-        doc.row(I18n.t("printing.receipt.tip"), format_money(@order.tip_cents)) if @order.tip_cents.positive?
 
         doc.bold
         doc.row(I18n.t("printing.receipt.total"), format_money(@order.total_cents))

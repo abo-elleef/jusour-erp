@@ -339,6 +339,7 @@ en:
       tip: "Tip"
       delivery_fee: "Delivery fee"
       total: "TOTAL"
+      total_without_delivery: "Total without delivery"
       payments: "Payments:"
       change: "Change"
       loyalty: "Loyalty: %{points} pts"

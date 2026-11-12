@@ -106,4 +106,40 @@ RSpec.describe Printing::Escpos::ReceiptBuilder do
       expect(details).not_to include("+ Double")
     end
   end
+
+  describe "total without delivery" do
+    def rows_for(record)
+      described_class.new(record.reload, printer: printer).build_debug.entries
+                     .select { |e| %i[text_row image_row].include?(e[:kind]) }
+                     .to_h { |e| [e[:left], e[:right]] }
+    end
+
+    it "shows the total minus the delivery fee, which the driver keeps" do
+      order.update_columns(delivery_fee_cents: 300, total_cents: 1300)
+
+      rows = I18n.with_locale(:en) { rows_for(order) }
+      expect(rows["TOTAL"]).to match(/13\.00/)
+      expect(rows["Total without delivery"]).to match(/10\.00/)
+    end
+
+    it "comes before the delivery fee and the total, after any discount" do
+      order.update_columns(discount_cents: 200, delivery_fee_cents: 300, total_cents: 1100)
+
+      labels = I18n.with_locale(:en) { rows_for(order).keys }
+      expect(labels.index("Discount")).to be < labels.index("Total without delivery")
+      expect(labels.index("Total without delivery")).to be < labels.index("Delivery fee")
+      expect(labels.index("Delivery fee")).to be < labels.index("TOTAL")
+      expect(I18n.with_locale(:en) { rows_for(order) }["Total without delivery"]).to match(/8\.00/)
+    end
+
+    it "is left out when the delivery order has no fee" do
+      expect(I18n.with_locale(:en) { rows_for(order) }).not_to have_key("Total without delivery")
+    end
+
+    it "is left out on a pickup order" do
+      order.update_columns(order_type: "pickup", delivery_fee_cents: 300, total_cents: 1300)
+
+      expect(I18n.with_locale(:en) { rows_for(order) }).not_to have_key("Total without delivery")
+    end
+  end
 end
