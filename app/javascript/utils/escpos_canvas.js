@@ -150,15 +150,20 @@ export class EscposDocument {
   }
 
   // A continuation line inside the item column (modifiers, notes).
-  modifier(text, { columns = 3, padded = false } = {}) {
-    const size = BASE_PX
+  // bold: the same bold, larger text as a ticket's item name (BOLD_LABEL_PX) —
+  // Document#modifier_text(bold: true) on the Rails side.
+  modifier(text, { columns = 3, padded = false, bold = false } = {}) {
+    const size = bold ? BOLD_LABEL_PX : BASE_PX
     const { labelBox, rules } = this.columns()
     const pad = padded ? TICKET_PAD_PX : 8
     const box = columns === 3 ? labelBox : { x0: pad, x1: this.px - pad }
+    const was = this.emphasis
+    if (bold) this.emphasis = true
     const lines = this.wrap(String(text), box.x1 - box.x0, size)
     this.drawBlock(lines.length, size, (ctx, y, i) => {
       this.fill(ctx, lines[i], { ...box, align: this.rtl ? "right" : "left", y, size })
     }, columns === 3 ? rules : [])
+    this.emphasis = was
   }
 
   // Hairline across the paper, 2px tall like the server's.
@@ -474,7 +479,7 @@ export function buildProductionTicket(order, items, title, { labels, rtl, widthC
     doc.row(line.name, String(line.quantity), { padded: true, boldValue: true, boldLabel: true, valueColumn: true })
     // Every modifier and the note on one line — TicketItemsTable#detail_lines.
     const detail = ticketDetail(line)
-    if (detail) doc.modifier(detail, { columns: 2, padded: true })
+    if (detail) doc.modifier(detail, { columns: 2, padded: true, bold: true })
     doc.separator()
   })
 

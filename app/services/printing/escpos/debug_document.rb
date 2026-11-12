@@ -83,13 +83,13 @@ module Printing
         end
       end
 
-      def modifier_text(line = "", columns: 3, padded: false)
+      def modifier_text(line = "", columns: 3, padded: false, bold: false)
         str = line.to_s
         if @use_images
           visual = Printing::Escpos::Bidi.visual_for_print(str, reshape: true)
           png = ArabicImageRenderer.render_modifier_row_png(visual, doc_width: @width, columns: columns,
                                                             pad: padded ? Document::PAD_DOTS : 8,
-                                                            line_factor: @line_factor)
+                                                            line_factor: @line_factor, bold: bold)
           push kind: :image, content: str, png_b64: png
         else
           push kind: :text, content: @rtl ? str : "  #{str}"

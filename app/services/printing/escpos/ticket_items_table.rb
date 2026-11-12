@@ -3,14 +3,16 @@
 module Printing
   module Escpos
     # The items table shared by kitchen, station and pick tickets: item name with its
-    # quantity, then one detail line holding every modifier and the item's note.
+    # quantity, then one detail line holding every modifier and the item's note,
+    # bold at the same size as the name.
     # The customer receipt uses the same detail line (TicketItemsTable.detail_lines).
     module TicketItemsTable
       MODIFIER_SEPARATOR = " • "
       NOTE_SEPARATOR     = " | "
-      # Characters per detail line before wrapping; Arabic glyphs at the ticket size
-      # are a little narrower than a text-mode column, minus the side padding.
-      DETAIL_CHARS_RATIO = 0.95
+      # Characters per detail line before wrapping, as a share of the text-mode width.
+      # The line prints bold at the item-name size (ArabicImageRenderer::BOLD_LABEL_PT)
+      # across the full paper: 0.95 fits at the regular 26pt, scaled by 26/32.
+      DETAIL_CHARS_RATIO = 0.77
       # Characters of an item name per line at the ticket's bold item size before it
       # wraps, as a share of the text-mode width: the name column is 65% of the paper
       # and the glyphs are larger (ArabicImageRenderer::BOLD_LABEL_PT). 42 columns
@@ -62,11 +64,11 @@ module Printing
 
         items.each do |item|
           # Name and quantity bold and large; a long name wraps, the quantity stays on
-          # its first line.
+          # its first line. Modifiers and the note match the name.
           first, *rest = TicketItemsTable.wrap(item.display_name.to_s, item_name_chars)
           doc.row(first, item.quantity.to_s, padded: true, bold_value: true, bold_label: true, value_column: true)
           rest.each { |line| doc.row(line, "", padded: true, bold_label: true, value_column: true) }
-          detail_lines(item).each { |line| doc.modifier_text(line, columns: 2, padded: true) }
+          detail_lines(item).each { |line| doc.modifier_text(line, columns: 2, padded: true, bold: true) }
           doc.separator
         end
       end

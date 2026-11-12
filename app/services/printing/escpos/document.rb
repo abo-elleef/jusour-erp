@@ -83,18 +83,27 @@ module Printing
       end
 
       # Render a modifier/add-on line inside the item-name column with column borders.
-      def modifier_text(line = "", columns: 3, padded: false)
+      # bold: the same bold, larger text as the ticket's item name above it.
+      def modifier_text(line = "", columns: 3, padded: false, bold: false)
         str = line.to_s
         if @use_images
           visual = Bidi.visual_for_print(str, reshape: true)
           bytes  = ArabicImageRenderer.render_modifier_row(visual, doc_width: @width, columns: columns,
                                                                    pad: padded ? PAD_DOTS : 8,
-                                                                   line_factor: @line_factor)
+                                                                   line_factor: @line_factor, bold: bold)
           return @buffer << bytes.b if bytes
         end
         # Text fallback
         margin = padded ? " " * PAD_CHARS : ""
+        if bold
+          bold(true)
+          double_height(true)
+        end
         @rtl ? (align(:right); text("#{str}#{margin}"); align(:left)) : text("#{margin}  #{str}")
+        return unless bold
+
+        double_height(false)
+        bold(false)
       end
 
       # Full-width horizontal line rendered as an image (used between table rows).

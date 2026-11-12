@@ -209,13 +209,17 @@ module Printing
 
       # Modifier/notes continuation row: text in the item-name column only,
       # with the same vertical column separators as a regular row3 image.
-      def render_modifier_row(visual_text, doc_width: 42, columns: 3, pad: 8, line_factor: DEFAULT_LINE_FACTOR)
+      # bold: the same bold, larger text as a ticket's item name (BOLD_LABEL_PT), for
+      # the modifier/note line under it. A plain line draws exactly as before, so
+      # receipt images keep their cache keys.
+      def render_modifier_row(visual_text, doc_width: 42, columns: 3, pad: 8, line_factor: DEFAULT_LINE_FACTOR,
+                              bold: false)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        h        = line_height(FONT_SIZE_PT, line_factor)
+        h        = line_height(bold ? BOLD_LABEL_PT : FONT_SIZE_PT, line_factor)
         font     = arabic_font
         return nil unless font
 
-        draws = [{ gravity: "East", offset: "+#{pad}+0", text: visual_text }]
+        draws = [label_annotation(visual_text, pad, bold)]
         if columns == 3
           qty_x = (px_width * 0.26).to_i
           sep1  = qty_x - 12
@@ -229,9 +233,10 @@ module Printing
       end
 
       # Same as render_modifier_row but returns a Base64-encoded PNG string.
-      def render_modifier_row_png(visual_text, doc_width: 42, columns: 3, pad: 8, line_factor: DEFAULT_LINE_FACTOR)
+      def render_modifier_row_png(visual_text, doc_width: 42, columns: 3, pad: 8, line_factor: DEFAULT_LINE_FACTOR,
+                                  bold: false)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        h        = line_height(FONT_SIZE_PT, line_factor)
+        h        = line_height(bold ? BOLD_LABEL_PT : FONT_SIZE_PT, line_factor)
         font     = arabic_font
         return nil unless font
 
@@ -239,7 +244,7 @@ module Printing
           im_command,
           "-size", "#{px_width}x#{h}", "xc:white",
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
-          "-gravity", "East", "-annotate", "+#{pad}+0", visual_text
+          *annotate_args(label_annotation(visual_text, pad, bold))
         ]
         if columns == 3
           qty_x = (px_width * 0.26).to_i

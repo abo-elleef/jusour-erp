@@ -187,6 +187,42 @@ RSpec.describe Printing::Escpos::Document do
       expect(line).to end_with("\x1BE\x00\x1D!\x00".b)
     end
 
+    it "draws a ticket's modifier line bold at the item-name size" do
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("font.ttf")
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:capture_pbm).and_return(nil)
+      Printing::Escpos::ArabicImageRenderer.render_modifier_row("+ Double", doc_width: 42, columns: 2, pad: 32,
+                                                                line_factor: 1.5, bold: true)
+
+      renderer = Printing::Escpos::ArabicImageRenderer
+      expect(renderer).to have_received(:capture_pbm) do |cmd|
+        expect(cmd).to include("576x#{(renderer::BOLD_LABEL_PT * 1.5).round}")
+        expect(cmd.each_cons(2).to_a).to include(["-pointsize", renderer::BOLD_LABEL_PT.to_s])
+        expect(cmd).to include("-stroke")
+      end
+    end
+
+    it "draws a receipt's modifier line exactly as before" do
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("font.ttf")
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:capture_pbm).and_return(nil)
+      Printing::Escpos::ArabicImageRenderer.render_modifier_row("+ Double", doc_width: 42)
+
+      expect(Printing::Escpos::ArabicImageRenderer).to have_received(:capture_pbm) do |cmd|
+        expect(cmd).to include("576x52")
+        expect(cmd).not_to include("-stroke")
+        expect(cmd.each_cons(5).to_a).to include(["-gravity", "East", "-annotate", "+8+0", "+ Double"])
+      end
+    end
+
+    it "prints a bold modifier line bold and double height in text mode" do
+      doc = described_class.new(width: 20, charset: "latin")
+      doc.modifier_text("+ Double", columns: 2, padded: true, bold: true)
+      bytes = doc.to_bytes
+
+      expect(bytes).to include("\x1BE\x01\x1D!\x11".b)
+      expect(bytes).to include("+ Double".b)
+      expect(bytes).to end_with("\x1D!\x00\x1BE\x00".b)
+    end
+
     it "draws receipt rows exactly as before, so their cached images stay valid" do
       allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("font.ttf")
       allow(Printing::Escpos::ArabicImageRenderer).to receive(:capture_pbm).and_return(nil)
