@@ -64,6 +64,9 @@
              data-payment-target="printReceipt" data-action="change->payment#rememberPrintChoices">
       <%= t("payment.print_receipt") %>
     </label>
+    <%# Only an order not yet placed goes to the kitchen when paid; a placed one
+        already has its tickets (FinalizePaidService submits drafts only). %>
+    <% if order.draft? %>
     <label class="inline-flex items-center gap-2 cursor-pointer">
       <input type="checkbox" checked class="w-4 h-4 rounded border-gray-300 text-green-700"
              data-payment-target="printProduction" data-action="change->payment#rememberPrintChoices">
@@ -72,6 +75,7 @@
         <span class="text-xs text-gray-500"><%= t("payment.kitchen_sent_at", time: l(order.kitchen_sent_at, format: :short_time)) %></span>
       <% end %>
     </label>
+    <% end %>
   </div>
 
   <%# Tips hidden — not accepted currently %>

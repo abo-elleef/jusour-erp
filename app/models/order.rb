@@ -8,6 +8,8 @@ class Order < ApplicationRecord
   # The two states an order can be left in. Everything else is someone's unfinished
   # business, and a cashier cannot close a shift while any of it is theirs.
   FINAL_STATUSES = %w[completed cancelled].freeze
+  # Placed and on its way: in the kitchen, not yet handed over or voided.
+  PLACED_STATUSES = %w[submitted in_progress ready].freeze
   ORDER_TYPES = %w[delivery pickup table].freeze
 
   # Advisory-lock namespace, so order numbering can never contend with another
@@ -36,6 +38,7 @@ class Order < ApplicationRecord
   belongs_to :location, optional: true
   belongs_to :workstation, optional: true
   belongs_to :staff_meal_user, class_name: "User", optional: true
+  belongs_to :unlocked_for_edit_by, class_name: "User", optional: true
   # The drawer the delivery fee was paid out of to the driver — see #apply_delivery_fee!.
   belongs_to :delivery_fee_drawer_session, class_name: "CashDrawerSession", optional: true
   has_many :order_items, dependent: :destroy
@@ -120,6 +123,11 @@ class Order < ApplicationRecord
   end
 
   scope :open_drafts, -> { where(status: "draft") }
+  # What the register's cart may hold: a draft, or a placed order unlocked for edit.
+  scope :cart_editable, -> {
+    where(status: "draft")
+      .or(where(status: PLACED_STATUSES).where.not(unlocked_for_edit_at: nil))
+  }
   # Orders still owed an ending. Drafts count — a cart with food in it is a sale
   # someone started — but an empty cart does not: there is nothing in it to finish.
   scope :not_finalized, -> {
@@ -205,6 +213,22 @@ class Order < ApplicationRecord
   # refunded one does, because money moved (or may yet), and that is a refund's job.
   def never_paid?
     payments.where.not(status: "failed").none?
+  end
+
+  # Placing an order locks its items. A manager's PIN reopens it in the register
+  # (editing_placed?) until it is placed again. Only an order nobody has paid
+  # anything on can be reopened: changing a paid order is a refund's job.
+  def editing_placed?
+    unlocked_for_edit_at.present? && PLACED_STATUSES.include?(status)
+  end
+
+  # Items, notes and discounts can change in the register.
+  def items_editable?
+    draft? || editing_placed?
+  end
+
+  def unlockable_for_edit?
+    PLACED_STATUSES.include?(status) && !editing_placed? && never_paid?
   end
 
   def amount_due_cents

@@ -35,6 +35,11 @@ module Printing
         doc.double_height(true)
         doc.text(@title)
         doc.text(@order.order_number)
+        # A placed order changed after the PIN: the whole order prints again, and this
+        # tells the station it replaces the earlier ticket rather than adds to it.
+        if @order.edit_count.to_i.positive?
+          doc.text(I18n.t("printing.production_ticket.edited", count: @order.edit_count))
+        end
         doc.double_height(false)
         doc.bold(false)
         doc.text(I18n.l(@order.created_at, format: :ticket))

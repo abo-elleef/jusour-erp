@@ -103,8 +103,8 @@ Rails.application.routes.draw do
       end
       member do
         post :print_receipt
-        post :send_to_kitchen
         post :resume
+        post :unlock_edit
         post :complete
         patch :update_fulfillment
         patch :change_payment_method

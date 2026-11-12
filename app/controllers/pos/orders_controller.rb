@@ -89,6 +89,27 @@ module Pos
       redirect_to pos_path, notice: t("flash.pos.order_resumed")
     end
 
+    # Reopens a placed, unpaid order in the register for changes, after the branch's
+    # edit-orders PIN. An order already unlocked just goes back to the register: the
+    # PIN was typed once, and the order stays open until it is placed again.
+    def unlock_edit
+      @order = Order.find(params[:id])
+      authorize @order, :unlock_edit?
+
+      unless @order.editing_placed?
+        error = @order.with_lock do
+          unlock_error(@order.location).tap { |reason| unlock! unless reason }
+        end
+        if error
+          return redirect_to pos_order_path(@order, from: params[:from]), alert: error, status: :see_other
+        end
+      end
+
+      session.delete(:pending_order_params)
+      session[:current_order_id] = @order.id
+      redirect_to pos_path, notice: t("flash.pos.order_unlocked", number: @order.order_number), status: :see_other
+    end
+
     def update_fulfillment
       @order = Order.find(params[:id])
       authorize @order, :update?
@@ -223,17 +244,22 @@ module Pos
       redirect_to destination, notice: t("flash.pos.print_queued")
     end
 
-    # Sends the tickets to the kitchen / bar / expo printers ahead of payment.
-    # Print-only: the order, its items and its payments are not touched.
-    def send_to_kitchen
-      @order = Order.find(params[:id])
-      authorize @order, :show?
-      Printing::DispatchProductionPrintsService.call(order: @order, manual: true)
-      destination = params[:from] == "pos" ? pos_path : pos_order_path(@order, from: params[:from])
-      redirect_to destination, notice: t("flash.pos.kitchen_queued")
+    private
+
+    # nil when the PIN is right and the order may be reopened; otherwise the reason.
+    def unlock_error(location)
+      return t("flash.pos.unlock.not_unlockable") unless @order.unlockable_for_edit?
+      return t("flash.pos.unlock.pin_not_set") unless location&.edit_orders_pin_configured?
+      return t("flash.pos.unlock.pin_locked") if location.edit_orders_pin_locked?
+      return if location.verify_edit_orders_pin(params[:pin].to_s.strip)
+
+      location.edit_orders_pin_locked? ? t("flash.pos.unlock.pin_locked") : t("flash.pos.unlock.wrong_pin")
     end
 
-    private
+    def unlock!
+      @order.update!(unlocked_for_edit_at: Time.current, unlocked_for_edit_by: current_user)
+      AuditLogEntry.record!(action: "order.unlock_edit", record: @order, user: current_user)
+    end
 
     def outstanding_orders
       @filter_type ||= begin

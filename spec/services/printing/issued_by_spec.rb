@@ -36,6 +36,20 @@ RSpec.describe "Cashier and station on printed tickets" do
     expect_issued_by(text_of(bytes))
   end
 
+  # A placed order changed with the branch PIN prints again in full; the banner
+  # tells the station it replaces the earlier ticket.
+  it "marks station tickets EDITED once the order was changed after placing" do
+    build = lambda do
+      I18n.with_locale(:en) do
+        text_of(Printing::Escpos::ProductionTicketBuilder.new(order, printer: printer, order_items: [], title: "Grill").build)
+      end
+    end
+    expect(build.call).not_to include("EDITED".b)
+
+    order.update_column(:edit_count, 2)
+    expect(build.call).to include("*** EDITED #2 ***".b)
+  end
+
   it "prints a dash when the order has no register" do
     order.update_column(:workstation_id, nil)
     bytes = I18n.with_locale(:en) { Printing::Escpos::KitchenTicketBuilder.new(order, printer: printer).build }

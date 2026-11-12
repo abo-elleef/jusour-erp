@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_11_130000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_12_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -799,6 +799,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_11_130000) do
     t.boolean "default_production_location", default: false, null: false
     t.integer "table_count"
     t.boolean "table_service", default: false, null: false
+    t.string "edit_orders_pin_digest"
+    t.integer "edit_orders_pin_failed_attempts", default: 0, null: false
+    t.datetime "edit_orders_pin_locked_until"
     t.index ["active"], name: "index_locations_on_active"
     t.index ["company_id", "name"], name: "index_locations_on_company_id_and_name", unique: true
     t.index ["company_id", "slug"], name: "index_locations_on_company_id_and_slug", unique: true
@@ -1056,6 +1059,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_11_130000) do
     t.datetime "kitchen_sent_at"
     t.integer "delivery_fee_cents", default: 0, null: false
     t.uuid "delivery_fee_drawer_session_id"
+    t.datetime "unlocked_for_edit_at"
+    t.uuid "unlocked_for_edit_by_id"
+    t.integer "edit_count", default: 0, null: false
     t.index "company_id, COALESCE(location_id, '00000000-0000-0000-0000-000000000000'::uuid), business_date, order_number", name: "index_orders_on_branch_day_order_number", unique: true, where: "(business_date IS NOT NULL)"
     t.index ["company_id", "business_date"], name: "index_orders_on_company_id_and_business_date"
     t.index ["company_id", "client_uuid"], name: "index_orders_on_company_id_and_client_uuid", unique: true, where: "(client_uuid IS NOT NULL)"
@@ -1069,6 +1075,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_11_130000) do
     t.index ["receipt_token"], name: "index_orders_on_receipt_token", unique: true
     t.index ["staff_meal_user_id"], name: "index_orders_on_staff_meal_user_id"
     t.index ["status"], name: "index_orders_on_status"
+    t.index ["unlocked_for_edit_by_id"], name: "index_orders_on_unlocked_for_edit_by_id"
     t.index ["user_id"], name: "index_orders_on_user_id"
     t.index ["workstation_id"], name: "index_orders_on_workstation_id"
   end
@@ -2165,6 +2172,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_11_130000) do
   add_foreign_key "orders", "locations"
   add_foreign_key "orders", "users"
   add_foreign_key "orders", "users", column: "staff_meal_user_id"
+  add_foreign_key "orders", "users", column: "unlocked_for_edit_by_id"
   add_foreign_key "orders", "workstations"
   add_foreign_key "overtime_rules", "companies"
   add_foreign_key "partners", "companies"

@@ -39,7 +39,7 @@ module Pos
     def load_current_order
       return unless session[:current_order_id]
 
-      Order.find_by(id: session[:current_order_id], status: "draft")
+      Order.cart_editable.find_by(id: session[:current_order_id])
     end
 
     def require_pos_access!

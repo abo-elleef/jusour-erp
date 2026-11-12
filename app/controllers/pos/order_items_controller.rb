@@ -107,7 +107,8 @@ module Pos
     end
 
     def set_order
-      @order = Order.find_by(id: session[:current_order_id], status: "draft")
+      # Only the cart, or a placed order a manager unlocked, takes item changes.
+      @order = Order.cart_editable.find_by(id: session[:current_order_id])
       @order ||= materialize_pending_order!
       return if current_pos_location.blank?
 
