@@ -13,13 +13,6 @@
           <%= print_icon %><%= t("printing.actions.print_receipt") %>
         <% end %>
       <% end %>
-      <%= form_with url: print_all_pos_order_path(@order, from: params[:from]), method: :post,
-                data: { controller: "submit-once", action: "submit->submit-once#guard" } do |f| %>
-        <%= f.button type: "submit", data: { submit_once_target: "submit" },
-              class: "flex items-center gap-1.5 text-sm font-semibold text-white bg-gray-800 hover:bg-gray-900 px-3 py-1.5 rounded-xl transition-colors" do %>
-          <%= print_icon %><%= t("printing.actions.print_all") %>
-        <% end %>
-      <% end %>
       <% if policy(@order).complete? %>
         <%= button_to complete_pos_order_path(@order, from: params[:from]), method: :post,
               form: { data: { turbo_confirm: @order.fully_paid? ? nil : t("pos.orders.complete_unpaid_confirm") } },

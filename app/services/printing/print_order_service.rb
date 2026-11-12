@@ -2,7 +2,7 @@
 
 module Printing
   class PrintOrderService
-    # manual: true is a cashier deliberately asking again (Print receipt, Print all,
+    # manual: true is a cashier deliberately asking again (Print receipt,
     # Send to kitchen). Those are never swallowed by the repeated-request guard.
     def self.call(order:, print_type:, printer: nil, order_items: nil, manual: false)
       new(order: order, print_type: print_type, printer: printer, order_items: order_items, manual: manual).call

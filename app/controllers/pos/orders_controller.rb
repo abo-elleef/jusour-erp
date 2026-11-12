@@ -233,14 +233,6 @@ module Pos
       redirect_to destination, notice: t("flash.pos.kitchen_queued")
     end
 
-    def print_all
-      @order = Order.find(params[:id])
-      authorize @order, :show?
-      Printing::PrintReceiptService.call(order: @order, manual: true)
-      Printing::DispatchProductionPrintsService.call(order: @order, manual: true)
-      redirect_to pos_order_path(@order, from: params[:from]), notice: t("flash.pos.print_all_queued")
-    end
-
     private
 
     def outstanding_orders

@@ -104,7 +104,6 @@ Rails.application.routes.draw do
       member do
         post :print_receipt
         post :send_to_kitchen
-        post :print_all
         post :resume
         post :complete
         patch :update_fulfillment

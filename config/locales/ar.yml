@@ -330,7 +330,6 @@ ar:
       printed: "طُبع"
     actions:
       print_receipt: "طباعة الإيصال"
-      print_all: "طباعة الكل"
     receipt:
       thank_you: "شكراً لطلبكم!"
       item: "الصنف"
@@ -6528,7 +6527,6 @@ ar:
         not_completed: "لا يمكن تغيير طريقة دفعة مستردة."
         drawer_closed: "تم إغلاق الدرج الخاص بهذه الدفعة، لذا لا يمكن تغيير طريقتها."
         not_your_drawer: "هذه الدفعة تخص درج كاشير آخر. اطلب من المدير."
-      print_all_queued: "تم إرسال جميع المطبوعات إلى الطابعات."
       already_paid: "هذا الطلب مدفوع بالكامل."
       customer_required: "أدخل هاتفًا أو بريدًا للعميل الجديد."
       customer_not_found: "العميل غير موجود."

@@ -328,7 +328,6 @@ en:
       printed: "Printed"
     actions:
       print_receipt: "Print Receipt"
-      print_all: "Print All"
     receipt:
       thank_you: "Thank you for your order!"
       item: "Item"
@@ -6462,7 +6461,6 @@ en:
         not_completed: "A refunded payment cannot change its method."
         drawer_closed: "This payment's drawer is already closed, so its method can no longer change."
         not_your_drawer: "This payment belongs to another cashier's drawer. Ask a manager."
-      print_all_queued: "All prints sent to printers."
       already_paid: "This order is already paid in full."
       customer_required: "Enter a phone or email for the new customer."
       customer_not_found: "Customer not found."
