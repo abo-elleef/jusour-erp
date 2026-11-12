@@ -1,0 +1,93 @@
+<%# Side drawer opened from the POS header: where this register is (branch +
+    station), who is signed in, language, the less-used destinations and sign out.
+    A native <dialog>: Escape closes it, and so does a click on the backdrop. %>
+<% item = "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-start transition-colors" %>
+<% idle = "#{item} text-gray-700 hover:bg-gray-100" %>
+<% active = "#{item} bg-gray-900 text-white" %>
+<% field_label = "block text-xs font-semibold text-gray-500 mb-1.5" %>
+<dialog id="pos-drawer"
+        aria-label="<%= t("pos.drawer.title") %>"
+        class="m-0 ms-auto h-dvh max-h-dvh w-80 max-w-[90vw] p-0 bg-white shadow-2xl backdrop:bg-black/40"
+        onclick="if(event.target===this)this.close()">
+  <div class="flex h-full flex-col">
+    <div class="flex items-center gap-3 px-4 py-4 border-b border-gray-200 shrink-0">
+      <span class="w-10 h-10 rounded-full bg-gray-900 text-white text-sm font-bold flex items-center justify-center uppercase shrink-0" aria-hidden="true">
+        <%= current_user.name.to_s.strip.first || "?" %>
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-bold text-gray-900 truncate"><%= current_user.name %></p>
+        <p class="text-xs text-gray-500 truncate"><%= current_user.email %></p>
+      </div>
+      <button type="button" onclick="this.closest('dialog').close()"
+              aria-label="<%= t("actions.close") %>"
+              class="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 text-xl leading-none">&times;</button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+      <%# Where this register is. %>
+      <section class="space-y-3">
+        <div>
+          <% if @pos_locations.many? %>
+            <%= form_with url: pos_set_location_path, method: :patch, data: { turbo_frame: "_top" } do %>
+              <label for="pos_location_id" class="<%= field_label %>"><%= t("pos.location.label") %></label>
+              <%# A blank option whenever nothing is actually selected: without it the browser
+                  shows the first branch as chosen while no branch is set, and the cashier has
+                  to pick another branch and come back to get one. %>
+              <%= select_tag :location_id,
+                    options_from_collection_for_select(@pos_locations, :id, :name, @pos_location&.id),
+                    id: "pos_location_id",
+                    include_blank: (@pos_location ? false : t("pos.location.select")),
+                    class: "w-full border rounded-xl px-3 py-2 text-sm font-semibold #{@pos_location ? 'border-gray-200 text-gray-800 bg-white' : 'border-amber-300 text-amber-900 bg-amber-50'}",
+                    onchange: "this.form.requestSubmit()" %>
+            <% end %>
+          <% elsif @pos_location %>
+            <p class="<%= field_label %>"><%= t("pos.location.label") %></p>
+            <p class="text-sm font-semibold text-gray-800 px-3 py-2 rounded-xl bg-gray-50 border border-gray-200"><%= @pos_location.name %></p>
+          <% else %>
+            <p class="text-sm font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+              <%= t("pos.location.none_assigned") %>
+            </p>
+          <% end %>
+        </div>
+
+        <% if @pos_workstations.present? && @pos_workstations.any? %>
+          <%= form_with url: pos_set_workstation_path, method: :patch, data: { turbo_frame: "_top" } do %>
+            <label for="pos_workstation_id" class="<%= field_label %>"><%= t("pos.workstation.label") %></label>
+            <%= select_tag :workstation_id,
+                  options_from_collection_for_select(@pos_workstations, :id, :name, @pos_workstation&.id),
+                  id: "pos_workstation_id",
+                  include_blank: (@pos_workstations.one? ? false : t("pos.workstation.select")),
+                  class: "w-full border border-amber-200 rounded-xl px-3 py-2 text-sm font-semibold text-amber-900 bg-amber-50",
+                  onchange: "this.form.requestSubmit()" %>
+          <% end %>
+        <% elsif @pos_location.nil? && @pos_locations.many? %>
+          <p class="text-xs text-gray-500"><%= t("pos.drawer.pick_branch_first") %></p>
+        <% end %>
+      </section>
+
+      <section class="border-t border-gray-100 pt-4">
+        <p class="<%= field_label %>"><%= t("locale.switcher_label") %></p>
+        <div class="flex items-center gap-1 rounded-xl border border-gray-200 bg-white p-0.5 text-sm font-semibold" role="group" aria-label="<%= t("locale.switcher_label") %>">
+          <%= button_to t("locale.en"), locale_path(locale: :en), method: :patch,
+                form_class: "flex-1", class: "w-full #{locale_button_class(:en)}" %>
+          <%= button_to t("locale.ar"), locale_path(locale: :ar), method: :patch,
+                form_class: "flex-1", class: "w-full #{locale_button_class(:ar)}" %>
+        </div>
+      </section>
+
+      <section class="border-t border-gray-100 pt-4 space-y-0.5">
+        <%= link_to t("nav.kitchen"), kitchen_path, class: (request.path == kitchen_path ? active : idle) %>
+        <% if current_user.admin_access? %>
+          <%= link_to t("nav.admin"), admin_root_path, class: idle %>
+        <% end %>
+        <%= link_to t("auth.change_password"), edit_account_password_path,
+              class: (request.path == edit_account_password_path ? active : idle) %>
+      </section>
+    </div>
+
+    <div class="px-4 py-3 border-t border-gray-200 shrink-0">
+      <%= button_to t("actions.sign_out"), destroy_user_session_path, method: :delete,
+            form_class: "w-full", class: "#{item} justify-center text-red-700 border border-red-200 hover:bg-red-50" %>
+    </div>
+  </div>
+</dialog>

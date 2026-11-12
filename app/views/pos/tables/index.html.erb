@@ -1,6 +1,6 @@
 <div class="<%= pos_viewport_h_class %> bg-gray-100 flex flex-col overflow-hidden" data-controller="auto-refresh">
-  <header class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-white shrink-0">
-    <span class="text-xl font-bold tracking-tight text-gray-900"><%= t("pos.tables.title") %></span>
+  <header class="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-200 bg-white shrink-0">
+    <span class="hidden sm:block text-xl font-bold tracking-tight text-gray-900 truncate min-w-0"><%= t("pos.tables.title") %></span>
     <%= render "pos/pos_nav" %>
   </header>
 

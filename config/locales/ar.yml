@@ -3612,6 +3612,10 @@ ar:
 
   pos:
     title: "جسور — نقطة البيع"
+    drawer:
+      open: "فتح القائمة"
+      title: "قائمة نقطة البيع"
+      pick_branch_first: "اختر الفرع أولاً لتظهر أجهزة الكاشير."
     location:
       label: "الفرع"
       select: "اختر الفرع"

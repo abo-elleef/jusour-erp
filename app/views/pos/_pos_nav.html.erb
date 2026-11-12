@@ -1,52 +1,46 @@
-<nav class="flex flex-wrap items-center gap-2" aria-label="<%= t("nav.pos") %>">
-  <%= render "shared/locale_switcher" %>
-  <% if @pos_locations.many? %>
-    <%= form_with url: pos_set_location_path, method: :patch,
-          class: "inline-flex items-center gap-2",
-          data: { turbo_frame: "_top" } do %>
-      <label for="pos_location_id" class="sr-only"><%= t("pos.location.label") %></label>
-      <%# A blank option whenever nothing is actually selected: without it the browser
-          shows the first branch as chosen while no branch is set, and the cashier has
-          to pick another branch and come back to get one. %>
-      <%= select_tag :location_id,
-            options_from_collection_for_select(@pos_locations, :id, :name, @pos_location&.id),
-            id: "pos_location_id",
-            include_blank: (@pos_location ? false : t("pos.location.select")),
-            class: "border rounded-xl px-3 py-1.5 text-sm font-semibold #{@pos_location ? 'border-gray-200 text-gray-800 bg-white' : 'border-amber-300 text-amber-900 bg-amber-50'}",
-            onchange: "this.form.requestSubmit()" %>
-    <% end %>
-  <% elsif @pos_location %>
-    <span class="text-sm font-semibold text-gray-600 px-2 py-1.5"><%= @pos_location.name %></span>
-  <% else %>
-    <span class="text-sm font-semibold text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5">
-      <%= t("pos.location.none_assigned") %>
-    </span>
-  <% end %>
-  <% if @pos_workstations.present? && @pos_workstations.any? %>
-    <%= form_with url: pos_set_workstation_path, method: :patch,
-          class: "inline-flex items-center gap-2",
-          data: { turbo_frame: "_top" } do %>
-      <label for="pos_workstation_id" class="sr-only"><%= t("pos.workstation.label") %></label>
-      <%= select_tag :workstation_id,
-            options_from_collection_for_select(@pos_workstations, :id, :name, @pos_workstation&.id),
-            id: "pos_workstation_id",
-            include_blank: (@pos_workstations.one? ? false : t("pos.workstation.select")),
-            class: "border border-amber-200 rounded-xl px-3 py-1.5 text-sm font-semibold text-amber-900 bg-amber-50",
-            onchange: "this.form.requestSubmit()" %>
-    <% end %>
-  <% end %>
-  <%= link_to t("nav.register"), pos_path, class: pos_nav_link_class(request.path == pos_path) %>
-  <% if @pos_location&.table_service? %>
-    <%= link_to t("nav.tables"), pos_tables_path, class: pos_nav_link_class(request.path == pos_tables_path) %>
-  <% end %>
-  <%= link_to t("nav.collect_payment"), pos_orders_path, class: pos_nav_link_class(request.path.start_with?("/pos/orders")) %>
-  <%= link_to t("nav.my_shift"), pos_shift_path, class: pos_nav_link_class(request.path == pos_shift_path || request.path.start_with?("/pos/shift")) %>
-  <%= link_to t("nav.kitchen"), kitchen_path, class: pos_nav_link_class(request.path == kitchen_path) %>
-  <% if current_user.admin_access? %>
-    <%= link_to t("nav.admin"), admin_root_path, class: pos_nav_link_class(request.path.start_with?("/admin")) %>
-  <% end %>
-  <%= link_to t("auth.change_password"), edit_account_password_path,
-        class: pos_nav_link_class(request.path == edit_account_password_path) %>
-  <%= button_to t("actions.sign_out"), destroy_user_session_path, method: :delete,
-        class: "px-3 py-1.5 rounded-xl text-sm font-semibold text-gray-600 border border-transparent hover:bg-gray-100 transition-colors" %>
+<%# POS header nav: the daily cashier tabs plus one button that opens the side
+    drawer (branch, station, language, other destinations, sign out).
+    It is a size container, so tab labels and the station name drop out when the
+    header is narrow — the POS register only gets ¾ of the screen. %>
+<% context_missing = @pos_location.nil? || (@pos_workstations.present? && @pos_workstations.many? && @pos_workstation.nil?) %>
+<% context_label = if @pos_location.nil?
+                     t("pos.location.select")
+                   elsif @pos_workstation
+                     @pos_workstation.name
+                   else
+                     @pos_location.name
+                   end %>
+<nav class="@container flex-1 min-w-0" aria-label="<%= t("nav.pos") %>">
+  <div class="flex items-center justify-end gap-2">
+    <div class="inline-flex items-center gap-0.5 rounded-xl border border-gray-200 bg-white p-0.5 shrink-0">
+      <%= pos_nav_tab t("nav.register"), pos_path, request.path == pos_path,
+            "M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" %>
+      <% if @pos_location&.table_service? %>
+        <%= pos_nav_tab t("nav.tables"), pos_tables_path, request.path == pos_tables_path,
+              "M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" %>
+      <% end %>
+      <%= pos_nav_tab t("nav.collect_payment"), pos_orders_path, request.path.start_with?("/pos/orders"),
+            "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" %>
+      <%= pos_nav_tab t("nav.my_shift"), pos_shift_path, request.path.start_with?("/pos/shift"),
+            "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" %>
+    </div>
+
+    <button type="button"
+            onclick="document.getElementById('pos-drawer').showModal()"
+            aria-haspopup="dialog"
+            aria-label="<%= t("pos.drawer.open") %>"
+            title="<%= context_label %>"
+            class="shrink-0 inline-flex items-center gap-2 rounded-xl border ps-2 pe-2.5 py-1.5 text-sm font-semibold transition-colors
+                   <%= context_missing ? 'border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50' %>">
+      <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+      <span class="hidden @2xl:inline max-w-[10rem] truncate"><%= context_label %></span>
+      <% if context_missing %>
+        <span class="@2xl:hidden w-2 h-2 rounded-full bg-amber-500" aria-hidden="true"></span>
+      <% end %>
+    </button>
+  </div>
+
+  <%= render "pos/pos_drawer" %>
 </nav>

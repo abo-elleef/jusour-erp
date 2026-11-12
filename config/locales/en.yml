@@ -3566,6 +3566,10 @@ en:
 
   pos:
     title: "Jusour POS"
+    drawer:
+      open: "Open menu"
+      title: "POS menu"
+      pick_branch_first: "Pick a branch to see its registers."
     location:
       label: "Branch"
       select: "Select branch"

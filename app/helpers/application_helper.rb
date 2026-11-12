@@ -946,9 +946,17 @@ module ApplicationHelper
     tag.span(count.to_i, class: "ms-2 text-xs font-semibold tabular-nums px-1.5 py-0.5 rounded-md #{tone}")
   end
 
-  def pos_nav_link_class(active)
-    base = "px-3 py-1.5 rounded-xl text-sm font-semibold border transition-colors"
-    active ? "#{base} bg-gray-900 text-white border-gray-900" : "#{base} bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+  # One tab of the POS header: an icon always, the label only when the header
+  # (an @container) is wide enough. icon_path is a 24x24 outline SVG path.
+  def pos_nav_tab(label, path, active, icon_path)
+    base = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors"
+    classes = active ? "#{base} bg-gray-900 text-white" : "#{base} text-gray-600 hover:bg-gray-100"
+    icon = tag.svg(class: "w-5 h-5 shrink-0", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", aria: { hidden: true }) do
+      tag.path("stroke-linecap": "round", "stroke-linejoin": "round", "stroke-width": "2", d: icon_path)
+    end
+    link_to path, class: classes, title: label, aria: { label: label, current: (active ? "page" : nil) } do
+      icon + tag.span(label, class: "hidden @xl:inline")
+    end
   end
 
   def pos_viewport_min_h_class
