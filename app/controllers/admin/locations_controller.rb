@@ -70,6 +70,7 @@ module Admin
       params.require(:location).permit(
         :name, :slug, :location_type, :address, :phone, :whatsapp_number,
         :active, :position, :public_menu_enabled, :deposit_treasury_id,
+        :cash_over_treasury_id, :cash_over_income_category_id, :cash_short_expense_category_id,
         :default_production_location, :table_count, :table_service, :receipt_logo, :remove_receipt_logo,
         :edit_orders_pin
       )

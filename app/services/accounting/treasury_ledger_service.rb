@@ -194,6 +194,9 @@ module Accounting
     # drawer when it opened, so banking the full counted amount would count it twice.
     def sync_drawer_reconcile!(session)
       remove_for_source(session, kinds: %w[drawer_reconcile])
+      # The entry is rebuilt (or removed) whatever happens below, so a re-sync
+      # that brings the amount to nothing doesn't leave the old one behind.
+      JournalEntryService.record_drawer_reconcile!(session) if session.treasury_id.present?
       return if session.treasury_id.blank?
       return unless session.counted_cash_cents
       return if session.cash_collected_cents.zero?
@@ -207,17 +210,21 @@ module Accounting
         occurred_on: session.session_date,
         source: session
       )
-      JournalEntryService.record_drawer_reconcile!(session)
     end
 
     # Hands the counted cash over to the safe it physically goes into: out of the
     # drawer, into the destination, both legs recorded so neither drifts. The whole
     # count leaves, float included — every open pulls a fresh float in, so a drawer
     # that kept one would be holding two by the next shift.
+    #
+    # Signed: a documented drawer banks what it should have held, which is
+    # negative when cash paid out beat cash taken — the safe then tops the drawer
+    # up, so the drawer still ends at zero and the safe at what was counted.
     def sync_drawer_deposit!(session)
       remove_for_source(session, kinds: %w[drawer_deposit])
+      JournalEntryService.record_drawer_deposit!(session) if session.treasury_id.present?
       return if session.deposit_treasury_id.blank? || session.treasury_id.blank?
-      return unless session.deposit_cents.positive?
+      return if session.deposit_cents.zero?
 
       description = drawer_deposit_description(session)
 
@@ -239,7 +246,6 @@ module Accounting
         occurred_on: session.session_date,
         source: session
       )
-      JournalEntryService.record_drawer_deposit!(session)
     end
 
     def sync_session_online_payments!(session)

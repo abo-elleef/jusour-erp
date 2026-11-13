@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_13_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_13_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -157,10 +157,16 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_13_120000) do
     t.uuid "company_id", null: false
     t.uuid "float_source_treasury_id"
     t.uuid "deposit_treasury_id"
+    t.boolean "variance_documented", default: false, null: false
+    t.uuid "shortage_voucher_id"
+    t.datetime "shortage_waived_at"
+    t.uuid "shortage_waived_by_id"
     t.index ["company_id"], name: "index_cash_drawer_sessions_on_company_id"
     t.index ["deposit_treasury_id"], name: "index_cash_drawer_sessions_on_deposit_treasury_id"
     t.index ["float_source_treasury_id"], name: "index_cash_drawer_sessions_on_float_source_treasury_id"
     t.index ["location_id"], name: "index_cash_drawer_sessions_on_location_id"
+    t.index ["shortage_voucher_id"], name: "index_cash_drawer_sessions_on_shortage_voucher_id"
+    t.index ["shortage_waived_by_id"], name: "index_cash_drawer_sessions_on_shortage_waived_by_id"
     t.index ["treasury_id"], name: "index_cash_drawer_sessions_on_treasury_id"
     t.index ["user_id"], name: "index_cash_drawer_sessions_on_user_id"
   end
@@ -802,7 +808,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_13_120000) do
     t.string "edit_orders_pin_digest"
     t.integer "edit_orders_pin_failed_attempts", default: 0, null: false
     t.datetime "edit_orders_pin_locked_until"
+    t.uuid "cash_over_treasury_id"
+    t.uuid "cash_over_income_category_id"
+    t.uuid "cash_short_expense_category_id"
     t.index ["active"], name: "index_locations_on_active"
+    t.index ["cash_over_income_category_id"], name: "index_locations_on_cash_over_income_category_id"
+    t.index ["cash_over_treasury_id"], name: "index_locations_on_cash_over_treasury_id"
+    t.index ["cash_short_expense_category_id"], name: "index_locations_on_cash_short_expense_category_id"
     t.index ["company_id", "name"], name: "index_locations_on_company_id_and_name", unique: true
     t.index ["company_id", "slug"], name: "index_locations_on_company_id_and_slug", unique: true
     t.index ["company_id"], name: "index_locations_on_company_id"
@@ -2071,6 +2083,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_13_120000) do
   add_foreign_key "cash_drawer_sessions", "treasuries", column: "deposit_treasury_id"
   add_foreign_key "cash_drawer_sessions", "treasuries", column: "float_source_treasury_id"
   add_foreign_key "cash_drawer_sessions", "users"
+  add_foreign_key "cash_drawer_sessions", "users", column: "shortage_waived_by_id"
+  add_foreign_key "cash_drawer_sessions", "vouchers", column: "shortage_voucher_id"
   add_foreign_key "categories", "companies"
   add_foreign_key "combo_items", "combos"
   add_foreign_key "combo_items", "menu_items"
@@ -2127,6 +2141,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_13_120000) do
   add_foreign_key "location_operating_days", "users", column: "closed_by_id"
   add_foreign_key "location_operating_days", "users", column: "opened_by_id"
   add_foreign_key "locations", "companies"
+  add_foreign_key "locations", "expense_categories", column: "cash_short_expense_category_id"
+  add_foreign_key "locations", "income_categories", column: "cash_over_income_category_id"
+  add_foreign_key "locations", "treasuries", column: "cash_over_treasury_id"
   add_foreign_key "locations", "treasuries", column: "deposit_treasury_id"
   add_foreign_key "loyalty_transactions", "customers"
   add_foreign_key "loyalty_transactions", "orders"

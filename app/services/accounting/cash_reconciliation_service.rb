@@ -18,20 +18,30 @@ module Accounting
       @sales_summary ||= SessionSalesSummary.for_session(@session)
     end
 
-    def reconcile!(counted_cents)
+    # `by` is whoever closed the drawer — the cashier at the till, or a manager
+    # from the admin — and is recorded on the over/short documents.
+    #
+    # The books take what the drawer should have held (expected); the gap to the
+    # count becomes its own document (Accounting::DrawerVarianceDocuments), so
+    # the safe still ends up holding exactly what was counted.
+    def reconcile!(counted_cents, by: nil)
       expected = @session.expected_cash_cents || compute_expected!
       variance = counted_cents - expected
 
-      @session.update!(
-        counted_cash_cents: counted_cents,
-        variance_cents: variance,
-        status: "reconciled"
-      )
+      CashDrawerSession.transaction do
+        @session.update!(
+          counted_cash_cents: counted_cents,
+          variance_cents: variance,
+          variance_documented: true,
+          status: "reconciled"
+        )
 
-      ::Accounting::TreasuryLedgerService.sync_drawer_reconcile!(@session)
-      ::Accounting::TreasuryLedgerService.sync_session_online_payments!(@session)
-      # Last, so the drawer is banked only after the takings are in it.
-      ::Accounting::TreasuryLedgerService.sync_drawer_deposit!(@session)
+        ::Accounting::TreasuryLedgerService.sync_drawer_reconcile!(@session)
+        ::Accounting::TreasuryLedgerService.sync_session_online_payments!(@session)
+        # Last, so the drawer is banked only after the takings are in it.
+        ::Accounting::TreasuryLedgerService.sync_drawer_deposit!(@session)
+        ::Accounting::DrawerVarianceDocuments.sync!(@session, by: by)
+      end
 
       AuditLogEntry.record!(
         action: "cash_drawer.reconciled",

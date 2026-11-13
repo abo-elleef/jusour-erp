@@ -347,8 +347,13 @@ class MoneyPathChecker
     counted = 15_000 + 4_000 + offline.order.payments.sum(:amount_cents)
     raise "drawer expected #{expected}, but #{counted} is in it" unless expected == counted
 
-    reconciler.reconcile!(counted)
-    check "POS — drawer reconciled"
+    # Counted 5.00 short: the safe takes the expected cash and the gap goes to
+    # the cashier by voucher, so the voucher's treasury and journal legs are
+    # walked too. (An overage's Income posts on commit, which never comes here.)
+    reconciler.reconcile!(counted - 500, by: owner)
+    raise "short drawer raised no voucher" unless session.reload.shortage_voucher
+
+    check "POS — drawer reconciled short (voucher to cashier)"
   rescue StandardError => e
     skip("POS", "could not exercise: #{e.class} #{e.message}")
   end

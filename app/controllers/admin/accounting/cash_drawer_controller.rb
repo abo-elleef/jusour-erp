@@ -5,7 +5,8 @@ require "csv"
 module Admin
   module Accounting
     class CashDrawerController < BaseController
-      before_action :set_session, only: %i[show count reconcile payments attach_payments print_slip reopen]
+      before_action :set_session, only: %i[show count reconcile payments attach_payments print_slip reopen
+                                                 waive_shortage unwaive_shortage]
       helper_method :print_mode?
 
       def index
@@ -83,7 +84,7 @@ module Admin
 
       def reconcile
         counted_cents = (params[:counted_cash].to_f * 100).to_i
-        ::Accounting::CashReconciliationService.new(@session).reconcile!(counted_cents)
+        ::Accounting::CashReconciliationService.new(@session).reconcile!(counted_cents, by: current_user)
         # No register is known here, so it goes to the branch for whichever is open.
         Printing::PrintDrawerCloseService.call(session: @session.reload)
         redirect_to admin_accounting_cash_drawer_index_path,
@@ -101,6 +102,25 @@ module Admin
       end
 
       # Undo a close, same business day only. Owner / super manager, with a reason.
+      # A manager takes a shortage off the cashier: the voucher to them is voided
+      # and the same amount becomes a company expense, paid from the same safe —
+      # the cash is still missing, so the safe must stay down by it.
+      def waive_shortage
+        authorize @session, :waive_shortage?
+        change_shortage_waiver!(waived: true)
+        redirect_to admin_accounting_cash_drawer_path(@session), notice: t("flash.accounting.drawer_shortage_waived")
+      rescue Pundit::NotAuthorizedError
+        redirect_to admin_accounting_cash_drawer_path(@session), alert: t("flash.accounting.drawer_shortage_waive_failed")
+      end
+
+      def unwaive_shortage
+        authorize @session, :unwaive_shortage?
+        change_shortage_waiver!(waived: false)
+        redirect_to admin_accounting_cash_drawer_path(@session), notice: t("flash.accounting.drawer_shortage_unwaived")
+      rescue Pundit::NotAuthorizedError
+        redirect_to admin_accounting_cash_drawer_path(@session), alert: t("flash.accounting.drawer_shortage_waive_failed")
+      end
+
       def reopen
         authorize @session, :reopen?
         result = ::Accounting::ReopenCashDrawer.call(
@@ -189,6 +209,22 @@ module Admin
                                .order(:created_at)
         entries.select { |e| e.changes_snapshot["cash_drawer_session_id"] == @session.id }
                .index_by(&:record_id)
+      end
+
+      def change_shortage_waiver!(waived:)
+        CashDrawerSession.transaction do
+          @session.update_columns(
+            shortage_waived_at: (Time.current if waived),
+            shortage_waived_by_id: (current_user.id if waived)
+          )
+          ::Accounting::DrawerVarianceDocuments.sync!(@session, by: current_user)
+          AuditLogEntry.record!(
+            action: waived ? "cash_drawer.shortage_waived" : "cash_drawer.shortage_unwaived",
+            record: @session,
+            user: current_user,
+            changes_snapshot: { variance_cents: @session.variance_cents }
+          )
+        end
       end
 
       def set_session

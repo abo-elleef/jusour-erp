@@ -253,18 +253,27 @@ module Accounting
       # the float was already debited to the drawer when it opened — and they clear
       # against sales clearing, where the day's revenue was recognised. Any gap
       # between the two is the cash over/short, and it stays visible in 1160.
+      # Signed like the treasury line it mirrors: cash paid out of the drawer
+      # (refunds, drivers) beating cash taken leaves a negative collection, which
+      # the treasury has always recorded — the entry now follows it rather than
+      # being skipped. Negative amounts swap sides (see #debit / #credit callers).
       def record_drawer_reconcile!(session)
         destroy_for_source!(session, kind: :reconcile)
         collected = session.cash_collected_cents
-        return unless collected.positive?
+        return if collected.zero?
 
         create! source: session, date: Date.current, user: session.user,
                 description: I18n.t("accounting.journal_entries.auto.drawer_reconcile",
                                     treasury: session.treasury.name,
                                     default: "Cash Drawer Reconciled — #{session.treasury.name}"),
                 source_tag: :reconcile do |lines|
-          lines << debit(session.treasury, collected)
-          lines << credit(SystemAccount::SALES_CLEARING, collected)
+          if collected.positive?
+            lines << debit(session.treasury, collected)
+            lines << credit(SystemAccount::SALES_CLEARING, collected)
+          else
+            lines << debit(SystemAccount::SALES_CLEARING, -collected)
+            lines << credit(session.treasury, -collected)
+          end
         end
       end
 
@@ -274,7 +283,7 @@ module Accounting
       def record_drawer_deposit!(session)
         destroy_for_source!(session, kind: :deposit)
         amount = session.deposit_cents
-        return unless amount.positive?
+        return if amount.zero?
         return if session.deposit_treasury.blank?
 
         create! source: session, date: Date.current, user: session.user,
@@ -283,8 +292,13 @@ module Accounting
                                     to: session.deposit_treasury.name,
                                     default: "Drawer banked — #{session.treasury.name} → #{session.deposit_treasury.name}"),
                 source_tag: :deposit do |lines|
-          lines << debit(session.deposit_treasury, amount)
-          lines << credit(session.treasury, amount)
+          if amount.positive?
+            lines << debit(session.deposit_treasury, amount)
+            lines << credit(session.treasury, amount)
+          else
+            lines << debit(session.treasury, -amount)
+            lines << credit(session.deposit_treasury, -amount)
+          end
         end
       end
 
