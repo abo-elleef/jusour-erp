@@ -1526,6 +1526,7 @@ module ApplicationHelper
     if current_user.can_access_admin?
       items << { label: t("nav.locations"), path: admin_locations_path, controller: "locations" }
       items << { label: t("nav.printers"), path: admin_printers_path, controller: "printers" }
+      items << { label: t("nav.print_jobs"), path: admin_print_logs_path, controller: "print_logs" }
       items << { label: t("nav.workstations"), path: admin_workstations_path, controller: "workstations" }
     end
     if current_user.owner?

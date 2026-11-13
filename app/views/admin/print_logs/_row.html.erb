@@ -1,0 +1,70 @@
+<%# One print job. Replaced in place by retry / mark-handled so the page keeps its scroll. %>
+<% location = log.order&.location || log.cash_drawer_session&.location %>
+<% badge = case log.status
+           when "sent" then "bg-green-100 text-green-800 border-green-200"
+           when "pending" then "bg-amber-100 text-amber-800 border-amber-200"
+           when "failed" then "bg-red-100 text-red-800 border-red-200"
+           when "handled" then "bg-blue-100 text-blue-800 border-blue-200"
+           else "bg-gray-100 text-gray-700 border-gray-200"
+           end %>
+<tr id="<%= dom_id(log) %>" class="hover:bg-gray-100 transition-colors align-top">
+  <td class="p-3 ps-5 text-gray-600 whitespace-nowrap tabular-nums"><%= l(log.created_at, format: :short) %></td>
+  <td class="p-3 text-gray-700">
+    <% if location && policy(location).show? %>
+      <%= link_to location.name, admin_location_path(location), class: "text-amber-700 hover:text-amber-800 font-medium", data: { turbo_frame: "_top" } %>
+    <% else %>
+      <%= location&.name || "—" %>
+    <% end %>
+  </td>
+  <td class="p-3">
+    <% if log.order %>
+      <%= link_to "##{log.order.order_number}", admin_order_path(log.order), class: "font-semibold text-amber-700 hover:text-amber-800", data: { turbo_frame: "_top" } %>
+    <% elsif log.cash_drawer_session %>
+      <% if policy(log.cash_drawer_session).show? %>
+        <%= link_to t("print_logs.subjects.drawer"), admin_accounting_cash_drawer_path(log.cash_drawer_session), class: "font-semibold text-amber-700 hover:text-amber-800", data: { turbo_frame: "_top" } %>
+      <% else %>
+        <%= t("print_logs.subjects.drawer") %>
+      <% end %>
+    <% else %>
+      —
+    <% end %>
+  </td>
+  <td class="p-3 text-gray-700"><%= t("print_logs.types.#{log.print_type}", default: log.print_type.humanize) %></td>
+  <td class="p-3 text-gray-700">
+    <% if log.printer %>
+      <%= link_to log.printer.name, admin_printer_path(log.printer), class: "text-amber-700 hover:text-amber-800 font-medium", data: { turbo_frame: "_top" } %>
+    <% else %>
+      <span class="text-gray-500"><%= t("print_logs.no_printer") %></span>
+    <% end %>
+  </td>
+  <td class="p-3 whitespace-nowrap">
+    <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= badge %>">
+      <%= t("printing.logs.statuses.#{log.status}") %>
+    </span>
+    <% if resolved %>
+      <p class="text-xs text-green-700 mt-1.5"><%= t("print_logs.reprinted_later") %></p>
+    <% end %>
+  </td>
+  <td class="p-3 text-xs min-w-[16rem] max-w-md">
+    <% if log.status == "failed" || log.error_message.present? %>
+      <p class="font-medium text-gray-900"><%= t("printing.status.reasons.#{log.failure_reason_key}", default: "") %></p>
+      <% if log.error_message.present? %>
+        <p class="text-gray-500 font-mono break-words mt-0.5"><%= log.error_message %></p>
+      <% end %>
+    <% else %>
+      <span class="text-gray-400">—</span>
+    <% end %>
+  </td>
+  <td class="p-3 pe-5 text-end whitespace-nowrap">
+    <% if log.status == "failed" && policy(log).manage? %>
+      <div class="inline-flex gap-2">
+        <%= button_to t("print_logs.actions.retry"), retry_admin_print_log_path(log), method: :post,
+              form: { data: { turbo_confirm: t("print_logs.actions.retry_confirm") } },
+              class: "inline-flex text-xs font-semibold text-amber-700 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors" %>
+        <%= button_to t("print_logs.actions.handle"), handle_admin_print_log_path(log), method: :post,
+              form: { data: { turbo_confirm: t("print_logs.actions.handle_confirm") } },
+              class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+      </div>
+    <% end %>
+  </td>
+</tr>

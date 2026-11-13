@@ -45,7 +45,13 @@ class PrintLog < ApplicationRecord
   # printer) — what the cashier still needs to act on.
   FAILED_WINDOW = 12.hours
   scope :needs_attention, lambda {
-    where(status: "failed").where("print_logs.updated_at > ?", FAILED_WINDOW.ago).where(
+    where(status: "failed").where("print_logs.updated_at > ?", FAILED_WINDOW.ago).unresolved
+  }
+
+  # No later successful print of the same ticket (same order or drawer, ticket type
+  # and printer). A failed job that is not unresolved was reprinted afterwards.
+  scope :unresolved, lambda {
+    where(
       "NOT EXISTS (SELECT 1 FROM print_logs later WHERE later.status = 'sent' " \
       "AND later.print_type = print_logs.print_type " \
       "AND later.order_id IS NOT DISTINCT FROM print_logs.order_id " \

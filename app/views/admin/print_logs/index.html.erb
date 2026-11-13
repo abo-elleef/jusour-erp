@@ -1,0 +1,100 @@
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% filter_params = request.query_parameters.except("page", "status") %>
+
+<div class="max-w-full">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title %></h1>
+    <p class="text-gray-600 text-sm mt-1"><%= t("print_logs.index.description") %></p>
+  </div>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <% [["unresolved", "text-red-700"], ["failed", "text-gray-900"], ["handled", "text-blue-700"], ["all", "text-gray-900"]].each do |key, color| %>
+      <%= link_to admin_print_logs_path(filter_params.merge(status: key)), class: orders_stat_card_class(@status == key) do %>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("print_logs.stats.#{key}") %></p>
+        <p class="text-2xl font-bold mt-1 tabular-nums <%= color %>"><%= @counts[key] %></p>
+      <% end %>
+    <% end %>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("print_logs.filters.title") %></h2>
+    </div>
+    <div class="p-5">
+      <%= form_with url: admin_print_logs_path, method: :get, class: "flex flex-wrap items-end gap-4" do %>
+        <div class="min-w-[9rem]">
+          <%= label_tag :from, t("print_logs.filters.from"), class: label_class %>
+          <%= date_field_tag :from, @from, class: input_class %>
+        </div>
+        <div class="min-w-[9rem]">
+          <%= label_tag :to, t("print_logs.filters.to"), class: label_class %>
+          <%= date_field_tag :to, @to, class: input_class %>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= label_tag :location_id, t("print_logs.fields.branch"), class: label_class %>
+          <%= select_tag :location_id,
+                options_for_select([[t("print_logs.filters.all_branches"), ""]] + @locations.map { |loc| [loc.name, loc.id] }, @location_id),
+                class: input_class %>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= label_tag :printer_id, t("print_logs.fields.printer"), class: label_class %>
+          <%= select_tag :printer_id,
+                options_for_select([[t("print_logs.filters.all_printers"), ""]] + @printers.map { |p| [p.name, p.id] }, @printer_id),
+                class: input_class %>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= label_tag :print_type, t("print_logs.fields.type"), class: label_class %>
+          <%= select_tag :print_type,
+                options_for_select([[t("print_logs.filters.all_types"), ""]] + PrintLog::PRINT_TYPES.map { |tp| [t("print_logs.types.#{tp}"), tp] }, @print_type),
+                class: input_class %>
+        </div>
+        <div class="min-w-[10rem]">
+          <%= label_tag :status_select, t("print_logs.fields.status"), class: label_class %>
+          <%= select_tag :status,
+                options_for_select(Admin::PrintLogsController::STATUS_FILTERS.map { |s| [t("print_logs.status_filters.#{s}"), s] }, @status),
+                id: "status_select", class: input_class %>
+        </div>
+        <%= submit_tag t("actions.apply_search"), name: nil,
+              class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
+        <% if @filtered || @status != Admin::PrintLogsController::DEFAULT_STATUS %>
+          <%= link_to t("actions.clear"), admin_print_logs_path,
+                class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl transition-colors" %>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+
+  <% if @print_logs.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-start text-sm min-w-[1040px]">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide text-start">
+            <tr>
+              <% sort_opts = { sort: @sort, direction: @direction, base_params: request.query_parameters.except("page") } %>
+              <th class="p-3 ps-5 text-start"><%= sort_header_link(t("print_logs.fields.time"), :created_at, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("print_logs.fields.branch"), :branch, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= t("print_logs.fields.subject") %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("print_logs.fields.type"), :print_type, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("print_logs.fields.printer"), :printer, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("print_logs.fields.status"), :status, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= t("print_logs.fields.error") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("print_logs.fields.actions") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% @print_logs.each do |log| %>
+              <%= render "admin/print_logs/row", log: log, resolved: @resolved_ids.include?(log.id) %>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("print_logs.empty.title") %></p>
+      <p class="text-gray-500 text-sm"><%= t("print_logs.empty.description") %></p>
+    </section>
+  <% end %>
+</div>

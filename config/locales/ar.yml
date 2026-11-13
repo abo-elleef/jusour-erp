@@ -222,6 +222,62 @@ ar:
     searchable_select:
       no_results: "لا توجد نتائج"
 
+  print_logs:
+    index:
+      description: "مهام الطباعة من كل الفروع. تبدأ بالتذاكر الفاشلة التي لم تُطبع مرة أخرى."
+    stats:
+      unresolved: "ما زالت فاشلة"
+      failed: "كل الفاشلة"
+      handled: "تمت يدويًا"
+      all: "كل المهام"
+    status_filters:
+      unresolved: "ما زالت فاشلة (لم تُعد طباعتها)"
+      failed: "كل الفاشلة"
+      handled: "تمت يدويًا"
+      pending: "قيد الانتظار"
+      sent: "تمت الطباعة"
+      skipped: "تخطي"
+      all: "كل الحالات"
+    filters:
+      title: "التصفية"
+      from: "من"
+      to: "إلى"
+      all_branches: "كل الفروع"
+      all_printers: "كل الطابعات"
+      all_types: "كل أنواع التذاكر"
+    fields:
+      time: "الوقت"
+      branch: "الفرع"
+      subject: "الطلب / الدرج"
+      type: "التذكرة"
+      printer: "الطابعة"
+      status: "الحالة"
+      error: "الخطأ"
+      actions: "الإجراءات"
+    types:
+      receipt: "إيصال"
+      kitchen: "المطبخ"
+      bar: "البار"
+      expo: "التجميع"
+      pick_station: "محطة الاستلام"
+      station: "محطة"
+      drawer_close: "إيصال إغلاق الدرج"
+    subjects:
+      drawer: "إغلاق الدرج"
+    no_printer: "بدون طابعة"
+    reprinted_later: "أعيدت طباعتها لاحقًا"
+    actions:
+      retry: "إعادة المحاولة"
+      retry_confirm: "إرسال هذه التذكرة إلى الفرع مرة أخرى؟ ستُطبع على الكاشير المفتوح في الفرع."
+      handle: "تمت يدويًا"
+      handle_confirm: "تأكيد أن هذه التذكرة عولجت يدويًا؟ لن تُطبع مرة أخرى."
+    flash:
+      retried: "أعيدت إلى قائمة الطباعة. ستُطبع عند فتح كاشير في الفرع."
+      handled: "تم التسجيل كمطبوعة يدويًا."
+      not_failed: "هذه المهمة لم تعد فاشلة."
+    empty:
+      title: "لا توجد مهام طباعة مطابقة"
+      description: "جرّب فترة أوسع أو حالة أخرى."
   printers:
     index:
       description: "طابعات الإيصالات والمطبخ والبار في المطعم."
@@ -487,6 +543,7 @@ ar:
       no_route: "لا يوجد مسار شبكة إلى %{host}:%{port}. ضع الخادم والطابعة على نفس الشبكة المحلية، وأوقف عزل شبكة الضيوف، وأغلق VPN أثناء الاختبار."
     logs:
       title: "مهام الطباعة الأخيرة"
+      view_all: "كل مهام الطباعة لهذه الطابعة"
       time: "الوقت"
       order: "الطلب"
       status: "الحالة"
@@ -510,6 +567,7 @@ ar:
     staff: "الموظفون"
     settings: "الإعدادات"
     printers: "الطابعات"
+    print_jobs: "مهام الطباعة"
     workstations: "الكاشيرات"
     inventory: "المخزون"
     locations: "المواقع"
@@ -4474,6 +4532,8 @@ ar:
         edit: "تعديل الموظف"
       settings:
         title: "الإعدادات"
+      print_logs:
+        title: "مهام الطباعة"
       printers:
         title: "الطابعات"
         new: "طابعة جديدة"
