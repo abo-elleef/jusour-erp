@@ -81,3 +81,59 @@ namespace :accounting do
     puts "Removed #{removed} per-order COGS rows; rebuilt #{rebuilt} branch-day rows."
   end
 end
+
+# Re-costs the daily COGS rows, e.g. after the costing changed (modifier recipes
+# were added to it on 2026-11-13). Rebuilds every branch-day that has completed
+# orders in the range; each row is replaced, or removed when the day costs
+# nothing, so it is safe to re-run. COGS rows carry no treasury and post no
+# journal entry, so this changes the management figure only.
+#
+#   bin/rails accounting:rebuild_daily_cogs                           # every day up to yesterday
+#   bin/rails "accounting:rebuild_daily_cogs[2026-10-01,2026-11-12]"
+namespace :accounting do
+  desc "Re-cost the daily COGS rows for every branch-day with sales in a range"
+  task :rebuild_daily_cogs, %i[from to] => :environment do |_t, args|
+    to = args[:to].present? ? Date.parse(args[:to]) : Date.yesterday
+
+    rebuilt = 0
+    before_total = 0
+    after_total = 0
+    Company.find_each do |company|
+      previous = Current.company
+      Current.company = company
+      begin
+        category = ExpenseCategory.find_by(name: Accounting::DailyCogsService::CATEGORY_NAME)
+        next if category.nil?
+
+        user = User.where(company_id: company.id, role: "owner").first ||
+               User.where(company_id: company.id).first
+        next if user.nil?
+
+        orders = Order.completed.where.not(location_id: nil)
+        if args[:from].present?
+          orders = orders.where(created_at: BusinessDay.range_between(Date.parse(args[:from]), to))
+        end
+        locations = Location.where(id: orders.distinct.pluck(:location_id)).index_by(&:id)
+        days = orders.pluck(:location_id, :created_at)
+                     .map { |location_id, at| [location_id, BusinessDay.for(at, location: locations[location_id])] }
+                     .uniq
+                     .select { |_, date| date <= to }
+
+        cogs = Expense.where(expense_category_id: category.id, is_auto_generated: true, source_record_type: "Location")
+        before_total += cogs.sum(:amount_cents).to_i
+
+        days.each do |location_id, date|
+          Accounting::DailyCogsService.call(location: locations[location_id], business_date: date, user: user)
+          rebuilt += 1
+        end
+
+        after_total += cogs.sum(:amount_cents).to_i
+        puts "#{company.name}: #{days.size} branch-days"
+      ensure
+        Current.company = previous
+      end
+    end
+
+    puts "Rebuilt #{rebuilt} branch-day COGS rows. COGS total #{before_total} → #{after_total} cents (#{after_total - before_total >= 0 ? '+' : ''}#{after_total - before_total})."
+  end
+end

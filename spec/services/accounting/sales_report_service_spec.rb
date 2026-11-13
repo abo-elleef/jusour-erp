@@ -101,5 +101,77 @@ RSpec.describe Accounting::SalesReportService do
       expect(items.first).to include(category: "Mains", units_sold: 2, revenue_cents: 2000)
       expect(items.last).to include(units_sold: 1, revenue_cents: 500)
     end
+
+    describe "modifier breakdown" do
+      def group(name, position: 0)
+        ModifierGroup.create!(company: company, name: name, required: true, position: position)
+      end
+
+      def sell(order, choices, quantity: 1, unit_price_cents: 1000)
+        line = create(:order_item, order: order, menu_item: menu_item, quantity: quantity, unit_price_cents: unit_price_cents)
+        choices.each do |modifier|
+          line.order_item_modifiers.create!(modifier: modifier, name: modifier.name,
+                                            price_adjustment_cents: modifier.price_adjustment_cents)
+        end
+        line
+      end
+
+      let(:size) { group("Size", position: 1) }
+      let(:heat) { group("Heat", position: 2) }
+      let(:single) { size.modifiers.create!(company: company, name: "Single", price_adjustment_cents: 0) }
+      let(:double) { size.modifiers.create!(company: company, name: "Double", price_adjustment_cents: 500) }
+      let(:hot) { heat.modifiers.create!(company: company, name: "Hot") }
+      let(:cold) { heat.modifiers.create!(company: company, name: "Cold") }
+      let(:order) do
+        create(:order, user: user, company: company, status: "completed",
+          subtotal_cents: 4500, total_cents: 4500, created_at: today.noon)
+      end
+
+      it "splits an item's units and revenue per choice, group by group, each adding up to the item" do
+        sell(order, [single, hot], quantity: 2)
+        sell(order, [double, cold])
+
+        item = described_class.new(today, today).call[:by_item].first
+
+        expect(item).to include(units_sold: 3, revenue_cents: 3500)
+        expect(item[:modifier_groups].map { |g| g[:name] }).to eq(%w[Size Heat])
+
+        size_group = item[:modifier_groups].first
+        expect(size_group[:choices].map { |c| [c[:name], c[:units_sold], c[:revenue_cents]] })
+          .to eq([["Single", 2, 2000], ["Double", 1, 1500]])
+        item[:modifier_groups].each do |g|
+          expect(g[:choices].sum { |c| c[:units_sold] }).to eq(3)
+          expect(g[:choices].sum { |c| c[:revenue_cents] }).to eq(3500)
+        end
+      end
+
+      it "merges groups and choices that share a name" do
+        copy = group("Size")
+        copy_double = copy.modifiers.create!(company: company, name: "Double", price_adjustment_cents: 500)
+        sell(order, [double])
+        sell(order, [copy_double])
+
+        groups = described_class.new(today, today).call[:by_item].first[:modifier_groups]
+
+        expect(groups.size).to eq(1)
+        expect(groups.first[:choices]).to contain_exactly(include(name: "Double", units_sold: 2, revenue_cents: 3000))
+      end
+
+      it "puts lines with no choice in a group under a no-choice row" do
+        sell(order, [single, hot])
+        sell(order, [double])
+
+        heat_group = described_class.new(today, today).call[:by_item].first[:modifier_groups].find { |g| g[:name] == "Heat" }
+
+        expect(heat_group[:choices].map { |c| [c[:name], c[:units_sold], c[:revenue_cents], c[:no_choice]] })
+          .to eq([["Hot", 1, 1000, nil], [I18n.t("accounting.sales_reports.no_choice"), 1, 1500, true]])
+      end
+
+      it "leaves items sold without modifiers with no groups" do
+        sell(order, [])
+
+        expect(described_class.new(today, today).call[:by_item].first[:modifier_groups]).to eq([])
+      end
+    end
   end
 end

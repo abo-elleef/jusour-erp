@@ -175,7 +175,7 @@
                  class: "px-3 py-1.5 rounded-lg text-sm font-semibold #{active ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-900'}"
        } %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6"
-             <%= 'data-controller=row-groups'.html_safe if grouped %>>
+             data-controller="row-groups">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.sales_reports.by_category_and_item") %></h2>
@@ -222,7 +222,7 @@
           <% if grouped %>
             <% grand_total = @category_groups.sum { |g| g[:revenue_cents] } %>
             <% if @category_groups.any? %>
-              <% @category_groups.each do |group| %>
+              <% @category_groups.each_with_index do |group, group_index| %>
                 <% share = pct.call(group[:revenue_cents], grand_total) %>
                 <tbody class="border-b border-gray-100" data-row-groups-target="group">
                   <tr class="cursor-pointer hover:bg-amber-50/40 transition-colors" data-action="click->row-groups#toggle">
@@ -244,13 +244,16 @@
                       </div>
                     </td>
                   </tr>
-                  <% group[:items].each do |row| %>
-                    <tr class="bg-gray-50/60 text-gray-700" data-row-groups-child hidden>
-                      <td class="py-2 px-3 ps-12"><%= row[:name] %></td>
+                  <% group[:items].each_with_index do |row, item_index| %>
+                    <% item_key = "g#{group_index}-#{item_index}" %>
+                    <tr class="bg-gray-50/60 text-gray-700 <%= 'cursor-pointer' if row[:modifier_groups].present? %>" data-row-groups-child hidden
+                        <% if row[:modifier_groups].present? %>data-row-groups-item="<%= item_key %>" data-action="click->row-groups#toggleItem"<% end %>>
+                      <%= render "item_name_cell", row: row, css: "py-2 px-3 ps-12" %>
                       <td class="py-2 px-3 text-end tabular-nums"><%= number_with_delimiter(row[:units_sold]) %></td>
                       <td class="py-2 px-3 text-end tabular-nums"><%= copyable_amount(row[:revenue_cents]) %></td>
                       <td class="py-2 px-3 pe-5 text-end text-xs text-gray-500 tabular-nums"><%= number_with_precision(pct.call(row[:revenue_cents], grand_total), precision: 1) %>%</td>
                     </tr>
+                    <%= render "item_modifier_rows", row: row, key: item_key, flat: false if row[:modifier_groups].present? %>
                   <% end %>
                 </tbody>
               <% end %>
@@ -260,9 +263,11 @@
           <% else %>
             <tbody class="divide-y divide-gray-100 table-zebra">
               <% if @visible_items.any? %>
-                <% @visible_items.each do |row| %>
-                  <tr class="hover:bg-gray-100 transition-colors">
-                    <td class="p-3 ps-5 font-medium text-gray-900"><%= row[:name] %></td>
+                <% @visible_items.each_with_index do |row, item_index| %>
+                  <% item_key = "f#{item_index}" %>
+                  <tr class="hover:bg-gray-100 transition-colors <%= 'cursor-pointer' if row[:modifier_groups].present? %>"
+                      <% if row[:modifier_groups].present? %>data-row-groups-item="<%= item_key %>" data-action="click->row-groups#toggleItem"<% end %>>
+                    <%= render "item_name_cell", row: row, css: "p-3 ps-5 font-medium text-gray-900" %>
                     <td class="p-3 text-gray-600"><%= row[:category] || "—" %></td>
                     <td class="p-3 text-end tabular-nums"><%= number_with_delimiter(row[:units_sold]) %></td>
                     <td class="p-3 text-end font-semibold tabular-nums"><%= copyable_amount(row[:revenue_cents]) %></td>
@@ -270,6 +275,7 @@
                       <%= @item_total_cents.positive? ? "#{number_with_precision(pct.call(row[:revenue_cents], @item_total_cents), precision: 1)}%" : "—" %>
                     </td>
                   </tr>
+                  <%= render "item_modifier_rows", row: row, key: item_key, flat: true if row[:modifier_groups].present? %>
                 <% end %>
               <% else %>
                 <tr><td colspan="5" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_reports.no_sales") %></td></tr>

@@ -1,0 +1,20 @@
+<%# Modifier choices sold under one item row: a label row per modifier group,
+    then its choices. Hidden until the item row is expanded (row-groups#toggleItem).
+    Locals: row (an item row with :modifier_groups), key (unique per page),
+    total_cents (what the share column divides by), flat (true adds the category column). %>
+<% row[:modifier_groups].each do |group| %>
+  <tr class="bg-amber-50/30 text-gray-500" data-row-groups-sub="<%= key %>" hidden>
+    <td class="pt-2 pb-1 px-3 ps-16 text-xs font-semibold" colspan="<%= flat ? 5 : 4 %>"><%= group[:name] %></td>
+  </tr>
+  <% group[:choices].each do |choice| %>
+    <tr class="bg-amber-50/30 <%= choice[:no_choice] ? 'text-gray-400 italic' : 'text-gray-700' %>" data-row-groups-sub="<%= key %>" hidden>
+      <td class="py-1.5 px-3 ps-20 text-sm"><%= choice[:name] %></td>
+      <% if flat %><td></td><% end %>
+      <td class="py-1.5 px-3 text-end text-sm tabular-nums"><%= number_with_delimiter(choice[:units_sold]) %></td>
+      <td class="py-1.5 px-3 text-end text-sm tabular-nums"><%= format_amount(choice[:revenue_cents]) %></td>
+      <td class="py-1.5 px-3 pe-5 text-end text-xs tabular-nums">
+        <%= row[:units_sold].positive? ? "#{number_with_precision(choice[:units_sold] * 100.0 / row[:units_sold], precision: 1)}%" : "—" %>
+      </td>
+    </tr>
+  <% end %>
+<% end %>

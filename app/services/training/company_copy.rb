@@ -383,10 +383,13 @@ module Training
       end
 
       from_source(ModifierRecipe).each do |src|
-        record = ModifierRecipe.new(attrs_of(src, except: %w[modifier_id ingredient_id]))
+        record = ModifierRecipe.new(attrs_of(src, except: %w[modifier_id ingredient_id unit_id]))
         record.modifier_id = mapped(:modifiers, src.modifier_id)
         record.ingredient_id = mapped(:ingredients, src.ingredient_id)
+        record.unit_id = mapped(:units, src.unit_id)
         next if record.modifier_id.nil? || record.ingredient_id.nil?
+        next skip!(:modifier_recipes, src, "unit is no longer one of the ingredient's units") unless
+          unit_available?(record.ingredient_id, record.unit_id)
 
         track!(:modifier_recipes, src, record)
       end

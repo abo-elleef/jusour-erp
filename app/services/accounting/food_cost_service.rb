@@ -12,6 +12,8 @@ module Accounting
         created_at: BusinessDay.range_between(@start, @end)
       )
       order_ids = completed_orders.select(:id)
+      # What the chosen modifiers' own recipes cost (a Double's extra patty).
+      modifier_cost = ModifierRecipeCost.by_menu_item(OrderItem.where(order_id: order_ids))
 
       items = MenuItem.available.includes(recipes: :ingredient).filter_map do |item|
         scope = OrderItem.where(order_id: order_ids, menu_item_id: item.id)
@@ -23,7 +25,7 @@ module Accounting
         ingredient_cost_per_unit = item.recipes.sum do |r|
           (r.base_quantity_used * r.ingredient.cost_per_unit_cents).round
         end
-        total_cost_cents = ingredient_cost_per_unit * units_sold
+        total_cost_cents = (ingredient_cost_per_unit * units_sold) + modifier_cost.fetch(item.id, 0)
         food_cost_pct = revenue_cents.positive? ? (total_cost_cents.to_f / revenue_cents * 100).round(1) : 0
 
         {

@@ -36,7 +36,7 @@ module Admin
       end
 
       def modifier_recipe_params
-        params.require(:modifier_recipe).permit(:ingredient_id, :quantity)
+        params.require(:modifier_recipe).permit(:ingredient_id, :quantity, :unit)
       end
     end
   end

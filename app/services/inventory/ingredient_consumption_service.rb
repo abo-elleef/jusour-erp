@@ -47,13 +47,24 @@ module Inventory
 
     private
 
+    # The item recipes plus the recipes of the modifiers chosen on each line (a
+    # Double's extra patty), each converted to the ingredient's base unit — what
+    # stock deduction draws down, so neither shows up as unexplained variance.
     def theoretical_usage(ingredient, order_ids)
-      OrderItem
+      from_items = OrderItem
         .joins(:order, menu_item: :recipes)
         .where(orders: { id: order_ids })
         .where(recipes: { ingredient_id: ingredient.id })
-        .sum("recipes.quantity_used * order_items.quantity")
+        .sum(Arel.sql("#{BaseQuantitySql.for('recipes', 'quantity_used')} * order_items.quantity"))
         .to_d
+      from_modifiers = OrderItem
+        .joins(:order, order_item_modifiers: { modifier: :modifier_recipes })
+        .where(orders: { id: order_ids })
+        .where.not(menu_item_id: nil)
+        .where(modifier_recipes: { ingredient_id: ingredient.id })
+        .sum(Arel.sql("#{BaseQuantitySql.for('modifier_recipes', 'quantity')} * order_items.quantity"))
+        .to_d
+      from_items + from_modifiers
     end
   end
 end

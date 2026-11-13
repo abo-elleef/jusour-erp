@@ -22,9 +22,9 @@ module Admin
 
     def edit
       authorize @modifier
-      @modifier_recipes = @modifier.modifier_recipes.includes(:ingredient)
+      @modifier_recipes = @modifier.modifier_recipes.includes(:unit_ref, ingredient: :ingredient_units)
       used_ids = @modifier_recipes.map(&:ingredient_id)
-      @recipe_ingredients = Ingredient.active.where.not(id: used_ids).order(:name)
+      @recipe_ingredients = Ingredient.active.includes(:ingredient_units).where.not(id: used_ids).order(:name)
     end
 
     def update

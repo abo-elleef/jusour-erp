@@ -1,6 +1,7 @@
 <%# locals: modifier_group, modifier, modifier_recipes, recipe_ingredients %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 <% chip_destructive = "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
+<% recipe_units_map = recipe_ingredients.to_h { |i| [i.id, i.available_units.map { |u| [ingredient_unit_label(u), u] }] } %>
 
 <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6">
   <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
@@ -18,7 +19,8 @@
             <p class="text-xs text-gray-500 mt-0.5 tabular-nums">
               <% sign = mr.quantity >= 0 ? "+" : "" %>
               <%= "#{sign}#{number_with_precision(mr.quantity, precision: 4, strip_insignificant_zeros: true)}" %>
-              <%= ingredient_unit_label(mr.ingredient.unit) %>
+              <%= ingredient_unit_label(mr.unit.presence || mr.ingredient.unit) %>
+              · <%= format_amount((mr.base_quantity * mr.ingredient.cost_per_unit_cents).round) %>
             </p>
           </div>
           <%= button_to t("actions.remove"),
@@ -38,13 +40,18 @@
       <% ingredient_options = recipe_ingredients.map { |i| { value: i.id, label: i.name } }.to_json %>
       <%= form_with url: admin_modifier_group_modifier_modifier_recipes_path(modifier_group, modifier),
             class: "flex flex-wrap gap-3 items-end",
-            data: { searchable_select_options: ingredient_options } do |f| %>
+            data: {
+              controller: "recipe-unit",
+              recipe_unit_units_value: recipe_units_map.to_json,
+              searchable_select_options: ingredient_options
+            } do |f| %>
         <div class="flex-1 min-w-[14rem]"
              data-controller="searchable-select"
              data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
           <%= label_tag "modifier_recipe[ingredient_id]", t("menu.modifiers.recipe_ingredient"), class: label_class %>
           <%= hidden_field_tag "modifier_recipe[ingredient_id]", nil,
-                data: { searchable_select_target: "hidden" } %>
+                data: { searchable_select_target: "hidden", recipe_unit_target: "ingredient",
+                        action: "change->recipe-unit#ingredientChanged" } %>
           <input type="text"
                  autocomplete="off"
                  spellcheck="false"
@@ -61,10 +68,17 @@
         </div>
         <div class="min-w-[8rem]">
           <%= label_tag "modifier_recipe[quantity]", t("menu.modifiers.recipe_quantity"), class: label_class %>
-          <%= number_field_tag "modifier_recipe[quantity]", nil,
-                step: 0.0001, required: true,
+          <%= text_field_tag "modifier_recipe[quantity]", nil,
+                required: true, inputmode: "decimal", autocomplete: "off",
                 placeholder: "e.g. 1 or -1",
-                class: "#{pos_input_class} tabular-nums" %>
+                class: "#{pos_input_class} tabular-nums",
+                data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" } %>
+        </div>
+        <div class="min-w-[6rem]">
+          <%= label_tag "modifier_recipe[unit]", t("admin.menu_items.recipe_unit"), class: label_class %>
+          <%= select_tag "modifier_recipe[unit]", nil,
+                class: "#{pos_input_class} appearance-none",
+                data: { recipe_unit_target: "unit" } %>
         </div>
         <%= submit_tag t("actions.add"),
               class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shrink-0" %>
