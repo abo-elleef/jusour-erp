@@ -98,6 +98,16 @@ class OrderPolicy < ApplicationPolicy
     !record.completed? || record.never_paid?
   end
 
+  # Voiding from the register. The branch's void-orders PIN is the real gate
+  # (Pos::OrdersController#void); this keeps the button to placed orders the admin
+  # void would also accept. A draft is discarded instead, not voided.
+  def void_with_pin?
+    return false unless user.can_access_pos?
+    return false if record.draft? || record.cancelled?
+
+    !record.completed? || record.never_paid?
+  end
+
   def refund?
     (user.owner? || user.manager?) && record.completed?
   end

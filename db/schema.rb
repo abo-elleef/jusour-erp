@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_13_150000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_14_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -811,6 +811,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_13_150000) do
     t.uuid "cash_over_treasury_id"
     t.uuid "cash_over_income_category_id"
     t.uuid "cash_short_expense_category_id"
+    t.string "void_orders_pin_digest"
+    t.integer "void_orders_pin_failed_attempts", default: 0, null: false
+    t.datetime "void_orders_pin_locked_until"
     t.index ["active"], name: "index_locations_on_active"
     t.index ["cash_over_income_category_id"], name: "index_locations_on_cash_over_income_category_id"
     t.index ["cash_over_treasury_id"], name: "index_locations_on_cash_over_treasury_id"

@@ -45,7 +45,8 @@ class Location < ApplicationRecord
   validates :table_count, numericality: { only_integer: true, in: 1..200, allow_nil: true }
   validates :table_count, presence: true, if: :table_service?
   validates :business_day_mode, inclusion: { in: BusinessDay::MODES }
-  validate :edit_orders_pin_is_four_digits
+  validate :edit_orders_pin_is_six_digits
+  validate :void_orders_pin_is_six_digits
 
   before_validation :generate_slug, if: -> { slug.blank? && name.present? }
   before_validation :normalize_business_day_start_hour
@@ -89,27 +90,36 @@ class Location < ApplicationRecord
   end
 
   def edit_orders_pin_locked?
-    edit_orders_pin_locked_until.present? && edit_orders_pin_locked_until.future?
+    branch_pin_locked?(:edit_orders)
   end
 
   # Counts failures like the payroll PIN: the fifth wrong one locks the PIN for a
   # few minutes, during which every PIN is refused without being checked.
   def verify_edit_orders_pin(raw)
-    return false unless edit_orders_pin_configured?
-    return false if edit_orders_pin_locked?
+    verify_branch_pin(:edit_orders, raw)
+  end
 
-    if edit_orders_pin_matches?(raw)
-      update_columns(edit_orders_pin_failed_attempts: 0, edit_orders_pin_locked_until: nil) if edit_orders_pin_failed_attempts.positive?
-      return true
-    end
+  # A second branch PIN, six digits, typed at the register to void an order. Same
+  # lockout rules as the edit-orders PIN, counted separately.
+  attr_reader :void_orders_pin
 
-    attempts = edit_orders_pin_failed_attempts + 1
-    if attempts >= EDIT_ORDERS_PIN_MAX_ATTEMPTS
-      update_columns(edit_orders_pin_failed_attempts: 0, edit_orders_pin_locked_until: EDIT_ORDERS_PIN_LOCKOUT.from_now)
-    else
-      update_columns(edit_orders_pin_failed_attempts: attempts)
-    end
-    false
+  def void_orders_pin=(raw)
+    return if raw.blank?
+
+    @void_orders_pin_raw = raw
+    self.void_orders_pin_digest = BCrypt::Password.create(raw.to_s)
+  end
+
+  def void_orders_pin_configured?
+    void_orders_pin_digest.present?
+  end
+
+  def void_orders_pin_locked?
+    branch_pin_locked?(:void_orders)
+  end
+
+  def verify_void_orders_pin(raw)
+    verify_branch_pin(:void_orders, raw)
   end
 
   # The central kitchen production forms should default to. Falls back to the
@@ -193,14 +203,47 @@ class Location < ApplicationRecord
 
   private
 
-  def edit_orders_pin_is_four_digits
+  def edit_orders_pin_is_six_digits
     return if @edit_orders_pin_raw.blank?
 
-    errors.add(:edit_orders_pin, :invalid) unless @edit_orders_pin_raw.to_s.match?(/\A\d{4}\z/)
+    errors.add(:edit_orders_pin, :invalid) unless @edit_orders_pin_raw.to_s.match?(/\A\d{6}\z/)
   end
 
-  def edit_orders_pin_matches?(raw)
-    BCrypt::Password.new(edit_orders_pin_digest) == raw.to_s
+  def void_orders_pin_is_six_digits
+    return if @void_orders_pin_raw.blank?
+
+    errors.add(:void_orders_pin, :invalid) unless @void_orders_pin_raw.to_s.match?(/\A\d{6}\z/)
+  end
+
+  # `kind` is :edit_orders or :void_orders: the prefix of that PIN's three columns.
+  def branch_pin_locked?(kind)
+    locked_until = self["#{kind}_pin_locked_until"]
+    locked_until.present? && locked_until.future?
+  end
+
+  def verify_branch_pin(kind, raw)
+    digest = self["#{kind}_pin_digest"]
+    return false if digest.blank?
+    return false if branch_pin_locked?(kind)
+
+    attempts_column = "#{kind}_pin_failed_attempts"
+    locked_column = "#{kind}_pin_locked_until"
+    if branch_pin_matches?(digest, raw)
+      update_columns(attempts_column => 0, locked_column => nil) if self[attempts_column].positive?
+      return true
+    end
+
+    attempts = self[attempts_column] + 1
+    if attempts >= EDIT_ORDERS_PIN_MAX_ATTEMPTS
+      update_columns(attempts_column => 0, locked_column => EDIT_ORDERS_PIN_LOCKOUT.from_now)
+    else
+      update_columns(attempts_column => attempts)
+    end
+    false
+  end
+
+  def branch_pin_matches?(digest, raw)
+    BCrypt::Password.new(digest) == raw.to_s
   rescue BCrypt::Errors::InvalidHash
     false
   end

@@ -30,10 +30,10 @@
           <span class="font-semibold text-gray-900"><%= order.order_number %></span> ·
           <%= t("pos.orders.unlock_hint") %>
         </p>
-        <%= password_field_tag :pin, nil, maxlength: 4, pattern: "[0-9]{4}", inputmode: "numeric",
+        <%= password_field_tag :pin, nil, maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
               autocomplete: "off", required: true, autofocus: true,
               id: "#{dialog_id}-pin",
-              placeholder: t("pos.manager_pin.placeholder"),
+              placeholder: t("pos.orders.six_digit_pin_placeholder"),
               class: "#{pos_input_class} text-center text-2xl tracking-widest min-h-14" %>
         <div class="flex gap-2">
           <%= submit_tag t("pos.orders.unlock_confirm"),
