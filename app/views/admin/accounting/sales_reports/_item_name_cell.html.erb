@@ -1,0 +1,12 @@
+<%# The item's name; an item sold with modifiers gets a chevron that opens its
+    choice rows (_item_modifier_rows). Locals: row, css. %>
+<td class="<%= css %>">
+  <% if row[:modifier_groups].present? %>
+    <button type="button" class="inline-flex items-center gap-2 text-start" aria-expanded="false" data-row-groups-item-toggle>
+      <span class="text-gray-400 text-xs transition-transform rtl:-scale-x-100" data-row-groups-item-chevron>▸</span>
+      <%= row[:name] %>
+    </button>
+  <% else %>
+    <%= row[:name] %>
+  <% end %>
+</td>

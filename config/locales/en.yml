@@ -3917,7 +3917,7 @@ en:
       recipes_empty: "No ingredient impact configured."
       recipes_all_assigned: "All ingredients are already assigned to this modifier."
       recipe_ingredient: "Ingredient"
-      recipe_quantity: "Quantity (± base unit)"
+      recipe_quantity: "Quantity (±)"
       recipe_quantity_hint: "Positive = add to deduction (e.g. +1 for extra patty). Negative = reduce deduction (e.g. -1 for no bun)."
     menu_items:
       assign_modifier_groups: "Modifier groups"
@@ -5531,6 +5531,9 @@ en:
       promo_cost_line: "Of which promos %{amount}"
       refunds: "Refunds"
       combos_category: "Combos"
+      no_choice: "No choice"
+      modifier_group: "Modifier group"
+      modifier_choice: "Choice"
       tips_line: "Tips %{amount}"
       delivery_fees_line: "Delivery fees paid to drivers %{amount}"
       pnl: "Profit & loss"

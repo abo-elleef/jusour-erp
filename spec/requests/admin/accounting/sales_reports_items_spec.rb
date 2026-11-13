@@ -72,4 +72,31 @@ RSpec.describe "Admin::Accounting sales report items view", type: :request do
     expect(response.body).to include("Burger,Mains,2")
     expect(response.body).to include("Mains,2,")
   end
+
+  describe "modifier choices" do
+    before do
+      size = ModifierGroup.create!(company: company, name: "Size")
+      double = size.modifiers.create!(company: company, name: "Double", price_adjustment_cents: 500)
+      line = OrderItem.joins(:menu_item).find_by(menu_items: { name: "Burger" })
+      line.order_item_modifiers.create!(modifier: double, name: "Double", price_adjustment_cents: 500)
+    end
+
+    it "lists them under the item, hidden until the item is opened, in both views" do
+      %w[grouped flat].each do |view|
+        get admin_accounting_sales_reports_path(range.merge(view: view))
+        section = response.body[/id="items-sold".*?<\/section>/m]
+        expect(section).to include("data-row-groups-item=")
+        sub_rows = section.scan(/<tr[^>]*data-row-groups-sub=[^>]*>.*?<\/tr>/m)
+        expect(sub_rows.map { |r| r.gsub(/<[^>]+>/, " ").squish })
+          .to eq(["Size", "Double 2 30.00 100.0%"])
+        expect(sub_rows).to all(include("hidden"))
+      end
+    end
+
+    it "adds them to the CSV export" do
+      get admin_accounting_sales_reports_path(range.merge(format: :csv))
+      expect(response.body).to include("Item,Modifier group,Choice,Units sold,Revenue")
+      expect(response.body).to match(/Burger,Size,Double,2,/)
+    end
+  end
 end

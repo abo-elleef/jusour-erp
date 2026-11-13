@@ -56,7 +56,7 @@
           <%= label_tag "recipe[ingredient_id]", t("admin.menu_items.recipe_ingredient"), class: label_class %>
           <%= hidden_field_tag "recipe[ingredient_id]", nil,
                 data: { searchable_select_target: "hidden", recipe_unit_target: "ingredient",
-                        action: "searchable-select:change->recipe-unit#ingredientChanged" } %>
+                        action: "change->recipe-unit#ingredientChanged" } %>
           <input type="text"
                  autocomplete="off" spellcheck="false" role="combobox"
                  aria-expanded="false" aria-autocomplete="list"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_12_160000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_13_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -949,10 +949,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_12_160000) do
     t.uuid "company_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "unit_id"
     t.index ["company_id"], name: "index_modifier_recipes_on_company_id"
     t.index ["ingredient_id"], name: "index_modifier_recipes_on_ingredient_id"
     t.index ["modifier_id", "ingredient_id"], name: "index_modifier_recipes_on_modifier_id_and_ingredient_id", unique: true
     t.index ["modifier_id"], name: "index_modifier_recipes_on_modifier_id"
+    t.index ["unit_id"], name: "index_modifier_recipes_on_unit_id"
   end
 
   create_table "modifiers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2152,6 +2154,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_12_160000) do
   add_foreign_key "modifier_groups", "companies"
   add_foreign_key "modifier_recipes", "ingredients"
   add_foreign_key "modifier_recipes", "modifiers"
+  add_foreign_key "modifier_recipes", "units"
   add_foreign_key "modifiers", "companies"
   add_foreign_key "modifiers", "modifier_groups"
   add_foreign_key "notifications", "companies"

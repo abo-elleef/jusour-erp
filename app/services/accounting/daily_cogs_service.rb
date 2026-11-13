@@ -14,8 +14,9 @@ module Accounting
   # that way since `record_daily_sales!`.
   #
   # Costed the way FoodCostService costs — units sold per menu item times that
-  # item's recipe cost at the ingredient's standard cost — so the food-cost report
-  # and this row quote the same number. Re-running replaces the day's row, so
+  # item's recipe cost, plus the recipes of the modifiers chosen on those lines
+  # (ModifierRecipeCost), at the ingredient's standard cost — so the food-cost
+  # report and this row quote the same number. Re-running replaces the day's row, so
   # backfilling a range stays idempotent.
   class DailyCogsService
     CATEGORY_NAME = "COGS"
@@ -85,9 +86,14 @@ module Accounting
 
       # Not `MenuItem.available` — an item sold that day still cost what it cost
       # after someone takes it off the menu.
-      MenuItem.where(id: units.keys).includes(recipes: :ingredient).sum do |item|
+      item_cost = MenuItem.where(id: units.keys).includes(recipes: :ingredient).sum do |item|
         unit_cost_cents(item) * units.fetch(item.id, 0)
       end
+      item_cost + modifier_cost_cents
+    end
+
+    def modifier_cost_cents
+      ModifierRecipeCost.by_menu_item(OrderItem.where(order_id: completed_orders.select(:id))).values.sum
     end
 
     def units_sold_by_menu_item

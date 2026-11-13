@@ -3971,7 +3971,7 @@ ar:
       recipes_empty: "لم يتم ضبط أي تأثير على المخزون."
       recipes_all_assigned: "جميع المكونات مضافة بالفعل لهذا المعدّل."
       recipe_ingredient: "المكوّن"
-      recipe_quantity: "الكمية (± الوحدة الأساسية)"
+      recipe_quantity: "الكمية (±)"
       recipe_quantity_hint: "موجب = إضافة للخصم (مثال: +1 قطعة إضافية). سالب = تقليل الخصم (مثال: -1 بدون خبز)."
     menu_items:
       assign_modifier_groups: "مجموعات المعدّلات"
@@ -5591,6 +5591,9 @@ ar:
       promo_cost_line: "منها عروض %{amount}"
       refunds: "المستردات"
       combos_category: "الوجبات المركبة"
+      no_choice: "بدون اختيار"
+      modifier_group: "مجموعة الإضافات"
+      modifier_choice: "الاختيار"
       tips_line: "بقشيش %{amount}"
       delivery_fees_line: "رسوم دليفري مدفوعة للطيارين %{amount}"
       pnl: "الأرباح والخسائر"

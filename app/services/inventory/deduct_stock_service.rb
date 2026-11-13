@@ -10,7 +10,7 @@ module Inventory
       @order.order_items
             .includes(
               menu_item: { recipes: :ingredient },
-              order_item_modifiers: { modifier: { modifier_recipes: :ingredient } }
+              order_item_modifiers: { modifier: { modifier_recipes: { ingredient: :ingredient_units } } }
             )
             .each do |item|
         next unless item.menu_item_id
@@ -24,7 +24,7 @@ module Inventory
 
         item.order_item_modifiers.each do |oim|
           oim.modifier.modifier_recipes.each do |mr|
-            totals[mr.ingredient] += mr.quantity.to_d * item.quantity
+            totals[mr.ingredient] += mr.base_quantity * item.quantity
           end
         end
 

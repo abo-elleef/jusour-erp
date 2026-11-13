@@ -113,6 +113,17 @@ module Admin
           csv << []
           csv << ["Item", "Category", "Units sold", "Revenue"]
           @items.each { |r| csv << [r[:name], r[:category], r[:units_sold], helpers.format_money(r[:revenue_cents])] }
+          if @items.any? { |r| r[:modifier_groups].present? }
+            csv << []
+            csv << ["Item", "Modifier group", "Choice", "Units sold", "Revenue"]
+            @items.each do |r|
+              r[:modifier_groups].each do |group|
+                group[:choices].each do |choice|
+                  csv << [r[:name], group[:name], choice[:name], choice[:units_sold], helpers.format_money(choice[:revenue_cents])]
+                end
+              end
+            end
+          end
           csv << []
           csv << %w[Payment\ Method Total]
           @report[:by_payment_method].each { |method, cents| csv << [method.titleize, helpers.format_money(cents)] }
