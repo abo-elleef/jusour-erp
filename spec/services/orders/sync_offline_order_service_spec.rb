@@ -271,4 +271,41 @@ RSpec.describe Orders::SyncOfflineOrderService do
       expect(result).to be_success
     end
   end
+
+  describe "a table someone else took while the internet was down" do
+    let(:branch) { create(:location, company: company, table_service: true, table_count: 6) }
+
+    let!(:holder) do
+      order = create(:order, user: other_cashier, company: company, location: branch,
+                             order_type: "table", table_number: "3", status: "submitted")
+      create(:order_item, order: order)
+      order
+    end
+
+    it "still syncs the paid order, and flags the clash for a manager" do
+      result = described_class.call(user: cashier, payload: payload(order_type: "table", table_number: "3"))
+
+      expect(result).to be_success
+      expect(result.order.table_number).to eq("3")
+      expect(result.order).to be_fully_paid
+      expect(Order.table_orders(branch)["3"]).to contain_exactly(holder, result.order)
+
+      entry = AuditLogEntry.find_by(action: "order.offline_table_clash")
+      expect(entry.record).to eq(result.order)
+      expect(entry.changes_snapshot).to include("table_number" => "3", "other_order_id" => holder.id)
+    end
+
+    it "flags nothing when the table was free" do
+      described_class.call(user: cashier, payload: payload(order_type: "table", table_number: "4"))
+
+      expect(AuditLogEntry.where(action: "order.offline_table_clash")).to be_empty
+    end
+
+    it "keeps the busy-table rule for ordinary orders" do
+      order = Order.new(user: cashier, company: company, location: branch, order_type: "table", table_number: "3")
+
+      expect(order).not_to be_valid
+      expect(order.errors[:table_number]).to be_present
+    end
+  end
 end

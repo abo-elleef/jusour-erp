@@ -16,7 +16,7 @@ module Pos
     def index
       authorize Order, :index_for_payment?
       @table_count = @pos_location.table_count
-      @busy_tables = Order.busy_tables(@pos_location)
+      @table_orders = Order.table_orders(@pos_location)
     end
 
     # Free table: start its order. Busy table: pick up whatever is open on it.

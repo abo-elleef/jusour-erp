@@ -28,6 +28,7 @@ module Orders
         csrf_token: @csrf_token,
         user: { id: @user.id, name: @user.name },
         location: @location && { id: @location.id, name: @location.name, table_count: @location.table_count },
+        busy_tables: busy_tables,
         workstation: @workstation && { id: @workstation.id, name: @workstation.name, code: register_code },
         drawer_session_id: drawer_session&.id,
         company: { receipt_name: @user.company.receipt_name(location: @location) },
@@ -55,6 +56,13 @@ module Orders
         break if index.negative?
       end
       code
+    end
+
+    # Tables holding an open order as of this snapshot, so the offline register can
+    # warn before seating one. Only as fresh as the last snapshot, and blind to what
+    # other registers do offline, so the register warns rather than blocks.
+    def busy_tables
+      Order.busy_tables(@location).transform_values { |order| { id: order.id, number: order.order_number } }
     end
 
     def drawer_session

@@ -3630,6 +3630,8 @@ en:
       delivery_required: "Enter the customer's phone and the delivery address."
       table_number: "Table number"
       table_required: "Enter the table number."
+      table_busy_hint: "Busy — %{number}"
+      table_busy_warning: "Table %{table} already has order %{number}. Make sure it is free before seating — this register cannot see the other registers while offline."
       order_notes: "Order notes"
       add: "Add"
       customize: "Customize"
@@ -3692,6 +3694,7 @@ en:
       clear: "Clear table"
       clear_confirm: "Mark table %{table}'s order as done and free the table?"
       busy_hint: "Open order #%{number}"
+      clash: "%{count} orders on this table — seated twice while offline"
       due: "%{amount} due"
       items:
         one: "%{count} item"
