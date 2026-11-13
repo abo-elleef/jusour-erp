@@ -129,7 +129,7 @@ module Pos
         return render :count, status: :unprocessable_entity
       end
 
-      service.reconcile!(counted_cents)
+      service.reconcile!(counted_cents, by: current_user)
 
       # The slip the cashier and the shift manager sign. Never blocks closing.
       Printing::PrintDrawerCloseService.call(session: @open_session.reload, workstation: @pos_workstation)

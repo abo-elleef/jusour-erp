@@ -29,6 +29,10 @@ module Accounting
       previous = snapshot
 
       CashDrawerSession.transaction do
+        # The over/short documents go first: the income or voucher is voided and
+        # its cash taken back out of the safe before the deposit itself goes.
+        ::Accounting::DrawerVarianceDocuments.remove!(@session, by: @user)
+
         # Treasury lines first: removing them reverses the balances they moved.
         ::Accounting::TreasuryLedgerService.remove_source!(
           @session, kinds: %w[drawer_reconcile drawer_deposit online_payment]
@@ -40,7 +44,10 @@ module Accounting
         @session.update!(
           status: "open",
           counted_cash_cents: nil,
-          variance_cents: nil
+          variance_cents: nil,
+          variance_documented: false,
+          shortage_waived_at: nil,
+          shortage_waived_by_id: nil
         )
         # The chosen safe stays: nothing moves to it until a new count is saved.
         # The expected figure is recomputed from the payments as they stand now.

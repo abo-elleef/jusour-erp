@@ -27,7 +27,11 @@ class Voucher < ApplicationRecord
   # always posted it.
   SETTLEMENT        = "settlement"
   EQUITY_ADJUSTMENT = "equity_adjustment"
-  PURPOSES = [SETTLEMENT, EQUITY_ADJUSTMENT].freeze
+  # A drawer counted short: the cashier is treated as having taken the missing
+  # cash from the safe, so it lands on their staff account like any other money
+  # given to them. Raised only by Accounting::DrawerVarianceDocuments.
+  CASH_SHORTAGE     = "cash_shortage"
+  PURPOSES = [SETTLEMENT, EQUITY_ADJUSTMENT, CASH_SHORTAGE].freeze
 
   belongs_to :treasury
   belongs_to :user
@@ -109,6 +113,20 @@ class Voucher < ApplicationRecord
   def backfilled?          = backfilled_at.present?
   def voided?              = voided_at.present?
   def equity_adjustment?   = purpose == EQUITY_ADJUSTMENT
+  def cash_shortage?       = purpose == CASH_SHORTAGE
+
+  # Raised by a drawer close: the shortage voucher, or the voucher settling a
+  # drawer's over/short Income or Expense. Those follow the drawer — reopen it,
+  # or waive the shortage — and are never voided on their own, which would put
+  # the safe out of step with the cash in it.
+  def drawer_variance_document?
+    return true if cash_shortage?
+
+    payment_allocations.any? do |allocation|
+      allocation.settles.respond_to?(:source_record_type) &&
+        allocation.settles.source_record_type == "CashDrawerSession"
+    end
+  end
 
   # An adjustment keeps the `adjustment` treasury kind it has always had. The
   # kind says what sort of movement this was, and the cash flow statement and

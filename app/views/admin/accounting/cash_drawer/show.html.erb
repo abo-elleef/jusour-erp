@@ -83,6 +83,63 @@
     </div>
   </div>
 
+  <%# Where the over/short went. A documented drawer banks the expected cash and books
+      the gap as its own document; older drawers banked the count and have none. %>
+  <% if session.status == "reconciled" %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+      <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.cash_drawer.variance_docs.section_title") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5">
+          <%= session.variance_documented? ? t("accounting.cash_drawer.variance_docs.booked_hint") : t("accounting.cash_drawer.variance_docs.legacy") %>
+        </p>
+      </div>
+      <% if session.variance_documented? %>
+        <div class="p-5 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <% income = session.variance_incomes.first %>
+          <% expense = session.variance_expenses.first %>
+          <% voucher = session.shortage_voucher %>
+          <div class="space-y-1">
+            <% if income %>
+              <p class="font-semibold text-green-700"><%= t("accounting.cash_drawer.variance_docs.over_income") %> · <%= money.(income.amount_cents) %></p>
+              <p class="text-gray-600">
+                <%= link_to income.income_category.name, admin_accounting_income_path(income), class: "text-amber-700 hover:text-amber-800" %>
+                · <%= link_to income.treasury.name, admin_accounting_treasury_path(income.treasury), class: "text-amber-700 hover:text-amber-800" %>
+              </p>
+            <% elsif voucher %>
+              <p class="font-semibold text-red-700"><%= t("accounting.cash_drawer.variance_docs.short_voucher") %> · <%= money.(voucher.amount_cents) %></p>
+              <p class="text-gray-600">
+                <%= link_to voucher.number, admin_accounting_voucher_path(voucher), class: "font-mono text-amber-700 hover:text-amber-800" %>
+                · <%= link_to session.user.name, admin_user_path(session.user), class: "text-amber-700 hover:text-amber-800" %>
+              </p>
+            <% elsif expense %>
+              <p class="font-semibold text-red-700"><%= t("accounting.cash_drawer.variance_docs.short_waived") %> · <%= money.(expense.amount_cents) %></p>
+              <p class="text-gray-600">
+                <%= link_to expense.expense_category.name, admin_accounting_expense_path(expense), class: "text-amber-700 hover:text-amber-800" %>
+                <% if session.shortage_waived_by %>
+                  · <%= t("accounting.cash_drawer.variance_docs.waived_by", name: session.shortage_waived_by.name, time: l(session.shortage_waived_at, format: :short)) %>
+                <% end %>
+              </p>
+            <% else %>
+              <p class="text-gray-500"><%= t("accounting.cash_drawer.variance_docs.none") %></p>
+            <% end %>
+          </div>
+          <div class="flex gap-2">
+            <% if policy(session).waive_shortage? %>
+              <%= button_to t("accounting.cash_drawer.variance_docs.waive"), waive_shortage_admin_accounting_cash_drawer_path(session),
+                    method: :post, form: { data: { turbo_confirm: t("accounting.cash_drawer.variance_docs.waive_confirm") } },
+                    class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200" %>
+            <% end %>
+            <% if policy(session).unwaive_shortage? %>
+              <%= button_to t("accounting.cash_drawer.variance_docs.unwaive"), unwaive_shortage_admin_accounting_cash_drawer_path(session),
+                    method: :post, form: { data: { turbo_confirm: t("accounting.cash_drawer.variance_docs.unwaive_confirm") } },
+                    class: "text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2 rounded-xl border border-gray-200" %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </section>
+  <% end %>
+
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.cash_drawer.takings_title") %></h2>

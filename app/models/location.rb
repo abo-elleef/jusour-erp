@@ -10,6 +10,14 @@ class Location < ApplicationRecord
   # Where this branch's drawers are banked when a shift closes. Set by an admin,
   # not chosen at the till — see #deposit_treasury_or_default.
   belongs_to :deposit_treasury, class_name: "Treasury", optional: true
+  # A drawer's over/short at close (see Accounting::DrawerVarianceDocuments).
+  # Overage: an Income in this category, into this treasury — the drawer's own
+  # deposit safe when blank. Shortage waived by a manager: an Expense in this
+  # category. Both categories are created on first use when blank, so closing a
+  # drawer never waits on a setting.
+  belongs_to :cash_over_treasury, class_name: "Treasury", optional: true
+  belongs_to :cash_over_income_category, class_name: "IncomeCategory", optional: true
+  belongs_to :cash_short_expense_category, class_name: "ExpenseCategory", optional: true
   has_many :ingredient_locations, dependent: :destroy
   has_many :ingredients, through: :ingredient_locations
   has_many :location_menu_items, dependent: :destroy
@@ -159,6 +167,26 @@ class Location < ApplicationRecord
     deposit_treasury || Treasury.default_treasury
   end
 
+  # The categories a drawer's over/short is booked to. Created on first use and
+  # remembered on the branch, so a cashier closing at midnight is never stopped
+  # by a setting nobody filled in. One shared category per company by name, so
+  # several branches don't each grow their own copy.
+  def cash_over_income_category!
+    cash_over_income_category || remember!(:cash_over_income_category,
+      IncomeCategory.find_or_create_by!(company: company,
+                                        name: I18n.t("accounting.cash_drawer.variance_docs.over_category", locale: I18n.default_locale)) do |c|
+        c.category_type = "other"
+      end)
+  end
+
+  def cash_short_expense_category!
+    cash_short_expense_category || remember!(:cash_short_expense_category,
+      ExpenseCategory.find_or_create_by!(company: company,
+                                         name: I18n.t("accounting.cash_drawer.variance_docs.short_category", locale: I18n.default_locale)) do |c|
+        c.category_type = "other"
+      end)
+  end
+
   def deposit_treasury_configured?
     deposit_treasury_id.present?
   end
@@ -220,5 +248,11 @@ class Location < ApplicationRecord
 
   def assign_company
     self.company ||= Current.company
+  end
+
+  def remember!(association, record)
+    update_column(:"#{association}_id", record.id)
+    association(association).target = record
+    record
   end
 end

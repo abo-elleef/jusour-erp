@@ -24,6 +24,18 @@ class CashDrawerSessionPolicy < ApplicationPolicy
     (user.owner? || user.super_manager?) && record.status != "open"
   end
 
+  # Waiving a shortage (and taking the waiver back) is a day-close decision,
+  # so it follows that permission. Never on one's own drawer.
+  def waive_shortage?
+    user.can?("accounting:day_close") && !own_session? &&
+      record.status == "reconciled" && record.short? && !record.shortage_waived?
+  end
+
+  def unwaive_shortage?
+    user.can?("accounting:day_close") && !own_session? &&
+      record.status == "reconciled" && record.short? && record.shortage_waived?
+  end
+
   def open_drawer?
     user.can_access_pos?
   end

@@ -4,11 +4,16 @@
 # banked into its safe, after the business day has moved on (ReopenCashDrawer only
 # works on the same day).
 #
-# Lowers the counted cash by AMOUNT pounds and re-posts what the count drives:
-#   - the drawer_reconcile treasury line and its journal entry (cash collected)
-#   - the drawer_deposit treasury lines and its journal entry (drawer → safe)
-# The safe ends AMOUNT lower; the drawer treasury nets to the same as before.
-# Expected cash, the payments and the orders are untouched.
+# Lowers the counted cash by AMOUNT pounds and re-posts what the count drives.
+#   - A drawer closed before over/short documents (variance_documented false)
+#     booked the count: its drawer_reconcile and drawer_deposit lines and their
+#     journal entries are re-posted, and the safe ends AMOUNT lower.
+#   - A documented drawer booked the expected cash, which doesn't change: its
+#     over/short Income or shortage voucher is rebuilt for the new difference.
+#     The Income's receipt voucher is raised on commit, so a dry run does not
+#     show its effect on the safe's balance.
+# The drawer treasury nets to the same as before. Expected cash, the payments
+# and the orders are untouched.
 #
 # Two things are deliberately preserved:
 #   - the session's updated_at: a counted drawer's order window ends at it
@@ -70,6 +75,7 @@ namespace :accounting do
 
       ::Accounting::TreasuryLedgerService.sync_drawer_reconcile!(session)
       ::Accounting::TreasuryLedgerService.sync_drawer_deposit!(session)
+      ::Accounting::DrawerVarianceDocuments.sync!(session, by: nil)
 
       dates.each do |kind, date|
         next unless date

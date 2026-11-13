@@ -402,6 +402,8 @@ Rails.application.routes.draw do
           patch :attach_payments
           post :print_slip
           post :reopen
+          post :waive_shortage
+          post :unwaive_shortage
         end
       end
 
