@@ -35,12 +35,12 @@ module Printing
 
       # ── Public interface (same as Document) ──────────────────────────────
 
-      def text(line = "")
+      def text(line = "", bold: false)
         str = line.to_s
         if @use_images && str.match?(ARABIC_PATTERN)
           visual = Printing::Escpos::Bidi.visual_for_print(str, reshape: true)
           png = ArabicImageRenderer.render_png(visual, doc_width: @width, align: @current_align, font_scale: @current_dh ? 2 : 1,
-                                               line_factor: @line_factor)
+                                               line_factor: @line_factor, bold: bold)
           push kind: :image, content: str, png_b64: png
         else
           push kind: :text, content: str

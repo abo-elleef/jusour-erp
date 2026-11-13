@@ -44,18 +44,19 @@ module Printing
         doc.text(@order.fulfillment_summary)
         doc.double_height(false)
         doc.bold(false)
+        # Who and where, bold so the courier/dispatcher reads them at a glance; the phone
+        # is double height too.
+        doc.bold
         if @order.customer
           doc.blank
-          doc.text(@order.customer.display_name) if @order.customer.name.present?
-          # Bold and double height so the courier/dispatcher reads the number at a glance.
-          doc.bold
+          doc.text(@order.customer.display_name, bold: true) if @order.customer.name.present?
           doc.double_height
           @order.customer.contact_phones.each { |p| doc.text(p) }
           doc.double_height(false)
-          doc.bold(false)
         end
         # Where the courier has to go — the order's own address, not the customer's list.
-        doc.text(@order.delivery_address) if @order.delivery? && @order.delivery_address.present?
+        doc.text(@order.delivery_address, bold: true) if @order.delivery? && @order.delivery_address.present?
+        doc.bold(false)
         doc.blank
 
         # ── Items table ────────────────────────────────────────────────────
