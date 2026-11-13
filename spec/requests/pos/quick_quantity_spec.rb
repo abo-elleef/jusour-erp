@@ -24,10 +24,14 @@ RSpec.describe "POS quick quantity", type: :request do
     Order.find(session[:current_order_id]).order_items.where(menu_item: item)
   end
 
-  it "links an item without modifiers to the popup instead of adding it straight away" do
+  it "makes the whole card open the popup instead of adding the item straight away" do
     doc = Nokogiri::HTML(response.body)
+    card = doc.at("a.menu-card[href='#{pos_modifier_form_path(menu_item_id: item.id)}']")
 
-    expect(doc.at("a[href='#{pos_modifier_form_path(menu_item_id: item.id)}']")).to be_present
+    expect(card).to be_present
+    expect(card["data-turbo-frame"]).to eq("modifier_modal")
+    expect(card.text).to include("Water")
+    expect(card.css("a")).to be_empty
     expect(doc.at("form[action^='#{pos_order_items_path}'] input[name='menu_item_id'][value='#{item.id}']")).to be_nil
   end
 
