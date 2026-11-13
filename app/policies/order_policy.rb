@@ -68,9 +68,11 @@ class OrderPolicy < ApplicationPolicy
     user.can_access_pos?
   end
 
-  # Money in one press, so it is not for anyone who can merely ring a sale.
+  # Any POS user may sweep their own orders from the current shift into their own
+  # open drawer. The controller limits it to exactly that set, so this is not a
+  # licence to settle anyone else's tickets or an older shift's.
   def collect_all_cash?
-    user.owner? || user.manager?
+    user.can_access_pos?
   end
 
   def apply_discount?

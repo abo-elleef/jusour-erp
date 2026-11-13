@@ -3734,7 +3734,7 @@ en:
       description: "Orders sent to the kitchen that still need payment. All order types are shown by default."
       awaiting_payment: "Awaiting payment"
       collect_all_title: "Collect everything in cash"
-      collect_all_hint: "Records a cash payment for the balance on every order listed below. Orders stay open until you complete them."
+      collect_all_hint: "Records a cash payment for the balance on every listed order from your current shift. Older orders are collected one at a time. Orders stay open until you complete them."
       collect_all: "Collect %{amount} in cash"
       collect_all_confirm:
         one: "Take %{amount} in cash for %{count} order?"
