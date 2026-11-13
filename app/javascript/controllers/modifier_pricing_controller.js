@@ -6,7 +6,7 @@ import { formatMoney } from "utils/offline_totals"
 // the header and the add button showing the full item price for what is picked.
 export default class extends Controller {
   static values = { config: Object }
-  static targets = ["total", "buttonTotal"]
+  static targets = ["total", "buttonTotal", "quantity"]
 
   connect() {
     this.refresh()
@@ -29,7 +29,16 @@ export default class extends Controller {
 
     const current = priceFor(config, selected)
     this.totalTargets.forEach((el) => { el.innerHTML = this.priceHtml(current, "text-lg") })
-    this.buttonTotalTargets.forEach((el) => { el.textContent = formatMoney(current.final) })
+    // The add button shows the line total: unit price × the typed count.
+    const lineTotal = formatMoney(current.final * this.quantity())
+    this.buttonTotalTargets.forEach((el) => { el.textContent = lineTotal })
+  }
+
+  // Optional count field (online POS only); missing, blank or junk counts as 1.
+  quantity() {
+    if (!this.hasQuantityTarget) return 1
+    const n = parseInt(this.quantityTarget.value, 10)
+    return n > 0 ? n : 1
   }
 
   priceHtml({ list, discount, final }, size) {

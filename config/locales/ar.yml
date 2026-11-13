@@ -3839,6 +3839,7 @@ ar:
     modifier:
       add_to_order: "إضافة للطلب"
       kitchen_notes: "ملاحظات المطبخ (اختياري)"
+      quantity: "الكمية"
       required: "مطلوب"
     collect_payment:
       title: "تحصيل الدفع"
