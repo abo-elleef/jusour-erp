@@ -53,14 +53,17 @@ module Printing
       # align: :left | :center | :right
       # font_scale: 2 doubles the point size — the printer's double-size command
       # only enlarges built-in text, never a raster image.
-      def render_line(text, doc_width: 42, align: :right, font_scale: 1, line_factor: DEFAULT_LINE_FACTOR)
+      # bold: draw the glyphs with an outline stroke — the printer's bold command
+      # (ESC E) only affects built-in text, never a raster image.
+      def render_line(text, doc_width: 42, align: :right, font_scale: 1, line_factor: DEFAULT_LINE_FACTOR, bold: false)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
 
         gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
         pt      = (FONT_SIZE_PT * font_scale).to_i
-        pbm     = render_pbm_single(text.to_s.strip, gravity, px_width, font, pt: pt, height: line_height(pt, line_factor))
+        pbm     = render_pbm_single(text.to_s.strip, gravity, px_width, font, pt: pt, height: line_height(pt, line_factor),
+                                                                                  bold: bold)
         pbm ? pbm_to_escpos(pbm) : nil
       end
 
@@ -156,7 +159,7 @@ module Printing
 
       # Same as render_line but returns a Base64-encoded PNG string.
       # font_scale: 2 doubles the point size (used for ESC/POS double-height text preview).
-      def render_png(text, doc_width: 42, align: :right, font_scale: 1, line_factor: DEFAULT_LINE_FACTOR)
+      def render_png(text, doc_width: 42, align: :right, font_scale: 1, line_factor: DEFAULT_LINE_FACTOR, bold: false)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
@@ -166,7 +169,7 @@ module Printing
         run_to_png([
           im_command,
           "-size", "#{px_width}x#{line_height(pt, line_factor)}", "xc:white",
-          "-font", font, "-pointsize", pt.to_s, "-fill", "black",
+          "-font", font, "-pointsize", pt.to_s, "-fill", "black", *bold_stroke_args(bold),
           "-gravity", gravity, "-annotate", "+0+0", text.to_s.strip
         ])
       end
@@ -303,11 +306,11 @@ module Printing
       end
 
       # Single text annotation → PBM binary.
-      def render_pbm_single(text, gravity, px_width, font, pt: FONT_SIZE_PT, height: pt * 2)
+      def render_pbm_single(text, gravity, px_width, font, pt: FONT_SIZE_PT, height: pt * 2, bold: false)
         cmd = [
           im_command,
           "-size", "#{px_width}x#{height}", "xc:white",
-          "-font", font, "-pointsize", pt.to_s, "-fill", "black",
+          "-font", font, "-pointsize", pt.to_s, "-fill", "black", *bold_stroke_args(bold),
           "-gravity", gravity, "-annotate", "+0+0", text,
           "-type", "Bilevel", "pbm:-"
         ]
@@ -368,6 +371,12 @@ module Printing
       # then the defaults are put back so later annotations draw as before. A plain
       # annotation produces exactly the arguments it always did, so receipt images
       # keep their cache keys.
+      # The same outline the bold row labels use (annotate_args); empty when not bold,
+      # so a plain line's command — and its raster-cache key — is unchanged.
+      def bold_stroke_args(bold)
+        bold ? ["-stroke", "black", "-strokewidth", BOLD_STROKE_WIDTH] : []
+      end
+
       def annotate_args(ann)
         args = ["-gravity", ann[:gravity], "-annotate", ann.fetch(:offset, "+0+0"), ann[:text]]
         return args unless ann[:bold]

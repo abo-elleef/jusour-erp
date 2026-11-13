@@ -38,10 +38,12 @@ module Printing
         init
       end
 
-      def text(line = "")
+      # bold: also draw Arabic (image) text bold. bold/bold(false) around a line only
+      # reaches the printer's built-in font, so Arabic needs this to look bold too.
+      def text(line = "", bold: false)
         str = line.to_s
         if @use_images && str.match?(ARABIC_PATTERN)
-          write_arabic_image(str, align: @current_align)
+          write_arabic_image(str, align: @current_align, bold: bold)
         else
           write_line(prepare_text(str))
         end
@@ -222,11 +224,11 @@ module Printing
       # Write Arabic text as a raster image line.
       # Pre-processes with reshape + bidi so ImageMagick (LTR renderer) displays
       # correctly: reshape assigns correct glyph forms, bidi reorders to visual order.
-      def write_arabic_image(text, align: :right)
+      def write_arabic_image(text, align: :right, bold: false)
         visual = Bidi.visual_for_print(text, reshape: true)
         bytes  = ArabicImageRenderer.render_line(visual, doc_width: @width, align: align,
                                                          font_scale: @double_height ? 2 : 1,
-                                                         line_factor: @line_factor)
+                                                         line_factor: @line_factor, bold: bold)
         if bytes
           @buffer << bytes.b
         else

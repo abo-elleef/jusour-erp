@@ -385,14 +385,15 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   doc.bold(false)
   if (order.order_type === "delivery") {
     // Who it is going to and where — what the courier needs from the bag's receipt.
+    // All bold so the courier reads them at a glance; the phone double height too.
     doc.blank()
-    if (order.customer_name) doc.text(order.customer_name)
     doc.bold()
+    if (order.customer_name) doc.text(order.customer_name)
     doc.doubleHeight()
     doc.text(order.customer_phone)
     doc.doubleHeight(false)
-    doc.bold(false)
     doc.text(order.delivery_address)
+    doc.bold(false)
   }
   doc.blank()
 
