@@ -12,7 +12,7 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
   let(:company) { create(:company) }
   let!(:branch) do
     create(:location, company: company, name: "Main Branch").tap do |l|
-      l.update!(edit_orders_pin: "4321")
+      l.update!(edit_orders_pin: "864213")
     end
   end
   let(:cashier) { create(:user, company: company, role: "cashier") }
@@ -76,7 +76,7 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
     it "refuses a wrong PIN and leaves the order locked" do
       order = place_new_order
 
-      post unlock_edit_pos_order_path(order), params: { pin: "0000" }
+      post unlock_edit_pos_order_path(order), params: { pin: "000000" }
 
       expect(response).to redirect_to(pos_order_path(order))
       expect(flash[:alert]).to eq(I18n.t("flash.pos.unlock.wrong_pin"))
@@ -86,8 +86,8 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
     it "locks the PIN after five wrong tries" do
       order = place_new_order
 
-      5.times { post unlock_edit_pos_order_path(order), params: { pin: "0000" } }
-      post unlock_edit_pos_order_path(order), params: { pin: "4321" }
+      5.times { post unlock_edit_pos_order_path(order), params: { pin: "000000" } }
+      post unlock_edit_pos_order_path(order), params: { pin: "864213" }
 
       expect(flash[:alert]).to eq(I18n.t("flash.pos.unlock.pin_locked"))
       expect(order.reload.unlocked_for_edit_at).to be_nil
@@ -97,7 +97,7 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
       order = place_new_order
       branch.update_columns(edit_orders_pin_digest: nil)
 
-      post unlock_edit_pos_order_path(order), params: { pin: "4321" }
+      post unlock_edit_pos_order_path(order), params: { pin: "864213" }
 
       expect(flash[:alert]).to eq(I18n.t("flash.pos.unlock.pin_not_set"))
     end
@@ -106,7 +106,7 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
       order = place_new_order
       create(:payment, order: order, amount_cents: 100, status: "completed")
 
-      post unlock_edit_pos_order_path(order), params: { pin: "4321" }
+      post unlock_edit_pos_order_path(order), params: { pin: "864213" }
 
       expect(order.reload.unlocked_for_edit_at).to be_nil
     end
@@ -114,7 +114,7 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
     it "with the right PIN, reopens the order in the register for item changes" do
       order = place_new_order
 
-      post unlock_edit_pos_order_path(order), params: { pin: "4321" }
+      post unlock_edit_pos_order_path(order), params: { pin: "864213" }
 
       expect(response).to redirect_to(pos_path)
       order.reload
@@ -129,7 +129,7 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
 
     it "refuses a payment while the order is being edited" do
       order = place_new_order
-      post unlock_edit_pos_order_path(order), params: { pin: "4321" }
+      post unlock_edit_pos_order_path(order), params: { pin: "864213" }
 
       expect do
         post pos_payments_path, params: { order_id: order.id, payment: { payment_method: "cash", amount_cents: order.total_cents } },
@@ -177,7 +177,7 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
       order = place_new_order
       list = pos_orders_path(order_type: order.order_type)
 
-      post unlock_edit_pos_order_path(order), params: { pin: "0000" }, headers: { "HTTP_REFERER" => list }
+      post unlock_edit_pos_order_path(order), params: { pin: "000000" }, headers: { "HTTP_REFERER" => list }
 
       expect(response).to redirect_to(list)
       expect(flash[:alert]).to eq(I18n.t("flash.pos.unlock.wrong_pin"))
@@ -186,7 +186,7 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
     it "opens the order in the register with the right PIN" do
       order = place_new_order
 
-      post unlock_edit_pos_order_path(order), params: { pin: "4321" },
+      post unlock_edit_pos_order_path(order), params: { pin: "864213" },
                                               headers: { "HTTP_REFERER" => pos_orders_path }
 
       expect(response).to redirect_to(pos_path)
@@ -197,7 +197,7 @@ RSpec.describe "Place order and the edit-orders PIN", type: :request do
   describe "placing an edited order again" do
     it "relocks it, counts the edit, and prints everything again" do
       order = place_new_order
-      post unlock_edit_pos_order_path(order), params: { pin: "4321" }
+      post unlock_edit_pos_order_path(order), params: { pin: "864213" }
       add(other_item)
 
       expect { patch pos_submit_path }

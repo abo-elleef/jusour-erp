@@ -34,6 +34,7 @@
         </button>
       <% end %>
       <%= render "pos/orders/edit_items_button", order: @order, from: params[:from] %>
+      <%= render "pos/orders/void_button", order: @order, from: params[:from] %>
       <%= render "pos/pos_nav" %>
     </div>
     <div class="flex flex-wrap items-center gap-3">

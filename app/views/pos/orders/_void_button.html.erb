@@ -1,0 +1,43 @@
+<%# Voids a placed order from the register. Needs the branch's six-digit
+    void-orders PIN (separate from the edit-orders PIN). Anything paid is refunded. %>
+<% from = local_assigns[:from] %>
+<% if policy(order).void_with_pin? %>
+  <% dialog_id = "void-order-dialog-#{order.id}" %>
+  <button type="button"
+          onclick="document.getElementById('<%= dialog_id %>').showModal()"
+          class="inline-flex items-center gap-1.5 text-sm font-semibold text-red-700 hover:text-red-800 px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 transition-colors">
+    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+    </svg>
+    <%= t("pos.orders.void") %>
+  </button>
+  <dialog id="<%= dialog_id %>"
+          class="m-auto rounded-[28px] shadow-2xl border-0 p-0 w-[22rem] max-w-[95vw] backdrop:bg-black/50 backdrop:backdrop-blur-sm text-start"
+          onclick="if(event.target===this)this.close()">
+    <%= form_with url: void_pos_order_path(order, from: from), method: :post,
+          class: "p-6 space-y-3", data: { turbo_frame: "_top", controller: "submit-once", action: "submit->submit-once#guard" } do %>
+      <h3 class="text-lg font-bold text-gray-900"><%= t("pos.orders.void_title") %></h3>
+      <p class="text-sm text-gray-600">
+        <span class="font-semibold text-gray-900"><%= order.order_number %></span> ·
+        <%= order.paid_cents.positive? ? t("pos.orders.void_hint_paid", amount: format_amount(order.refundable_cents)) : t("pos.orders.void_hint") %>
+      </p>
+      <%= text_field_tag :reason, nil, maxlength: 200, autocomplete: "off",
+            id: "#{dialog_id}-reason",
+            placeholder: t("pos.orders.void_reason_placeholder"),
+            class: pos_input_class %>
+      <%= password_field_tag :pin, nil, maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
+            autocomplete: "off", required: true,
+            id: "#{dialog_id}-pin",
+            placeholder: t("pos.orders.six_digit_pin_placeholder"),
+            class: "#{pos_input_class} text-center text-2xl tracking-widest min-h-14" %>
+      <div class="flex gap-2">
+        <%= button_tag t("pos.orders.void_confirm"), type: "submit", data: { submit_once_target: "submit" },
+              class: "flex-1 min-h-11 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl" %>
+        <button type="button" onclick="this.closest('dialog').close()"
+                class="min-h-11 px-4 rounded-xl border border-gray-200 font-semibold text-gray-700">
+          <%= t("pos.orders.void_back") %>
+        </button>
+      </div>
+    <% end %>
+  </dialog>
+<% end %>

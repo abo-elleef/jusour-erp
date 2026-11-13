@@ -64,28 +64,13 @@ module Admin
 
     def void
       authorize @order, :void?
-      reason = params[:reason].presence || "Voided by manager"
-      unless @order.may_cancel?
+      result = ::Orders::VoidService.call(order: @order, user: current_user, reason: params[:reason])
+      unless result.voided?
         return redirect_to admin_order_path(@order), alert: t("flash.order.cannot_void")
       end
 
-      @order.payments.where(status: "pending").find_each do |payment|
-        if payment.stripe_payment_intent_id
-          Payments::StripeTerminalService.cancel_payment_intent(payment.stripe_payment_intent_id)
-        end
-      end
-      refunded_cents = 0
-      @order.with_lock do
-        @order.cancel!(by: current_user)
-        # A paid order that is voided gives its money back. Leaving the payments as
-        # they were kept them in the drawer's expected cash after the cashier had
-        # handed the cash back, so the till read short by the whole order.
-        refunded_cents = ::Payments::RefundService.call(order: @order, amount_cents: @order.refundable_cents,
-                                                        reason: reason, user: current_user)
-        @order.order_events.create!(event_type: "void", user: current_user, description: reason)
-      end
-      notice = if refunded_cents.positive?
-                 t("flash.order.voided_and_refunded", amount: helpers.format_money(refunded_cents))
+      notice = if result.refunded_cents.positive?
+                 t("flash.order.voided_and_refunded", amount: helpers.format_money(result.refunded_cents))
                else
                  t("flash.order.voided")
                end

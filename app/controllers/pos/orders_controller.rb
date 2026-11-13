@@ -114,6 +114,34 @@ module Pos
       redirect_to pos_path, notice: t("flash.pos.order_unlocked", number: @order.order_number), status: :see_other
     end
 
+    # Voids a placed order from the register after the branch's void-orders PIN
+    # (six digits, separate from the edit PIN). Same effect as the admin void:
+    # cancelled, stock and loyalty put back, anything paid refunded.
+    def void
+      @order = Order.find(params[:id])
+      authorize @order, :void_with_pin?
+
+      error = void_pin_error(@order.location)
+      if error
+        return redirect_back_or_to pos_order_path(@order, from: params[:from]), alert: error, status: :see_other
+      end
+
+      reason = params[:reason].to_s.strip.presence || t("pos.orders.void_default_reason")
+      result = ::Orders::VoidService.call(order: @order, user: current_user, reason: reason)
+      unless result.voided?
+        return redirect_to pos_order_path(@order, from: params[:from]), alert: t("flash.order.cannot_void"), status: :see_other
+      end
+
+      AuditLogEntry.record!(action: "order.void_with_pin", record: @order, user: current_user)
+      session.delete(:current_order_id) if session[:current_order_id] == @order.id
+      notice = if result.refunded_cents.positive?
+                 t("flash.order.voided_and_refunded", amount: helpers.format_money(result.refunded_cents))
+               else
+                 t("flash.order.voided")
+               end
+      redirect_to pos_order_path(@order, from: params[:from]), notice: notice, status: :see_other
+    end
+
     def update_fulfillment
       @order = Order.find(params[:id])
       authorize @order, :update?
@@ -258,6 +286,15 @@ module Pos
       return if location.verify_edit_orders_pin(params[:pin].to_s.strip)
 
       location.edit_orders_pin_locked? ? t("flash.pos.unlock.pin_locked") : t("flash.pos.unlock.wrong_pin")
+    end
+
+    # nil when the void-orders PIN is right; otherwise the reason it was refused.
+    def void_pin_error(location)
+      return t("flash.pos.void.pin_not_set") unless location&.void_orders_pin_configured?
+      return t("flash.pos.unlock.pin_locked") if location.void_orders_pin_locked?
+      return if location.verify_void_orders_pin(params[:pin].to_s.strip)
+
+      location.void_orders_pin_locked? ? t("flash.pos.unlock.pin_locked") : t("flash.pos.unlock.wrong_pin")
     end
 
     def unlock!
