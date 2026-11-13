@@ -32,7 +32,7 @@ RSpec.describe "Discarding a draft cart", type: :request do
       .to change(Order, :count).by(-1)
       .and change(OrderItem, :count).by(-1)
 
-    expect(flash[:notice]).to eq(I18n.t("flash.pos.order_discarded", number: order.order_number))
+    expect(flash[:notice]).to eq(I18n.t("flash.pos.order_discarded", number: order.display_number))
   end
 
   it "offers the button on the shift screen" do

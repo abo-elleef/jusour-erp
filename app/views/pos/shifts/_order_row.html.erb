@@ -1,7 +1,7 @@
 <tr class="hover:bg-gray-100 transition-colors">
   <td class="p-3 ps-5 text-gray-400 tabular-nums"><%= local_assigns[:index] %></td>
   <td class="p-3">
-    <span class="font-bold text-gray-900"><%= order.order_number %></span>
+    <span class="font-bold text-gray-900"><%= order.display_number %></span>
   </td>
   <td class="p-3 text-gray-600 tabular-nums whitespace-nowrap">
     <%= l(order.created_at, format: :long_with_time) %>
@@ -41,7 +41,7 @@
         <% if policy(order).destroy? %>
           <%= button_to t("actions.delete"), pos_order_path(order),
                 method: :delete,
-                form: { data: { turbo_confirm: t("pos.shift.orders.discard_confirm", number: order.order_number) } },
+                form: { data: { turbo_confirm: t("pos.shift.orders.discard_confirm", number: order.display_number) } },
                 class: "inline-flex items-center border border-red-200 text-red-700 hover:bg-red-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors" %>
         <% end %>
       </div>

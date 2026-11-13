@@ -608,7 +608,7 @@ ar:
 
   order:
     errors:
-      table_busy: "الطاولة %{table} عليها طلب مفتوح بالفعل (#%{number})."
+      table_busy: "الطاولة %{table} عليها طلب مفتوح بالفعل (%{number})."
     types:
       delivery: "دليفري"
       pickup: "تيك أواي"
@@ -633,6 +633,7 @@ ar:
       due: "متبقي %{amount}"
     labels:
       order_number: "رقم الطلب"
+      draft_number: "مسودة"
       cashier: "الكاشير"
       order_type: "نوع الطلب"
       subtotal: "المجموع الفرعي"
@@ -3801,7 +3802,7 @@ ar:
       open: "فتح الطاولة"
       clear: "إخلاء الطاولة"
       clear_confirm: "إنهاء طلب الطاولة %{table} وإخلاء الطاولة؟"
-      busy_hint: "طلب مفتوح #%{number}"
+      busy_hint: "طلب مفتوح %{number}"
       clash: "%{count} طلبات على هذه الطاولة — تم الحجز مرتين أثناء انقطاع الإنترنت"
       due: "المتبقي %{amount}"
       items:

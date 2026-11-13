@@ -152,7 +152,7 @@
             <% @orders.each do |order| %>
               <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 pl-5 font-medium">
-                  <%= link_to order.order_number, admin_order_path(order, admin_orders_filter_params),
+                  <%= link_to order.display_number, admin_order_path(order, admin_orders_filter_params),
                         class: "text-amber-700 hover:text-amber-800 font-semibold" %>
                 </td>
                 <td class="p-3 text-gray-600 whitespace-nowrap">

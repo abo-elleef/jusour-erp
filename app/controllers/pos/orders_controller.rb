@@ -257,7 +257,7 @@ module Pos
       @order = Order.find(params[:id])
       authorize @order, :destroy?
 
-      number = @order.order_number
+      number = @order.display_number
       order_id = @order.id
       AuditLogEntry.record!(action: "order.discard", record: @order, user: current_user)
       @order.destroy!

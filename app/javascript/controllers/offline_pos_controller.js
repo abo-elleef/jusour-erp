@@ -303,7 +303,9 @@ export default class extends Controller {
     for (const [n, holder] of Object.entries(this.snapshot.busy_tables || {})) {
       // The online draft this cart was carried over from is this same sale.
       if (handoffId && String(holder.id) === handoffId) continue
-      busy[String(n)] = `#${holder.number}`
+      // label is "#12", or "Draft" for an order not placed (so not numbered) yet;
+      // a snapshot cached before labels existed only has the number.
+      busy[String(n)] = holder.label || `#${holder.number}`
     }
     for (const order of this.orders) {
       if (order.order_type === "table" && order.table_number) busy[String(order.table_number)] = order.offline_number

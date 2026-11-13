@@ -35,7 +35,7 @@ module Printing
         doc.bold
         doc.text(restaurant)
         doc.double_height
-        doc.text(@order.order_number)
+        doc.text(@order.display_number)
         doc.double_height(false)
         doc.bold(false)
         doc.text(@order.created_at.strftime("%d/%m/%Y %I:%M %p"))

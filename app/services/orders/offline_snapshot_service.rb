@@ -62,7 +62,11 @@ module Orders
     # warn before seating one. Only as fresh as the last snapshot, and blind to what
     # other registers do offline, so the register warns rather than blocks.
     def busy_tables
-      Order.busy_tables(@location).transform_values { |order| { id: order.id, number: order.order_number } }
+      # label is ready to show ("#12", or "Draft" before the order is placed and
+      # numbered); number stays for a register still running an older script.
+      Order.busy_tables(@location).transform_values do |order|
+        { id: order.id, number: order.order_number, label: order.display_reference }
+      end
     end
 
     def drawer_session

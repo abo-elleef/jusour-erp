@@ -56,13 +56,16 @@ class Order < ApplicationRecord
   monetize :delivery_fee_cents, allow_nil: false
   monetize :total_cents, allow_nil: true
 
-  validates :order_number, presence: true,
-                           uniqueness: { scope: %i[company_id location_id business_date] }
+  # A draft has no number yet: it takes the next one when it is placed or paid
+  # (the submit event), so the daily count follows the order the kitchen gets
+  # orders in, not the order cashiers started building them.
+  validates :order_number, presence: true, unless: :unnumbered?
+  validates :order_number, uniqueness: { scope: %i[company_id location_id business_date] }, allow_nil: true
   validates :order_type, presence: true, inclusion: { in: ORDER_TYPES }
   validates :delivery_fee_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   before_validation :assign_business_date, on: :create
-  before_validation :assign_order_number, on: :create
+  before_validation :assign_order_number, unless: :unnumbered?
   before_save :clear_fulfillment_fields_for_type
   validate :table_must_be_free, if: :table_slot_changed?, unless: :allow_table_clash
 
@@ -82,6 +85,10 @@ class Order < ApplicationRecord
 
     event :submit do
       transitions from: :draft, to: :submitted
+      before do
+        assign_order_number
+        self.placed_at ||= Time.current
+      end
       after do
         Tax::CalculateService.call(self)
         broadcast_to_kds
@@ -316,6 +323,22 @@ class Order < ApplicationRecord
          .where.not(id: id).first
   end
 
+  # A draft has no number yet, and a draft cancelled before it was ever placed
+  # never needs one.
+  def unnumbered?
+    draft? || (cancelled? && order_number.blank?)
+  end
+
+  # For screens that can show a draft, which has no number until it is placed.
+  def display_number
+    order_number.presence || I18n.t("order.labels.draft_number")
+  end
+
+  # "#12" once placed, "Draft" before — for messages that point at an order.
+  def display_reference
+    order_number.present? ? "##{order_number}" : display_number
+  end
+
   def broadcast_to_kds
     Turbo::StreamsChannel.broadcast_refresh_to("kitchen_#{company_id}")
   end
@@ -362,7 +385,7 @@ class Order < ApplicationRecord
     other = table_conflict
     return unless other
 
-    errors.add(:table_number, I18n.t("order.errors.table_busy", table: table_number, number: other.order_number))
+    errors.add(:table_number, I18n.t("order.errors.table_busy", table: table_number, number: other.display_reference))
   end
 
   # Two registers claiming the same free table at the same moment would both pass

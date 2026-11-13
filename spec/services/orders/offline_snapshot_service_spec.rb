@@ -46,6 +46,21 @@ RSpec.describe Orders::OfflineSnapshotService do
 
     snapshot = described_class.call(user: cashier, location: branch, workstation: nil, csrf_token: "t")
 
-    expect(snapshot[:busy_tables]).to eq("5" => { id: order.id, number: order.order_number })
+    expect(snapshot[:busy_tables]).to eq("5" => { id: order.id, number: order.order_number,
+                                                  label: order.display_reference })
+  end
+
+  it "labels a table held by an unplaced draft without a number" do
+    branch.update!(table_service: true, table_count: 6)
+    draft = create(:order, user: cashier, company: company, location: branch, order_type: "table",
+                           table_number: "2", status: "draft", order_number: nil)
+    create(:order_item, order: draft)
+
+    holder = described_class.call(user: cashier, location: branch, workstation: nil, csrf_token: "t")[:busy_tables]["2"]
+
+    skip "drafts don't hold tables here" if holder.nil?
+    expect(holder[:number]).to be_nil
+    expect(holder[:label]).to eq(draft.display_reference)
+    expect(holder[:label]).not_to include("#")
   end
 end

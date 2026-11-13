@@ -97,7 +97,7 @@ RSpec.describe "POS offline mode", type: :request do
         expect(copies.size).to eq(2)
         order = copies.first["order"]
         draft = Order.find(order["server_order_id"])
-        expect(order).to include("order_number" => draft.order_number, "user_id" => cashier.id, "order_type" => draft.order_type)
+        expect(order).to include("order_number" => draft.display_number, "user_id" => cashier.id, "order_type" => draft.order_type)
         expect(order["items"]).to eq([{ "menu_item_id" => burger.id, "combo_id" => nil, "quantity" => 2,
                                         "notes" => "no onions", "modifier_ids" => [] }])
         expect(copies.first["rendered_at"]).to be_a(Integer)

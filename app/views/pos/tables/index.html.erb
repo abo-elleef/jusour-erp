@@ -38,7 +38,7 @@
                 </span>
               </div>
               <p class="text-xs text-gray-600">
-                #<%= order.order_number %><%= " (#{order.offline_number})" if order.offline_number.present? %> · <%= t("pos.tables.items", count: order.order_items.sum(&:quantity)) %> · <%= time_ago_in_words(order.created_at) %>
+                <%= order.display_reference %><%= " (#{order.offline_number})" if order.offline_number.present? %> · <%= t("pos.tables.items", count: order.order_items.sum(&:quantity)) %> · <%= time_ago_in_words(order.created_at) %>
               </p>
               <p class="text-xs text-gray-500"><%= order.user&.name.presence || order.user&.email %></p>
               <p class="text-sm font-bold text-gray-900 tabular-nums">

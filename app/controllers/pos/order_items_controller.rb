@@ -24,7 +24,7 @@ module Pos
         # since the cashier picked it. The first item is where that shows up. Once the
         # order has items it already holds the table, so later adds are never blocked.
         if first_item && (other = @order.table_conflict)
-          raise TableBusy, t("order.errors.table_busy", table: @order.table_number, number: other.order_number)
+          raise TableBusy, t("order.errors.table_busy", table: @order.table_number, number: other.display_reference)
         end
         @order.recalculate_totals!
       end
