@@ -50,10 +50,10 @@
       </div>
     </div>
 
-    <%# Settles exactly the orders listed below — the filters apply, so the total in
-        the confirmation is the total on screen. %>
-    <% if @orders.any? && policy(Order).collect_all_cash? %>
-      <% due_total = @orders.sum(&:amount_due_cents) %>
+    <%# Settles the listed orders from the current shift — the filters apply, and the
+        total in the button and confirmation is exactly what will be collected. %>
+    <% if @shift_orders.any? && policy(Order).collect_all_cash? %>
+      <% due_total = @shift_orders.sum(&:amount_due_cents) %>
       <div class="rounded-2xl border border-green-200 bg-green-50/70 p-4 mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p class="font-semibold text-green-900"><%= t("pos.collect_payment.collect_all_title") %></p>
@@ -63,7 +63,7 @@
               collect_all_cash_pos_orders_path(order_type: @filter_type, q: params[:q]&.to_unsafe_h),
               method: :post,
               form: { data: { turbo_confirm: t("pos.collect_payment.collect_all_confirm",
-                                               count: @orders.size,
+                                               count: @shift_orders.size,
                                                amount: format_money(due_total)) } },
               class: "inline-flex items-center bg-green-700 hover:bg-green-800 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0" %>
       </div>

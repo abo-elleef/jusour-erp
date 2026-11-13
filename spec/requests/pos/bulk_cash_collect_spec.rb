@@ -109,15 +109,58 @@ RSpec.describe "Collecting outstanding orders in cash", type: :request do
     expect(order.reload.amount_due_cents).to be_positive
   end
 
-  it "is not offered to a plain cashier" do
-    sign_in_with_drawer(cashier)
-    outstanding(owner: cashier)
+  describe "as a cashier with an open drawer" do
+    before { sign_in_with_drawer(cashier) }
 
-    get pos_orders_path
-    expect(response.body).not_to include(collect_all_cash_pos_orders_path)
+    it "is offered and settles the cashier's own orders from this shift" do
+      order = outstanding(owner: cashier)
+      order.update!(status: "completed")
 
-    post collect_all_cash_pos_orders_path
-    expect(response).to have_http_status(:found).or have_http_status(:forbidden)
+      get pos_orders_path
+      expect(response.body).to include(collect_all_cash_pos_orders_path)
+
+      post collect_all_cash_pos_orders_path
+
+      expect(order.reload.amount_due_cents).to eq(0)
+      expect(Payment.where(payment_method: "cash").last.cash_drawer_session)
+        .to eq(cashier.open_cash_drawer_session(location: branch))
+    end
+
+    it "leaves orders from before this shift for one-at-a-time collection" do
+      older = outstanding(owner: cashier)
+      older.update_columns(created_at: cashier.open_cash_drawer_session(location: branch).created_at - 1.hour)
+      current = outstanding(owner: cashier, total_cents: 2_000)
+
+      get pos_orders_path
+      expect(response.body).to include(older.order_number.to_s)
+      expect(response.body).to include(helper_money(2_000))
+
+      post collect_all_cash_pos_orders_path
+
+      expect(current.reload.amount_due_cents).to eq(0)
+      expect(older.reload.amount_due_cents).to be_positive
+    end
+
+    it "never touches another cashier's orders" do
+      someone_else = outstanding(owner: manager)
+      outstanding(owner: cashier)
+
+      post collect_all_cash_pos_orders_path
+
+      expect(someone_else.reload.amount_due_cents).to be_positive
+    end
+
+    it "hides the button when only older-shift orders are outstanding" do
+      older = outstanding(owner: cashier)
+      older.update_columns(created_at: cashier.open_cash_drawer_session(location: branch).created_at - 1.hour)
+
+      get pos_orders_path
+      expect(response.body).not_to include(collect_all_cash_pos_orders_path)
+
+      post collect_all_cash_pos_orders_path
+      expect(flash[:alert]).to eq(I18n.t("flash.pos.nothing_to_collect"))
+      expect(older.reload.amount_due_cents).to be_positive
+    end
   end
 
   def helper_money(cents)

@@ -15,11 +15,13 @@ module Pos
       @filter_type = nil if @filter_type == "all"
 
       @orders = outstanding_orders
+      @shift_orders = shift_outstanding_orders
     end
 
-    # Settles everything currently listed, in cash, in one press. Scoped to the
-    # same filters as the page — the user's own orders, of the chosen type: what
-    # they are looking at is what they are collecting.
+    # Settles, in cash, in one press, the listed orders from the current shift —
+    # the user's own orders, of the chosen type, rung up while this drawer has been
+    # open. Older orders stay on the list to be collected one at a time: their cash
+    # did not come in through this drawer.
     def collect_all_cash
       authorize Order, :collect_all_cash?
 
@@ -28,7 +30,7 @@ module Pos
                            alert: t("flash.pos.shift.no_open_drawer")
       end
 
-      result = Payments::BulkCashCollectService.call(orders: outstanding_orders, user: current_user)
+      result = Payments::BulkCashCollectService.call(orders: shift_outstanding_orders, user: current_user)
 
       if result.any?
         redirect_to pos_orders_path(order_type: @filter_type),
@@ -276,6 +278,17 @@ module Pos
       # else's here.
       scope = scope.where(user: current_user)
       scope.limit(100).to_a.select { |order| order.amount_due_cents.positive? }
+    end
+
+    # The listed orders that belong to the open drawer session. Same definition of
+    # "this shift" as the close guard (CashDrawerSession#orders), so a sweep clears
+    # exactly what would otherwise stop the drawer from closing.
+    def shift_outstanding_orders
+      drawer = current_user.open_cash_drawer_session(location: @pos_location)
+      return [] unless drawer
+
+      shift_ids = drawer.orders.pluck(:id).to_set
+      outstanding_orders.select { |order| shift_ids.include?(order.id) }
     end
 
     # The same set that blocks the shift from closing, so pressing the button
