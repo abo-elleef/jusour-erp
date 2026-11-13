@@ -5,15 +5,24 @@
     <div class="bg-white rounded-2xl border border-gray-200 p-6 max-w-md w-full text-gray-900 max-h-[90vh] overflow-y-auto">
       <%= form_with url: pos_order_items_path, method: :post,
             data: { turbo_stream: true, turbo_frame: "_top",
-                    controller: "modifier-pricing",
+                    controller: "modifier-pricing pos-quick-add",
                     modifier_pricing_config_value: pricing.to_json,
-                    action: "change->modifier-pricing#refresh" } do %>
+                    action: "change->modifier-pricing#refresh input->modifier-pricing#refresh keydown->pos-quick-add#keydown" } do %>
         <h3 class="text-xl font-bold tracking-tight text-gray-900"><%= menu_item.name %></h3>
         <%# Filled by modifier-pricing; the server value shows until JS runs. %>
         <p class="mt-1 mb-4 flex items-baseline gap-2 tabular-nums" data-modifier-pricing-target="total">
           <span class="text-lg font-bold text-gray-900"><%= format_amount(pricing[:base_cents]) %></span>
         </p>
         <%= hidden_field_tag :menu_item_id, menu_item.id %>
+        <%# Count typed straight away: focused on open; text (not number) so Arabic-Indic digits work. %>
+        <label class="mb-4 flex items-center gap-3">
+          <span class="text-sm font-semibold text-gray-900"><%= t("pos.modifier.quantity") %></span>
+          <%= text_field_tag :quantity, 1, inputmode: "numeric", pattern: "[0-9]*", autocomplete: "off", autofocus: true,
+                class: "#{pos_input_class} w-24 text-center text-2xl font-bold tabular-nums",
+                data: { controller: "arabic-numerals",
+                        modifier_pricing_target: "quantity", pos_quick_add_target: "quantity",
+                        action: "input->arabic-numerals#normalize input->pos-quick-add#digitsOnly focus->arabic-numerals#select" } %>
+        </label>
         <% groups.each do |group| %>
           <% shows_prices = modifier_group_shows_prices?(group, pricing) %>
           <fieldset class="mb-4 rounded-2xl border border-gray-200 bg-gray-50/80 p-3 space-y-1.5">
@@ -44,7 +53,7 @@
             <%= t("pos.modifier.add_to_order") %>
             · <span class="tabular-nums" data-modifier-pricing-target="buttonTotal"><%= format_amount(pricing[:base_cents]) %></span>
           </button>
-          <%= link_to t("actions.cancel"), pos_path, class: "flex-1 text-center border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors", data: { turbo_frame: "_top" } %>
+          <%= link_to t("actions.cancel"), pos_path, class: "flex-1 text-center border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors", data: { turbo_frame: "_top", pos_quick_add_target: "cancel" } %>
         </div>
       <% end %>
     </div>

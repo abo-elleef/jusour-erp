@@ -3789,6 +3789,7 @@ en:
     modifier:
       add_to_order: "Add to order"
       kitchen_notes: "Kitchen notes (optional)"
+      quantity: "Quantity"
       required: "required"
     collect_payment:
       title: "Collect Payment"

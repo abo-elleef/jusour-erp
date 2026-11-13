@@ -20,11 +20,9 @@
   <% else %>
     <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(item.price_cents_at(location)) %></p>
   <% end %>
-  <% if item.modifier_groups.any? %>
-    <%= link_to t("actions.customize"), pos_modifier_form_path(menu_item_id: item.id),
-          class: "mt-2 block text-center #{pos_btn_accent_class}",
-          data: { turbo_frame: "modifier_modal" } %>
-  <% else %>
-    <%= button_to t("actions.add"), pos_order_items_path(menu_item_id: item.id), method: :post, form: pos_order_item_form_data, class: "mt-2 #{pos_btn_accent_class}" %>
-  <% end %>
+  <%# Every item opens the add popup, so the count is typed there instead of fixed in the cart. %>
+  <%= link_to (item.modifier_groups.any? ? t("actions.customize") : t("actions.add")),
+        pos_modifier_form_path(menu_item_id: item.id),
+        class: "mt-2 block text-center #{pos_btn_accent_class}",
+        data: { turbo_frame: "modifier_modal" } %>
 </div>

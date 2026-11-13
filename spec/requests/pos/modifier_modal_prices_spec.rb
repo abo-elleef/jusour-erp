@@ -36,7 +36,7 @@ RSpec.describe "POS customize modal prices", type: :request do
 
   it "shows each size's full price at the branch, and no prices for choices that cost nothing" do
     doc = modal
-    config = JSON.parse(doc.at("form[data-controller='modifier-pricing']")["data-modifier-pricing-config-value"])
+    config = JSON.parse(doc.at("form[data-controller~='modifier-pricing']")["data-modifier-pricing-config-value"])
 
     expect(config["base_cents"]).to eq(11_000)
     expect(doc.at("[data-modifier-price='#{single.id}']").text).to include("110.00")
@@ -47,7 +47,7 @@ RSpec.describe "POS customize modal prices", type: :request do
   it "sends live promos in priority order so the modal can show promo prices" do
     create(:menu_promo, company: company, menu_item: item, modifier: double, promo_price_cents: 13_000)
 
-    config = JSON.parse(modal.at("form[data-controller='modifier-pricing']")["data-modifier-pricing-config-value"])
+    config = JSON.parse(modal.at("form[data-controller~='modifier-pricing']")["data-modifier-pricing-config-value"])
 
     expect(config["promos"]).to eq([{ "modifier_id" => double.id, "discount_cents" => 1_500 }])
   end
