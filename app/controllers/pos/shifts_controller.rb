@@ -11,14 +11,22 @@ module Pos
 
     # Sortable columns of the orders table → SQL columns (fixed strings, never user input).
     # Order numbers are digit strings, so length first makes "10" come after "9".
+    # Empty values (no customer, not an offline order) always sort last.
     SHIFT_ORDER_SORTS = {
       "number" => %w[LENGTH(orders.order_number) orders.order_number],
+      "offline" => %w[LENGTH(orders.offline_number) orders.offline_number],
       "time" => %w[orders.created_at],
       "type" => %w[orders.order_type],
       "status" => %w[orders.status],
+      "customer" => %w[customers.name],
+      "payment" => ["(SELECT MIN(sort_payments.payment_method) FROM payments sort_payments " \
+                    "WHERE sort_payments.order_id = orders.id AND sort_payments.status = 'completed')"],
       "delivery_fee" => %w[orders.delivery_fee_cents],
       "total" => %w[orders.total_cents]
     }.freeze
+
+    # Arabic-Indic and Persian digits typed into the search box, as ASCII.
+    SEARCH_DIGITS = ["٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789"].freeze
 
     before_action :require_pos_access!
     before_action :set_open_session, only: %i[count reconcile]
@@ -263,10 +271,14 @@ module Pos
                                        .select(:order_id))
       end
 
+      @query = params[:q].to_s.strip.tr(*SEARCH_DIGITS).first(100)
+      shown = shown.where(id: shift_order_search(@query).select(:id)) if @query.present?
+
       @sort = params[:sort].presence_in(SHIFT_ORDER_SORTS.keys) || "time"
       @direction = params[:dir] == "asc" ? "asc" : "desc"
-      @shift_orders = shown.includes(:customer, :payments)
-        .order(Arel.sql(SHIFT_ORDER_SORTS.fetch(@sort).map { |column| "#{column} #{@direction}" }.join(", ")))
+      sorted = @sort == "customer" ? shown.left_joins(:customer) : shown
+      @shift_orders = sorted.includes(:customer, :payments)
+        .order(Arel.sql(SHIFT_ORDER_SORTS.fetch(@sort).map { |column| "#{column} #{@direction} NULLS LAST" }.join(", ")))
         .order(created_at: :desc)
       # A cancelled order earned nothing, so it is listed but not added up.
       filtered_live = shown.where.not(status: "cancelled")
@@ -276,9 +288,31 @@ module Pos
       @all_orders_count = session_orders.count
     end
 
-    # Keeps the order-type / payment-method filters and the sort when switching Open ↔ All.
+    # One box, many fields: order number or table number (exact, a leading # is
+    # fine), the offline register's number, the customer's name, phones or email,
+    # the order's notes or delivery address, or an item / combo name on it.
+    def shift_order_search(query)
+      like = "%#{Order.sanitize_sql_like(query)}%"
+      exact = query.delete_prefix("#")
+      Order.left_joins(:customer).where(<<~SQL.squish, exact: exact, like: like)
+        orders.order_number = :exact OR orders.table_number = :exact
+        OR orders.offline_number ILIKE :like
+        OR customers.name ILIKE :like OR customers.phone ILIKE :like
+        OR customers.phone_secondary ILIKE :like OR customers.email ILIKE :like
+        OR orders.notes ILIKE :like OR orders.delivery_address ILIKE :like
+        OR EXISTS (
+          SELECT 1 FROM order_items search_items
+          LEFT JOIN menu_items search_menu ON search_menu.id = search_items.menu_item_id
+          LEFT JOIN combos search_combos ON search_combos.id = search_items.combo_id
+          WHERE search_items.order_id = orders.id
+            AND (search_menu.name ILIKE :like OR search_combos.name ILIKE :like)
+        )
+      SQL
+    end
+
+    # Keeps the search, the order-type / payment-method filters and the sort when switching Open ↔ All.
     def shift_orders_filter_params
-      { order_type: @order_type_filter, payment_method: @payment_method_filter,
+      { q: @query.presence, order_type: @order_type_filter, payment_method: @payment_method_filter,
         sort: params[:sort].presence && @sort, dir: params[:dir].presence && @direction }.compact
     end
     helper_method :shift_orders_filter_params

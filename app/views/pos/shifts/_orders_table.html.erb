@@ -4,16 +4,17 @@
                       data: { turbo_frame: "shift_orders", turbo_action: "advance" })
    } %>
     <div class="overflow-x-auto">
-      <table class="w-full text-left text-sm min-w-[720px]">
+      <table class="w-full text-left text-sm min-w-[800px]">
         <thead class="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
           <tr>
             <th class="p-3 ps-5 text-start w-10">#</th>
             <th class="p-3 text-start"><%= sort_link.call(t("order.labels.order_number"), "number") %></th>
+            <th class="p-3 text-start"><%= sort_link.call(t("pos.shift.orders.offline_number"), "offline") %></th>
             <th class="p-3 text-start"><%= sort_link.call(t("order.labels.date_time"), "time") %></th>
             <th class="p-3 text-start"><%= sort_link.call(t("order.labels.type"), "type") %></th>
             <th class="p-3 text-start"><%= sort_link.call(t("order.labels.status"), "status") %></th>
-            <th class="p-3 text-start"><%= t("order.labels.customer") %></th>
-            <th class="p-3 text-start"><%= t("order.labels.payment_method") %></th>
+            <th class="p-3 text-start"><%= sort_link.call(t("order.labels.customer"), "customer") %></th>
+            <th class="p-3 text-start"><%= sort_link.call(t("order.labels.payment_method"), "payment") %></th>
             <th class="p-3 text-end"><%= sort_link.call(t("order.labels.delivery_fee"), "delivery_fee") %></th>
             <th class="p-3 text-end"><%= sort_link.call(t("order.labels.total"), "total") %></th>
             <th class="p-3 pe-5 text-end"></th>
@@ -27,7 +28,7 @@
         <% if local_assigns[:total_cents] %>
           <tfoot class="border-t-2 border-gray-200 bg-gray-50">
             <tr>
-              <td colspan="7" class="p-3 ps-5 font-semibold text-gray-900">
+              <td colspan="8" class="p-3 ps-5 font-semibold text-gray-900">
                 <%= t("pos.shift.orders.total_row", count: total_count) %>
                 <span class="block text-xs font-normal text-gray-500"><%= t("pos.shift.orders.total_excludes_cancelled") %></span>
               </td>
