@@ -28,6 +28,10 @@ const COMPACT_LINE_FACTOR = 1.5
 const VALUE_COLUMN_SHARE = 0.35
 const WRAP_SEPARATORS = ["+", "•", "|"]
 const FONT_FAMILY = '"Noto Naskh Arabic", "Segoe UI", Tahoma, Arial, "Arial Unicode MS", sans-serif'
+// Numbers (prices, quantities, phones) in a sans font: Noto Naskh's "0" is a narrow,
+// pinched oval that prints almost like an "8" — ArabicImageRenderer#digit_font.
+const DIGIT_FONT_FAMILY = 'Arial, "Noto Sans", "Segoe UI", Tahoma, sans-serif'
+const NUMERIC_TEXT = /^[\d\s.,:+\-×x%]+$/
 const BLACK_BELOW = 150 // 0–255 luminance; anything darker prints
 const ARABIC_SCRIPT = /[֐-ࣿיִ-﷿ﹰ-﻿]/
 
@@ -220,13 +224,14 @@ export class EscposDocument {
     }
   }
 
-  font(size) {
-    return `${this.emphasis ? "bold " : ""}${size}px ${FONT_FAMILY}`
+  font(size, text = "") {
+    const family = NUMERIC_TEXT.test(String(text)) ? DIGIT_FONT_FAMILY : FONT_FAMILY
+    return `${this.emphasis ? "bold " : ""}${size}px ${family}`
   }
 
   measure(text, size) {
     const ctx = this.scratch()
-    ctx.font = this.font(size)
+    ctx.font = this.font(size, text)
     return ctx.measureText(text).width
   }
 
@@ -304,10 +309,10 @@ export class EscposDocument {
     if (value === "") return
 
     let fitted = size
-    ctx.font = this.font(fitted)
+    ctx.font = this.font(fitted, value)
     while (fitted > 14 && ctx.measureText(value).width > x1 - x0) {
       fitted -= 1
-      ctx.font = this.font(fitted)
+      ctx.font = this.font(fitted, value)
     }
     // Order each string by its own script. A date or a price on an Arabic receipt is
     // still read left to right, and would print as "PM 11:55 05/11/2026" if it

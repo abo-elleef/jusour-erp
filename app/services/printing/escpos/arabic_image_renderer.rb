@@ -45,6 +45,22 @@ module Printing
         "/System/Library/Fonts/Supplemental/GeezaPro.ttc"
       ].freeze
 
+      # Prices, quantities and totals are drawn in a sans font: the Arabic font's "0"
+      # is a narrow, pinched oval that prints almost like an "8" on thermal paper.
+      # Heroku gets Noto Sans from fonts-noto-core (Aptfile); the apt buildpack unpacks
+      # packages under /app/.apt, not /usr/share. macOS dev uses Arial. With none
+      # found, values fall back to the Arabic font as before.
+      DIGIT_FONT_CANDIDATES = [
+        Rails.root.join("vendor/fonts/NotoSans-Regular.ttf").to_s,
+        "/app/.apt/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+        "/app/.apt/usr/share/fonts/opentype/noto/NotoSans-Regular.otf",
+        "/app/.apt/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSans-Regular.otf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/System/Library/Fonts/Supplemental/Arial.ttf"
+      ].freeze
+
       module_function
 
       # ── Public API ────────────────────────────────────────────────────────
@@ -124,6 +140,11 @@ module Printing
         CANDIDATE_FONTS.find { |f| File.exist?(f) }
       end
 
+      # The font for numeric values (see DIGIT_FONT_CANDIDATES), or nil.
+      def digit_font
+        DIGIT_FONT_CANDIDATES.find { |f| File.exist?(f) }
+      end
+
       # Returns raw ESC/POS bytes for a 3-column receipt row (image mode).
       # item_name_visual: already reshaped+bidi-processed Arabic label
       # qty_str:          plain quantity string ("1", "2" …)
@@ -144,8 +165,8 @@ module Printing
 
         pbm = render_pbm_multi(
           [
-            { gravity: "East", offset: "+#{price_rx}+0", text: price_str },
-            { gravity: "East", offset: "+#{qty_rx}+0",   text: qty_str },
+            { gravity: "East", offset: "+#{price_rx}+0", text: price_str, font: value_font(price_str) },
+            { gravity: "East", offset: "+#{qty_rx}+0",   text: qty_str, font: value_font(qty_str) },
             { gravity: "East", offset: "+8+0",            text: item_name_visual },
             { draw: "line #{sep1},0 #{sep1},#{h}" },
             { draw: "line #{sep2},0 #{sep2},#{h}" }
@@ -206,8 +227,8 @@ module Printing
           im_command,
           "-size", "#{px_width}x#{h}", "xc:white",
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
-          "-gravity", "East", "-annotate", "+#{price_rx}+0", price_str,
-          "-gravity", "East", "-annotate", "+#{qty_rx}+0",   qty_str,
+          *annotate_args({ gravity: "East", offset: "+#{price_rx}+0", text: price_str, font: value_font(price_str) }),
+          *annotate_args({ gravity: "East", offset: "+#{qty_rx}+0", text: qty_str, font: value_font(qty_str) }),
           "-gravity", "East", "-annotate", "+8+0",            item_name_visual,
           "-draw", "line #{sep1},0 #{sep1},#{h}",
           "-draw", "line #{sep2},0 #{sep2},#{h}"
@@ -350,7 +371,15 @@ module Printing
       def value_annotation(value, px_width, pad, bold, value_center_x)
         offset = value_center_x ? format("%+d+0", value_center_x - (px_width / 2)) : "+#{pad}+0"
         { gravity: value_center_x ? "Center" : "West", offset: offset, text: value.to_s, bold: bold,
-          pt: BOLD_VALUE_PT }
+          pt: BOLD_VALUE_PT, font: value_font(value) }
+      end
+
+      # The digit font for a value with no Arabic in it (a price, a quantity); nil
+      # keeps the Arabic font (a column header such as "السعر").
+      def value_font(value)
+        return nil if value.to_s.match?(/\p{Arabic}/)
+
+        digit_font
       end
 
       # The label side of a row, pinned `pad` dots from the right edge.
@@ -367,23 +396,26 @@ module Printing
         line_height(pt, line_factor)
       end
 
-      # One text annotation. bold: a thicker glyph at the annotation's own size (pt),
-      # then the defaults are put back so later annotations draw as before. A plain
-      # annotation produces exactly the arguments it always did, so receipt images
-      # keep their cache keys.
       # The same outline the bold row labels use (annotate_args); empty when not bold,
       # so a plain line's command — and its raster-cache key — is unchanged.
       def bold_stroke_args(bold)
         bold ? ["-stroke", "black", "-strokewidth", BOLD_STROKE_WIDTH] : []
       end
 
+      # One text annotation. bold: a thicker glyph at the annotation's own size (pt),
+      # then the defaults are put back so later annotations draw as before.
+      # font: draw this annotation in another font (the digit font), then switch back
+      # to the Arabic font for whatever follows.
       def annotate_args(ann)
         args = ["-gravity", ann[:gravity], "-annotate", ann.fetch(:offset, "+0+0"), ann[:text]]
-        return args unless ann[:bold]
+        if ann[:bold]
+          args = ["-pointsize", ann.fetch(:pt, BOLD_VALUE_PT).to_s, "-stroke", "black", "-strokewidth", BOLD_STROKE_WIDTH,
+                  *args,
+                  "-stroke", "none", "-strokewidth", "1", "-pointsize", FONT_SIZE_PT.to_s]
+        end
+        return args unless ann[:font]
 
-        ["-pointsize", ann.fetch(:pt, BOLD_VALUE_PT).to_s, "-stroke", "black", "-strokewidth", BOLD_STROKE_WIDTH,
-         *args,
-         "-stroke", "none", "-strokewidth", "1", "-pointsize", FONT_SIZE_PT.to_s]
+        ["-font", ann[:font], *args, "-font", arabic_font]
       end
 
       # Runs an ImageMagick command that writes a PBM to stdout; returns the PBM or nil.
