@@ -1,13 +1,17 @@
 <%# locals: combo, category: %>
+<%# Like the item card, the whole card is the tap target: tapping it adds the combo.
+    A one-button form so it still POSTs; the form carries .menu-card / data-category
+    for the category filter. %>
 <% highlighted = combo.highlighted_now? %>
-<div class="menu-card relative rounded-2xl border <%= highlighted ? 'border-rose-300 bg-rose-50/50' : 'border-amber-200 bg-amber-50/50' %> p-3 hover:border-amber-400 transition-colors flex flex-col" data-category="<%= category %>">
+<%= button_to pos_order_items_path(combo_id: combo.id), method: :post,
+      form: { class: "menu-card", data: { turbo_stream: true, category: category } },
+      class: "relative w-full h-full rounded-2xl border #{highlighted ? 'border-rose-300 bg-rose-50/50' : 'border-amber-200 bg-amber-50/50'} p-3 hover:border-amber-400 active:scale-[0.98] transition flex flex-col text-start cursor-pointer select-none" do %>
   <% if highlighted %>
     <span class="absolute top-2 end-2 z-[1] rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
       <%= t("promos.deal_badge") %>
     </span>
   <% end %>
-  <div class="w-1/2 mx-auto aspect-square <%= highlighted ? 'bg-rose-100/80 text-rose-800' : 'bg-amber-100/80 text-amber-800' %> rounded-xl mb-2 shrink-0 flex items-center justify-center font-bold text-xs tracking-wide uppercase px-2 text-center"><%= t("actions.combo") %></div>
-  <p class="font-semibold text-sm flex-1 text-gray-900"><%= combo.name %></p>
-  <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(combo.price_cents) %></p>
-  <%= button_to t("actions.add"), pos_order_items_path(combo_id: combo.id), method: :post, form: pos_order_item_form_data, class: "mt-2 #{pos_btn_accent_class}" %>
-</div>
+  <span class="w-1/2 mx-auto aspect-square <%= highlighted ? 'bg-rose-100/80 text-rose-800' : 'bg-amber-100/80 text-amber-800' %> rounded-xl mb-2 shrink-0 flex items-center justify-center font-bold text-xs tracking-wide uppercase px-2 text-center"><%= t("actions.combo") %></span>
+  <span class="block font-extrabold text-lg leading-snug flex-1 text-gray-900"><%= combo.name %></span>
+  <span class="block text-lg text-amber-700 font-bold mt-1 tabular-nums text-end"><%= format_money(combo.price_cents) %></span>
+<% end %>

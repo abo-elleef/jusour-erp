@@ -1,5 +1,6 @@
 <%# locals: item, location:, promo:, category: %>
-<%# The whole card is the tap target: image, name, price or button all open the add popup. %>
+<%# The whole card is the tap target (image, name or price all open the add popup),
+    so it carries no separate button — that space goes to a bigger name and price. %>
 <%= link_to pos_modifier_form_path(menu_item_id: item.id),
       class: "menu-card relative rounded-2xl border #{promo ? 'border-rose-300 bg-rose-50/40' : 'border-gray-200 bg-white'} p-3 hover:border-amber-300 active:scale-[0.98] transition flex flex-col cursor-pointer select-none",
       data: { category: category, turbo_frame: "modifier_modal" } do %>
@@ -13,18 +14,15 @@
   <% else %>
     <div class="w-1/2 mx-auto aspect-square bg-gray-100 rounded-xl mb-2 shrink-0 flex items-center justify-center text-gray-400 text-xs font-medium px-2 text-center"><%= item.category.name %></div>
   <% end %>
-  <p class="font-semibold text-sm leading-tight flex-1 text-gray-900"><%= item.name %></p>
+  <p class="font-extrabold text-lg leading-snug flex-1 text-gray-900"><%= item.name %></p>
   <% if promo %>
-    <p class="mt-1 flex items-baseline gap-1.5 tabular-nums">
-      <span class="text-xs text-gray-400 line-through"><%= format_money(promo.list_price_cents) %></span>
-      <span class="text-rose-700 font-bold"><%= format_money(promo.promo_price_cents) %></span>
+    <%# Price on the opposite side from the name, so the eye finds each in its own spot. %>
+    <p class="mt-1 flex flex-wrap items-baseline justify-end gap-1.5 tabular-nums">
+      <span class="text-sm text-gray-400 line-through"><%= format_money(promo.list_price_cents) %></span>
+      <span class="text-lg text-rose-700 font-bold"><%= format_money(promo.promo_price_cents) %></span>
           <% if promo.modifier_name.present? %><span class="text-[11px] font-semibold text-rose-700"><%= t("promos.only_choice", choice: promo.modifier_name) %></span><% end %>
     </p>
   <% else %>
-    <p class="text-amber-700 font-bold mt-1 tabular-nums"><%= format_money(item.price_cents_at(location)) %></p>
+    <p class="text-lg text-amber-700 font-bold mt-1 tabular-nums text-end"><%= format_money(item.price_cents_at(location)) %></p>
   <% end %>
-  <%# Looks like a button; the card around it is the link (links can't nest). %>
-  <span class="mt-2 block text-center <%= pos_btn_accent_class %>">
-    <%= item.modifier_groups.any? ? t("actions.customize") : t("actions.add") %>
-  </span>
 <% end %>
