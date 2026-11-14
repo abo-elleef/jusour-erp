@@ -3,9 +3,13 @@ import { Controller } from "@hotwired/stimulus"
 // The POS add-item popup, driven from the keyboard so a rush-hour cashier never
 // reaches for the cart to fix a count:
 //   tap item → count field is focused and selected → type 3 (Arabic or English digits)
-//   → Enter: jumps to the first choice when the item has modifiers, else adds
-//   → arrows move between choices; Enter picks the focused one and goes to the next
-//     required group still empty, or adds when none is left. Esc closes.
+//   → Enter: jumps to the first option group when the item has any, else adds
+//   → arrows move between choices inside a group
+//   → Enter picks the focused choice and moves to the NEXT group, required or
+//     optional, in the order they are shown; after the last group it adds (or
+//     goes back to a required group still empty instead of failing validation)
+//   → Tab moves to the next group without picking; Shift+Tab goes back as usual.
+//   Esc closes.
 export default class extends Controller {
   static targets = ["quantity", "cancel"]
 
@@ -30,43 +34,76 @@ export default class extends Controller {
       this.cancelTarget.click()
       return
     }
-    if (event.key !== "Enter" || event.isComposing) return
-
-    const target = event.target
-    if (target === this.quantityTarget) {
-      const choice = this.firstChoice()
-      if (choice) {
-        event.preventDefault()
-        choice.focus()
-      }
-      // No modifiers: the form's own implicit submit adds the item.
-      return
-    }
-    if (target.matches("input[data-modifier-option]")) {
-      // Browsers don't reliably submit a form on Enter from a radio or checkbox.
-      event.preventDefault()
-      // Enter on a focused choice picks it, like a tap.
-      if (target.type === "radio" && !target.checked) {
-        target.checked = true
-        target.dispatchEvent(new Event("change", { bubbles: true }))
-      }
-      // Another required group still empty: go there instead of failing validation.
-      const next = this.unpickedRequired()
-      if (next) next.focus()
-      else this.element.requestSubmit()
-    }
+    if (event.isComposing) return
+    if (event.key === "Enter") this.enter(event)
+    else if (event.key === "Tab" && !event.shiftKey) this.tab(event)
   }
 
-  // The first required group with nothing picked yet, else the very first choice.
-  firstChoice() {
-    return this.unpickedRequired() || this.element.querySelector("input[data-modifier-option]")
+  enter(event) {
+    const target = event.target
+    if (target === this.quantityTarget) {
+      const first = this.groups()[0]
+      if (first) {
+        event.preventDefault()
+        this.focusGroup(first)
+      }
+      // No option groups: the form's own implicit submit adds the item.
+      return
+    }
+    if (!target.matches("input[data-modifier-option]")) return
+
+    // Browsers don't reliably submit a form on Enter from a radio or checkbox.
+    event.preventDefault()
+    // Enter on a focused choice picks it, like a tap. A checkbox is only ever
+    // ticked here, never unticked (Space still toggles it).
+    if (!target.checked) {
+      target.checked = true
+      target.dispatchEvent(new Event("change", { bubbles: true }))
+    }
+
+    const next = this.groupAfter(target)
+    if (next) return this.focusGroup(next)
+
+    // Last group: a required one still empty gets the focus instead of a failed submit.
+    const missing = this.unpickedRequired()
+    if (missing) this.focusGroup(missing)
+    else this.element.requestSubmit()
+  }
+
+  // Tab from an option skips the rest of its group (checkboxes would otherwise
+  // take one Tab each) and lands on the next group. From the last group it
+  // falls through to the browser, which moves on to the kitchen note.
+  tab(event) {
+    const target = event.target
+    if (!target.matches("input[data-modifier-option]")) return
+
+    const next = this.groupAfter(target)
+    if (!next) return
+    event.preventDefault()
+    this.focusGroup(next)
+  }
+
+  groups() {
+    return [...this.element.querySelectorAll("fieldset")].filter((f) => f.querySelector("input[data-modifier-option]"))
+  }
+
+  groupAfter(option) {
+    const groups = this.groups()
+    const index = groups.indexOf(option.closest("fieldset"))
+    return index >= 0 ? groups[index + 1] : null
+  }
+
+  // Lands on the group's picked choice if there is one, else its first choice.
+  focusGroup(fieldset) {
+    const options = [...fieldset.querySelectorAll("input[data-modifier-option]")]
+    const option = options.find((o) => o.checked) || options[0]
+    option?.focus()
   }
 
   unpickedRequired() {
-    for (const fieldset of this.element.querySelectorAll("fieldset")) {
+    return this.groups().find((fieldset) => {
       const options = [...fieldset.querySelectorAll("input[data-modifier-option]")]
-      if (options.some((o) => o.required) && !options.some((o) => o.checked)) return options[0]
-    }
-    return null
+      return options.some((o) => o.required) && !options.some((o) => o.checked)
+    })
   }
 }
