@@ -12,7 +12,7 @@ module Admin
         @direction = parse_index_sort_direction_param
         @filtered = (params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?)) || @status.present?
 
-        scope = @q.result.includes(:treasury)
+        scope = @q.result.includes(:treasury, :approvers)
         scope = scope.where(active: @status == "active") if @status
         scope = scope.order(@sort => @direction, name: :asc)
 
@@ -21,28 +21,29 @@ module Admin
 
       def new
         @payment_method = ::Sales::PaymentMethod.new(active: true, requires_approval: true)
-        @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+        load_form_data
       end
 
       def create
         @payment_method = ::Sales::PaymentMethod.new(payment_method_params)
-        if @payment_method.save
+        if save_with_approvers(@payment_method)
           redirect_to admin_sales_payment_methods_path, notice: t("sales.payment_methods.flash.created")
         else
-          @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+          load_form_data
           render :new, status: :unprocessable_entity
         end
       end
 
       def edit
-        @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+        load_form_data
       end
 
       def update
-        if @payment_method.update(payment_method_params)
+        @payment_method.assign_attributes(payment_method_params)
+        if save_with_approvers(@payment_method)
           redirect_to admin_sales_payment_methods_path, notice: t("sales.payment_methods.flash.updated")
         else
-          @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+          load_form_data
           render :edit, status: :unprocessable_entity
         end
       end
@@ -65,6 +66,29 @@ module Admin
 
       def payment_method_params
         params.require(:sales_payment_method).permit(:name, :treasury_id, :active, :requires_approval)
+      end
+
+      def load_form_data
+        @treasuries = Treasury.active.payable.visible_to(current_user).ordered
+        @eligible_approvers = eligible_approvers
+      end
+
+      # Only people who can open the sales area can act on an approval.
+      def eligible_approvers
+        User.where(company_id: Current.company.id).active.order(:name).select { |u| u.can?("customers:manage") }
+      end
+
+      # Approvers are replaced as a set; ids outside the eligible list are dropped.
+      def save_with_approvers(payment_method)
+        submitted = Array(params.dig(:sales_payment_method, :approver_ids)).compact_blank
+        allowed = eligible_approvers.map(&:id).map(&:to_s)
+        ::Sales::PaymentMethod.transaction do
+          payment_method.save!
+          payment_method.approver_ids = submitted & allowed
+        end
+        true
+      rescue ActiveRecord::RecordInvalid
+        false
       end
 
       def parse_index_sort_param

@@ -3477,6 +3477,7 @@ en:
       inactive: "Inactive"
       needs_approval: "Needs approval"
       settles_on_confirm: "Settles on confirm"
+      any_approver: "Anyone who can confirm payments"
       delete_confirm: "Remove this payment method?"
       empty_title: "No online payment methods yet"
       empty_hint: "Add one (e.g. InstaPay) and map it to a treasury before offering it on invoices."
@@ -3493,6 +3494,7 @@ en:
         name: "Name"
         treasury: "Treasury"
         settlement: "Settlement"
+        approvers: "Approvers"
         status: "Status"
         actions: "Actions"
       form:
@@ -3503,6 +3505,8 @@ en:
         treasury_hint: "Where the money lands once a payment by this method is approved."
         requires_approval: "Needs payment approval"
         requires_approval_hint: "On for transfers and wallets: the invoice waits until someone checks the money arrived. Turn off for a card machine at the counter: the payment settles as soon as the invoice is confirmed, like cash."
+        approvers: "Approvers"
+        approvers_hint: "Who checks and approves payments made by this method, and gets notified. Leave all unticked to let anyone who can confirm payments approve. The owner can always approve."
         active: "Active"
         create_button: "Create payment method"
       flash:

@@ -42,4 +42,39 @@ RSpec.describe "Admin::Sales::PaymentMethods", type: :request do
     expect(response.body).to include(I18n.t("sales.payment_methods.settles_on_confirm"))
     expect(response.body).to include(I18n.t("sales.payment_methods.needs_approval"))
   end
+
+  describe "approvers" do
+    let(:saif) { create(:user, company: company, role: "manager", name: "Saif") }
+    let(:naggar) { create(:user, company: company, role: "manager", name: "El-Naggar") }
+    let(:cashier) { create(:user, company: company, role: "cashier", name: "Cashier") }
+
+    it "saves the ticked approvers and lists them" do
+      post admin_sales_payment_methods_path, params: { sales_payment_method: {
+        name: "Vodafone Cash Saif", treasury_id: treasury.id, active: "1", approver_ids: ["", saif.id] } }
+
+      method = Sales::PaymentMethod.find_by!(name: "Vodafone Cash Saif")
+      expect(method.approvers).to contain_exactly(saif)
+
+      get admin_sales_payment_methods_path
+      expect(response.body).to include("Saif")
+    end
+
+    it "replaces the set on edit, and clears it when nothing is ticked" do
+      method = create(:sales_payment_method, company: company, treasury: treasury, name: "CIB")
+      method.approvers << saif
+
+      patch admin_sales_payment_method_path(method), params: { sales_payment_method: { approver_ids: ["", naggar.id] } }
+      expect(method.reload.approvers).to contain_exactly(naggar)
+
+      patch admin_sales_payment_method_path(method), params: { sales_payment_method: { approver_ids: [""] } }
+      expect(method.reload.approvers).to be_empty
+    end
+
+    it "ignores someone who can't open the sales area" do
+      post admin_sales_payment_methods_path, params: { sales_payment_method: {
+        name: "QNB", treasury_id: treasury.id, active: "1", approver_ids: [cashier.id] } }
+
+      expect(Sales::PaymentMethod.find_by!(name: "QNB").approvers).to be_empty
+    end
+  end
 end

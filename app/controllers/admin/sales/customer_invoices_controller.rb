@@ -5,7 +5,7 @@ module Admin
     class CustomerInvoicesController < BaseController
       before_action :set_invoice, only: %i[show edit update confirm approve_payment reject_payment mark_dispatched complete_shipping void attach_payment_proof_image]
       before_action :require_draft_for_edit, only: %i[edit update]
-      before_action :require_confirm_payments_access, only: %i[approve_payment reject_payment]
+      before_action :require_payment_approver, only: %i[approve_payment reject_payment]
       before_action -> { require_sales_permission("sales:dispatch") }, only: :mark_dispatched
       before_action -> { require_sales_permission("sales:complete_shipping") }, only: :complete_shipping
 
@@ -201,8 +201,13 @@ module Admin
         redirect_to admin_sales_customer_invoice_path(@invoice), alert: t("sales.customer_invoices.errors.not_draft_for_edit")
       end
 
-      def require_confirm_payments_access
-        require_sales_permission("sales:confirm_payments")
+      # The method's own approvers when it has any, else sales:confirm_payments
+      # (Sales::PaymentApproval). The owner can always approve.
+      def require_payment_approver
+        return if ::Sales::PaymentApproval.can_approve?(current_user, @invoice)
+
+        flash[:alert] = t("flash.access_denied")
+        redirect_to admin_sales_customer_invoice_path(@invoice)
       end
 
       def require_sales_permission(key)

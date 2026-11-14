@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_14_170100) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_14_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1352,6 +1352,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_170100) do
     t.index ["company_id"], name: "index_roles_on_company_id"
   end
 
+  create_table "sales_payment_method_approvers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "sales_payment_method_id", null: false
+    t.uuid "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_sales_payment_method_approvers_on_company_id"
+    t.index ["sales_payment_method_id", "user_id"], name: "index_sales_pm_approvers_on_method_and_user", unique: true
+    t.index ["sales_payment_method_id"], name: "index_sales_pm_approvers_on_payment_method_id"
+    t.index ["user_id"], name: "index_sales_payment_method_approvers_on_user_id"
+  end
+
   create_table "sales_payment_methods", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.string "name", null: false
@@ -2241,6 +2253,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_170100) do
   add_foreign_key "recipes", "ingredients"
   add_foreign_key "recipes", "menu_items"
   add_foreign_key "recipes", "units"
+  add_foreign_key "sales_payment_method_approvers", "companies"
+  add_foreign_key "sales_payment_method_approvers", "sales_payment_methods"
+  add_foreign_key "sales_payment_method_approvers", "users"
   add_foreign_key "sales_payment_methods", "companies"
   add_foreign_key "shift_logs", "companies"
   add_foreign_key "shift_logs", "users"

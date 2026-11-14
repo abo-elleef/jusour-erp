@@ -1413,7 +1413,7 @@ module ApplicationHelper
       items << { controller: "payment_methods", label: "sales.nav.payment_methods", path: :admin_sales_payment_methods_path }
     end
 
-    if current_user.can?("sales:confirm_payments") && Current.company&.feature_enabled?(:ar_credit_sales)
+    if Current.company&.feature_enabled?(:ar_credit_sales) && ::Sales::PaymentApproval.approver_anywhere?(current_user)
       items << { controller: "payment_approvals", label: "sales.nav.payment_approvals", path: :admin_sales_payment_approvals_path }
     end
 
