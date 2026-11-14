@@ -4,7 +4,7 @@ require "csv"
 
 module Admin
   class CustomersController < BaseController
-    before_action :set_customer, only: %i[show edit update destroy]
+    before_action :set_customer, only: %i[show edit update destroy block unblock]
 
     def index
       authorize Customer
@@ -50,6 +50,7 @@ module Admin
         @invoices = invoices.includes(:location).order(invoice_date: :desc, created_at: :desc).limit(20)
       end
       @loyalty_transactions = @customer.loyalty_transactions.order(created_at: :desc).limit(20)
+      @online_request_counts = OnlineOrderRequest.where(customer: @customer).group(:status).count
     end
 
     def new
@@ -92,6 +93,25 @@ module Admin
 
       @customer.destroy
       redirect_to admin_customers_path, notice: t("flash.customer.removed")
+    end
+
+    # Blocks the customer from placing self-orders on the public menu.
+    def block
+      authorize @customer
+      reason = params[:blocked_reason].to_s.strip
+      if reason.blank?
+        redirect_to admin_customer_path(@customer), alert: t("flash.customer.block_reason_required")
+        return
+      end
+
+      @customer.block!(by: current_user, reason: reason)
+      redirect_to admin_customer_path(@customer), notice: t("flash.customer.blocked")
+    end
+
+    def unblock
+      authorize @customer
+      @customer.unblock!
+      redirect_to admin_customer_path(@customer), notice: t("flash.customer.unblocked")
     end
 
     private

@@ -140,6 +140,60 @@
         <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.fields.public_menu_enabled_hint") %></p>
       </div>
     </div>
+
+    <%# Customer self-ordering from the public menu. Orders arrive as requests a
+        cashier accepts or rejects at the register; these settings gate them. %>
+    <fieldset class="rounded-xl border border-stone-200 p-4 space-y-4">
+      <legend class="px-1 text-sm font-bold text-gray-900"><%= t("admin.locations.online_ordering.heading") %></legend>
+      <p class="text-xs text-gray-500"><%= t("admin.locations.online_ordering.description") %></p>
+
+      <div class="flex items-start gap-3">
+        <%= f.check_box :online_ordering_enabled, class: "w-4 h-4 mt-0.5 text-amber-600 border-gray-300 rounded" %>
+        <div>
+          <%= f.label :online_ordering_enabled, t("admin.locations.online_ordering.enabled"), class: "text-sm font-semibold text-gray-700" %>
+          <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.online_ordering.enabled_hint") %></p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <%= f.label :online_open_time, t("admin.locations.online_ordering.open_time"), class: "block text-sm font-semibold text-gray-700 mb-1" %>
+          <%= f.time_field :online_open_time, value: location.online_open_time&.strftime("%H:%M"),
+                class: "w-40 rounded-xl border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none" %>
+        </div>
+        <div>
+          <%= f.label :online_close_time, t("admin.locations.online_ordering.close_time"), class: "block text-sm font-semibold text-gray-700 mb-1" %>
+          <%= f.time_field :online_close_time, value: location.online_close_time&.strftime("%H:%M"),
+                class: "w-40 rounded-xl border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none" %>
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 -mt-2"><%= t("admin.locations.online_ordering.hours_hint") %></p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <%= f.label :online_accept_timeout_minutes, t("admin.locations.online_ordering.accept_timeout"), class: "block text-sm font-semibold text-gray-700 mb-1" %>
+          <%= f.text_field :online_accept_timeout_minutes, inputmode: "numeric", autocomplete: "off",
+                data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" },
+                class: "w-32 rounded-xl border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none" %>
+          <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.online_ordering.accept_timeout_hint") %></p>
+        </div>
+        <div>
+          <%= f.label :online_max_order_pounds, t("admin.locations.online_ordering.max_order"), class: "block text-sm font-semibold text-gray-700 mb-1" %>
+          <%# type="text", not "number": a native number input rejects Arabic-Indic digits. %>
+          <%= f.text_field :online_max_order_pounds, inputmode: "decimal", autocomplete: "off",
+                data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" },
+                class: "w-40 rounded-xl border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none" %>
+          <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.online_ordering.max_order_hint") %></p>
+        </div>
+      </div>
+
+      <% if location.persisted? %>
+        <p class="text-sm">
+          <%= link_to t("admin.locations.online_ordering.manage_delivery_areas"), admin_location_delivery_areas_path(location),
+                class: "font-semibold text-amber-700 hover:text-amber-800 hover:underline" %>
+        </p>
+      <% end %>
+    </fieldset>
   <% end %>
 
   <% if location.central_kitchen? %>

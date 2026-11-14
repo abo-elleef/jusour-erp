@@ -1,0 +1,72 @@
+<%= turbo_stream_from OnlineOrders::Broadcast.inbox_stream_name(@pos_location) %>
+<div class="<%= pos_viewport_h_class %> bg-gray-100 flex flex-col overflow-hidden">
+  <header class="flex items-center justify-between gap-3 px-5 py-3 border-b border-gray-200 bg-white shrink-0">
+    <span class="hidden sm:block text-xl font-bold tracking-tight text-gray-900 truncate min-w-0"><%= t("pos.online_orders.title") %></span>
+    <%= render "pos/pos_nav" %>
+  </header>
+
+  <div class="flex-1 min-h-0 overflow-y-auto">
+    <div class="p-5 pb-28 max-w-4xl mx-auto w-full space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 <%= @pos_location.online_ordering_enabled? ? "border-emerald-200 bg-emerald-50" : "border-amber-200 bg-amber-50" %>">
+        <div>
+          <p class="font-semibold <%= @pos_location.online_ordering_enabled? ? "text-emerald-900" : "text-amber-900" %>">
+            <%= t(@pos_location.online_ordering_enabled? ? "pos.online_orders.status_on" : "pos.online_orders.status_off") %>
+          </p>
+          <% if @pos_location.online_hours_set? %>
+            <p class="text-sm text-gray-600 tabular-nums" dir="ltr"><%= @pos_location.online_open_time.strftime("%H:%M") %> – <%= @pos_location.online_close_time.strftime("%H:%M") %></p>
+          <% end %>
+        </div>
+        <%= button_to t(@pos_location.online_ordering_enabled? ? "pos.online_orders.pause" : "pos.online_orders.resume"),
+              toggle_pos_online_order_requests_path, method: :patch,
+              class: "rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50" %>
+      </div>
+
+      <section>
+        <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500"><%= t("pos.online_orders.waiting", count: @pending.size) %></h2>
+        <% if @pending.empty? %>
+          <p class="rounded-2xl border border-dashed border-gray-300 bg-white px-4 py-10 text-center text-sm text-gray-500"><%= t("pos.online_orders.none_waiting") %></p>
+        <% else %>
+          <ul class="space-y-3">
+            <% @pending.each do |req| %>
+              <li>
+                <%= link_to pos_online_order_request_path(req), class: "flex items-center justify-between gap-4 rounded-2xl border border-amber-300 bg-white p-4 shadow-sm hover:bg-amber-50" do %>
+                  <div class="min-w-0">
+                    <p class="font-semibold text-gray-900"><%= req.customer_name %> <span class="font-normal text-gray-500 tabular-nums" dir="ltr"><%= req.phone %></span></p>
+                    <p class="text-sm text-gray-600">
+                      <%= order_type_label(req.fulfillment) %><% if req.delivery? %> · <%= req.delivery_area&.display_name %><% end %>
+                      · <%= t("pos.online_orders.items", count: req.lines.sum { |l| l["quantity"].to_i }) %>
+                      · <%= t("pos.online_orders.ago", time: time_ago_in_words(req.created_at)) %>
+                    </p>
+                    <% if req.customer&.blocked? %><p class="text-xs font-semibold text-rose-700"><%= t("pos.online_orders.blocked_customer") %></p><% end %>
+                  </div>
+                  <span class="shrink-0 text-lg font-bold tabular-nums text-gray-900"><%= format_money(req.total_cents) %></span>
+                <% end %>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </section>
+
+      <% if @recent.any? %>
+        <section>
+          <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500"><%= t("pos.online_orders.recent") %></h2>
+          <ul class="divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-white">
+            <% @recent.each do |req| %>
+              <li class="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+                <span class="min-w-0 truncate"><%= req.customer_name %> <span class="text-gray-500 tabular-nums" dir="ltr"><%= req.phone %></span></span>
+                <span class="flex shrink-0 items-center gap-3">
+                  <span class="tabular-nums"><%= format_money(req.total_cents) %></span>
+                  <% if req.order %>
+                    <%= link_to "##{req.order.order_number}", pos_order_path(req.order), class: "font-semibold text-emerald-700 hover:underline" %>
+                  <% else %>
+                    <span class="rounded-full px-2 py-0.5 text-xs font-semibold <%= req.rejected? ? "bg-rose-100 text-rose-800" : "bg-gray-100 text-gray-700" %>"><%= t("pos.online_orders.statuses.#{req.status}") %></span>
+                  <% end %>
+                </span>
+              </li>
+            <% end %>
+          </ul>
+        </section>
+      <% end %>
+    </div>
+  </div>
+</div>

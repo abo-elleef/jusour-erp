@@ -45,6 +45,78 @@ en:
       products_description: "Every product you stock — balances, costs, and reorder points."
 
   public:
+    online_order:
+      add: "Add"
+      add_to_cart: "Add to order"
+      quantity: "Quantity"
+      item_note: "Note for this item (optional)"
+      required: "Required"
+      choose_one: "Choose one"
+      choose_any: "Choose any"
+      pick_required: "Please choose: %{group}"
+      view_cart: "View order"
+      items_count: "%{count} items"
+      your_order: "Your order"
+      empty_cart: "Your order is empty."
+      remove: "Remove"
+      pickup: "Pickup"
+      delivery: "Delivery"
+      name: "Your name"
+      phone: "Mobile number"
+      phone_hint: "We may call to confirm your order."
+      area: "Delivery area"
+      choose_area: "Choose your area"
+      address: "Address (street, building, floor, flat)"
+      note: "Note for the restaurant (optional)"
+      subtotal: "Items"
+      delivery_fee: "Delivery fee"
+      total: "Total"
+      cash_note: "Pay cash when you receive your order."
+      send: "Send order"
+      sending: "Sending…"
+      closed: "Online ordering is closed right now. You can still call or WhatsApp us."
+      no_areas: "Delivery isn't available online yet — pickup only."
+      status_title: "Your order"
+      status:
+        pending: "Waiting for the restaurant to confirm…"
+        pending_hint: "This page updates by itself. Keep it open."
+        accepted: "Confirmed! Your order number is #%{number}."
+        accepted_hint_delivery: "It's being prepared and will be delivered to you."
+        accepted_hint_pickup: "It's being prepared. Show this number when you pick it up."
+        rejected: "Sorry, the restaurant couldn't take this order."
+        expired: "The restaurant didn't confirm in time."
+        expired_hint: "Please call or WhatsApp the branch to place your order."
+      reject_reasons:
+        closed: "We're closed or too busy right now."
+        out_of_area: "We don't deliver to this address."
+        item_unavailable: "An item is not available right now."
+        suspicious: "We couldn't confirm this order."
+        no_answer: "We couldn't reach you by phone."
+        other: "Please contact the branch."
+      order_again: "Back to the menu"
+      line_errors:
+        unavailable: "no longer available"
+        required_choice: "a required choice is missing"
+        single_choice: "only one choice allowed"
+        bad_quantity: "quantity too large"
+      errors:
+        generic: "Something went wrong. Please try again or call the branch."
+        closed: "Online ordering is closed right now."
+        spam: "Please wait a moment and try again."
+        invalid_phone: "Please enter a valid Egyptian mobile number (01…)."
+        missing_name: "Please enter your name."
+        blocked: "We can't take online orders for this number. Please call the branch."
+        too_many_pending: "You already have orders waiting for confirmation."
+        too_many_today: "Daily online order limit reached. Please call the branch."
+        too_many_requests: "Too many orders from this connection. Please call the branch."
+        bad_fulfillment: "Choose pickup or delivery."
+        missing_area: "Please choose your delivery area."
+        missing_address: "Please enter your address."
+        empty_cart: "Your order is empty."
+        bad_items:
+          one: "One item in your order can't be ordered now. Please review your order."
+          other: "%{count} items in your order can't be ordered now. Please review your order."
+        too_large: "Online orders are limited to %{max}. Please call the branch for bigger orders."
     menu:
       meta_description: "Browse our menu"
       choose_branch: "Choose a branch to view the menu"
@@ -549,6 +621,7 @@ en:
         handled: "Printed by hand"
 
   nav:
+    online_orders_admin: "Online orders"
     open_menu: "Open menu"
     dashboard: "Dashboard"
     categories: "Categories"
@@ -572,6 +645,7 @@ en:
     register: "Register"
     tables: "Tables"
     collect_payment: "Collect Payment"
+    online_orders: "Online"
     my_shift: "My shift"
     kitchen: "Kitchen"
     production: "Production"
@@ -601,6 +675,10 @@ en:
     staff: "Staff"
 
   order:
+    sources:
+      pos: "Register"
+      offline: "Offline register"
+      online: "Online"
     errors:
       table_busy: "Table %{table} already has an open order (%{number})."
     types:
@@ -3624,6 +3702,59 @@ en:
       customer_invoice_payment_pending: "Invoice %{invoice_number} is awaiting payment confirmation."
 
   pos:
+    online_orders:
+      title: "Online orders"
+      status_on: "Taking online orders"
+      status_off: "Online orders paused"
+      pause: "Pause online orders"
+      resume: "Resume online orders"
+      paused: "Online orders paused for this branch."
+      resumed: "Online orders resumed for this branch."
+      waiting:
+        one: "1 waiting"
+        other: "%{count} waiting"
+      none_waiting: "No online orders waiting."
+      recent: "Decided recently"
+      items:
+        one: "1 item"
+        other: "%{count} items"
+      ago: "%{time} ago"
+      blocked_customer: "Blocked customer"
+      new_customer: "New customer — consider calling"
+      previous_orders:
+        one: "1 previous order"
+        other: "%{count} previous orders"
+      last_order: "Last order %{date}"
+      previous_rejections:
+        one: "1 earlier rejection"
+        other: "%{count} earlier rejections"
+      accept: "Accept & send to kitchen"
+      accept_new_total: "Accept at the new total"
+      reject: "Reject"
+      confirm_reject: "Reject order"
+      block_phone: "Block this phone from ordering online"
+      block_reason: "Rejected online order: %{reason}"
+      accepted: "Order #%{number} accepted and sent to the kitchen."
+      rejected: "Order rejected. The customer can see why."
+      price_changed: "Prices changed since the customer ordered. New total: %{total}. Call the customer if needed, then accept again."
+      open_order: "Open order #%{number}"
+      order_note_prefix: "Online order — %{phone}"
+      reasons:
+        closed: "Closed / too busy"
+        out_of_area: "Outside delivery area"
+        item_unavailable: "Item unavailable"
+        suspicious: "Looks fake / spam"
+        no_answer: "Customer didn't answer"
+        other: "Other"
+      statuses:
+        pending: "Waiting"
+        accepted: "Accepted"
+        rejected: "Rejected"
+        expired: "Expired"
+      errors:
+        not_pending: "This order was already handled."
+        expired: "This order expired before it was accepted."
+        items_changed: "Some items can no longer be ordered. Call the customer and ring it up by hand."
     title: "Jusour POS"
     drawer:
       open: "Open menu"
@@ -4046,6 +4177,47 @@ en:
         category: "Menu category"
 
   admin:
+    online_orders:
+      title: "Online orders"
+      description: "Every order customers sent from the public menu, by branch: accepted, rejected, expired or waiting."
+      status: "Status"
+      branch: "Branch"
+      reason: "Reject reason"
+      phone: "Phone"
+      date: "Date"
+      customer: "Customer"
+      decided_by: "Handled by"
+      total: "Total"
+      all: "All"
+      empty: "No online orders match."
+    delivery_areas:
+      title: "Delivery areas"
+      description: "The areas this branch delivers online orders to, each with its own delivery fee."
+      new_button: "New delivery area"
+      new_title: "New delivery area"
+      edit_title: "Edit delivery area"
+      empty: "No delivery areas yet. Without one, online customers can only choose pickup."
+      empty_filtered: "No delivery areas match these filters."
+      delete_confirm: "Delete the delivery area %{name}? Past orders keep their fee. To hide it for now, untick Active instead."
+      online_ordering_off: "Online ordering is off for this branch, so these areas are not offered yet."
+      turn_on: "Turn it on in the branch settings"
+      fields:
+        name: "Name"
+        name_ar: "Arabic name"
+        name_ar_hint: "Shown on the public menu when it is in Arabic. Leave blank to use the name above."
+        fee: "Delivery fee"
+        fee_hint: "Added to the customer's order. Leave blank or 0 for free delivery."
+        position: "Order"
+        active: "Active"
+      filters:
+        search: "Search"
+        search_placeholder: "Area name"
+        status: "Status"
+      status:
+        active: "Active"
+        inactive: "Inactive"
+      errors:
+        must_be_branch: "must be a branch"
     inventory:
       ingredient: "Ingredient"
       quantity: "Quantity"
@@ -4070,6 +4242,21 @@ en:
         remove_confirm: "Remove this mapping? Online payments via this method won't be booked to any treasury until you reassign."
         hint: "Totals are booked automatically when a cashier closes the drawer. If no treasury is mapped for a method, that method's payments are skipped."
     locations:
+      online_ordering:
+        heading: "Online ordering"
+        description: "Lets customers order delivery or pickup from this branch's public menu, paying cash on delivery. Each order arrives at the register as a request a cashier accepts or rejects. Needs the public menu on."
+        enabled: "Accept online orders"
+        enabled_hint: "Customers see an order button on the public menu while this is on and the time is within the hours below."
+        open_time: "Online orders open at"
+        close_time: "Online orders close at"
+        hours_hint: "In the company timezone. A close time earlier than the open time runs past midnight (e.g. 18:00 to 02:00). Leave both blank to take orders whenever the menu is public."
+        accept_timeout: "Auto-reject after (minutes)"
+        accept_timeout_hint: "A request nobody accepts within this time is rejected and the customer is told. 1 to 120."
+        max_order: "Largest order allowed"
+        max_order_hint: "Optional. Online orders above this total are refused at checkout. Leave blank for no limit."
+        manage_delivery_areas: "Manage delivery areas and fees →"
+        errors:
+          hours_both_or_neither: "Set both the online open and close times, or leave both blank"
       title: "Locations"
       description: "Manage branches and central kitchen."
       new_button: "New Location"
@@ -4175,6 +4362,8 @@ en:
       title: "Dashboard"
       description: "Manage menu, discounts, customers, and orders."
     orders:
+      source: "Source"
+      all_sources: "All sources"
       title: "Orders"
       description: "Search and review POS orders, payments, and fulfillment."
       open_pos: "Open POS"
@@ -4531,6 +4720,20 @@ en:
         vendor_purchases_summary_title: "Vendor purchases summary"
 
   customers:
+    online_orders:
+      summary:
+        one: "1 online order"
+        other: "%{count} online orders"
+      view: "View online orders"
+    block:
+      block: "Block from online ordering"
+      hint: "A blocked customer cannot place orders from the public menu. They can still be served at the register."
+      reason: "Reason"
+      block_confirm: "Block this customer from ordering online?"
+      blocked_heading: "Blocked from online ordering"
+      blocked_by: "By %{name} on %{time}"
+      unblock: "Unblock"
+      unblock_confirm: "Let this customer order online again?"
     description: "Loyalty accounts, contact info, and order history."
     new_button: "New customer"
     new_subtitle: "Add a loyalty account for repeat guests."
@@ -6528,6 +6731,10 @@ en:
         mixed_locations: "This batch spans more than one location, so it can't become a single transfer."
 
   flash:
+    delivery_area:
+      created: "Delivery area added."
+      updated: "Delivery area updated."
+      removed: "Delivery area deleted."
     unauthorized: "You are not authorized to perform this action."
     access_denied: "Access denied."
     admin_required: "Admin access required."
@@ -6654,6 +6861,9 @@ en:
       updated: "Promo updated."
       removed: "Promo removed."
     customer:
+      blocked: "Customer blocked from online ordering."
+      unblocked: "Customer can order online again."
+      block_reason_required: "Write a reason for blocking this customer."
       created: "Customer created."
       updated: "Customer updated."
       removed: "Customer removed."

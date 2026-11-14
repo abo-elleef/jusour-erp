@@ -32,4 +32,13 @@ class CustomerPolicy < ApplicationPolicy
   def destroy?
     user.owner?
   end
+
+  # Stops (or lets again) a customer place self-orders from the public menu.
+  def block?
+    user.can?("customers:manage")
+  end
+
+  def unblock?
+    block?
+  end
 end

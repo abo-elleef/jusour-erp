@@ -50,6 +50,7 @@ RSpec.describe Orders::SyncOfflineOrderService do
     order = result.order
     expect(order.client_uuid).to eq(uuid)
     expect(order.offline_number).to eq("OFF-7")
+    expect(order.source).to eq("offline")
     expect(order.status).to eq("submitted")
     expect(order.order_number).to be_present
     expect(order.placed_at).to be_present

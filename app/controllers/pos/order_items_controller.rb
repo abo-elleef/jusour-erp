@@ -137,63 +137,25 @@ module Pos
       order
     end
 
+    # Prices come from the database only; see Orders::ResolveLine.
     def add_combo
-      combo = Combo.find(params[:combo_id])
-      unless Combo.available_at_location(@order.location).exists?(combo.id)
-        raise ItemUnavailableAtLocation
-      end
-
-      existing = @order.order_items.find_by(combo_id: combo.id, unit_price_cents: combo.price_cents, notes: [nil, ""])
-      if existing
-        existing.update!(quantity: existing.quantity + 1)
-        return
-      end
-
-      @order.order_items.create!(
-        combo: combo,
-        quantity: 1,
-        unit_price_cents: combo.price_cents
-      )
+      add_line(combo_id: params[:combo_id])
     end
 
     def add_menu_item
-      menu_item = MenuItem.includes(:location_menu_items).find(params[:menu_item_id])
-      unless menu_item.available_at_location?(@order.location)
-        raise ItemUnavailableAtLocation
-      end
-
-      modifier_ids = Array(params[:modifier_ids]) + Array(params[:modifier_group_selections]&.values)
-      unit_price = menu_item.price_cents_at(@order.location)
-      quantity = params[:quantity].to_i.positive? ? params[:quantity].to_i : 1
-
-      # The same item, same modifiers and no per-item note is the same line: bump the
-      # count instead of stacking identical rows.
-      if params[:notes].blank?
-        wanted = Modifier.where(id: modifier_ids).pluck(:id).sort
-        existing = @order.order_items.includes(:order_item_modifiers)
-                         .where(menu_item_id: menu_item.id, unit_price_cents: unit_price, notes: [nil, ""])
-                         .detect { |line| line.order_item_modifiers.map(&:modifier_id).compact.sort == wanted }
-        if existing
-          existing.update!(quantity: existing.quantity + quantity)
-          Promos::SyncOrderItemDiscount.call(order_item: existing)
-          return
-        end
-      end
-
-      item = @order.order_items.create!(
-        menu_item: menu_item,
-        quantity: quantity,
-        unit_price_cents: unit_price,
+      add_line(
+        menu_item_id: params[:menu_item_id],
+        modifier_ids: Array(params[:modifier_ids]) + Array(params[:modifier_group_selections]&.values),
+        quantity: params[:quantity],
         notes: params[:notes]
       )
-      Modifier.where(id: modifier_ids).find_each do |mod|
-        item.order_item_modifiers.create!(
-          modifier: mod,
-          name: mod.name,
-          price_adjustment_cents: mod.price_adjustment_cents
-        )
-      end
-      Promos::SyncOrderItemDiscount.call(order_item: item)
+    end
+
+    def add_line(**attrs)
+      line = Orders::ResolveLine.call(location: @order.location, **attrs)
+      Orders::AddLineService.call(order: @order, line: line)
+    rescue Orders::ResolveLine::Invalid
+      raise ItemUnavailableAtLocation
     end
 
     def order_item_params

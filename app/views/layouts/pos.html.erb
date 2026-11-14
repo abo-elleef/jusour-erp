@@ -134,6 +134,9 @@
       </dialog>
     <% end %>
     <%= render "shared/toasts" %>
+    <% if @pos_location&.id %>
+      <%= turbo_stream_from OnlineOrders::Broadcast.stream_name(@pos_location) %>
+    <% end %>
     <span class="sr-only" data-connectivity-target="syncStatus"></span>
     <% if current_user&.company_id && Printing::Config.client_routing? %>
       <% pos_loc_id = session[:pos_location_id] %>

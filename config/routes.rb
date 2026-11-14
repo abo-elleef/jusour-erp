@@ -113,6 +113,13 @@ Rails.application.routes.draw do
       end
     end
     resources :order_items, only: %i[create update destroy]
+    resources :online_order_requests, path: "online", only: %i[index show] do
+      member do
+        patch :accept
+        patch :reject
+      end
+      collection { patch :toggle }
+    end
     resources :print_logs, only: [] do
       collection do
         get :pending
@@ -153,6 +160,10 @@ Rails.application.routes.draw do
   scope module: :public, path: "m" do
     get ":company_slug", to: "menus#index", as: :public_menus
     get ":company_slug/:location_slug", to: "menus#show", as: :public_menu
+    # Customer self-ordering (see Public::OnlineOrdersController).
+    post ":company_slug/:location_slug/quote", to: "online_orders#quote", as: :public_online_order_quote
+    post ":company_slug/:location_slug/orders", to: "online_orders#create", as: :public_online_orders
+    get ":company_slug/order/:token", to: "online_orders#show", as: :public_online_order
   end
 
   # Storefront by path — always works, before (or without) a subdomain.
@@ -238,7 +249,12 @@ Rails.application.routes.draw do
       end
     end
     resources :combos
-    resources :customers
+    resources :customers do
+      member do
+        post :block
+        post :unblock
+      end
+    end
     resources :users do
       member do
         get :statement
@@ -265,6 +281,7 @@ Rails.application.routes.draw do
     end
     get "print_agent/test_payload/:printer_id", to: "print_agent#test_payload", as: :print_agent_test_payload
     get "print_debug", to: "print_debug#show", as: :print_debug
+    resources :online_order_requests, path: "online-orders", only: :index
     resources :orders, only: %i[index show] do
       member do
         post :void
@@ -283,6 +300,7 @@ Rails.application.routes.draw do
         member { post :adjust }
         collection { post :clear_stock }
       end
+      resources :delivery_areas, except: [:show], module: :locations
     end
 
     resources :notifications, only: [:index] do

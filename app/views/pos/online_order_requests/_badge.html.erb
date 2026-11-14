@@ -1,0 +1,10 @@
+<%# The pending-count pill on the "Online" tab. Replaced over the pos_online_* stream
+    whenever a request arrives or is decided; online_badge_controller beeps when the
+    count goes up. locals: count, location, ring %>
+<span id="online-orders-badge"
+      data-controller="online-badge"
+      data-online-badge-count-value="<%= count %>"
+      data-online-badge-key-value="<%= location.id %>"
+      class="<%= count.positive? ? "inline-flex" : "hidden" %> min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-bold text-white tabular-nums">
+  <%= count %>
+</span>

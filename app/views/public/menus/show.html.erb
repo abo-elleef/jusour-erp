@@ -4,7 +4,15 @@
 <% offer_combos = @combos.select(&:highlighted_now?) %>
 <% has_offers = offer_items.any? || offer_combos.any? %>
 
-<div data-controller="public-menu" class="min-h-screen flex flex-col">
+<div data-controller="public-menu<%= " online-order" if @accepting_orders %>" class="min-h-screen flex flex-col<%= " pb-24" if @accepting_orders %>"
+     <% if @accepting_orders %>
+       data-online-order-quote-url-value="<%= public_online_order_quote_path(company_slug: @company.slug, location_slug: @location.slug) %>"
+       data-online-order-create-url-value="<%= public_online_orders_path(company_slug: @company.slug, location_slug: @location.slug) %>"
+       data-online-order-storage-key-value="cart:<%= @company.slug %>:<%= @location.slug %>"
+       data-online-order-started-at-value="<%= OnlineOrders::SubmitService.page_stamp %>"
+       data-online-order-pick-required-value="<%= t("public.online_order.pick_required", group: "%{group}") %>"
+       data-online-order-required-label-value="<%= t("public.online_order.required") %>"
+     <% end %>>
   <header class="border-b border-stone-200/80 bg-white">
     <div class="max-w-3xl mx-auto px-4 pt-5 pb-4">
       <div class="space-y-1">
@@ -100,10 +108,10 @@
                     item: item,
                     location: @location,
                     promo: @promos_by_item_id[item.id],
-                    category: "offers" %>
+                    category: "offers", ordering: @accepting_orders %>
             <% end %>
             <% offer_combos.each do |combo| %>
-              <%= render "public/menus/combo_card", combo: combo, category: "offers" %>
+              <%= render "public/menus/combo_card", combo: combo, category: "offers", ordering: @accepting_orders %>
             <% end %>
           </div>
         </section>
@@ -118,15 +126,24 @@
                 item: item,
                 location: @location,
                 promo: @promos_by_item_id&.[](item.id),
-                category: item.category_id %>
+                category: item.category_id,
+                ordering: @accepting_orders %>
         <% end %>
 
         <% @combos.each do |combo| %>
-          <%= render "public/menus/combo_card", combo: combo, category: "combos" %>
+          <%= render "public/menus/combo_card", combo: combo, category: "combos", ordering: @accepting_orders %>
         <% end %>
       </div>
     <% end %>
   </main>
+
+  <% if @accepting_orders %>
+    <%= render "public/menus/ordering" %>
+  <% elsif @location.online_ordering_enabled? %>
+    <div class="max-w-3xl mx-auto w-full px-4 pb-6">
+      <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><%= t("public.online_order.closed") %></p>
+    </div>
+  <% end %>
 
   <footer class="border-t border-stone-200 bg-white py-4 text-center text-xs text-gray-400">
     <%= t("public.menu.footer", company: @company.name) %>

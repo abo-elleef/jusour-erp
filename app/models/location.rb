@@ -3,6 +3,7 @@
 class Location < ApplicationRecord
   include Tenantable
   include HasReceiptLogo
+  include MoneyInputs
 
   TYPES = %w[central_kitchen branch].freeze
 
@@ -33,6 +34,7 @@ class Location < ApplicationRecord
   has_many :cash_drawer_sessions, dependent: :nullify
   has_many :workstations, dependent: :destroy
   has_many :location_operating_days, dependent: :destroy
+  has_many :delivery_areas, dependent: :destroy
   has_many :outgoing_stock_transfers, class_name: "StockTransfer", foreign_key: :from_location_id, dependent: :restrict_with_error
   has_many :incoming_stock_transfers, class_name: "StockTransfer", foreign_key: :to_location_id, dependent: :restrict_with_error
 
@@ -45,12 +47,16 @@ class Location < ApplicationRecord
   validates :table_count, numericality: { only_integer: true, in: 1..200, allow_nil: true }
   validates :table_count, presence: true, if: :table_service?
   validates :business_day_mode, inclusion: { in: BusinessDay::MODES }
+  validates :online_accept_timeout_minutes, numericality: { only_integer: true, in: 1..120 }
+  validates :online_max_order_cents, numericality: { only_integer: true, greater_than: 0, allow_nil: true }
+  validate :online_hours_both_or_neither
   validate :edit_orders_pin_is_six_digits
   validate :void_orders_pin_is_six_digits
 
   before_validation :generate_slug, if: -> { slug.blank? && name.present? }
   before_validation :normalize_business_day_start_hour
   before_validation :normalize_business_day_mode
+  before_validation :normalize_online_ordering
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }
@@ -64,6 +70,12 @@ class Location < ApplicationRecord
   before_validation :clear_business_day_settings_for_non_branches
   before_validation :clear_default_production_for_non_central_kitchens
   before_save :unset_other_default_production_locations, if: -> { default_production_location? && active? }
+
+  money_input :online_max_order_cents
+
+  # Opening hours are wall-clock times ("09:00"), not instants: kept out of
+  # time-zone conversion so they read back the same whatever Time.zone is.
+  self.skip_time_zone_conversion_for_attributes = %i[online_open_time online_close_time]
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[name location_type active]
@@ -201,6 +213,22 @@ class Location < ApplicationRecord
     deposit_treasury_id.present?
   end
 
+  # Whether a customer can place a self-order on the public menu right now: the
+  # branch has online ordering on, its public menu is reachable, and `now` falls
+  # inside the online hours in the company's timezone. No hours set = any time.
+  # A window whose close is earlier than its open runs past midnight
+  # (18:00–02:00 is open at 23:00 and at 01:00).
+  def accepting_online_orders?(now = Time.current)
+    return false unless online_ordering_enabled? && active? && branch? && public_menu_enabled?
+    return true if online_open_time.nil? || online_close_time.nil?
+
+    within_online_hours?(now)
+  end
+
+  def online_hours_set?
+    online_open_time.present? && online_close_time.present?
+  end
+
   private
 
   def edit_orders_pin_is_six_digits
@@ -271,6 +299,37 @@ class Location < ApplicationRecord
 
   def normalize_business_day_start_hour
     self.business_day_start_hour = nil if business_day_start_hour.blank?
+  end
+
+  def within_online_hours?(now)
+    zone = Time.find_zone(company&.timezone.presence || Time.zone.name) || Time.zone
+    local = now.in_time_zone(zone)
+    current = local.hour * 3600 + local.min * 60 + local.sec
+    open = seconds_of_day(online_open_time)
+    close = seconds_of_day(online_close_time)
+
+    if open == close
+      true # same open and close: round the clock
+    elsif open < close
+      current >= open && current < close
+    else
+      current >= open || current < close
+    end
+  end
+
+  def seconds_of_day(time)
+    time.hour * 3600 + time.min * 60 + time.sec
+  end
+
+  def normalize_online_ordering
+    self.online_ordering_enabled = false unless branch?
+    self.online_accept_timeout_minutes = 10 if online_accept_timeout_minutes.blank?
+  end
+
+  def online_hours_both_or_neither
+    return if online_open_time.present? == online_close_time.present?
+
+    errors.add(:base, I18n.t("admin.locations.online_ordering.errors.hours_both_or_neither"))
   end
 
   def normalize_business_day_mode

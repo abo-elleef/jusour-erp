@@ -89,6 +89,13 @@
                   { include_blank: t("admin.orders.all_types") },
                   class: "#{input_class} appearance-none" %>
           </div>
+          <div>
+            <%= f.label :source_eq, t("admin.orders.source"), class: label_class %>
+            <%= f.select :source_eq,
+                  options_for_select(Order::SOURCES.map { |source| [t("order.sources.#{source}"), source] }, @q.source_eq),
+                  { include_blank: t("admin.orders.all_sources") },
+                  class: "#{input_class} appearance-none" %>
+          </div>
         </div>
         <div class="flex flex-wrap items-center gap-3 pt-1">
           <%= f.submit t("actions.apply_filters"),
@@ -172,6 +179,9 @@
                   <span class="text-xs uppercase font-semibold px-2.5 py-1 rounded-full <%= order_type_class(order.order_type) %>">
                     <%= order.order_type_label %>
                   </span>
+                  <% if order.source == "online" %>
+                    <span class="ms-1 text-xs uppercase font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-800"><%= t("order.sources.online") %></span>
+                  <% end %>
                   <span class="text-xs text-gray-500 block mt-1"><%= order.fulfillment_summary %></span>
                 </td>
                 <td class="p-3">
