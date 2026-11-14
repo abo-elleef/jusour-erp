@@ -4,6 +4,13 @@
     <span class="font-bold text-gray-900"><%= order.display_number %></span>
   </td>
   <td class="p-3 text-gray-600 tabular-nums whitespace-nowrap">
+    <% if order.offline_number.present? %>
+      <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200"><%= order.offline_number %></span>
+    <% else %>
+      <span class="text-gray-400"><%= t("accounting.shared.em_dash") %></span>
+    <% end %>
+  </td>
+  <td class="p-3 text-gray-600 tabular-nums whitespace-nowrap">
     <%= l(order.created_at, format: :long_with_time) %>
   </td>
   <td class="p-3">
