@@ -974,6 +974,8 @@ en:
         reports: "Leads reports"
       sales:
         confirm_payments: "Confirm online payments"
+        dispatch: "Hand deliveries to the shipping company"
+        complete_shipping: "Confirm deliveries are completed"
       storefront:
         manage: "Manage the storefront website"
   settings:
@@ -2784,8 +2786,14 @@ en:
 
   sales:
     customer_invoices:
+      shipping_statuses:
+        waiting_for_shipping: "Waiting for shipping"
+        shipped: "With the shipping company"
+        shipping_completed: "Delivered"
       title: "Sales invoices"
       filters:
+        shipping: "Shipping"
+        all_shipping: "All"
         all_customers: "All customers"
         from_date: "From"
         to_date: "To"
@@ -2800,6 +2808,7 @@ en:
       empty_title: "No sales invoices yet"
       empty_hint: "Create your first credit sale to a commercial customer."
       stats:
+        waiting_for_shipping: "Waiting for shipping"
         outstanding: "Outstanding"
         drafts: "Drafts"
       statuses:
@@ -2823,6 +2832,7 @@ en:
         pickup: "Pickup"
         delivery: "Delivery"
       errors:
+        not_shipped: "Only an invoice that is with the shipping company can be marked delivered."
         no_settlement_treasury: "No treasury is set up to receive this payment method."
         not_confirmed: "Only a confirmed invoice can be dispatched."
         not_delivery: "Only a delivery invoice can be dispatched."
@@ -2832,6 +2842,7 @@ en:
         cannot_void: "Only a draft or a payment still awaiting confirmation can be voided."
         not_draft_for_edit: "Only a draft invoice can be edited."
       table:
+        shipping: "Shipping"
         number: "Number"
         customer: "Customer"
         date: "Date"
@@ -2878,6 +2889,12 @@ en:
         save_draft: "Save draft"
         save_and_confirm: "Save & confirm"
       show:
+        shipping: "Shipping"
+        shipped_hint: "With %{shipping_company} since %{date}. Mark it delivered once the shipping company's system shows it handed over."
+        complete_shipping: "Mark delivered"
+        complete_shipping_prompt: "Mark this order as delivered? Check the shipping company's system first."
+        shipping_completed_hint: "Delivered — confirmed by %{name} on %{date}."
+        dispatch_needs_permission: "Waiting for someone allowed to hand deliveries to the shipping company."
         salesperson: "Salesperson"
         fulfillment: "Fulfillment"
         shipping_company: "Shipping company"
@@ -2914,6 +2931,7 @@ en:
         receive_by_voucher_hint: "Invoices are collected by issuing a receipt voucher. The voucher opens with this invoice and its balance due filled in."
         receive_by_voucher_button: "Receive by voucher"
       flash:
+        shipping_completed: "Marked as delivered."
         saved: "Draft saved."
         confirmed: "Sale confirmed — balance raised and stock deducted."
         confirmed_with_warning: "Sale confirmed — note the customer is over their credit warning limit."

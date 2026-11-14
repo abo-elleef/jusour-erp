@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_14_170100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -338,6 +338,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
     t.uuid "sales_payment_method_id"
     t.integer "delivery_fee_cents", default: 0, null: false
     t.integer "standard_delivery_fee_cents", default: 0, null: false
+    t.string "shipping_status"
+    t.datetime "shipping_completed_at"
+    t.uuid "shipping_completed_by_id"
     t.index ["company_id", "fulfillment_method"], name: "index_customer_invoices_on_company_id_and_fulfillment_method"
     t.index ["company_id", "invoice_number"], name: "index_customer_invoices_on_company_id_and_invoice_number", unique: true
     t.index ["company_id", "legacy_number"], name: "index_customer_invoices_on_company_id_and_legacy_number", unique: true, where: "(legacy_number IS NOT NULL)"
@@ -351,6 +354,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
     t.index ["shipping_company_id"], name: "index_customer_invoices_on_shipping_company_id"
     t.index ["treasury_id"], name: "index_customer_invoices_on_treasury_id"
     t.index ["user_id"], name: "index_customer_invoices_on_user_id"
+    t.index ["company_id", "shipping_status"], name: "index_customer_invoices_on_company_id_and_shipping_status"
+    t.index ["shipping_completed_by_id"], name: "index_customer_invoices_on_shipping_completed_by_id"
   end
 
   create_table "customers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2098,6 +2103,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
   add_foreign_key "combos", "companies"
   add_foreign_key "company_settings", "companies"
   add_foreign_key "customer_addresses", "customers"
+  add_foreign_key "customer_invoices", "users", column: "shipping_completed_by_id"
   add_foreign_key "customer_invoices", "treasuries"
   add_foreign_key "customers", "companies"
   add_foreign_key "digital_wallet_day_closes", "companies"

@@ -50,10 +50,10 @@ module Sales
                                 invoice_number: @invoice.invoice_number,
                                 default: "COD dispatch — invoice #{@invoice.invoice_number}")
           )
-          @invoice.update!(dispatched_at: Time.current, payment_status: "paid",
-                           amount_paid_cents: @invoice.total_cents)
+          @invoice.update!(dispatched_at: Time.current, shipping_status: "shipped",
+                           payment_status: "paid", amount_paid_cents: @invoice.total_cents)
         else
-          @invoice.update!(dispatched_at: Time.current)
+          @invoice.update!(dispatched_at: Time.current, shipping_status: "shipped")
         end
       end
 

@@ -3,14 +3,18 @@
 module Admin
   module Sales
     class CustomerInvoicesController < BaseController
-      before_action :set_invoice, only: %i[show edit update confirm approve_payment reject_payment mark_dispatched void attach_payment_proof_image]
+      before_action :set_invoice, only: %i[show edit update confirm approve_payment reject_payment mark_dispatched complete_shipping void attach_payment_proof_image]
       before_action :require_draft_for_edit, only: %i[edit update]
       before_action :require_confirm_payments_access, only: %i[approve_payment reject_payment]
+      before_action -> { require_sales_permission("sales:dispatch") }, only: :mark_dispatched
+      before_action -> { require_sales_permission("sales:complete_shipping") }, only: :complete_shipping
 
       def index
         @status = params[:status].presence_in(%w[draft pending_payment_confirmation confirmed historical void])
+        @shipping = params[:shipping].presence_in(CustomerInvoice::SHIPPING_STATUSES)
         scope = CustomerInvoice.recent.includes(:customer, :location)
         scope = scope.where(status: @status) if @status
+        scope = scope.where(shipping_status: @shipping) if @shipping
         @customer = Customer.find_by(id: params[:customer_id]) if params[:customer_id].present?
         scope = scope.where(customer: @customer) if @customer
         @from_date = parse_filter_date(params[:from_date])
@@ -21,6 +25,7 @@ module Admin
         @pagy, @invoices = pagy(:offset, scope, limit: 50)
         @draft_count = CustomerInvoice.draft.count
         @pending_confirmation_count = CustomerInvoice.pending_payment_confirmation.count
+        @waiting_for_shipping_count = CustomerInvoice.confirmed.waiting_for_shipping.count
         @outstanding_cents = CustomerInvoice.outstanding.sum(Arel.sql("total_cents - amount_paid_cents"))
       end
 
@@ -112,6 +117,15 @@ module Admin
           alert: t("sales.customer_invoices.flash.dispatch_failed", error: e.message)
       end
 
+      # The courier's system shows the order delivered. No money moves.
+      def complete_shipping
+        ::Sales::CompleteShippingService.new(@invoice, current_user).call
+        redirect_to admin_sales_customer_invoice_path(@invoice),
+          notice: t("sales.customer_invoices.flash.shipping_completed")
+      rescue ::Sales::CompleteShippingService::Error => e
+        redirect_to admin_sales_customer_invoice_path(@invoice), alert: e.message
+      end
+
       # A draft (including one bounced back here by reject_payment) or a still-
       # pending invoice posts nothing yet, so voiding it is just marking it
       # dead — same reasoning as Sales::CreditNotesController#void.
@@ -188,10 +202,14 @@ module Admin
       end
 
       def require_confirm_payments_access
-        return if current_user.can?("sales:confirm_payments")
+        require_sales_permission("sales:confirm_payments")
+      end
+
+      def require_sales_permission(key)
+        return if current_user.can?(key)
 
         flash[:alert] = t("flash.access_denied")
-        redirect_to admin_sales_customer_invoices_path
+        redirect_to(@invoice ? admin_sales_customer_invoice_path(@invoice) : admin_sales_customer_invoices_path)
       end
 
       def load_form_data

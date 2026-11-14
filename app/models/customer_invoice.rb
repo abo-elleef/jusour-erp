@@ -20,6 +20,11 @@ class CustomerInvoice < ApplicationRecord
   STATUSES = %w[draft pending_payment_confirmation confirmed historical void].freeze
   PAYMENT_STATUSES = %w[unpaid partially_paid paid].freeze
   FULFILLMENT_METHODS = %w[pickup delivery].freeze
+  # A delivery's own track, separate from payment (status) — nil for pickup:
+  #   waiting_for_shipping (confirmed) → shipped (handed to the courier, at
+  #   dispatch) → shipping_completed (the courier's system shows it delivered;
+  #   marked by whoever holds sales:complete_shipping). Completion moves no money.
+  SHIPPING_STATUSES = %w[waiting_for_shipping shipped shipping_completed].freeze
 
   # How the sale is settled.
   #   on_account        — the credit sale this module was built for; raises a receivable.
@@ -49,6 +54,7 @@ class CustomerInvoice < ApplicationRecord
   belongs_to :shipping_company, optional: true
   # Required when payment_method is "online" — which configured method/treasury was used.
   belongs_to :sales_payment_method, class_name: "Sales::PaymentMethod", optional: true
+  belongs_to :shipping_completed_by, class_name: "User", optional: true
 
   # Evidence of payment — an InstaPay/bank-transfer screenshot, mainly. Mirrors
   # VendorInvoice#invoice_image: one attachment, replace to change, no delete.
@@ -75,6 +81,7 @@ class CustomerInvoice < ApplicationRecord
   validates :payment_status, inclusion: { in: PAYMENT_STATUSES }
   validates :payment_method, inclusion: { in: PAYMENT_METHODS }
   validates :fulfillment_method, inclusion: { in: FULFILLMENT_METHODS }
+  validates :shipping_status, inclusion: { in: SHIPPING_STATUSES }, allow_nil: true
   validates :invoice_number, presence: true,
     uniqueness: { scope: :company_id, case_sensitive: false }
   validates :delivery_fee_cents, numericality: { greater_than_or_equal_to: 0 }
@@ -87,6 +94,7 @@ class CustomerInvoice < ApplicationRecord
   before_validation :default_blank_delivery_fees
   before_validation :zero_delivery_fees_for_pickup
   before_save :recalculate_total
+  before_save :start_shipping_track
 
   scope :draft, -> { where(status: "draft") }
   scope :pending_payment_confirmation, -> { where(status: "pending_payment_confirmation") }
@@ -99,6 +107,7 @@ class CustomerInvoice < ApplicationRecord
   scope :realized, -> { where(status: %w[confirmed historical]) }
   scope :outstanding, -> { where(status: "confirmed", payment_status: %w[unpaid partially_paid]) }
   scope :recent, -> { order(invoice_date: :desc, created_at: :desc) }
+  scope :waiting_for_shipping, -> { where(shipping_status: "waiting_for_shipping") }
 
   # "SI-<year>-<sequence>", company-wide, resetting each year — same scheme as
   # vendor invoices (VI-) and journal entries.
@@ -141,6 +150,9 @@ class CustomerInvoice < ApplicationRecord
   def delivery? = fulfillment_method == "delivery"
   def pickup?   = fulfillment_method == "pickup"
   def dispatched? = dispatched_at.present?
+  def waiting_for_shipping? = shipping_status == "waiting_for_shipping"
+  def shipped?              = shipping_status == "shipped"
+  def shipping_completed?   = shipping_status == "shipping_completed"
 
   def subtotal_cents
     customer_invoice_lines.reject(&:marked_for_destruction?).sum(&:line_total_cents)
@@ -179,6 +191,16 @@ class CustomerInvoice < ApplicationRecord
   end
 
   private
+
+  # Every path into "confirmed" (on account, cash, COD, an approved online
+  # payment) starts a delivery's shipping track here, so no confirm branch can
+  # forget it. Pickup never gets one.
+  def start_shipping_track
+    return unless delivery? && shipping_status.nil?
+    return unless will_save_change_to_status?(to: "confirmed")
+
+    self.shipping_status = "waiting_for_shipping"
+  end
 
   def default_salesperson
     self.salesperson ||= user

@@ -178,6 +178,7 @@ Rails.application.routes.draw do
           post :approve_payment
           post :reject_payment
           post :mark_dispatched
+          post :complete_shipping
           patch :void
           patch :attach_payment_proof_image
         end

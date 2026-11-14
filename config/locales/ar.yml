@@ -980,6 +980,8 @@ ar:
         reports: "تقارير العملاء المحتملين"
       sales:
         confirm_payments: "تأكيد المدفوعات الإلكترونية"
+        dispatch: "تسليم الطلبات لشركة الشحن"
+        complete_shipping: "تأكيد اكتمال التوصيل"
       storefront:
         manage: "إدارة الموقع الإلكتروني"
   settings:
@@ -2804,8 +2806,14 @@ ar:
 
   sales:
     customer_invoices:
+      shipping_statuses:
+        waiting_for_shipping: "في انتظار الشحن"
+        shipped: "مع شركة الشحن"
+        shipping_completed: "تم التسليم"
       title: "فواتير المبيعات"
       filters:
+        shipping: "الشحن"
+        all_shipping: "الكل"
         all_customers: "كل العملاء"
         from_date: "من"
         to_date: "إلى"
@@ -2820,6 +2828,7 @@ ar:
       empty_title: "لا توجد فواتير مبيعات بعد"
       empty_hint: "أنشئ أول عملية بيع آجل لعميل تجاري."
       stats:
+        waiting_for_shipping: "في انتظار الشحن"
         outstanding: "المستحق"
         drafts: "المسودات"
       statuses:
@@ -2839,6 +2848,7 @@ ar:
         pickup: "تيك أواي"
         delivery: "دليفري"
       errors:
+        not_shipped: "يمكن تأكيد التسليم فقط لفاتورة موجودة مع شركة الشحن."
         no_settlement_treasury: "لا توجد خزينة مهيأة لاستلام طريقة الدفع هذه."
         not_confirmed: "لا يمكن الشحن إلا لفاتورة مؤكدة."
         not_delivery: "لا يمكن الشحن إلا لفاتورة دليفري."
@@ -2852,6 +2862,7 @@ ar:
         partially_paid: "مدفوعة جزئياً"
         paid: "مدفوعة"
       table:
+        shipping: "الشحن"
         number: "الرقم"
         customer: "العميل"
         date: "التاريخ"
@@ -2898,6 +2909,12 @@ ar:
         save_draft: "حفظ كمسودة"
         save_and_confirm: "حفظ وتأكيد"
       show:
+        shipping: "الشحن"
+        shipped_hint: "مع %{shipping_company} منذ %{date}. أكّد التسليم عندما يُظهر نظام شركة الشحن أنها سُلّمت."
+        complete_shipping: "تأكيد التسليم"
+        complete_shipping_prompt: "تأكيد تسليم هذا الطلب؟ راجع نظام شركة الشحن أولاً."
+        shipping_completed_hint: "تم التسليم — أكّده %{name} في %{date}."
+        dispatch_needs_permission: "في انتظار شخص مصرّح له بتسليم الطلبات لشركة الشحن."
         salesperson: "البائع"
         fulfillment: "التسليم"
         shipping_company: "شركة الشحن"
@@ -2934,6 +2951,7 @@ ar:
         receive_by_voucher_hint: "تُحصَّل الفواتير بإصدار سند قبض. يُفتح السند وبه هذه الفاتورة والمبلغ المتبقي عليها."
         receive_by_voucher_button: "تحصيل بسند قبض"
       flash:
+        shipping_completed: "تم تأكيد التسليم."
         saved: "تم حفظ المسودة."
         confirmed: "تم تأكيد البيع — رُفع الرصيد وخُصم المخزون."
         confirmed_with_warning: "تم تأكيد البيع — لاحظ أن العميل تجاوز حد التحذير الائتماني."
