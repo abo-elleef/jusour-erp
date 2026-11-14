@@ -95,9 +95,11 @@ module Printing
           doc.row(I18n.t("printing.receipt.delivery_fee"), format_money(@order.delivery_fee_cents))
         end
 
-        doc.bold
-        doc.row(I18n.t("printing.receipt.total"), format_money(@order.total_cents))
-        doc.bold(false)
+        # The total in the same big, boxed style as the net payment above it.
+        doc.separator
+        doc.row(I18n.t("printing.receipt.total"), format_money(@order.total_cents),
+                bold_label: true, bold_value: true)
+        doc.separator
 
         compose_payments(doc)
         compose_change(doc)

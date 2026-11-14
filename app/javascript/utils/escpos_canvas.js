@@ -414,9 +414,10 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   doc.row(r.subtotal, money(totals.subtotal_cents))
   if (totals.discount_cents > 0) doc.row(r.discount, `-${money(totals.discount_cents)}`)
   if (totals.tax_cents > 0) doc.row(r.tax, money(totals.tax_cents))
-  doc.bold()
-  doc.row(r.total, money(totals.total_cents))
-  doc.bold(false)
+  // Big and boxed in, like the server receipt's total.
+  doc.separator()
+  doc.row(r.total, money(totals.total_cents), { boldLabel: true, boldValue: true })
+  doc.separator()
 
   doc.text(r.payments)
   doc.row(`  ${labels.cash}`, money(order.tendered_cents), { boldLabel: true })
