@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_14_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -245,6 +245,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_120000) do
     t.integer "business_day_start_hour", default: 6, null: false
     t.string "business_day_mode", default: "automatic", null: false
     t.boolean "restrict_stock_transfers_to_source", default: true, null: false
+    t.boolean "allow_fractional_sales_quantities", default: false, null: false
     t.index ["company_id"], name: "index_company_settings_on_company_id", unique: true
   end
 
@@ -1353,6 +1354,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_120000) do
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "requires_approval", default: true, null: false
     t.index ["company_id", "name"], name: "index_sales_payment_methods_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_sales_payment_methods_on_company_id"
     t.index ["treasury_id"], name: "index_sales_payment_methods_on_treasury_id"

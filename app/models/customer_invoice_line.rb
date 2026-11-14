@@ -3,6 +3,7 @@
 class CustomerInvoiceLine < ApplicationRecord
   include UnitReferenced
   include MoneyInputs
+  include WholeSalesQuantity
 
   belongs_to :customer_invoice
   belongs_to :ingredient
@@ -32,6 +33,8 @@ class CustomerInvoiceLine < ApplicationRecord
   end
 
   private
+
+  def sales_document = customer_invoice
 
   # The unit price is the product's selling price — sales can't set it, so it is
   # enforced here rather than trusted from the form. Only applies while the price

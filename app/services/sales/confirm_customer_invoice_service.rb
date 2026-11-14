@@ -9,7 +9,9 @@ module Sales
   #   on_account        — runs the two-limit credit check and raises Accounts Receivable
   #   cash               — banks the money straight into a treasury, no receivable at all
   #   online             — same as cash, but only once someone with sales:confirm_payments
-  #                        has approved it (see the pending_payment_confirmation gate below)
+  #                        has approved it (see the pending_payment_confirmation gate below),
+  #                        unless its method settles at once (requires_approval false —
+  #                        a card machine), which settles on confirm just like cash
   #   cash_on_delivery   — confirms (stock leaves) but settles nowhere yet; the shipping
   #                        company isn't charged until Sales::DispatchCustomerInvoiceService
   #                        runs, because nobody is holding our cash until then
@@ -35,11 +37,11 @@ module Sales
     def call
       validate!
 
-      # First time an online-payment draft is confirmed: park it for approval
+      # First time an online-payment draft that needs approval is confirmed: park it
       # instead of settling anything. Calling this again once it's
       # pending_payment_confirmation (i.e. the approve action) falls through
       # to settle_now! below, same as cash always has.
-      if @invoice.draft? && @invoice.online?
+      if @invoice.draft? && @invoice.requires_payment_approval?
         @invoice.update!(status: "pending_payment_confirmation")
         Sales::NotifyService.deliver_payment_pending(@invoice)
         return Result.new(invoice: @invoice, credit_warning: false, pending_confirmation: true)

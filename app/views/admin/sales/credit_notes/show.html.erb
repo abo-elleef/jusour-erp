@@ -63,7 +63,7 @@
         <% @credit_note.credit_note_lines.each do |line| %>
           <tr>
             <td class="p-3 ps-5 text-gray-800"><%= line.ingredient.name %></td>
-            <td class="p-3 text-end tabular-nums text-gray-700"><%= line.quantity %> <%= ingredient_unit_label(line.unit.presence || line.ingredient.unit) %></td>
+            <td class="p-3 text-end tabular-nums text-gray-700"><%= sales_quantity_value(line.quantity) %> <%= ingredient_unit_label(line.unit.presence || line.ingredient.unit) %></td>
             <td class="p-3 text-end tabular-nums text-gray-700"><%= format_money(line.unit_price_cents) %></td>
             <td class="p-3 text-end pe-5 tabular-nums font-medium text-gray-900"><%= format_money(line.line_total_cents) %></td>
           </tr>

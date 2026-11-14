@@ -1007,6 +1007,11 @@ ar:
       hint: "سلوك تحويلات المخزون عندما تكون كميات المصدر غير مكتملة."
       restrict_transfers: "تقييد التحويلات بمخزون المصدر"
       restrict_transfers_hint: "عند التفعيل، لا يمكن إرسال أكثر مما هو متوفر في موقع المصدر. عند الإيقاف يمكن الإرسال بشكل عادي وقد يصبح رصيد المصدر سالباً حتى يُصحَّح المخزون."
+    sales:
+      title: "المبيعات"
+      hint: "طريقة إدخال الكميات في فواتير البيع والمرتجعات."
+      allow_fractions: "السماح بالكميات الكسرية"
+      allow_fractions_hint: "عند الإيقاف: الفواتير والمرتجعات تقبل أرقاماً صحيحة فقط (البيع بالقطعة). فعّلها إذا كنت تبيع بالوزن أو الطول، مثل ٢٫٥ كجم."
     loyalty: "الولاء"
     redeem_threshold: "النقاط المطلوبة للاستبدال"
     tax_rates: "معدلات الضريبة"
@@ -3490,6 +3495,8 @@ ar:
       edit_title: "تعديل %{name}"
       active: "نشطة"
       inactive: "غير نشطة"
+      needs_approval: "تحتاج اعتماد"
+      settles_on_confirm: "تُحصَّل عند التأكيد"
       delete_confirm: "إزالة طريقة الدفع هذه؟"
       empty_title: "لا توجد طرق دفع إلكتروني بعد"
       empty_hint: "أضف طريقة (مثل إنستاباي) واربطها بخزينة قبل عرضها في الفواتير."
@@ -3509,6 +3516,7 @@ ar:
       table:
         name: "الاسم"
         treasury: "الخزينة"
+        settlement: "التحصيل"
         status: "الحالة"
         actions: "إجراءات"
       form:
@@ -3517,6 +3525,8 @@ ar:
         treasury: "الخزينة"
         select_treasury: "اختر خزينة…"
         treasury_hint: "أين يصل المبلغ بعد اعتماد الدفعة بهذه الطريقة."
+        requires_approval: "تحتاج اعتماد الدفعة"
+        requires_approval_hint: "مفعّلة للتحويلات والمحافظ: تنتظر الفاتورة حتى يتأكد أحد من وصول المبلغ. أوقفها لماكينة الفيزا على الكاونتر: يُحصَّل المبلغ فور تأكيد الفاتورة مثل الكاش."
         active: "نشطة"
         create_button: "إنشاء طريقة دفع"
       flash:
@@ -6953,6 +6963,8 @@ ar:
 
   activerecord:
     errors:
+      messages:
+        whole_number_required: "%{attribute} يجب أن تكون رقماً صحيحاً. للبيع بالكسور فعّلها من الإعدادات ← المبيعات."
       models:
         location: &receipt_logo_errors
           attributes:
@@ -7293,6 +7305,14 @@ ar:
         one: "موظف"
         other: "موظفون"
     attributes:
+      customer_invoice_line:
+        quantity: "الكمية"
+      credit_note_line:
+        quantity: "الكمية"
+      customer_invoice/customer_invoice_lines:
+        quantity: "الكمية"
+      credit_note/credit_note_lines:
+        quantity: "الكمية"
       storefront_page:
         slot: "الصفحة"
         title: "عنوان الصفحة"

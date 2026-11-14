@@ -48,11 +48,11 @@
       <p class="text-sm text-amber-900">
         <% if @invoice.cash_on_delivery? %>
           <%= t("sales.customer_invoices.show.draft_hint_cod") %>
-        <% elsif @invoice.online? %>
+        <% elsif @invoice.requires_payment_approval? %>
           <%= t("sales.customer_invoices.show.draft_hint_online") %>
         <% elsif @invoice.paid_on_issue? %>
           <%= t("sales.customer_invoices.show.draft_hint_paid_now",
-                method: t("sales.customer_invoices.payment_methods.#{@invoice.payment_method}")) %>
+                method: @invoice.sales_payment_method&.name || t("sales.customer_invoices.payment_methods.#{@invoice.payment_method}")) %>
         <% else %>
           <%= t("sales.customer_invoices.show.draft_hint") %>
         <% end %>
@@ -128,7 +128,7 @@
               <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient),
                     class: "font-semibold text-amber-700 hover:text-amber-800" %>
             </td>
-            <td class="p-3 text-end tabular-nums text-gray-700"><%= line.quantity %> <%= ingredient_unit_label(line.unit.presence || line.ingredient.unit) %></td>
+            <td class="p-3 text-end tabular-nums text-gray-700"><%= sales_quantity_value(line.quantity) %> <%= ingredient_unit_label(line.unit.presence || line.ingredient.unit) %></td>
             <td class="p-3 text-end tabular-nums text-gray-700"><%= format_money(line.unit_price_cents) %></td>
             <td class="p-3 text-end pe-5 tabular-nums font-medium text-gray-900"><%= format_money(line.line_total_cents) %></td>
           </tr>

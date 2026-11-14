@@ -24,6 +24,13 @@
               class: "#{pos_input_class} appearance-none", required: true %>
         <p class="text-xs text-gray-500 mt-1"><%= t("sales.payment_methods.form.treasury_hint") %></p>
       </div>
+      <label class="flex items-start gap-3 cursor-pointer">
+        <%= f.check_box :requires_approval, class: "mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+        <span>
+          <span class="block text-sm font-medium text-gray-900"><%= t("sales.payment_methods.form.requires_approval") %></span>
+          <span class="block text-xs text-gray-500 mt-1"><%= t("sales.payment_methods.form.requires_approval_hint") %></span>
+        </span>
+      </label>
       <label class="flex items-center gap-3 cursor-pointer">
         <%= f.check_box :active, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
         <span class="text-sm font-medium text-gray-900"><%= t("sales.payment_methods.form.active") %></span>

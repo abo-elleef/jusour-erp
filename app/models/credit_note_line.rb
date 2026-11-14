@@ -3,6 +3,7 @@
 class CreditNoteLine < ApplicationRecord
   include UnitReferenced
   include MoneyInputs
+  include WholeSalesQuantity
 
   belongs_to :credit_note
   belongs_to :ingredient
@@ -29,6 +30,8 @@ class CreditNoteLine < ApplicationRecord
   end
 
   private
+
+  def sales_document = credit_note
 
   def derive_line_total
     self.line_total_cents = (quantity.to_d * unit_price_cents.to_i).round

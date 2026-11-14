@@ -134,6 +134,10 @@ class CustomerInvoice < ApplicationRecord
   def cash_on_delivery? = payment_method == CASH_ON_DELIVERY
   def online?           = payment_method == ONLINE
 
+  # Online payments wait for approval unless their method settles at once
+  # (Sales::PaymentMethod#requires_approval — e.g. a card machine).
+  def requires_payment_approval? = online? && (sales_payment_method.nil? || sales_payment_method.requires_approval?)
+
   def delivery? = fulfillment_method == "delivery"
   def pickup?   = fulfillment_method == "pickup"
   def dispatched? = dispatched_at.present?
