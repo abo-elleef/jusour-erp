@@ -1411,6 +1411,9 @@ module ApplicationHelper
       items << { controller: "price_tiers", label: "sales.nav.price_tiers", path: :admin_sales_price_tiers_path }
       items << { controller: "shipping_companies", label: "sales.nav.shipping_companies", path: :admin_sales_shipping_companies_path }
       items << { controller: "payment_methods", label: "sales.nav.payment_methods", path: :admin_sales_payment_methods_path }
+      if current_user.owner?
+        items << { controller: "stage_accesses", label: "sales.nav.stage_accesses", path: :admin_sales_stage_access_path }
+      end
     end
 
     if Current.company&.feature_enabled?(:ar_credit_sales) && ::Sales::PaymentApproval.approver_anywhere?(current_user)
@@ -1731,6 +1734,9 @@ module ApplicationHelper
     end
     if raw[:direction].present?
       raw[:arrow] = raw[:direction] == "up" ? "▲" : "▼"
+    end
+    if raw[:stage].present?
+      raw[:stage] = t("sales.customer_invoices.stages.#{raw[:stage]}", default: raw[:stage].to_s.humanize)
     end
 
     # Replace plain ingredient name, supplier name, and invoice number with links when IDs are stored.

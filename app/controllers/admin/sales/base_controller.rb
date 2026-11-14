@@ -7,6 +7,7 @@ module Admin
     class BaseController < Admin::BaseController
       before_action { require_feature!(:ar_credit_sales) }
       before_action :require_sales_access
+      before_action { Current.user = current_user }
 
       private
 

@@ -2805,7 +2805,32 @@ ar:
           output_used: "لا يمكن التراجع — جزء من الناتج استُخدم أو حُوِّل. عدّل المخزون يدوياً إذا لزم الأمر."
 
   sales:
+    stage_accesses:
+      title: "مراحل الفواتير حسب الدور"
+      description: "اختر لكل دور فواتير المبيعات التي يراها أعضاؤه والمراحل التي تصلهم إشعارات عنها."
+      role: "الدور"
+      owner: "المالك"
+      owner_hint: "يرى كل المراحل دائماً."
+      see: "يرى"
+      notify: "إشعار"
+      not_configured: "لم يُحفظ بعد — يرى كل المراحل بدون إشعارات"
+      empty: "لا توجد أدوار تستطيع فتح المبيعات بعد."
+      hints:
+        default: "الدور الذي لم يُحفظ بعد يرى كل المراحل ولا تصله إشعارات المراحل — مثل الوضع الحالي."
+        always: "مهما أُلغي من اختيارات، يرى كل شخص الفواتير التي سجّلها أو هو البائع فيها، والمدفوعات المسؤول عن اعتمادها."
+        approvals: "معتمِدو الدفع تصلهم دائماً إشعارات اعتماداتهم؛ تفعيل الإشعار على «بانتظار اعتماد الدفعة» يُبلغ آخرين أيضاً."
+      flash:
+        updated: "تم الحفظ. أصبحت رؤية الفواتير والإشعارات تتبع هذا الجدول."
     customer_invoices:
+      stages:
+        draft: "مسودة"
+        pending_payment_confirmation: "بانتظار اعتماد الدفعة"
+        confirmed: "مؤكدة (استلام)"
+        waiting_for_shipping: "في انتظار الشحن"
+        shipped: "مع شركة الشحن"
+        shipping_completed: "تم التسليم"
+        void: "ملغاة"
+        historical: "تاريخية"
       shipping_statuses:
         waiting_for_shipping: "في انتظار الشحن"
         shipped: "مع شركة الشحن"
@@ -3082,6 +3107,7 @@ ar:
       shipping_companies: "شركات الشحن"
       payment_methods: "طرق الدفع الإلكتروني"
       payment_approvals: "اعتماد المدفوعات"
+      stage_accesses: "مراحل الفواتير حسب الدور"
       leads: "العملاء المحتملون"
       lead_reports: "تقارير العملاء المحتملين"
       reports: "التقارير"
@@ -3645,6 +3671,7 @@ ar:
       cash_variance: "فرق نقدي"
       vendor_balance_negative: "رصيد المورد سالب"
       customer_invoice_payment_pending: "دفعة بانتظار الاعتماد"
+      customer_invoice_stage_entered: "تغيّرت مرحلة فاتورة"
       unknown: "تنبيه"
     index:
       description: "تنبيهات المخزون والمحاسبة للمالكين والمديرين."
@@ -3700,6 +3727,7 @@ ar:
       cash_variance: "فرق درج نقدي بقيمة %{variance} لـ %{name} بتاريخ %{date}."
       vendor_balance_negative: "أصبح رصيد %{supplier} سالباً (%{balance}) بعد تعديل فاتورة %{invoice_number} — أصبح المورد مديناً لك."
       customer_invoice_payment_pending: "الفاتورة %{invoice_number} بانتظار اعتماد الدفعة."
+      customer_invoice_stage_entered: "الفاتورة %{invoice_number} أصبحت: %{stage}."
 
   pos:
     title: "جسور — نقطة البيع"

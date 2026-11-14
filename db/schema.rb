@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_14_180000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_14_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1377,6 +1377,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_180000) do
     t.index ["treasury_id"], name: "index_sales_payment_methods_on_treasury_id"
   end
 
+  create_table "sales_stage_accesses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "role_id", null: false
+    t.string "stage", null: false
+    t.boolean "can_see", default: true, null: false
+    t.boolean "notify", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_sales_stage_accesses_on_company_id"
+    t.index ["role_id", "stage"], name: "index_sales_stage_accesses_on_role_id_and_stage", unique: true
+    t.index ["role_id"], name: "index_sales_stage_accesses_on_role_id"
+  end
+
   create_table "shift_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "user_id", null: false
     t.datetime "clocked_in_at", null: false
@@ -2257,6 +2270,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_180000) do
   add_foreign_key "sales_payment_method_approvers", "sales_payment_methods"
   add_foreign_key "sales_payment_method_approvers", "users"
   add_foreign_key "sales_payment_methods", "companies"
+  add_foreign_key "sales_stage_accesses", "companies"
+  add_foreign_key "sales_stage_accesses", "roles"
   add_foreign_key "shift_logs", "companies"
   add_foreign_key "shift_logs", "users"
   add_foreign_key "shipping_companies", "companies"

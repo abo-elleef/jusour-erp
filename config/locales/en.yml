@@ -2785,7 +2785,32 @@ en:
           output_used: "Cannot undo — some of the produced stock has already been used or transferred. Adjust stock manually if needed."
 
   sales:
+    stage_accesses:
+      title: "Invoice stages by role"
+      description: "Choose, for each role, which sales invoices its members see and which stages notify them."
+      role: "Role"
+      owner: "Owner"
+      owner_hint: "Always sees every stage."
+      see: "Sees"
+      notify: "Notify"
+      not_configured: "Not saved yet — sees every stage, no notifications"
+      empty: "No roles can open the sales area yet."
+      hints:
+        default: "A role you haven't saved sees every stage and gets no stage notifications — today's behaviour."
+        always: "Whatever is unticked, people still see invoices they recorded or are the salesperson on, and payments they are responsible for approving."
+        approvals: "Payment approvers are always notified about their own approvals; ticking Notify on “Awaiting payment approval” tells others too."
+      flash:
+        updated: "Saved. Invoice visibility and notifications now follow this table."
     customer_invoices:
+      stages:
+        draft: "Draft"
+        pending_payment_confirmation: "Awaiting payment approval"
+        confirmed: "Confirmed (pickup)"
+        waiting_for_shipping: "Waiting for shipping"
+        shipped: "With the shipping company"
+        shipping_completed: "Delivered"
+        void: "Void"
+        historical: "Historical"
       shipping_statuses:
         waiting_for_shipping: "Waiting for shipping"
         shipped: "With the shipping company"
@@ -3062,6 +3087,7 @@ en:
       shipping_companies: "Shipping companies"
       payment_methods: "Online payment methods"
       payment_approvals: "Payment approvals"
+      stage_accesses: "Invoice stages by role"
       leads: "Leads"
       lead_reports: "Leads reports"
       reports: "Reports"
@@ -3599,6 +3625,7 @@ en:
       cash_variance: "Cash variance"
       vendor_balance_negative: "Vendor balance negative"
       customer_invoice_payment_pending: "Payment awaiting confirmation"
+      customer_invoice_stage_entered: "Invoice stage changed"
       unknown: "Alert"
     index:
       description: "Inventory and accounting alerts for owners and managers."
@@ -3654,6 +3681,7 @@ en:
       cash_variance: "Cash drawer variance of %{variance} detected for %{name} on %{date}."
       vendor_balance_negative: "%{supplier}'s balance has gone negative (%{balance}) after editing invoice %{invoice_number} — they now owe you money back."
       customer_invoice_payment_pending: "Invoice %{invoice_number} is awaiting payment confirmation."
+      customer_invoice_stage_entered: "Invoice %{invoice_number} is now: %{stage}."
 
   pos:
     title: "Jusour POS"

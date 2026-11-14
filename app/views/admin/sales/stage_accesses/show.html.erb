@@ -1,0 +1,80 @@
+<% content_for :title, t("sales.stage_accesses.title") %>
+
+<div class="max-w-full">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("sales.stage_accesses.title") %></h1>
+    <p class="text-gray-600 text-sm mt-1 max-w-3xl"><%= t("sales.stage_accesses.description") %></p>
+  </div>
+
+  <ul class="text-xs text-gray-600 space-y-1 mb-5 list-disc ps-5 max-w-3xl">
+    <li><%= t("sales.stage_accesses.hints.default") %></li>
+    <li><%= t("sales.stage_accesses.hints.always") %></li>
+    <li><%= t("sales.stage_accesses.hints.approvals") %></li>
+  </ul>
+
+  <% if @roles.empty? %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold"><%= t("sales.stage_accesses.empty") %></p>
+    </section>
+  <% else %>
+    <%= form_with url: admin_sales_stage_access_path, method: :patch do %>
+      <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-4">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm min-w-[64rem]">
+            <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-600">
+              <tr>
+                <th class="p-3 ps-5 text-start"><%= t("sales.stage_accesses.role") %></th>
+                <% CustomerInvoice::STAGES.each do |stage| %>
+                  <th class="p-3 text-center align-bottom"><%= t("sales.customer_invoices.stages.#{stage}") %></th>
+                <% end %>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr class="bg-gray-50/50">
+                <td class="p-3 ps-5 font-semibold text-gray-900"><%= t("sales.stage_accesses.owner") %></td>
+                <td class="p-3 text-gray-500 text-xs" colspan="<%= CustomerInvoice::STAGES.size %>"><%= t("sales.stage_accesses.owner_hint") %></td>
+              </tr>
+              <% @roles.each do |role| %>
+                <% configured = CustomerInvoice::STAGES.any? { |s| @cells[[role.id, s]] } %>
+                <tr class="hover:bg-gray-50">
+                  <td class="p-3 ps-5">
+                    <span class="font-semibold text-gray-900"><%= role.name %></span>
+                    <% unless configured %>
+                      <span class="block text-xs text-amber-700 mt-0.5"><%= t("sales.stage_accesses.not_configured") %></span>
+                    <% end %>
+                  </td>
+                  <% CustomerInvoice::STAGES.each do |stage| %>
+                    <% cell = @cells[[role.id, stage]] %>
+                    <% see = cell ? cell.can_see : true %>
+                    <% notify = cell ? cell.notify : false %>
+                    <% base = "grid[#{role.id}][#{stage}]" %>
+                    <td class="p-3 text-center">
+                      <div class="inline-flex flex-col items-start gap-1.5">
+                        <label class="inline-flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
+                          <%= hidden_field_tag "#{base}[see]", "0", id: nil %>
+                          <%= check_box_tag "#{base}[see]", "1", see, id: "see_#{role.id}_#{stage}",
+                                class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+                          <%= t("sales.stage_accesses.see") %>
+                        </label>
+                        <% unless stage == "historical" %>
+                          <label class="inline-flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
+                            <%= hidden_field_tag "#{base}[notify]", "0", id: nil %>
+                            <%= check_box_tag "#{base}[notify]", "1", notify, id: "notify_#{role.id}_#{stage}",
+                                  class: "rounded border-gray-300 text-blue-600 focus:ring-blue-500/40" %>
+                            <%= t("sales.stage_accesses.notify") %>
+                          </label>
+                        <% end %>
+                      </div>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <%= submit_tag t("actions.save_changes"),
+            class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl shadow-sm" %>
+    <% end %>
+  <% end %>
+</div>

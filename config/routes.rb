@@ -184,6 +184,7 @@ Rails.application.routes.draw do
         end
       end
       resources :payment_methods, controller: "payment_methods", except: %i[show]
+      resource :stage_access, only: %i[show update]
       resources :credit_notes, only: %i[index new create show] do
         member do
           post :confirm
