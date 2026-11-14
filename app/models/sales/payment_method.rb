@@ -2,8 +2,10 @@
 
 module Sales
   # A company-configured way to take an online payment on a customer invoice
-  # (InstaPay, a bank transfer, a particular mobile wallet, ...) and where
-  # that money lands. Deliberately separate from PaymentMethodTreasury, which
+  # (InstaPay, a bank transfer, a particular mobile wallet, a card machine, ...)
+  # and where that money lands. requires_approval: transfers and wallets wait
+  # for someone with sales:confirm_payments to check them; a method without it
+  # (the card machine at the counter) settles on confirm, like cash. Deliberately separate from PaymentMethodTreasury, which
   # is shared POS day-close infrastructure this module must not touch — see
   # [[project_distribution_pnl_reporting]] discussion on scope.
   class PaymentMethod < ApplicationRecord
@@ -14,7 +16,7 @@ module Sales
     belongs_to :treasury
     has_many :customer_invoices, dependent: :restrict_with_error
 
-    INDEX_SORTABLE_COLUMNS = %w[name active created_at].freeze
+    INDEX_SORTABLE_COLUMNS = %w[name active requires_approval created_at].freeze
     INDEX_DEFAULT_SORT = "name"
     INDEX_DEFAULT_SORT_DIRECTION = "asc"
 
@@ -25,7 +27,7 @@ module Sales
     scope :ordered, -> { order(:name) }
 
     def self.ransackable_attributes(_auth_object = nil)
-      %w[name active created_at]
+      %w[name active requires_approval created_at]
     end
 
     # Used once a method has settled real invoices — deleting it would orphan

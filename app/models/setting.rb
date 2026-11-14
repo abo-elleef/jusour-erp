@@ -8,7 +8,7 @@ class Setting
     restaurant_name print_routing print_agent_port print_agent_token
     print_encoding print_code_page arabic_font_path receipt_logo_url
     receipt_footer_text business_day_start_hour
-    restrict_stock_transfers_to_source
+    restrict_stock_transfers_to_source allow_fractional_sales_quantities
   ].freeze
 
   INTEGER_COLUMNS = %w[
@@ -16,7 +16,7 @@ class Setting
     print_agent_port print_code_page business_day_start_hour
   ].freeze
 
-  BOOLEAN_COLUMNS = %w[restrict_stock_transfers_to_source].freeze
+  BOOLEAN_COLUMNS = %w[restrict_stock_transfers_to_source allow_fractional_sales_quantities].freeze
 
   def self.get(key, default = nil)
     row = CompanySetting.current
@@ -62,5 +62,11 @@ class Setting
   # When false, overselling is allowed and source quantity can go negative.
   def self.restrict_stock_transfers_to_source?
     get_bool("restrict_stock_transfers_to_source", true)
+  end
+
+  # Sales invoices and returns take whole quantities unless the owner allows
+  # fractions (a client selling by weight). Off by default.
+  def self.allow_fractional_sales_quantities?
+    get_bool("allow_fractional_sales_quantities", false)
   end
 end

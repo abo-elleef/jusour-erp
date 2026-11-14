@@ -166,5 +166,26 @@ RSpec.describe Sales::ConfirmCustomerInvoiceService do
       expect(treasury.reload.balance_cents).to eq(100_000)
       expect(ingredient.stock_batches.sum(:quantity_remaining).to_d).to eq(95)
     end
+
+    context "when the method settles at once (card machine)" do
+      let(:payment_method) do
+        create(:sales_payment_method, company: company, treasury: treasury, requires_approval: false)
+      end
+
+      it "settles on the first confirm like cash: no approval queue, no notification" do
+        create(:user, company: company, role: "manager") # holds sales:confirm_payments
+        inv = online_invoice
+
+        result = nil
+        expect { result = described_class.new(inv, user).call }.not_to change(Notification, :count)
+
+        expect(result.pending_confirmation).to be_falsey
+        expect(inv.reload.status).to eq("confirmed")
+        expect(inv.payment_status).to eq("paid")
+        expect(inv.treasury).to eq(treasury)
+        expect(treasury.reload.balance_cents).to eq(100_000)
+        expect(ingredient.stock_batches.sum(:quantity_remaining).to_d).to eq(95)
+      end
+    end
   end
 end

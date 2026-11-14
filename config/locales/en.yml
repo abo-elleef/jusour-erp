@@ -1001,6 +1001,11 @@ en:
       hint: "How stock transfers behave when source quantities are incomplete."
       restrict_transfers: "Restrict transfers to source stock"
       restrict_transfers_hint: "When on, you cannot send more than the source location has on hand. Turn off to allow sending anyway — source balance can go negative until stock is corrected."
+    sales:
+      title: "Sales"
+      hint: "How quantities are entered on sales invoices and returns."
+      allow_fractions: "Allow fractional quantities"
+      allow_fractions_hint: "Off: invoices and returns take whole numbers only (sold by the piece). Turn on if you sell by weight or length, e.g. 2.5 kg."
     loyalty: "Loyalty"
     redeem_threshold: "Points needed to redeem"
     tax_rates: "Tax rates"
@@ -3452,6 +3457,8 @@ en:
       edit_title: "Edit %{name}"
       active: "Active"
       inactive: "Inactive"
+      needs_approval: "Needs approval"
+      settles_on_confirm: "Settles on confirm"
       delete_confirm: "Remove this payment method?"
       empty_title: "No online payment methods yet"
       empty_hint: "Add one (e.g. InstaPay) and map it to a treasury before offering it on invoices."
@@ -3467,6 +3474,7 @@ en:
       table:
         name: "Name"
         treasury: "Treasury"
+        settlement: "Settlement"
         status: "Status"
         actions: "Actions"
       form:
@@ -3475,6 +3483,8 @@ en:
         treasury: "Treasury"
         select_treasury: "Select a treasury…"
         treasury_hint: "Where the money lands once a payment by this method is approved."
+        requires_approval: "Needs payment approval"
+        requires_approval_hint: "On for transfers and wallets: the invoice waits until someone checks the money arrived. Turn off for a card machine at the counter: the payment settles as soon as the invoice is confirmed, like cash."
         active: "Active"
         create_button: "Create payment method"
       flash:
@@ -6877,6 +6887,8 @@ en:
 
   activerecord:
     errors:
+      messages:
+        whole_number_required: "must be a whole number. To sell in fractions, turn them on in Settings → Sales."
       models:
         location: &receipt_logo_errors
           attributes:
@@ -7221,6 +7233,14 @@ en:
         one: "Staff member"
         other: "Staff members"
     attributes:
+      customer_invoice_line:
+        quantity: "Quantity"
+      credit_note_line:
+        quantity: "Quantity"
+      customer_invoice/customer_invoice_lines:
+        quantity: "Quantity"
+      credit_note/credit_note_lines:
+        quantity: "Quantity"
       storefront_page:
         slot: "Page"
         title: "Page title"

@@ -31,4 +31,27 @@ RSpec.describe "Admin settings inventory", type: :request do
 
     expect(CompanySetting.find_by!(company: company).restrict_stock_transfers_to_source).to be(true)
   end
+
+  describe "fractional sales quantities" do
+    it "defaults to whole numbers only" do
+      expect(Setting.allow_fractional_sales_quantities?).to be(false)
+    end
+
+    it "lets the owner allow fractions, and turn them off again" do
+      patch admin_settings_path, params: { allow_fractional_sales_quantities: "1" }
+      expect(CompanySetting.find_by!(company: company).allow_fractional_sales_quantities).to be(true)
+
+      patch admin_settings_path, params: { allow_fractional_sales_quantities: "0" }
+      expect(CompanySetting.find_by!(company: company).allow_fractional_sales_quantities).to be(false)
+    end
+
+    it "shows the switch only to companies that sell by invoice" do
+      get admin_settings_path
+      expect(response.body).not_to include("allow_fractional_sales_quantities")
+
+      company.update!(business_type: "distribution")
+      get admin_settings_path
+      expect(response.body).to include("allow_fractional_sales_quantities")
+    end
+  end
 end

@@ -20,7 +20,7 @@ module Admin
       end
 
       def new
-        @payment_method = ::Sales::PaymentMethod.new(active: true)
+        @payment_method = ::Sales::PaymentMethod.new(active: true, requires_approval: true)
         @treasuries = Treasury.active.payable.visible_to(current_user).ordered
       end
 
@@ -64,7 +64,7 @@ module Admin
       end
 
       def payment_method_params
-        params.require(:sales_payment_method).permit(:name, :treasury_id, :active)
+        params.require(:sales_payment_method).permit(:name, :treasury_id, :active, :requires_approval)
       end
 
       def parse_index_sort_param
