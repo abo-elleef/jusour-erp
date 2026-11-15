@@ -4,7 +4,7 @@
     for the category filter. %>
 <% highlighted = combo.highlighted_now? %>
 <%= button_to pos_order_items_path(combo_id: combo.id), method: :post,
-      form: { class: "menu-card", data: { turbo_stream: true, category: category } },
+      form: { class: "menu-card", data: { turbo_stream: true, category: category, search: combo.name } },
       class: "relative w-full h-full rounded-2xl border #{highlighted ? 'border-rose-300 bg-rose-50/50' : 'border-amber-200 bg-amber-50/50'} p-3 hover:border-amber-400 active:scale-[0.98] transition flex flex-col text-start cursor-pointer select-none" do %>
   <% if highlighted %>
     <span class="absolute top-2 end-2 z-[1] rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">

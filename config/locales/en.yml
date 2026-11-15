@@ -3648,12 +3648,28 @@ en:
     workstation:
       label: "Register"
       select: "Select register"
+    shortcuts:
+      title: "Keyboard shortcuts"
+      intro: "Work the register without the mouse. Keys work with the keyboard on Arabic or English."
+      rows:
+        search: "Search the menu"
+        arrows: "Move between items"
+        open: "Open the highlighted item / next step / confirm"
+        esc: "Clear the search, close a popup"
+        categories: "Pick a category (0 = All)"
+        new_order: "New order"
+        place_order: "Place order (send to kitchen)"
+        charge: "Charge — cash amount ready, Enter twice pays"
+        help: "This list"
     menu:
       select_branch: "Select a branch above to load the menu."
       empty_at_branch: "No menu items are available at %{branch}."
       offers: "Offers"
       offers_hint: "Limited-time prices and meal deals"
       full_menu: "Full menu"
+      search_label: "Search the menu"
+      search_placeholder: "Search items by name or code"
+      search_empty: "No items match."
     offline:
       banner_offline: "You are offline. Cash payments only. Orders will sync when reconnected."
       banner_online: "Back online — syncing queued payments..."

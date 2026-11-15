@@ -28,6 +28,8 @@ export default class extends Controller {
 
   disconnect() {
     document.removeEventListener("keydown", this.escape)
+    // Lets the menu search take the focus back (pos_menu_search_controller).
+    document.dispatchEvent(new CustomEvent("pos:popup-closed"))
   }
 
   escape(event) {

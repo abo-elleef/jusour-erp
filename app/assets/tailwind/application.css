@@ -238,3 +238,37 @@
 }
 .enter-next button[type="submit"] .enter-hint { display: none; }
 .enter-next button[type="submit"]:focus .enter-hint { display: inline-flex; }
+
+/* POS keyboard: the card the arrow keys / search have picked (pos_menu_search_controller). */
+.menu-card.pos-card-active,
+form.menu-card.pos-card-active > button {
+  outline: 3px solid #f59e0b;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 7px rgb(245 158 11 / 0.25);
+  border-color: #f59e0b;
+}
+.search-miss { display: none !important; }
+
+/* Key badges on POS buttons (F4/F8/F9, F2 in search). Only where there is a real
+   keyboard and mouse — a touch tablet gets no clutter. */
+.pos-key-hint {
+  display: none;
+  align-items: center;
+  margin-inline-start: 0.375rem;
+  padding: 0 0.375rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgb(0 0 0 / 0.15);
+  background: rgb(0 0 0 / 0.05);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  vertical-align: middle;
+}
+.pos-key-hint--dark {
+  border-color: rgb(255 255 255 / 0.35);
+  background: rgb(255 255 255 / 0.15);
+}
+@media (hover: hover) and (pointer: fine) {
+  .pos-key-hint { display: inline-flex; }
+}

@@ -1,0 +1,27 @@
+<%# F1 or ? on the register (pos_shortcuts_controller). Esc or the button closes it. %>
+<% rows = [
+  [%w[F2 /], "search"], [%w[↑ ↓ ← →], "arrows"], [%w[Enter], "open"],
+  [%w[Esc], "esc"], [%w[1–9 0], "categories"], [%w[F4], "new_order"],
+  [%w[F8], "place_order"], [%w[F9], "charge"], [%w[F1 ?], "help"]
+] %>
+<dialog id="pos-shortcuts-help" class="m-auto w-full max-w-md rounded-2xl border border-gray-200 p-0 text-gray-900 backdrop:bg-gray-900/40 backdrop:backdrop-blur-sm">
+  <div class="p-6">
+    <h3 class="text-xl font-bold tracking-tight"><%= t("pos.shortcuts.title") %></h3>
+    <p class="mt-1 text-sm text-gray-500"><%= t("pos.shortcuts.intro") %></p>
+    <table class="mt-4 w-full text-sm">
+      <tbody class="divide-y divide-gray-100">
+        <% rows.each do |keys, key| %>
+          <tr>
+            <td class="py-2 pe-4 whitespace-nowrap w-0">
+              <span class="inline-flex gap-1" dir="ltr"><% keys.each do |k| %><kbd class="min-w-7 rounded-md border border-gray-300 bg-gray-50 px-1.5 py-0.5 text-center text-xs font-bold"><%= k %></kbd><% end %></span>
+            </td>
+            <td class="py-2 text-gray-700"><%= t("pos.shortcuts.rows.#{key}") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <form method="dialog" class="mt-5">
+      <button class="w-full rounded-xl border border-gray-200 py-2.5 font-semibold text-gray-700 hover:bg-gray-50"><%= t("actions.close") %></button>
+    </form>
+  </div>
+</dialog>

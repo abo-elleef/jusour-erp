@@ -5,23 +5,39 @@
 <%# Categories: a vertical rail beside the items from md up, so every category
     is visible and always in the same spot (no sideways scrolling). On phones they
     wrap above the items instead, capped in height so the items stay visible. %>
-<div class="flex flex-col md:flex-row flex-1 min-h-0">
+<div class="flex flex-col md:flex-row flex-1 min-h-0" data-controller="pos-menu-search">
 <nav class="flex flex-wrap gap-2 px-4 py-3 border-b border-gray-200 bg-white shrink-0 max-h-36 overflow-y-auto
             md:flex-col md:flex-nowrap md:w-44 md:max-h-none md:px-2 md:py-2 md:border-b-0 md:border-e"
      aria-label="<%= t("pos.categories.label") %>">
-  <button type="button" class="<%= pos_category_pill_class(active: true) %>" data-action="pos#filterCategory" data-category="all"><%= t("actions.all") %></button>
+  <button type="button" class="<%= pos_category_pill_class(active: true) %>" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="all"><%= t("actions.all") %></button>
   <% if has_offers %>
-    <button type="button" class="<%= pos_category_pill_class %> border-rose-200 text-rose-800" data-action="pos#filterCategory" data-category="offers"><%= t("pos.categories.offers") %></button>
+    <button type="button" class="<%= pos_category_pill_class %> border-rose-200 text-rose-800" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="offers"><%= t("pos.categories.offers") %></button>
   <% end %>
   <% @categories.each do |cat| %>
-    <button type="button" class="<%= pos_category_pill_class %>" data-action="pos#filterCategory" data-category="<%= cat.id %>"><%= cat.name %></button>
+    <button type="button" class="<%= pos_category_pill_class %>" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="<%= cat.id %>"><%= cat.name %></button>
   <% end %>
   <% if @combos.any? %>
-    <button type="button" class="<%= pos_category_pill_class %>" data-action="pos#filterCategory" data-category="combos"><%= t("pos.categories.combos") %></button>
+    <button type="button" class="<%= pos_category_pill_class %>" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="combos"><%= t("pos.categories.combos") %></button>
   <% end %>
 </nav>
 
 <div class="overflow-y-auto flex-1 touch-manipulation p-4 space-y-6" id="menu-scroll">
+  <% if @pos_location.present? && (@menu_items.any? || @combos.any?) %>
+    <%# Keyboard path to an item: F2 or / focuses this box; see pos_menu_search_controller. %>
+    <div class="sticky -top-4 z-10 -mx-4 -mt-4 px-4 pt-4 pb-2 bg-gray-50">
+      <label class="relative block">
+        <span class="sr-only"><%= t("pos.menu.search_label") %></span>
+        <svg class="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m20 20-3.5-3.5"/></svg>
+        <input type="search" autocomplete="off" spellcheck="false" enterkeyhint="go"
+               placeholder="<%= t("pos.menu.search_placeholder") %>"
+               class="<%= pos_input_class %> ps-9 pe-14"
+               data-pos-menu-search-target="input"
+               data-action="input->pos-menu-search#search keydown->pos-menu-search#keydown">
+        <kbd class="pos-key-hint absolute end-3 top-1/2 -translate-y-1/2">F2</kbd>
+      </label>
+      <p class="hidden mt-3 text-center text-sm text-gray-500" data-pos-menu-search-target="empty"><%= t("pos.menu.search_empty") %></p>
+    </div>
+  <% end %>
   <% if @pos_location.blank? %>
     <p class="text-center text-gray-500 py-16 text-sm"><%= t("pos.menu.select_branch") %></p>
   <% elsif @menu_items.empty? && @combos.empty? %>

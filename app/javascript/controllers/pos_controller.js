@@ -78,6 +78,13 @@ export default class extends Controller {
       }
     }
     document.getElementById("payment-modal")?.classList.remove("hidden")
+    // Keyboard path: the cash amount is ready to type over; Enter then lands on
+    // the highlighted Pay cash button (enter-next) and a second Enter pays.
+    const cash = document.querySelector("#payment-modal input[name='amount_pounds']")
+    if (cash) {
+      cash.focus()
+      cash.select()
+    }
   }
 
   closePayment() {

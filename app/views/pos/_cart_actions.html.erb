@@ -16,29 +16,35 @@
     <% if order.editing_placed? %>
       <%# A placed order reopened with the branch PIN. It goes back to the kitchen
           (and locks again) only when placed again; until then it cannot be charged. %>
-      <%= button_to t("pos.cart.replace_order"), pos_submit_path, method: :patch,
+      <%= button_to pos_submit_path, method: :patch,
             form: { data: { turbo_frame: "_top", controller: "submit-once", action: "submit->submit-once#guard" } },
-            data: { submit_once_target: "submit" },
+            data: { submit_once_target: "submit", pos_shortcut: "place-order" },
             disabled: order.order_items.empty?,
-            class: pos_cart_filled_btn_class %>
+            class: pos_cart_filled_btn_class do %>
+        <%= t("pos.cart.replace_order") %> <kbd class="pos-key-hint pos-key-hint--dark">F8</kbd>
+      <% end %>
       <p class="text-xs text-stone-500 text-center"><%= t("pos.cart.replace_order_hint") %></p>
     <% else %>
     <%# Place order sends everything to print and locks the items; Charge takes the
         money (and places the order, if it was not placed yet). %>
     <% if order.persisted? && order.order_items.any? %>
-      <%= button_to t("pos.cart.place_order"), pos_submit_path, method: :patch,
+      <%= button_to pos_submit_path, method: :patch,
             form: { data: { turbo_frame: "_top", controller: "submit-once", action: "submit->submit-once#guard" } },
-            data: { submit_once_target: "submit" },
-            class: pos_cart_outlined_btn_class %>
+            data: { submit_once_target: "submit", pos_shortcut: "place-order" },
+            class: pos_cart_outlined_btn_class do %>
+        <%= t("pos.cart.place_order") %> <kbd class="pos-key-hint">F8</kbd>
+      <% end %>
     <% end %>
     <button type="button"
           class="<%= pos_cart_filled_btn_class %>"
           data-action="pos#openPayment"
+          data-pos-shortcut="charge"
           data-amount-cents="<%= order.amount_due_cents %>"
           data-total-cents="<%= order.total_cents %>"
           data-due-text="<%= t('payment.due', amount: format_money(order.amount_due_cents)) %>"
           <%= "disabled" if order.order_items.empty? %>>
       <%= t("pos.cart.charge", amount: format_money(order.amount_due_cents)) %>
+      <kbd class="pos-key-hint pos-key-hint--dark">F9</kbd>
     </button>
     <% end %>
   </div>

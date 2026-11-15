@@ -3,7 +3,7 @@
     so it carries no separate button — that space goes to a bigger name and price. %>
 <%= link_to pos_modifier_form_path(menu_item_id: item.id),
       class: "menu-card relative rounded-2xl border #{promo ? 'border-rose-300 bg-rose-50/40' : 'border-gray-200 bg-white'} p-3 hover:border-amber-300 active:scale-[0.98] transition flex flex-col cursor-pointer select-none",
-      data: { category: category, turbo_frame: "modifier_modal" } do %>
+      data: { category: category, turbo_frame: "modifier_modal", search: "#{item.name} #{item.code}" } do %>
   <% if promo %>
     <span class="absolute top-2 end-2 z-[1] rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
       <%= promo.label.presence || t("promos.badge") %>

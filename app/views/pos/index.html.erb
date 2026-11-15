@@ -1,4 +1,4 @@
-<div class="flex flex-col lg:flex-row <%= pos_viewport_h_class %> min-h-0 overflow-hidden" data-controller="pos">
+<div class="flex flex-col lg:flex-row <%= pos_viewport_h_class %> min-h-0 overflow-hidden" data-controller="pos pos-shortcuts">
   <section class="flex flex-col min-h-0 flex-1 lg:flex-none lg:w-3/4 lg:h-full bg-gray-50 min-w-0">
     <div data-controller="pos-queue" class="flex flex-col flex-1 min-h-0">
       <header class="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-gray-200 bg-white shrink-0">
@@ -38,10 +38,11 @@
           <%= t("pos.cart.all_orders") %>
         <% end %>
         <%# Primary: the action the cashier repeats all day. %>
-        <%= button_to pos_new_order_path, method: :post,
+        <%= button_to pos_new_order_path, method: :post, data: { pos_shortcut: "new-order" },
               class: "inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-stone-900 hover:bg-stone-800 active:bg-stone-950 px-4 py-2 rounded-full transition-colors shadow-sm shrink-0" do %>
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14M5 12h14"/></svg>
           <%= t("pos.cart.new_order") %>
+          <kbd class="pos-key-hint pos-key-hint--dark">F4</kbd>
         <% end %>
       </div>
     </div>
@@ -50,6 +51,7 @@
   </aside>
 
   <%= turbo_frame_tag "modifier_modal" %>
+  <%= render "pos/shortcuts_help" %>
 
   <div id="payment-modal" class="hidden fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4" data-pos-target="paymentModal">
     <div id="payment-modal-content">
