@@ -272,3 +272,8 @@ form.menu-card.pos-card-active > button {
 @media (hover: hover) and (pointer: fine) {
   .pos-key-hint { display: inline-flex; }
 }
+/* The picked category pill is dark: its number badge goes light. */
+.pos-category-btn.bg-gray-900 .pos-key-hint {
+  border-color: rgb(255 255 255 / 0.35);
+  background: rgb(255 255 255 / 0.15);
+}

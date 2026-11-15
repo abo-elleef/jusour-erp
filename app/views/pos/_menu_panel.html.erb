@@ -9,15 +9,18 @@
 <nav class="flex flex-wrap gap-2 px-4 py-3 border-b border-gray-200 bg-white shrink-0 max-h-36 overflow-y-auto
             md:flex-col md:flex-nowrap md:w-44 md:max-h-none md:px-2 md:py-2 md:border-b-0 md:border-e"
      aria-label="<%= t("pos.categories.label") %>">
-  <button type="button" class="<%= pos_category_pill_class(active: true) %>" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="all"><%= t("actions.all") %></button>
+  <button type="button" class="<%= pos_category_pill_class(active: true) %> inline-flex items-center gap-2" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="all"><kbd class="pos-key-hint !ms-0 shrink-0">0</kbd><%= t("actions.all") %></button>
+  <%# Number keys 1–9 pick these in rail order (pos_shortcuts_controller#pickCategory). %>
+  <% category_key = 0 %>
+  <% key_hint = ->() { (category_key += 1) <= 9 ? tag.kbd(category_key, class: "pos-key-hint !ms-0 shrink-0") : nil } %>
   <% if has_offers %>
-    <button type="button" class="<%= pos_category_pill_class %> border-rose-200 text-rose-800" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="offers"><%= t("pos.categories.offers") %></button>
+    <button type="button" class="<%= pos_category_pill_class %> border-rose-200 text-rose-800 inline-flex items-center gap-2" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="offers"><%= key_hint.call %><%= t("pos.categories.offers") %></button>
   <% end %>
   <% @categories.each do |cat| %>
-    <button type="button" class="<%= pos_category_pill_class %>" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="<%= cat.id %>"><%= cat.name %></button>
+    <button type="button" class="<%= pos_category_pill_class %> inline-flex items-center gap-2" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="<%= cat.id %>"><%= key_hint.call %><%= cat.name %></button>
   <% end %>
   <% if @combos.any? %>
-    <button type="button" class="<%= pos_category_pill_class %>" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="combos"><%= t("pos.categories.combos") %></button>
+    <button type="button" class="<%= pos_category_pill_class %> inline-flex items-center gap-2" data-action="pos#filterCategory pos-menu-search#categoryPicked" data-category="combos"><%= key_hint.call %><%= t("pos.categories.combos") %></button>
   <% end %>
 </nav>
 

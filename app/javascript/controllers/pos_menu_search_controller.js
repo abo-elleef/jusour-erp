@@ -6,7 +6,8 @@ import { Controller } from "@hotwired/stimulus"
 //   → arrows move the highlight by what is on screen (rows and columns, RTL aware)
 //   → Enter opens the highlighted item's add popup (a combo is added straight away)
 //   → when that popup closes, the box gets the focus back with its text selected,
-//     so the next item is typed at once. Esc clears the search.
+//     so the next item is typed at once. Esc clears the search and leaves the
+//     box, so 1–9 / 0 switch categories again.
 // Hiding uses its own `search-miss` class, so it never fights the category
 // filter's `hidden` (pos_controller#filterCategory).
 
@@ -86,11 +87,14 @@ export default class extends Controller {
         this.open(this.active())
         break
       case "Escape":
-        if (!this.inputTarget.value) return
+        // Clear and step out of the box, so the number keys pick categories again.
         event.preventDefault()
         event.stopPropagation()
-        this.inputTarget.value = ""
-        this.clearFilter()
+        if (this.inputTarget.value) {
+          this.inputTarget.value = ""
+          this.clearFilter()
+        }
+        this.inputTarget.blur()
         break
     }
   }

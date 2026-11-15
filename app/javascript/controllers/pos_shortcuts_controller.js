@@ -45,15 +45,26 @@ export default class extends Controller {
       event.preventDefault()
       return this.run("help")
     }
-    if (event.code === "Slash" && !event.shiftKey) {
+    // The key's position (code) for the Arabic layout, where that key types ظ;
+    // the character itself as a fallback for keyboards that send no code.
+    if ((event.code === "Slash" && !event.shiftKey) || event.key === "/") {
       event.preventDefault()
       return this.run("search")
     }
-    const digit = event.code.match(/^(?:Digit|Numpad)(\d)$/)
-    if (digit && !event.shiftKey) {
+    const digit = event.shiftKey ? null : this.digit(event)
+    if (digit !== null) {
       event.preventDefault()
-      this.pickCategory(Number(digit[1]))
+      this.pickCategory(digit)
     }
+  }
+
+  digit(event) {
+    const byCode = event.code?.match(/^(?:Digit|Numpad)(\d)$/)
+    if (byCode) return Number(byCode[1])
+    const index = "0123456789".indexOf(event.key)
+    if (index >= 0 && event.key.length === 1) return index
+    const arabic = "٠١٢٣٤٥٦٧٨٩".indexOf(event.key)
+    return arabic >= 0 && event.key.length === 1 ? arabic : null
   }
 
   run(action) {
