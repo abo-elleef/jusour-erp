@@ -4128,7 +4128,7 @@ en:
         all_payment_methods: "All payment methods"
         offline_number: "Offline #"
         search: "Search"
-        search_placeholder: "Order or table number, offline #, customer name or phone, item…"
+        search_placeholder: "Order or table number, offline #, customer name or phone, address, item…"
         no_match: "No orders match these filters."
         clear_filters: "Clear filters"
         total_row:

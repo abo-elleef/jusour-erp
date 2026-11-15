@@ -38,10 +38,23 @@
       <%= render "pos/pos_nav" %>
     </div>
     <div class="flex flex-wrap items-center gap-3">
-      <% back_path = @from_shift ? pos_shift_path(tab: "orders") : pos_orders_path(order_type: @order.order_type) %>
+      <%# Back to the shift list the cashier came from, keeping its search/filters when the
+          browser still tells us that URL; otherwise the plain list. %>
+      <% referer = URI.parse(request.referer.to_s) rescue nil %>
+      <% came_from_shift_list = referer && referer.host == request.host && referer.path == pos_shift_path %>
+      <% back_path = if @from_shift
+                       came_from_shift_list ? referer.request_uri : pos_shift_path(tab: "orders")
+                     else
+                       pos_orders_path(order_type: @order.order_type)
+                     end %>
       <% back_label = @from_shift ? t("pos.shift.back_to_shift_orders") : t("nav.orders") %>
-      <%= link_to "← #{back_label}", back_path,
-            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-xl hover:bg-gray-100 transition-colors" %>
+      <%= link_to back_path, data: { testid: "order-back" },
+            class: "flex items-center gap-1.5 text-sm font-semibold text-gray-800 px-3 py-1.5 rounded-xl border border-gray-300 bg-white hover:bg-gray-50 transition-colors" do %>
+        <svg class="w-4 h-4 shrink-0 rtl:-scale-x-100" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        <%= back_label %>
+      <% end %>
       <%# Numbers restart at 1 each day per branch, so the date is part of the name. %>
       <span class="text-xl font-bold tracking-tight text-gray-900"><%= @order.order_number %></span>
       <span class="text-sm font-medium text-gray-500 tabular-nums">

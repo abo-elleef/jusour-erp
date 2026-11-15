@@ -4202,7 +4202,7 @@ ar:
         all_payment_methods: "كل طرق الدفع"
         offline_number: "رقم الأوفلاين"
         search: "بحث"
-        search_placeholder: "رقم الطلب أو الطاولة، رقم الأوفلاين، اسم أو هاتف العميل، صنف…"
+        search_placeholder: "رقم الطلب أو الطاولة، رقم الأوفلاين، اسم أو هاتف العميل، العنوان، صنف…"
         no_match: "لا توجد طلبات تطابق هذه الفلاتر."
         clear_filters: "مسح الفلاتر"
         total_row:
