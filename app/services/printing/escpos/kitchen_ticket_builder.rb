@@ -29,18 +29,21 @@ module Printing
         doc.receipt_logo(location: @order.location, company: @order.company)
 
         doc.align(:center)
-        doc.bold
-        doc.double_height(true)
-        doc.text(I18n.t("printing.kitchen_ticket.title"))
-        doc.text(@order.display_number)
-        doc.double_height(false)
-        doc.bold(false)
-        doc.text(@order.created_at.strftime("%b %d %l:%M %p"))
-        doc.bold
-        doc.double_height(true)
-        doc.text(@order.fulfillment_summary)
-        doc.double_height(false)
-        doc.bold(false)
+        # Logo, title, number, date and order type close together, as one block.
+        doc.tight do
+          doc.bold
+          doc.double_height(true)
+          doc.text(I18n.t("printing.kitchen_ticket.title"))
+          doc.text(@order.display_number)
+          doc.double_height(false)
+          doc.bold(false)
+          doc.text(@order.created_at.strftime("%b %d %l:%M %p"))
+          doc.bold
+          doc.double_height(true)
+          doc.text(@order.fulfillment_summary)
+          doc.double_height(false)
+          doc.bold(false)
+        end
         compose_issued_by(doc, cashier: @order.user&.name.to_s, station: @order.workstation&.name.to_s)
 
         items = @order.order_items.includes(:order_item_modifiers, :combo, :order_discounts, menu_item: :category)

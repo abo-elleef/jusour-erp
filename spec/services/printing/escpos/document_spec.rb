@@ -98,6 +98,59 @@ RSpec.describe Printing::Escpos::Document do
     end
   end
 
+  describe "receipt lines" do
+    let(:renderer) { Printing::Escpos::ArabicImageRenderer }
+
+    before do
+      allow(renderer).to receive_messages(arabic_font: "/fonts/arabic.ttf", digit_font: "/fonts/sans.ttf")
+      allow(renderer).to receive(:capture_pbm).and_return(nil)
+    end
+
+    it "draws a receipt item name bold at the regular size" do
+      renderer.render_row3("label", "1", "20.00", bold_label: true)
+
+      expect(renderer).to have_received(:capture_pbm) do |cmd|
+        expect(cmd.each_cons(2).to_a).to include(["-pointsize", renderer::FONT_SIZE_PT.to_s],
+                                                 ["-strokewidth", renderer::BOLD_STROKE_WIDTH])
+      end
+    end
+
+    it "draws a big bold phone tighter and heavier than an Arabic line" do
+      renderer.render_line("01080008080", font_scale: 2, bold: true)
+
+      pt = renderer::FONT_SIZE_PT * 2
+      expect(renderer).to have_received(:capture_pbm) do |cmd|
+        expect(cmd).to include("576x#{(pt * renderer::LATIN_LINE_FACTOR).round}")
+        expect(cmd.each_cons(2).to_a).to include(["-strokewidth", renderer::BIG_BOLD_STROKE], ["-font", "/fonts/sans.ttf"])
+      end
+    end
+
+    it "keeps an Arabic line's height and outline" do
+      renderer.render_line("توصيل", font_scale: 2, bold: true)
+
+      pt = renderer::FONT_SIZE_PT * 2
+      expect(renderer).to have_received(:capture_pbm) do |cmd|
+        expect(cmd).to include("576x#{pt * renderer::DEFAULT_LINE_FACTOR}")
+        expect(cmd.each_cons(2).to_a).to include(["-strokewidth", renderer::BOLD_STROKE_WIDTH])
+      end
+    end
+  end
+
+  describe "#tight" do
+    it "draws header lines at the tight line height, then goes back" do
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("/fonts/arabic.ttf")
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:render_line).and_return("IMG".b)
+      doc = described_class.new(charset: "utf-8")
+      doc.tight { doc.text("دليفري") }
+      doc.text("شكرا")
+
+      expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_line)
+        .with(anything, hash_including(line_factor: Printing::Escpos::ArabicImageRenderer::TIGHT_LINE_FACTOR)).once
+      expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_line)
+        .with(anything, hash_including(line_factor: Printing::Escpos::ArabicImageRenderer::DEFAULT_LINE_FACTOR)).once
+    end
+  end
+
   describe "ArabicImageRenderer.line_font" do
     it "uses the digit font for a line with no Arabic, the Arabic font otherwise" do
       renderer = Printing::Escpos::ArabicImageRenderer

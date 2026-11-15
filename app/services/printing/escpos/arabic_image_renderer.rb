@@ -32,10 +32,20 @@ module Printing
       ITEM_NAME_PT     = 36
       ITEM_NAME_STROKE = "1.6"
       ITEM_DETAIL_PT   = 28
+      # A line with no Arabic (order number, phone, date) needs far less room above and
+      # below than Arabic glyphs do: drawn at the Arabic line height it padded the
+      # receipt with blank paper. And at double size the regular outline looked thin
+      # next to the printer's own bold it replaced, so a big bold line gets a heavier one.
+      LATIN_LINE_FACTOR   = 1.35
+      BIG_BOLD_STROKE     = "2.4"
+      BOLD_LINE_STROKE    = "1.6"
       # Image line height as a multiple of the point size. 2 is the receipt's airy
       # default; kitchen/station tickets use COMPACT_LINE_FACTOR to save paper.
       DEFAULT_LINE_FACTOR = 2
       COMPACT_LINE_FACTOR = 1.5
+      # Header lines (shop name, order number, date, order type) stacked under the logo:
+      # just enough room for the glyphs, so the header reads as one block.
+      TIGHT_LINE_FACTOR   = 1.25
 
       CANDIDATE_FONTS = [
         # Bundled fallback — drop NotoNaskhArabic-Regular.ttf into vendor/fonts/
@@ -84,8 +94,9 @@ module Printing
 
         gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
         pt      = (FONT_SIZE_PT * font_scale).to_i
-        pbm     = render_pbm_single(text.to_s.strip, gravity, px_width, font, pt: pt, height: line_height(pt, line_factor),
-                                                                                  bold: bold)
+        pbm     = render_pbm_single(text.to_s.strip, gravity, px_width, font, pt: pt,
+                                    height: line_height(pt, line_factor_for(text, line_factor)),
+                                    bold: bold, stroke: line_stroke(text, pt, bold))
         pbm ? pbm_to_escpos(pbm) : nil
       end
 
@@ -158,7 +169,8 @@ module Printing
       # qty_str:          plain quantity string ("1", "2" …)
       # price_str:        price string ("ج.م.130.00" …)
       # Layout: [price — West] [qty — center-left] [item name — East]
-      def render_row3(item_name_visual, qty_str, price_str, doc_width: 42)
+      # bold_label: the item name bold, same size (customer receipt item rows).
+      def render_row3(item_name_visual, qty_str, price_str, doc_width: 42, bold_label: false)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         qty_x    = (px_width * 0.26).to_i
         sep1     = qty_x - 12              # vertical divider: price | qty
@@ -175,7 +187,7 @@ module Printing
           [
             { gravity: "East", offset: "+#{price_rx}+0", text: price_str, font: value_font(price_str) },
             { gravity: "East", offset: "+#{qty_rx}+0",   text: qty_str, font: value_font(qty_str) },
-            { gravity: "East", offset: "+8+0",            text: item_name_visual },
+            { gravity: "East", offset: "+8+0", text: item_name_visual, bold: bold_label, pt: FONT_SIZE_PT },
             { draw: "line #{sep1},0 #{sep1},#{h}" },
             { draw: "line #{sep2},0 #{sep2},#{h}" }
           ],
@@ -197,8 +209,8 @@ module Printing
         gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
         run_to_png([
           im_command,
-          "-size", "#{px_width}x#{line_height(pt, line_factor)}", "xc:white",
-          "-font", font, "-pointsize", pt.to_s, "-fill", "black", *bold_stroke_args(bold),
+          "-size", "#{px_width}x#{line_height(pt, line_factor_for(text, line_factor))}", "xc:white",
+          "-font", font, "-pointsize", pt.to_s, "-fill", "black", *bold_stroke_args(bold, line_stroke(text, pt, bold)),
           "-gravity", gravity, "-annotate", "+0+0", text.to_s.strip
         ])
       end
@@ -220,7 +232,7 @@ module Printing
       end
 
       # Same as render_row3 but returns a Base64-encoded PNG string.
-      def render_row3_png(item_name_visual, qty_str, price_str, doc_width: 42)
+      def render_row3_png(item_name_visual, qty_str, price_str, doc_width: 42, bold_label: false)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         qty_x    = (px_width * 0.26).to_i
         sep1     = qty_x - 12
@@ -237,7 +249,7 @@ module Printing
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
           *annotate_args({ gravity: "East", offset: "+#{price_rx}+0", text: price_str, font: value_font(price_str) }),
           *annotate_args({ gravity: "East", offset: "+#{qty_rx}+0", text: qty_str, font: value_font(qty_str) }),
-          "-gravity", "East", "-annotate", "+8+0",            item_name_visual,
+          *annotate_args({ gravity: "East", offset: "+8+0", text: item_name_visual, bold: bold_label, pt: FONT_SIZE_PT }),
           "-draw", "line #{sep1},0 #{sep1},#{h}",
           "-draw", "line #{sep2},0 #{sep2},#{h}"
         ])
@@ -335,11 +347,11 @@ module Printing
       end
 
       # Single text annotation → PBM binary.
-      def render_pbm_single(text, gravity, px_width, font, pt: FONT_SIZE_PT, height: pt * 2, bold: false)
+      def render_pbm_single(text, gravity, px_width, font, pt: FONT_SIZE_PT, height: pt * 2, bold: false, stroke: nil)
         cmd = [
           im_command,
           "-size", "#{px_width}x#{height}", "xc:white",
-          "-font", font, "-pointsize", pt.to_s, "-fill", "black", *bold_stroke_args(bold),
+          "-font", font, "-pointsize", pt.to_s, "-fill", "black", *bold_stroke_args(bold, stroke),
           "-gravity", gravity, "-annotate", "+0+0", text,
           "-type", "Bilevel", "pbm:-"
         ]
@@ -418,8 +430,21 @@ module Printing
 
       # The same outline the bold row labels use (annotate_args); empty when not bold,
       # so a plain line's command — and its raster-cache key — is unchanged.
-      def bold_stroke_args(bold)
-        bold ? ["-stroke", "black", "-strokewidth", BOLD_STROKE_WIDTH] : []
+      def bold_stroke_args(bold, stroke = nil)
+        bold ? ["-stroke", "black", "-strokewidth", stroke || BOLD_STROKE_WIDTH] : []
+      end
+
+      # Arabic lines keep their line height; Latin-only lines (digits) sit tighter.
+      def line_factor_for(text, line_factor)
+        text.to_s.match?(/\p{Arabic}/) ? line_factor : [line_factor, LATIN_LINE_FACTOR].min
+      end
+
+      # The outline for a bold Latin-only line: heavier at double size, a little heavier
+      # at normal size. Arabic lines (nil) keep BOLD_STROKE_WIDTH and their cache keys.
+      def line_stroke(text, pt, bold)
+        return nil if !bold || text.to_s.match?(/\p{Arabic}/)
+
+        pt >= FONT_SIZE_PT * 2 ? BIG_BOLD_STROKE : BOLD_LINE_STROKE
       end
 
       # One text annotation. bold: a thicker glyph at the annotation's own size (pt),

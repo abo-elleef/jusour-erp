@@ -31,23 +31,26 @@ module Printing
         doc.receipt_logo(location: @order.location, company: @order.company)
 
         doc.align(:center)
-        doc.bold
-        doc.double_height(true)
-        doc.text(@title)
-        doc.text(@order.display_number)
-        # A placed order changed after the PIN: the whole order prints again, and this
-        # tells the station it replaces the earlier ticket rather than adds to it.
-        if @order.edit_count.to_i.positive?
-          doc.text(I18n.t("printing.production_ticket.edited", count: @order.edit_count))
+        # Logo, title, number, date and order type close together, as one block.
+        doc.tight do
+          doc.bold
+          doc.double_height(true)
+          doc.text(@title)
+          doc.text(@order.display_number)
+          # A placed order changed after the PIN: the whole order prints again, and this
+          # tells the station it replaces the earlier ticket rather than adds to it.
+          if @order.edit_count.to_i.positive?
+            doc.text(I18n.t("printing.production_ticket.edited", count: @order.edit_count))
+          end
+          doc.double_height(false)
+          doc.bold(false)
+          doc.text(I18n.l(@order.created_at, format: :ticket))
+          doc.bold
+          doc.double_height(true)
+          doc.text(@order.fulfillment_summary)
+          doc.double_height(false)
+          doc.bold(false)
         end
-        doc.double_height(false)
-        doc.bold(false)
-        doc.text(I18n.l(@order.created_at, format: :ticket))
-        doc.bold
-        doc.double_height(true)
-        doc.text(@order.fulfillment_summary)
-        doc.double_height(false)
-        doc.bold(false)
         compose_issued_by(doc, cashier: @order.user&.name.to_s, station: @order.workstation&.name.to_s)
 
         compose_items_table(doc, @order_items)

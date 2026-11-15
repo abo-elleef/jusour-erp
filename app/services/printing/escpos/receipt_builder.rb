@@ -28,22 +28,25 @@ module Printing
 
         # ── Logo ───────────────────────────────────────────────────────────
         doc.align(:center)
-        doc.blank if doc.receipt_logo(location: @order.location, company: @order.company)
+        doc.receipt_logo(location: @order.location, company: @order.company)
 
         # ── Header ─────────────────────────────────────────────────────────
+        # Logo, shop name, number, date and order type close together, as one block.
         doc.align(:center)
-        doc.bold
-        doc.text(restaurant)
-        doc.double_height
-        doc.text(@order.display_number)
-        doc.double_height(false)
-        doc.bold(false)
-        doc.text(@order.created_at.strftime("%d/%m/%Y %I:%M %p"))
-        doc.bold
-        doc.double_height
-        doc.text(@order.fulfillment_summary)
-        doc.double_height(false)
-        doc.bold(false)
+        doc.tight do
+          doc.bold
+          doc.text(restaurant)
+          doc.double_height
+          doc.text(@order.display_number)
+          doc.double_height(false)
+          doc.bold(false)
+          doc.text(@order.created_at.strftime("%d/%m/%Y %I:%M %p"))
+          doc.bold
+          doc.double_height
+          doc.text(@order.fulfillment_summary)
+          doc.double_height(false)
+          doc.bold(false)
+        end
         # Who and where, bold so the courier/dispatcher reads them at a glance; the phone
         # is double height too.
         doc.bold
@@ -66,9 +69,13 @@ module Printing
         doc.separator
 
         OrderItem.in_menu_order(@order.order_items.includes(:order_item_modifiers, :combo, :order_discounts, menu_item: :category)).each do |item|
-          doc.row3(item.display_name, item.quantity.to_s, format_money(item.line_total_cents))
+          # Item name bold, and its modifiers/note bold at the regular size, so the
+          # dish and its details stand out from the prices around them.
+          doc.row3(item.display_name, item.quantity.to_s, format_money(item.line_total_cents), bold_label: true)
           # Every modifier and the note on one line, like the station tickets.
-          TicketItemsTable.detail_lines(item, limit: detail_chars).each { |line| doc.modifier_text(line) }
+          TicketItemsTable.detail_lines(item, limit: detail_chars).each do |line|
+            doc.modifier_text(line, bold: true, pt: ArabicImageRenderer::FONT_SIZE_PT)
+          end
           doc.separator
         end
 
@@ -130,8 +137,9 @@ module Printing
       end
 
       # The item column is the right 54% of the paper (price and quantity take the
-      # rest), so the detail line wraps sooner than on a kitchen ticket.
-      RECEIPT_DETAIL_CHARS_RATIO = 0.5
+      # rest), so the detail line wraps sooner than on a kitchen ticket; bold, so a
+      # little sooner than plain text would.
+      RECEIPT_DETAIL_CHARS_RATIO = 0.47
 
       def detail_chars
         (line_width * RECEIPT_DETAIL_CHARS_RATIO).floor

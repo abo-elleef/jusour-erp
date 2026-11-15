@@ -41,6 +41,16 @@ module Printing
 
       # bold: also draw Arabic (image) text bold. bold/bold(false) around a line only
       # reaches the printer's built-in font, so Arabic needs this to look bold too.
+      # Lines drawn inside the block use the tight header line height
+      # (ArabicImageRenderer::TIGHT_LINE_FACTOR) instead of the document's own.
+      def tight
+        was = @line_factor
+        @line_factor = [was, ArabicImageRenderer::TIGHT_LINE_FACTOR].min
+        yield
+      ensure
+        @line_factor = was
+      end
+
       def text(line = "", bold: false)
         str = line.to_s
         # Lines with digits (order number, phone, date) are drawn as images too, in
@@ -76,9 +86,10 @@ module Printing
 
       # Three-column receipt row: label (item name) | center (qty) | value (price).
       # In RTL image mode: label on right, qty in centre-left zone, value on left.
-      def row3(label, center, value)
+      # bold_label: the item name bold (receipt item rows); image mode only.
+      def row3(label, center, value, bold_label: false)
         if @use_images && (label.to_s.match?(ARABIC_PATTERN) || value.to_s.match?(ARABIC_PATTERN))
-          write_arabic_row3_image(label.to_s, center.to_s, value.to_s)
+          write_arabic_row3_image(label.to_s, center.to_s, value.to_s, bold_label: bold_label)
         else
           label_str  = prepare_text(label)
           center_str = center.to_s
@@ -293,13 +304,14 @@ module Printing
         value.to_s.length
       end
 
-      def write_arabic_row3_image(label, center, value)
+      def write_arabic_row3_image(label, center, value, bold_label: false)
         visual_label  = Bidi.visual_for_print(label,  reshape: true)
         visual_center = Bidi.visual_for_print(center, reshape: true)
         # Price column is always LTR (Latin digits). Only apply bidi when the
         # value is pure Arabic text (e.g. the "السعر" column header).
         visual_value  = value.match?(/[a-zA-Z0-9]/) ? value : Bidi.visual_for_print(value, reshape: true)
-        bytes = ArabicImageRenderer.render_row3(visual_label, visual_center, visual_value, doc_width: @width)
+        bytes = ArabicImageRenderer.render_row3(visual_label, visual_center, visual_value, doc_width: @width,
+                                                                                            bold_label: bold_label)
         if bytes
           @buffer << bytes.b
         else

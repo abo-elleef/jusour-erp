@@ -145,12 +145,20 @@ export class EscposDocument {
   }
 
   // Item | Qty | Price, with the column rules the server draws.
-  row3(label, qty, price) {
+  // boldLabel: the item name bold, same size — Document#row3(bold_label: true).
+  row3(label, qty, price, { boldLabel = false } = {}) {
     const { labelBox, qtyBox, priceBox, rules } = this.columns()
     const size = BASE_PX
-    const lines = this.wrap(String(label), labelBox.x1 - labelBox.x0, size)
+    const asLabel = (fn) => {
+      const was = this.emphasis
+      if (boldLabel) this.emphasis = true
+      const result = fn()
+      this.emphasis = was
+      return result
+    }
+    const lines = asLabel(() => this.wrap(String(label), labelBox.x1 - labelBox.x0, size))
     this.drawBlock(lines.length, size, (ctx, y, i, h) => {
-      this.fill(ctx, lines[i], { ...labelBox, align: this.rtl ? "right" : "left", y, size })
+      asLabel(() => this.fill(ctx, lines[i], { ...labelBox, align: this.rtl ? "right" : "left", y, size }))
       if (i === 0) {
         const mid = h / 2
         this.fill(ctx, qty, { ...qtyBox, align: "center", y: lines.length === 1 ? y : mid, size })
@@ -418,10 +426,11 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   doc.separator()
   order.items.forEach((line) => {
     const unit = (line.unit_price_cents || 0) + (line.modifiers || []).reduce((s, m) => s + m.price_adjustment_cents, 0)
-    doc.row3(line.name, String(line.quantity), money(unit * line.quantity))
+    // Item name and its details bold, like ReceiptBuilder on the server.
+    doc.row3(line.name, String(line.quantity), money(unit * line.quantity), { boldLabel: true })
     // Every modifier and the note on one line, like the station tickets.
     const detail = ticketDetail(line)
-    if (detail) doc.modifier(detail)
+    if (detail) doc.modifier(detail, { bold: true, px: BASE_PX })
     doc.separator()
   })
 

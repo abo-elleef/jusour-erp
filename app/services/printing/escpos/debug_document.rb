@@ -36,6 +36,16 @@ module Printing
 
       # ── Public interface (same as Document) ──────────────────────────────
 
+      # Lines drawn inside the block use the tight header line height
+      # (ArabicImageRenderer::TIGHT_LINE_FACTOR) instead of the document's own.
+      def tight
+        was = @line_factor
+        @line_factor = [was, ArabicImageRenderer::TIGHT_LINE_FACTOR].min
+        yield
+      ensure
+        @line_factor = was
+      end
+
       def text(line = "", bold: false)
         str = line.to_s
         # Lines with digits (order number, phone, date) are drawn as images too, in
@@ -75,13 +85,14 @@ module Printing
         end
       end
 
-      def row3(label, center, value)
+      def row3(label, center, value, bold_label: false)
         if @use_images && (label.to_s.match?(ARABIC_PATTERN) || value.to_s.match?(ARABIC_PATTERN))
           visual_label  = Printing::Escpos::Bidi.visual_for_print(label.to_s,  reshape: true)
           visual_center = Printing::Escpos::Bidi.visual_for_print(center.to_s, reshape: true)
           v = value.to_s
           visual_value  = v.match?(/[a-zA-Z0-9]/) ? v : Printing::Escpos::Bidi.visual_for_print(v, reshape: true)
-          png = ArabicImageRenderer.render_row3_png(visual_label, visual_center, visual_value, doc_width: @width)
+          png = ArabicImageRenderer.render_row3_png(visual_label, visual_center, visual_value, doc_width: @width,
+                                                                                               bold_label: bold_label)
           push kind: :image_row3, label: label.to_s, center: center.to_s, value: value.to_s, png_b64: png
         else
           left_str, right_str = @rtl ? [value.to_s, label.to_s] : [label.to_s, value.to_s]
