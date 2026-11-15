@@ -307,8 +307,10 @@
             <p class="text-xs text-red-800/80 mt-0.5"><%= t(@order.completed? ? "admin.orders.void_completed_hint" : "admin.orders.void_hint") %></p>
           </div>
           <div class="p-5">
-            <%= form_with url: void_admin_order_path(@order), method: :post, class: "space-y-4",
-                  data: { controller: "submit-once", action: "submit->submit-once#guard" } do %>
+            <%# No submit-once guard: it would mark the form sent before Turbo's confirm,
+                so pressing Cancel there would leave the button dead. data-disable-with
+                already blocks a double click. %>
+            <%= form_with url: void_admin_order_path(@order), method: :post, class: "space-y-4" do %>
               <div>
                 <%= label_tag :reason, t("admin.orders.void_reason"), class: label_class %>
                 <%= text_field_tag :reason, nil, placeholder: t("admin.orders.void_reason_placeholder"), class: input_class %>
