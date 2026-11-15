@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_14_150200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -374,6 +374,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
     t.integer "credit_terms_days"
     t.text "standing_note"
     t.uuid "originating_lead_id"
+    t.datetime "blocked_at"
+    t.text "blocked_reason"
+    t.uuid "blocked_by_id"
+    t.index ["blocked_by_id"], name: "index_customers_on_blocked_by_id"
     t.index ["company_id", "email"], name: "index_customers_on_company_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["company_id", "legacy_code"], name: "index_customers_on_company_id_and_legacy_code", where: "((legacy_code IS NOT NULL) AND ((legacy_code)::text <> ''::text))"
     t.index ["company_id", "phone"], name: "index_customers_on_company_id_and_phone", unique: true, where: "((phone IS NOT NULL) AND ((phone)::text <> ''::text))"
@@ -382,6 +386,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
     t.index ["originating_lead_id"], name: "index_customers_on_originating_lead_id"
     t.index ["price_tier_id"], name: "index_customers_on_price_tier_id"
     t.index ["treasury_id"], name: "index_customers_on_treasury_id"
+  end
+
+  create_table "delivery_areas", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "location_id", null: false
+    t.string "name", null: false
+    t.string "name_ar"
+    t.integer "fee_cents", default: 0, null: false
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_delivery_areas_on_company_id"
+    t.index ["location_id", "position"], name: "index_delivery_areas_on_location_id_and_position"
+    t.index ["location_id"], name: "index_delivery_areas_on_location_id"
   end
 
   create_table "digital_wallet_day_closes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -815,6 +834,11 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
     t.string "void_orders_pin_digest"
     t.integer "void_orders_pin_failed_attempts", default: 0, null: false
     t.datetime "void_orders_pin_locked_until"
+    t.boolean "online_ordering_enabled", default: false, null: false
+    t.time "online_open_time"
+    t.time "online_close_time"
+    t.integer "online_accept_timeout_minutes", default: 10, null: false
+    t.integer "online_max_order_cents"
     t.index ["active"], name: "index_locations_on_active"
     t.index ["cash_over_income_category_id"], name: "index_locations_on_cash_over_income_category_id"
     t.index ["cash_over_treasury_id"], name: "index_locations_on_cash_over_treasury_id"
@@ -999,6 +1023,43 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
     t.index ["recipient_type", "recipient_id"], name: "index_notifications_on_recipient"
   end
 
+  create_table "online_order_requests", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "location_id", null: false
+    t.uuid "customer_id"
+    t.uuid "delivery_area_id"
+    t.uuid "order_id"
+    t.uuid "decided_by_id"
+    t.string "status", default: "pending", null: false
+    t.string "token", null: false
+    t.string "fulfillment", null: false
+    t.string "customer_name", null: false
+    t.string "phone", null: false
+    t.text "address"
+    t.text "note"
+    t.jsonb "cart", default: [], null: false
+    t.jsonb "quote", default: {}, null: false
+    t.integer "total_cents", default: 0, null: false
+    t.integer "delivery_fee_cents", default: 0, null: false
+    t.string "ip"
+    t.string "user_agent"
+    t.string "reject_reason"
+    t.datetime "decided_at"
+    t.datetime "expires_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "ip", "created_at"], name: "idx_on_company_id_ip_created_at_5cc7233531"
+    t.index ["company_id", "phone", "created_at"], name: "idx_on_company_id_phone_created_at_09f9c425ff"
+    t.index ["company_id"], name: "index_online_order_requests_on_company_id"
+    t.index ["customer_id"], name: "index_online_order_requests_on_customer_id"
+    t.index ["decided_by_id"], name: "index_online_order_requests_on_decided_by_id"
+    t.index ["delivery_area_id"], name: "index_online_order_requests_on_delivery_area_id"
+    t.index ["location_id", "status", "created_at"], name: "idx_on_location_id_status_created_at_ce190dd1e3"
+    t.index ["location_id"], name: "index_online_order_requests_on_location_id"
+    t.index ["order_id"], name: "index_online_order_requests_on_order_id", unique: true
+    t.index ["token"], name: "index_online_order_requests_on_token", unique: true
+  end
+
   create_table "order_discounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "order_id", null: false
     t.uuid "discount_rule_id"
@@ -1081,6 +1142,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
     t.uuid "unlocked_for_edit_by_id"
     t.integer "edit_count", default: 0, null: false
     t.datetime "placed_at"
+    t.string "source", default: "pos", null: false
     t.index "company_id, COALESCE(location_id, '00000000-0000-0000-0000-000000000000'::uuid), business_date, order_number", name: "index_orders_on_branch_day_order_number", unique: true, where: "(business_date IS NOT NULL)"
     t.index ["company_id", "business_date"], name: "index_orders_on_company_id_and_business_date"
     t.index ["company_id", "client_uuid"], name: "index_orders_on_company_id_and_client_uuid", unique: true, where: "(client_uuid IS NOT NULL)"
@@ -2100,6 +2162,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
   add_foreign_key "customer_addresses", "customers"
   add_foreign_key "customer_invoices", "treasuries"
   add_foreign_key "customers", "companies"
+  add_foreign_key "customers", "users", column: "blocked_by_id"
+  add_foreign_key "delivery_areas", "companies"
+  add_foreign_key "delivery_areas", "locations"
   add_foreign_key "digital_wallet_day_closes", "companies"
   add_foreign_key "digital_wallet_day_closes", "locations"
   add_foreign_key "digital_wallet_day_closes", "users", column: "recorded_by_id"
@@ -2182,6 +2247,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150100) do
   add_foreign_key "modifiers", "companies"
   add_foreign_key "modifiers", "modifier_groups"
   add_foreign_key "notifications", "companies"
+  add_foreign_key "online_order_requests", "companies"
+  add_foreign_key "online_order_requests", "customers"
+  add_foreign_key "online_order_requests", "delivery_areas"
+  add_foreign_key "online_order_requests", "locations"
+  add_foreign_key "online_order_requests", "orders"
+  add_foreign_key "online_order_requests", "users", column: "decided_by_id"
   add_foreign_key "order_discounts", "discount_rules"
   add_foreign_key "order_discounts", "menu_promos"
   add_foreign_key "order_discounts", "order_items"

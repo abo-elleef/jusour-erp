@@ -1,0 +1,94 @@
+<% content_for :title, t("admin.online_orders.title") %>
+<% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% sort_opts = { sort: @sort, direction: @direction } %>
+<% total = @summary.values.sum %>
+
+<div class="max-w-full space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("admin.online_orders.title") %></h1>
+    <p class="text-gray-600 text-sm mt-1"><%= t("admin.online_orders.description") %></p>
+  </div>
+
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <% OnlineOrderRequest::STATUSES.each do |status| %>
+      <div class="rounded-2xl border border-gray-200 bg-white p-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-500"><%= t("pos.online_orders.statuses.#{status}") %></p>
+        <p class="mt-1 text-2xl font-bold tabular-nums text-gray-900"><%= @summary[status].to_i %></p>
+        <% if total.positive? %><p class="mt-1 text-xs text-gray-500 tabular-nums"><%= number_to_percentage(@summary[status].to_i * 100.0 / total, precision: 0) %></p><% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <%= search_form_for @q, url: admin_online_order_requests_path, html: { class: "rounded-2xl border border-gray-200 bg-white p-4 space-y-3" } do |f| %>
+    <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div>
+        <%= f.label :status_eq, t("admin.online_orders.status"), class: label_class %>
+        <%= f.select :status_eq, OnlineOrderRequest::STATUSES.map { |s| [t("pos.online_orders.statuses.#{s}"), s] },
+              { include_blank: t("admin.online_orders.all") }, class: input_class %>
+      </div>
+      <div>
+        <%= f.label :location_id_eq, t("admin.online_orders.branch"), class: label_class %>
+        <%= f.select :location_id_eq, @locations.map { |l| [l.name, l.id] }, { include_blank: t("admin.online_orders.all") }, class: input_class %>
+      </div>
+      <div>
+        <%= f.label :reject_reason_eq, t("admin.online_orders.reason"), class: label_class %>
+        <%= f.select :reject_reason_eq, OnlineOrderRequest::REJECT_REASONS.map { |r| [t("pos.online_orders.reasons.#{r}"), r] },
+              { include_blank: t("admin.online_orders.all") }, class: input_class %>
+      </div>
+      <div>
+        <%= f.label :phone_cont, t("admin.online_orders.phone"), class: label_class %>
+        <%= f.search_field :phone_cont, class: input_class, dir: "ltr" %>
+      </div>
+      <div>
+        <%= label_tag :date, t("admin.online_orders.date"), class: label_class %>
+        <%= date_field_tag :date, @filter_date, class: input_class %>
+      </div>
+    </div>
+    <div class="flex gap-3">
+      <%= f.submit t("actions.apply_filters"), class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+      <%= link_to t("actions.clear"), admin_online_order_requests_path, class: "text-sm font-medium text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl" %>
+    </div>
+  <% end %>
+
+  <div class="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-start text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <tr>
+          <th class="p-3 text-start"><%= sort_header_link(t("admin.online_orders.date"), :created_at, **sort_opts) %></th>
+          <th class="p-3 text-start"><%= sort_header_link(t("admin.online_orders.customer"), :customer, **sort_opts) %></th>
+          <th class="p-3 text-start"><%= t("admin.online_orders.branch") %></th>
+          <th class="p-3 text-start"><%= t("admin.orders.type") %></th>
+          <th class="p-3 text-start"><%= sort_header_link(t("admin.online_orders.status"), :status, **sort_opts) %></th>
+          <th class="p-3 text-start"><%= t("admin.online_orders.decided_by") %></th>
+          <th class="p-3 text-end"><%= sort_header_link(t("admin.online_orders.total"), :total, **sort_opts) %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @requests.each do |req| %>
+          <tr>
+            <td class="p-3 whitespace-nowrap tabular-nums"><%= l(req.created_at, format: :short) %></td>
+            <td class="p-3">
+              <% if req.customer %><%= link_to req.customer_name, admin_customer_path(req.customer), class: "font-medium text-gray-900 hover:underline" %><% else %><span class="font-medium"><%= req.customer_name %></span><% end %>
+              <span class="block text-xs text-gray-500 tabular-nums" dir="ltr"><%= req.phone %></span>
+            </td>
+            <td class="p-3"><%= link_to req.location.name, admin_location_path(req.location), class: "hover:underline" %></td>
+            <td class="p-3"><%= order_type_label(req.fulfillment) %></td>
+            <td class="p-3">
+              <% status = req.overdue? ? "expired" : req.status %>
+              <span class="rounded-full px-2.5 py-1 text-xs font-semibold <%= { "pending" => "bg-amber-100 text-amber-800", "accepted" => "bg-emerald-100 text-emerald-800", "rejected" => "bg-rose-100 text-rose-800" }.fetch(status, "bg-gray-100 text-gray-700") %>"><%= t("pos.online_orders.statuses.#{status}") %></span>
+              <% if req.order %><%= link_to "##{req.order.order_number}", admin_order_path(req.order), class: "ms-1 font-semibold text-emerald-700 hover:underline" %><% end %>
+              <% if req.reject_reason %><span class="block mt-1 text-xs text-gray-500"><%= t("pos.online_orders.reasons.#{req.reject_reason}") %></span><% end %>
+            </td>
+            <td class="p-3"><% if req.decided_by %><%= link_to req.decided_by.name, admin_user_path(req.decided_by), class: "hover:underline" %><% else %><span class="text-gray-400">—</span><% end %></td>
+            <td class="p-3 text-end tabular-nums"><%= format_amount(req.total_cents) %></td>
+          </tr>
+        <% end %>
+        <% if @requests.empty? %>
+          <tr><td colspan="7" class="p-8 text-center text-gray-500"><%= t("admin.online_orders.empty") %></td></tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <%= render "admin/accounting/pagination", pagy: @pagy %>
+</div>

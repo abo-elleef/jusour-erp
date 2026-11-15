@@ -11,6 +11,9 @@ class Order < ApplicationRecord
   # Placed and on its way: in the kitchen, not yet handed over or voided.
   PLACED_STATUSES = %w[submitted in_progress ready].freeze
   ORDER_TYPES = %w[delivery pickup table].freeze
+  # Where the order was keyed in: the register, the offline register (synced
+  # later), or a customer's self-order from the public menu.
+  SOURCES = %w[pos offline online].freeze
 
   # Advisory-lock namespace, so order numbering can never contend with another
   # part of the app that reaches for an advisory lock of its own.
@@ -62,6 +65,7 @@ class Order < ApplicationRecord
   validates :order_number, presence: true, unless: :unnumbered?
   validates :order_number, uniqueness: { scope: %i[company_id location_id business_date] }, allow_nil: true
   validates :order_type, presence: true, inclusion: { in: ORDER_TYPES }
+  validates :source, inclusion: { in: SOURCES }
   validates :delivery_fee_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
 
   before_validation :assign_business_date, on: :create
@@ -200,7 +204,7 @@ class Order < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[status order_number order_type created_at user_id customer_id total_cents subtotal_cents]
+    %w[status order_number order_type source created_at user_id customer_id total_cents subtotal_cents]
   end
 
   def self.ransackable_associations(_auth_object = nil)

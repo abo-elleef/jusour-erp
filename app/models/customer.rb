@@ -22,6 +22,8 @@ class Customer < ApplicationRecord
   belongs_to :price_tier, optional: true
   # The lead this customer was converted from, if any — see Lead#convert!.
   belongs_to :originating_lead, class_name: "Lead", optional: true
+  # Who blocked this customer from self-ordering on the public menu, if anyone.
+  belongs_to :blocked_by, class_name: "User", optional: true
   has_many :customer_invoices, dependent: :restrict_with_error
   has_many :addresses, class_name: "CustomerAddress", dependent: :destroy, inverse_of: :customer
 
@@ -52,6 +54,22 @@ class Customer < ApplicationRecord
 
   def self.ransackable_associations(_auth_object = nil)
     %w[addresses]
+  end
+
+  scope :blocked, -> { where.not(blocked_at: nil) }
+
+  # A blocked customer cannot place online (self-)orders. Staff can still sell to
+  # them at the register: the block is about the public menu, not the person.
+  def blocked?
+    blocked_at.present?
+  end
+
+  def block!(by:, reason:)
+    update!(blocked_at: Time.current, blocked_by: by, blocked_reason: reason.to_s.strip.presence)
+  end
+
+  def unblock!
+    update!(blocked_at: nil, blocked_by: nil, blocked_reason: nil)
   end
 
   def display_name

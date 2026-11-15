@@ -60,6 +60,7 @@ module Orders
           location: location,
           workstation: workstation,
           order_type: order_type,
+          source: "offline",
           table_number: @payload[:table_number].presence,
           notes: @payload[:notes].presence,
           client_uuid: uuid,

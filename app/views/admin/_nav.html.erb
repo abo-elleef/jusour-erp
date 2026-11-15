@@ -19,6 +19,9 @@
     <%= link_to admin_orders_path, class: admin_nav_link_class(admin_nav_active?("admin/orders")) do %>
       <%= admin_nav_icon(:orders) %><span><%= t("nav.orders") %></span>
     <% end %>
+    <%= link_to admin_online_order_requests_path, class: admin_nav_link_class(admin_nav_active?("admin/online_order_requests")) do %>
+      <%= admin_nav_icon(:orders) %><span><%= t("nav.online_orders_admin") %></span>
+    <% end %>
   <% end %>
   <% if menu_selling && current_user.can?("menu:manage") %>
     <%= link_to admin_menu_items_path, class: admin_nav_link_class(admin_nav_active?("admin/menu_items", "admin/categories", "admin/combos", "admin/menu_promos", "admin/modifiers", "admin/modifier_groups", "admin/tax_rates")) do %>

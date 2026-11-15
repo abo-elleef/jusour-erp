@@ -948,15 +948,24 @@ module ApplicationHelper
 
   # One tab of the POS header: an icon always, the label only when the header
   # (an @container) is wide enough. icon_path is a 24x24 outline SVG path.
-  def pos_nav_tab(label, path, active, icon_path)
+  def pos_nav_tab(label, path, active, icon_path, badge: nil)
     base = "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors"
     classes = active ? "#{base} bg-gray-900 text-white" : "#{base} text-gray-600 hover:bg-gray-100"
     icon = tag.svg(class: "w-5 h-5 shrink-0", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", aria: { hidden: true }) do
       tag.path("stroke-linecap": "round", "stroke-linejoin": "round", "stroke-width": "2", d: icon_path)
     end
     link_to path, class: classes, title: label, aria: { label: label, current: (active ? "page" : nil) } do
-      icon + tag.span(label, class: "hidden @xl:inline")
+      icon + tag.span(label, class: "hidden @xl:inline") + badge.to_s
     end
+  end
+
+  # Pending self-orders for the register's branch, for the "Online" tab badge.
+  # nil when the branch doesn't take online orders and has none waiting (no tab).
+  def pos_online_pending_count(location)
+    return nil if location.nil?
+
+    count = OnlineOrderRequest.where(location: location).pending.where("expires_at > ?", Time.current).count
+    location.online_ordering_enabled? || count.positive? ? count : nil
   end
 
   def pos_viewport_min_h_class
@@ -1559,6 +1568,7 @@ module ApplicationHelper
     menu_selling = tab_feature_enabled?(feature: :menu)
     if menu_selling && current_user.can?("orders:view")
       items << { label: t("nav.orders"), path: admin_orders_path, group: t("nav.groups.sell_serve") }
+      items << { label: t("nav.online_orders_admin"), path: admin_online_order_requests_path, group: t("nav.groups.sell_serve") }
     end
     if menu_selling && current_user.can?("menu:manage")
       items << { label: t("nav.menu"), path: admin_menu_items_path, group: t("nav.groups.sell_serve") }
