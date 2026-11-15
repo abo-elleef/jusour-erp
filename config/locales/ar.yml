@@ -4264,6 +4264,8 @@ ar:
       all_customers: "كل العملاء"
       status: "الحالة"
       all_statuses: "كل الحالات"
+      empty_draft: "فارغ"
+      empty_draft_hint: "محفوظ بدون أصناف — يُحذف تلقائياً عند بدء طلب جديد أو إغلاق الوردية"
       type: "النوع"
       all_types: "كل الأنواع"
       today_link: "اليوم"

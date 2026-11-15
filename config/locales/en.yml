@@ -4210,6 +4210,8 @@ en:
       all_customers: "All customers"
       status: "Status"
       all_statuses: "All statuses"
+      empty_draft: "Empty"
+      empty_draft_hint: "Saved but no items yet — deleted automatically when the cashier moves on or closes the shift"
       type: "Type"
       all_types: "All types"
       today_link: "Today"

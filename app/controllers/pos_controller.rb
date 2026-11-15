@@ -3,6 +3,7 @@
 class PosController < ApplicationController
   include PosLocationScoped
   include OpenDrawerGate
+  include AbandonedCartCleanup
 
   layout "pos"
 
@@ -19,13 +20,14 @@ class PosController < ApplicationController
     sync_order_location!
     @order.recalculate_totals! if @order.persisted?
     load_pos_menu
-    @open_orders = Order.open_drafts.where(user: current_user).order(created_at: :desc).limit(10)
+    @open_orders = Order.open_drafts.without_empty_drafts.where(user: current_user).order(created_at: :desc).limit(10)
     @open_cash_session = current_user.open_cash_drawer_session
     @staff_users = User.active.order(:name)
   end
 
   def new_order
     authorize Order, :create?
+    discard_abandoned_cart!
     session.delete(:current_order_id)
     session.delete(:pending_order_params)
     redirect_to pos_path, status: :see_other

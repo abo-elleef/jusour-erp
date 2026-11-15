@@ -138,6 +138,7 @@ module Pos
       end
 
       service.reconcile!(counted_cents, by: current_user)
+      discard_empty_drafts!
 
       # The slip the cashier and the shift manager sign. Never blocks closing.
       Printing::PrintDrawerCloseService.call(session: @open_session.reload, workstation: @pos_workstation)
@@ -221,6 +222,15 @@ module Pos
       redirect_to pos_orders_path, alert: t("flash.pos.shift.collect_payment_first", count: unpaid)
     end
 
+    # Closing the drawer ends the shift: any cart this cashier saved at this branch
+    # and never put an item in is deleted, so nothing empty outlives the shift.
+    def discard_empty_drafts!
+      Order.empty_drafts.where(user_id: current_user.id, location_id: @pos_location&.id).find_each do |order|
+        Orders::DiscardEmptyDraftService.call(order, user: current_user)
+      end
+      session.delete(:current_order_id) unless Order.exists?(id: session[:current_order_id])
+    end
+
     def unfinalized_orders_for(user)
       user.unfinalized_shift_orders(location: @pos_location)
     end
@@ -250,7 +260,7 @@ module Pos
       @open_orders_count = unfinalized.count
       @paid_open_orders_count = unfinalized.includes(:payments).count(&:fully_paid?)
 
-      session_orders = @shift_drawer ? @shift_drawer.orders : Order.none
+      session_orders = @shift_drawer ? @shift_drawer.orders.without_empty_drafts : Order.none
       @shift_time_range = @shift_drawer && [@shift_drawer.order_window.begin, @shift_drawer.order_window.end]
 
       # One list, two views: "open" is what the cashier came here to clear and is

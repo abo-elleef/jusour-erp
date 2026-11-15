@@ -109,8 +109,15 @@ module Pos
     def set_order
       # Only the cart, or a placed order a manager unlocked, takes item changes.
       @order = Order.cart_editable.find_by(id: session[:current_order_id])
-      @order ||= materialize_pending_order!
-      return if current_pos_location.blank?
+      # Only adding an item saves a new cart. Opening the add popup (modifier_form)
+      # used to save one too, so every popup the cashier cancelled left an empty
+      # takeaway draft behind; the popup only needs the branch.
+      @order ||= case action_name
+                 when "create" then materialize_pending_order!
+                 when "modifier_form" then Order.new(location: current_pos_location, user: current_user)
+                 end
+      return redirect_to(pos_path, status: :see_other) unless @order
+      return if current_pos_location.blank? || @order.new_record?
 
       attrs = {}
       attrs[:location] = current_pos_location if @order.location_id.blank?
