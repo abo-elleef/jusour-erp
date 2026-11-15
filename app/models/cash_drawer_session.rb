@@ -50,9 +50,13 @@ class CashDrawerSession < ApplicationRecord
   end
 
   # The cashier's orders from this drawer session. There is no FK from orders to
-  # the drawer, so they are matched by cashier, branch and time.
+  # the drawer, so they are matched by cashier, branch and time — plus any order
+  # that took a payment in this drawer, whenever it was rung. Without those, an
+  # older order paid here put money in the drawer's totals that no listed order
+  # accounted for.
   def orders
     Order.where(user_id: user_id, location_id: location_id, created_at: order_window)
+      .or(Order.where(id: payments.select(:order_id)))
   end
 
   # The cash the books put in the drawer at close.

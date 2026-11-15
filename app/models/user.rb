@@ -146,7 +146,7 @@ class User < ApplicationRecord
     drawer = current_drawer_session(location: location)
     return Order.none unless drawer
 
-    Order.not_finalized.merge(drawer.orders)
+    Order.not_finalized.where(id: drawer.orders.select(:id))
   end
 
   # This cashier's orders in the current drawer session that still owe money,
@@ -157,7 +157,7 @@ class User < ApplicationRecord
     drawer = current_drawer_session(location: location)
     return [] unless drawer
 
-    Order.not_fully_paid.merge(drawer.orders).includes(:payments).to_a
+    Order.not_fully_paid.where(id: drawer.orders.select(:id)).includes(:payments).to_a
          .select { |order| order.amount_due_cents.positive? }
   end
 
