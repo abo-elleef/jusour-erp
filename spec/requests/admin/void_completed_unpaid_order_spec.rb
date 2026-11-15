@@ -127,7 +127,7 @@ RSpec.describe "Voiding a completed order that was never paid", type: :request d
     end
   end
 
-  it "is refused for a cashier without the branch PIN" do
+  it "is not reachable by a plain cashier (no admin access)" do
     order = completed_order
     sign_in cashier
 
