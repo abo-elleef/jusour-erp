@@ -3,22 +3,51 @@ import { Controller } from "@hotwired/stimulus"
 // The POS add-item popup, driven from the keyboard so a rush-hour cashier never
 // reaches for the cart to fix a count:
 //   tap item → count field is focused and selected → type 3 (Arabic or English digits)
-//   → Enter: jumps to the first option group when the item has any, else adds
+//   → Enter: jumps to the first option group when the item has any, else to the note
 //   → arrows move between choices inside a group
 //   → Enter picks the focused choice and moves to the NEXT group, required or
-//     optional, in the order they are shown; after the last group it adds (or
-//     goes back to a required group still empty instead of failing validation)
+//     optional, in the order they are shown; after the last group → kitchen note
+//   → Enter in the note → the Add button, highlighted (or back to a required
+//     group still empty instead of failing validation)
+//   → Enter on the Add button adds. Enter never adds from anywhere else.
 //   → Tab moves to the next group without picking; Shift+Tab goes back as usual.
-//   Esc closes.
+//   Esc = Cancel, wherever the focus is (even after a click on blank space in
+//   the popup drops it to <body>).
 export default class extends Controller {
-  static targets = ["quantity", "cancel"]
+  static targets = ["quantity", "notes", "submit", "cancel"]
 
   connect() {
+    this.escape = this.escape.bind(this)
+    document.addEventListener("keydown", this.escape)
     // A Turbo-frame insert doesn't reliably honour `autofocus`.
     requestAnimationFrame(() => {
       this.quantityTarget.focus()
       this.quantityTarget.select()
     })
+  }
+
+  disconnect() {
+    document.removeEventListener("keydown", this.escape)
+  }
+
+  escape(event) {
+    if (event.key !== "Escape" || event.isComposing) return
+    event.preventDefault()
+    this.cancel(event)
+  }
+
+  // Closes the popup in place: no page reload, so the picked category, the
+  // scroll position and the basket stay exactly as the cashier left them.
+  // Swaps in an empty frame, the same as a successful add does
+  // (order_items/create.turbo_stream), so the next item tap loads normally.
+  cancel(event) {
+    event?.preventDefault()
+    document.removeEventListener("keydown", this.escape) // a held key must not cancel twice
+    const frame = this.element.closest("turbo-frame")
+    if (!frame) return window.location.assign(this.cancelTarget.href)
+    const empty = document.createElement("turbo-frame")
+    empty.id = frame.id
+    frame.replaceWith(empty)
   }
 
   // Integers only: runs after arabic-numerals#normalize has turned ٣ into 3.
@@ -29,11 +58,6 @@ export default class extends Controller {
   }
 
   keydown(event) {
-    if (event.key === "Escape") {
-      event.preventDefault()
-      this.cancelTarget.click()
-      return
-    }
     if (event.isComposing) return
     if (event.key === "Enter") this.enter(event)
     else if (event.key === "Tab" && !event.shiftKey) this.tab(event)
@@ -42,12 +66,17 @@ export default class extends Controller {
   enter(event) {
     const target = event.target
     if (target === this.quantityTarget) {
+      event.preventDefault()
       const first = this.groups()[0]
-      if (first) {
-        event.preventDefault()
-        this.focusGroup(first)
-      }
-      // No option groups: the form's own implicit submit adds the item.
+      if (first) this.focusGroup(first)
+      else this.notesTarget.focus()
+      return
+    }
+    if (target === this.notesTarget) {
+      event.preventDefault()
+      const missing = this.unpickedRequired()
+      if (missing) this.focusGroup(missing)
+      else this.submitTarget.focus()
       return
     }
     if (!target.matches("input[data-modifier-option]")) return
@@ -64,10 +93,8 @@ export default class extends Controller {
     const next = this.groupAfter(target)
     if (next) return this.focusGroup(next)
 
-    // Last group: a required one still empty gets the focus instead of a failed submit.
-    const missing = this.unpickedRequired()
-    if (missing) this.focusGroup(missing)
-    else this.element.requestSubmit()
+    // Last group: on to the kitchen note.
+    this.notesTarget.focus()
   }
 
   // Tab from an option skips the rest of its group (checkboxes would otherwise

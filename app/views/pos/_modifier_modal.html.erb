@@ -3,7 +3,7 @@
 <%= turbo_frame_tag "modifier_modal" do %>
   <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-2xl border border-gray-200 p-6 max-w-md w-full text-gray-900 max-h-[90vh] overflow-y-auto">
-      <%= form_with url: pos_order_items_path, method: :post,
+      <%= form_with url: pos_order_items_path, method: :post, class: "enter-next",
             data: { turbo_stream: true, turbo_frame: "_top",
                     controller: "modifier-pricing pos-quick-add",
                     modifier_pricing_config_value: pricing.to_json,
@@ -47,13 +47,15 @@
             <% end %>
           </fieldset>
         <% end %>
-        <%= text_field_tag :notes, nil, placeholder: t("pos.modifier.kitchen_notes"), class: "#{pos_input_class} mb-4" %>
+        <%= text_field_tag :notes, nil, placeholder: t("pos.modifier.kitchen_notes"), autocomplete: "off",
+              class: "#{pos_input_class} mb-4", data: { pos_quick_add_target: "notes" } %>
         <div class="flex gap-2">
-          <button type="submit" class="flex-1 <%= pos_btn_accent_class %>">
+          <button type="submit" class="flex-1 <%= pos_btn_accent_class %>" data-pos-quick-add-target="submit">
             <%= t("pos.modifier.add_to_order") %>
             · <span class="tabular-nums" data-modifier-pricing-target="buttonTotal"><%= format_amount(pricing[:base_cents]) %></span>
+            <kbd class="enter-hint ms-2 items-center rounded-md bg-white/25 px-1.5 text-xs font-bold">↵ Enter</kbd>
           </button>
-          <%= link_to t("actions.cancel"), pos_path, class: "flex-1 text-center border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors", data: { turbo_frame: "_top", pos_quick_add_target: "cancel" } %>
+          <%= link_to t("actions.cancel"), pos_path, class: "flex-1 text-center border border-gray-200 text-gray-700 font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition-colors", data: { turbo_frame: "_top", pos_quick_add_target: "cancel", action: "click->pos-quick-add#cancel" } %>
         </div>
       <% end %>
     </div>

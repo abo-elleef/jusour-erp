@@ -88,7 +88,7 @@
       <%= form_with url: pos_customer_path(order.customer),
             method: :patch,
             scope: :customer,
-            data: { turbo_stream: true },
+            data: { turbo_stream: true, controller: "enter-next" },
             onsubmit: "document.getElementById('edit-customer-dialog').close()" do |f| %>
         <div class="px-6 py-5 space-y-5">
           <% if edit_customer_errors&.any? %>
@@ -259,7 +259,7 @@
           <%= form_with url: pos_attach_customer_path,
                 method: :patch,
                 scope: :customer,
-                data: { turbo_stream: true },
+                data: { turbo_stream: true, controller: "enter-next" },
                 class: "space-y-3" do |f| %>
             <div>
               <%= f.label :name, t("customers.form.name"), class: label_class %>
