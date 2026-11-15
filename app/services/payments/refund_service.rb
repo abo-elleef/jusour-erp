@@ -2,15 +2,16 @@
 
 module Payments
   class RefundService
-    def self.call(order:, amount_cents:, reason:, user:)
-      new(order: order, amount_cents: amount_cents, reason: reason, user: user).call
-    end
+    def self.call(...) = new(...).call
 
-    def initialize(order:, amount_cents:, reason:, user:)
+    # skip_closed_drawers: leave payments a counted drawer took alone (Orders::VoidService
+    # refunds those by voucher instead).
+    def initialize(order:, amount_cents:, reason:, user:, skip_closed_drawers: false)
       @order = order
       @amount_cents = amount_cents
       @reason = reason
       @user = user
+      @skip_closed_drawers = skip_closed_drawers
     end
 
     # Returns the amount actually refunded. Never more than the order still holds:
@@ -21,7 +22,12 @@ module Payments
       return 0 unless @amount_cents.positive?
 
       remaining = @amount_cents
-      @order.payments.where(status: %w[completed partially_refunded]).order(:id).find_each do |payment|
+      payments = @order.payments.where(status: %w[completed partially_refunded])
+      if @skip_closed_drawers
+        payments = payments.left_joins(:cash_drawer_session)
+                           .where("payments.cash_drawer_session_id IS NULL OR cash_drawer_sessions.status = 'open'")
+      end
+      payments.order(:id).find_each do |payment|
         break if remaining <= 0
 
         refund_amount = [remaining, payment.amount_cents - payment.refunded_amount_cents].min

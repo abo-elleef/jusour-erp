@@ -91,21 +91,32 @@ class OrderPolicy < ApplicationPolicy
 
   # A completed order only while nobody has paid for it (a cart swept up by
   # Complete all); once money came in, it is a refund.
+  # The admin order page. Anyone who can open it may void; the branch's void-orders
+  # PIN is the gate for everyone but owners and managers (void_without_pin?).
   def void?
-    return false unless user.owner? || user.manager?
+    return false unless show?
     return false if record.cancelled?
 
     !record.completed? || record.never_paid?
+  end
+
+  # Owners and managers void and reopen orders on the admin page without the
+  # branch PIN; everyone else types it.
+  def skip_branch_pin?
+    user.owner? || user.manager?
   end
 
   # Voiding from the register. The branch's void-orders PIN is the real gate
   # (Pos::OrdersController#void); this keeps the button to placed orders the admin
   # void would also accept. A draft is discarded instead, not voided.
   def void_with_pin?
-    return false unless user.can_access_pos?
-    return false if record.draft? || record.cancelled?
+    void_at_register_allowed_by_status? && !record.paid_in_closed_drawer?
+  end
 
-    !record.completed? || record.never_paid?
+  # A void the register would take but for money a closed drawer took in: the page
+  # says to void it from the admin side instead of offering the PIN.
+  def void_needs_admin?
+    void_at_register_allowed_by_status? && record.paid_in_closed_drawer?
   end
 
   def refund?
@@ -129,6 +140,17 @@ class OrderPolicy < ApplicationPolicy
 
     user.can_access_pos? && record.user_id == user.id
   end
+
+  private
+
+  def void_at_register_allowed_by_status?
+    return false unless user.can_access_pos?
+    return false if record.draft? || record.cancelled?
+
+    !record.completed? || record.never_paid?
+  end
+
+  public
 
   class Scope < Scope
     def resolve

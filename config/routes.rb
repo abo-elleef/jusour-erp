@@ -268,6 +268,7 @@ Rails.application.routes.draw do
     resources :orders, only: %i[index show] do
       member do
         post :void
+        post :unlock_edit
         post :refund
         patch :change_payment_method
       end

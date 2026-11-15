@@ -115,6 +115,12 @@ class Voucher < ApplicationRecord
   def equity_adjustment?   = purpose == EQUITY_ADJUSTMENT
   def cash_shortage?       = purpose == CASH_SHORTAGE
 
+  # Refunds a voided order (Orders::VoidService). It follows the order: voiding it
+  # alone would put the cash back while the order stays cancelled.
+  def order_refund?
+    payment_allocations.any? { |allocation| allocation.settles_type == "Order" }
+  end
+
   # Raised by a drawer close: the shortage voucher, or the voucher settling a
   # drawer's over/short Income or Expense. Those follow the drawer — reopen it,
   # or waive the shortage — and are never voided on their own, which would put

@@ -216,6 +216,37 @@ class Order < ApplicationRecord
             .sum(Arel.sql("payments.amount_cents - payments.refunded_amount_cents")).to_i
   end
 
+  # Money still held on this order that a drawer already counted took in. Refunding
+  # it would write the refund onto that payment and quietly lower the closed
+  # drawer's expected cash after its count and safe deposit, while the cash really
+  # leaves whichever drawer is open now. So the register refuses to void it; that
+  # is for the admin side.
+  def paid_in_closed_drawer?
+    closed_drawer_refundable_cents.positive?
+  end
+
+  # The part of refundable_cents a closed drawer took in. A void refunds it by a
+  # payment voucher from a treasury the admin picks, not on the payment itself.
+  def closed_drawer_refundable_cents
+    payments.where(status: %w[completed partially_refunded])
+            .joins(:cash_drawer_session)
+            .where.not(cash_drawer_sessions: { status: "open" })
+            .sum(Arel.sql("payments.amount_cents - payments.refunded_amount_cents")).to_i
+  end
+
+  # Payment vouchers that refunded this order's closed-drawer money on a void.
+  def refund_vouchers
+    Voucher.active.where(id: PaymentAllocation.where(settles: self, payment_type: "Voucher").select(:payment_id))
+  end
+
+  # The treasury a closed drawer's cash for this order ended up in — the obvious
+  # place to refund it from.
+  def suggested_refund_treasury
+    session = CashDrawerSession.where(id: payments.select(:cash_drawer_session_id))
+                               .where.not(status: "open").order(:updated_at).last
+    session&.deposit_treasury || session&.treasury
+  end
+
   # What the customer has paid toward this bill, refunds or not. This — not
   # paid_cents, which is the money actually kept — decides whether anything is owed.
   def settled_cents

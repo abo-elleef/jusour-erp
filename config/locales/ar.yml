@@ -607,6 +607,7 @@ ar:
     staff: "الموظفون"
 
   order:
+    refund_voucher_notes: "رد مبلغ الطلب الملغى %{number} (%{date})، المدفوع في وردية مغلقة. السبب: %{reason}"
     errors:
       table_busy: "الطاولة %{table} عليها طلب مفتوح بالفعل (%{number})."
     types:
@@ -4002,6 +4003,7 @@ ar:
       void_confirm: "إلغاء الطلب"
       void_back: "رجوع"
       void_default_reason: "أُلغي من الكاشير"
+      void_needs_admin: "دُفع في وردية مغلقة — يُلغى من صفحة الطلب في لوحة الإدارة."
       edit_details: "تعديل التفاصيل"
       mark_completed: "إنهاء الطلب"
       complete_unpaid_confirm: "ما زال على هذا الطلب مبلغ مستحق. هل تريد إنهاءه؟ سيبقى في شاشة التحصيل حتى يتم سداده."
@@ -4316,6 +4318,14 @@ ar:
       void_heading: "إلغاء الطلب"
       void_hint: "إلغاء هذا الطلب. أي مبلغ مدفوع يُسترد ويخرج من الدرج."
       void_completed_hint: "هذا الطلب مكتمل ولم يُدفع. إلغاؤه يعيد مكوناته إلى مخزون الفرع ويحذفه من مبيعات ذلك اليوم."
+      void_pin: "رمز إلغاء الطلبات للفرع"
+      edit_pin: "رمز تعديل الطلبات للفرع"
+      edit_items: "تعديل الأصناف"
+      continue_editing: "متابعة التعديل في الكاشير"
+      edit_items_hint: "يفتح هذا الطلب في الكاشير بفرع %{branch}."
+      refund_treasury: "يُصرف المبلغ المردود من"
+      refund_treasury_hint: "دُفع %{amount} من هذا الطلب في وردية مغلقة. يُرد بسند صرف من هذه الخزينة، وتبقى الوردية المغلقة كما جُردت."
+      refund_vouchers_heading: "رُد بسند صرف"
       void_reason: "السبب"
       void_reason_placeholder: "لماذا يُلغى هذا الطلب؟"
       void_submit: "إلغاء الطلب"
@@ -5852,6 +5862,7 @@ ar:
         grand_total: "الإجمالي"
     vouchers:
       title: "السندات"
+      order_refund_for: "رد مبلغ — طلب %{number}"
       subtitle: "سندات القبض والصرف — مستند حركة النقدية من الخزينة وإليها."
       search_placeholder: "الرقم أو الطرف أو الفاتورة أو الملاحظات…"
       number: "رقم السند"
@@ -6635,6 +6646,7 @@ ar:
         wrong_pin: "رمز غير صحيح."
       void:
         pin_not_set: "لا يوجد رمز إلغاء طلبات لهذا الفرع بعد. يضبطه المسؤول من صفحة إعدادات الفرع."
+        drawer_closed: "دُفع هذا الطلب في وردية مغلقة، فلا يمكن إلغاؤه من الكاشير. يلغيه المدير من صفحة الطلب في لوحة الإدارة."
       sent_to_kitchen: "تم الإرسال للمطبخ."
       location_changed: "تم التبديل إلى %{name}."
       invalid_location: "اختر فرعًا صالحًا."
@@ -6790,6 +6802,9 @@ ar:
       voided: "تم إلغاء الطلب."
       voided_and_refunded: "تم إلغاء الطلب واسترداد %{amount} للعميل — أعِده من الدرج."
       cannot_void: "لم يعد من الممكن إلغاء هذا الطلب."
+      voided_and_refunded_by_voucher: "أُلغي الطلب. رُد مبلغ %{amount} بسند صرف %{number} من %{treasury}."
+      refund_treasury_required: "دُفع هذا الطلب في وردية مغلقة. اختر الخزينة التي يُصرف منها المبلغ المردود."
+      edit_branch_not_allowed: "لست من موظفي فرع هذا الطلب، فلا يمكنك فتحه في الكاشير."
       refund_out_of_range: "يجب أن يكون مبلغ الاسترداد أكبر من صفر ولا يزيد عن %{max}."
       refunded: "تم استرداد المبلغ."
     notification:

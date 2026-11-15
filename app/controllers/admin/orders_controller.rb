@@ -2,9 +2,11 @@
 
 module Admin
   class OrdersController < BaseController
+    include BranchOrderPins
+
     before_action { require_feature!(:menu) }
 
-    before_action :set_order, only: %i[show void refund change_payment_method]
+    before_action :set_order, only: %i[show void unlock_edit refund change_payment_method]
 
     # Sortable columns -> the SQL they order by. Whitelisted: the sort key comes from
     # the URL, so it must never reach the query as text. Cashier, customer and item
@@ -47,6 +49,11 @@ module Admin
       @order_items = @order.order_items.includes(:menu_item, :combo, :order_item_modifiers)
       @payments = @order.payments.includes(:processed_by_user).order(created_at: :desc)
       @order_events = @order.order_events.includes(:user).order(created_at: :desc)
+      @refund_vouchers = @order.refund_vouchers.to_a
+      if policy(@order).void? && @order.paid_in_closed_drawer?
+        @refund_treasuries = refund_treasuries
+        @suggested_refund_treasury = @order.suggested_refund_treasury
+      end
     end
 
     def change_payment_method
@@ -62,19 +69,62 @@ module Admin
       end
     end
 
+    # Owners and managers void straight away; everyone else needs the branch's
+    # void-orders PIN. Money a closed drawer took in is refunded by a payment voucher
+    # from the treasury picked on the form (Orders::VoidService).
     def void
       authorize @order, :void?
-      result = ::Orders::VoidService.call(order: @order, user: current_user, reason: params[:reason])
-      unless result.voided?
-        return redirect_to admin_order_path(@order), alert: t("flash.order.cannot_void")
+      unless policy(@order).skip_branch_pin?
+        if (error = void_pin_error(@order.location))
+          return redirect_to admin_order_path(@order), alert: error, status: :see_other
+        end
       end
 
-      notice = if result.refunded_cents.positive?
+      refund_treasury = refund_treasuries.find_by(id: params[:refund_treasury_id]) if params[:refund_treasury_id].present?
+      result = ::Orders::VoidService.call(order: @order, user: current_user, reason: params[:reason],
+                                          refund_treasury: refund_treasury)
+      unless result.voided?
+        alert = result.error == :treasury_required ? t("flash.order.refund_treasury_required") : t("flash.order.cannot_void")
+        return redirect_to admin_order_path(@order), alert: alert, status: :see_other
+      end
+
+      AuditLogEntry.record!(action: "order.void_with_pin", record: @order, user: current_user) unless policy(@order).skip_branch_pin?
+      notice = if result.voucher
+                 t("flash.order.voided_and_refunded_by_voucher", amount: helpers.format_money(result.refunded_cents),
+                                                                 number: result.voucher.number,
+                                                                 treasury: result.voucher.treasury.name)
+               elsif result.refunded_cents.positive?
                  t("flash.order.voided_and_refunded", amount: helpers.format_money(result.refunded_cents))
                else
                  t("flash.order.voided")
                end
-      redirect_to admin_order_path(@order), notice: notice
+      redirect_to admin_order_path(@order), notice: notice, status: :see_other
+    end
+
+    # Reopens a placed, unpaid order in the register at the order's own branch.
+    # Owners and managers skip the branch's edit-orders PIN.
+    def unlock_edit
+      authorize @order, :unlock_edit?
+      unless pos_branch_allowed?(@order.location)
+        return redirect_to admin_order_path(@order), alert: t("flash.order.edit_branch_not_allowed"), status: :see_other
+      end
+
+      unless @order.editing_placed?
+        error = @order.with_lock do
+          reason = if policy(@order).skip_branch_pin?
+                     t("flash.pos.unlock.not_unlockable") unless @order.unlockable_for_edit?
+                   else
+                     unlock_error(@order.location)
+                   end
+          reason.tap { unlock! unless reason }
+        end
+        return redirect_to admin_order_path(@order), alert: error, status: :see_other if error
+      end
+
+      switch_pos_branch!(@order.location)
+      session.delete(:pending_order_params)
+      session[:current_order_id] = @order.id
+      redirect_to pos_path, notice: t("flash.pos.order_unlocked", number: @order.order_number), status: :see_other
     end
 
     def refund
@@ -93,6 +143,26 @@ module Admin
 
     def set_order
       @order = Order.find(params[:id])
+    end
+
+    # Where a void's closed-drawer refund may come from: money treasuries this user
+    # may see.
+    def refund_treasuries
+      Treasury.payable.active.visible_to(current_user).ordered
+    end
+
+    def pos_branch_allowed?(location)
+      location.present? && (current_user.all_locations? || current_user.location_ids.include?(location.id))
+    end
+
+    # The register works in one branch at a time (PosLocationScoped); an order is
+    # edited in its own. A till from another branch is dropped so the register asks.
+    def switch_pos_branch!(location)
+      return if session[:pos_location_id] == location.id
+
+      session[:pos_location_id] = location.id
+      cookies.permanent.signed[PosLocationScoped::POS_LOCATION_COOKIE] = location.id
+      session.delete(:pos_workstation_id)
     end
 
     # Empty values go last either way, and ties fall back to newest first so the page

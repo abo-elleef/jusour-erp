@@ -601,6 +601,7 @@ en:
     staff: "Staff"
 
   order:
+    refund_voucher_notes: "Refund for voided order %{number} (%{date}), paid in a shift already closed. Reason: %{reason}"
     errors:
       table_busy: "Table %{table} already has an open order (%{number})."
     types:
@@ -3948,6 +3949,7 @@ en:
       void_confirm: "Void order"
       void_back: "Back"
       void_default_reason: "Voided at the register"
+      void_needs_admin: "Paid in a closed shift — void it from the admin order page."
       edit_details: "Edit details"
       mark_completed: "Mark completed"
       complete_unpaid_confirm: "This order still has a balance due. Complete it anyway? It stays on Collect Payment until it is settled."
@@ -4262,6 +4264,14 @@ en:
       void_heading: "Void order"
       void_hint: "Cancel this order. Any money already paid is refunded and leaves the drawer."
       void_completed_hint: "This order was completed but never paid. Voiding returns its stock to the branch and takes it out of that day's sales."
+      void_pin: "Branch void-orders PIN"
+      edit_pin: "Branch edit-orders PIN"
+      edit_items: "Edit items"
+      continue_editing: "Continue editing in the register"
+      edit_items_hint: "Opens this order in the register at %{branch}."
+      refund_treasury: "Refund paid from"
+      refund_treasury_hint: "%{amount} of this order was paid in a shift that is already closed. It is refunded by a payment voucher from this treasury; the closed shift is left as it was counted."
+      refund_vouchers_heading: "Refunded by voucher"
       void_reason: "Reason"
       void_reason_placeholder: "Why is this order being voided?"
       void_submit: "Void order"
@@ -5792,6 +5802,7 @@ en:
         grand_total: "Total"
     vouchers:
       title: "Vouchers"
+      order_refund_for: "Refund — order %{number}"
       subtitle: "Receipt and payment vouchers — the document for money crossing a treasury."
       search_placeholder: "Number, party, invoice or notes…"
       number: "Voucher no."
@@ -6569,6 +6580,7 @@ en:
         wrong_pin: "Wrong PIN."
       void:
         pin_not_set: "This branch has no void-orders PIN yet. An admin sets it on the branch settings page."
+        drawer_closed: "This order was paid in a shift that is already closed, so it can't be voided at the register. A manager voids it from the admin order page."
       sent_to_kitchen: "Sent to kitchen."
       location_changed: "Register switched to %{name}."
       invalid_location: "Select a valid branch."
@@ -6724,6 +6736,9 @@ en:
       voided: "Order voided."
       voided_and_refunded: "Order voided. %{amount} refunded to the customer — hand it back from the drawer."
       cannot_void: "This order can no longer be voided."
+      voided_and_refunded_by_voucher: "Order voided. %{amount} refunded by payment voucher %{number} from %{treasury}."
+      refund_treasury_required: "This order was paid in a shift that is already closed. Pick the treasury the refund is paid from."
+      edit_branch_not_allowed: "You don't work at this order's branch, so you can't open it in the register."
       refund_out_of_range: "Refund must be more than zero and no more than %{max}."
       refunded: "Refund processed."
     notification:

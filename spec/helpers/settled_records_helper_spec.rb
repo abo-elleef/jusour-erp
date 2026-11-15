@@ -70,6 +70,9 @@ RSpec.describe SettledRecordsHelper, type: :helper do
                              payroll_month: Date.current.beginning_of_month)
     when "Customer" then create(:customer, company: company)
     when "Supplier" then Supplier.create!(name: "Farms #{SecureRandom.hex(3)}", lead_time_days: 2, company: company)
+    when "Order"
+      create(:order, company: company, user: user, location: create(:location, company: company),
+                     status: "cancelled", order_number: "17")
     else raise "no fixture for settleable type #{type}"
     end
   end

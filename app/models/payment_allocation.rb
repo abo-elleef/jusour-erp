@@ -17,8 +17,10 @@ class PaymentAllocation < ApplicationRecord
   #
   # The specs walk this list, so a type added here without those fails rather
   # than raising NoMethodError on a page nobody tested.
+  # An Order is settled only by a void refunding money a closed drawer took in
+  # (Orders::VoidService); it clears against sales clearing (1160).
   SETTLEABLE_TYPES = %w[Expense Income VendorInvoice CustomerInvoice Customer Supplier
-                        PayrollAdvance].freeze
+                        PayrollAdvance Order].freeze
 
   belongs_to :payment, polymorphic: true
   belongs_to :settles, polymorphic: true

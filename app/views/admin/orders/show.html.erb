@@ -28,9 +28,12 @@
         <% end %>
       </p>
     </div>
-    <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full border <%= order_status_class(@order.status) %> <%= order_status_border_class(@order.status) %>">
-      <%= order_status_label(@order.status) %>
-    </span>
+    <div class="flex flex-wrap items-center gap-2">
+      <%= render "admin/orders/edit_items_button", order: @order, input_class: input_class, label_class: label_class %>
+      <span class="text-xs font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full border <%= order_status_class(@order.status) %> <%= order_status_border_class(@order.status) %>">
+        <%= order_status_label(@order.status) %>
+      </span>
+    </div>
   </div>
 
   <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -283,6 +286,20 @@
         </div>
       </section>
 
+      <% if @refund_vouchers.any? %>
+        <section class="rounded-2xl border border-gray-200 bg-white px-5 py-4">
+          <h2 class="text-sm font-semibold text-gray-900 mb-2"><%= t("admin.orders.refund_vouchers_heading") %></h2>
+          <ul class="space-y-1 text-sm">
+            <% @refund_vouchers.each do |voucher| %>
+              <li class="flex justify-between gap-3">
+                <span><%= voucher_number_link(voucher) %> · <%= voucher.treasury.name %> · <%= l(voucher.voucher_date, format: :long) %></span>
+                <span class="font-semibold tabular-nums"><%= format_amount(voucher.amount_cents) %></span>
+              </li>
+            <% end %>
+          </ul>
+        </section>
+      <% end %>
+
       <% if policy(@order).void? %>
         <section class="rounded-2xl border border-red-200 bg-red-50/30 overflow-hidden">
           <div class="px-5 py-4 border-b border-red-100 bg-red-50/80">
@@ -290,11 +307,32 @@
             <p class="text-xs text-red-800/80 mt-0.5"><%= t(@order.completed? ? "admin.orders.void_completed_hint" : "admin.orders.void_hint") %></p>
           </div>
           <div class="p-5">
-            <%= form_with url: void_admin_order_path(@order), method: :post, class: "space-y-4" do %>
+            <%= form_with url: void_admin_order_path(@order), method: :post, class: "space-y-4",
+                  data: { controller: "submit-once", action: "submit->submit-once#guard" } do %>
               <div>
                 <%= label_tag :reason, t("admin.orders.void_reason"), class: label_class %>
                 <%= text_field_tag :reason, nil, placeholder: t("admin.orders.void_reason_placeholder"), class: input_class %>
               </div>
+              <% if @refund_treasuries %>
+                <div>
+                  <%= label_tag :refund_treasury_id, t("admin.orders.refund_treasury"), class: label_class %>
+                  <%= select_tag :refund_treasury_id,
+                        options_from_collection_for_select(@refund_treasuries, :id, :name, @suggested_refund_treasury&.id),
+                        include_blank: @suggested_refund_treasury.nil?, required: true, class: input_class %>
+                  <p class="text-xs text-gray-500 mt-1.5">
+                    <%= t("admin.orders.refund_treasury_hint", amount: format_amount(@order.closed_drawer_refundable_cents)) %>
+                  </p>
+                </div>
+              <% end %>
+              <% unless policy(@order).skip_branch_pin? %>
+                <div>
+                  <%= label_tag :void_pin, t("admin.orders.void_pin"), class: label_class %>
+                  <%= password_field_tag :pin, nil, id: "void_pin", maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
+                        autocomplete: "off", required: true,
+                        placeholder: t("pos.orders.six_digit_pin_placeholder"),
+                        class: "#{input_class} text-center tracking-widest" %>
+                </div>
+              <% end %>
               <%= submit_tag t("admin.orders.void_submit"),
                     class: "w-full bg-red-700 hover:bg-red-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors",
                     data: { turbo_confirm: t("admin.orders.void_confirm") } %>

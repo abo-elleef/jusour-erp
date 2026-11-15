@@ -341,10 +341,19 @@ class MoneyPathChecker
 
     check "POS — offline order synced"
 
+    # Paid but not yet handed over when the drawer closes; voided afterwards below.
+    held = Order.create!(company: @company, location: location, user: owner,
+                         order_type: "pickup", status: "submitted",
+                         order_number: "V#{SecureRandom.hex(3)}")
+    held.order_items.create!(menu_item: item, quantity: 1, unit_price_cents: 2_000)
+    held.update!(subtotal_cents: 2_000, total_cents: 2_000)
+    Payments::CashPaymentService.call(order: held, amount_cents: 2_000, tip_cents: 0, user: owner)
+    held.reload.update_columns(status: "submitted") if held.completed?
+
     reconciler = Accounting::CashReconciliationService.new(session)
     expected = reconciler.compute_expected!
-    # Float + cash sale + delivery food (the fee went to the driver) + offline order.
-    counted = 15_000 + 4_000 + offline.order.payments.sum(:amount_cents)
+    # Float + cash sale + delivery food (the fee went to the driver) + offline order + held order.
+    counted = 15_000 + 4_000 + offline.order.payments.sum(:amount_cents) + 2_000
     raise "drawer expected #{expected}, but #{counted} is in it" unless expected == counted
 
     # Counted 5.00 short: the safe takes the expected cash and the gap goes to
@@ -354,6 +363,13 @@ class MoneyPathChecker
     raise "short drawer raised no voucher" unless session.reload.shortage_voucher
 
     check "POS — drawer reconciled short (voucher to cashier)"
+
+    # Voided after its drawer closed: refunded by a payment voucher from the safe,
+    # against sales clearing, leaving the counted drawer as it was.
+    result = Orders::VoidService.call(order: held.reload, user: owner, reason: "verify", refund_treasury: safe)
+    raise "closed-drawer void did not refund by voucher" unless result.voided? && result.voucher
+
+    check "POS — paid order voided after its drawer closed (refund voucher)"
   rescue StandardError => e
     skip("POS", "could not exercise: #{e.class} #{e.message}")
   end

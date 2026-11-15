@@ -108,6 +108,9 @@ RSpec.describe "Voucher pages render whatever was settled", type: :request do
                              payroll_month: Date.current.beginning_of_month)
     when "Customer" then create(:customer, company: company)
     when "Supplier" then Supplier.create!(name: "Fresh Farms", lead_time_days: 2, company: company)
+    when "Order"
+      create(:order, company: company, user: owner, location: create(:location, company: company),
+                     status: "cancelled", order_number: "17")
     else raise "no fixture for settleable type #{type}"
     end
   end

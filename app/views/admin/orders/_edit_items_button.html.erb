@@ -1,0 +1,37 @@
+<%# Reopens a placed, unpaid order in the register at its own branch. Owners and
+    managers go straight through; everyone else types the branch's edit-orders PIN. %>
+<% if policy(order).unlock_edit? %>
+  <% button_class = "inline-flex items-center gap-1.5 text-sm font-semibold text-amber-800 hover:text-amber-900 px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 hover:bg-amber-100 transition-colors" %>
+  <% if order.editing_placed? || policy(order).skip_branch_pin? %>
+    <%= button_to unlock_edit_admin_order_path(order), method: :post, form_class: "inline-flex",
+          class: button_class, title: t("admin.orders.edit_items_hint", branch: order.location&.name) do %>
+      <%= t(order.editing_placed? ? "admin.orders.continue_editing" : "admin.orders.edit_items") %>
+    <% end %>
+  <% else %>
+    <% dialog_id = "admin-unlock-edit-dialog-#{order.id}" %>
+    <button type="button" class="<%= button_class %>" onclick="document.getElementById('<%= dialog_id %>').showModal()">
+      <%= t("admin.orders.edit_items") %>
+    </button>
+    <dialog id="<%= dialog_id %>"
+            class="m-auto rounded-2xl shadow-2xl border-0 p-0 w-[22rem] max-w-[95vw] backdrop:bg-black/50 text-start"
+            onclick="if(event.target===this)this.close()">
+      <%= form_with url: unlock_edit_admin_order_path(order), method: :post, class: "p-6 space-y-3" do %>
+        <h3 class="text-lg font-bold text-gray-900"><%= t("pos.orders.unlock_title") %></h3>
+        <p class="text-sm text-gray-600"><%= t("admin.orders.edit_items_hint", branch: order.location&.name) %></p>
+        <%= label_tag "#{dialog_id}-pin", t("admin.orders.edit_pin"), class: label_class %>
+        <%= password_field_tag :pin, nil, id: "#{dialog_id}-pin", maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
+              autocomplete: "off", required: true, autofocus: true,
+              placeholder: t("pos.orders.six_digit_pin_placeholder"),
+              class: "#{input_class} text-center tracking-widest" %>
+        <div class="flex gap-2">
+          <%= submit_tag t("pos.orders.unlock_confirm"),
+                class: "flex-1 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl" %>
+          <button type="button" onclick="this.closest('dialog').close()"
+                  class="px-4 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700">
+            <%= t("pos.manager_pin.cancel") %>
+          </button>
+        </div>
+      <% end %>
+    </dialog>
+  <% end %>
+<% end %>

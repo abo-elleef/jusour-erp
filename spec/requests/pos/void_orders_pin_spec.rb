@@ -18,10 +18,11 @@ RSpec.describe "Voiding an order with the branch PIN", type: :request do
   let(:cashier) { create(:user, company: company, role: "cashier") }
   let(:menu_item) { create(:menu_item, company: company) }
 
+  let!(:drawer) { open_drawer_for(cashier, location: branch) }
+
   before do
     Current.company = company
     sign_in cashier
-    open_drawer_for(cashier, location: branch)
     allow_any_instance_of(MenuItem).to receive(:available_at_location?).and_return(true)
     get pos_path
   end
@@ -105,6 +106,59 @@ RSpec.describe "Voiding an order with the branch PIN", type: :request do
     expect(order.reload.status).to eq("cancelled")
     expect(order.order_events.where(event_type: "void", description: "Customer left")).to exist
     expect(AuditLogEntry.where(action: "order.void_with_pin", record_id: order.id)).to exist
+  end
+
+  describe "a paid order" do
+    def pay(order, session:)
+      create(:payment, order: order, company: company, amount_cents: 5000, status: "completed",
+                       payment_method: "cash", cash_drawer_session: session)
+    end
+
+    it "is voided and refunded while the drawer that took the money is still open" do
+      order = place_new_order
+      payment = pay(order, session: drawer)
+
+      post void_pos_order_path(order), params: { pin: "135790" }
+
+      expect(order.reload.status).to eq("cancelled")
+      expect(payment.reload.status).to eq("refunded")
+    end
+
+    # Refunding would rewrite the counted drawer's expected cash after its count.
+    it "is refused once that drawer is closed, and sent to the admin side" do
+      order = place_new_order
+      payment = pay(order, session: drawer)
+      drawer.update_columns(status: "counted")
+      open_drawer_for(cashier, location: branch)
+
+      get pos_order_path(order)
+      expect(response.body).not_to include(%(id="void-order-dialog-#{order.id}"))
+      expect(response.body).to include(CGI.escapeHTML(I18n.t("pos.orders.void_needs_admin")))
+
+      post void_pos_order_path(order), params: { pin: "135790" }
+
+      expect(response).to redirect_to(pos_order_path(order))
+      expect(flash[:alert]).to eq(I18n.t("flash.pos.void.drawer_closed"))
+      expect(order.reload.status).not_to eq("cancelled")
+      expect(payment.reload.refunded_amount_cents).to eq(0)
+    end
+
+    it "is still voidable from admin after the drawer closed" do
+      order = place_new_order
+      pay(order, session: drawer)
+      drawer.update_columns(status: "reconciled")
+
+      result = Orders::VoidService.call(order: order, user: cashier, open_drawers_only: true)
+      expect(result.voided?).to be(false)
+      expect(result.error).to eq(:drawer_closed)
+
+      expect(Orders::VoidService.call(order: order.reload, user: cashier).error).to eq(:treasury_required)
+
+      Current.company = company
+      safe = Treasury.create!(company: company, name: "Safe", treasury_type: "safe",
+                              balance_cents: 0, opening_balance_cents: 0)
+      expect(Orders::VoidService.call(order: order.reload, user: cashier, refund_treasury: safe).voided?).to be(true)
+    end
   end
 
   it "does not offer it on a draft or an already cancelled order" do

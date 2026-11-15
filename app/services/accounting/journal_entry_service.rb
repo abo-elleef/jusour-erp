@@ -179,6 +179,10 @@ module Accounting
         when ::VendorInvoice          then settles.supplier.to_account
         when ::CustomerInvoice        then settles.customer.to_account
         when ::Customer, ::Supplier   then settles.to_account
+        # Refunding a voided order's money that a closed drawer took in: that cash
+        # reached the treasury against 1160 at the drawer close, and the order never
+        # posted revenue (only completed orders do), so the refund clears 1160.
+        when ::Order                  then SystemAccount::SALES_CLEARING.to_account
         # Legacy: only until payroll:convert_to_staff_accounts has run.
         when ::PayrollAdvance         then settles.user.to_account
         else default_counter_for(voucher)

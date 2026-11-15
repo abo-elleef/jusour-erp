@@ -7,7 +7,7 @@
 class VoucherPolicy < AccountingPolicy
   def destroy?
     return false if record.is_a?(Voucher) && (record.backfilled? || record.voided?)
-    return false if record.is_a?(Voucher) && record.drawer_variance_document?
+    return false if record.is_a?(Voucher) && (record.drawer_variance_document? || record.order_refund?)
 
     user.owner? || user.accountant?
   end

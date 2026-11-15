@@ -6,6 +6,8 @@ module Pos
 
     layout "pos"
 
+    include BranchOrderPins
+
     before_action :require_pos_access!
 
     def index
@@ -119,6 +121,10 @@ module Pos
     # cancelled, stock and loyalty put back, anything paid refunded.
     def void
       @order = Order.find(params[:id])
+      if policy(@order).void_needs_admin?
+        return redirect_to pos_order_path(@order, from: params[:from]),
+                           alert: t("flash.pos.void.drawer_closed"), status: :see_other
+      end
       authorize @order, :void_with_pin?
 
       error = void_pin_error(@order.location)
@@ -127,9 +133,10 @@ module Pos
       end
 
       reason = params[:reason].to_s.strip.presence || t("pos.orders.void_default_reason")
-      result = ::Orders::VoidService.call(order: @order, user: current_user, reason: reason)
+      result = ::Orders::VoidService.call(order: @order, user: current_user, reason: reason, open_drawers_only: true)
       unless result.voided?
-        return redirect_to pos_order_path(@order, from: params[:from]), alert: t("flash.order.cannot_void"), status: :see_other
+        alert = result.error == :drawer_closed ? t("flash.pos.void.drawer_closed") : t("flash.order.cannot_void")
+        return redirect_to pos_order_path(@order, from: params[:from]), alert: alert, status: :see_other
       end
 
       AuditLogEntry.record!(action: "order.void_with_pin", record: @order, user: current_user)
@@ -277,30 +284,6 @@ module Pos
     end
 
     private
-
-    # nil when the PIN is right and the order may be reopened; otherwise the reason.
-    def unlock_error(location)
-      return t("flash.pos.unlock.not_unlockable") unless @order.unlockable_for_edit?
-      return t("flash.pos.unlock.pin_not_set") unless location&.edit_orders_pin_configured?
-      return t("flash.pos.unlock.pin_locked") if location.edit_orders_pin_locked?
-      return if location.verify_edit_orders_pin(params[:pin].to_s.strip)
-
-      location.edit_orders_pin_locked? ? t("flash.pos.unlock.pin_locked") : t("flash.pos.unlock.wrong_pin")
-    end
-
-    # nil when the void-orders PIN is right; otherwise the reason it was refused.
-    def void_pin_error(location)
-      return t("flash.pos.void.pin_not_set") unless location&.void_orders_pin_configured?
-      return t("flash.pos.unlock.pin_locked") if location.void_orders_pin_locked?
-      return if location.verify_void_orders_pin(params[:pin].to_s.strip)
-
-      location.void_orders_pin_locked? ? t("flash.pos.unlock.pin_locked") : t("flash.pos.unlock.wrong_pin")
-    end
-
-    def unlock!
-      @order.update!(unlocked_for_edit_at: Time.current, unlocked_for_edit_by: current_user)
-      AuditLogEntry.record!(action: "order.unlock_edit", record: @order, user: current_user)
-    end
 
     def outstanding_orders
       @filter_type ||= begin
