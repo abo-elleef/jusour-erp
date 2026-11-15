@@ -164,6 +164,8 @@ module Orders
         id: combo.id,
         name: combo.name,
         price_cents: combo.price_cents,
+        # Shown under Offers on the register, so its lines sort first (sortCartLines).
+        highlighted: combo.highlighted_now?,
         menu_item_ids: combo.combo_items.map(&:menu_item_id)
       }
     end

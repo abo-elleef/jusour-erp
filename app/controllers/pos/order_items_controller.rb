@@ -15,11 +15,10 @@ module Pos
       authorize @order, :update?
       @order.with_lock do
         first_item = @order.order_items.none?
-        if params[:combo_id]
-          add_combo
-        else
-          add_menu_item
-        end
+        # The line this add landed on (new, or an existing one whose quantity went
+        # up): the basket scrolls to it and highlights it, since lines are sorted by
+        # category and name and the new one is not always last.
+        @added_item = params[:combo_id] ? add_combo : add_menu_item
         # An empty cart doesn't hold its table, so another register may have taken it
         # since the cashier picked it. The first item is where that shows up. Once the
         # order has items it already holds the table, so later adds are never blocked.

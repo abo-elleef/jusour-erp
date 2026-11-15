@@ -1015,8 +1015,11 @@ module ApplicationHelper
       "hover:bg-stone-100/70 transition-colors [&::-webkit-details-marker]:hidden"
   end
 
-  def pos_cart_line_item_class
-    "rounded-2xl bg-white p-3 shadow-[0_1px_2px_rgba(0,0,0,0.06)] ring-1 ring-stone-200/50"
+  # added: the line the cashier just added — amber ring and tint so it is easy to find
+  # in the sorted basket.
+  def pos_cart_line_item_class(added: false)
+    base = "rounded-2xl p-3 shadow-[0_1px_2px_rgba(0,0,0,0.06)] transition-colors"
+    added ? "#{base} bg-amber-50 ring-2 ring-amber-400" : "#{base} bg-white ring-1 ring-stone-200/50"
   end
 
   def pos_cart_qty_minus_btn_class

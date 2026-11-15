@@ -18,7 +18,7 @@ module Admin
         debug: Printing::Escpos::ReceiptBuilder.new(@order, printer: receipt_printer).build_debug
       }
 
-      items = @order.order_items.includes(:order_item_modifiers, :combo, menu_item: :category).to_a
+      items = @order.order_items.includes(:order_item_modifiers, :combo, :order_discounts, menu_item: :category).to_a
 
       # ── Expo / Pick station ────────────────────────────────────────────────
       expo_printer = Printer.default_for("expo", location: @order.location)

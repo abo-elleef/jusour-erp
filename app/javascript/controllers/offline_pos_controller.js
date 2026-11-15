@@ -250,7 +250,7 @@ export default class extends Controller {
         <h2 class="font-semibold text-gray-900">${esc(this.t("cart_title"))}</h2>
         <button type="button" data-act="clear-cart" class="text-xs font-semibold text-gray-600 hover:text-gray-900 ${empty ? "invisible" : ""}">${esc(this.t("clear"))}</button>
       </div>
-      <div class="flex-1 min-h-0 overflow-y-auto">
+      <div class="flex-1 min-h-0 overflow-y-auto" data-cart-lines>
         ${empty ? `<p class="text-center text-sm text-gray-500 py-10 px-4">${esc(this.t("cart_empty"))}</p>` : lines.map((line) => this.lineHtml(line)).join("")}
       </div>
       <div class="px-3 py-3 space-y-2.5 shrink-0 bg-white border-t border-stone-200/80">
@@ -335,8 +335,11 @@ export default class extends Controller {
     const promo = line.promo_discount_cents ? `<p class="text-xs text-rose-700">${esc(line.promo_label || "")}</p>` : ""
     const round = "w-9 h-9 rounded-full border border-gray-200 bg-white text-lg leading-none hover:bg-gray-50"
 
+    const added = line.uid === this.addedUid
+    const rowClass = added ? "bg-amber-50 ring-2 ring-inset ring-amber-400" : "bg-white/60"
+
     return `
-      <div class="px-3 py-2.5 border-b border-stone-200/80 bg-white/60">
+      <div data-uid="${esc(line.uid)}" class="px-3 py-2.5 border-b border-stone-200/80 ${rowClass}">
         <div class="flex justify-between gap-2">
           <p class="font-semibold text-sm text-gray-900">${esc(line.name)}</p>
           <p class="text-sm tabular-nums text-gray-900">${formatMoney(lineTotal(line))}</p>
@@ -705,10 +708,11 @@ export default class extends Controller {
     const promo = this.promoFor(item, modifiers)
     const plain = modifiers.length === 0 && !notes
     const existing = plain && this.cart.lines.find((line) => line.menu_item_id === item.id && !line.notes && (line.modifiers || []).length === 0)
+    let added = existing
     if (existing) {
       existing.quantity += 1
     } else {
-      this.cart.lines.push({
+      added = {
         uid: uuid(),
         menu_item_id: item.id,
         combo_id: null,
@@ -722,24 +726,44 @@ export default class extends Controller {
         promo_label: promo?.label || null,
         promo_discount_cents: promo?.discount_cents || 0,
         routing_ids: [item.id]
-      })
+      }
+      this.cart.lines.push(added)
       this.sortCartLines(this.cart.lines)
     }
+    this.showAdded(added)
+  }
+
+  // Lines are sorted, so the one an add landed on can be anywhere: highlight it (until
+  // the next basket change) and scroll it to the middle of the basket — the same as
+  // the online register (cart_scroll_controller.js).
+  showAdded(line) {
+    this.addedUid = line.uid
     this.draw("cart")
+    const list = this.region("cart")?.querySelector("[data-cart-lines]")
+    const row = list?.querySelector(`[data-uid="${line.uid}"]`)
+    if (!list || !row) return
+    const offset = row.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop
+    list.scrollTop = Math.max(0, offset - (list.clientHeight - row.offsetHeight) / 2)
   }
 
   // The basket, the saved order and every print list lines in one order, like
-  // OrderItem.in_menu_order on the server: by menu category (the snapshot's category
-  // order), A→Z by name inside each, combos last. The sort is stable, so two lines
+  // OrderItem.in_menu_order on the server: offers first (a line priced by a promo, or
+  // a highlighted combo), then by menu category (the snapshot's category order),
+  // A→Z by name inside each, the other combos last. The sort is stable, so two lines
   // of the same item keep the order they were added in.
   sortCartLines(lines) {
-    const { items, categories } = this.snapshot.menu
+    const { items, categories, combos } = this.snapshot.menu
     const categoryRank = new Map(categories.map((category, index) => [category.id, index]))
     const itemCategory = new Map(items.map((item) => [item.id, item.category_id]))
+    const highlighted = new Set((combos || []).filter((combo) => combo.highlighted).map((combo) => combo.id))
+    // Groups: offers (-1) first like the register's rail, then each category, then
+    // categories missing from the snapshot, then the other combos.
     const key = (line) => {
-      if (line.combo_id) return [categories.length + 1, String(line.name || "").toLowerCase()]
+      const name = String(line.name || "").toLowerCase()
+      if (line.promo_id || highlighted.has(line.combo_id)) return [-1, name]
+      if (line.combo_id) return [categories.length + 1, name]
       const rank = categoryRank.get(itemCategory.get(line.menu_item_id))
-      return [rank === undefined ? categories.length : rank, String(line.name || "").toLowerCase()]
+      return [rank === undefined ? categories.length : rank, name]
     }
     lines.sort((a, b) => {
       const [rankA, nameA] = key(a)
@@ -754,10 +778,11 @@ export default class extends Controller {
     const combo = this.snapshot.menu.combos.find((candidate) => candidate.id === id)
     if (!combo) return
     const existing = this.cart.lines.find((line) => line.combo_id === combo.id)
+    let added = existing
     if (existing) {
       existing.quantity += 1
     } else {
-      this.cart.lines.push({
+      added = {
         uid: uuid(),
         menu_item_id: null,
         combo_id: combo.id,
@@ -771,21 +796,24 @@ export default class extends Controller {
         promo_label: null,
         promo_discount_cents: 0,
         routing_ids: combo.menu_item_ids
-      })
+      }
+      this.cart.lines.push(added)
       this.sortCartLines(this.cart.lines)
     }
-    this.draw("cart")
+    this.showAdded(added)
   }
 
   changeQuantity(uid, delta) {
     const line = this.cart.lines.find((candidate) => candidate.uid === uid)
     if (!line) return
     line.quantity = Math.max(1, line.quantity + delta)
+    this.addedUid = null
     this.draw("cart")
   }
 
   removeLine(uid) {
     this.cart.lines = this.cart.lines.filter((line) => line.uid !== uid)
+    this.addedUid = null
     this.draw("cart")
   }
 

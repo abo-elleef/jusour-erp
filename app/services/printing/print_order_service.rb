@@ -90,7 +90,7 @@ module Printing
     def ticket_items
       return @order_items if @order_items
 
-      @order.order_items.includes(:order_item_modifiers, :combo, menu_item: :category).to_a
+      @order.order_items.includes(:order_item_modifiers, :combo, :order_discounts, menu_item: :category).to_a
     end
 
     def production_title(printer)

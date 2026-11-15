@@ -19,9 +19,10 @@
       </div>
     <% end %>
     <%# Same order as the order pages and every print: by category, then name (OrderItem.in_menu_order). %>
-    <% newest_id = order.order_items.max_by { |line| [line.created_at || Time.current, line.id.to_s] }&.id %>
-    <% OrderItem.in_menu_order(order.order_items.includes(:combo, :order_item_modifiers, menu_item: :category)).each do |item| %>
-      <article class="<%= pos_cart_line_item_class %>"<%= " data-cart-newest" if item.id == newest_id %>>
+    <% OrderItem.in_menu_order(order.order_items.includes(:combo, :order_item_modifiers, :order_discounts, menu_item: :category)).each do |item| %>
+      <%# The line the last add landed on stays highlighted until the next basket change. %>
+      <% added = item.id == local_assigns[:added_item_id] %>
+      <article class="<%= pos_cart_line_item_class(added: added) %>"<%= " data-cart-added" if added %>>
         <div class="flex justify-between items-start gap-2">
           <h3 class="text-sm font-medium leading-snug text-stone-900 min-w-0"><%= item.display_name %></h3>
           <span class="shrink-0 text-sm font-medium text-stone-900 tabular-nums"><%= format_money(item.line_total_cents) %></span>

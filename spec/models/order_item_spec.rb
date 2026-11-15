@@ -30,6 +30,20 @@ RSpec.describe OrderItem do
         .to eq(["Beef", "Zinger", "Cola", "Water", "Fries", "Family box"])
     end
 
+    it "puts offer lines first, like the register's Offers tab" do
+      on_offer = line("Zinger", burgers)
+      on_offer.order_discounts.build(menu_promo_id: SecureRandom.uuid, amount_cents: 500, description: "Promo")
+      highlighted = combo_line("Family box")
+      allow(highlighted.combo).to receive(:highlighted_now?).and_return(true)
+      manual_discount = line("Beef", burgers)
+      manual_discount.order_discounts.build(amount_cents: 100, description: "Manager")
+
+      items = [line("Cola", drinks), manual_discount, combo_line("Party box"), on_offer, highlighted]
+
+      expect(described_class.in_menu_order(items).map(&:display_name))
+        .to eq(["Family box", "Zinger", "Beef", "Cola", "Party box"])
+    end
+
     it "keeps two lines of the same item in the order they were added" do
       first = line("Beef", burgers, created_at: Time.zone.parse("2026-11-15 12:00"))
       second = line("Beef", burgers, created_at: Time.zone.parse("2026-11-15 12:05"))
