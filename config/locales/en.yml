@@ -349,6 +349,13 @@ en:
       title: "No print jobs match"
       description: "Try a wider date range or another status."
   printers:
+    assigned:
+      title: "Assigned items"
+      hint: "Only these items print at this station, grouped by category."
+      none: "No items are assigned to this printer."
+      count:
+        one: "1 item"
+        other: "%{count} items"
     index:
       description: "Receipt, kitchen, and bar printers used across the restaurant."
     stats:
@@ -407,6 +414,10 @@ en:
       menu_items: "Menu items"
       menu_items_hint: "For kitchen and bar printers — only these items are printed at this station."
       menu_items_empty: "No menu items yet. Add items under Menu first."
+      menu_items_search: "Search items or categories…"
+      menu_items_select_all: "Select all in this category"
+      menu_items_selected: "%{count} selected"
+      menu_items_no_match: "No items match your search."
     empty:
       title: "No printers configured"
       description: "Add receipt and kitchen printers for your POS and KDS."

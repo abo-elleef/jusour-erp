@@ -101,6 +101,46 @@
     </dl>
   </section>
 
+  <% if @printer.production_station? || @assigned_item_groups.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("printers.assigned.title") %></h2>
+          <p class="text-xs text-gray-600 mt-0.5"><%= t("printers.assigned.hint") %></p>
+        </div>
+        <span class="text-xs font-semibold text-gray-600 whitespace-nowrap">
+          <%= t("printers.assigned.count", count: @assigned_item_groups.sum { |_, items| items.size }) %>
+        </span>
+      </div>
+      <% if @assigned_item_groups.any? %>
+        <div class="divide-y divide-gray-100">
+          <% @assigned_item_groups.each do |category, items| %>
+            <details open class="group">
+              <summary class="flex items-center justify-between gap-3 px-5 py-3 cursor-pointer select-none hover:bg-gray-50 list-none">
+                <span class="flex items-center gap-2">
+                  <svg class="w-3.5 h-3.5 text-gray-400 transition-transform group-open:rotate-90 rtl:-scale-x-100" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                  <%= link_to category.name, admin_category_path(category),
+                        class: "text-sm font-semibold text-amber-700 hover:text-amber-800" %>
+                </span>
+                <span class="text-xs font-semibold text-gray-500 tabular-nums"><%= items.size %></span>
+              </summary>
+              <ul class="flex flex-wrap gap-2 px-5 pb-4 ps-11">
+                <% items.each do |item| %>
+                  <li>
+                    <%= link_to item.name, edit_admin_menu_item_path(item),
+                          class: "inline-flex text-sm text-gray-800 bg-gray-50 hover:bg-amber-50 hover:text-amber-800 border border-gray-200 rounded-lg px-2.5 py-1 transition-colors" %>
+                  </li>
+                <% end %>
+              </ul>
+            </details>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="px-5 py-6 text-sm text-gray-500"><%= t("printers.assigned.none") %></p>
+      <% end %>
+    </section>
+  <% end %>
+
   <% if @printer.network? && Printing::Config.client_routing? %>
     <section class="rounded-2xl border border-indigo-200 bg-indigo-50/40 overflow-hidden mt-6">
       <div class="px-5 py-4 border-b border-indigo-100">

@@ -19,6 +19,7 @@ module Admin
     def show
       authorize @printer
       @recent_print_logs = @printer.print_logs.includes(:order).order(created_at: :desc).limit(10)
+      @assigned_item_groups = group_by_category(@printer.menu_items.includes(:category))
       return unless @printer.network? && Printing::Config.server_routing?
 
       @connection_check = Printing::Drivers::Network.check_connection(
@@ -116,9 +117,17 @@ module Admin
       )
     end
 
+    # [[category, items]] — categories in menu order, items A→Z within each.
+    def group_by_category(menu_items)
+      menu_items.to_a
+                .group_by(&:category)
+                .sort_by { |category, _| [category.position.to_i, category.name.to_s] }
+                .map { |category, items| [category, items.sort_by { |item| item.name.to_s }] }
+    end
+
     def load_form_data
       @locations = Location.active.branches.ordered
-      @menu_items = MenuItem.ordered.includes(:category)
+      @menu_item_groups = group_by_category(MenuItem.includes(:category))
       @printer.location ||= @locations.first if @printer.location_id.blank? && @locations.one?
     end
   end
