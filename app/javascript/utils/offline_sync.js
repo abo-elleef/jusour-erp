@@ -123,6 +123,8 @@ function orderPayload(order) {
     notes: order.notes,
     replaces_order_id: order.replaces_order_id || null,
     tendered_cents: order.tendered_cents,
+    payment_method: order.payment_method || "cash",
+    staff_meal_user_id: order.staff_meal_user_id || null,
     items: order.items.map((line) => ({
       menu_item_id: line.menu_item_id,
       combo_id: line.combo_id,

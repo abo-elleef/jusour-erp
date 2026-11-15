@@ -34,6 +34,26 @@ RSpec.describe Orders::OfflineSnapshotService do
     expect(code_for(stations[27])).to eq("AB")
   end
 
+  describe "staff meal" do
+    def snapshot
+      described_class.call(user: cashier, location: branch, workstation: nil, csrf_token: "t")
+    end
+
+    it "lists active staff and the treasury that pays, like the online payment popup" do
+      Treasury.create!(company: company, name: "Main safe", treasury_type: "safe", is_default: true,
+                       balance_cents: 0, opening_balance_cents: 0)
+
+      expect(snapshot[:staff_meal][:treasury_name]).to eq("Main safe")
+      expect(snapshot[:staff_meal][:staff]).to include({ id: cashier.id, name: cashier.name })
+    end
+
+    it "is left out when there is no treasury to pay from" do
+      cashier
+      Treasury.update_all(active: false)
+      expect(snapshot[:staff_meal]).to be_nil
+    end
+  end
+
   it "leaves the workstation out when none is chosen" do
     expect(described_class.call(user: cashier, location: branch, workstation: nil, csrf_token: "t")[:workstation]).to be_nil
   end

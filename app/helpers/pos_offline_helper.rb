@@ -12,6 +12,16 @@ module PosOfflineHelper
       order_notes: I18n.t("printing.receipt.order_notes"),
       fulfillment: I18n.t("order.fulfillment"),
       cash: I18n.t("payment.methods.cash"),
+      payment_methods: {
+        cash: I18n.t("payment.methods.cash"),
+        instapay: I18n.t("payment.methods.instapay"),
+        vodafone_cash: I18n.t("payment.methods.vodafone_cash"),
+        staff_deduction: I18n.t("payment.staff_meal")
+      },
+      staff_meal_member: I18n.t("payment.staff_meal_member"),
+      select_staff_member: I18n.t("payment.select_staff_member"),
+      staff_meal_amount: I18n.t("payment.staff_meal_amount"),
+      staff_meal_from_treasury: I18n.t("payment.staff_meal_from_treasury"),
       all: I18n.t("actions.all"),
       combos: I18n.t("pos.categories.combos"),
       categories: I18n.t("pos.categories.label"),

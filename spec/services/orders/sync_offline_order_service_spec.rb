@@ -136,6 +136,58 @@ RSpec.describe Orders::SyncOfflineOrderService do
     expect(order.payments.sole.cash_drawer_session).to eq(drawer)
   end
 
+  describe "payment method" do
+    it "records an order queued without a method as cash" do
+      order = described_class.call(user: cashier, payload: payload).order
+
+      expect(order.payments.sole.payment_method).to eq("cash")
+    end
+
+    %w[instapay vodafone_cash].each do |method|
+      it "records #{method} for exactly the total, whatever was tendered" do
+        order = described_class.call(user: cashier, payload: payload(payment_method: method, tendered_cents: 9999)).order
+
+        payment = order.payments.sole
+        expect(payment.payment_method).to eq(method)
+        expect(payment.amount_cents).to eq(order.total_cents)
+        expect(order).to be_fully_paid
+      end
+    end
+
+    it "records a staff meal against the staff member and the default treasury" do
+      treasury = Treasury.create!(company: company, name: "Main", treasury_type: "safe", is_default: true,
+                                  balance_cents: 100_000, opening_balance_cents: 100_000)
+      staff = create(:user, company: company, role: "cashier", email: "staff@example.com")
+
+      result = described_class.call(user: cashier, payload: payload(payment_method: "staff_deduction", staff_meal_user_id: staff.id))
+
+      expect(result).to be_success
+      order = result.order
+      payment = order.payments.sole
+      expect(payment.payment_method).to eq("staff_deduction")
+      expect(payment.amount_cents).to eq(order.total_cents)
+      expect(order.staff_meal_user).to eq(staff)
+      expect(treasury.reload.balance_cents).to eq(100_000 - order.total_cents)
+    end
+
+    it "refuses a staff meal with no staff member, keeping the order queued" do
+      Treasury.create!(company: company, name: "Main", treasury_type: "safe", is_default: true,
+                       balance_cents: 0, opening_balance_cents: 0)
+
+      result = described_class.call(user: cashier, payload: payload(payment_method: "staff_deduction"))
+
+      expect(result).not_to be_success
+      expect(Order.find_by(client_uuid: uuid)).to be_nil
+    end
+
+    it "refuses an unknown method" do
+      result = described_class.call(user: cashier, payload: payload(payment_method: "card"))
+
+      expect(result).not_to be_success
+      expect(Order.find_by(client_uuid: uuid)).to be_nil
+    end
+  end
+
   it "records, but does not refuse, a price that differs from the menu" do
     line = payload[:items].first.merge(unit_price_cents: 100)
 

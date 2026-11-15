@@ -425,9 +425,12 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   doc.separator()
 
   doc.text(r.payments)
-  doc.row(`  ${labels.cash}`, money(order.tendered_cents), { boldLabel: true })
+  // Orders saved before the register offered other methods carry none: cash.
+  const method = order.payment_method || "cash"
+  const methodLabel = labels.payment_methods?.[method] || labels.cash
+  doc.row(`  ${methodLabel}`, money(order.tendered_cents), { boldLabel: true })
   const change = order.tendered_cents - totals.total_cents
-  if (change > 0) doc.row(r.change, money(change))
+  if (method === "cash" && change > 0) doc.row(r.change, money(change))
   doc.separator()
 
   if (order.notes) {

@@ -414,27 +414,72 @@ export default class extends Controller {
       </div>`
   }
 
+  // The same methods as the online payment popup (pos/_payment_modal): cash,
+  // InstaPay, Vodafone Cash, and a staff meal when the snapshot has staff and a
+  // treasury to pay it from.
+  paymentMethods() {
+    const methods = ["cash", "instapay", "vodafone_cash"]
+    if (this.snapshot.staff_meal?.staff?.length) methods.push("staff_deduction")
+    return methods
+  }
+
+  methodLabel(method) {
+    return this.labelsValue.payment_methods?.[method] || method
+  }
+
   paymentModalHtml() {
     const total = this.cartTotals().total_cents
-    const rounded = [10, 50, 100, 200]
-      .map((step) => Math.ceil(total / (step * 100)) * step * 100)
-      .filter((value, index, all) => value > total && all.indexOf(value) === index)
-    const quick = [total, ...rounded]
-      .map((value) => `<button type="button" data-act="quick-cash" data-cents="${value}" class="${BTN_PLAIN} flex-1 tabular-nums">${formatMoney(value)}</button>`)
+    const method = this.modal.method || "cash"
+    const tabs = this.paymentMethods()
+      .map((value) => {
+        const active = value === method
+        return `<button type="button" data-act="pay-method" data-value="${value}" aria-pressed="${active}" class="${active ? BTN_DARK : BTN_PLAIN} !px-2 text-sm">${esc(this.methodLabel(value))}</button>`
+      })
       .join("")
 
     return `
       <div class="flex justify-between items-center mb-4">
-        <h3 class="text-xl font-bold tracking-tight">${esc(this.t("pay_cash"))}</h3>
+        <h3 class="text-xl font-bold tracking-tight">${esc(this.t("payment_title"))}</h3>
         <button type="button" data-act="close-modal" class="text-gray-500 hover:text-gray-900 text-2xl leading-none w-10 h-10 rounded-xl hover:bg-gray-100" aria-label="${esc(this.t("close"))}">×</button>
       </div>
       <p class="text-2xl font-bold text-green-700 mb-4 tabular-nums">${esc(this.t("total"))}: ${formatMoney(total)}</p>
-      <label class="block text-xs font-semibold text-gray-600 mb-1.5">${esc(this.t("cash_tendered"))}</label>
-      <input type="text" inputmode="decimal" data-field="tendered" value="${(total / 100).toFixed(2)}" class="${INPUT} text-2xl text-center min-h-14" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">
-      <div class="flex flex-wrap gap-2 mt-3">${quick}</div>
-      <p class="mt-3 text-sm text-gray-700">${esc(this.t("change_due"))}: <strong data-change-due class="tabular-nums">0.00</strong></p>
+      <div class="grid grid-cols-2 gap-2 mb-4">${tabs}</div>
+      ${this.paymentBodyHtml(method, total)}
       <p data-modal-error class="text-sm text-red-600 mt-2 hidden"></p>
       <button type="button" data-act="confirm-payment" class="w-full mt-4 ${BTN_ACCENT} !bg-green-700 hover:!bg-green-800">${esc(this.t("confirm_payment"))}</button>`
+  }
+
+  paymentBodyHtml(method, total) {
+    if (method === "cash") {
+      const rounded = [10, 50, 100, 200]
+        .map((step) => Math.ceil(total / (step * 100)) * step * 100)
+        .filter((value, index, all) => value > total && all.indexOf(value) === index)
+      const quick = [total, ...rounded]
+        .map((value) => `<button type="button" data-act="quick-cash" data-cents="${value}" class="${BTN_PLAIN} flex-1 tabular-nums">${formatMoney(value)}</button>`)
+        .join("")
+      return `
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">${esc(this.t("cash_tendered"))}</label>
+        <input type="text" inputmode="decimal" data-field="tendered" value="${(total / 100).toFixed(2)}" class="${INPUT} text-2xl text-center min-h-14" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">
+        <div class="flex flex-wrap gap-2 mt-3">${quick}</div>
+        <p class="mt-3 text-sm text-gray-700">${esc(this.t("change_due"))}: <strong data-change-due class="tabular-nums">0.00</strong></p>`
+    }
+
+    if (method === "staff_deduction") {
+      const { staff, treasury_name: treasury } = this.snapshot.staff_meal
+      const options = staff
+        .map((user) => `<option value="${user.id}" ${String(user.id) === String(this.modal.staffUserId) ? "selected" : ""}>${esc(user.name)}</option>`)
+        .join("")
+      return `
+        <label class="block text-xs font-semibold text-gray-600 mb-1.5">${esc(this.t("staff_meal_member"))}</label>
+        <select data-field="staff_meal_user_id" class="${INPUT} appearance-none w-full">
+          <option value="">${esc(this.t("select_staff_member"))}</option>${options}
+        </select>
+        <p class="mt-3 text-sm text-gray-600">${esc(this.t("staff_meal_amount"))}: <strong class="tabular-nums">${formatMoney(total)}</strong></p>
+        <p class="text-xs text-gray-500 mt-1">${esc(this.t("staff_meal_from_treasury", { name: treasury }))}</p>`
+    }
+
+    // InstaPay / Vodafone Cash: the transfer is for the total, no change.
+    return `<p class="text-sm text-gray-700">${esc(this.t("amount_to_receive"))}: <strong class="tabular-nums">${formatMoney(total)}</strong> · ${esc(this.methodLabel(method))}</p>`
   }
 
   ordersModalHtml() {
@@ -514,6 +559,7 @@ export default class extends Controller {
       case "clear-cart": this.forgetHandoff(); this.cart = this.emptyCart(); this.draw("cart"); break
       case "open-payment": this.openPayment(); break
       case "quick-cash": this.setTendered(parseInt(cents, 10)); break
+      case "pay-method": this.setPaymentMethod(value); break
       case "confirm-payment": this.confirmPayment(); break
       case "confirm-modifiers": this.confirmModifiers(); break
       case "close-modal": this.closeModal(); break
@@ -531,6 +577,7 @@ export default class extends Controller {
     if (field === "customer_phone") this.cart.customer_phone = event.target.value
     if (field === "delivery_address") this.cart.delivery_address = event.target.value
     if (field === "tendered") this.updateChangeDue()
+    if (field === "staff_meal_user_id" && this.modal) this.modal.staffUserId = event.target.value
   }
 
   // ── Cart ──────────────────────────────────────────────────────────────────
@@ -759,7 +806,14 @@ export default class extends Controller {
       this.toast(this.t("delivery_required"), "alert")
       return
     }
-    this.modal = { kind: "payment" }
+    this.modal = { kind: "payment", method: "cash", staffUserId: "" }
+    this.draw("modal")
+    this.updateChangeDue()
+  }
+
+  setPaymentMethod(method) {
+    if (!this.modal || this.modal.kind !== "payment" || !this.paymentMethods().includes(method)) return
+    this.modal.method = method
     this.draw("modal")
     this.updateChangeDue()
   }
@@ -793,16 +847,24 @@ export default class extends Controller {
 
   async confirmPayment() {
     const total = this.cartTotals().total_cents
-    const tendered = parseAmountToCents(this.tenderedInput().value)
+    const method = this.modal?.method || "cash"
     const error = this.region("modal").querySelector("[data-modal-error]")
-
-    if (tendered === null || tendered < total) {
-      error.textContent = this.t("not_enough")
+    const fail = (message) => {
+      error.textContent = message
       error.classList.remove("hidden")
-      return
     }
 
-    const order = await this.saveOrder(tendered)
+    let tendered = total
+    let staffMealUserId = null
+    if (method === "cash") {
+      tendered = parseAmountToCents(this.tenderedInput().value)
+      if (tendered === null || tendered < total) return fail(this.t("not_enough"))
+    } else if (method === "staff_deduction") {
+      staffMealUserId = this.modal.staffUserId
+      if (!staffMealUserId) return fail(this.t("staff_required"))
+    }
+
+    const order = await this.saveOrder(tendered, method, staffMealUserId)
     this.forgetHandoff()
     this.cart = this.emptyCart()
     this.modal = null
@@ -811,7 +873,7 @@ export default class extends Controller {
     this.enqueuePrint(order.client_uuid, "all")
   }
 
-  async saveOrder(tenderedCents) {
+  async saveOrder(tenderedCents, paymentMethod = "cash", staffMealUserId = null) {
     const now = new Date()
     const dayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
     const number = await nextCounter(dayKey)
@@ -839,6 +901,8 @@ export default class extends Controller {
       items: cart.lines.map(({ uid: _uid, ...line }) => line),
       totals: this.cartTotals(),
       tendered_cents: tenderedCents,
+      payment_method: paymentMethod,
+      staff_meal_user_id: staffMealUserId ? Number(staffMealUserId) : null,
       jobs: [],
       sync: { status: "queued" }
     }

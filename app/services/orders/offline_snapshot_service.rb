@@ -36,11 +36,24 @@ module Orders
         print: print_settings,
         menu: menu,
         tax_rates: tax_rates,
-        printers: printers
+        printers: printers,
+        staff_meal: staff_meal
       }
     end
 
     private
+
+    # Staff meals need someone to charge and a treasury to pay from; without
+    # either the online register hides the option, so the offline one does too.
+    def staff_meal
+      treasury = Treasury.default_treasury
+      return unless treasury
+
+      staff = User.active.order(:name).map { |user| { id: user.id, name: user.name } }
+      return if staff.empty?
+
+      { treasury_name: treasury.name, staff: staff }
+    end
 
     # A letter per register at the branch (A, B, C, ... then AA, AB, ...) so
     # offline order numbers from two registers never read the same in the

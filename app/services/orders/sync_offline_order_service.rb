@@ -19,6 +19,11 @@ module Orders
     # for an outage; anything outside it is stamped with the time it arrived.
     MAX_AGE = 3.days
 
+    # The offline register takes the same methods as the online one (see
+    # pos/_payment_modal). Orders queued before it knew about methods carry none,
+    # and those were all cash.
+    PAYMENT_METHODS = %w[cash instapay vodafone_cash staff_deduction].freeze
+
     def self.call(user:, payload:)
       new(user: user, payload: payload).call
     end
@@ -200,11 +205,17 @@ module Orders
     end
 
     def record_payment(order)
+      method = @payload[:payment_method].presence || "cash"
+      raise ArgumentError, "Unknown payment method: #{method}" unless PAYMENT_METHODS.include?(method)
+      return record_staff_meal(order) if method == "staff_deduction"
+
+      # Cash is recorded as handed over (change is given from it), the wallets
+      # take exactly the total.
       tendered = @payload[:tendered_cents].to_i
-      amount = tendered.positive? ? tendered : order.total_cents.to_i
+      amount = method == "cash" && tendered.positive? ? tendered : order.total_cents.to_i
 
       order.payments.create!(
-        payment_method: "cash",
+        payment_method: method,
         amount_cents: amount,
         tip_cents: 0,
         status: "completed",
@@ -212,6 +223,22 @@ module Orders
         cash_drawer_session: drawer_session,
         created_at: order.created_at
       )
+    end
+
+    # Same as the online register: the meal is charged to the staff member and
+    # paid from the default treasury, outside any drawer.
+    def record_staff_meal(order)
+      staff_user = User.find(@payload[:staff_meal_user_id])
+      treasury = Treasury.default_treasury
+      raise ArgumentError, "No default treasury configured" unless treasury
+
+      payment = Payments::StaffMealPaymentService.call(
+        order: order,
+        staff_meal_user: staff_user,
+        treasury: treasury,
+        processed_by: cashier
+      )
+      payment.update!(created_at: order.created_at)
     end
 
     def menu_item_for(line)

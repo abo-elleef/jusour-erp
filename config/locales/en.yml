@@ -3859,7 +3859,7 @@ en:
     offline_mode:
       title: "Jusour POS — Offline"
       loading: "Loading offline register…"
-      banner: "No internet — offline mode. Cash only. Orders and printing keep working and sync when the connection returns."
+      banner: "No internet — offline mode. Orders and printing keep working and sync when the connection returns."
       back_online: "Internet is back."
       back_to_pos: "Back to POS"
       no_snapshot: "The offline register has not been prepared on this computer yet. Open the POS while online once, then try again."
@@ -3884,6 +3884,9 @@ en:
       total: "Total"
       charge: "Charge %{amount}"
       pay_cash: "Pay cash"
+      payment_title: "Take payment"
+      amount_to_receive: "Amount received"
+      staff_required: "Choose the staff member."
       cash_tendered: "Cash received"
       change_due: "Change due"
       not_enough: "Cash received is less than the total."
