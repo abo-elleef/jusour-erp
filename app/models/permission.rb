@@ -53,6 +53,8 @@ module Permission
     { key: "leads:manage",            group: "sales" },
     { key: "leads:reports",           group: "sales" },
     { key: "sales:confirm_payments",  group: "sales" },
+    { key: "sales:dispatch",          group: "sales" },
+    { key: "sales:complete_shipping", group: "sales" },
     { key: "storefront:manage",       group: "sales" }
   ].freeze
 
@@ -81,7 +83,7 @@ module Permission
         attendance:log attendance:view attendance:penalties attendance:waive_penalties attendance:audit staff:view locations:manage printers:manage
         pos:access kitchen:access production:access
         leads:view leads:manage leads:reports sales:confirm_payments
-        storefront:manage
+        sales:dispatch sales:complete_shipping storefront:manage
       ]
     },
     "sub_manager" => {
@@ -92,7 +94,7 @@ module Permission
         dashboard:view orders:view menu:manage customers:manage inventory:view
         accounting:day_close
         attendance:log attendance:view pos:access kitchen:access
-        leads:view leads:manage sales:confirm_payments
+        leads:view leads:manage sales:confirm_payments sales:dispatch
       ]
     },
     "accountant" => {

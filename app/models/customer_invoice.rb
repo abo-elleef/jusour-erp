@@ -20,6 +20,16 @@ class CustomerInvoice < ApplicationRecord
   STATUSES = %w[draft pending_payment_confirmation confirmed historical void].freeze
   PAYMENT_STATUSES = %w[unpaid partially_paid paid].freeze
   FULFILLMENT_METHODS = %w[pickup delivery].freeze
+  # A delivery's own track, separate from payment (status) — nil for pickup:
+  #   waiting_for_shipping (confirmed) → shipped (handed to the courier, at
+  #   dispatch) → shipping_completed (the courier's system shows it delivered;
+  #   marked by whoever holds sales:complete_shipping). Completion moves no money.
+  SHIPPING_STATUSES = %w[waiting_for_shipping shipped shipping_completed].freeze
+  # Where an invoice is in its life, as one value: the status, except that a
+  # confirmed delivery is described by its shipping step and a confirmed pickup
+  # is just "confirmed". Drives the owner's role × stage grid (Sales::StageAccess).
+  STAGES = %w[draft pending_payment_confirmation confirmed waiting_for_shipping shipped
+              shipping_completed void historical].freeze
 
   # How the sale is settled.
   #   on_account        — the credit sale this module was built for; raises a receivable.
@@ -49,6 +59,7 @@ class CustomerInvoice < ApplicationRecord
   belongs_to :shipping_company, optional: true
   # Required when payment_method is "online" — which configured method/treasury was used.
   belongs_to :sales_payment_method, class_name: "Sales::PaymentMethod", optional: true
+  belongs_to :shipping_completed_by, class_name: "User", optional: true
 
   # Evidence of payment — an InstaPay/bank-transfer screenshot, mainly. Mirrors
   # VendorInvoice#invoice_image: one attachment, replace to change, no delete.
@@ -75,6 +86,7 @@ class CustomerInvoice < ApplicationRecord
   validates :payment_status, inclusion: { in: PAYMENT_STATUSES }
   validates :payment_method, inclusion: { in: PAYMENT_METHODS }
   validates :fulfillment_method, inclusion: { in: FULFILLMENT_METHODS }
+  validates :shipping_status, inclusion: { in: SHIPPING_STATUSES }, allow_nil: true
   validates :invoice_number, presence: true,
     uniqueness: { scope: :company_id, case_sensitive: false }
   validates :delivery_fee_cents, numericality: { greater_than_or_equal_to: 0 }
@@ -87,6 +99,8 @@ class CustomerInvoice < ApplicationRecord
   before_validation :default_blank_delivery_fees
   before_validation :zero_delivery_fees_for_pickup
   before_save :recalculate_total
+  before_save :start_shipping_track
+  after_commit :notify_stage_entered, on: %i[create update]
 
   scope :draft, -> { where(status: "draft") }
   scope :pending_payment_confirmation, -> { where(status: "pending_payment_confirmation") }
@@ -99,6 +113,19 @@ class CustomerInvoice < ApplicationRecord
   scope :realized, -> { where(status: %w[confirmed historical]) }
   scope :outstanding, -> { where(status: "confirmed", payment_status: %w[unpaid partially_paid]) }
   scope :recent, -> { order(invoice_date: :desc, created_at: :desc) }
+  scope :waiting_for_shipping, -> { where(shipping_status: "waiting_for_shipping") }
+
+  # Invoices at any of the given STAGES (see #stage).
+  def self.in_stages(stages)
+    stages = Array(stages).map(&:to_s) & STAGES
+    return none if stages.empty?
+
+    relation = where(status: stages & %w[draft pending_payment_confirmation void historical])
+    shipping = stages & SHIPPING_STATUSES
+    relation = relation.or(where(status: "confirmed", shipping_status: shipping)) if shipping.any?
+    relation = relation.or(where(status: "confirmed", shipping_status: nil)) if stages.include?("confirmed")
+    relation
+  end
 
   # "SI-<year>-<sequence>", company-wide, resetting each year — same scheme as
   # vendor invoices (VI-) and journal entries.
@@ -141,6 +168,13 @@ class CustomerInvoice < ApplicationRecord
   def delivery? = fulfillment_method == "delivery"
   def pickup?   = fulfillment_method == "pickup"
   def dispatched? = dispatched_at.present?
+  def waiting_for_shipping? = shipping_status == "waiting_for_shipping"
+  def shipped?              = shipping_status == "shipped"
+  def shipping_completed?   = shipping_status == "shipping_completed"
+
+  def stage
+    confirmed? && shipping_status.present? ? shipping_status : status
+  end
 
   def subtotal_cents
     customer_invoice_lines.reject(&:marked_for_destruction?).sum(&:line_total_cents)
@@ -179,6 +213,34 @@ class CustomerInvoice < ApplicationRecord
   end
 
   private
+
+  # Tell the roles that asked (owner's role × stage grid) when an invoice
+  # reaches a new stage. Runs after commit so a rolled-back confirm notifies
+  # nobody.
+  def notify_stage_entered
+    previous_status = saved_changes.key?("status") ? saved_changes["status"].first : status
+    previous_shipping = saved_changes.key?("shipping_status") ? saved_changes["shipping_status"].first : shipping_status
+    previous_stage = if previously_new_record?
+                       nil
+                     elsif previous_status == "confirmed" && previous_shipping.present?
+                       previous_shipping
+                     else
+                       previous_status
+                     end
+    return if previous_stage == stage
+
+    Sales::StageVisibility.notify_stage_entered(self, stage, actor: Current.user)
+  end
+
+  # Every path into "confirmed" (on account, cash, COD, an approved online
+  # payment) starts a delivery's shipping track here, so no confirm branch can
+  # forget it. Pickup never gets one.
+  def start_shipping_track
+    return unless delivery? && shipping_status.nil?
+    return unless will_save_change_to_status?(to: "confirmed")
+
+    self.shipping_status = "waiting_for_shipping"
+  end
 
   def default_salesperson
     self.salesperson ||= user

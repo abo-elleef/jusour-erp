@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_14_150200) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_14_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -338,6 +338,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150200) do
     t.uuid "sales_payment_method_id"
     t.integer "delivery_fee_cents", default: 0, null: false
     t.integer "standard_delivery_fee_cents", default: 0, null: false
+    t.string "shipping_status"
+    t.datetime "shipping_completed_at"
+    t.uuid "shipping_completed_by_id"
     t.index ["company_id", "fulfillment_method"], name: "index_customer_invoices_on_company_id_and_fulfillment_method"
     t.index ["company_id", "invoice_number"], name: "index_customer_invoices_on_company_id_and_invoice_number", unique: true
     t.index ["company_id", "legacy_number"], name: "index_customer_invoices_on_company_id_and_legacy_number", unique: true, where: "(legacy_number IS NOT NULL)"
@@ -351,6 +354,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150200) do
     t.index ["shipping_company_id"], name: "index_customer_invoices_on_shipping_company_id"
     t.index ["treasury_id"], name: "index_customer_invoices_on_treasury_id"
     t.index ["user_id"], name: "index_customer_invoices_on_user_id"
+    t.index ["company_id", "shipping_status"], name: "index_customer_invoices_on_company_id_and_shipping_status"
+    t.index ["shipping_completed_by_id"], name: "index_customer_invoices_on_shipping_completed_by_id"
   end
 
   create_table "customers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -1409,6 +1414,18 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150200) do
     t.index ["company_id"], name: "index_roles_on_company_id"
   end
 
+  create_table "sales_payment_method_approvers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "sales_payment_method_id", null: false
+    t.uuid "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_sales_payment_method_approvers_on_company_id"
+    t.index ["sales_payment_method_id", "user_id"], name: "index_sales_pm_approvers_on_method_and_user", unique: true
+    t.index ["sales_payment_method_id"], name: "index_sales_pm_approvers_on_payment_method_id"
+    t.index ["user_id"], name: "index_sales_payment_method_approvers_on_user_id"
+  end
+
   create_table "sales_payment_methods", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "company_id", null: false
     t.string "name", null: false
@@ -1420,6 +1437,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150200) do
     t.index ["company_id", "name"], name: "index_sales_payment_methods_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_sales_payment_methods_on_company_id"
     t.index ["treasury_id"], name: "index_sales_payment_methods_on_treasury_id"
+  end
+
+  create_table "sales_stage_accesses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "role_id", null: false
+    t.string "stage", null: false
+    t.boolean "can_see", default: true, null: false
+    t.boolean "notify", default: false, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_sales_stage_accesses_on_company_id"
+    t.index ["role_id", "stage"], name: "index_sales_stage_accesses_on_role_id_and_stage", unique: true
+    t.index ["role_id"], name: "index_sales_stage_accesses_on_role_id"
   end
 
   create_table "shift_logs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2160,6 +2190,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150200) do
   add_foreign_key "combos", "companies"
   add_foreign_key "company_settings", "companies"
   add_foreign_key "customer_addresses", "customers"
+  add_foreign_key "customer_invoices", "users", column: "shipping_completed_by_id"
   add_foreign_key "customer_invoices", "treasuries"
   add_foreign_key "customers", "companies"
   add_foreign_key "customers", "users", column: "blocked_by_id"
@@ -2306,7 +2337,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_14_150200) do
   add_foreign_key "recipes", "ingredients"
   add_foreign_key "recipes", "menu_items"
   add_foreign_key "recipes", "units"
+  add_foreign_key "sales_payment_method_approvers", "companies"
+  add_foreign_key "sales_payment_method_approvers", "sales_payment_methods"
+  add_foreign_key "sales_payment_method_approvers", "users"
   add_foreign_key "sales_payment_methods", "companies"
+  add_foreign_key "sales_stage_accesses", "companies"
+  add_foreign_key "sales_stage_accesses", "roles"
   add_foreign_key "shift_logs", "companies"
   add_foreign_key "shift_logs", "users"
   add_foreign_key "shipping_companies", "companies"

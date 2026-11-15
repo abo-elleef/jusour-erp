@@ -27,8 +27,8 @@
             <%= link_to @invoice.shipping_company.name, admin_sales_shipping_company_path(@invoice.shipping_company),
                   class: "font-medium text-gray-700 #{header_link_class}" %>
           <% end %>
-          <% if @invoice.cash_on_delivery? %>
-            — <%= @invoice.dispatched? ? t("sales.customer_invoices.show.dispatched_at", date: l(@invoice.dispatched_at, format: :long)) : t("sales.customer_invoices.show.not_dispatched") %>
+          <% if @invoice.shipping_status.present? %>
+            <span class="ms-1"><%= render "shipping_badge", invoice: @invoice %></span>
           <% end %>
         <% end %>
       </p>
@@ -77,7 +77,7 @@
               method: :patch,
               class: "text-sm font-semibold text-red-600 hover:bg-red-50 px-4 py-2.5 rounded-xl border border-red-200 transition-colors",
               form: { data: { turbo_confirm: t("sales.customer_invoices.show.void_prompt") } } %>
-        <% if current_user.can?("sales:confirm_payments") %>
+        <% if ::Sales::PaymentApproval.can_approve?(current_user, @invoice) %>
           <%= button_to t("sales.customer_invoices.show.reject"), reject_payment_admin_sales_customer_invoice_path(@invoice),
                 method: :post,
                 class: "bg-white hover:bg-gray-50 text-gray-700 text-sm font-semibold px-4 py-2.5 rounded-xl border border-gray-300",
@@ -98,10 +98,39 @@
               t("sales.customer_invoices.show.cod_awaiting_dispatch_hint", amount: format_money(@invoice.total_cents)) :
               t("sales.customer_invoices.show.not_dispatched") %>
       </p>
-      <%= button_to t("sales.customer_invoices.show.dispatch"), mark_dispatched_admin_sales_customer_invoice_path(@invoice),
-            method: :post,
-            class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm",
-            form: { data: { turbo_confirm: t("sales.customer_invoices.show.dispatch_prompt") } } %>
+      <% if current_user.can?("sales:dispatch") %>
+        <%= button_to t("sales.customer_invoices.show.dispatch"), mark_dispatched_admin_sales_customer_invoice_path(@invoice),
+              method: :post,
+              class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm",
+              form: { data: { turbo_confirm: t("sales.customer_invoices.show.dispatch_prompt") } } %>
+      <% else %>
+        <p class="text-xs text-amber-800"><%= t("sales.customer_invoices.show.dispatch_needs_permission") %></p>
+      <% end %>
+    </div>
+  <%# With the courier: whoever checks the courier's system marks it delivered.
+      No money moves here — the courier's balance settled at dispatch. %>
+  <% elsif @invoice.confirmed? && @invoice.shipped? %>
+    <div class="rounded-2xl border border-blue-200 bg-blue-50/50 px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3">
+      <p class="text-sm text-blue-900">
+        <%= t("sales.customer_invoices.show.shipped_hint",
+              shipping_company: @invoice.shipping_company&.name,
+              date: l(@invoice.dispatched_at, format: :long)) %>
+      </p>
+      <% if current_user.can?("sales:complete_shipping") %>
+        <%= button_to t("sales.customer_invoices.show.complete_shipping"), complete_shipping_admin_sales_customer_invoice_path(@invoice),
+              method: :post,
+              class: "bg-blue-700 hover:bg-blue-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm",
+              form: { data: { turbo_confirm: t("sales.customer_invoices.show.complete_shipping_prompt") } } %>
+      <% end %>
+    </div>
+  <% elsif @invoice.confirmed? && @invoice.shipping_completed? %>
+    <div class="rounded-2xl border border-green-200 bg-green-50/60 px-5 py-4 mb-6">
+      <p class="text-sm text-green-900">
+        <% completer = @invoice.shipping_completed_by %>
+        <%= t("sales.customer_invoices.show.shipping_completed_hint",
+              name: completer&.name || "—",
+              date: l(@invoice.shipping_completed_at, format: :long)) %>
+      </p>
     </div>
   <%# Imported history: a completed sale from the previous system, with no balance
       of its own to settle here. %>

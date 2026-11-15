@@ -8,8 +8,10 @@ module Sales
   # hardcoded role list would silently drift from "whoever can actually
   # approve" the moment it's customized.
   class NotifyService
+    # The method's own approvers when it has any, else every holder of
+    # sales:confirm_payments — the rule lives in Sales::PaymentApproval.
     def self.deliver_payment_pending(invoice)
-      recipients_for("sales:confirm_payments").find_each do |user|
+      Sales::PaymentApproval.approvers_for(invoice).find_each do |user|
         Notification.create!(
           recipient: user, company: invoice.company, notification_type: "sales",
           # customer_invoice_id lives in both places on purpose: top-level is

@@ -52,6 +52,7 @@
               <th class="p-3 ps-5"><%= sort_header_link(t("sales.payment_methods.table.name"), :name, **sort_opts) %></th>
               <th class="p-3"><%= t("sales.payment_methods.table.treasury") %></th>
               <th class="p-3"><%= sort_header_link(t("sales.payment_methods.table.settlement"), :requires_approval, **sort_opts) %></th>
+              <th class="p-3"><%= t("sales.payment_methods.table.approvers") %></th>
               <th class="p-3"><%= sort_header_link(t("sales.payment_methods.table.status"), :active, **sort_opts) %></th>
               <th class="p-3 pe-5 text-end"><%= t("sales.payment_methods.table.actions") %></th>
             </tr>
@@ -63,6 +64,15 @@
                 <td class="p-3 text-gray-700"><%= link_to payment_method.treasury.name, admin_accounting_treasury_path(payment_method.treasury), class: "hover:underline" %></td>
                 <td class="p-3 text-gray-700">
                   <%= payment_method.requires_approval? ? t("sales.payment_methods.needs_approval") : t("sales.payment_methods.settles_on_confirm") %>
+                </td>
+                <td class="p-3 text-gray-700">
+                  <% if !payment_method.requires_approval? %>
+                    <span class="text-gray-400">—</span>
+                  <% elsif (approvers = payment_method.approvers.select(&:active?)).any? %>
+                    <%= safe_join(approvers.map { |u| link_to(u.name, admin_user_path(u), class: "hover:underline") }, "، ") %>
+                  <% else %>
+                    <span class="text-gray-500"><%= t("sales.payment_methods.any_approver") %></span>
+                  <% end %>
                 </td>
                 <td class="p-3">
                   <% if payment_method.active? %>

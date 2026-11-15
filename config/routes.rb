@@ -189,11 +189,13 @@ Rails.application.routes.draw do
           post :approve_payment
           post :reject_payment
           post :mark_dispatched
+          post :complete_shipping
           patch :void
           patch :attach_payment_proof_image
         end
       end
       resources :payment_methods, controller: "payment_methods", except: %i[show]
+      resource :stage_access, only: %i[show update]
       resources :credit_notes, only: %i[index new create show] do
         member do
           post :confirm

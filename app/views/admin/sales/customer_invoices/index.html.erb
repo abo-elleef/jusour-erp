@@ -21,13 +21,20 @@
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.customer_invoices.stats.drafts") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @draft_count %></p>
     </div>
+    <%= link_to admin_sales_customer_invoices_path(status: "confirmed", shipping: "waiting_for_shipping"),
+          class: "bg-white rounded-2xl border border-gray-200 p-4 hover:border-amber-300 transition-colors" do %>
+      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.customer_invoices.stats.waiting_for_shipping") %></p>
+      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @waiting_for_shipping_count %></p>
+    <% end %>
   </div>
 
   <% filter_params = { customer_id: @customer&.id, from_date: @from_date&.iso8601, to_date: @to_date&.iso8601 }.compact %>
+  <% status_params = { status: @status, shipping: @shipping }.compact %>
   <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
   <section class="rounded-2xl border border-gray-200 bg-white p-4 mb-4">
     <%= form_with url: admin_sales_customer_invoices_path, method: :get, class: "flex flex-wrap items-end gap-4" do |f| %>
       <%= hidden_field_tag :status, @status if @status %>
+      <%= hidden_field_tag :shipping, @shipping if @shipping %>
       <div class="min-w-[16rem] flex-1 max-w-sm" data-searchable-select-options="<%= customer_search_options(@customers) %>">
         <%= label_tag :customer_id, t("sales.customer_invoices.table.customer"), class: label_class %>
         <%= render "shared/searchable_select",
@@ -47,7 +54,7 @@
       <%= submit_tag t("sales.customer_invoices.filters.apply"), name: nil,
             class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
       <% if filter_params.any? %>
-        <%= link_to t("sales.customer_invoices.filters.clear"), admin_sales_customer_invoices_path(status: @status),
+        <%= link_to t("sales.customer_invoices.filters.clear"), admin_sales_customer_invoices_path(**status_params),
               class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-2 py-2.5" %>
       <% end %>
     <% end %>
@@ -58,8 +65,18 @@
     <% [[nil, "all"], ["draft", "draft"], ["pending_payment_confirmation", "pending_payment_confirmation"],
         ["confirmed", "confirmed"], ["historical", "historical"], ["void", "void"]].each do |val, key| %>
       <%= link_to t("sales.customer_invoices.statuses.#{key}"),
-            admin_sales_customer_invoices_path(**filter_params, status: val),
+            admin_sales_customer_invoices_path(**filter_params, status: val, shipping: @shipping),
             class: "px-3 py-1.5 rounded-lg font-medium border transition-colors #{@status == val ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" %>
+    <% end %>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-2 text-sm mb-4">
+    <span class="text-gray-500 me-1"><%= t("sales.customer_invoices.filters.shipping") %>:</span>
+    <% [[nil, t("sales.customer_invoices.filters.all_shipping")],
+        *CustomerInvoice::SHIPPING_STATUSES.map { |s| [s, t("sales.customer_invoices.shipping_statuses.#{s}")] }].each do |val, label| %>
+      <%= link_to label,
+            admin_sales_customer_invoices_path(**filter_params, status: @status, shipping: val),
+            class: "px-3 py-1.5 rounded-lg font-medium border transition-colors #{@shipping == val ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" %>
     <% end %>
   </div>
 
@@ -73,6 +90,7 @@
               <th class="p-3"><%= t("sales.customer_invoices.table.customer") %></th>
               <th class="p-3"><%= t("sales.customer_invoices.table.date") %></th>
               <th class="p-3"><%= t("sales.customer_invoices.table.status") %></th>
+              <th class="p-3"><%= t("sales.customer_invoices.table.shipping") %></th>
               <th class="p-3 text-end"><%= t("sales.customer_invoices.table.total") %></th>
               <th class="p-3 text-end pe-5"><%= t("sales.customer_invoices.table.balance") %></th>
             </tr>
@@ -90,6 +108,7 @@
                 </td>
                 <td class="p-3 text-gray-600 tabular-nums"><%= l(inv.invoice_date, format: :long) %></td>
                 <td class="p-3"><%= render "status_badge", invoice: inv %></td>
+                <td class="p-3"><%= render "shipping_badge", invoice: inv %></td>
                 <td class="p-3 text-end tabular-nums text-gray-700"><%= format_money(inv.total_cents) %></td>
                 <td class="p-3 text-end pe-5 tabular-nums font-semibold <%= inv.balance_due_cents.positive? && !inv.historical? ? 'text-amber-700' : 'text-gray-400' %>">
                   <%= inv.historical? ? "—" : format_money(inv.balance_due_cents) %>

@@ -1,0 +1,10 @@
+<%# locals: invoice — a delivery's shipping track; renders nothing for pickup. %>
+<% if invoice.shipping_status.present? %>
+  <% chip = "text-xs font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap" %>
+  <% classes = { "waiting_for_shipping" => "bg-amber-50 text-amber-800 border-amber-200",
+                 "shipped" => "bg-blue-50 text-blue-800 border-blue-200",
+                 "shipping_completed" => "bg-green-100 text-green-800 border-green-200" } %>
+  <span class="<%= chip %> <%= classes[invoice.shipping_status] %>">
+    <%= t("sales.customer_invoices.shipping_statuses.#{invoice.shipping_status}") %>
+  </span>
+<% end %>

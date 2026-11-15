@@ -15,6 +15,11 @@ module Sales
 
     belongs_to :treasury
     has_many :customer_invoices, dependent: :restrict_with_error
+    # Who approves payments by this method; empty = anyone with
+    # sales:confirm_payments (see Sales::PaymentApproval).
+    has_many :approver_links, class_name: "Sales::PaymentMethodApprover",
+      foreign_key: :sales_payment_method_id, inverse_of: :sales_payment_method, dependent: :destroy
+    has_many :approvers, through: :approver_links, source: :user
 
     INDEX_SORTABLE_COLUMNS = %w[name active requires_approval created_at].freeze
     INDEX_DEFAULT_SORT = "name"

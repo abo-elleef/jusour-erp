@@ -3,14 +3,20 @@
 module Admin
   module Sales
     class CustomerInvoicesController < BaseController
-      before_action :set_invoice, only: %i[show edit update confirm approve_payment reject_payment mark_dispatched void attach_payment_proof_image]
+      before_action :set_invoice, only: %i[show edit update confirm approve_payment reject_payment mark_dispatched complete_shipping void attach_payment_proof_image]
+      before_action :require_stage_visible, only: %i[show edit update]
       before_action :require_draft_for_edit, only: %i[edit update]
-      before_action :require_confirm_payments_access, only: %i[approve_payment reject_payment]
+      before_action :require_payment_approver, only: %i[approve_payment reject_payment]
+      before_action -> { require_sales_permission("sales:dispatch") }, only: :mark_dispatched
+      before_action -> { require_sales_permission("sales:complete_shipping") }, only: :complete_shipping
 
       def index
         @status = params[:status].presence_in(%w[draft pending_payment_confirmation confirmed historical void])
-        scope = CustomerInvoice.recent.includes(:customer, :location)
+        @shipping = params[:shipping].presence_in(CustomerInvoice::SHIPPING_STATUSES)
+        visible = ::Sales::StageVisibility.scope_for(current_user)
+        scope = visible.recent.includes(:customer, :location)
         scope = scope.where(status: @status) if @status
+        scope = scope.where(shipping_status: @shipping) if @shipping
         @customer = Customer.find_by(id: params[:customer_id]) if params[:customer_id].present?
         scope = scope.where(customer: @customer) if @customer
         @from_date = parse_filter_date(params[:from_date])
@@ -19,9 +25,10 @@ module Admin
         scope = scope.where(invoice_date: ..@to_date) if @to_date
         @customers = Customer.order(:name)
         @pagy, @invoices = pagy(:offset, scope, limit: 50)
-        @draft_count = CustomerInvoice.draft.count
-        @pending_confirmation_count = CustomerInvoice.pending_payment_confirmation.count
-        @outstanding_cents = CustomerInvoice.outstanding.sum(Arel.sql("total_cents - amount_paid_cents"))
+        @draft_count = visible.draft.count
+        @pending_confirmation_count = visible.pending_payment_confirmation.count
+        @waiting_for_shipping_count = visible.confirmed.waiting_for_shipping.count
+        @outstanding_cents = visible.outstanding.sum(Arel.sql("total_cents - amount_paid_cents"))
       end
 
       def new
@@ -91,16 +98,14 @@ module Admin
         end
 
         @invoice.update!(status: "draft")
-        redirect_to admin_sales_customer_invoice_path(@invoice),
-          notice: t("sales.customer_invoices.flash.payment_rejected")
+        redirect_after_change(@invoice, notice: t("sales.customer_invoices.flash.payment_rejected"))
       end
 
       # "dispatch" is reserved by ActionController::Metal (the core method that
       # invokes an action) — naming this action that would shadow it.
       def mark_dispatched
         ::Sales::DispatchCustomerInvoiceService.new(@invoice, current_user).call
-        redirect_to admin_sales_customer_invoice_path(@invoice),
-          notice: t("sales.customer_invoices.flash.dispatched")
+        redirect_after_change(@invoice, notice: t("sales.customer_invoices.flash.dispatched"))
       rescue ::Sales::DispatchCustomerInvoiceService::Error => e
         redirect_to admin_sales_customer_invoice_path(@invoice), alert: e.message
       # Anything else (e.g. a ledger/journal failure) would otherwise 422 and look
@@ -110,6 +115,14 @@ module Admin
         Rails.logger.error("[DispatchCustomerInvoice] #{e.class}: #{e.message}")
         redirect_to admin_sales_customer_invoice_path(@invoice),
           alert: t("sales.customer_invoices.flash.dispatch_failed", error: e.message)
+      end
+
+      # The courier's system shows the order delivered. No money moves.
+      def complete_shipping
+        ::Sales::CompleteShippingService.new(@invoice, current_user).call
+        redirect_after_change(@invoice, notice: t("sales.customer_invoices.flash.shipping_completed"))
+      rescue ::Sales::CompleteShippingService::Error => e
+        redirect_to admin_sales_customer_invoice_path(@invoice), alert: e.message
       end
 
       # A draft (including one bounced back here by reject_payment) or a still-
@@ -157,8 +170,7 @@ module Admin
               else
                 "confirmed"
               end
-        redirect_to admin_sales_customer_invoice_path(result.invoice),
-          notice: t("sales.customer_invoices.flash.#{key}")
+        redirect_after_change(result.invoice, notice: t("sales.customer_invoices.flash.#{key}"))
       rescue ::Sales::ConfirmCustomerInvoiceService::CreditBlocked => e
         redirect_to admin_sales_customer_invoice_path(@invoice || CustomerInvoice.find(params[:id])), alert: e.message
       rescue ::Sales::ConfirmCustomerInvoiceService::Error => e
@@ -175,6 +187,20 @@ module Admin
         @invoice = CustomerInvoice.find(params[:id])
       end
 
+      # After an action moves an invoice to a stage this user's role can't see
+      # (e.g. a wallet holder approves a payment and it goes on to shipping),
+      # land them back on their list with the success message rather than on a
+      # page that would refuse them.
+      def redirect_after_change(invoice, notice:)
+        if ::Sales::StageVisibility.can_see?(current_user, invoice.reload)
+          redirect_to admin_sales_customer_invoice_path(invoice), notice: notice
+        elsif ::Sales::PaymentApproval.approver_anywhere?(current_user)
+          redirect_to admin_sales_customer_invoices_path(status: "pending_payment_confirmation"), notice: notice
+        else
+          redirect_to admin_sales_customer_invoices_path, notice: notice
+        end
+      end
+
       def parse_filter_date(value)
         Date.iso8601(value) if value.present?
       rescue Date::Error
@@ -187,11 +213,29 @@ module Admin
         redirect_to admin_sales_customer_invoice_path(@invoice), alert: t("sales.customer_invoices.errors.not_draft_for_edit")
       end
 
-      def require_confirm_payments_access
-        return if current_user.can?("sales:confirm_payments")
+      # The method's own approvers when it has any, else sales:confirm_payments
+      # (Sales::PaymentApproval). The owner can always approve.
+      # The owner's role × stage grid (Sales::StageVisibility) — your own
+      # invoices and approvals you're responsible for always stay visible.
+      def require_stage_visible
+        return if ::Sales::StageVisibility.can_see?(current_user, @invoice)
 
         flash[:alert] = t("flash.access_denied")
         redirect_to admin_sales_customer_invoices_path
+      end
+
+      def require_payment_approver
+        return if ::Sales::PaymentApproval.can_approve?(current_user, @invoice)
+
+        flash[:alert] = t("flash.access_denied")
+        redirect_to admin_sales_customer_invoice_path(@invoice)
+      end
+
+      def require_sales_permission(key)
+        return if current_user.can?(key)
+
+        flash[:alert] = t("flash.access_denied")
+        redirect_to(@invoice ? admin_sales_customer_invoice_path(@invoice) : admin_sales_customer_invoices_path)
       end
 
       def load_form_data
