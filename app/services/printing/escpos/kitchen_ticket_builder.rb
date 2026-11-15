@@ -43,7 +43,7 @@ module Printing
         doc.bold(false)
         compose_issued_by(doc, cashier: @order.user&.name.to_s, station: @order.workstation&.name.to_s)
 
-        items = @order.order_items.includes(:order_item_modifiers, :menu_item, :combo)
+        items = @order.order_items.includes(:order_item_modifiers, :combo, menu_item: :category)
         compose_items_table(doc, items)
 
         if @order.notes.present?

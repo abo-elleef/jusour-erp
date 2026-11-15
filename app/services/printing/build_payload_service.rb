@@ -49,7 +49,7 @@ module Printing
         Escpos::ProductionTicketBuilder.new(
           @order,
           printer: @printer,
-          order_items: @order.order_items.includes(:order_item_modifiers, :menu_item, :combo),
+          order_items: @order.order_items.includes(:order_item_modifiers, :combo, menu_item: :category),
           title: @print_type == "pick_station" ? I18n.t("printing.production_ticket.pick_title") : (@printer.station.presence || @printer.name)
         ).build
       else

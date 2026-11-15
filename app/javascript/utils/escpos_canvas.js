@@ -19,6 +19,10 @@ const LINE_GAP = 8
 const TICKET_PAD_PX = 32
 const BOLD_LABEL_PX = 32
 const BOLD_VALUE_PX = 40
+// Ticket item rows: the name a step larger, the modifier/note line a step smaller —
+// ArabicImageRenderer::ITEM_NAME_PT / ITEM_DETAIL_PT.
+const ITEM_NAME_PX = 36
+const ITEM_DETAIL_PX = 28
 // Line height as a multiple of the text size: 2 for receipts, 1.5 for compact
 // kitchen tickets — ArabicImageRenderer::DEFAULT/COMPACT_LINE_FACTOR.
 const DEFAULT_LINE_FACTOR = 2
@@ -94,10 +98,11 @@ export class EscposDocument {
   // boldLabel / boldValue: that side bold and larger (ticket item rows). A bold label
   // in the value column wraps onto further rows, the value staying on the first —
   // TicketItemsTable#compose_items_table on the Rails side.
-  row(label, value = "", { padded = false, boldValue = false, boldLabel = false, valueColumn = false } = {}) {
+  // labelPx: a bold label's size (ticket item names pass ITEM_NAME_PX).
+  row(label, value = "", { padded = false, boldValue = false, boldLabel = false, valueColumn = false, labelPx = null } = {}) {
     const size = BASE_PX
     const pad = padded ? TICKET_PAD_PX : 8
-    const labelSize = boldLabel ? BOLD_LABEL_PX : size
+    const labelSize = boldLabel ? (labelPx || BOLD_LABEL_PX) : size
     const valueSize = boldValue ? BOLD_VALUE_PX : size
     // Each side is drawn bold by switching emphasis on just for it.
     const emphasised = (on, fn) => {
@@ -157,8 +162,9 @@ export class EscposDocument {
   // A continuation line inside the item column (modifiers, notes).
   // bold: the same bold, larger text as a ticket's item name (BOLD_LABEL_PX) —
   // Document#modifier_text(bold: true) on the Rails side.
-  modifier(text, { columns = 3, padded = false, bold = false } = {}) {
-    const size = bold ? BOLD_LABEL_PX : BASE_PX
+  // px: a bold line's size (ticket detail lines pass ITEM_DETAIL_PX).
+  modifier(text, { columns = 3, padded = false, bold = false, px = null } = {}) {
+    const size = bold ? (px || BOLD_LABEL_PX) : BASE_PX
     const { labelBox, rules } = this.columns()
     const pad = padded ? TICKET_PAD_PX : 8
     const box = columns === 3 ? labelBox : { x0: pad, x1: this.px - pad }
@@ -224,8 +230,12 @@ export class EscposDocument {
     }
   }
 
+  // Numbers, and any line with digits but no Arabic (phone, date), in the digit
+  // font — ArabicImageRenderer#line_font / #value_font.
   font(size, text = "") {
-    const family = NUMERIC_TEXT.test(String(text)) ? DIGIT_FONT_FAMILY : FONT_FAMILY
+    const str = String(text)
+    const digits = NUMERIC_TEXT.test(str) || (/\d/.test(str) && !ARABIC_SCRIPT.test(str))
+    const family = digits ? DIGIT_FONT_FAMILY : FONT_FAMILY
     return `${this.emphasis ? "bold " : ""}${size}px ${family}`
   }
 
@@ -490,10 +500,10 @@ export function buildProductionTicket(order, items, title, { labels, rtl, widthC
   doc.row(r.item, r.qty, { padded: true, valueColumn: true })
   doc.separator()
   items.forEach((line) => {
-    doc.row(line.name, String(line.quantity), { padded: true, boldValue: true, boldLabel: true, valueColumn: true })
+    doc.row(line.name, String(line.quantity), { padded: true, boldValue: true, boldLabel: true, valueColumn: true, labelPx: ITEM_NAME_PX })
     // Every modifier and the note on one line — TicketItemsTable#detail_lines.
     const detail = ticketDetail(line)
-    if (detail) doc.modifier(detail, { columns: 2, padded: true, bold: true })
+    if (detail) doc.modifier(detail, { columns: 2, padded: true, bold: true, px: ITEM_DETAIL_PX })
     doc.separator()
   })
 

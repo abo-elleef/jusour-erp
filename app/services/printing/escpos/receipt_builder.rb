@@ -65,7 +65,7 @@ module Printing
         doc.row3(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.qty"), I18n.t("printing.receipt.price"))
         doc.separator
 
-        @order.order_items.includes(:order_item_modifiers, :menu_item, :combo).each do |item|
+        OrderItem.in_menu_order(@order.order_items.includes(:order_item_modifiers, :combo, menu_item: :category)).each do |item|
           doc.row3(item.display_name, item.quantity.to_s, format_money(item.line_total_cents))
           # Every modifier and the note on one line, like the station tickets.
           TicketItemsTable.detail_lines(item, limit: detail_chars).each { |line| doc.modifier_text(line) }

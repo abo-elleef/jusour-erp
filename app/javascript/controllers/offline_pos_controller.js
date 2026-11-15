@@ -615,6 +615,7 @@ export default class extends Controller {
       if (line) cart.lines.push(line)
       else missing += 1
     }
+    this.sortCartLines(cart.lines)
     if (cart.lines.length === 0) {
       await deleteMeta("handoff").catch(() => {})
       return null
@@ -722,8 +723,31 @@ export default class extends Controller {
         promo_discount_cents: promo?.discount_cents || 0,
         routing_ids: [item.id]
       })
+      this.sortCartLines(this.cart.lines)
     }
     this.draw("cart")
+  }
+
+  // The basket, the saved order and every print list lines in one order, like
+  // OrderItem.in_menu_order on the server: by menu category (the snapshot's category
+  // order), A→Z by name inside each, combos last. The sort is stable, so two lines
+  // of the same item keep the order they were added in.
+  sortCartLines(lines) {
+    const { items, categories } = this.snapshot.menu
+    const categoryRank = new Map(categories.map((category, index) => [category.id, index]))
+    const itemCategory = new Map(items.map((item) => [item.id, item.category_id]))
+    const key = (line) => {
+      if (line.combo_id) return [categories.length + 1, String(line.name || "").toLowerCase()]
+      const rank = categoryRank.get(itemCategory.get(line.menu_item_id))
+      return [rank === undefined ? categories.length : rank, String(line.name || "").toLowerCase()]
+    }
+    lines.sort((a, b) => {
+      const [rankA, nameA] = key(a)
+      const [rankB, nameB] = key(b)
+      if (rankA !== rankB) return rankA - rankB
+      return nameA < nameB ? -1 : nameA > nameB ? 1 : 0
+    })
+    return lines
   }
 
   addCombo(id) {
@@ -748,6 +772,7 @@ export default class extends Controller {
         promo_discount_cents: 0,
         routing_ids: combo.menu_item_ids
       })
+      this.sortCartLines(this.cart.lines)
     }
     this.draw("cart")
   }

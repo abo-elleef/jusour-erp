@@ -24,7 +24,7 @@ module Printing
     private
 
     def load_items
-      @order.order_items.includes(:order_item_modifiers, :menu_item, :combo).to_a
+      @order.order_items.includes(:order_item_modifiers, :combo, menu_item: :category).to_a
     end
 
     def print_pick_station

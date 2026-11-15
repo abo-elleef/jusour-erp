@@ -77,6 +77,35 @@ RSpec.describe Printing::Escpos::Document do
       expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_line)
         .with(anything, hash_including(font_scale: 1)).once
     end
+
+    # The printer's built-in font has a dotted 0 that reads as 8 on a phone number.
+    it "draws a line with digits as an image too, as written and bold when bold is on" do
+      doc = described_class.new(charset: "utf-8")
+      doc.bold
+      doc.text("01013313790")
+      doc.bold(false)
+      doc.text("15/11/2026 05:42 PM")
+
+      expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_line)
+        .with("01013313790", hash_including(bold: true))
+      expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_line)
+        .with("15/11/2026 05:42 PM", hash_including(bold: false))
+    end
+
+    it "keeps a line with no digits and no Arabic in the printer's font" do
+      described_class.new(charset: "utf-8").text("Thank you")
+      expect(Printing::Escpos::ArabicImageRenderer).not_to have_received(:render_line)
+    end
+  end
+
+  describe "ArabicImageRenderer.line_font" do
+    it "uses the digit font for a line with no Arabic, the Arabic font otherwise" do
+      renderer = Printing::Escpos::ArabicImageRenderer
+      allow(renderer).to receive_messages(arabic_font: "/fonts/arabic.ttf", digit_font: "/fonts/sans.ttf")
+
+      expect(renderer.line_font("01013313790")).to eq("/fonts/sans.ttf")
+      expect(renderer.line_font("توصيل 12")).to eq("/fonts/arabic.ttf")
+    end
   end
 
   # Regression: raster bytes made the buffer BINARY, and the next non-ASCII text line
@@ -160,7 +189,36 @@ RSpec.describe Printing::Escpos::Document do
       expect(Printing::Escpos::ArabicImageRenderer).to have_received(:render_row)
         .with(anything, "2", doc_width: 42, pad: described_class::PAD_DOTS, bold_value: true, bold_label: false,
                              line_factor: Printing::Escpos::ArabicImageRenderer::COMPACT_LINE_FACTOR,
-                             value_center_x: (576 * 0.35 / 2).round)
+                             value_center_x: (576 * 0.35 / 2).round, label_pt: nil, label_stroke: nil)
+    end
+
+    it "draws a ticket item name larger and heavier when asked" do
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("font.ttf")
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:capture_pbm).and_return(nil)
+      renderer = Printing::Escpos::ArabicImageRenderer
+      renderer.render_row("label", "", doc_width: 42, bold_label: true, line_factor: 1.5,
+                                       label_pt: renderer::ITEM_NAME_PT, label_stroke: renderer::ITEM_NAME_STROKE)
+
+      expect(renderer).to have_received(:capture_pbm) do |cmd|
+        expect(cmd).to include("576x#{(renderer::ITEM_NAME_PT * 1.5).round}")
+        expect(cmd.each_cons(2).to_a).to include(["-pointsize", renderer::ITEM_NAME_PT.to_s],
+                                                 ["-strokewidth", renderer::ITEM_NAME_STROKE])
+      end
+    end
+
+    it "draws a ticket's detail line bold, a step smaller than the item name" do
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:arabic_font).and_return("font.ttf")
+      allow(Printing::Escpos::ArabicImageRenderer).to receive(:capture_pbm).and_return(nil)
+      renderer = Printing::Escpos::ArabicImageRenderer
+      renderer.render_modifier_row("+ Double", doc_width: 42, columns: 2, pad: 32, line_factor: 1.5, bold: true,
+                                               pt: renderer::ITEM_DETAIL_PT)
+
+      expect(renderer::ITEM_DETAIL_PT).to be < renderer::ITEM_NAME_PT
+      expect(renderer).to have_received(:capture_pbm) do |cmd|
+        expect(cmd).to include("576x#{(renderer::ITEM_DETAIL_PT * 1.5).round}")
+        expect(cmd.each_cons(2).to_a).to include(["-pointsize", renderer::ITEM_DETAIL_PT.to_s])
+        expect(cmd).to include("-stroke")
+      end
     end
 
     it "draws a ticket item row bold and larger, in an image tall enough for it" do

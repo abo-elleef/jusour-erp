@@ -10,7 +10,7 @@
         <p class="text-xs text-gray-400 mb-2"><%= order.delivery_address %></p>
       <% end %>
       <ul class="space-y-2 mb-4">
-        <% order.order_items.each do |item| %>
+        <% OrderItem.in_menu_order(order.order_items).each do |item| %>
           <li>
             <span class="font-bold"><%= item.quantity %>×</span> <%= item.display_name %>
             <% item.order_item_modifiers.each do |m| %>

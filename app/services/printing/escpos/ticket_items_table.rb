@@ -3,21 +3,23 @@
 module Printing
   module Escpos
     # The items table shared by kitchen, station and pick tickets: item name with its
-    # quantity, then one detail line holding every modifier and the item's note,
-    # bold at the same size as the name.
+    # quantity, then one detail line holding every modifier and the item's note.
+    # The name is larger and heavier (ArabicImageRenderer::ITEM_NAME_PT); the detail
+    # line is bold a step smaller (ITEM_DETAIL_PT), so the dish stands out first.
+    # Lines print in OrderItem.in_menu_order, like the basket and the order pages.
     # The customer receipt uses the same detail line (TicketItemsTable.detail_lines).
     module TicketItemsTable
       MODIFIER_SEPARATOR = " • "
       NOTE_SEPARATOR     = " | "
       # Characters per detail line before wrapping, as a share of the text-mode width.
-      # The line prints bold at the item-name size (ArabicImageRenderer::BOLD_LABEL_PT)
-      # across the full paper: 0.95 fits at the regular 26pt, scaled by 26/32.
-      DETAIL_CHARS_RATIO = 0.77
+      # The line prints bold at ArabicImageRenderer::ITEM_DETAIL_PT across the full
+      # paper: 0.95 fits at the regular 26pt, scaled by 26/28.
+      DETAIL_CHARS_RATIO = 0.88
       # Characters of an item name per line at the ticket's bold item size before it
       # wraps, as a share of the text-mode width: the name column is 65% of the paper
-      # and the glyphs are larger (ArabicImageRenderer::BOLD_LABEL_PT). 42 columns
-      # gives 29; a 30-character Arabic name is about the most that fits.
-      ITEM_NAME_CHARS_RATIO = 0.7
+      # and the glyphs are larger (ArabicImageRenderer::ITEM_NAME_PT). 0.7 fitted at
+      # 32pt; scaled by 32/36 that is 0.62 — 26 characters on 80mm paper.
+      ITEM_NAME_CHARS_RATIO = 0.62
 
       # "+ Double • Extra cheese | no sauce", wrapped at word boundaries to `limit`
       # characters so a long list never runs off the paper. [] for a plain item.
@@ -62,13 +64,17 @@ module Printing
         doc.row(I18n.t("printing.receipt.item"), I18n.t("printing.receipt.qty"), padded: true, value_column: true)
         doc.separator
 
-        items.each do |item|
+        name_style = { label_pt: ArabicImageRenderer::ITEM_NAME_PT, label_stroke: ArabicImageRenderer::ITEM_NAME_STROKE }
+        OrderItem.in_menu_order(items).each do |item|
           # Name and quantity bold and large; a long name wraps, the quantity stays on
-          # its first line. Modifiers and the note match the name.
+          # its first line. Modifiers and the note bold, a step smaller than the name.
           first, *rest = TicketItemsTable.wrap(item.display_name.to_s, item_name_chars)
-          doc.row(first, item.quantity.to_s, padded: true, bold_value: true, bold_label: true, value_column: true)
-          rest.each { |line| doc.row(line, "", padded: true, bold_label: true, value_column: true) }
-          detail_lines(item).each { |line| doc.modifier_text(line, columns: 2, padded: true, bold: true) }
+          doc.row(first, item.quantity.to_s, padded: true, bold_value: true, bold_label: true, value_column: true,
+                                              **name_style)
+          rest.each { |line| doc.row(line, "", padded: true, bold_label: true, value_column: true, **name_style) }
+          detail_lines(item).each do |line|
+            doc.modifier_text(line, columns: 2, padded: true, bold: true, pt: ArabicImageRenderer::ITEM_DETAIL_PT)
+          end
           doc.separator
         end
       end

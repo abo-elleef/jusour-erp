@@ -26,6 +26,12 @@ module Printing
       BOLD_LABEL_PT     = 32
       BOLD_VALUE_PT     = 40
       BOLD_STROKE_WIDTH = "1.2"
+      # Ticket item rows (TicketItemsTable): the item name a step larger and heavier
+      # than BOLD_LABEL_PT, and the modifier/note line under it a step smaller — still
+      # bold — so the cook finds the dish first and its details right below it.
+      ITEM_NAME_PT     = 36
+      ITEM_NAME_STROKE = "1.6"
+      ITEM_DETAIL_PT   = 28
       # Image line height as a multiple of the point size. 2 is the receipt's airy
       # default; kitchen/station tickets use COMPACT_LINE_FACTOR to save paper.
       DEFAULT_LINE_FACTOR = 2
@@ -73,7 +79,7 @@ module Printing
       # (ESC E) only affects built-in text, never a raster image.
       def render_line(text, doc_width: 42, align: :right, font_scale: 1, line_factor: DEFAULT_LINE_FACTOR, bold: false)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        font     = arabic_font
+        font     = line_font(text)
         return nil unless font
 
         gravity = { left: "West", center: "Center", right: "East" }.fetch(align, "East")
@@ -90,8 +96,10 @@ module Printing
       # item names). The image grows to fit the larger text.
       # value_center_x: centre the value on this x (dots from the left) instead of
       # pinning it to the edge — the quantity column on kitchen tickets.
+      # label_pt / label_stroke: a bold label's size and outline (ticket item names
+      # pass ITEM_NAME_PT / ITEM_NAME_STROKE); the defaults draw as before.
       def render_row(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false, bold_label: false,
-                     line_factor: DEFAULT_LINE_FACTOR, value_center_x: nil)
+                     line_factor: DEFAULT_LINE_FACTOR, value_center_x: nil, label_pt: nil, label_stroke: nil)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
@@ -99,9 +107,9 @@ module Printing
         pbm = render_pbm_multi(
           [
             value_annotation(ltr_value, px_width, pad, bold_value, value_center_x),
-            label_annotation(arabic_label, pad, bold_label)
+            label_annotation(arabic_label, pad, bold_label, pt: label_pt, stroke: label_stroke)
           ],
-          px_width, font, height: row_height(ltr_value, bold_value, bold_label, line_factor)
+          px_width, font, height: row_height(ltr_value, bold_value, bold_label, line_factor, label_pt: label_pt)
         )
         pbm ? pbm_to_escpos(pbm) : nil
       end
@@ -182,7 +190,7 @@ module Printing
       # font_scale: 2 doubles the point size (used for ESC/POS double-height text preview).
       def render_png(text, doc_width: 42, align: :right, font_scale: 1, line_factor: DEFAULT_LINE_FACTOR, bold: false)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        font     = arabic_font
+        font     = line_font(text)
         return nil unless font
 
         pt      = (FONT_SIZE_PT * font_scale).to_i
@@ -197,17 +205,17 @@ module Printing
 
       # Same as render_row but returns a Base64-encoded PNG string.
       def render_row_png(arabic_label, ltr_value, doc_width: 42, pad: 8, bold_value: false, bold_label: false,
-                         line_factor: DEFAULT_LINE_FACTOR, value_center_x: nil)
+                         line_factor: DEFAULT_LINE_FACTOR, value_center_x: nil, label_pt: nil, label_stroke: nil)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
         font     = arabic_font
         return nil unless font
 
         run_to_png([
           im_command,
-          "-size", "#{px_width}x#{row_height(ltr_value, bold_value, bold_label, line_factor)}", "xc:white",
+          "-size", "#{px_width}x#{row_height(ltr_value, bold_value, bold_label, line_factor, label_pt: label_pt)}", "xc:white",
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
           *annotate_args(value_annotation(ltr_value, px_width, pad, bold_value, value_center_x)),
-          *annotate_args(label_annotation(arabic_label, pad, bold_label))
+          *annotate_args(label_annotation(arabic_label, pad, bold_label, pt: label_pt, stroke: label_stroke))
         ])
       end
 
@@ -237,17 +245,17 @@ module Printing
 
       # Modifier/notes continuation row: text in the item-name column only,
       # with the same vertical column separators as a regular row3 image.
-      # bold: the same bold, larger text as a ticket's item name (BOLD_LABEL_PT), for
-      # the modifier/note line under it. A plain line draws exactly as before, so
-      # receipt images keep their cache keys.
+      # bold: bold, larger text (BOLD_LABEL_PT, or pt when given — ticket detail lines
+      # pass ITEM_DETAIL_PT) for the modifier/note line under a ticket item. A plain
+      # line draws exactly as before, so receipt images keep their cache keys.
       def render_modifier_row(visual_text, doc_width: 42, columns: 3, pad: 8, line_factor: DEFAULT_LINE_FACTOR,
-                              bold: false)
+                              bold: false, pt: nil)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        h        = line_height(bold ? BOLD_LABEL_PT : FONT_SIZE_PT, line_factor)
+        h        = line_height(bold ? pt || BOLD_LABEL_PT : FONT_SIZE_PT, line_factor)
         font     = arabic_font
         return nil unless font
 
-        draws = [label_annotation(visual_text, pad, bold)]
+        draws = [label_annotation(visual_text, pad, bold, pt: pt)]
         if columns == 3
           qty_x = (px_width * 0.26).to_i
           sep1  = qty_x - 12
@@ -262,9 +270,9 @@ module Printing
 
       # Same as render_modifier_row but returns a Base64-encoded PNG string.
       def render_modifier_row_png(visual_text, doc_width: 42, columns: 3, pad: 8, line_factor: DEFAULT_LINE_FACTOR,
-                                  bold: false)
+                                  bold: false, pt: nil)
         px_width = PAPER_PX_WIDTH.fetch(doc_width, 576)
-        h        = line_height(bold ? BOLD_LABEL_PT : FONT_SIZE_PT, line_factor)
+        h        = line_height(bold ? pt || BOLD_LABEL_PT : FONT_SIZE_PT, line_factor)
         font     = arabic_font
         return nil unless font
 
@@ -272,7 +280,7 @@ module Printing
           im_command,
           "-size", "#{px_width}x#{h}", "xc:white",
           "-font", font, "-pointsize", FONT_SIZE_PT.to_s, "-fill", "black",
-          *annotate_args(label_annotation(visual_text, pad, bold))
+          *annotate_args(label_annotation(visual_text, pad, bold, pt: pt))
         ]
         if columns == 3
           qty_x = (px_width * 0.26).to_i
@@ -376,6 +384,14 @@ module Printing
 
       # The digit font for a value with no Arabic in it (a price, a quantity); nil
       # keeps the Arabic font (a column header such as "السعر").
+      # A whole line with no Arabic in it (an order number, a phone, the date) in the
+      # digit font, whose 0 is a clear open oval; Arabic lines keep the Arabic font.
+      def line_font(text)
+        return arabic_font if text.to_s.match?(/\p{Arabic}/)
+
+        digit_font || arabic_font
+      end
+
       def value_font(value)
         return nil if value.to_s.match?(/\p{Arabic}/)
 
@@ -383,15 +399,19 @@ module Printing
       end
 
       # The label side of a row, pinned `pad` dots from the right edge.
-      def label_annotation(label, pad, bold)
-        { gravity: "East", offset: "+#{pad}+0", text: label.to_s.strip, bold: bold, pt: BOLD_LABEL_PT }
+      # pt / stroke: a bold label's size and outline; nil keeps BOLD_LABEL_PT and
+      # BOLD_STROKE_WIDTH, so existing rows keep their commands and cache keys.
+      def label_annotation(label, pad, bold, pt: nil, stroke: nil)
+        ann = { gravity: "East", offset: "+#{pad}+0", text: label.to_s.strip, bold: bold, pt: pt || BOLD_LABEL_PT }
+        ann[:stroke] = stroke if stroke
+        ann
       end
 
       # Tall enough for the largest text on the row. A plain row keeps the height it
       # always had.
-      def row_height(value, bold_value, bold_label, line_factor)
+      def row_height(value, bold_value, bold_label, line_factor, label_pt: nil)
         pt = FONT_SIZE_PT
-        pt = BOLD_LABEL_PT if bold_label
+        pt = label_pt || BOLD_LABEL_PT if bold_label
         pt = BOLD_VALUE_PT if bold_value && value.to_s.strip.present?
         line_height(pt, line_factor)
       end
@@ -409,8 +429,8 @@ module Printing
       def annotate_args(ann)
         args = ["-gravity", ann[:gravity], "-annotate", ann.fetch(:offset, "+0+0"), ann[:text]]
         if ann[:bold]
-          args = ["-pointsize", ann.fetch(:pt, BOLD_VALUE_PT).to_s, "-stroke", "black", "-strokewidth", BOLD_STROKE_WIDTH,
-                  *args,
+          args = ["-pointsize", ann.fetch(:pt, BOLD_VALUE_PT).to_s, "-stroke", "black",
+                  "-strokewidth", ann.fetch(:stroke, BOLD_STROKE_WIDTH), *args,
                   "-stroke", "none", "-strokewidth", "1", "-pointsize", FONT_SIZE_PT.to_s]
         end
         return args unless ann[:font]

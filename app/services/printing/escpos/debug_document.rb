@@ -9,6 +9,7 @@ module Printing
     # Enable with: PRINT_DEBUG=true in your env.
     class DebugDocument
       ARABIC_PATTERN = /\p{Arabic}/
+      DIGIT_PATTERN  = /\d/
 
       attr_reader :entries, :config_summary
 
@@ -37,10 +38,13 @@ module Printing
 
       def text(line = "", bold: false)
         str = line.to_s
-        if @use_images && str.match?(ARABIC_PATTERN)
-          visual = Printing::Escpos::Bidi.visual_for_print(str, reshape: true)
+        # Lines with digits (order number, phone, date) are drawn as images too, in
+        # the digit font: the printer's built-in font has a dotted 0 that reads as 8.
+        if @use_images && (str.match?(ARABIC_PATTERN) || str.match?(DIGIT_PATTERN))
+          arabic = str.match?(ARABIC_PATTERN)
+          visual = arabic ? Printing::Escpos::Bidi.visual_for_print(str, reshape: true) : str
           png = ArabicImageRenderer.render_png(visual, doc_width: @width, align: @current_align, font_scale: @current_dh ? 2 : 1,
-                                               line_factor: @line_factor, bold: bold)
+                                               line_factor: @line_factor, bold: bold || (!arabic && @current_bold))
           push kind: :image, content: str, png_b64: png
         else
           push kind: :text, content: str
@@ -51,7 +55,8 @@ module Printing
         lines.times { push kind: :blank, content: "" }
       end
 
-      def row(left, right = "", padded: false, bold_value: false, bold_label: false, value_column: false)
+      def row(left, right = "", padded: false, bold_value: false, bold_label: false, value_column: false,
+              label_pt: nil, label_stroke: nil)
         if @use_images && (left.to_s.match?(ARABIC_PATTERN) || right.to_s.match?(ARABIC_PATTERN))
           visual_label = Printing::Escpos::Bidi.visual_for_print(left.to_s, reshape: true)
           visual_right = right.to_s.match?(ARABIC_PATTERN) ? Printing::Escpos::Bidi.visual_for_print(right.to_s, reshape: true) : right.to_s
@@ -59,7 +64,8 @@ module Printing
           png = ArabicImageRenderer.render_row_png(visual_label, visual_right, doc_width: @width,
                                                    pad: padded ? Document::PAD_DOTS : 8, bold_value: bold_value,
                                                    bold_label: bold_label,
-                                                   line_factor: @line_factor, value_center_x: center_x)
+                                                   line_factor: @line_factor, value_center_x: center_x,
+                                                   label_pt: label_pt, label_stroke: label_stroke)
           push kind: :image_row, left: left.to_s, right: right.to_s, png_b64: png
         else
           left_str  = left.to_s
@@ -83,13 +89,13 @@ module Printing
         end
       end
 
-      def modifier_text(line = "", columns: 3, padded: false, bold: false)
+      def modifier_text(line = "", columns: 3, padded: false, bold: false, pt: nil)
         str = line.to_s
         if @use_images
           visual = Printing::Escpos::Bidi.visual_for_print(str, reshape: true)
           png = ArabicImageRenderer.render_modifier_row_png(visual, doc_width: @width, columns: columns,
                                                             pad: padded ? Document::PAD_DOTS : 8,
-                                                            line_factor: @line_factor, bold: bold)
+                                                            line_factor: @line_factor, bold: bold, pt: pt)
           push kind: :image, content: str, png_b64: png
         else
           push kind: :text, content: @rtl ? str : "  #{str}"

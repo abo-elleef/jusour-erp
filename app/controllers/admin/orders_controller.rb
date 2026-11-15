@@ -46,7 +46,7 @@ module Admin
 
     def show
       authorize @order
-      @order_items = @order.order_items.includes(:menu_item, :combo, :order_item_modifiers)
+      @order_items = OrderItem.in_menu_order(@order.order_items.includes(:combo, :order_item_modifiers, menu_item: :category))
       @payments = @order.payments.includes(:processed_by_user).order(created_at: :desc)
       @order_events = @order.order_events.includes(:user).order(created_at: :desc)
       @refund_vouchers = @order.refund_vouchers.to_a

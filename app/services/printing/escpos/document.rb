@@ -7,6 +7,7 @@ module Printing
       GS  = "\x1D"
 
       ARABIC_PATTERN = /\p{Arabic}/
+      DIGIT_PATTERN  = /\d/
       # Side margin for padded rows: in dots for image rows (~4 mm at 203 dpi) and in
       # characters for plain-text rows.
       PAD_DOTS  = 32
@@ -42,8 +43,13 @@ module Printing
       # reaches the printer's built-in font, so Arabic needs this to look bold too.
       def text(line = "", bold: false)
         str = line.to_s
+        # Lines with digits (order number, phone, date) are drawn as images too, in
+        # the digit font: the printer's built-in font has a dotted 0 that reads as 8.
         if @use_images && str.match?(ARABIC_PATTERN)
           write_arabic_image(str, align: @current_align, bold: bold)
+        elsif @use_images && str.match?(DIGIT_PATTERN)
+          # The printer's bold (ESC E) never reaches an image, so carry it over.
+          write_arabic_image(str, align: @current_align, bold: bold || @bold_on)
         else
           write_line(prepare_text(str))
         end
@@ -57,11 +63,12 @@ module Printing
       # bold_value: print the value (right-hand argument, e.g. a quantity) bold.
       # value_column: centre the value in a column set in from the edge (quantities).
       # bold_label / bold_value: the label / value bold and larger (ticket item rows).
-      def row(left, right = "", padded: false, bold_value: false, bold_label: false, value_column: false)
+      def row(left, right = "", padded: false, bold_value: false, bold_label: false, value_column: false,
+              label_pt: nil, label_stroke: nil)
         opts = { padded: padded, bold_value: bold_value, bold_label: bold_label, value_column: value_column }
         if @use_images && (left.to_s.match?(ARABIC_PATTERN) || right.to_s.match?(ARABIC_PATTERN))
           # Single image: Arabic label on right, LTR value (price) on left.
-          write_arabic_row_image(left.to_s, right.to_s, **opts)
+          write_arabic_row_image(left.to_s, right.to_s, **opts, label_pt: label_pt, label_stroke: label_stroke)
         else
           write_text_row(left, right, **opts)
         end
@@ -86,13 +93,13 @@ module Printing
 
       # Render a modifier/add-on line inside the item-name column with column borders.
       # bold: the same bold, larger text as the ticket's item name above it.
-      def modifier_text(line = "", columns: 3, padded: false, bold: false)
+      def modifier_text(line = "", columns: 3, padded: false, bold: false, pt: nil)
         str = line.to_s
         if @use_images
           visual = Bidi.visual_for_print(str, reshape: true)
           bytes  = ArabicImageRenderer.render_modifier_row(visual, doc_width: @width, columns: columns,
                                                                    pad: padded ? PAD_DOTS : 8,
-                                                                   line_factor: @line_factor, bold: bold)
+                                                                   line_factor: @line_factor, bold: bold, pt: pt)
           return @buffer << bytes.b if bytes
         end
         # Text fallback
@@ -119,6 +126,7 @@ module Printing
       end
 
       def bold(on = true)
+        @bold_on = on ? true : false
         @buffer << ESC << "E" << (on ? "\x01" : "\x00")
       end
 
@@ -225,7 +233,8 @@ module Printing
       # Pre-processes with reshape + bidi so ImageMagick (LTR renderer) displays
       # correctly: reshape assigns correct glyph forms, bidi reorders to visual order.
       def write_arabic_image(text, align: :right, bold: false)
-        visual = Bidi.visual_for_print(text, reshape: true)
+        # A line with no Arabic (a phone, the date) is already in display order.
+        visual = text.match?(ARABIC_PATTERN) ? Bidi.visual_for_print(text, reshape: true) : text
         bytes  = ArabicImageRenderer.render_line(visual, doc_width: @width, align: align,
                                                          font_scale: @double_height ? 2 : 1,
                                                          line_factor: @line_factor, bold: bold)
@@ -240,7 +249,7 @@ module Printing
       # LTR value (price) on the left — both on the same baseline.
       # Only the Arabic label is reshaped/reordered; the price is passed as-is.
       def write_arabic_row_image(arabic_label, ltr_value, padded: false, bold_value: false, bold_label: false,
-                                 value_column: false)
+                                 value_column: false, label_pt: nil, label_stroke: nil)
         visual_label = Bidi.visual_for_print(arabic_label, reshape: true)
         visual_value = ltr_value.to_s.match?(ARABIC_PATTERN) ? Bidi.visual_for_print(ltr_value.to_s, reshape: true) : ltr_value.to_s
         bytes = ArabicImageRenderer.render_row(visual_label, visual_value, doc_width: @width,
@@ -248,7 +257,8 @@ module Printing
                                                                           bold_value: bold_value,
                                                                           bold_label: bold_label,
                                                                           line_factor: @line_factor,
-                                                                          value_center_x: value_center_x(value_column))
+                                                                          value_center_x: value_center_x(value_column),
+                                                                          label_pt: label_pt, label_stroke: label_stroke)
         if bytes
           @buffer << bytes.b
         else
