@@ -7,6 +7,7 @@ module Pos
     layout "pos"
 
     include BranchOrderPins
+    include AbandonedCartCleanup
 
     before_action :require_pos_access!
 
@@ -89,6 +90,7 @@ module Pos
         authorize order, :resume_table?
       end
 
+      discard_abandoned_cart!(keep_id: order.id)
       session[:current_order_id] = order.id
       redirect_to pos_path, notice: t("flash.pos.order_resumed")
     end
@@ -111,6 +113,7 @@ module Pos
         end
       end
 
+      discard_abandoned_cart!(keep_id: @order.id)
       session.delete(:pending_order_params)
       session[:current_order_id] = @order.id
       redirect_to pos_path, notice: t("flash.pos.order_unlocked", number: @order.order_number), status: :see_other

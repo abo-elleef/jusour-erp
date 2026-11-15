@@ -7,6 +7,7 @@ module Pos
   class TablesController < ApplicationController
     include PosLocationScoped
     include OpenDrawerGate
+    include AbandonedCartCleanup
 
     layout "pos"
 
@@ -29,6 +30,7 @@ module Pos
         return redirect_to pos_order_path(holder, from: "tables") unless holder.draft?
 
         authorize holder, :resume_table?
+        discard_abandoned_cart!(keep_id: holder.id)
         session[:current_order_id] = holder.id
         return redirect_to pos_path, notice: t("flash.pos.order_resumed")
       end
@@ -37,6 +39,7 @@ module Pos
       require_open_drawer_to_order!(location: @pos_location)
       return if performed?
 
+      discard_abandoned_cart!
       order = Orders::CreateService.call(
         user: current_user, location: @pos_location, workstation: @pos_workstation,
         order_type: "table", table_number: number

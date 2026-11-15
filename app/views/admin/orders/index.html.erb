@@ -150,7 +150,8 @@
           </thead>
           <tbody class="divide-y divide-gray-100 table-zebra">
             <% @orders.each do |order| %>
-              <tr class="hover:bg-gray-100 transition-colors">
+              <% empty_draft = order.empty_draft? %>
+              <tr class="hover:bg-gray-100 transition-colors <%= 'opacity-50' if empty_draft %>">
                 <td class="p-3 pl-5 font-medium">
                   <%= link_to order.display_number, admin_order_path(order, admin_orders_filter_params),
                         class: "text-amber-700 hover:text-amber-800 font-semibold" %>
@@ -178,6 +179,9 @@
                   <span class="text-xs uppercase font-semibold px-2.5 py-1 rounded-full <%= order_status_class(order.status) %>">
                     <%= order_status_label(order.status) %>
                   </span>
+                  <% if empty_draft %>
+                    <span class="text-xs text-gray-500 block mt-1" title="<%= t("admin.orders.empty_draft_hint") %>"><%= t("admin.orders.empty_draft") %></span>
+                  <% end %>
                 </td>
                 <td class="p-3 text-right text-gray-600 tabular-nums"><%= order.order_items.size %></td>
                 <td class="p-3 text-right font-semibold text-gray-900 whitespace-nowrap tabular-nums"><%= format_money(order.total_cents) %></td>

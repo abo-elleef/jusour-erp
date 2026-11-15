@@ -135,6 +135,18 @@ class Order < ApplicationRecord
   end
 
   scope :open_drafts, -> { where(status: "draft") }
+  HAS_ITEMS_SQL = "EXISTS (SELECT 1 FROM order_items WHERE order_items.order_id = orders.id)"
+  # A cart that was saved but never got an item. Orders::DiscardEmptyDraftService
+  # deletes these; until it does, the cashier's lists leave them out.
+  scope :empty_drafts, -> {
+    where(status: "draft", unlocked_for_edit_at: nil)
+      .where.not(HAS_ITEMS_SQL)
+      .where.not("EXISTS (SELECT 1 FROM payments WHERE payments.order_id = orders.id)")
+  }
+  scope :without_empty_drafts, -> {
+    where("orders.status <> 'draft' OR orders.unlocked_for_edit_at IS NOT NULL OR #{HAS_ITEMS_SQL} " \
+          "OR EXISTS (SELECT 1 FROM payments WHERE payments.order_id = orders.id)")
+  }
   # What the register's cart may hold: a draft, or a placed order unlocked for edit.
   scope :cart_editable, -> {
     where(status: "draft")
@@ -269,6 +281,12 @@ class Order < ApplicationRecord
   # Placing an order locks its items. A manager's PIN reopens it in the register
   # (editing_placed?) until it is placed again. Only an order nobody has paid
   # anything on can be reopened: changing a paid order is a refund's job.
+  # Saved but never given an item: see Orders::DiscardEmptyDraftService. Uses the
+  # loaded associations when the caller preloaded them (admin list).
+  def empty_draft?
+    draft? && unlocked_for_edit_at.nil? && order_items.none? && payments.none?
+  end
+
   def editing_placed?
     unlocked_for_edit_at.present? && PLACED_STATUSES.include?(status)
   end
