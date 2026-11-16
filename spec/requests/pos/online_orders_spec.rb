@@ -36,6 +36,15 @@ RSpec.describe "POS online orders inbox", type: :request do
     expect(flash[:notice]).to include(order.order_number.to_s)
   end
 
+  it "puts the accepted order on the cashier's register so its receipt prints there" do
+    register = Workstation.create!(company: company, location: branch, name: "Front", active: true)
+    get pos_path # the branch's only register is picked for this session
+
+    patch accept_pos_online_order_request_path(request_record)
+
+    expect(request_record.reload.order.workstation).to eq(register)
+  end
+
   it "won't accept without an open drawer" do
     CashDrawerSession.where(user: cashier).update_all(status: "closed")
 

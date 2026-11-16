@@ -29,7 +29,7 @@ module Pos
     end
 
     def accept
-      result = OnlineOrders::AcceptService.call(request: @request, user: current_user,
+      result = OnlineOrders::AcceptService.call(request: @request, user: current_user, workstation: @pos_workstation,
                                                 confirm_price_change: params[:confirm_price_change].present?)
       if result.ok?
         redirect_to pos_online_order_requests_path,

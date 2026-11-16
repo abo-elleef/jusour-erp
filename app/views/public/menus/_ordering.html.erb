@@ -82,11 +82,11 @@
           <p class="mt-1 text-xs text-stone-500"><%= t("public.online_order.phone_hint") %></p>
         </div>
         <div class="hidden space-y-3" data-online-order-target="deliveryFields">
-          <select name="delivery_area_id" data-action="online-order#refreshQuote"
+          <select name="delivery_area_id" data-action="change->online-order#areaChanged input->online-order#areaChanged"
                   class="w-full rounded-lg border border-stone-300 px-3 py-2.5 text-sm">
             <option value=""><%= t("public.online_order.choose_area") %></option>
             <% @delivery_areas.each do |area| %>
-              <option value="<%= area.id %>"><%= area.display_name %> — <%= format_money(area.fee_cents) %></option>
+              <option value="<%= area.id %>" data-fee="<%= format_money(area.fee_cents) %>"><%= area.display_name %> — <%= format_money(area.fee_cents) %></option>
             <% end %>
           </select>
           <textarea name="address" rows="2" maxlength="500" autocomplete="street-address"
@@ -103,7 +103,7 @@
 
       <dl class="space-y-1.5 rounded-xl bg-stone-50 px-4 py-3 text-sm">
         <div class="flex justify-between"><dt class="text-stone-600"><%= t("public.online_order.subtotal") %></dt><dd class="tabular-nums" data-online-order-target="subtotal">—</dd></div>
-        <div class="hidden justify-between" data-online-order-target="feeRow"><dt class="text-stone-600"><%= t("public.online_order.delivery_fee") %></dt><dd class="tabular-nums" data-online-order-target="fee">—</dd></div>
+        <div class="hidden justify-between" data-online-order-target="feeRow"><dt class="text-stone-600"><%= t("public.online_order.delivery_fee") %></dt><dd class="tabular-nums" data-online-order-target="fee" data-choose-text="<%= t("public.online_order.choose_area") %>">—</dd></div>
         <div class="flex justify-between border-t border-stone-200 pt-1.5 text-base font-semibold"><dt><%= t("public.online_order.total") %></dt><dd class="tabular-nums" data-online-order-target="total">—</dd></div>
       </dl>
       <p class="text-xs text-stone-500"><%= t("public.online_order.cash_note") %></p>

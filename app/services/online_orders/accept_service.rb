@@ -5,6 +5,10 @@ module OnlineOrders
   # cashier (so it shows in their shift and Collect Payment), priced again from the
   # database, then placed — order number, kitchen tickets, receipt, KDS.
   #
+  # The order belongs to the register the cashier accepted it on (workstation:),
+  # exactly like an order rung up there, so the customer receipt prints on that
+  # register's receipt printer.
+  #
   # If prices moved since the customer sent it (a promo ended, a price changed),
   # nothing is created until the cashier confirms the new total.
   class AcceptService
@@ -16,9 +20,10 @@ module OnlineOrders
       new(...).call
     end
 
-    def initialize(request:, user:, confirm_price_change: false)
+    def initialize(request:, user:, workstation: nil, confirm_price_change: false)
       @request = request
       @user = user
+      @workstation = workstation
       @confirm_price_change = confirm_price_change
     end
 
@@ -48,7 +53,7 @@ module OnlineOrders
       customer = FindOrCreateCustomer.call(@request)
       remember_address(customer)
       order = Orders::CreateService.call(
-        user: @user, customer: customer, location: @request.location,
+        user: @user, customer: customer, location: @request.location, workstation: @workstation,
         order_type: @request.fulfillment, delivery_address: @request.address
       )
       order.update!(source: "online", notes: order_notes)

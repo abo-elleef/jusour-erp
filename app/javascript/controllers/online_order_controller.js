@@ -258,7 +258,23 @@ export default class extends Controller {
     this.deliveryFieldsTarget.classList.toggle("hidden", !delivery)
     this.feeRowTarget.classList.toggle("hidden", !delivery)
     this.feeRowTarget.classList.toggle("flex", delivery)
+    this.showAreaFee()
     this.refreshQuote()
+  }
+
+  // The fee shows the moment an area is picked (its price is on the option), and
+  // the total waits for the server's quote instead of showing a stale sum.
+  areaChanged() {
+    this.showAreaFee()
+    this.refreshQuote()
+  }
+
+  showAreaFee() {
+    if (this.fulfillment() !== "delivery") return
+    const area = this.checkoutFormTarget.elements.delivery_area_id
+    const option = area?.selectedOptions[0]
+    this.feeTarget.textContent = option?.value ? option.dataset.fee : this.feeTarget.dataset.chooseText
+    this.totalTarget.textContent = "…"
   }
 
   fulfillment() {
@@ -287,8 +303,11 @@ export default class extends Controller {
       const quote = await response.json()
       this.renderLines(quote.lines, quote.errors)
       this.subtotalTarget.textContent = quote.subtotal
-      this.feeTarget.textContent = quote.delivery_fee
       this.totalTarget.textContent = quote.total
+      const areaPicked = this.checkoutFormTarget.elements.delivery_area_id?.value
+      this.feeTarget.textContent = body.fulfillment === "delivery" && !areaPicked
+        ? this.feeTarget.dataset.chooseText
+        : quote.delivery_fee
     } catch (_e) {
       // Offline for a moment: keep what is shown; sending will report the problem.
     }
