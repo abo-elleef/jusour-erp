@@ -328,11 +328,12 @@
               <% end %>
               <% unless policy(@order).skip_branch_pin? %>
                 <div>
-                  <%= label_tag :void_pin, t("admin.orders.void_pin"), class: label_class %>
-                  <%= text_field_tag :pin, nil, id: "void_pin", maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
+                  <% void_pin_id = pin_field_id %>
+                  <%= label_tag void_pin_id, t("admin.orders.void_pin"), class: label_class %>
+                  <%= pin_field_tag :pin, id: void_pin_id, maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
                         required: true,
                         placeholder: t("pos.orders.six_digit_pin_placeholder"),
-                        **pin_field_attributes("#{input_class} text-center tracking-widest") %>
+                        class: "#{input_class} text-center tracking-widest" %>
                 </div>
               <% end %>
               <%= submit_tag t("admin.orders.void_submit"),

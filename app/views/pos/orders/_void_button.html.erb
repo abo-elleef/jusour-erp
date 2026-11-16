@@ -28,11 +28,10 @@
             id: "#{dialog_id}-reason",
             placeholder: t("pos.orders.void_reason_placeholder"),
             class: pos_input_class %>
-      <%= text_field_tag :pin, nil, maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
+      <%= pin_field_tag :pin, maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
             required: true,
-            id: "#{dialog_id}-pin",
             placeholder: t("pos.orders.six_digit_pin_placeholder"),
-            **pin_field_attributes("#{pos_input_class} text-center text-2xl tracking-widest min-h-14") %>
+            class: "#{pos_input_class} text-center text-2xl tracking-widest min-h-14" %>
       <div class="flex gap-2">
         <%= button_tag t("pos.orders.void_confirm"), type: "submit", data: { submit_once_target: "submit" },
               class: "flex-1 min-h-11 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl" %>

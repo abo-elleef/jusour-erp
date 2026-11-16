@@ -505,6 +505,26 @@ module ApplicationHelper
     }
   end
 
+  # A shared PIN input that no browser can remember: the visible, masked box has
+  # no name and should get a fresh random id each render (pin_field_id), and the
+  # value is posted from a hidden field (pin_field_controller.js). Pass the param
+  # name as it should reach the server, e.g. :pin or "location[void_orders_pin]".
+  def pin_field_tag(name, id: pin_field_id, **options)
+    extra_class = options.delete(:class)
+    visible = pin_field_attributes(extra_class)
+              .deep_merge(data: { pin_field_target: "input", action: "input->pin-field#sync" })
+    tag.span(class: "contents", data: { controller: "pin-field" }) do
+      hidden_field_tag(name, "", id: nil, data: { pin_field_target: "value" }) +
+        tag.input(id: id, **options, **visible)
+    end
+  end
+
+  # A new id every render, so form-autocomplete history never sees the same key
+  # twice. Pass the same value to the label and to pin_field_tag.
+  def pin_field_id
+    "pin-#{SecureRandom.hex(6)}"
+  end
+
   # Any action button that stays on screen when the rules refuse it: greyed out,
   # aria-disabled (not disabled, so the tooltip still opens) and explaining why on
   # hover, tap or focus. The block is the button's content (icon + label).

@@ -18,8 +18,10 @@ export default class extends Controller {
     this.inputTarget.focus()
   }
 
+  // Wiped on close too, so a verified PIN never sits in the page.
   close() {
     this.modalTarget.classList.add("hidden")
+    this.inputTarget.value = ""
   }
 
   async verify(event) {

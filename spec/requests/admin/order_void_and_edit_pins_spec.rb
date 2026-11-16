@@ -96,13 +96,17 @@ RSpec.describe "Admin order page: void and edit with branch PINs", type: :reques
     it "shows the PIN field to non-managers only" do
       order = placed_order
 
+      void_form_pins = lambda do
+        Nokogiri::HTML(response.body).css(%(form[action="#{void_admin_order_path(order)}"] input[name="pin"]))
+      end
+
       sign_in supervisor
       get admin_order_path(order)
-      expect(response.body).to include(%(id="void_pin"))
+      expect(void_form_pins.call).to be_present
 
       sign_in manager
       get admin_order_path(order)
-      expect(response.body).not_to include(%(id="void_pin"))
+      expect(void_form_pins.call).to be_empty
     end
 
     it "refunds on the payment while the paying drawer is still open" do
