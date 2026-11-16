@@ -513,7 +513,9 @@ module ApplicationHelper
     extra_class = options.delete(:class)
     visible = pin_field_attributes(extra_class)
               .deep_merge(data: { pin_field_target: "input", action: "input->pin-field#sync" })
-    tag.span(class: "contents", data: { controller: "pin-field" }) do
+    # A real block, not display: contents: the dialogs space their rows with
+    # space-y-*, whose margin a contents box can't carry.
+    tag.div(data: { controller: "pin-field" }) do
       hidden_field_tag(name, "", id: nil, data: { pin_field_target: "value" }) +
         tag.input(id: id, **options, **visible)
     end
