@@ -116,21 +116,28 @@ module Dashboard
     end
 
     # Sales per hour of the business day, today (up to now) and all of last week's
-    # same day, keyed "HH:00" in business-day order (06:00 → 05:00).
+    # same day, keyed "HH:00" in business-day order (06:00 → 05:00), with the
+    # order count behind each figure for the chart tooltip.
     def by_hour(today, last_week, today_start, last_week_start)
       bucket = ->(rows, start) {
-        rows.group_by { |r| ((r[:created_at] - start) / 3600).floor }.transform_values { |rs| sum(rs) }
+        rows.group_by { |r| ((r[:created_at] - start) / 3600).floor }
+          .transform_values { |rs| { cents: sum(rs), count: rs.size } }
       }
+      empty = { cents: 0, count: 0 }
       today_hours = bucket.call(today, today_start)
       last_week_hours = bucket.call(last_week, last_week_start)
       current_hour = ((@now - today_start) / 3600).floor
 
       (0..23).map do |i|
-        label = (today_start + i.hours).strftime("%H:00")
+        starts_at = today_start + i.hours
+        upcoming = i > current_hour
         {
-          hour: label,
-          today_cents: i <= current_hour ? today_hours.fetch(i, 0) : nil,
-          last_week_cents: last_week_hours.fetch(i, 0)
+          hour: starts_at.strftime("%H:00"),
+          hour_of_day: starts_at.hour,
+          today_cents: upcoming ? nil : today_hours.fetch(i, empty)[:cents],
+          today_count: upcoming ? nil : today_hours.fetch(i, empty)[:count],
+          last_week_cents: last_week_hours.fetch(i, empty)[:cents],
+          last_week_count: last_week_hours.fetch(i, empty)[:count]
         }
       end
     end

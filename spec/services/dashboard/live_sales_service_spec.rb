@@ -79,6 +79,8 @@ RSpec.describe Dashboard::LiveSalesService do
     hours = described_class.call(now: now).by_hour
     expect(hours.first[:hour]).to eq("06:00")
     expect(hours.find { |h| h[:hour] == "13:00" }[:today_cents]).to eq(800)
+    expect(hours.find { |h| h[:hour] == "13:00" }).to include(hour_of_day: 13, today_count: 1)
+    expect(hours.find { |h| h[:hour] == "15:00" }[:today_count]).to be_nil
     expect(hours.find { |h| h[:hour] == "15:00" }[:today_cents]).to be_nil
   end
 end

@@ -168,8 +168,13 @@ module Accounting
         .transform_values(&:to_i)
     end
 
+    # Per hour of the day (0..23), summed over every day in the range: order
+    # count and net sales, the same sales figure as the daily totals.
     def hourly_distribution
-      completed_orders.group_by_hour(:created_at, time_zone: Time.zone, range: @range).count
+      hours = completed_orders.group_by_hour_of_day(:created_at, time_zone: Time.zone)
+      counts = hours.count
+      sales = hours.sum(Arel.sql(RevenueCalculator::ORDER_NET_SALES))
+      (0..23).to_h { |h| [h, { count: counts.fetch(h, 0), sales_cents: sales.fetch(h, 0).to_i }] }
     end
 
     def daily_totals

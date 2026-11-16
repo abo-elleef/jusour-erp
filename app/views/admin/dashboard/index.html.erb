@@ -63,10 +63,22 @@
             <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.live.by_hour") %></p>
             <p class="text-xs text-gray-500"><%= t("dashboard.live.last_week_full_day", amount: format_amount(live.last_week_full_day_cents)) %></p>
           </div>
-          <%= column_chart [
-                { name: t("dashboard.live.today"), data: live.by_hour.map { |h| [h[:hour], h[:today_cents] && h[:today_cents] / 100.0] } },
-                { name: l(live.last_week_date, format: "%A %-d/%-m"), data: live.by_hour.map { |h| [h[:hour], h[:last_week_cents] / 100.0] } }
-              ], colors: ["#4f46e5", "#cbd5e1"], thousands: ",", height: "220px", legend: "bottom" %>
+          <% last_week_name = l(live.last_week_date, format: "%A %-d/%-m")
+             hour_lines = ->(name, count, cents) {
+               next [] if cents.nil?
+               [name, t("hourly_chart.orders", count: count), t("hourly_chart.sales", amount: format_amount(cents))]
+             } %>
+          <div data-controller="chart-tooltip" data-chart-tooltip-chart-id-value="live-sales-by-hour-chart"
+               data-chart-tooltip-titles-value="<%= live.by_hour.map { |h| hour_range_label(h[:hour_of_day]) }.to_json %>"
+               data-chart-tooltip-lines-value="<%= [
+                 live.by_hour.map { |h| hour_lines.call(t("dashboard.live.today"), h[:today_count], h[:today_cents]) },
+                 live.by_hour.map { |h| hour_lines.call(last_week_name, h[:last_week_count], h[:last_week_cents]) }
+               ].to_json %>">
+            <%= column_chart [
+                  { name: t("dashboard.live.today"), data: live.by_hour.map { |h| [hour_axis_label(h[:hour_of_day]), h[:today_cents] && h[:today_cents] / 100.0] } },
+                  { name: last_week_name, data: live.by_hour.map { |h| [hour_axis_label(h[:hour_of_day]), h[:last_week_cents] / 100.0] } }
+                ], id: "live-sales-by-hour-chart", colors: ["#4f46e5", "#cbd5e1"], thousands: ",", height: "220px", legend: "bottom" %>
+          </div>
         </div>
         <% if live.by_branch.any? %>
           <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">

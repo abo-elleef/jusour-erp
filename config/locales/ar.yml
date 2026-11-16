@@ -4,6 +4,13 @@ ar:
       short_time: "%H:%M"
       long_with_time: "%-d %B %Y %I:%M %p"
       ticket: "%-d %b %I:%M %p"
+  hourly_chart:
+    am: "ص"
+    pm: "م"
+    range: "%{from} – %{to}"
+    orders: "الطلبات: %{count}"
+    sales: "المبيعات: %{amount}"
+    share: "النسبة من المبيعات: %{percent}%"
   date:
     formats:
       long: "%-d %B %Y"
@@ -6075,7 +6082,7 @@ ar:
       expand_all: "فتح الكل"
       collapse_all: "طي الكل"
       payments_total: "إجمالي المحصّل"
-      hourly_hint: "عدد الطلبات حسب ساعة اليوم"
+      hourly_hint: "الطلبات حسب ساعة اليوم — مرّر على العمود لترى المبيعات ونسبتها"
       export_pdf: "تصدير PDF"
     food_costs:
       title: "تكلفة الطعام %"

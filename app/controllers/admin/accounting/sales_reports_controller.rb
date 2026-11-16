@@ -89,14 +89,22 @@ module Admin
         @previous = ::Accounting::SalesReportService.new(@previous_start, @previous_end, include_open: @include_open).summary
       end
 
-      # Order count per hour of the day, summed over every day in the range, in
-      # business-day order (so a day that starts at 06:00 reads 06:00 → 05:00).
+      # Orders and sales per hour of the day, summed over every day in the range,
+      # in business-day order (so a day that starts at 06:00 reads 06:00 → 05:00).
+      # share_percent: the hour's part of the period's sales.
       def prepare_orders_by_hour
-        counts = Hash.new(0)
-        @report[:hourly_distribution].each { |time, count| counts[time.hour] += count }
+        hours = @report[:hourly_distribution]
+        total = hours.values.sum { |h| h[:sales_cents] }
         start = BusinessDay.start_hour.to_i
-        @orders_by_hour = (0..23).map { |i| (start + i) % 24 }
-          .to_h { |hour| [format("%02d:00", hour), counts[hour]] }
+        @orders_by_hour = (0..23).map { |i| (start + i) % 24 }.map do |hour|
+          h = hours[hour]
+          {
+            hour: hour,
+            count: h[:count],
+            sales_cents: h[:sales_cents],
+            share_percent: total.positive? ? (h[:sales_cents] * 100.0 / total).round(1) : 0
+          }
+        end
       end
 
       def generate_sales_csv

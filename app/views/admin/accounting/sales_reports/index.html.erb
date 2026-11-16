@@ -163,8 +163,16 @@
       <%= line_chart @report[:daily_totals].transform_values { |c| c / 100.0 }.transform_keys(&:to_s),
             prefix: chart_money_prefix, thousands: ",", height: "260px" %>
     </div>
-    <div data-tab-panel="hour" data-tabs-target="panel" hidden>
-      <%= column_chart @orders_by_hour, height: "260px" %>
+    <div data-tab-panel="hour" data-tabs-target="panel" hidden
+         data-controller="chart-tooltip" data-chart-tooltip-chart-id-value="sales-by-hour-chart"
+         data-chart-tooltip-titles-value="<%= @orders_by_hour.map { |h| hour_range_label(h[:hour]) }.to_json %>"
+         data-chart-tooltip-lines-value="<%= [@orders_by_hour.map { |h| [
+           t("hourly_chart.orders", count: h[:count]),
+           t("hourly_chart.sales", amount: format_amount(h[:sales_cents])),
+           t("hourly_chart.share", percent: number_with_precision(h[:share_percent], precision: 1))
+         ] }].to_json %>">
+      <%= column_chart @orders_by_hour.to_h { |h| [hour_axis_label(h[:hour]), h[:count]] },
+            id: "sales-by-hour-chart", height: "260px" %>
     </div>
   </section>
 

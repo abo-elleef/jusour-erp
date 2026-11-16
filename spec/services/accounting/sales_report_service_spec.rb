@@ -46,6 +46,20 @@ RSpec.describe Accounting::SalesReportService do
       expect(report[:summary][:promo_cost_cents]).to eq(500)
     end
 
+    it "gives order count and net sales per hour of the day" do
+      [[today.noon, 1000], [today.noon + 20.minutes, 500], [today.noon + 3.hours, 2500]].each do |at, cents|
+        create(:order, user: user, company: company, status: "completed",
+          subtotal_cents: cents, discount_cents: 0, tax_cents: 0, tip_cents: 0, total_cents: cents, created_at: at)
+      end
+
+      hours = described_class.new(today, today).call[:hourly_distribution]
+
+      expect(hours.keys).to eq((0..23).to_a)
+      expect(hours[12]).to eq(count: 2, sales_cents: 1500)
+      expect(hours[15]).to eq(count: 1, sales_cents: 2500)
+      expect(hours[9]).to eq(count: 0, sales_cents: 0)
+    end
+
     it "charts daily net sales instead of order totals with tax and tips" do
       order = create(:order, user: user, company: company, status: "completed",
         subtotal_cents: 1000, discount_cents: 0, tax_cents: 80, tip_cents: 100, total_cents: 1180,

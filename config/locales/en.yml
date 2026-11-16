@@ -4,6 +4,13 @@ en:
       short_time: "%I:%M %p"
       long_with_time: "%-d %B %Y %I:%M %p"
       ticket: "%-d %b %I:%M %p"
+  hourly_chart:
+    am: "AM"
+    pm: "PM"
+    range: "%{from} – %{to}"
+    orders: "Orders: %{count}"
+    sales: "Sales: %{amount}"
+    share: "Share of sales: %{percent}%"
   date:
     formats:
       long: "%b %-d, %Y"
@@ -5987,7 +5994,7 @@ en:
       expand_all: "Expand all"
       collapse_all: "Collapse all"
       payments_total: "Total collected"
-      hourly_hint: "Order count by hour of day"
+      hourly_hint: "Orders by hour of day — hover a bar for its sales and share"
       export_pdf: "Export PDF"
     food_costs:
       title: "Food cost %"
