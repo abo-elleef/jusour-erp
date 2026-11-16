@@ -7188,7 +7188,6 @@ en:
       business_day_none: "No manual branches to advance."
       business_day_branch_updated: "%{branch} business day settings saved."
       business_day_defaults_updated: "Company default start hour saved."
-      drawer_open_invalid: "Select a valid cashier and cash drawer treasury."
       already_clocked_in: "Already clocked in."
       clocked_in: "Clocked in at %{time}."
       clocked_out: "Clocked out."

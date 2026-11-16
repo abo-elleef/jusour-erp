@@ -24,11 +24,6 @@ module Admin
           date: @date, location: @location, treasury: @treasury
         )
         @sessions = @rows.map(&:session)
-        @cashiers = User.active.includes(:assigned_treasury).order(:name)
-        @default_user = current_user
-        @default_treasury_id = current_user.assigned_treasury_id ||
-          Treasury.default_treasury&.id ||
-          @drawer_treasuries.first&.id
 
         respond_to do |format|
           format.html
@@ -51,29 +46,6 @@ module Admin
                                       .group_by(&:payment_method)
                                       .transform_values { |ps| ps.sum { |p| p.amount_cents - p.refunded_amount_cents } }
         @refunded_cents = @payments.sum(&:refunded_amount_cents)
-      end
-
-      def open_session
-        user = User.active.find(params[:user_id].presence || current_user.id)
-        treasury = resolve_open_treasury(user)
-        location = Location.active.branches.find(params[:location_id])
-        @session = CashDrawerSession.create!(
-          user: user,
-          treasury: treasury,
-          location: location,
-          session_date: BusinessDay.today(location: location),
-          opening_float_cents: (params[:opening_float].to_f * 100).to_i,
-          float_source_treasury: Treasury.float_source,
-          status: "open"
-        )
-        ::Accounting::CashReconciliationService.new(@session).compute_expected!
-        ::Accounting::TreasuryLedgerService.sync_drawer_open!(@session)
-        redirect_to admin_accounting_cash_drawer_index_path(date: @session.session_date, location_id: location.id),
-              notice: t("flash.accounting.drawer_opened")
-      rescue ActiveRecord::RecordInvalid => e
-        redirect_to admin_accounting_cash_drawer_index_path, alert: e.record.errors.full_messages.to_sentence
-      rescue ActiveRecord::RecordNotFound
-        redirect_to admin_accounting_cash_drawer_index_path, alert: t("flash.accounting.drawer_open_invalid")
       end
 
       def count
@@ -234,16 +206,6 @@ module Admin
 
       def set_session
         @session = CashDrawerSession.find(params[:id])
-      end
-
-      def resolve_open_treasury(user)
-        if params[:treasury_id].present?
-          Treasury.active.cash_drawers.find(params[:treasury_id])
-        elsif user.assigned_treasury&.active? && user.assigned_treasury.treasury_type == "cash_drawer"
-          user.assigned_treasury
-        else
-          raise ActiveRecord::RecordNotFound
-        end
       end
     end
   end

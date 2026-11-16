@@ -7286,7 +7286,6 @@ ar:
       business_day_none: "لا توجد فروع يدوية للتقديم."
       business_day_branch_updated: "تم حفظ إعدادات يوم العمل لـ %{branch}."
       business_day_defaults_updated: "تم حفظ ساعة البداية الافتراضية للشركة."
-      drawer_open_invalid: "اختر كاشيرًا وخزينة درج نقد صالحين."
       already_clocked_in: "مسجّل الدخول مسبقًا."
       clocked_in: "تسجيل دخول الساعة %{time}."
       clocked_out: "تم تسجيل الخروج."

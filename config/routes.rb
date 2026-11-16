@@ -420,9 +420,6 @@ Rails.application.routes.draw do
       resources :tax_reports, only: [:index]
 
       resources :cash_drawer, only: %i[index show], controller: "cash_drawer" do
-        collection do
-          post :open_session
-        end
         member do
           get :count
           patch :reconcile
