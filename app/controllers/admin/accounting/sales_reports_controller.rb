@@ -9,7 +9,8 @@ module Admin
 
       def index
         parse_date_range
-        @report = ::Accounting::SalesReportService.new(@start_date, @end_date).call
+        @include_open = params[:include_open] == "1"
+        @report = ::Accounting::SalesReportService.new(@start_date, @end_date, include_open: @include_open).call
         prepare_items
         prepare_comparison
         prepare_orders_by_hour
@@ -85,7 +86,7 @@ module Admin
         days = (@end_date - @start_date).to_i + 1
         @previous_end = @start_date - 1
         @previous_start = @previous_end - (days - 1)
-        @previous = ::Accounting::SalesReportService.new(@previous_start, @previous_end).summary
+        @previous = ::Accounting::SalesReportService.new(@previous_start, @previous_end, include_open: @include_open).summary
       end
 
       # Order count per hour of the day, summed over every day in the range, in

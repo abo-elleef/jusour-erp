@@ -21,17 +21,15 @@ module Admin
         public_storefront_home_url(company_slug: Current.company.slug)
     end
 
+    # Live: every placed order today so far, not only completed ones (those are
+    # mostly completed at drawer close), paced against last week. See
+    # Dashboard::LiveSalesService.
     def load_today_stats
-      today_orders = Order.completed.on_date(Date.current)
-      @today_order_count   = today_orders.count
-      # Net of refunds: a refunded order stays "completed" at its full total.
-      # Delivery fees are the driver's money, not revenue.
-      @today_revenue_cents = today_orders.sum(:total_cents) - today_orders.sum(:delivery_fee_cents) -
-                             ::Accounting::RevenueCalculator.refunds_cents(today_orders.pluck(:id))
-      @today_avg_cents     = @today_order_count.positive? ? (@today_revenue_cents / @today_order_count) : 0
+      location_ids = current_user.all_locations? ? nil : current_user.accessible_location_ids
+      @live_sales = ::Dashboard::LiveSalesService.call(location_ids: location_ids)
     end
 
-def load_treasury_flow
+    def load_treasury_flow
       treasury_ids = ::Treasury.visible_to(current_user).active.pluck(:id)
       today_txns = ::TreasuryTransaction.where(treasury_id: treasury_ids, occurred_on: Date.current)
       @treasury_in_cents  = today_txns.where("amount_cents > 0").sum(:amount_cents)

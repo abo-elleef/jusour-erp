@@ -30,6 +30,22 @@
   </div>
   <%= render "admin/accounting/date_range_form" %>
 
+  <%# Open orders: placed but not completed yet. Off = completed only (what the day
+      close and COGS use); on = everything sold so far, for reading the day live. %>
+  <% toggle_params = request.query_parameters.except("include_open").merge(@include_open ? {} : { include_open: "1" }) %>
+  <div class="flex flex-wrap items-center gap-3 mb-4 -mt-2">
+    <%= link_to admin_accounting_sales_reports_path(toggle_params), role: "switch", "aria-checked": @include_open.to_s,
+          class: "inline-flex items-center gap-2 text-sm font-medium text-gray-700", data: { turbo_action: "replace" } do %>
+      <span class="relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors <%= @include_open ? 'bg-indigo-600' : 'bg-gray-300' %>">
+        <span class="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all <%= @include_open ? 'start-[1.125rem]' : 'start-0.5' %>"></span>
+      </span>
+      <%= t("accounting.sales_reports.include_open") %>
+    <% end %>
+    <span class="text-xs <%= @include_open ? 'text-amber-700' : 'text-gray-500' %>">
+      <%= t(@include_open ? "accounting.sales_reports.include_open_on_hint" : "accounting.sales_reports.include_open_off_hint") %>
+    </span>
+  </div>
+
   <%# Headline cards: each answers one question, with the change vs the previous period. %>
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
     <div class="rounded-2xl border border-amber-200 bg-amber-50/40 p-4">

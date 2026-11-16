@@ -2,8 +2,16 @@
 
 module Accounting
   class SalesReportService
-    def initialize(start_date, end_date)
+    # Statuses counted when the report is asked to include open orders: placed
+    # but not yet completed (most get completed in bulk at drawer close).
+    OPEN_STATUSES = Order::PLACED_STATUSES
+
+    # include_open: also count placed orders that are not completed yet, so the
+    # report can be read during the day. Off by default — the day close, COGS
+    # and every other caller work from completed orders only.
+    def initialize(start_date, end_date, include_open: false)
       @range = BusinessDay.range_between(start_date, end_date)
+      @include_open = include_open
     end
 
     def call
@@ -26,7 +34,10 @@ module Accounting
     private
 
     def completed_orders
-      @completed_orders ||= Order.completed.where(created_at: @range)
+      @completed_orders ||= begin
+        statuses = @include_open ? %w[completed] + OPEN_STATUSES : %w[completed]
+        Order.where(status: statuses, created_at: @range)
+      end
     end
 
     def order_ids

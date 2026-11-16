@@ -3,25 +3,94 @@
 <div class="max-w-full">
   <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-6"><%= t("admin.dashboard.title") %></h1>
 
-  <%# ── Today at a glance ──────────────────────────────────────── %>
+  <%# ── Today at a glance (live) ───────────────────────────────── %>
   <%# POS ticket figures: shown only to companies that actually sell that way, since
-      three zeros read as a bad day rather than as "not applicable here". %>
-  <% if current_user.can?("orders:view") && tab_feature_enabled?(feature: :menu) %>
-    <section class="mb-8">
-      <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3"><%= t("dashboard.today_section") %></h2>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      zeros read as a bad day rather than as "not applicable here".
+      Live: every placed order so far, paced against the same weekday last week
+      up to the same time — see Dashboard::LiveSalesService. %>
+  <% if @live_sales && tab_feature_enabled?(feature: :menu) %>
+    <% live = @live_sales %>
+    <% change_badge = ->(pct) {
+         next "" if pct.nil?
+         css = pct.negative? ? "text-red-700 bg-red-50 border-red-200" : "text-emerald-700 bg-emerald-50 border-emerald-200"
+         tag.span("#{pct.positive? ? '+' : ''}#{pct}%", class: "text-xs font-semibold border px-2 py-0.5 rounded-full tabular-nums #{css}", dir: "ltr")
+       } %>
+    <section class="mb-8" id="live-sales">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+        <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <%= t("dashboard.today_section") %>
+          <span class="ms-1 inline-flex items-center gap-1 normal-case tracking-normal text-emerald-700">
+            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span><%= t("dashboard.live.as_of", time: l(live.now, format: "%H:%M")) %>
+          </span>
+        </h2>
+        <% if current_user.can?(AccountingNav.permission_for("sales_reports").to_s) %>
+          <%= link_to t("dashboard.live.open_report"),
+                admin_accounting_sales_reports_path(start_date: live.business_date, end_date: live.business_date, include_open: "1"),
+                class: "text-xs font-semibold text-indigo-600 hover:text-indigo-800" %>
+        <% end %>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="rounded-2xl border border-gray-200 bg-white p-5">
-          <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.today_revenue") %></p>
-          <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1"><%= format_money(@today_revenue_cents) %></p>
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.live.sales_so_far") %></p>
+            <%= change_badge.call(live.change_percent) %>
+          </div>
+          <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1"><%= format_amount(live.sales_cents) %></p>
+          <p class="text-xs text-gray-500 mt-1">
+            <%= t("dashboard.live.last_week_same_time", day: l(live.last_week_date, format: "%A %-d/%-m"), amount: format_amount(live.last_week_same_time_cents)) %>
+          </p>
         </div>
         <div class="rounded-2xl border border-gray-200 bg-white p-5">
           <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.today_orders") %></p>
-          <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1"><%= @today_order_count %></p>
+          <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1"><%= live.order_count %></p>
+          <p class="text-xs text-gray-500 mt-1"><%= t("dashboard.live.last_week_orders", count: live.last_week_same_time_count) %></p>
         </div>
         <div class="rounded-2xl border border-gray-200 bg-white p-5">
           <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.today_avg") %></p>
-          <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1"><%= format_money(@today_avg_cents) %></p>
+          <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1"><%= format_amount(live.avg_cents) %></p>
         </div>
+        <div class="rounded-2xl border border-gray-200 bg-white p-5">
+          <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.live.collected") %></p>
+          <p class="text-3xl font-bold text-gray-900 tabular-nums mt-1"><%= format_amount(live.collected_cents) %></p>
+          <p class="text-xs text-gray-500 mt-1"><%= t("dashboard.live.not_collected", amount: format_amount([live.sales_cents - live.collected_cents, 0].max)) %></p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 <%= 'lg:grid-cols-3' if live.by_branch.any? %> gap-4 mt-4">
+        <div class="rounded-2xl border border-gray-200 bg-white p-5 <%= 'lg:col-span-2' if live.by_branch.any? %>">
+          <div class="flex items-baseline justify-between gap-2 mb-2">
+            <p class="text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.live.by_hour") %></p>
+            <p class="text-xs text-gray-500"><%= t("dashboard.live.last_week_full_day", amount: format_amount(live.last_week_full_day_cents)) %></p>
+          </div>
+          <%= column_chart [
+                { name: t("dashboard.live.today"), data: live.by_hour.map { |h| [h[:hour], h[:today_cents] && h[:today_cents] / 100.0] } },
+                { name: l(live.last_week_date, format: "%A %-d/%-m"), data: live.by_hour.map { |h| [h[:hour], h[:last_week_cents] / 100.0] } }
+              ], colors: ["#4f46e5", "#cbd5e1"], thousands: ",", height: "220px", legend: "bottom" %>
+        </div>
+        <% if live.by_branch.any? %>
+          <div class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+            <p class="px-5 pt-5 pb-2 text-xs font-semibold text-gray-500 uppercase"><%= t("dashboard.live.by_branch") %></p>
+            <ul class="divide-y divide-gray-100">
+              <% live.by_branch.each do |b| %>
+                <li class="flex items-center justify-between gap-3 px-5 py-3">
+                  <div class="min-w-0">
+                    <% if b[:location_id] %>
+                      <%= link_to b[:name], admin_location_path(b[:location_id]), class: "text-sm font-medium text-gray-800 hover:text-indigo-700 truncate block" %>
+                    <% else %>
+                      <span class="text-sm font-medium text-gray-500"><%= t("dashboard.live.no_branch") %></span>
+                    <% end %>
+                    <span class="text-xs text-gray-500"><%= t("dashboard.live.orders_count", count: b[:order_count]) %> · <%= t("dashboard.live.last_week_short", amount: format_amount(b[:last_week_cents])) %></span>
+                  </div>
+                  <div class="flex items-center gap-2 shrink-0">
+                    <span class="text-sm font-bold tabular-nums text-gray-900"><%= format_amount(b[:sales_cents]) %></span>
+                    <%= change_badge.call(b[:change_percent]) %>
+                  </div>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
       </div>
     </section>
   <% end %>
