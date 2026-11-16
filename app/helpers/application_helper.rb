@@ -488,6 +488,29 @@ module ApplicationHelper
     end
   end
 
+  # Any action button that stays on screen when the rules refuse it: greyed out,
+  # aria-disabled (not disabled, so the tooltip still opens) and explaining why on
+  # hover, tap or focus. The block is the button's content (icon + label).
+  def blocked_action_button(reason, &block)
+    tag.span class: "relative inline-flex", data: { controller: "tooltip" } do
+      button = tag.button type: "button",
+        class: "inline-flex items-center gap-1.5 text-sm font-semibold text-gray-400 px-3 py-1.5 rounded-xl " \
+               "border border-gray-200 bg-gray-50 cursor-not-allowed",
+        aria: { disabled: true },
+        data: {
+          tooltip_target: "trigger",
+          action: "mouseenter->tooltip#onMouseEnter mouseleave->tooltip#onMouseLeave " \
+                   "focus->tooltip#onFocus blur->tooltip#onBlur click->tooltip#toggle"
+        }, &block
+      panel = tag.span reason,
+        role: "tooltip",
+        class: "hidden absolute z-20 top-full mt-2 end-0 w-72 max-w-[80vw] rounded-xl border " \
+               "border-gray-200 bg-white p-3 text-xs leading-relaxed text-gray-600 shadow-lg font-normal text-start",
+        data: { tooltip_target: "panel" }
+      button + panel
+    end
+  end
+
   # A small "i" icon that reveals explanatory text next to a label — on hover
   # where the device supports it, on tap where it doesn't (see tooltip_controller.js).
   # For a short line of methodology text that would otherwise need its own

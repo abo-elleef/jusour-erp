@@ -124,9 +124,9 @@ class Order < ApplicationRecord
     # the pass. Missing it here made a void of a ready order silently do nothing.
     event :cancel do
       transitions from: %i[draft submitted in_progress ready], to: :cancelled
-      # A completed order can be voided only if no money ever came in: a cart left
-      # open and swept up by Complete all. A paid one is refunded, not voided.
-      transitions from: :completed, to: :cancelled, guard: :never_paid?
+      # A completed order can be voided too, paid or not: Orders::VoidService refunds
+      # what was paid and UndoCompletionService puts stock, loyalty and the day back.
+      transitions from: :completed, to: :cancelled
       after do |*args|
         if aasm.from_state == :completed
           voided_by = args.first.is_a?(Hash) ? args.first[:by] : nil

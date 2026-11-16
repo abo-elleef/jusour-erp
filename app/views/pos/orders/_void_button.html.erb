@@ -1,18 +1,10 @@
 <%# Voids a placed order from the register. Needs the branch's six-digit
     void-orders PIN (separate from the edit-orders PIN). Anything paid is refunded.
     Money a closed drawer took in is refunded from the admin side instead
-    (Order#paid_in_closed_drawer?), so the button is shown disabled with why. %>
+    (Order#paid_in_closed_drawer?). Whenever the register can't void it (that,
+    a draft, already voided) the button stays, greyed out with the reason. %>
 <% from = local_assigns[:from] %>
-<% if policy(order).void_needs_admin? %>
-  <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-400 px-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 cursor-not-allowed"
-        title="<%= t("pos.orders.void_needs_admin") %>" aria-disabled="true">
-    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
-    </svg>
-    <%= t("pos.orders.void") %>
-    <span class="text-xs font-medium text-gray-500"><%= t("pos.orders.void_needs_admin") %></span>
-  </span>
-<% elsif policy(order).void_with_pin? %>
+<% if policy(order).void_with_pin? %>
   <% dialog_id = "void-order-dialog-#{order.id}" %>
   <button type="button"
           onclick="document.getElementById('<%= dialog_id %>').showModal()"
@@ -51,4 +43,11 @@
       </div>
     <% end %>
   </dialog>
+<% else %>
+  <%= blocked_action_button(t("pos.orders.blocked.void.#{policy(order).void_blocked_reason}")) do %>
+    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+    </svg>
+    <%= t("pos.orders.void") %>
+  <% end %>
 <% end %>

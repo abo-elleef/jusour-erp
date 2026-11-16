@@ -124,6 +124,21 @@ RSpec.describe "Voiding an order with the branch PIN", type: :request do
       expect(payment.reload.status).to eq("refunded")
     end
 
+    it "is voided and refunded after it was completed, too" do
+      order = place_new_order
+      payment = pay(order, session: drawer)
+      order.update_columns(status: "completed")
+
+      get pos_order_path(order)
+      expect(response.body).to include(%(id="void-order-dialog-#{order.id}"))
+
+      post void_pos_order_path(order), params: { pin: "135790" }
+
+      expect(order.reload.status).to eq("cancelled")
+      expect(payment.reload.status).to eq("refunded")
+      expect(flash[:notice]).to be_present
+    end
+
     # Refunding would rewrite the counted drawer's expected cash after its count.
     it "is refused once that drawer is closed, and sent to the admin side" do
       order = place_new_order
@@ -133,7 +148,7 @@ RSpec.describe "Voiding an order with the branch PIN", type: :request do
 
       get pos_order_path(order)
       expect(response.body).not_to include(%(id="void-order-dialog-#{order.id}"))
-      expect(response.body).to include(CGI.escapeHTML(I18n.t("pos.orders.void_needs_admin")))
+      expect(response.body).to include(CGI.escapeHTML(I18n.t("pos.orders.blocked.void.closed_drawer")))
 
       post void_pos_order_path(order), params: { pin: "135790" }
 
@@ -158,6 +173,42 @@ RSpec.describe "Voiding an order with the branch PIN", type: :request do
       safe = Treasury.create!(company: company, name: "Safe", treasury_type: "safe",
                               balance_cents: 0, opening_balance_cents: 0)
       expect(Orders::VoidService.call(order: order.reload, user: cashier, refund_treasury: safe).voided?).to be(true)
+    end
+  end
+
+  describe "buttons the rules refuse stay on the order page, greyed out with why" do
+    it "explains Edit items on a paid order" do
+      order = place_new_order
+      create(:payment, order: order, company: company, amount_cents: order.total_cents, status: "completed",
+                       payment_method: "cash", cash_drawer_session: drawer)
+
+      get pos_order_path(order)
+
+      expect(response.body).not_to include(%(id="unlock-edit-dialog-#{order.id}"))
+      expect(response.body).to include(CGI.escapeHTML(I18n.t("pos.orders.blocked.edit_items.paid")))
+      expect(response.body).to include(%(aria-disabled="true"))
+    end
+
+    it "explains Edit items on a completed unpaid order" do
+      order = place_new_order
+      order.update_columns(status: "completed")
+
+      get pos_order_path(order)
+
+      expect(response.body).to include(CGI.escapeHTML(I18n.t("pos.orders.blocked.edit_items.completed")))
+    end
+
+    it "explains both on a voided order" do
+      order = place_new_order
+      post void_pos_order_path(order), params: { pin: "135790" }
+      expect(order.reload.status).to eq("cancelled")
+
+      get pos_order_path(order)
+      expect(response).to have_http_status(:ok)
+
+      expect(response.body).not_to include(%(id="void-order-dialog-#{order.id}"))
+      expect(response.body).to include(CGI.escapeHTML(I18n.t("pos.orders.blocked.void.cancelled")))
+      expect(response.body).to include(CGI.escapeHTML(I18n.t("pos.orders.blocked.edit_items.cancelled")))
     end
   end
 

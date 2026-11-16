@@ -1,7 +1,9 @@
 <%# Items lock once the order is placed. The branch's edit-orders PIN reopens it
     in the register; an order already reopened just goes back there.
     Used on the order page and on every row of Collect Payment and My Shift's
-    orders tab, so the dialog id carries the order id. %>
+    orders tab, so the dialog id carries the order id.
+    show_blocked: the order page keeps the button on screen, greyed out with the
+    reason, when the rules refuse it; the list rows just leave it out. %>
 <% from = local_assigns[:from] %>
 <% if policy(order).unlock_edit? %>
   <% if order.editing_placed? %>
@@ -45,5 +47,12 @@
         </div>
       <% end %>
     </dialog>
+  <% end %>
+<% elsif local_assigns[:show_blocked] %>
+  <%= blocked_action_button(t("pos.orders.blocked.edit_items.#{policy(order).edit_items_blocked_reason}")) do %>
+      <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>
+      </svg>
+      <%= t("pos.orders.edit_items") %>
   <% end %>
 <% end %>

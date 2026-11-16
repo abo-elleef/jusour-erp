@@ -33,7 +33,7 @@
           <%= t("pos.orders.edit_details") %>
         </button>
       <% end %>
-      <%= render "pos/orders/edit_items_button", order: @order, from: params[:from] %>
+      <%= render "pos/orders/edit_items_button", order: @order, from: params[:from], show_blocked: true %>
       <%= render "pos/orders/void_button", order: @order, from: params[:from] %>
       <%= render "pos/pos_nav" %>
     </div>

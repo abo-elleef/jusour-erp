@@ -2,8 +2,7 @@
 
 module Orders
   # Takes back what completing an order did, for an order voided after it was
-  # completed. Only a never-paid order can get here (Order#never_paid?): a cart
-  # left open and swept up by Complete all, say. A paid one is refunded instead.
+  # completed. Money paid on it is refunded separately, by Orders::VoidService.
   #
   # Completing did three things, and each is undone:
   # - stock: DeductStockService drew the recipe out of the branch. It is put back

@@ -89,15 +89,12 @@ class OrderPolicy < ApplicationPolicy
     user.can_access_pos? || user.owner? || user.manager?
   end
 
-  # A completed order only while nobody has paid for it (a cart swept up by
-  # Complete all); once money came in, it is a refund.
+  # Completed orders too, paid or not: the void refunds what was paid.
   # The admin order page. Anyone who can open it may void; the branch's void-orders
   # PIN is the gate for everyone but owners and managers (void_without_pin?).
   def void?
     return false unless show?
-    return false if record.cancelled?
-
-    !record.completed? || record.never_paid?
+    !record.cancelled?
   end
 
   # Owners and managers void and reopen orders on the admin page without the
@@ -117,6 +114,31 @@ class OrderPolicy < ApplicationPolicy
   # says to void it from the admin side instead of offering the PIN.
   def void_needs_admin?
     void_at_register_allowed_by_status? && record.paid_in_closed_drawer?
+  end
+
+  # Why the register's Edit items button is greyed out (nil when it works). A key
+  # under pos.orders.blocked.edit_items.
+  def edit_items_blocked_reason
+    return if unlock_edit?
+    return :no_access unless user.can_access_pos?
+    return :cancelled if record.cancelled?
+    return :draft if record.draft?
+    return :paid unless record.never_paid?
+    return :completed if record.completed?
+
+    :no_access
+  end
+
+  # Why the register's Void button is greyed out (nil when it works). A key under
+  # pos.orders.blocked.void.
+  def void_blocked_reason
+    return if void_with_pin?
+    return :closed_drawer if void_needs_admin?
+    return :no_access unless user.can_access_pos?
+    return :cancelled if record.cancelled?
+    return :draft if record.draft?
+
+    :no_access
   end
 
   def refund?
@@ -145,9 +167,7 @@ class OrderPolicy < ApplicationPolicy
 
   def void_at_register_allowed_by_status?
     return false unless user.can_access_pos?
-    return false if record.draft? || record.cancelled?
-
-    !record.completed? || record.never_paid?
+    !(record.draft? || record.cancelled?)
   end
 
   public

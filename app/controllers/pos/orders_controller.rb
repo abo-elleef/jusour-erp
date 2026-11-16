@@ -75,7 +75,9 @@ module Pos
       @order_items = OrderItem.in_menu_order(@order.order_items.includes(:combo, :order_item_modifiers, :order_discounts, menu_item: :category))
       @payments = @order.payments.order(created_at: :desc)
 
-      if @from_shift || @order.amount_due_cents.zero?
+      # A voided order has nothing to collect: without this, voiding an unpaid order
+      # from its own page bounced the cashier off it with "not authorized".
+      if @from_shift || @order.cancelled? || @order.amount_due_cents.zero?
         return
       end
 

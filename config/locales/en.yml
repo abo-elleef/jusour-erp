@@ -4166,7 +4166,18 @@ en:
       void_confirm: "Void order"
       void_back: "Back"
       void_default_reason: "Voided at the register"
-      void_needs_admin: "Paid in a closed shift — void it from the admin order page."
+      blocked:
+        edit_items:
+          cancelled: "This order is voided, so its items can't change."
+          draft: "Not placed yet — change its items in the register."
+          paid: "Already paid, so its items are locked. Void it and ring a new order instead."
+          completed: "Completed orders can't be edited. Void it and ring a new order instead."
+          no_access: "You don't have access to edit this order."
+        void:
+          cancelled: "This order is already voided."
+          draft: "Not placed yet — remove its items in the register to discard it."
+          closed_drawer: "Paid in a closed shift — void it from the admin order page."
+          no_access: "You don't have access to void this order."
       edit_details: "Edit details"
       mark_completed: "Mark completed"
       complete_unpaid_confirm: "This order still has a balance due. Complete it anyway? It stays on Collect Payment until it is settled."

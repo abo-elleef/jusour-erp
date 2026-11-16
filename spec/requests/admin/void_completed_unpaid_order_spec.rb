@@ -114,16 +114,22 @@ RSpec.describe "Voiding a completed order that was never paid", type: :request d
       expect(response.body).to include(CGI.escapeHTML(I18n.t("admin.orders.void_completed_hint")))
     end
 
-    it "refuses a completed order that was paid — that is a refund" do
+    it "voids a completed order that was paid: refund, stock back, out of the day" do
       order = completed_order
-      create(:payment, order: order, amount_cents: order.total_cents, status: "completed", payment_method: "cash")
+      payment = create(:payment, order: order, amount_cents: order.total_cents, status: "completed",
+                                 payment_method: "cash")
+      post_day!
+      expect(sales_revenue_cents).to eq(order.total_cents)
 
       get admin_order_path(order)
-      expect(response.body).not_to include(void_admin_order_path(order))
+      expect(response.body).to include(void_admin_order_path(order))
 
       post void_admin_order_path(order)
-      expect(order.reload).to be_completed
-      expect(on_hand).to eq(4.5)
+
+      expect(order.reload).to be_cancelled
+      expect(payment.reload.status).to eq("refunded")
+      expect(on_hand).to eq(5)
+      expect(sales_revenue_cents).to eq(0)
     end
   end
 
