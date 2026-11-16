@@ -49,12 +49,22 @@ module Printing
         Escpos::ProductionTicketBuilder.new(
           @order,
           printer: @printer,
-          order_items: @order.order_items.includes(:order_item_modifiers, :combo, :order_discounts, menu_item: :category),
+          order_items: production_items,
           title: @print_type == "pick_station" ? I18n.t("printing.production_ticket.pick_title") : (@printer.station.presence || @printer.name)
         ).build
       else
         Escpos::ReceiptBuilder.new(@order, printer: @printer).build
       end
+    end
+
+    # The pick ticket lists the whole order; a station ticket only the items
+    # assigned to that printer (same rule DispatchProductionPrintsService used
+    # to decide the station gets a ticket at all).
+    def production_items
+      items = @order.order_items.includes(:order_item_modifiers, :combo, :order_discounts, menu_item: :category).to_a
+      return items if @print_type == "pick_station"
+
+      OrderItemRouting.matching_items(items, @printer)
     end
   end
 end
