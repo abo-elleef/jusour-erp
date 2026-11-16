@@ -488,6 +488,23 @@ module ApplicationHelper
     end
   end
 
+  # Attributes for a shared PIN input (branch edit/void-orders PIN, manager PIN).
+  # Not type="password": browsers offer to save those, and a PIN saved on a shared
+  # till can be read back from the browser's password manager by whoever uses it
+  # next. A text input masked by CSS (.pin-mask) is never offered for saving; the
+  # data attributes ask 1Password, LastPass, Bitwarden and Dashlane to skip it too.
+  def pin_field_attributes(extra_class = nil)
+    {
+      type: "text",
+      autocomplete: "off",
+      autocorrect: "off",
+      autocapitalize: "off",
+      spellcheck: false,
+      class: ["pin-mask", extra_class].compact.join(" "),
+      data: { "1p-ignore" => "", lpignore: "true", bwignore: "", form_type: "other" }
+    }
+  end
+
   # Any action button that stays on screen when the rules refuse it: greyed out,
   # aria-disabled (not disabled, so the tooltip still opens) and explaining why on
   # hover, tap or focus. The block is the button's content (icon + label).

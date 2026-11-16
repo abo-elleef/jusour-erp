@@ -277,3 +277,12 @@ form.menu-card.pos-card-active > button {
   border-color: rgb(255 255 255 / 0.35);
   background: rgb(255 255 255 / 0.15);
 }
+
+/* Branch PINs (edit/void orders, manager PIN) are typed on shared tills. As
+   type="password" the browser offers to save them, and anyone at the till could
+   then read them back from its password manager. They are plain text inputs
+   masked here instead (see pin_field_attributes). */
+.pin-mask {
+  -webkit-text-security: disc;
+  text-security: disc;
+}

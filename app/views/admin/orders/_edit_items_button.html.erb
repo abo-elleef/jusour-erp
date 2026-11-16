@@ -19,10 +19,10 @@
         <h3 class="text-lg font-bold text-gray-900"><%= t("pos.orders.unlock_title") %></h3>
         <p class="text-sm text-gray-600"><%= t("admin.orders.edit_items_hint", branch: order.location&.name) %></p>
         <%= label_tag "#{dialog_id}-pin", t("admin.orders.edit_pin"), class: label_class %>
-        <%= password_field_tag :pin, nil, id: "#{dialog_id}-pin", maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
-              autocomplete: "off", required: true, autofocus: true,
+        <%= text_field_tag :pin, nil, id: "#{dialog_id}-pin", maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
+              required: true, autofocus: true,
               placeholder: t("pos.orders.six_digit_pin_placeholder"),
-              class: "#{input_class} text-center tracking-widest" %>
+              **pin_field_attributes("#{input_class} text-center tracking-widest") %>
         <div class="flex gap-2">
           <%= submit_tag t("pos.orders.unlock_confirm"),
                 class: "flex-1 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl" %>

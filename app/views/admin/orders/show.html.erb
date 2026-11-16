@@ -329,10 +329,10 @@
               <% unless policy(@order).skip_branch_pin? %>
                 <div>
                   <%= label_tag :void_pin, t("admin.orders.void_pin"), class: label_class %>
-                  <%= password_field_tag :pin, nil, id: "void_pin", maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
-                        autocomplete: "off", required: true,
+                  <%= text_field_tag :pin, nil, id: "void_pin", maxlength: 6, pattern: "[0-9]{6}", inputmode: "numeric",
+                        required: true,
                         placeholder: t("pos.orders.six_digit_pin_placeholder"),
-                        class: "#{input_class} text-center tracking-widest" %>
+                        **pin_field_attributes("#{input_class} text-center tracking-widest") %>
                 </div>
               <% end %>
               <%= submit_tag t("admin.orders.void_submit"),

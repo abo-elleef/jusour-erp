@@ -66,6 +66,25 @@ RSpec.describe "Voiding an order with the branch PIN", type: :request do
     expect(response.body).to include(void_pos_order_path(order))
   end
 
+  # A type="password" field makes the browser offer to save the PIN, and a PIN
+  # saved on a shared till can be read back by whoever uses it next.
+  it "asks for the PINs in masked text fields the browser will not offer to save" do
+    order = place_new_order
+    branch.update!(edit_orders_pin: "864213")
+    order.update_columns(unlocked_for_edit_at: nil)
+
+    get pos_order_path(order)
+
+    expect(response.body).not_to include('type="password"')
+    pin_inputs = Nokogiri::HTML(response.body).css('input[name="pin"]')
+    expect(pin_inputs.size).to eq(2)
+    pin_inputs.each do |input|
+      expect(input["type"]).to eq("text")
+      expect(input["class"]).to include("pin-mask")
+      expect(input["autocomplete"]).to eq("off")
+    end
+  end
+
   it "refuses a wrong PIN and leaves the order alone" do
     order = place_new_order
 
