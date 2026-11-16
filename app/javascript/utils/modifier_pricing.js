@@ -11,7 +11,7 @@
 //
 // config = {
 //   base_cents,
-//   groups: [{ id, multi_select, modifiers: [{ id, price_adjustment_cents }] }],
+//   groups: [{ id, multi_select, max_selections, modifiers: [{ id, price_adjustment_cents }] }],
 //   promos: [{ modifier_id, discount_cents }]
 // }
 
@@ -44,4 +44,23 @@ export function priceWithOption(config, selectedIds, group, modifierId) {
 export function groupShowsPrices(group, promos) {
   const targeted = new Set((promos || []).map((row) => row.modifier_id).filter(Boolean))
   return group.modifiers.some((modifier) => modifier.price_adjustment_cents !== 0 || targeted.has(modifier.id))
+}
+
+// A multi-select group may cap how many choices are allowed ("up to 3"). Once
+// the cap is reached the group's other checkboxes are disabled, so the cashier
+// or customer has to untick one before picking another. Shared by the POS
+// modals and the public menu popup.
+//   inputsFor(groupId) → that group's checkbox inputs
+export function applySelectionCaps(groups, inputsFor) {
+  for (const group of groups) {
+    const cap = group.max_selections
+    if (!group.multi_select || !cap) continue
+    const inputs = [...inputsFor(group.id)]
+    const full = inputs.filter((input) => input.checked).length >= cap
+    inputs.forEach((input) => {
+      input.disabled = full && !input.checked
+      const label = input.closest("label")
+      if (label) label.classList.toggle("opacity-40", input.disabled)
+    })
+  }
 }

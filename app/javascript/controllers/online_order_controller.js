@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { applySelectionCaps } from "utils/modifier_pricing"
 
 // Customer self-ordering on the public menu.
 //
@@ -19,7 +20,8 @@ export default class extends Controller {
     storageKey: String,
     startedAt: String,
     pickRequired: String,
-    requiredLabel: String
+    requiredLabel: String,
+    upTo: String
   }
 
   connect() {
@@ -67,6 +69,12 @@ export default class extends Controller {
       badge.textContent = this.requiredLabelValue
       legend.append(badge)
     }
+    if (group.multi && group.max) {
+      const cap = document.createElement("span")
+      cap.className = "text-xs font-normal text-stone-500"
+      cap.textContent = this.upToValue.replace("%{count}", group.max)
+      legend.append(cap)
+    }
     fieldset.append(legend)
 
     const list = document.createElement("div")
@@ -95,7 +103,16 @@ export default class extends Controller {
       list.append(label)
     })
     fieldset.append(list)
+    fieldset.addEventListener("change", () => this.applyCaps())
     return fieldset
+  }
+
+  // "Up to N" groups: grey out the rest once N are ticked.
+  applyCaps() {
+    applySelectionCaps(
+      this.item.groups.map((group) => ({ id: group.id, multi_select: group.multi, max_selections: group.max })),
+      (groupId) => this.itemGroupsTarget.querySelectorAll(`input[name="group-${groupId}"]`)
+    )
   }
 
   addToCart(event) {

@@ -66,7 +66,7 @@ module Admin
     end
 
     def modifier_group_params
-      params.require(:modifier_group).permit(:name, :required, :multi_select, :position)
+      params.require(:modifier_group).permit(:name, :required, :multi_select, :max_selections, :position)
     end
   end
 end

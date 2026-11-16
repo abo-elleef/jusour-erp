@@ -29,11 +29,12 @@
             <legend class="text-sm font-semibold text-gray-900 px-1">
               <%= group.name %>
               <% if group.required %><span class="text-red-600">*</span><% end %>
+              <% if group.max_selections %><span class="text-xs font-medium text-gray-500">(<%= t("pos.modifier.up_to", count: group.max_selections) %>)</span><% end %>
             </legend>
             <% group.modifiers.each do |mod| %>
               <label class="flex items-center gap-3 min-h-12 px-3 text-sm cursor-pointer rounded-xl border border-transparent hover:bg-white has-[:checked]:bg-amber-50 has-[:checked]:border-amber-400">
                 <% if group.multi_select %>
-                  <%= check_box_tag "modifier_ids[]", mod.id, false, id: "mod_#{mod.id}", data: { modifier_option: true }, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/30" %>
+                  <%= check_box_tag "modifier_ids[]", mod.id, false, id: "mod_#{mod.id}", data: { modifier_option: true, group: group.id }, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/30" %>
                 <% else %>
                   <%= radio_button_tag "modifier_group_selections[#{group.id}]", mod.id, false, required: group.required, data: { modifier_option: true }, class: "border-gray-300 text-amber-600 focus:ring-amber-500/30" %>
                 <% end %>

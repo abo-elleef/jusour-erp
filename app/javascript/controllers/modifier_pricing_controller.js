@@ -1,5 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
-import { priceFor, priceWithOption } from "utils/modifier_pricing"
+import { applySelectionCaps, priceFor, priceWithOption } from "utils/modifier_pricing"
 import { formatMoney } from "utils/offline_totals"
 
 // Customize modal (POS and offline POS): keeps the price beside every choice,
@@ -18,6 +18,8 @@ export default class extends Controller {
 
   refresh() {
     const config = this.configValue
+    applySelectionCaps(config.groups, (groupId) =>
+      this.element.querySelectorAll(`input[data-modifier-option][data-group="${groupId}"]`))
     const selected = this.selectedIds()
 
     for (const group of config.groups) {

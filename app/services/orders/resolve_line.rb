@@ -8,8 +8,8 @@ module Orders
   # (Orders::QuoteService), so the two can never price the same line differently.
   #
   # Choices that don't belong to the item are always dropped. With strict: true it also
-  # refuses a line whose required groups are empty or whose single-choice group has
-  # more than one pick — the public menu has no cashier to catch that. The POS modal
+  # refuses a line whose required groups are empty, whose single-choice group has
+  # more than one pick, or whose multi-select group goes over its max_selections — the public menu has no cashier to catch that. The POS modal
   # already enforces both in the browser, so the POS runs non-strict.
   class ResolveLine
     class Invalid < StandardError
@@ -97,6 +97,7 @@ module Orders
         picks = picked_by_group.fetch(group.id, [])
         raise Invalid.new(:required_choice, group.name) if group.required && picks.empty?
         raise Invalid.new(:single_choice, group.name) if !group.multi_select && picks.size > 1
+        raise Invalid.new(:too_many_choices, group.name) if group.max_selections && picks.size > group.max_selections
       end
     end
   end

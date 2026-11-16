@@ -153,6 +153,7 @@ module Orders
         name: group.name,
         required: group.required ? true : false,
         multi_select: group.multi_select ? true : false,
+        max_selections: group.max_selections,
         modifiers: group.modifiers.map do |modifier|
           { id: modifier.id, name: modifier.name, price_adjustment_cents: modifier.price_adjustment_cents }
         end

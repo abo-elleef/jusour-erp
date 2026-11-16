@@ -11,6 +11,7 @@ module PosModifierHelper
         {
           id: group.id,
           multi_select: group.multi_select ? true : false,
+          max_selections: group.max_selections,
           modifiers: group.modifiers.map { |m| { id: m.id, price_adjustment_cents: m.price_adjustment_cents } }
         }
       end,

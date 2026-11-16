@@ -73,6 +73,14 @@ RSpec.describe Orders::QuoteService do
       .to eq(0 => :single_choice)
   end
 
+  it "refuses more picks than a multi-select group's cap" do
+    extras.update!(max_selections: 1)
+
+    expect(quote([{ menu_item_id: burger.id, modifier_ids: [single.id, cheese.id, bacon.id] }]).errors)
+      .to eq(0 => :too_many_choices)
+    expect(quote([{ menu_item_id: burger.id, modifier_ids: [single.id, cheese.id] }]).errors).to be_empty
+  end
+
   it "refuses an item that is off at this branch" do
     LocationMenuItem.find_by!(location: branch, menu_item: burger).update!(available: false)
 

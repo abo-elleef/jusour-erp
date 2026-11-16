@@ -10,6 +10,7 @@ module PublicOrderingHelper
       groups: item.modifier_groups.map do |group|
         {
           id: group.id, name: group.name, required: group.required, multi: group.multi_select,
+          max: group.max_selections,
           modifiers: group.modifiers.map do |mod|
             { id: mod.id, name: mod.name,
               price: mod.price_adjustment_cents.zero? ? nil : "+#{format_money(mod.price_adjustment_cents)}" }

@@ -375,6 +375,7 @@ export default class extends Controller {
       groups: item.modifier_groups.map((group) => ({
         id: group.id,
         multi_select: group.multi_select,
+        max_selections: group.max_selections || null,
         modifiers: group.modifiers.map((m) => ({ id: m.id, price_adjustment_cents: m.price_adjustment_cents }))
       })),
       promos: (item.promos || (item.promo ? [item.promo] : [])).map((promo) => ({
@@ -397,7 +398,7 @@ export default class extends Controller {
           .join("")
         return `
           <fieldset class="mb-4 rounded-2xl border border-gray-200 bg-gray-50/80 p-3 space-y-1.5">
-            <legend class="text-sm font-semibold px-1">${esc(group.name)}${group.required ? ' <span class="text-red-600">*</span>' : ""}</legend>
+            <legend class="text-sm font-semibold px-1">${esc(group.name)}${group.required ? ' <span class="text-red-600">*</span>' : ""}${group.multi_select && group.max_selections ? ` <span class="text-xs font-medium text-gray-500">(${esc(this.t("up_to", { count: group.max_selections }))})</span>` : ""}</legend>
             ${options}
           </fieldset>`
       })
