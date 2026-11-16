@@ -319,6 +319,14 @@ class Order < ApplicationRecord
     delivery? && settled_cents.zero?
   end
 
+  # The one rule for reading a typed delivery fee (pounds) from a form: nil when
+  # the field was not sent at all, blank counts as free delivery (0).
+  def self.delivery_fee_cents_from(raw)
+    return nil if raw.nil?
+
+    (raw.to_s.strip.presence.to_f * 100).round
+  end
+
   # The customer pays the fee with the order, but it is the driver's money, not
   # the restaurant's. On a cash order the driver keeps it out of what they
   # collected; on an InstaPay / Vodafone Cash order the cashier hands it over from

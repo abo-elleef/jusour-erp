@@ -181,7 +181,7 @@ module Pos
       @order = Order.find(params[:id])
       authorize @order, @order.draft? ? :update? : :record_payment?
 
-      cents = (params[:delivery_fee_pounds].to_s.strip.presence.to_f * 100).round
+      cents = Order.delivery_fee_cents_from(params[:delivery_fee_pounds].to_s)
       alert = if cents.negative?
                 t("flash.pos.negative_delivery_fee")
               elsif !@order.apply_delivery_fee!(cents)

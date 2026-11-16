@@ -10,3 +10,11 @@
 <% if @fulfillment_error.present? %>
   <%= turbo_stream.append "toast-container", partial: "shared/toast", locals: { message: @fulfillment_error, type: :alert } %>
 <% end %>
+<%# The order type and delivery fee change the total, the Charge button and
+    whether Place order asks for a fee, so the cart and modal follow. %>
+<%= turbo_stream.replace "cart" do %>
+  <%= render "pos/cart_body", order: @order %>
+<% end %>
+<%= turbo_stream.update "payment-modal-content" do %>
+  <%= render "pos/payment_modal", order: @order %>
+<% end %>

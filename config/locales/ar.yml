@@ -4042,6 +4042,8 @@ ar:
       saved_addresses: "عنوان محفوظ"
       custom_address: "إدخال العنوان يدويًا"
       customer_required_for_delivery: "اختر عميلاً أولاً لإدخال عنوان الدليفري."
+      fee_prompt_title: "رسوم الدليفري"
+      fee_prompt_hint: "اكتب رسوم الدليفري لهذا الطلب، أو اضغط Enter لدليفري مجاني."
     tables:
       title: "الطاولات"
       summary: "%{busy} مشغولة · %{free} متاحة"

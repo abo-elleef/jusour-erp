@@ -71,6 +71,21 @@
               rows: 2,
               class: pos_input_class,
               data: { order_type_target: "deliveryAddress", action: "blur->order-type#submitForm" } %>
+        <%# Typed here with the address, so the payment modal is not needed just to
+            save the fee. Fixed once money is taken (Order#delivery_fee_editable?). %>
+        <% if order.delivery_fee_editable? %>
+          <%= label_tag :delivery_fee_pounds, t("payment.delivery_fee"), for: "fulfillment_delivery_fee_pounds",
+                class: "block text-xs font-semibold text-gray-600 mt-3 mb-1.5" %>
+          <%= text_field_tag :delivery_fee_pounds,
+                (order.delivery_fee_cents.positive? ? format("%.2f", order.delivery_fee_cents / 100.0) : ""),
+                id: "fulfillment_delivery_fee_pounds",
+                inputmode: "decimal", autocomplete: "off", placeholder: "0",
+                class: "#{pos_input_class} tabular-nums",
+                data: { controller: "arabic-numerals",
+                        action: "input->arabic-numerals#normalize focus->arabic-numerals#select blur->order-type#submitForm keydown.enter->arabic-numerals#commit" } %>
+        <% elsif order.delivery_fee_cents.positive? %>
+          <p class="text-xs text-gray-600 mt-3"><%= t("payment.delivery_fee") %>: <span class="font-semibold tabular-nums"><%= format_amount(order.delivery_fee_cents) %></span></p>
+        <% end %>
       <% else %>
         <p class="text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2">
           <%= t("pos.delivery.customer_required_for_delivery") %>

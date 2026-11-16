@@ -27,7 +27,45 @@
     <% else %>
     <%# Place order sends everything to print and locks the items; Charge takes the
         money (and places the order, if it was not placed yet). %>
-    <% if order.persisted? && order.order_items.any? %>
+    <% if order.persisted? && order.order_items.any? && order.delivery? && order.delivery_fee_cents.zero? && order.delivery_fee_editable? %>
+      <%# A delivery order with no fee yet: Place order (F8) asks for it first, so
+          the cashier never opens the payment modal just to save the fee. Enter on
+          an empty field places it as free delivery. %>
+      <button type="button"
+              class="<%= pos_cart_outlined_btn_class %>"
+              data-pos-shortcut="place-order"
+              onclick="const d=document.getElementById('place-order-fee-dialog'); if(!d.open) d.showModal()">
+        <%= t("pos.cart.place_order") %> <kbd class="pos-key-hint">F8</kbd>
+      </button>
+      <dialog id="place-order-fee-dialog"
+              class="m-auto rounded-[28px] shadow-2xl border-0 p-0 w-[21rem] max-w-[90vw] backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+              onclick="if(event.target===this)this.close()">
+        <%= form_with url: pos_submit_path, method: :patch,
+              data: { turbo_frame: "_top", controller: "submit-once", action: "submit->submit-once#guard" } do %>
+          <div class="px-6 pt-6 pb-4">
+            <h3 class="text-base font-semibold text-stone-900"><%= t("pos.delivery.fee_prompt_title") %></h3>
+            <p class="text-sm text-stone-500 mt-0.5"><%= t("pos.delivery.fee_prompt_hint") %></p>
+          </div>
+          <div class="px-6 pb-4">
+            <%= text_field_tag :delivery_fee_pounds, "",
+                  id: "place_order_delivery_fee_pounds",
+                  inputmode: "decimal", autocomplete: "off", placeholder: "0", autofocus: true,
+                  class: "#{pos_input_class} text-2xl text-center min-h-14 tabular-nums",
+                  data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" } %>
+          </div>
+          <div class="flex justify-end gap-2 px-6 pb-6">
+            <button type="button" onclick="this.closest('dialog').close()"
+                    class="rounded-full px-5 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 transition-colors">
+              <%= t("actions.cancel") %>
+            </button>
+            <button type="submit" data-submit-once-target="submit"
+                    class="rounded-full px-5 py-2 text-sm font-medium bg-stone-800 text-white hover:bg-stone-700 transition-colors cursor-pointer">
+              <%= t("pos.cart.place_order") %>
+            </button>
+          </div>
+        <% end %>
+      </dialog>
+    <% elsif order.persisted? && order.order_items.any? %>
       <%= button_to pos_submit_path, method: :patch,
             form: { data: { turbo_frame: "_top", controller: "submit-once", action: "submit->submit-once#guard" } },
             data: { submit_once_target: "submit", pos_shortcut: "place-order" },

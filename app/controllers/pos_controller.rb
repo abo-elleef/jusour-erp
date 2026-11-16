@@ -103,6 +103,10 @@ class PosController < ApplicationController
     end
 
     authorize order, :submit?
+    # A delivery order placed with no fee yet asks for one on the way out.
+    if (fee_error = apply_typed_delivery_fee(order))
+      return redirect_to pos_path, alert: fee_error, status: :see_other
+    end
     replacing = order.editing_placed?
     Orders::PlaceService.call(order, user: current_user)
     session.delete(:current_order_id)
@@ -135,6 +139,7 @@ class PosController < ApplicationController
         apply_customer_default_delivery_address!(@order.customer)
         @order.reload
       end
+      @fulfillment_error = apply_typed_delivery_fee(@order)
       respond_to do |format|
         format.turbo_stream
         format.html { redirect_to pos_path }
@@ -248,6 +253,9 @@ class PosController < ApplicationController
       delivery_address: pending["delivery_address"]
     )
     session[:current_order_id] = @order.id
+    # set_order only totals a saved order, so this new one would reach the views
+    # with nil totals (the cart re-render after picking Delivery on an empty cart).
+    @order.recalculate_totals!
   end
 
   # Returns an unsaved Order so nothing hits the DB until the first item is added.
@@ -391,5 +399,17 @@ class PosController < ApplicationController
 
   def fulfillment_params
     params.permit(:order_type, :table_number, :delivery_address)
+  end
+
+  # Saves a delivery fee typed next to the address or in the Place order popup,
+  # so the cashier never has to open the payment modal just for the fee.
+  # Returns an error message, or nil when there was nothing to do or it saved.
+  def apply_typed_delivery_fee(order)
+    cents = Order.delivery_fee_cents_from(params[:delivery_fee_pounds])
+    return nil if cents.nil? || !order.delivery?
+    return t("flash.pos.negative_delivery_fee") if cents.negative?
+    return nil if order.apply_delivery_fee!(cents)
+
+    t("flash.pos.delivery_fee_locked")
   end
 end

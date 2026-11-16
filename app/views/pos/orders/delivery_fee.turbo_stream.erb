@@ -4,3 +4,8 @@
 <%= turbo_stream.update "payment-modal-content" do %>
   <%= render "pos/payment_modal", order: @order, saved_delivery_fee: true %>
 <% end %>
+<%# The fee field next to the address must show the saved fee too, or its next
+    save (on the address blur) would send the old value back. %>
+<%= turbo_stream.update "drawer-fulfillment-body" do %>
+  <%= render "pos/order_fulfillment", order: @order, embedded: true %>
+<% end %>

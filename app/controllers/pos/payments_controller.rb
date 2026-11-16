@@ -140,8 +140,7 @@ module Pos
     def delivery_fee_cents_param
       return @delivery_fee_cents_param if defined?(@delivery_fee_cents_param)
 
-      raw = params[:delivery_fee_pounds]
-      @delivery_fee_cents_param = raw.nil? ? nil : (raw.to_s.strip.presence.to_f * 100).round
+      @delivery_fee_cents_param = Order.delivery_fee_cents_from(params[:delivery_fee_pounds])
     end
 
     def refuse_negative_delivery_fee
