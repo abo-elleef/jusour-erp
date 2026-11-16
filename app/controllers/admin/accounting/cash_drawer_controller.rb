@@ -193,6 +193,11 @@ module Admin
                   csv_amount(@totals.vodafone_cash_cents), csv_amount(@totals.expected_cents),
                   csv_amount(@totals.counted_cents), csv_amount(@totals.variance_cents), nil,
                   csv_amount(@totals.deposited_cents)]
+          csv << []
+          csv << [t("accounting.cash_drawer.total_sales"), csv_amount(@totals.total_sales_cents)]
+          csv << [t("accounting.cash_drawer.driver_payouts"), csv_amount(-@totals.driver_payout_cents)]
+          csv << [t("accounting.cash_drawer.net_takings"), csv_amount(@totals.net_takings_cents)]
+          csv << [t("accounting.cash_drawer.actual_takings"), csv_amount(@totals.actual_takings_cents)]
         end
       end
 

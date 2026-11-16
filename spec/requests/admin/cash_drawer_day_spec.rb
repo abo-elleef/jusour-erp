@@ -90,10 +90,12 @@ RSpec.describe "The admin drawer day view", type: :request do
       expect(response.headers["Content-Disposition"]).to include("cash-drawer-#{Date.current}.csv")
       rows = CSV.parse(response.body.delete_prefix("\uFEFF"))
       expect(rows.first).to include("Branch A")
-      expect(rows.size).to eq(4) # title, header, one shift, totals
+      # title, header, one shift, totals, a blank line, then the four day takings lines
+      expect(rows.size).to eq(9)
       expect(rows[2]).to include("Branch A", "Till 1", "50.00")
-      expect(rows.last.first).to eq(I18n.t("accounting.cash_drawer.table_total"))
-      expect(rows.last).to include("50.00")
+      expect(rows[3].first).to eq(I18n.t("accounting.cash_drawer.table_total"))
+      expect(rows[3]).to include("50.00")
+      expect(rows.last).to eq([I18n.t("accounting.cash_drawer.actual_takings"), "50.00"])
       expect(rows.flatten).not_to include("Till 2")
     end
 

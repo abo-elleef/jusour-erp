@@ -142,4 +142,49 @@ RSpec.describe Accounting::DrawerDayReport do
       expect(totals.deposited_cents).to eq(0)
     end
   end
+
+  describe "takings after the drivers are paid" do
+    def pay_driver(session, fee)
+      create(:order, user: session.user, company: company, location: session.location,
+                     status: "completed", order_type: "delivery", total_cents: fee, delivery_fee_cents: fee,
+                     delivery_fee_drawer_session_id: session.id)
+    end
+
+    it "takes the delivery fees paid out of the drawers off the takings" do
+      one = shift(treasury: till_one, cash: 50_000, instapay: 10_000)
+      two = shift(treasury: till_two, cash: 20_000, vodafone: 5_000)
+      pay_driver(one, 3_000)
+      pay_driver(two, 1_000)
+
+      _rows, totals = described_class.call(date: date, location: branch)
+
+      expect(totals.total_sales_cents).to eq(85_000)
+      expect(totals.driver_payout_cents).to eq(4_000)
+      expect(totals.net_takings_cents).to eq(81_000)
+    end
+
+    it "matches expected cash (float aside) plus the wallets" do
+      session = shift(treasury: till_one, float: 10_000, cash: 50_000, instapay: 10_000)
+      pay_driver(session, 3_000)
+      ::Accounting::CashReconciliationService.new(session).compute_expected!
+
+      _rows, totals = described_class.call(date: date, location: branch)
+
+      expect(totals.net_takings_cents)
+        .to eq(session.reload.expected_cash_cents - 10_000 + 10_000)
+    end
+
+    it "adds the variance for the takings as counted" do
+      session = shift(treasury: till_one, float: 0, cash: 50_000)
+      pay_driver(session, 3_000)
+      ::Accounting::CashReconciliationService.new(session).compute_expected!
+      session.update!(counted_cash_cents: 47_500, status: "reconciled")
+      session.update!(variance_cents: 47_500 - session.expected_cash_cents)
+
+      _rows, totals = described_class.call(date: date, location: branch)
+
+      expect(totals.net_takings_cents).to eq(47_000)
+      expect(totals.actual_takings_cents).to eq(47_500)
+    end
+  end
 end

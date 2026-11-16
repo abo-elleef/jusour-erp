@@ -99,6 +99,20 @@
           <p class="text-xl font-bold text-green-700 mt-0.5 tabular-nums"><%= format_money(@totals.total_sales_cents) %></p>
         </div>
         <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.driver_payouts") %></p>
+          <p class="text-xl font-bold text-gray-900 mt-0.5 tabular-nums"><%= format_money(-@totals.driver_payout_cents) %></p>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.net_takings") %></p>
+          <p class="text-xl font-bold text-green-700 mt-0.5 tabular-nums"><%= format_money(@totals.net_takings_cents) %></p>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.cash_drawer.net_takings_hint") %></p>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.actual_takings") %></p>
+          <p class="text-xl font-bold text-gray-900 mt-0.5 tabular-nums"><%= format_money(@totals.actual_takings_cents) %></p>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.cash_drawer.actual_takings_hint") %></p>
+        </div>
+        <div>
           <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("accounting.cash_drawer.variance") %></p>
           <p class="text-xl font-bold mt-0.5 tabular-nums <%= @totals.variance_cents.negative? ? "text-red-700" : "text-gray-900" %>">
             <%= format_money(@totals.variance_cents) %>

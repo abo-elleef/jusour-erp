@@ -20,6 +20,7 @@ module Accounting
       def instapay_cents = summary.instapay_cents
       def vodafone_cash_cents = summary.vodafone_cash_cents
       def total_sales_cents = summary.total_sales_cents
+      def driver_payout_cents = summary.driver_payout_cents.to_i
 
       def expected_cents = session.expected_cash_cents.to_i
       def counted_cents = session.counted_cash_cents
@@ -39,11 +40,23 @@ module Accounting
     Totals = Struct.new(
       :opening_float_cents, :cash_cents, :instapay_cents, :vodafone_cash_cents,
       :expected_cents, :counted_cents, :variance_cents, :deposited_cents,
-      :shifts, :open_shifts,
+      :driver_payout_cents, :shifts, :open_shifts,
       keyword_init: true
     ) do
       def total_sales_cents
         cash_cents + instapay_cents + vodafone_cash_cents
+      end
+
+      # What the day should have brought in once the drivers' delivery fees are
+      # paid out of the drawers: expected cash (float aside) plus the wallets.
+      def net_takings_cents
+        total_sales_cents - driver_payout_cents
+      end
+
+      # The same, but with the cash as counted rather than as expected. A drawer
+      # nobody has counted yet has no variance, so it adds its expected figure.
+      def actual_takings_cents
+        net_takings_cents + variance_cents
       end
 
       # A day is only closed when every drawer in it is.
@@ -90,6 +103,7 @@ module Accounting
         counted_cents: rows.sum { |r| r.counted_cents.to_i },
         variance_cents: rows.sum { |r| r.variance_cents.to_i },
         deposited_cents: rows.sum(&:deposited_cents),
+        driver_payout_cents: rows.sum(&:driver_payout_cents),
         shifts: rows.size,
         open_shifts: rows.count(&:open?)
       )
