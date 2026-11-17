@@ -498,6 +498,10 @@ en:
       change: "Change"
       loyalty: "Loyalty: %{points} pts"
       order_notes: "Order notes:"
+      voided: "*** VOIDED ***"
+      void_reason: "Reason: %{reason}"
+      voided_by: "Voided by: %{name}"
+      refunded: "Refunded"
     kitchen_ticket:
       title: "KITCHEN"
       order_notes: "Order notes:"

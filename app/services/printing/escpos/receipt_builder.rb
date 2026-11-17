@@ -47,6 +47,7 @@ module Printing
           doc.double_height(false)
           doc.bold(false)
         end
+        compose_void_banner(doc) if @order.cancelled?
         # Who and where, bold so the courier/dispatcher reads them at a glance; the phone
         # is double height too.
         doc.bold
@@ -110,6 +111,7 @@ module Printing
 
         compose_payments(doc)
         compose_change(doc)
+        compose_refunded(doc) if @order.cancelled?
         doc.rule
 
         if @order.notes.present?
@@ -162,6 +164,34 @@ module Printing
           label = I18n.t("payment.methods.#{payment.payment_method}", default: payment.payment_method.humanize)
           doc.row("  #{label}", format_money(payment.amount_cents), bold_label: true)
         end
+      end
+
+      # A voided order's receipt (printed by Orders::VoidService): a big VOIDED
+      # banner under the header, then why and by whom, so nobody reads it as a sale.
+      def compose_void_banner(doc)
+        void_event = @order.order_events.where(event_type: "void").order(:created_at).last
+        doc.blank
+        doc.align(:center)
+        doc.bold
+        doc.double_height
+        doc.text(I18n.t("printing.receipt.voided"))
+        doc.double_height(false)
+        if void_event&.description.present?
+          doc.text(I18n.t("printing.receipt.void_reason", reason: void_event.description))
+        end
+        doc.text(I18n.t("printing.receipt.voided_by", name: void_event.user.name)) if void_event&.user&.name.present?
+        doc.bold(false)
+        doc.text(I18n.l((void_event&.created_at || Time.current), format: :ticket))
+        doc.rule
+      end
+
+      # What went back to the customer. Refunded payments drop out of the payments
+      # list above (only completed ones show), so the amount is said here instead.
+      def compose_refunded(doc)
+        refunded = @order.payments.sum(:refunded_amount_cents)
+        return unless refunded.positive?
+
+        doc.row(I18n.t("printing.receipt.refunded"), format_money(refunded), bold_label: true, bold_value: true)
       end
 
       def compose_change(doc)

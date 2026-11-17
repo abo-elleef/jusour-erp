@@ -3,7 +3,8 @@
 module Orders
   # Voids an order: cancels it (which puts stock, loyalty and a posted sales day
   # back for a completed one), refunds whatever was paid, and records who did it.
-  # Shared by the admin order page and the register's void-orders PIN.
+  # Shared by the admin order page and the register's void-orders PIN. A placed
+  # order's receipt prints again marked VOIDED, with the reason.
   #
   # Money is refunded two ways, depending on where it was taken:
   # - a drawer still open (or no drawer: card, online): on the payment itself, so
@@ -42,6 +43,8 @@ module Orders
         end
       end
 
+      # A cart nobody placed never had a receipt; there is nothing to take back.
+      print_receipt = !@order.draft?
       refunded_cents = 0
       voucher = nil
       error = nil
@@ -63,6 +66,7 @@ module Orders
       end
       return failure(error) if error
 
+      Printing::PrintVoidReceiptJob.perform_later(@order.id) if print_receipt
       Result.new(voided: true, refunded_cents: refunded_cents, voucher: voucher)
     end
 
