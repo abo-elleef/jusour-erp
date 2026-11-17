@@ -3944,6 +3944,8 @@ ar:
       offers: "العروض"
       offers_hint: "أسعار محدودة المدة ووجبات العرض"
       full_menu: "القائمة الكاملة"
+      top_sellers: "الأكثر مبيعًا"
+      top_sellers_hint: "الأكثر مبيعًا في هذا الفرع خلال آخر 14 يومًا"
       search_label: "ابحث في القائمة"
       search_placeholder: "ابحث عن صنف بالاسم أو الكود"
       search_empty: "لا توجد أصناف مطابقة."

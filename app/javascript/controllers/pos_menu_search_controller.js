@@ -62,7 +62,7 @@ export default class extends Controller {
       this.element.querySelector('.pos-category-btn[data-category="all"]')?.click()
       this.selfClick = false
     }
-    this.offersSection()?.classList.add("search-miss")
+    this.repeatSections().forEach((section) => section.classList.add("search-miss"))
 
     let matches = 0
     this.gridCards().forEach((card) => {
@@ -111,7 +111,7 @@ export default class extends Controller {
   clearFilter() {
     this.searching = false
     this.gridCards().forEach((card) => card.classList.remove("search-miss"))
-    this.offersSection()?.classList.remove("search-miss")
+    this.repeatSections().forEach((section) => section.classList.remove("search-miss"))
     if (this.hasEmptyTarget) this.emptyTarget.classList.add("hidden")
     this.highlight(null)
   }
@@ -182,12 +182,12 @@ export default class extends Controller {
     return this.element.querySelector(`.menu-card.${ACTIVE}`)
   }
 
-  offersSection() {
-    return this.element.querySelector('[data-pos-target="offersSection"]')
+  // Offers and Most sold repeat full-menu cards, so they are hidden while searching.
+  repeatSections() {
+    return this.element.querySelectorAll('[data-pos-target="offersSection"], [data-pos-target="topSellersSection"]')
   }
 
-  // Cards of the full menu (offers repeat some of them, so they are left out
-  // while searching).
+  // Cards of the full menu (the repeat sections are left out while searching).
   gridCards() {
     return [...this.element.querySelectorAll('[data-pos-target="menuGrid"] .menu-card')]
   }

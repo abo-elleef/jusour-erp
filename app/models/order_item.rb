@@ -56,8 +56,14 @@ class OrderItem < ApplicationRecord
     combo&.name || menu_item&.name
   end
 
+  # Same number either way: when the modifiers are already loaded (the totals
+  # preload them), add them up in Ruby instead of one SQL sum per line.
   def modifier_total_cents
-    order_item_modifiers.sum(:price_adjustment_cents)
+    if order_item_modifiers.loaded?
+      order_item_modifiers.sum(&:price_adjustment_cents)
+    else
+      order_item_modifiers.sum(:price_adjustment_cents)
+    end
   end
 
   def tax_category

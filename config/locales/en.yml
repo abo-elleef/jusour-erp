@@ -3874,6 +3874,8 @@ en:
       offers: "Offers"
       offers_hint: "Limited-time prices and meal deals"
       full_menu: "Full menu"
+      top_sellers: "Most sold"
+      top_sellers_hint: "This branch's best sellers over the last 14 days"
       search_label: "Search the menu"
       search_placeholder: "Search items by name or code"
       search_empty: "No items match."
