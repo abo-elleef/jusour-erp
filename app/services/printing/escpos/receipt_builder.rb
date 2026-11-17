@@ -40,7 +40,7 @@ module Printing
           doc.text(@order.display_number)
           doc.double_height(false)
           doc.bold(false)
-          doc.text(@order.created_at.strftime("%d/%m/%Y %I:%M %p"))
+          doc.text(@order.ticket_time.strftime("%d/%m/%Y %I:%M %p"))
           doc.bold
           doc.double_height
           doc.text(@order.fulfillment_summary)

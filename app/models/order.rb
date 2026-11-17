@@ -395,6 +395,13 @@ class Order < ApplicationRecord
     order_number.presence || I18n.t("order.labels.draft_number")
   end
 
+  # The time printed on receipts and kitchen tickets: when the order was
+  # placed (sent to the kitchen), not when its draft was first opened. A draft
+  # left open for hours would otherwise print a misleadingly old time.
+  def ticket_time
+    placed_at || created_at
+  end
+
   # "#12" once placed, "Draft" before — for messages that point at an order.
   def display_reference
     order_number.present? ? "##{order_number}" : display_number

@@ -144,4 +144,25 @@ RSpec.describe Printing::Escpos::ReceiptBuilder do
       expect(I18n.with_locale(:en) { rows_for(order) }).not_to have_key("Total without delivery")
     end
   end
+  describe "printed time" do
+    def contents
+      described_class.new(order.reload, printer: printer).build_debug.entries.map { |e| e[:content].to_s.strip }
+    end
+
+    it "prints when the order was placed, not when its draft was opened" do
+      opened = Time.zone.local(2026, 11, 16, 20, 14)
+      placed = Time.zone.local(2026, 11, 17, 2, 47)
+      order.update_columns(created_at: opened, placed_at: placed)
+
+      expect(contents).to include("17/11/2026 02:47 AM")
+      expect(contents).not_to include("16/11/2026 08:14 PM")
+    end
+
+    it "falls back to the opened time when the order has no placed time" do
+      opened = Time.zone.local(2026, 11, 16, 20, 14)
+      order.update_columns(created_at: opened, placed_at: nil)
+
+      expect(contents).to include("16/11/2026 08:14 PM")
+    end
+  end
 end

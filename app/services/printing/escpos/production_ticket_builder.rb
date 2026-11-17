@@ -44,7 +44,7 @@ module Printing
           end
           doc.double_height(false)
           doc.bold(false)
-          doc.text(I18n.l(@order.created_at, format: :ticket))
+          doc.text(I18n.l(@order.ticket_time, format: :ticket))
           doc.bold
           doc.double_height(true)
           doc.text(@order.fulfillment_summary)
