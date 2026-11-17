@@ -132,6 +132,20 @@ RSpec.describe "Admin::Locations", type: :request do
 
       expect(location.reload.active).to be false
     end
+
+    it "turns the register's Most sold row on and off" do
+      location = create(:location, company: company)
+      expect(location.pos_top_sellers_enabled).to be false
+
+      get edit_admin_location_path(location)
+      expect(response.body).to include("location[pos_top_sellers_enabled]")
+
+      patch admin_location_path(location), params: { location: { pos_top_sellers_enabled: "1" } }
+      expect(location.reload.pos_top_sellers_enabled).to be true
+
+      patch admin_location_path(location), params: { location: { pos_top_sellers_enabled: "0" } }
+      expect(location.reload.pos_top_sellers_enabled).to be false
+    end
   end
 
   describe "DELETE /admin/locations/:id" do

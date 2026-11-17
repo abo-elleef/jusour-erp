@@ -307,6 +307,16 @@ class PosController < ApplicationController
     @menu_items = menu.menu_items
     @combos = menu.combos
     @promos_by_item_id = menu.promos_by_item_id
+    # Mapped onto the items already loaded for this branch, so a top seller that is
+    # no longer available here drops out and its price and promo match the grid.
+    # Only where an admin turned it on for this branch (Locations → edit).
+    @top_seller_items =
+      if @pos_location&.pos_top_sellers_enabled?
+        items_by_id = @menu_items.index_by(&:id)
+        Menus::TopSellers.call(location: @pos_location).filter_map { |id| items_by_id[id] }
+      else
+        []
+      end
   end
 
   def no_cache

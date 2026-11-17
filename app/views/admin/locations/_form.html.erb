@@ -142,6 +142,13 @@
         <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.fields.public_menu_enabled_hint") %></p>
       </div>
     </div>
+    <div class="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50/80 p-4">
+      <%= f.check_box :pos_top_sellers_enabled, class: "w-4 h-4 mt-0.5 text-amber-600 border-gray-300 rounded" %>
+      <div>
+        <%= f.label :pos_top_sellers_enabled, t("admin.locations.fields.pos_top_sellers_enabled"), class: "text-sm font-semibold text-gray-700" %>
+        <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.fields.pos_top_sellers_enabled_hint") %></p>
+      </div>
+    </div>
 
     <%# Customer self-ordering from the public menu. Orders arrive as requests a
         cashier accepts or rejects at the register; these settings gate them. %>

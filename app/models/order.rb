@@ -213,7 +213,10 @@ class Order < ApplicationRecord
 
   def recalculate_totals!
     order_items.reset
-    subtotal = order_items.sum(&:line_total_cents)
+    # A separate, freshly loaded relation with the modifiers preloaded: one query
+    # for all lines instead of one per line, and nothing preloaded is left on the
+    # order for later code to read stale.
+    subtotal = order_items.includes(:order_item_modifiers).sum(&:line_total_cents)
     discount = order_discounts.sum(:amount_cents)
     self.subtotal_cents = subtotal
     self.discount_cents = discount

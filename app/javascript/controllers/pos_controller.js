@@ -6,7 +6,7 @@ const OFFERS_INACTIVE = ["bg-white", "text-rose-800", "border-rose-200", "hover:
 const LEGACY_HOVER_CLASSES = ["hover:bg-gray-50"]
 
 export default class extends Controller {
-  static targets = ["offersSection", "menuGrid"]
+  static targets = ["offersSection", "topSellersSection", "menuGrid"]
 
   connect() {
     this.highlightCategory("all")
@@ -18,6 +18,11 @@ export default class extends Controller {
       const show = category === "all" || card.dataset.category === category
       card.classList.toggle("hidden", !show)
     })
+
+    // Top-seller cards repeat full-menu ones, so the row only shows under "All".
+    if (this.hasTopSellersSectionTarget) {
+      this.topSellersSectionTarget.classList.toggle("hidden", category !== "all")
+    }
 
     if (this.hasOffersSectionTarget) {
       const showOffers = category === "all" || category === "offers"

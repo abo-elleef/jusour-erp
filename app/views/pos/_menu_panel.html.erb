@@ -46,6 +46,26 @@
   <% elsif @menu_items.empty? && @combos.empty? %>
     <p class="text-center text-gray-500 py-16 text-sm"><%= t("pos.menu.empty_at_branch", branch: @pos_location.name) %></p>
   <% else %>
+    <% if @top_seller_items.present? %>
+      <%# Shown in "All" only (pos#filterCategory) and hidden while searching
+          (pos-menu-search), since its cards repeat ones in the full menu. %>
+      <section data-pos-target="topSellersSection">
+        <div class="mb-3">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("pos.menu.top_sellers") %></h2>
+          <p class="text-xs text-gray-500 mt-0.5"><%= t("pos.menu.top_sellers_hint") %></p>
+        </div>
+        <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+          <% @top_seller_items.each do |item| %>
+            <%= render "pos/menu_item_card",
+                  item: item,
+                  location: @pos_location,
+                  promo: @promos_by_item_id&.[](item.id),
+                  category: "top" %>
+          <% end %>
+        </div>
+      </section>
+    <% end %>
+
     <% if has_offers %>
       <section data-pos-target="offersSection">
         <div class="mb-3">
@@ -68,7 +88,7 @@
     <% end %>
 
     <section data-pos-target="menuGrid">
-      <% if has_offers %>
+      <% if has_offers || @top_seller_items.present? %>
         <h2 class="text-sm font-semibold text-gray-900 mb-3"><%= t("pos.menu.full_menu") %></h2>
       <% end %>
       <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 2xl:grid-cols-6 gap-3" id="menu-grid">
