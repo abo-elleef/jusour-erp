@@ -112,10 +112,7 @@ module Accounting
     # The same orders the day's sales entry recognises, so cost and revenue can
     # never be drawn from different sets.
     def completed_orders
-      Order.completed.where(
-        placed_at: BusinessDay.range(@business_date, location: @location),
-        location_id: @location.id
-      )
+      Order.completed.where(business_date: @business_date, location_id: @location.id)
     end
   end
 end

@@ -63,6 +63,16 @@ RSpec.describe "POS revenue reaches the ledger" do
       expect(ledger(Accounting::JournalEntryService::SALES_CLEARING_CODE)).to eq(104_000)
     end
 
+    it "takes the day's orders by business date, so a manual day open past the cutoff keeps its late sales" do
+      # Rung tomorrow at noon while the branch was still on today's operating day.
+      late = create_order(subtotal: 30_000)
+      late.update_columns(created_at: 1.day.from_now, placed_at: 1.day.from_now, business_date: business_date)
+      create_order(subtotal: 20_000)
+      post_day!
+
+      expect(ledger(Accounting::JournalEntryService::SALES_REVENUE_CODE)).to eq(-50_000)
+    end
+
     it "credits nothing to equity" do
       create_order(subtotal: 50_000)
       post_day!

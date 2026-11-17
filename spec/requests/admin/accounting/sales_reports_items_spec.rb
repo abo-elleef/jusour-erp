@@ -99,4 +99,33 @@ RSpec.describe "Admin::Accounting sales report items view", type: :request do
       expect(response.body).to match(/Burger,Size,Double,2,/)
     end
   end
+
+  describe "branch filter" do
+    let!(:mall) { create(:location, company: company, name: "Mall") }
+    let!(:downtown) { create(:location, company: company, name: "Downtown") }
+
+    before do
+      tea = create(:menu_item, company: company, category: drinks, name: "Tea", base_price_cents: 200)
+      order = create(:order, user: owner, company: company, location: mall, status: "completed",
+                             subtotal_cents: 200, total_cents: 200, created_at: Time.zone.now.change(hour: 12))
+      create(:order_item, order: order, menu_item: tea, quantity: 1, unit_price_cents: 200)
+    end
+
+    it "shows a branch select and narrows the report to that branch" do
+      get admin_accounting_sales_reports_path(range)
+      expect(response.body).to include(%(name="location_id"), I18n.t("accounting.sales_reports.all_branches", locale: :ar), "Burger", "Tea")
+      # The select owns location_id, so it is not also sent as a hidden field.
+      get admin_accounting_sales_reports_path(range.merge(location_id: mall.id))
+      expect(response.body).not_to include(%(type="hidden" name="location_id"))
+      section = response.body[/id="items-sold".*?<\/section>/m]
+      expect(section).to include("Tea")
+      expect(section).not_to include("Burger")
+    end
+
+    it "names the branch in the CSV" do
+      get admin_accounting_sales_reports_path(range.merge(location_id: mall.id, format: :csv))
+      expect(response.body).to include("Branch,Mall")
+      expect(response.body).not_to include("Burger")
+    end
+  end
 end

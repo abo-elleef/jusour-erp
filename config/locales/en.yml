@@ -5947,6 +5947,8 @@ en:
       count_value: "%{count} · %{amount}"
       showing: "%{count} records"
     sales_reports:
+      branch: "Branch"
+      all_branches: "All branches"
       include_open: "Include open orders"
       include_open_off_hint: "Completed orders only — open orders are added when the drawer closes."
       include_open_on_hint: "Including orders placed but not completed yet. Figures will change until the day closes."

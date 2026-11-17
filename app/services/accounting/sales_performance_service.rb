@@ -48,6 +48,8 @@ module Accounting
 
     def initialize(start_date, end_date, location_id: nil)
       @range = BusinessDay.range_between(start_date, end_date)
+      @start_date = start_date
+      @end_date = end_date
       @location_id = location_id.presence
     end
 
@@ -129,7 +131,7 @@ module Accounting
 
     # Same population as Accounting::SalesReportService#completed_orders.
     def completed_orders
-      @completed_orders ||= scope_to_location(Order.completed.where(placed_at: @range))
+      @completed_orders ||= scope_to_location(Order.completed.on_business_days(@start_date, @end_date))
     end
 
     # Void and refund events inside the range, for orders in the company

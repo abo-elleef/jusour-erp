@@ -12,6 +12,27 @@ RSpec.describe Accounting::SalesReportService do
   before { Current.company = company }
 
   describe "#call" do
+    it "counts only the chosen branch when location_id is given, in every section" do
+      downtown = create(:location, company: company)
+      mall = create(:location, company: company)
+      [[downtown, 1, 11], [mall, 3, 19]].each do |location, qty, hour|
+        order = create(:order, user: user, company: company, location: location, status: "completed",
+          subtotal_cents: 1000 * qty, total_cents: 1000 * qty, created_at: today.to_time.change(hour: hour))
+        create(:order_item, order: order, menu_item: menu_item, quantity: qty, unit_price_cents: 1000)
+      end
+
+      all = described_class.new(today, today).call
+      one = described_class.new(today, today, location_id: mall.id).call
+
+      expect(all[:summary][:order_count]).to eq(2)
+      expect(one[:summary][:order_count]).to eq(1)
+      expect(one[:summary][:gross_sales_cents]).to eq(3000)
+      expect(one[:by_item].sole).to include(units_sold: 3, revenue_cents: 3000)
+      expect(one[:by_category].find { |r| r[:category] == "Mains" }[:units_sold]).to eq(3)
+      expect(one[:hourly_distribution][11][:count]).to eq(0)
+      expect(one[:hourly_distribution][19][:count]).to eq(1)
+    end
+
     it "calculates net sales from subtotal minus discounts and refunds" do
       order = create(:order, user: user, company: company, status: "completed",
         subtotal_cents: 2000, discount_cents: 200, tax_cents: 100, tip_cents: 50, total_cents: 1950,
@@ -100,6 +121,22 @@ RSpec.describe Accounting::SalesReportService do
       expect(report[:daily_totals][yesterday].to_i).to eq(0)
       expect(report[:hourly_distribution][12][:count]).to eq(1)
       expect(described_class.new(yesterday, yesterday).call[:summary][:net_sales_cents]).to eq(0)
+    end
+
+    it "counts an order on its branch's business day, even when a manual day runs past the clock cutoff" do
+      yesterday = today - 1
+      # A manual-day branch still on yesterday at noon today: the order is
+      # yesterday's sale, rung up in the 12:00 hour.
+      order = create(:order, user: user, company: company, status: "completed",
+        subtotal_cents: 400, discount_cents: 0, tax_cents: 0, tip_cents: 0, total_cents: 400,
+        created_at: today.noon, placed_at: today.noon, business_date: yesterday)
+      create(:order_item, order: order, menu_item: menu_item, quantity: 1, unit_price_cents: 400)
+
+      report = described_class.new(yesterday, today).call
+      expect(report[:daily_totals][yesterday]).to eq(400)
+      expect(report[:daily_totals][today].to_i).to eq(0)
+      expect(report[:hourly_distribution][12][:count]).to eq(1)
+      expect(described_class.new(today, today).call[:summary][:net_sales_cents]).to eq(0)
     end
 
     it "includes modifier revenue in category breakdown" do

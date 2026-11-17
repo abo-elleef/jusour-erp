@@ -4,7 +4,10 @@ require "prawn/table"
 
 module Accounting
   class PdfReportService
-    def initialize(report, start_date, end_date)
+    # one_branch: the report was filtered to a single branch. Said in words, not
+    # by name — the PDF font has no Arabic glyphs and branch names often do.
+    def initialize(report, start_date, end_date, one_branch: false)
+      @one_branch = one_branch
       @report = report
       @start = start_date
       @end = end_date
@@ -14,6 +17,7 @@ module Accounting
       Prawn::Document.new(page_size: "LETTER", margin: [36, 36, 36, 36]) do |pdf|
         pdf.text "Sales Report", size: 20, style: :bold
         pdf.text "#{@start.strftime('%B %d, %Y')} – #{@end.strftime('%B %d, %Y')}", size: 12, color: "555555"
+        pdf.text "One branch only", size: 10, color: "B45309" if @one_branch
         pdf.move_down 12
 
         pdf.text "Summary", size: 14, style: :bold

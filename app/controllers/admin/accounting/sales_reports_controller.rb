@@ -10,7 +10,10 @@ module Admin
       def index
         parse_date_range
         @include_open = params[:include_open] == "1"
-        @report = ::Accounting::SalesReportService.new(@start_date, @end_date, include_open: @include_open).call
+        # Only branches sell; inactive ones stay so their past sales can be read.
+        @locations = Location.branches.ordered
+        @location = @locations.find_by(id: params[:location_id]) if params[:location_id].present?
+        @report = ::Accounting::SalesReportService.new(@start_date, @end_date, include_open: @include_open, location_id: @location&.id).call
         prepare_items
         prepare_comparison
         prepare_orders_by_hour
@@ -19,7 +22,7 @@ module Admin
           format.html
           format.csv { send_data generate_sales_csv, filename: "sales-#{@start_date}-#{@end_date}.csv" }
           format.pdf do
-            send_data ::Accounting::PdfReportService.new(@report, @start_date, @end_date).render,
+            send_data ::Accounting::PdfReportService.new(@report, @start_date, @end_date, one_branch: @location.present?).render,
               filename: "sales-#{@start_date}-#{@end_date}.pdf",
               type: "application/pdf",
               disposition: "attachment"
@@ -86,7 +89,7 @@ module Admin
         days = (@end_date - @start_date).to_i + 1
         @previous_end = @start_date - 1
         @previous_start = @previous_end - (days - 1)
-        @previous = ::Accounting::SalesReportService.new(@previous_start, @previous_end, include_open: @include_open).summary
+        @previous = ::Accounting::SalesReportService.new(@previous_start, @previous_end, include_open: @include_open, location_id: @location&.id).summary
       end
 
       # Orders and sales per hour of the day, summed over every day in the range,
@@ -111,6 +114,7 @@ module Admin
         summary = @report[:summary]
         CSV.generate(headers: true) do |csv|
           csv << %w[Metric Value]
+          csv << ["Branch", @location&.name || "All branches"]
           csv << ["Gross Sales", helpers.format_money(summary[:gross_sales_cents])]
           csv << ["Discounts", helpers.format_money(summary[:discount_cents])]
           csv << ["Tax", helpers.format_money(summary[:tax_cents])]
