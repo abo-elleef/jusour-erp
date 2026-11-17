@@ -36,7 +36,7 @@ module Accounting
     def completed_orders
       @completed_orders ||= begin
         statuses = @include_open ? %w[completed] + OPEN_STATUSES : %w[completed]
-        Order.where(status: statuses, created_at: @range)
+        Order.where(status: statuses, placed_at: @range)
       end
     end
 
@@ -171,7 +171,7 @@ module Accounting
     # Per hour of the day (0..23), summed over every day in the range: order
     # count and net sales, the same sales figure as the daily totals.
     def hourly_distribution
-      hours = completed_orders.group_by_hour_of_day(:created_at, time_zone: Time.zone)
+      hours = completed_orders.group_by_hour_of_day(:placed_at, time_zone: Time.zone)
       counts = hours.count
       sales = hours.sum(Arel.sql(RevenueCalculator::ORDER_NET_SALES))
       (0..23).to_h { |h| [h, { count: counts.fetch(h, 0), sales_cents: sales.fetch(h, 0).to_i }] }
@@ -179,7 +179,7 @@ module Accounting
 
     def daily_totals
       completed_orders
-        .group_by_day(:created_at, time_zone: Time.zone, day_start: BusinessDay.start_hour, range: @range)
+        .group_by_day(:placed_at, time_zone: Time.zone, day_start: BusinessDay.start_hour, range: @range)
         .sum(Arel.sql(RevenueCalculator::ORDER_NET_SALES))
     end
   end

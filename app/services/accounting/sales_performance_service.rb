@@ -129,7 +129,7 @@ module Accounting
 
     # Same population as Accounting::SalesReportService#completed_orders.
     def completed_orders
-      @completed_orders ||= scope_to_location(Order.completed.where(created_at: @range))
+      @completed_orders ||= scope_to_location(Order.completed.where(placed_at: @range))
     end
 
     # Void and refund events inside the range, for orders in the company

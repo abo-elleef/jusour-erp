@@ -107,7 +107,7 @@ module Orders
       # Not BusinessDay.for: on a manual-day branch that answers "today", whatever
       # the time given. Only orders from before business_date existed lack one.
       @business_date ||= @order.business_date ||
-                         (@order.created_at.in_time_zone -
+                         ((@order.placed_at || @order.created_at).in_time_zone -
                           BusinessDay.start_hour(location: @order.location).hours).to_date
     end
   end

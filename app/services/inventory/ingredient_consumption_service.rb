@@ -14,7 +14,7 @@ module Inventory
 
     def call
       range = @start.beginning_of_day..@end.end_of_day
-      completed_orders = Order.where(status: "completed", created_at: range)
+      completed_orders = Order.where(status: "completed", placed_at: range)
       order_ids = completed_orders.select(:id)
 
       rows = Ingredient.active.includes(:unit_ref).map do |ingredient|

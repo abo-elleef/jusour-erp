@@ -71,6 +71,9 @@ module Orders
           client_uuid: uuid,
           offline_number: @payload[:offline_number].presence,
           created_at: created_at,
+          # Rung up and paid at the till while offline: that moment is when it
+          # was placed, not when the sync reached the server.
+          placed_at: created_at,
           allow_table_clash: true
         )
 
@@ -323,14 +326,16 @@ module Orders
       end
     end
 
+    # Memoised: created_at and placed_at must be the same instant, and the
+    # fallback reads the clock.
     def created_at
-      raw = @payload[:created_at].presence
-      time = raw && Time.zone.parse(raw.to_s)
-      return Time.current if time.nil? || time > Time.current || time < MAX_AGE.ago
-
-      time
-    rescue ArgumentError
-      Time.current
+      @created_at ||= begin
+        raw = @payload[:created_at].presence
+        time = raw && Time.zone.parse(raw.to_s)
+        time.nil? || time > Time.current || time < MAX_AGE.ago ? Time.current : time
+      rescue ArgumentError
+        Time.current
+      end
     end
 
     def failure(message)

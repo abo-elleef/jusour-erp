@@ -88,6 +88,20 @@ RSpec.describe Accounting::SalesReportService do
       expect(described_class.new(today, today).call[:summary][:net_sales_cents]).to eq(0)
     end
 
+    it "counts an order on the day it was placed, not the day its cart was opened" do
+      yesterday = today - 1
+      order = create(:order, user: user, company: company, status: "completed",
+        subtotal_cents: 700, discount_cents: 0, tax_cents: 0, tip_cents: 0, total_cents: 700,
+        created_at: yesterday.noon, placed_at: today.noon)
+      create(:order_item, order: order, menu_item: menu_item, quantity: 1, unit_price_cents: 700)
+
+      report = described_class.new(yesterday, today).call
+      expect(report[:daily_totals][today]).to eq(700)
+      expect(report[:daily_totals][yesterday].to_i).to eq(0)
+      expect(report[:hourly_distribution][12][:count]).to eq(1)
+      expect(described_class.new(yesterday, yesterday).call[:summary][:net_sales_cents]).to eq(0)
+    end
+
     it "includes modifier revenue in category breakdown" do
       order = create(:order, user: user, company: company, status: "completed",
         subtotal_cents: 1200, discount_cents: 0, tax_cents: 0, total_cents: 1200, created_at: today.noon)

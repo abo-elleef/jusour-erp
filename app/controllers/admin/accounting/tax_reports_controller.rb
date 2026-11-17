@@ -9,7 +9,7 @@ module Admin
 
       def index
         parse_date_range
-        completed_orders = Order.completed.where(created_at: BusinessDay.range_between(@start_date, @end_date))
+        completed_orders = Order.completed.where(placed_at: BusinessDay.range_between(@start_date, @end_date))
         order_ids = completed_orders.pluck(:id)
 
         @tax_rows = TaxRate.active.map do |rate|

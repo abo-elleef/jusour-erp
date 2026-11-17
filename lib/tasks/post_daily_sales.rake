@@ -60,7 +60,7 @@ namespace :accounting do
         pairs = Order.where(id: legacy.select(:source_record_id))
                      .where.not(location_id: nil)
                      .includes(:location)
-                     .map { |order| [order.location, BusinessDay.for(order.created_at, location: order.location)] }
+                     .map { |order| [order.location, BusinessDay.for(order.placed_at || order.created_at, location: order.location)] }
                      .uniq { |location, date| [location.id, date] }
 
         removed += legacy.destroy_all.size
@@ -111,10 +111,10 @@ namespace :accounting do
 
         orders = Order.completed.where.not(location_id: nil)
         if args[:from].present?
-          orders = orders.where(created_at: BusinessDay.range_between(Date.parse(args[:from]), to))
+          orders = orders.where(placed_at: BusinessDay.range_between(Date.parse(args[:from]), to))
         end
         locations = Location.where(id: orders.distinct.pluck(:location_id)).index_by(&:id)
-        days = orders.pluck(:location_id, :created_at)
+        days = orders.pluck(:location_id, :placed_at)
                      .map { |location_id, at| [location_id, BusinessDay.for(at, location: locations[location_id])] }
                      .uniq
                      .select { |_, date| date <= to }
