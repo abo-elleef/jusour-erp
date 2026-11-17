@@ -1,0 +1,12 @@
+<%# How many order notes a Sales report row has; opens the Order notes page
+    filtered to that row. Inside the items-sold frame, so it targets the page.
+    Locals: count, filters (category / item / modifier_group / modifier_choice). %>
+<% if @notes_params && count.to_i.positive? %>
+  <%= link_to admin_accounting_order_notes_path(@notes_params.merge(filters)),
+        class: "inline-flex items-center gap-1 rounded-md bg-sky-50 px-1.5 py-0.5 text-xs font-semibold text-sky-700 hover:bg-sky-100 align-middle tabular-nums",
+        title: t("accounting.sales_reports.notes_chip_title"),
+        data: { turbo_frame: "_top" } do %>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5" aria-hidden="true"><path d="M4 3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2v3l4-3h6a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H4Z"/></svg>
+    <%= count %>
+  <% end %>
+<% end %>

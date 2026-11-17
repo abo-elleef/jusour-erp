@@ -8,7 +8,14 @@
   </tr>
   <% group[:choices].each do |choice| %>
     <tr class="bg-amber-50/30 <%= choice[:no_choice] ? 'text-gray-400 italic' : 'text-gray-700' %>" data-row-groups-sub="<%= key %>" hidden>
-      <td class="py-1.5 px-3 ps-20 text-sm"><%= choice[:name] %></td>
+      <td class="py-1.5 px-3 ps-20 text-sm">
+        <%= choice[:name] %>
+        <% unless choice[:no_choice] %>
+          <%= render "admin/accounting/sales_reports/notes_chip",
+                count: @note_counts&.dig(:choices, [row[:item_key], group[:name], choice[:name]]),
+                filters: { item: row[:item_key], modifier_group: group[:name], modifier_choice: choice[:name] } %>
+        <% end %>
+      </td>
       <% if flat %><td></td><% end %>
       <td class="py-1.5 px-3 text-end text-sm tabular-nums"><%= number_with_delimiter(choice[:units_sold]) %></td>
       <td class="py-1.5 px-3 text-end text-sm tabular-nums"><%= format_amount(choice[:revenue_cents]) %></td>

@@ -19,7 +19,7 @@ module Admin
         prepare_orders_by_hour
 
         respond_to do |format|
-          format.html
+          format.html { prepare_note_counts }
           format.csv { send_data generate_sales_csv, filename: "sales-#{@start_date}-#{@end_date}.csv" }
           format.pdf do
             send_data ::Accounting::PdfReportService.new(@report, @start_date, @end_date, one_branch: @location.present?).render,
@@ -73,6 +73,7 @@ module Admin
           {
             name: category || t("accounting.sales_reports.uncategorized"),
             category: category,
+            category_key: rows.first[:category_key],
             units_sold: rows.sum { |r| r[:units_sold] },
             revenue_cents: rows.sum { |r| r[:revenue_cents] },
             items: @item_dir == "asc" ? sorted : sorted.reverse
@@ -81,6 +82,13 @@ module Admin
         group_sort = @item_sort == "category" ? "name" : @item_sort
         sorted = groups.sort_by { |g| [ITEM_SORTS[group_sort].call(g), g[:name].to_s.downcase] }
         @item_dir == "asc" ? sorted : sorted.reverse
+      end
+
+      # How many order notes sit behind each category / item / choice row, for the
+      # chips that open the Order notes page already filtered to that row.
+      def prepare_note_counts
+        @note_counts = ::Accounting::OrderNotesService.new(@start_date, @end_date, include_open: @include_open, location_id: @location&.id).counts
+        @notes_params = { start_date: @start_date, end_date: @end_date, location_id: @location&.id, include_open: (@include_open ? "1" : nil) }.compact
       end
 
       # Headline numbers for the period of the same length just before this one,
