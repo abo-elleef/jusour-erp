@@ -9,6 +9,15 @@
     </div>
 
     <% status = @request.overdue? ? "expired" : @request.status %>
+    <%# Saves this order in the browser so the branch menu can link back to it. %>
+    <div hidden data-controller="recent-orders"
+         data-recent-orders-mode-value="remember"
+         data-recent-orders-storage-key-value="<%= recent_orders_storage_key(@company, @location) %>"
+         data-recent-orders-order-value="<%= { token: @request.token,
+                                                url: public_online_order_path(company_slug: @company.slug, token: @request.token),
+                                                placedAt: @request.created_at.iso8601,
+                                                total: format_money(@request.total_cents),
+                                                status: status }.to_json %>"></div>
     <section class="rounded-2xl border p-5 <%= { "pending" => "border-amber-200 bg-amber-50", "accepted" => "border-emerald-200 bg-emerald-50", "rejected" => "border-rose-200 bg-rose-50", "expired" => "border-stone-300 bg-white" }[status] %>"
              id="online-order-status" data-status="<%= status %>">
       <% case status %>

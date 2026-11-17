@@ -11,7 +11,7 @@ export default class extends Controller {
     "itemDialog", "itemName", "itemPrice", "itemGroups", "itemNote", "itemError", "itemQuantity",
     "cartBar", "cartCount",
     "checkoutDialog", "checkoutForm", "lines", "deliveryFields", "feeRow",
-    "subtotal", "fee", "total", "checkoutError", "sendButton"
+    "subtotal", "fee", "total", "checkoutError", "sendButton", "limitWarning"
   ]
 
   static values = {
@@ -289,7 +289,7 @@ export default class extends Controller {
   }
 
   async refreshQuote() {
-    if (this.cart.length === 0) return
+    if (this.cart.length === 0) return this.showLimit(null)
     const form = this.checkoutFormTarget
     const body = {
       items: this.cartPayload(),
@@ -304,6 +304,7 @@ export default class extends Controller {
       this.renderLines(quote.lines, quote.errors)
       this.subtotalTarget.textContent = quote.subtotal
       this.totalTarget.textContent = quote.total
+      this.showLimit(quote.over_limit)
       const areaPicked = this.checkoutFormTarget.elements.delivery_area_id?.value
       this.feeTarget.textContent = body.fulfillment === "delivery" && !areaPicked
         ? this.feeTarget.dataset.chooseText
@@ -350,7 +351,7 @@ export default class extends Controller {
         ? "تعذر الاتصال. حاول مرة أخرى."
         : "Couldn't connect. Please try again.")
     }
-    button.disabled = false
+    button.disabled = Boolean(this.overLimit)
     button.textContent = label
   }
 
@@ -364,6 +365,15 @@ export default class extends Controller {
       },
       body: JSON.stringify(body)
     })
+  }
+
+  // Over the branch's online maximum: say so up front and hold the Send button.
+  // The server refuses it anyway; this only saves the customer typing their details.
+  showLimit(message) {
+    this.overLimit = Boolean(message)
+    if (message) this.showError(this.limitWarningTarget, message)
+    else this.hideError(this.limitWarningTarget)
+    this.sendButtonTarget.disabled = this.overLimit
   }
 
   showError(target, message) {

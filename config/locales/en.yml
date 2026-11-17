@@ -84,6 +84,12 @@ en:
       sending: "Sending…"
       closed: "Online ordering is closed right now. You can still call or WhatsApp us."
       no_areas: "Delivery isn't available online yet — pickup only."
+      recent:
+        title: "Your recent orders"
+        pending: "Waiting for confirmation"
+        accepted: "Confirmed"
+        view: "View"
+      hours: "We take online orders from %{open} to %{close}."
       status_title: "Your order"
       status:
         pending: "Waiting for the restaurant to confirm…"

@@ -53,6 +53,36 @@
     </div>
   </header>
 
+  <% if @location.online_ordering_enabled? && !@accepting_orders %>
+    <%# At the top, so a customer sees why there are no Add buttons before scrolling. %>
+    <div class="border-b border-amber-200 bg-amber-50">
+      <div class="max-w-3xl mx-auto px-4 py-3 text-sm text-amber-900" role="status" id="online-ordering-closed">
+        <p class="font-medium"><%= t("public.online_order.closed") %></p>
+        <% if @location.online_hours_set? %>
+          <p class="mt-0.5 text-amber-900/80"><%= t("public.online_order.hours",
+                open: l(@location.online_open_time, format: "%-I:%M %p"),
+                close: l(@location.online_close_time, format: "%-I:%M %p")) %></p>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+
+  <% if @location.online_ordering_enabled? %>
+    <%# Orders this browser sent in the last day; filled by recent_orders_controller.js. %>
+    <section class="hidden border-b border-amber-200 bg-amber-50/70"
+             data-controller="recent-orders"
+             data-recent-orders-storage-key-value="<%= recent_orders_storage_key(@company, @location) %>"
+             data-recent-orders-labels-value="<%= { pending: t("public.online_order.recent.pending"),
+                                                    accepted: t("public.online_order.recent.accepted"),
+                                                    view: t("public.online_order.recent.view") }.to_json %>"
+             aria-label="<%= t("public.online_order.recent.title") %>">
+      <div class="max-w-3xl mx-auto px-4 py-3 space-y-2">
+        <h2 class="text-sm font-semibold text-amber-900"><%= t("public.online_order.recent.title") %></h2>
+        <div class="space-y-2" data-recent-orders-target="list"></div>
+      </div>
+    </section>
+  <% end %>
+
   <% if @categories.any? || @combos.any? || has_offers %>
     <nav class="sticky top-0 z-10 border-b border-stone-200/80 bg-white/95 shadow-sm backdrop-blur-sm"
          aria-label="<%= t("public.menu.category_filters") %>">
@@ -140,10 +170,6 @@
 
   <% if @accepting_orders %>
     <%= render "public/menus/ordering" %>
-  <% elsif @location.online_ordering_enabled? %>
-    <div class="max-w-3xl mx-auto w-full px-4 pb-6">
-      <p class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"><%= t("public.online_order.closed") %></p>
-    </div>
   <% end %>
 
   <footer class="border-t border-stone-200 bg-white py-4 text-center text-xs text-gray-400">

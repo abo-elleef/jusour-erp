@@ -20,6 +20,12 @@ module PublicOrderingHelper
     }.to_json
   end
 
+  # localStorage key for the orders this browser sent to one branch
+  # (see recent_orders_controller.js). Shared by the menu and the status page.
+  def recent_orders_storage_key(company, location)
+    "online-orders:#{company.slug}:#{location.slug}"
+  end
+
   def orderable_combo_json(combo)
     { kind: "combo", id: combo.id, name: combo.name, price: format_money(combo.price_cents), groups: [] }.to_json
   end

@@ -18,7 +18,8 @@ module Public
         errors: result.errors.transform_values { |code| t("public.online_order.line_errors.#{code}") },
         subtotal: helpers.format_money(result.subtotal_cents - result.discount_cents),
         delivery_fee: helpers.format_money(result.delivery_fee_cents),
-        total: helpers.format_money(result.total_cents)
+        total: helpers.format_money(result.total_cents),
+        over_limit: over_limit_message(result.total_cents)
       }
     end
 
@@ -51,6 +52,15 @@ module Public
     def cart_items
       Array(params.permit(items: [:menu_item_id, :combo_id, :quantity, :notes, { modifier_ids: [] }])[:items])
         .map { |item| item.to_h }
+    end
+
+    # Same rule as OnlineOrders::SubmitService (the max itself is allowed), shown
+    # in the checkout so the customer learns it before typing their details.
+    def over_limit_message(total_cents)
+      max = @location.online_max_order_cents
+      return if max.blank? || total_cents <= max
+
+      t("public.online_order.errors.too_large", max: helpers.format_money(max))
     end
 
     def error_message(result)
