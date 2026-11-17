@@ -6035,6 +6035,8 @@ ar:
       count_value: "%{count} · %{amount}"
       showing: "%{count} سجل"
     sales_reports:
+      branch: "الفرع"
+      all_branches: "كل الفروع"
       include_open: "تضمين الطلبات المفتوحة"
       include_open_off_hint: "الطلبات المكتملة فقط — تُضاف الطلبات المفتوحة عند إغلاق الدرج."
       include_open_on_hint: "يشمل الطلبات المسجّلة التي لم تكتمل بعد. ستتغير الأرقام حتى إغلاق اليوم."

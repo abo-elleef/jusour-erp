@@ -8,9 +8,7 @@ module Accounting
     end
 
     def call
-      completed_orders = Order.completed.where(
-        placed_at: BusinessDay.range_between(@start, @end)
-      )
+      completed_orders = Order.completed.on_business_days(@start, @end)
       order_ids = completed_orders.select(:id)
       # What the chosen modifiers' own recipes cost (a Double's extra patty).
       modifier_cost = ModifierRecipeCost.by_menu_item(OrderItem.where(order_id: order_ids))

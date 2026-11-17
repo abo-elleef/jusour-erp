@@ -9,9 +9,13 @@ module Accounting
     # include_open: also count placed orders that are not completed yet, so the
     # report can be read during the day. Off by default — the day close, COGS
     # and every other caller work from completed orders only.
-    def initialize(start_date, end_date, include_open: false)
-      @range = BusinessDay.range_between(start_date, end_date)
+    # location_id: one branch only; nil means every branch. Every section is
+    # built from completed_orders, so they all follow it.
+    def initialize(start_date, end_date, include_open: false, location_id: nil)
+      @start_date = start_date.to_date
+      @end_date = end_date.to_date
       @include_open = include_open
+      @location_id = location_id
     end
 
     def call
@@ -36,7 +40,8 @@ module Accounting
     def completed_orders
       @completed_orders ||= begin
         statuses = @include_open ? %w[completed] + OPEN_STATUSES : %w[completed]
-        Order.where(status: statuses, placed_at: @range)
+        scope = Order.where(status: statuses).on_business_days(@start_date, @end_date)
+        @location_id ? scope.where(location_id: @location_id) : scope
       end
     end
 
@@ -177,10 +182,10 @@ module Accounting
       (0..23).to_h { |h| [h, { count: counts.fetch(h, 0), sales_cents: sales.fetch(h, 0).to_i }] }
     end
 
+    # Per business day, every day of the range present (zero when nothing sold).
     def daily_totals
-      completed_orders
-        .group_by_day(:placed_at, time_zone: Time.zone, day_start: BusinessDay.start_hour, range: @range)
-        .sum(Arel.sql(RevenueCalculator::ORDER_NET_SALES))
+      sums = completed_orders.group(:business_date).sum(Arel.sql(RevenueCalculator::ORDER_NET_SALES))
+      (@start_date..@end_date).index_with { |date| sums.fetch(date, 0) }
     end
   end
 end

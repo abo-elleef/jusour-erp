@@ -174,14 +174,13 @@ class Order < ApplicationRecord
   scope :awaiting_payment, -> {
     where.not(status: %w[draft cancelled]).order(created_at: :desc)
   }
-  # The business day an order belongs to is the one it was placed on: an order
-  # counts toward the day it went to the kitchen or was paid, not the day its
-  # cart was first opened. A draft has not been placed, so it falls back to when
-  # it was opened (the admin list still shows today's drafts under today).
-  scope :on_date, ->(date) {
-    range = BusinessDay.range(date)
-    where(placed_at: range).or(where(placed_at: nil, created_at: range))
-  }
+  # The business day an order belongs to is its business_date: the branch's
+  # operating day when it was placed (a draft carries the day it was opened
+  # until then). Not a clock range: a manual-day branch stays on its day until
+  # someone advances it, whatever the clock says. The hour within the day comes
+  # from placed_at.
+  scope :on_date, ->(date) { where(business_date: date) }
+  scope :on_business_days, ->(from, to) { where(business_date: from.to_date..to.to_date) }
   scope :completed, -> { where(status: "completed") }
   scope :open_orders, -> { where(status: %w[submitted in_progress ready]) }
   scope :unpaid, -> {
@@ -435,7 +434,7 @@ class Order < ApplicationRecord
   end
 
   def assign_business_date
-    self.business_date ||= BusinessDay.for(created_at || Time.current, location: location)
+    self.business_date ||= BusinessDay.for(placed_at || created_at || Time.current, location: location)
   end
 
   # Numbers restart at 1 for each branch every business day, so a cashier can read

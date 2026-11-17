@@ -17,7 +17,6 @@ module Accounting
     def initialize(start_date, end_date)
       @start_date = start_date
       @end_date = end_date
-      @range = BusinessDay.range_between(start_date, end_date)
       @date_range = start_date..end_date
     end
 
@@ -42,7 +41,7 @@ module Accounting
     end
 
     def completed_orders
-      @completed_orders ||= Order.completed.where(placed_at: @range)
+      @completed_orders ||= Order.completed.on_business_days(@start_date, @end_date)
     end
 
     def refunds_cents

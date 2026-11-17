@@ -28,7 +28,8 @@
             class: export_btn_class %>
     </div>
   </div>
-  <%= render "admin/accounting/date_range_form" %>
+  <%= render "admin/accounting/date_range_form",
+        extra_fields: ("admin/accounting/sales_reports/branch_field" if @locations.size > 1), extra_keys: [:location_id] %>
 
   <%# Open orders: placed but not completed yet. Off = completed only (what the day
       close and COGS use); on = everything sold so far, for reading the day live. %>
