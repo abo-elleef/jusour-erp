@@ -1,12 +1,15 @@
 <%# The item's name; an item sold with modifiers gets a chevron that opens its
-    choice rows (_item_modifier_rows). Locals: row, css. %>
+    choice rows (_item_modifier_rows), and a chip when it has order notes.
+    Locals: row, css. %>
+<% notes_chip = render("admin/accounting/sales_reports/notes_chip", count: @note_counts&.dig(:items, row[:item_key]), filters: { item: row[:item_key] }) %>
 <td class="<%= css %>">
   <% if row[:modifier_groups].present? %>
     <button type="button" class="inline-flex items-center gap-2 text-start" aria-expanded="false" data-row-groups-item-toggle>
       <span class="text-gray-400 text-xs transition-transform rtl:-scale-x-100" data-row-groups-item-chevron>▸</span>
       <%= row[:name] %>
     </button>
+    <%= notes_chip %>
   <% else %>
-    <%= row[:name] %>
+    <%= row[:name] %> <%= notes_chip %>
   <% end %>
 </td>

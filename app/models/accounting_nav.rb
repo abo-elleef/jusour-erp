@@ -94,6 +94,8 @@ module AccountingNav
     .each_with_object({}) { |t, h| h[t[:controller]] = t[:permission] }
     .merge(
       "treasury_transfers" => "accounting:ledgers",
+      # Order notes: opened from the Sales report, not a tab of its own.
+      "order_notes" => "accounting:reports",
       "payroll" => "payroll:view",
       "monthly_payroll" => "payroll:view",
       # Reports hub → Staff (ApplicationHelper#staff_report_items)

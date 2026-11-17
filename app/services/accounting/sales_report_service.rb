@@ -37,12 +37,16 @@ module Accounting
 
     private
 
+    # The orders the report counts. A class method so the Order notes page
+    # (OrderNotesService) lists notes from exactly the same orders.
+    def self.orders_scope(start_date, end_date, include_open: false, location_id: nil)
+      statuses = include_open ? %w[completed] + OPEN_STATUSES : %w[completed]
+      scope = Order.where(status: statuses).on_business_days(start_date, end_date)
+      location_id ? scope.where(location_id: location_id) : scope
+    end
+
     def completed_orders
-      @completed_orders ||= begin
-        statuses = @include_open ? %w[completed] + OPEN_STATUSES : %w[completed]
-        scope = Order.where(status: statuses).on_business_days(@start_date, @end_date)
-        @location_id ? scope.where(location_id: @location_id) : scope
-      end
+      @completed_orders ||= self.class.orders_scope(@start_date, @end_date, include_open: @include_open, location_id: @location_id)
     end
 
     def order_ids
@@ -100,21 +104,26 @@ module Accounting
         .joins("LEFT JOIN combos ON combos.id = order_items.combo_id")
         .joins("LEFT JOIN categories ON categories.id = menu_items.category_id")
         .where(order_id: order_ids)
-        .group("order_items.menu_item_id", "order_items.combo_id", "menu_items.name", "combos.name", "categories.name")
+        .group("order_items.menu_item_id", "order_items.combo_id", "menu_items.name", "combos.name", "categories.name", "categories.id")
         .pluck(
           Arel.sql("COALESCE(menu_items.name, combos.name)"),
           Arel.sql("categories.name"),
+          Arel.sql("categories.id"),
           Arel.sql("order_items.menu_item_id"),
           Arel.sql("order_items.combo_id"),
           Arel.sql("SUM(order_items.quantity)"),
           Arel.sql("SUM(#{RevenueCalculator::ORDER_ITEM_LINE_REVENUE})")
         )
 
-      rows.map do |name, category, menu_item_id, combo_id, units, revenue|
+      rows.map do |name, category, category_id, menu_item_id, combo_id, units, revenue|
         units = units.to_i
         revenue = revenue.to_i
         {
           name: name,
+          # Ids for links (the notes page filters by them); the key is what
+          # OrderNotesService uses for an item, menu item or combo alike.
+          item_key: OrderNotesService.item_key(menu_item_id, combo_id),
+          category_key: OrderNotesService.category_key(category_id, combo_id),
           category: combo_id ? combos_label : category,
           units_sold: units,
           revenue_cents: revenue,
