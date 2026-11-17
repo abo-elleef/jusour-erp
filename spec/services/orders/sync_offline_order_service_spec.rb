@@ -70,6 +70,8 @@ RSpec.describe Orders::SyncOfflineOrderService do
 
     expect(order.created_at).to eq(stamp)
     expect(order.payments.sole.created_at).to eq(stamp)
+    # Placed when the till rang it up, not when the sync arrived: sales count on that day.
+    expect(order.placed_at).to eq(stamp)
   end
 
   it "ignores a clock that is in the future or absurdly old" do

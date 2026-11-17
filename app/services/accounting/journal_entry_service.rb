@@ -335,7 +335,7 @@ module Accounting
       #
       # Idempotent: re-running for the same day replaces the day's entry.
       def record_daily_sales!(location:, business_date:, user:, orders: nil)
-        orders ||= Order.completed.where(created_at: BusinessDay.range(business_date, location: location),
+        orders ||= Order.completed.where(placed_at: BusinessDay.range(business_date, location: location),
                                          location_id: location.id)
         destroy_for_daily_sales!(location: location, business_date: business_date)
 

@@ -42,7 +42,7 @@ module Accounting
     end
 
     def completed_orders
-      @completed_orders ||= Order.completed.where(created_at: @range)
+      @completed_orders ||= Order.completed.where(placed_at: @range)
     end
 
     def refunds_cents

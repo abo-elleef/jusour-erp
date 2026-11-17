@@ -113,7 +113,7 @@ module Accounting
     # never be drawn from different sets.
     def completed_orders
       Order.completed.where(
-        created_at: BusinessDay.range(@business_date, location: @location),
+        placed_at: BusinessDay.range(@business_date, location: @location),
         location_id: @location.id
       )
     end

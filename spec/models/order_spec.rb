@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe Order, type: :model do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:user) { create(:user) }
 
   describe "validations" do
@@ -71,10 +73,22 @@ RSpec.describe Order, type: :model do
 
     it "starts over on the next business day" do
       place(create(:order, user: user, location: branch))
-      tomorrow = place(create(:order, user: user, location: branch,
-                                      business_date: BusinessDay.for(Time.current, location: branch) + 1))
+      tomorrow = travel_to(1.day.from_now) { place(create(:order, user: user, location: branch)) }
 
       expect(tomorrow.order_number).to eq("1")
+    end
+
+    it "belongs to the day it was placed on, not the day its cart was opened" do
+      place(create(:order, user: user, location: branch))
+      opened_today = create(:order, user: user, location: branch)
+
+      placed = travel_to(1.day.from_now) { place(opened_today) }
+
+      expect(placed.business_date).to eq(BusinessDay.for(placed.placed_at, location: branch))
+      expect(placed.business_date).to eq(BusinessDay.for(opened_today.created_at, location: branch) + 1)
+      expect(placed.order_number).to eq("1")
+      expect(Order.on_date(placed.business_date)).to include(placed)
+      expect(Order.on_date(placed.business_date - 1)).not_to include(placed)
     end
 
     it "keeps a number that was set by hand" do

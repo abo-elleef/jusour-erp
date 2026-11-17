@@ -71,6 +71,7 @@ class Order < ApplicationRecord
   before_validation :assign_business_date, on: :create
   before_validation :assign_order_number, unless: :unnumbered?
   before_save :clear_fulfillment_fields_for_type
+  before_save :default_placed_at
   validate :table_must_be_free, if: :table_slot_changed?, unless: :allow_table_clash
 
   # Set only by Orders::SyncOfflineOrderService. An order rung up while the
@@ -90,8 +91,11 @@ class Order < ApplicationRecord
     event :submit do
       transitions from: :draft, to: :submitted
       before do
-        assign_order_number
         self.placed_at ||= Time.current
+        # The order belongs to the day it was placed on, so its number and its
+        # business date both come from that day, not from when the cart opened.
+        self.business_date = BusinessDay.for(placed_at, location: location)
+        assign_order_number
       end
       after do
         Tax::CalculateService.call(self)
@@ -170,8 +174,13 @@ class Order < ApplicationRecord
   scope :awaiting_payment, -> {
     where.not(status: %w[draft cancelled]).order(created_at: :desc)
   }
+  # The business day an order belongs to is the one it was placed on: an order
+  # counts toward the day it went to the kitchen or was paid, not the day its
+  # cart was first opened. A draft has not been placed, so it falls back to when
+  # it was opened (the admin list still shows today's drafts under today).
   scope :on_date, ->(date) {
-    where(created_at: BusinessDay.range(date))
+    range = BusinessDay.range(date)
+    where(placed_at: range).or(where(placed_at: nil, created_at: range))
   }
   scope :completed, -> { where(status: "completed") }
   scope :open_orders, -> { where(status: %w[submitted in_progress ready]) }
@@ -415,6 +424,15 @@ class Order < ApplicationRecord
   end
 
   private
+
+  # Every order past draft has a placed_at: the reports bucket sales by it. The
+  # submit event sets it; an order written straight into a later status (an
+  # import, a fixture) takes the time it was rung up.
+  def default_placed_at
+    return if draft? || placed_at.present?
+
+    self.placed_at = created_at || Time.current
+  end
 
   def assign_business_date
     self.business_date ||= BusinessDay.for(created_at || Time.current, location: location)

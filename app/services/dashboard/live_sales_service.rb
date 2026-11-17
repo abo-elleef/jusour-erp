@@ -42,7 +42,7 @@ module Dashboard
 
       today = rows(today_range.begin...@now)
       last_week = rows(last_week_range)
-      last_week_so_far_rows = last_week.select { |r| last_week_so_far.cover?(r[:created_at]) }
+      last_week_so_far_rows = last_week.select { |r| last_week_so_far.cover?(r[:placed_at]) }
 
       sales = sum(today)
       before = sum(last_week_so_far_rows)
@@ -68,12 +68,12 @@ module Dashboard
 
     # One hash per order: when, which branch, and its sales net of refunds.
     def rows(range)
-      scope = Order.where(status: COUNTED_STATUSES, created_at: range)
+      scope = Order.where(status: COUNTED_STATUSES, placed_at: range)
       scope = scope.where(location_id: @location_ids) unless @location_ids.nil?
-      orders = scope.pluck(:id, :created_at, :location_id, Arel.sql("orders.total_cents - orders.delivery_fee_cents"))
+      orders = scope.pluck(:id, :placed_at, :location_id, Arel.sql("orders.total_cents - orders.delivery_fee_cents"))
       refunds = refunds_by_order(orders.map(&:first))
-      orders.map do |id, created_at, location_id, cents|
-        { id: id, created_at: created_at, location_id: location_id, cents: cents.to_i - refunds.fetch(id, 0) }
+      orders.map do |id, placed_at, location_id, cents|
+        { id: id, placed_at: placed_at, location_id: location_id, cents: cents.to_i - refunds.fetch(id, 0) }
       end
     end
 
@@ -120,7 +120,7 @@ module Dashboard
     # order count behind each figure for the chart tooltip.
     def by_hour(today, last_week, today_start, last_week_start)
       bucket = ->(rows, start) {
-        rows.group_by { |r| ((r[:created_at] - start) / 3600).floor }
+        rows.group_by { |r| ((r[:placed_at] - start) / 3600).floor }
           .transform_values { |rs| { cents: sum(rs), count: rs.size } }
       }
       empty = { cents: 0, count: 0 }
