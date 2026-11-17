@@ -508,6 +508,10 @@ ar:
       change: "الباقي"
       loyalty: "الولاء: %{points} نقطة"
       order_notes: "ملاحظات الطلب:"
+      voided: "*** طلب ملغي ***"
+      void_reason: "سبب الإلغاء: %{reason}"
+      voided_by: "ألغاه: %{name}"
+      refunded: "المسترد"
     kitchen_ticket:
       title: "المطبخ"
       order_notes: "ملاحظات الطلب:"

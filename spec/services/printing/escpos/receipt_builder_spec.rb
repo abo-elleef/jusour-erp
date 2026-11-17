@@ -165,4 +165,25 @@ RSpec.describe Printing::Escpos::ReceiptBuilder do
       expect(contents).to include("16/11/2026 08:14 PM")
     end
   end
+
+  describe "a voided order" do
+    def contents
+      described_class.new(order.reload, printer: printer).build_debug.entries.map { |e| e[:content] || e[:left] }.compact
+    end
+
+    it "prints no void banner on a normal receipt" do
+      expect(contents.join(" ")).not_to include("VOIDED")
+    end
+
+    it "prints the VOIDED banner, the reason, who voided it and the refund" do
+      voider = create(:user, company: company, name: "Mona Manager")
+      Orders::VoidService.call(order: order, user: voider, reason: "Customer left")
+
+      text = contents
+      expect(text).to include(I18n.t("printing.receipt.voided"))
+      expect(text).to include(I18n.t("printing.receipt.void_reason", reason: "Customer left"))
+      expect(text).to include(I18n.t("printing.receipt.voided_by", name: "Mona Manager"))
+      expect(text).to include(I18n.t("printing.receipt.refunded"))
+    end
+  end
 end

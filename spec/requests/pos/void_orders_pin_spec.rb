@@ -206,6 +206,34 @@ RSpec.describe "Voiding an order with the branch PIN", type: :request do
     end
   end
 
+  describe "the receipt" do
+    it "prints again marked voided when a placed order is voided" do
+      order = place_new_order
+
+      expect do
+        post void_pos_order_path(order), params: { pin: "135790", reason: "Wrong order" }
+      end.to have_enqueued_job(Printing::PrintVoidReceiptJob).with(order.id)
+      expect(order.reload.status).to eq("cancelled")
+    end
+
+    it "does not print for a cart that was never placed" do
+      post pos_order_items_path(menu_item_id: menu_item.id), as: :turbo_stream
+      cart = Order.find(session[:current_order_id])
+
+      expect do
+        Orders::VoidService.call(order: cart, user: cashier)
+      end.not_to have_enqueued_job(Printing::PrintVoidReceiptJob)
+    end
+
+    it "sends the voided receipt to the receipt printer" do
+      order = place_new_order
+      Orders::VoidService.call(order: order, user: cashier, reason: "Wrong order")
+
+      expect(Printing::PrintReceiptService).to receive(:call).with(order: order, manual: true)
+      Printing::PrintVoidReceiptJob.perform_now(order.id)
+    end
+  end
+
   describe "buttons the rules refuse stay on the order page, greyed out with why" do
     it "explains Edit items on a paid order" do
       order = place_new_order
