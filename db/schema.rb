@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_15_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_17_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -840,6 +840,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_15_120000) do
     t.integer "void_orders_pin_failed_attempts", default: 0, null: false
     t.datetime "void_orders_pin_locked_until"
     t.boolean "online_ordering_enabled", default: false, null: false
+    t.boolean "pos_top_sellers_enabled", default: false, null: false
     t.time "online_open_time"
     t.time "online_close_time"
     t.integer "online_accept_timeout_minutes", default: 10, null: false

@@ -8,7 +8,7 @@ RSpec.describe "POS most sold row", type: :request do
   include Devise::Test::IntegrationHelpers
 
   let(:company) { create(:company) }
-  let!(:branch) { create(:location, company: company, name: "Main Branch") }
+  let!(:branch) { create(:location, company: company, name: "Main Branch", pos_top_sellers_enabled: true) }
   let(:cashier) { create(:user, company: company, role: "cashier") }
   let(:burger) { create(:menu_item, company: company, name: "Top Burger") }
   let(:retired) { create(:menu_item, company: company, name: "Retired Wrap") }
@@ -33,6 +33,11 @@ RSpec.describe "POS most sold row", type: :request do
   it "shows the branch's top sellers that are still available here" do
     expect(row.text).to include("Top Burger")
     expect(row.text).not_to include("Retired Wrap")
+  end
+
+  it "is left out when the branch has it turned off" do
+    branch.update!(pos_top_sellers_enabled: false)
+    expect(row).to be_nil
   end
 
   it "is left out when the branch has sold nothing completed" do
