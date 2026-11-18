@@ -26,6 +26,12 @@ RSpec.describe "POS order completion", type: :request do
     order
   end
 
+  def paid_open_order(owner: cashier, status: "submitted")
+    order = open_order(owner: owner, status: status)
+    create(:payment, order: order, amount_cents: order.total_cents)
+    order
+  end
+
   def open_drawer_for(user)
     treasury = Treasury.create!(company: company, name: "Till", treasury_type: "cash_drawer",
                                 balance_cents: 0, opening_balance_cents: 0)
@@ -95,29 +101,38 @@ RSpec.describe "POS order completion", type: :request do
       expect(response.body).not_to include(complete_pos_order_path(order))
     end
 
-    it "offers the bulk close on the shift screen, counting what it will close" do
-      2.times { open_order }
+    it "offers the bulk close for paid orders only, counting what it will close" do
+      2.times { paid_open_order }
+      open_order
 
       get pos_shift_path(tab: "orders")
 
-      expect(response.body).to include(complete_all_pos_orders_path)
-      expect(response.body).to include(I18n.t("pos.shift.orders.complete_all_confirm", count: 2))
+      expect(response.body).to include(complete_paid_pos_orders_path)
+      expect(response.body).to include(I18n.t("pos.shift.orders.complete_paid_confirm", count: 2))
     end
 
-    it "hides the bulk close when nothing is open" do
+    it "hides the bulk close when no open order is paid" do
+      open_order
+
       get pos_shift_path(tab: "orders")
 
-      expect(response.body).not_to include(complete_all_pos_orders_path)
+      expect(response.body).not_to include(complete_paid_pos_orders_path)
+    end
+
+    it "no longer offers a way to complete unpaid orders in bulk" do
+      post "/pos/orders/complete_all"
+
+      expect(response).to have_http_status(:not_found)
     end
   end
 
-  describe "POST /pos/orders/complete_all" do
+  describe "POST /pos/orders/complete_paid" do
     before { open_drawer_for(cashier) }
 
-    it "closes everything this cashier still has open" do
-      mine = [open_order, open_order(status: "ready")]
+    it "closes every paid order this cashier still has open" do
+      mine = [paid_open_order, paid_open_order(status: "ready")]
 
-      post complete_all_pos_orders_path
+      post complete_paid_pos_orders_path
 
       expect(response).to redirect_to(pos_shift_path(tab: "orders"))
       expect(mine.map { |o| o.reload.status }).to all(eq("completed"))
@@ -139,15 +154,15 @@ RSpec.describe "POS order completion", type: :request do
     end
 
     it "leaves another cashier's orders alone" do
-      theirs = open_order(owner: other_cashier)
+      theirs = paid_open_order(owner: other_cashier)
 
-      post complete_all_pos_orders_path
+      post complete_paid_pos_orders_path
 
       expect(theirs.reload.status).to eq("submitted")
     end
 
     it "says so when there is nothing open" do
-      post complete_all_pos_orders_path
+      post complete_paid_pos_orders_path
 
       expect(flash[:alert]).to eq(I18n.t("flash.pos.no_orders_to_complete"))
     end
@@ -155,21 +170,21 @@ RSpec.describe "POS order completion", type: :request do
     # The bug this covers: two orders missing a table number reported as "no open
     # orders", while the banner above counted them. The cashier had nowhere to go.
     it "distinguishes orders it could not move from having none at all" do
-      order = open_order(status: "draft")
+      order = paid_open_order(status: "draft")
       order.update!(order_type: "table", table_number: nil)
 
-      post complete_all_pos_orders_path
+      post complete_paid_pos_orders_path
 
       expect(flash[:alert]).to eq(I18n.t("flash.pos.orders_not_completable", count: 1))
       expect(flash[:notice]).to be_nil
     end
 
     it "reports both halves when some close and some cannot" do
-      open_order
-      blocked = open_order(status: "draft")
+      paid_open_order
+      blocked = paid_open_order(status: "draft")
       blocked.update!(order_type: "table", table_number: nil)
 
-      post complete_all_pos_orders_path
+      post complete_paid_pos_orders_path
 
       expect(flash[:notice]).to eq(I18n.t("flash.pos.orders_completed", count: 1))
       expect(flash[:alert]).to eq(I18n.t("flash.pos.orders_not_completable", count: 1))
@@ -185,13 +200,13 @@ RSpec.describe "POS order completion", type: :request do
     # The cashier works their current drawer session only. An order left open in
     # an earlier one is the admin's to handle, so it is neither listed nor closed.
     it "leaves an unfinished order from an earlier session out of the list and the bulk close" do
-      stale = open_order(status: "draft")
+      stale = paid_open_order(status: "draft")
       stale.update!(created_at: 5.days.ago)
 
       get pos_shift_path(tab: "orders")
       expect(response.body).not_to include(resume_pos_order_path(stale))
 
-      post complete_all_pos_orders_path
+      post complete_paid_pos_orders_path
       expect(stale.reload.status).to eq("draft")
     end
   end

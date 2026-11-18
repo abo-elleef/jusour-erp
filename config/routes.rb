@@ -97,7 +97,6 @@ Rails.application.routes.draw do
     resources :orders, only: %i[index show destroy] do
       collection do
         post :sync_offline
-        post :complete_all
         post :complete_paid
         post :collect_all_cash
       end

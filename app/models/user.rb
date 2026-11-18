@@ -141,7 +141,7 @@ class User < ApplicationRecord
 
   # This cashier's orders that have no ending yet, limited to the current drawer
   # session. One definition for the shift tab, the close/clock-out guard and
-  # Complete all, so the cashier is never blocked by an order they cannot see.
+  # Complete paid, so the cashier is never blocked by an order they cannot see.
   def unfinalized_shift_orders(location: nil)
     current_drawer_session(location: location)&.unfinished_orders || Order.none
   end

@@ -230,16 +230,11 @@ module Pos
       end
     end
 
-    # End of shift: close everything this cashier still has open. Scoped to their
-    # own orders — a cashier closing down must not sweep the next register's tickets
-    # off the pass.
-    def complete_all
-      authorize Order, :complete_all?
-      complete_and_redirect(open_orders_for(current_user))
-    end
-
-    # The safe version of the above: only the open orders whose payment is already
-    # fully collected. Unpaid or part-paid ones stay open for Collect Payment.
+    # End of shift: complete this cashier's open orders whose payment is already
+    # fully collected. Scoped to their own orders — a cashier closing down must not
+    # sweep the next register's tickets off the pass. Unpaid or part-paid ones stay
+    # open for Collect Payment. (There is no "complete all regardless of payment":
+    # it was removed 2026-11-18 because cashiers pressed it by mistake.)
     def complete_paid
       authorize Order, :complete_all?
       complete_and_redirect(open_orders_for(current_user).includes(:payments).select(&:fully_paid?))

@@ -170,11 +170,11 @@ RSpec.describe "Closing a shift over unfinished or unpaid orders", type: :reques
       expect(response.body).to include(I18n.t("pos.shift.unfinalized_orders_warning", count: 1))
     end
 
-    it "clears the block in one press of Complete all once the money is in" do
+    it "clears the block in one press of Complete paid once the money is in" do
       pay!(order_for(cashier))
       pay!(order_for(cashier, status: "draft"))
 
-      post complete_all_pos_orders_path
+      post complete_paid_pos_orders_path
       patch reconcile_pos_shift_path, params: { counted_cash: "100.00" }
 
       expect(response).to redirect_to(pos_shift_path)

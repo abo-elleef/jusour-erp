@@ -4165,11 +4165,6 @@ en:
         complete_paid_confirm:
           one: "Complete the %{count} open order that is fully paid? Unpaid orders stay open."
           other: "Complete the %{count} open orders that are fully paid? Unpaid orders stay open."
-        complete_all: "Complete all open orders"
-        complete_all_hint: "Closes every order you have left open, paid or not. Unpaid ones stay on Collect Payment."
-        complete_all_confirm:
-          one: "Mark %{count} open order as completed?"
-          other: "Mark all %{count} open orders as completed?"
     orders:
       edit_items: "Edit items"
       continue_editing: "Continue editing"
