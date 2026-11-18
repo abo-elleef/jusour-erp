@@ -12,11 +12,20 @@ module Pos
     def update
       authorize @customer, :update_contact?
 
-      if @customer.update(customer_params)
-        @order = load_current_order
+      saved = @customer.update(customer_params)
+      @order = load_current_order
+
+      # The cart this form was opened from may have moved on in the meantime —
+      # placed or paid (often from another tab), or the session moved to another
+      # order. There is no cart left to re-render, so reload the register instead.
+      if @order.nil?
+        flash[saved ? :notice : :alert] = saved ? t("flash.customer_updated") : @customer.errors.full_messages.to_sentence
+        return redirect_to(pos_path, status: :see_other)
+      end
+
+      if saved
         render "pos/customers/update", formats: [:turbo_stream]
       else
-        @order = load_current_order
         @customer_form_errors = @customer.errors
         render "pos/customers/update_error", formats: [:turbo_stream]
       end

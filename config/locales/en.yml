@@ -6932,6 +6932,7 @@ en:
         mixed_locations: "This batch spans more than one location, so it can't become a single transfer."
 
   flash:
+    customer_updated: "Customer updated."
     delivery_area:
       created: "Delivery area added."
       updated: "Delivery area updated."
