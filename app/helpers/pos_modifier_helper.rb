@@ -3,8 +3,11 @@
 # Data for the POS "customize" modal's live prices (modifier_pricing_controller).
 # The offline register builds the same shape from its snapshot.
 module PosModifierHelper
-  def modifier_pricing_config(menu_item, location, groups)
-    promos = Menus::ActivePromo.new(location: location).all_for_item(menu_item)
+  # active_promo: pass one Menus::ActivePromo when building many items on a page
+  # (the public menu), so the live promos are loaded once, not once per item.
+  def modifier_pricing_config(menu_item, location, groups, active_promo: nil)
+    active_promo ||= Menus::ActivePromo.new(location: location)
+    promos = active_promo.all_for_item(menu_item)
     {
       base_cents: menu_item.price_cents_at(location),
       groups: groups.map do |group|

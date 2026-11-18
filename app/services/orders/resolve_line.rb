@@ -39,7 +39,7 @@ module Orders
     end
 
     def initialize(location:, menu_item_id: nil, combo_id: nil, modifier_ids: [], quantity: 1, notes: nil,
-                   strict: false, promo_finder: nil)
+                   strict: false, promo_finder: nil, channel: nil)
       @location = location
       @menu_item_id = menu_item_id.presence
       @combo_id = combo_id.presence
@@ -47,6 +47,9 @@ module Orders
       @quantity = quantity.to_i
       @notes = notes.to_s.strip.presence
       @strict = strict
+      # :public refuses items whose category is on the POS only (Category#menu_visibility).
+      # The POS passes nothing: a cashier may still ring up anything enabled at the branch.
+      @channel = channel
       @promo_finder = promo_finder || Menus::ActivePromo.new(location: location)
     end
 
@@ -68,9 +71,10 @@ module Orders
     end
 
     def resolve_menu_item
-      menu_item = MenuItem.includes(:location_menu_items, menu_item_modifier_groups: :modifier_group)
+      menu_item = MenuItem.includes(:category, :location_menu_items, menu_item_modifier_groups: :modifier_group)
                           .find_by(id: @menu_item_id)
       raise Invalid, :unavailable if menu_item.nil? || !menu_item.available_at_location?(@location)
+      raise Invalid, :unavailable if @channel && !menu_item.category.shown_on?(@channel)
 
       modifiers = allowed_modifiers(menu_item)
       check_groups!(menu_item, modifiers) if @strict

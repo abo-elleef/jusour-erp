@@ -302,7 +302,7 @@ class PosController < ApplicationController
   end
 
   def load_pos_menu
-    menu = Menus::ForLocation.call(location: @pos_location)
+    menu = Menus::ForLocation.call(location: @pos_location, channel: :pos)
     @categories = menu.categories
     @menu_items = menu.menu_items
     @combos = menu.combos

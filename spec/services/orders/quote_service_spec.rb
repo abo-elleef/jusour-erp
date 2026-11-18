@@ -35,6 +35,14 @@ RSpec.describe Orders::QuoteService do
     expect(result.snapshot["lines"].first["modifiers"].map { |m| m["name"] }).to contain_exactly("Double", "Cheese", "Bacon")
   end
 
+  it "refuses an item whose category is on the POS only" do
+    burger.category.update!(menu_visibility: "pos")
+
+    result = quote([{ menu_item_id: burger.id, modifier_ids: [single.id] }])
+
+    expect(result.errors).to eq(0 => :unavailable)
+  end
+
   it "uses the branch price override" do
     LocationMenuItem.find_by!(location: branch, menu_item: burger).update!(price_override_cents: 12_000)
 

@@ -104,7 +104,7 @@ module Orders
     end
 
     def menu
-      result = Menus::ForLocation.call(location: @location)
+      result = Menus::ForLocation.call(location: @location, channel: :pos)
 
       {
         categories: result.categories.map { |category| { id: category.id, name: category.name } },

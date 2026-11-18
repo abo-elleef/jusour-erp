@@ -1,5 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
-import { applySelectionCaps } from "utils/modifier_pricing"
+import { applySelectionCaps, groupShowsPrices, priceFor, priceWithOption } from "utils/modifier_pricing"
+import { formatMoney } from "utils/offline_totals"
 
 // Customer self-ordering on the public menu.
 //
@@ -40,6 +41,7 @@ export default class extends Controller {
     this.itemQuantityTarget.textContent = "1"
     this.hideError(this.itemErrorTarget)
     this.itemGroupsTarget.replaceChildren(...this.item.groups.map((group) => this.groupFieldset(group)))
+    this.refreshPrices()
     this.itemDialogTarget.showModal()
   }
 
@@ -94,17 +96,58 @@ export default class extends Controller {
       name.textContent = mod.name
       left.append(input, name)
       label.append(left)
-      if (mod.price) {
+      if (this.groupHasPrices(group)) {
+        // Filled by refreshPrices: the whole item price with this choice.
         const price = document.createElement("span")
-        price.className = "tabular-nums text-stone-500"
-        price.textContent = mod.price
+        price.className = "flex items-baseline gap-1.5 tabular-nums"
+        price.dataset.modifierPrice = mod.id
         label.append(price)
       }
       list.append(label)
     })
     fieldset.append(list)
-    fieldset.addEventListener("change", () => this.applyCaps())
+    fieldset.addEventListener("change", () => {
+      this.applyCaps()
+      this.refreshPrices()
+    })
     return fieldset
+  }
+
+  // ---- prices in the popup (same rule as the POS customize modal) -------
+  // Every priced choice shows the whole item price if picked ("110.00", not
+  // "+35.00"), and the header follows what is picked. Combos carry no pricing.
+
+  pricingGroup(group) {
+    return this.item.pricing.groups.find((row) => row.id === group.id)
+  }
+
+  groupHasPrices(group) {
+    const pricing = this.item.pricing
+    return Boolean(pricing) && groupShowsPrices(this.pricingGroup(group), pricing.promos)
+  }
+
+  pickedIds() {
+    return [...this.itemGroupsTarget.querySelectorAll("input:checked")].map((input) => input.value)
+  }
+
+  refreshPrices() {
+    const pricing = this.item.pricing
+    if (!pricing) return
+    const picked = this.pickedIds()
+    for (const group of this.item.groups) {
+      const pricingGroup = this.pricingGroup(group)
+      for (const mod of group.modifiers) {
+        const slot = this.itemGroupsTarget.querySelector(`[data-modifier-price="${mod.id}"]`)
+        if (slot) slot.innerHTML = this.priceHtml(priceWithOption(pricing, picked, pricingGroup, mod.id), "text-sm")
+      }
+    }
+    this.itemPriceTarget.innerHTML = this.priceHtml(priceFor(pricing, picked), "text-sm")
+  }
+
+  priceHtml({ list, discount, final }, size) {
+    const now = `<span class="${size} font-semibold ${discount ? "text-rose-700" : "text-amber-700"}">${formatMoney(final)}</span>`
+    if (!discount) return now
+    return `<span class="text-xs font-normal text-stone-400 line-through">${formatMoney(list)}</span> ${now}`
   }
 
   // "Up to N" groups: grey out the rest once N are ticked.

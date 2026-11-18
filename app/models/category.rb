@@ -14,7 +14,14 @@ class Category < ApplicationRecord
   validates :code, presence: true, uniqueness: { scope: :company_id, case_sensitive: false },
     format: { with: /\A[A-Za-z0-9]+\z/, message: :alphanumeric_only }
 
+  # Where the category's items are offered. Most are on both; some only on the
+  # register (staff items, extras), some only on the public menu (online deals).
+  MENU_VISIBILITIES = %w[both pos public].freeze
+  validates :menu_visibility, inclusion: { in: MENU_VISIBILITIES }
+
   scope :active, -> { where(active: true) }
+  # channel: :pos or :public
+  scope :shown_on, ->(channel) { where(menu_visibility: ["both", channel.to_s]) }
   scope :ordered, -> { order(:position, :name) }
 
   # A short default code derived from the name (first alphanumerics), deduped
@@ -28,6 +35,10 @@ class Category < ApplicationRecord
       candidate = "#{base}#{n}"
     end
     candidate
+  end
+
+  def shown_on?(channel)
+    menu_visibility == "both" || menu_visibility == channel.to_s
   end
 
   private

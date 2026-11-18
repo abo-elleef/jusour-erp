@@ -55,7 +55,7 @@ module Orders
       @items.each_with_index do |raw, index|
         raw = raw.to_h.stringify_keys
         lines << ResolveLine.call(
-          location: @location, strict: true, promo_finder: promo_finder,
+          location: @location, strict: true, promo_finder: promo_finder, channel: :public,
           menu_item_id: raw["menu_item_id"], combo_id: raw["combo_id"],
           modifier_ids: raw["modifier_ids"], quantity: raw["quantity"], notes: raw["notes"]
         )

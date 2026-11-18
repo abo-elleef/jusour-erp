@@ -33,6 +33,14 @@
         <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.categories.position_hint") %></p>
       </div>
 
+      <div>
+        <%= f.label :menu_visibility, t("admin.categories.menu_visibility"), class: label_class %>
+        <%= f.select :menu_visibility,
+              Category::MENU_VISIBILITIES.map { |value| [t("admin.categories.menu_visibility_#{value}"), value] },
+              {}, class: input_class %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("admin.categories.menu_visibility_hint") %></p>
+      </div>
+
       <div class="rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3">
         <label class="inline-flex items-center gap-3 cursor-pointer">
           <%= f.check_box :active, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
