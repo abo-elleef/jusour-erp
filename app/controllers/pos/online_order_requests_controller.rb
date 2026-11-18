@@ -19,13 +19,13 @@ module Pos
     def index
       scope = OnlineOrderRequest.where(location: @pos_location).includes(:customer, :delivery_area, :order)
       @pending = scope.pending.where("expires_at > ?", Time.current).order(:created_at)
+      @checks = @pending.to_h { |req| [req.id, OnlineOrders::CustomerCheck.new(req)] }
       @recent = scope.where.not(status: "pending").where(decided_at: 12.hours.ago..).order(decided_at: :desc).limit(20)
     end
 
     def show
-      @customer = @request.customer || OnlineOrders::FindOrCreateCustomer.lookup(@request.phone)
-      @previous_orders = @customer ? Order.where(customer: @customer).where.not(status: "cancelled").count : 0
-      @last_order = @customer && Order.where(customer: @customer).order(created_at: :desc).first
+      @check = OnlineOrders::CustomerCheck.new(@request)
+      @customer = @check.customer
     end
 
     def accept

@@ -50,7 +50,7 @@ module OnlineOrders
       return fail(:invalid_phone) if @phone.nil?
       return fail(:missing_name) if customer_name.blank?
 
-      customer = existing_customer
+      customer = FindOrCreateCustomer.lookup(@phone)
       return fail(:blocked) if customer&.blocked?
       return fail(:too_many_pending) if recent.pending.where(phone: @phone).count >= MAX_PENDING_PER_PHONE
       return fail(:too_many_today) if recent.where(phone: @phone).where(created_at: @now.beginning_of_day..).count >= MAX_PER_PHONE_PER_DAY
@@ -124,11 +124,6 @@ module OnlineOrders
     def too_fast?
       started = self.class.verifier.verified(@params[:started_at].to_s, purpose: :online_order)
       started.nil? || (@now.to_i - started.to_i) < MIN_SECONDS_ON_PAGE
-    end
-
-    def existing_customer
-      variants = Phones::EgyptianMobile.variants(@phone)
-      Customer.where(phone: variants).or(Customer.where(phone_secondary: variants)).first
     end
   end
 end
