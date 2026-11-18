@@ -148,36 +148,118 @@
     <% end %>
   </section>
 
-  <%# Trend: one chart, by day or by hour. %>
+  <%# Trend: one chart, by day or by hour. Chart / Table switch shows the numbers
+      behind the chart (what the tooltips show), for a screenshot or print. %>
   <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6"
-           data-controller="tabs" data-tabs-storage-key-value="sales-report-trend">
+           data-controller="tabs chart-table" data-tabs-storage-key-value="sales-report-trend"
+           data-chart-table-storage-key-value="sales-report-trend">
     <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
       <div>
         <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.sales_reports.trend") %></h2>
         <p class="text-xs text-gray-500 mt-0.5" data-tab-panel="day" data-tabs-target="panel"><%= t("accounting.sales_reports.daily_totals_hint") %></p>
         <p class="text-xs text-gray-500 mt-0.5" data-tab-panel="hour" data-tabs-target="panel" hidden><%= t("accounting.sales_reports.hourly_hint") %></p>
       </div>
-      <div class="flex gap-1 text-sm font-semibold">
-        <% [["day", t("accounting.sales_reports.by_day")], ["hour", t("accounting.sales_reports.by_hour")]].each do |name, label| %>
-          <button type="button" class="px-3 py-1.5 border-b-2 border-transparent text-gray-500"
-                  data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="<%= name %>"><%= label %></button>
-        <% end %>
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="flex gap-1 text-sm font-semibold">
+          <% [["day", t("accounting.sales_reports.by_day")], ["hour", t("accounting.sales_reports.by_hour")]].each do |name, label| %>
+            <button type="button" class="px-3 py-1.5 border-b-2 border-transparent text-gray-500"
+                    data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="<%= name %>"><%= label %></button>
+          <% end %>
+        </div>
+        <div class="flex rounded-xl bg-gray-100 p-1 text-xs font-semibold">
+          <% [["chart", t("accounting.sales_reports.view_chart")], ["table", t("accounting.sales_reports.view_table")]].each do |view, label| %>
+            <button type="button" class="px-3 py-1 rounded-lg text-gray-500"
+                    data-chart-table-target="button" data-action="chart-table#switch" data-chart-table-view-param="<%= view %>"><%= label %></button>
+          <% end %>
+        </div>
       </div>
     </div>
     <div data-tab-panel="day" data-tabs-target="panel">
-      <%= line_chart @report[:daily_totals].transform_values { |c| c / 100.0 }.transform_keys(&:to_s),
-            prefix: chart_money_prefix, thousands: ",", height: "260px" %>
+      <div data-chart-table-view="chart">
+        <%= line_chart @report[:daily_totals].transform_values { |c| c / 100.0 }.transform_keys(&:to_s),
+              prefix: chart_money_prefix, thousands: ",", height: "260px" %>
+      </div>
+      <div data-chart-table-view="table" hidden>
+        <% day_sales_total = @report[:daily_totals].values.sum %>
+        <% day_orders_total = @report[:daily_order_counts].values.sum %>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="border-b border-gray-100 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <tr>
+                <th class="p-2 ps-0 text-start"><%= t("accounting.sales_reports.day") %></th>
+                <th class="p-2 text-end"><%= t("accounting.sales_reports.orders") %></th>
+                <th class="p-2 text-end"><%= t("accounting.sales_reports.net_sales") %></th>
+                <th class="p-2 pe-0 text-end"><%= t("accounting.sales_reports.share") %></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              <% @report[:daily_totals].each do |date, cents| %>
+                <% orders = @report[:daily_order_counts][date] %>
+                <tr class="<%= 'text-gray-400' if cents.zero? && orders.zero? %>">
+                  <td class="p-2 ps-0 whitespace-nowrap"><%= l(date, format: "%a %d/%m/%Y") %></td>
+                  <td class="p-2 text-end tabular-nums"><%= orders %></td>
+                  <td class="p-2 text-end tabular-nums font-medium"><%= format_amount(cents) %></td>
+                  <td class="p-2 pe-0 text-end tabular-nums text-gray-500"><%= number_with_precision(day_sales_total.positive? ? cents * 100.0 / day_sales_total : 0, precision: 1) %>%</td>
+                </tr>
+              <% end %>
+            </tbody>
+            <tfoot class="border-t border-gray-200 font-semibold">
+              <tr>
+                <td class="p-2 ps-0"><%= t("accounting.sales_reports.total") %></td>
+                <td class="p-2 text-end tabular-nums"><%= day_orders_total %></td>
+                <td class="p-2 text-end tabular-nums"><%= format_amount(day_sales_total) %></td>
+                <td class="p-2 pe-0 text-end tabular-nums text-gray-500"><%= day_sales_total.positive? ? "100.0%" : "0.0%" %></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
     </div>
-    <div data-tab-panel="hour" data-tabs-target="panel" hidden
-         data-controller="chart-tooltip" data-chart-tooltip-chart-id-value="sales-by-hour-chart"
-         data-chart-tooltip-titles-value="<%= @orders_by_hour.map { |h| hour_range_label(h[:hour]) }.to_json %>"
-         data-chart-tooltip-lines-value="<%= [@orders_by_hour.map { |h| [
-           t("hourly_chart.orders", count: h[:count]),
-           t("hourly_chart.sales", amount: format_amount(h[:sales_cents])),
-           t("hourly_chart.share", percent: number_with_precision(h[:share_percent], precision: 1))
-         ] }].to_json %>">
-      <%= column_chart @orders_by_hour.to_h { |h| [hour_axis_label(h[:hour]), h[:count]] },
-            id: "sales-by-hour-chart", height: "260px" %>
+    <div data-tab-panel="hour" data-tabs-target="panel" hidden>
+      <div data-chart-table-view="chart"
+           data-controller="chart-tooltip" data-chart-tooltip-chart-id-value="sales-by-hour-chart"
+           data-chart-tooltip-titles-value="<%= @orders_by_hour.map { |h| hour_range_label(h[:hour]) }.to_json %>"
+           data-chart-tooltip-lines-value="<%= [@orders_by_hour.map { |h| [
+             t("hourly_chart.orders", count: h[:count]),
+             t("hourly_chart.sales", amount: format_amount(h[:sales_cents])),
+             t("hourly_chart.share", percent: number_with_precision(h[:share_percent], precision: 1))
+           ] }].to_json %>">
+        <%= column_chart @orders_by_hour.to_h { |h| [hour_axis_label(h[:hour]), h[:count]] },
+              id: "sales-by-hour-chart", height: "260px" %>
+      </div>
+      <div data-chart-table-view="table" hidden>
+        <% hour_sales_total = @orders_by_hour.sum { |h| h[:sales_cents] } %>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="border-b border-gray-100 text-xs font-semibold uppercase tracking-wide text-gray-500">
+              <tr>
+                <th class="p-2 ps-0 text-start"><%= t("accounting.sales_reports.hour") %></th>
+                <th class="p-2 text-end"><%= t("accounting.sales_reports.orders") %></th>
+                <th class="p-2 text-end"><%= t("accounting.sales_reports.net_sales") %></th>
+                <th class="p-2 pe-0 text-end"><%= t("accounting.sales_reports.share") %></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+              <% @orders_by_hour.each do |h| %>
+                <tr class="<%= 'text-gray-400' if h[:count].zero? && h[:sales_cents].zero? %>">
+                  <td class="p-2 ps-0 whitespace-nowrap"><%= hour_range_label(h[:hour]) %></td>
+                  <td class="p-2 text-end tabular-nums"><%= h[:count] %></td>
+                  <td class="p-2 text-end tabular-nums font-medium"><%= format_amount(h[:sales_cents]) %></td>
+                  <td class="p-2 pe-0 text-end tabular-nums text-gray-500"><%= number_with_precision(h[:share_percent], precision: 1) %>%</td>
+                </tr>
+              <% end %>
+            </tbody>
+            <tfoot class="border-t border-gray-200 font-semibold">
+              <tr>
+                <td class="p-2 ps-0"><%= t("accounting.sales_reports.total") %></td>
+                <td class="p-2 text-end tabular-nums"><%= @orders_by_hour.sum { |h| h[:count] } %></td>
+                <td class="p-2 text-end tabular-nums"><%= format_amount(hour_sales_total) %></td>
+                <td class="p-2 pe-0 text-end tabular-nums text-gray-500"><%= hour_sales_total.positive? ? "100.0%" : "0.0%" %></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
     </div>
   </section>
 

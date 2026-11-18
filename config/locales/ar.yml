@@ -6135,6 +6135,10 @@ ar:
       collapse_all: "طي الكل"
       payments_total: "إجمالي المحصّل"
       hourly_hint: "الطلبات حسب ساعة اليوم — مرّر على العمود لترى المبيعات ونسبتها"
+      view_chart: "رسم بياني"
+      view_table: "جدول"
+      day: "اليوم"
+      hour: "الساعة"
       export_pdf: "تصدير PDF"
     food_costs:
       title: "تكلفة الطعام %"
