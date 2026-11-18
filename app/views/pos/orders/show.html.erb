@@ -72,6 +72,10 @@
 
   <div class="flex-1 min-h-0 overflow-y-auto">
   <div class="p-5 max-w-6xl mx-auto w-full grid grid-cols-1 <%= @order.amount_due_cents.positive? && !@from_shift ? "lg:grid-cols-2" : "" %> gap-6 pb-8">
+    <div class="space-y-6 min-w-0">
+    <% if @order.customer.present? %>
+      <%= render "pos/orders/customer_details", order: @order %>
+    <% end %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-visible">
       <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
         <h2 class="text-sm font-semibold text-gray-900"><%= t("order.labels.items") %></h2>
@@ -144,6 +148,7 @@
         </div>
       <% end %>
     </section>
+    </div>
 
     <% if @order.amount_due_cents.positive? && !@from_shift %>
       <div class="lg:sticky lg:top-5 lg:self-start">
