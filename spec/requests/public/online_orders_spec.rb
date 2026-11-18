@@ -16,15 +16,32 @@ RSpec.describe "Public self-ordering", type: :request do
     create(:location_menu_item, location: branch, menu_item: item, available: true)
   end
 
-  it "shows Add buttons and the checkout when the branch takes online orders" do
+  it "makes the whole card the tap target and shows the checkout when the branch takes online orders" do
     get menu_path
 
     doc = Nokogiri::HTML(response.body)
     expect(doc.at("[data-controller~='online-order']")).to be_present
-    expect(doc.at("button[data-action='online-order#open']")["data-item"]).to include(item.id)
+    expect(doc.at(".public-menu-card button")).to be_nil
+    card = doc.at("article.public-menu-card[role='button']")
+    expect(card["data-action"]).to include("click->online-order#open")
+    expect(card["data-item"]).to include(item.id)
     expect(doc.at("select[name='delivery_area_id']").text).to include("Dokki")
     expect(doc.at("[data-controller='recent-orders']")["data-recent-orders-storage-key-value"])
       .to eq("online-orders:#{company.slug}:#{branch.slug}")
+  end
+
+  it "gives the popup the full item price for every choice, not just the added amount" do
+    group = ModifierGroup.create!(company: company, name: "Size")
+    double = group.modifiers.create!(name: "Double", price_adjustment_cents: 3_500)
+    item.menu_item_modifier_groups.create!(modifier_group: group, position: 1)
+
+    get menu_path
+
+    data = JSON.parse(Nokogiri::HTML(response.body).at("article.public-menu-card")["data-item"])
+    expect(data["pricing"]["base_cents"]).to eq(5_000)
+    expect(data["pricing"]["groups"].first["modifiers"])
+      .to contain_exactly({ "id" => double.id, "price_adjustment_cents" => 3_500 })
+    expect(data["groups"].first["modifiers"].first).not_to have_key("price")
   end
 
   it "shows a closed note and no Add buttons when ordering is paused" do
