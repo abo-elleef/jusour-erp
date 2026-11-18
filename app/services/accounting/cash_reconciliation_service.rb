@@ -21,18 +21,23 @@ module Accounting
     # `by` is whoever closed the drawer — the cashier at the till, or a manager
     # from the admin — and is recorded on the over/short documents.
     #
-    # The books take what the drawer should have held (expected); the gap to the
-    # count becomes its own document (Accounting::DrawerVarianceDocuments), so
-    # the safe still ends up holding exactly what was counted.
+    # In the company's default (documented) mode the books take what the drawer
+    # should have held (expected); the gap to the count becomes its own document
+    # (Accounting::DrawerVarianceDocuments), so the safe still ends up holding
+    # exactly what was counted. In simple mode the books take the count and the
+    # gap is only reported.
     def reconcile!(counted_cents, by: nil)
       expected = @session.expected_cash_cents || compute_expected!
       variance = counted_cents - expected
+      # A count correction keeps the mode the drawer was first closed under, so
+      # changing the company setting never rewrites a closed drawer's books.
+      documented = @session.status == "reconciled" ? @session.variance_documented? : Setting.document_drawer_variance?
 
       CashDrawerSession.transaction do
         @session.update!(
           counted_cash_cents: counted_cents,
           variance_cents: variance,
-          variance_documented: true,
+          variance_documented: documented,
           status: "reconciled"
         )
 

@@ -54,6 +54,21 @@
       ],
       "port": 3000,
       "autoPort": false
+    },
+    {
+      "name": "Rails (smoke copy 3003)",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "DATABASE_URL=postgres:///saqr_pos_smoke",
+        "bin/rails",
+        "server",
+        "-p",
+        "3003",
+        "--pid",
+        "tmp/pids/server-smoke-3003.pid"
+      ],
+      "port": 3003,
+      "autoPort": false
     }
   ]
 }

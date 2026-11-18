@@ -9,6 +9,7 @@ class Setting
     print_encoding print_code_page arabic_font_path receipt_logo_url
     receipt_footer_text business_day_start_hour
     restrict_stock_transfers_to_source allow_fractional_sales_quantities
+    drawer_close_mode
   ].freeze
 
   INTEGER_COLUMNS = %w[
@@ -68,5 +69,21 @@ class Setting
   # fractions (a client selling by weight). Off by default.
   def self.allow_fractional_sales_quantities?
     get_bool("allow_fractional_sales_quantities", false)
+  end
+
+  DRAWER_CLOSE_MODES = %w[documented simple].freeze
+
+  # How a drawer close books an over/short count.
+  #   documented (default) — the safe gets the expected cash; the gap becomes an
+  #     Income (over) or a voucher to the cashier (short). See
+  #     Accounting::DrawerVarianceDocuments.
+  #   simple — the safe gets what was counted; the gap is shown but not booked.
+  def self.drawer_close_mode
+    mode = get("drawer_close_mode", "documented").to_s
+    DRAWER_CLOSE_MODES.include?(mode) ? mode : "documented"
+  end
+
+  def self.document_drawer_variance?
+    drawer_close_mode == "documented"
   end
 end

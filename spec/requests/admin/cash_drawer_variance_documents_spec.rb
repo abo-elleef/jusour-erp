@@ -185,4 +185,49 @@ RSpec.describe "Cash drawer over/short documents", type: :request do
     expect(drawer.variance_incomes.reload).to be_empty
     expect(safe.reload.balance_cents).to eq(15_400)
   end
+
+  context "when the company closes drawers in simple mode" do
+    before { Setting.set("drawer_close_mode", "simple") }
+
+    it "banks the counted cash when over and books no income" do
+      close(15_400)
+
+      expect(drawer).to have_attributes(variance_cents: 400, variance_documented: false)
+      expect(safe.reload.balance_cents).to eq(15_400)
+      expect(drawer.variance_incomes).to be_empty
+      expect(Income.where(company: company)).to be_empty
+    end
+
+    it "banks the counted cash when short and charges nothing to the cashier" do
+      close(14_680)
+
+      expect(drawer).to have_attributes(variance_cents: -320, variance_documented: false, shortage_voucher_id: nil)
+      expect(safe.reload.balance_cents).to eq(14_680)
+      expect(Voucher.where(company: company)).to be_empty
+      expect(account_balance(cashier.account_code)).to eq(0)
+      expect(CashDrawerSession.new(drawer.attributes).short?).to be false
+      expect(CashDrawerSessionPolicy.new(owner, drawer).waive_shortage?).to be false
+    end
+
+    it "is saved from the settings page" do
+      Setting.set("drawer_close_mode", "documented")
+      sign_in owner
+
+      patch admin_settings_path, params: { drawer_close_mode: "simple" }
+
+      expect(response).to redirect_to(admin_settings_path)
+      expect(CompanySetting.find_by!(company: company).drawer_close_mode).to eq("simple")
+    end
+  end
+
+  it "keeps a documented drawer documented on a count correction after the company switches to simple" do
+    close(14_680)
+    Setting.set("drawer_close_mode", "simple")
+
+    close(14_600, by: owner)
+
+    expect(drawer).to have_attributes(variance_documented: true, variance_cents: -400)
+    expect(drawer.shortage_voucher).to have_attributes(amount_cents: 400)
+    expect(safe.reload.balance_cents).to eq(14_600)
+  end
 end
