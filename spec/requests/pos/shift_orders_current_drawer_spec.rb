@@ -3,7 +3,7 @@
 require "rails_helper"
 
 # No order is rung without an open drawer, so the drawer session is the cashier's
-# shift. The orders tab, the close guard and Complete all look at that session
+# shift. The orders tab, the close guard and Complete paid look at that session
 # only; orders left over from an earlier session are the admin's to handle.
 RSpec.describe "Shift orders tab shows the current drawer session", type: :request do
   include Devise::Test::IntegrationHelpers
@@ -82,11 +82,12 @@ RSpec.describe "Shift orders tab shows the current drawer session", type: :reque
     expect(todays_drawer.reload.status).to eq("reconciled")
   end
 
-  it "leaves an earlier session's open order alone on Complete all" do
+  it "leaves an earlier session's open order alone on Complete paid" do
     stale = order_at(Time.zone.local(2026, 6, 9, 12, 0, 0), status: "submitted")
     current = order_at(Time.zone.local(2026, 6, 10, 13, 0, 0), status: "submitted")
+    [stale, current].each { |o| create(:payment, order: o, amount_cents: o.total_cents) }
 
-    post complete_all_pos_orders_path
+    post complete_paid_pos_orders_path
 
     expect(current.reload.status).to eq("completed")
     expect(stale.reload.status).to eq("submitted")

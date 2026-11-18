@@ -32,23 +32,18 @@
         <span class="tabular-nums text-xs px-2 py-0.5 rounded-full <%= @filter == "all" ? "bg-white/20" : "bg-gray-100 text-gray-700" %>"><%= @all_orders_count %></span>
       <% end %>
     </div>
-    <% if @filter == "open" && @open_orders_count.positive? %>
-      <div class="flex flex-wrap items-center gap-2">
-        <% if @paid_open_orders_count.to_i.positive? %>
-          <%= button_to t("pos.shift.orders.complete_paid", count: @paid_open_orders_count), complete_paid_pos_orders_path,
-                method: :post,
-                form: { data: { turbo_confirm: t("pos.shift.orders.complete_paid_confirm", count: @paid_open_orders_count) } },
-                class: "inline-flex items-center border border-green-700 text-green-800 hover:bg-green-50 px-5 py-2 rounded-xl text-sm font-semibold transition-colors" %>
-        <% end %>
-        <%= button_to t("pos.shift.orders.complete_all"), complete_all_pos_orders_path,
-              method: :post,
-              form: { data: { turbo_confirm: t("pos.shift.orders.complete_all_confirm", count: @open_orders_count) } },
-              class: "inline-flex items-center bg-green-700 hover:bg-green-800 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors" %>
-      </div>
+    <%# Only paid orders can be bulk-completed. "Complete all open orders" was removed
+        (2026-11-18): cashiers pressed it by mistake and closed unpaid orders into
+        their shift. Unpaid ones go through Collect Payment. %>
+    <% if @filter == "open" && @paid_open_orders_count.to_i.positive? %>
+      <%= button_to t("pos.shift.orders.complete_paid", count: @paid_open_orders_count), complete_paid_pos_orders_path,
+            method: :post,
+            form: { data: { turbo_confirm: t("pos.shift.orders.complete_paid_confirm", count: @paid_open_orders_count) } },
+            class: "inline-flex items-center bg-green-700 hover:bg-green-800 text-white px-5 py-2 rounded-xl text-sm font-semibold transition-colors" %>
     <% end %>
   </div>
 
-  <%# Narrows the list above; Open/All counts and Complete-all still cover every open order. %>
+  <%# Narrows the list above; Open/All counts and Complete paid still cover every open order. %>
   <%= form_with url: pos_shift_path, method: :get,
         data: { controller: "auto-submit", turbo_frame: "shift_orders", turbo_action: "advance" },
         class: "flex flex-wrap items-end gap-3 mb-4" do %>

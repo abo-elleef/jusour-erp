@@ -7,6 +7,9 @@ module Admin
     class CashDrawerController < BaseController
       before_action :set_session, only: %i[show count reconcile payments attach_payments print_slip reopen
                                                  waive_shortage unwaive_shortage]
+      # Same rule as closing from the POS: no open, draft or unpaid order may be
+      # left on the drawer. Admin used to skip it.
+      before_action :block_open_orders!, only: :reconcile
       helper_method :print_mode?
 
       def index
@@ -52,6 +55,7 @@ module Admin
         service = ::Accounting::CashReconciliationService.new(@session)
         service.compute_expected!
         @sales_summary = service.sales_summary
+        @blocking_orders = @session.open? ? @session.orders_blocking_close : []
       end
 
       def reconcile
@@ -202,6 +206,16 @@ module Admin
             changes_snapshot: { variance_cents: @session.variance_cents }
           )
         end
+      end
+
+      def block_open_orders!
+        return unless @session.open?
+
+        count = @session.orders_blocking_close.size
+        return if count.zero?
+
+        redirect_to count_admin_accounting_cash_drawer_path(@session),
+                    alert: t("flash.accounting.drawer_has_open_orders", count: count)
       end
 
       def set_session
