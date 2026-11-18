@@ -28,6 +28,20 @@ RSpec.describe "POS online orders inbox", type: :request do
     expect(response.body).to include("Mona")
   end
 
+  it "shows who the caller is on the request and a trust label in the inbox" do
+    create(:customer, company: company, name: "Karim", phone: "010 0123 4567")
+    request_record
+
+    get pos_online_order_request_path(request_record)
+    card = Nokogiri::HTML(response.body).at("[data-testid=online-order-customer-check]")
+    expect(card.text).to include("Karim")
+    expect(card.at("[data-testid=online-order-trust]")["data-level"]).to eq("caution") # typed "Mona"
+    expect(card.at("[data-testid=online-order-check-reasons]").text).to include("(Karim)")
+
+    get pos_online_order_requests_path
+    expect(Nokogiri::HTML(response.body).at("[data-testid=online-order-trust]")["data-level"]).to eq("caution")
+  end
+
   it "accepts into the cashier's own order" do
     patch accept_pos_online_order_request_path(request_record)
 

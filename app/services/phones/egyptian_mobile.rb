@@ -26,5 +26,20 @@ module Phones
       rest = local.delete_prefix("0")
       [local, "+20#{rest}", "20#{rest}", "0020#{rest}", "+20 #{rest}"]
     end
+
+    # The same number as bare digits, the way a stored phone reads once spaces,
+    # dashes, "+" and Arabic digits are stripped by .digits_sql. Includes the
+    # number typed without its leading 0 ("1012345678").
+    def digit_variants(local)
+      return [] if local.blank?
+
+      rest = local.delete_prefix("0")
+      [local, rest, "20#{rest}", "0020#{rest}"]
+    end
+
+    # SQL that turns a stored phone column into bare Latin digits.
+    def digits_sql(column)
+      "regexp_replace(translate(#{column}, '#{ARABIC_DIGITS}', '#{LATIN_DIGITS}'), '[^0-9]', '', 'g')"
+    end
   end
 end

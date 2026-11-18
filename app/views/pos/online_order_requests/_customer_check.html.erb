@@ -1,0 +1,100 @@
+<%# locals: check %>
+<%# "Who is this?" — what we know about the phone, so the cashier can tell a regular
+    from a new number or a likely fake before accepting. See OnlineOrders::CustomerCheck. %>
+<% request = check.request %>
+<% customer = check.customer %>
+<% by_status = check.requests_by_status %>
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden" data-testid="online-order-customer-check">
+  <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 bg-gray-50/80 px-5 py-3">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("pos.online_orders.check.title") %></h2>
+    <%= render "pos/online_order_requests/trust_badge", check: check, size: :lg %>
+  </div>
+
+  <div class="space-y-3 px-5 py-4 text-sm">
+    <% if check.level == "caution" %>
+      <ul class="space-y-1 rounded-xl bg-orange-50 px-3 py-2 text-orange-900 ring-1 ring-orange-200" data-testid="online-order-check-reasons">
+        <% check.reasons.each do |reason| %>
+          <li class="flex gap-1.5"><span aria-hidden="true">⚠</span>
+            <span><%= t("pos.online_orders.check.reasons.#{reason}", count: check.reason_count(reason), name: check.name_on_file.to_s) %></span>
+          </li>
+        <% end %>
+      </ul>
+    <% elsif check.level == "blocked" && customer.blocked_reason.present? %>
+      <p class="rounded-xl bg-rose-50 px-3 py-2 text-rose-800 ring-1 ring-rose-200"><%= customer.blocked_reason %></p>
+    <% end %>
+
+    <dl class="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+      <div class="flex justify-between gap-3">
+        <dt class="text-gray-500"><%= t("pos.online_orders.check.on_file") %></dt>
+        <dd class="text-end font-semibold text-gray-900">
+          <% if customer %>
+            <%= link_to customer.display_name, admin_customer_path(customer), class: "hover:underline #{"text-orange-700" if check.name_mismatch?}" %>
+          <% else %>
+            <span class="text-amber-800"><%= t("pos.online_orders.check.no_match") %></span>
+          <% end %>
+        </dd>
+      </div>
+
+      <% if check.address_status %>
+        <div class="flex justify-between gap-3">
+          <dt class="text-gray-500"><%= t("pos.online_orders.check.address") %></dt>
+          <dd class="text-end font-semibold <%= check.address_status == :known ? "text-emerald-700" : "text-amber-800" %>" data-testid="online-order-check-address">
+            <%= t("pos.online_orders.check.address_#{check.address_status}") %>
+          </dd>
+        </div>
+      <% end %>
+
+      <div class="flex justify-between gap-3">
+        <dt class="text-gray-500"><%= t("pos.online_orders.check.completed") %></dt>
+        <dd class="text-end font-semibold tabular-nums text-gray-900"><%= check.completed_count %></dd>
+      </div>
+
+      <% if check.completed_count.positive? %>
+        <div class="flex justify-between gap-3">
+          <dt class="text-gray-500"><%= t("pos.online_orders.check.total_spent") %></dt>
+          <dd class="text-end font-semibold tabular-nums text-gray-900"><%= format_money(check.total_spent_cents) %></dd>
+        </div>
+      <% end %>
+
+      <% if (last = check.last_order) %>
+        <div class="flex justify-between gap-3 sm:col-span-2">
+          <dt class="text-gray-500"><%= t("pos.online_orders.check.last_order") %></dt>
+          <dd class="text-end font-semibold text-gray-900">
+            <%= l((last.placed_at || last.created_at).to_date) %><% if last.location %> · <%= last.location.name %><% end %>
+            · <span class="tabular-nums"><%= format_money(last.total_cents) %></span>
+          </dd>
+        </div>
+      <% end %>
+
+      <% if check.voided_count.positive? %>
+        <div class="flex justify-between gap-3">
+          <dt class="text-gray-500"><%= t("pos.online_orders.check.voided") %></dt>
+          <dd class="text-end font-semibold tabular-nums text-rose-700"><%= check.voided_count %></dd>
+        </div>
+      <% end %>
+    </dl>
+
+    <% if by_status.values.sum.positive? %>
+      <div>
+        <p class="mb-1 text-xs font-semibold text-gray-500"><%= t("pos.online_orders.check.earlier_requests") %></p>
+        <div class="flex flex-wrap gap-1.5 text-xs">
+          <% %w[accepted rejected expired].each do |status| %>
+            <% next if by_status[status].to_i.zero? %>
+            <span class="rounded-full px-2.5 py-1 font-semibold <%= status == "rejected" ? "bg-rose-100 text-rose-800" : status == "accepted" ? "bg-emerald-50 text-emerald-800" : "bg-gray-100 text-gray-700" %>">
+              <%= t("pos.online_orders.statuses.#{status}") %>: <span class="tabular-nums"><%= by_status[status] %></span>
+            </span>
+          <% end %>
+          <% check.rejection_reasons.each do |reason, n| %>
+            <span class="rounded-full bg-rose-50 px-2.5 py-1 text-rose-700"><%= t("pos.online_orders.reasons.#{reason}", default: reason) %> × <span class="tabular-nums"><%= n %></span></span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if check.standing_note %>
+      <p class="rounded-lg bg-amber-100/70 px-2 py-1.5 text-xs text-amber-900">
+        <span class="font-semibold"><%= t("pos.customer.standing_note") %>:</span> <%= check.standing_note %>
+      </p>
+    <% end %>
+  </div>
+</section>

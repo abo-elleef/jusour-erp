@@ -37,7 +37,16 @@
                       · <%= t("pos.online_orders.items", count: req.lines.sum { |l| l["quantity"].to_i }) %>
                       · <%= t("pos.online_orders.ago", time: time_ago_in_words(req.created_at)) %>
                     </p>
-                    <% if req.customer&.blocked? %><p class="text-xs font-semibold text-rose-700"><%= t("pos.online_orders.blocked_customer") %></p><% end %>
+                    <% check = @checks[req.id] %>
+                    <p class="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                      <%= render "pos/online_order_requests/trust_badge", check: check %>
+                      <% check.reasons.first(2).each do |reason| %>
+                        <span class="text-orange-800"><%= t("pos.online_orders.check.short_reasons.#{reason}") %></span>
+                      <% end %>
+                      <% if check.completed_count.positive? && check.level != "caution" %>
+                        <span class="text-gray-600"><%= t("pos.online_orders.previous_orders", count: check.completed_count) %></span>
+                      <% end %>
+                    </p>
                   </div>
                   <span class="shrink-0 text-lg font-bold tabular-nums text-gray-900"><%= format_money(req.total_cents) %></span>
                 <% end %>

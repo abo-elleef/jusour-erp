@@ -3810,15 +3810,44 @@ en:
         one: "1 item"
         other: "%{count} items"
       ago: "%{time} ago"
-      blocked_customer: "Blocked customer"
-      new_customer: "New customer — consider calling"
       previous_orders:
         one: "1 previous order"
         other: "%{count} previous orders"
-      last_order: "Last order %{date}"
-      previous_rejections:
-        one: "1 earlier rejection"
-        other: "%{count} earlier rejections"
+      check:
+        title: "Who is this?"
+        typed_name: "Name typed by the customer — differs from the name on file"
+        on_file: "Customer on file"
+        no_match: "No match — new number"
+        address: "Delivery address"
+        address_known: "Used before"
+        address_new: "New address"
+        completed: "Completed orders"
+        total_spent: "Total spent"
+        last_order: "Last order"
+        voided: "Voided orders"
+        earlier_requests: "Earlier online requests from this phone"
+        levels:
+          blocked: "Blocked"
+          caution: "Caution — call first"
+          new: "New — call first"
+          returning: "Returning customer"
+          trusted: "Trusted"
+        reasons:
+          earlier_rejections:
+            one: "1 earlier online request from this phone was rejected"
+            other: "%{count} earlier online requests from this phone were rejected"
+          shared_device:
+            one: "The same device ordered with 1 other phone this week"
+            other: "The same device ordered with %{count} other phones this week"
+          name_mismatch: "The name typed doesn't match the name on file (%{name})"
+          voided_orders:
+            one: "1 earlier order was voided after it was sent to the kitchen"
+            other: "%{count} earlier orders were voided after they were sent to the kitchen"
+        short_reasons:
+          earlier_rejections: "rejected before"
+          shared_device: "shared device"
+          name_mismatch: "name differs"
+          voided_orders: "voided orders"
       accept: "Accept & send to kitchen"
       accept_new_total: "Accept at the new total"
       reject: "Reject"

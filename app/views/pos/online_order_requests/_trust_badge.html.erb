@@ -1,0 +1,13 @@
+<%# locals: check, size: :sm %>
+<% size = local_assigns.fetch(:size, :sm) %>
+<% tone = {
+     "blocked" => "bg-rose-600 text-white",
+     "caution" => "bg-orange-100 text-orange-900 ring-1 ring-orange-300",
+     "new" => "bg-amber-100 text-amber-900 ring-1 ring-amber-300",
+     "returning" => "bg-sky-100 text-sky-900 ring-1 ring-sky-200",
+     "trusted" => "bg-emerald-100 text-emerald-900 ring-1 ring-emerald-300"
+   }.fetch(check.level) %>
+<span class="inline-flex items-center rounded-full font-bold <%= tone %> <%= size == :lg ? "px-3 py-1 text-sm" : "px-2 py-0.5 text-xs" %>"
+      data-testid="online-order-trust" data-level="<%= check.level %>">
+  <%= t("pos.online_orders.check.levels.#{check.level}") %>
+</span>

@@ -15,9 +15,21 @@ module OnlineOrders
       customer
     end
 
+    # Exact stored shapes first (indexed); then the same number however a cashier
+    # typed it — "010 6038 3589", "010-...", Arabic digits, or without its leading 0.
     def lookup(phone)
       variants = Phones::EgyptianMobile.variants(phone)
-      Customer.where(phone: variants).or(Customer.where(phone_secondary: variants)).first
+      return nil if variants.empty?
+
+      Customer.where(phone: variants).or(Customer.where(phone_secondary: variants)).first ||
+        loose_lookup(phone)
+    end
+
+    def loose_lookup(phone)
+      digits = Phones::EgyptianMobile.digit_variants(phone)
+      Customer.where("#{Phones::EgyptianMobile.digits_sql('customers.phone')} IN (?)", digits)
+              .or(Customer.where("#{Phones::EgyptianMobile.digits_sql('customers.phone_secondary')} IN (?)", digits))
+              .order(:created_at).first
     end
 
     def create(request)
