@@ -110,4 +110,21 @@ RSpec.describe "Customer standing notes", type: :request do
       expect(customer.reload.standing_note).to eq("Nut allergy, and no ice")
     end
   end
+
+  describe "editing a customer after the cart has moved on" do
+    it "saves and reloads the register instead of crashing" do
+      # The order was placed/paid elsewhere (e.g. another tab) while the edit
+      # dialog was still open, so it is no longer the register's editable cart.
+      order = start_cart!
+      attach!(customer_id: customer.id)
+      order.update_columns(status: "completed")
+
+      patch pos_customer_path(customer), params: {
+        customer: { name: "Nadia", standing_note: "No ice" }
+      }, as: :turbo_stream
+
+      expect(response).to redirect_to(pos_path)
+      expect(customer.reload.standing_note).to eq("No ice")
+    end
+  end
 end
