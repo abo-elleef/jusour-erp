@@ -12,7 +12,7 @@ module Public
     end
 
     def show
-      menu = Menus::ForLocation.call(location: @location)
+      menu = Menus::ForLocation.call(location: @location, channel: :public)
       @categories = menu.categories
       @menu_items = menu.menu_items
       @combos = menu.combos

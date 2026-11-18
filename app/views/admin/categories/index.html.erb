@@ -66,6 +66,11 @@
                     <%= t("admin.categories.inactive") %>
                   </span>
                 <% end %>
+                <% unless cat.menu_visibility == "both" %>
+                  <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-sky-50 text-sky-800 border border-sky-200">
+                    <%= t("admin.categories.menu_visibility_#{cat.menu_visibility}") %>
+                  </span>
+                <% end %>
               </div>
               <p class="text-xs text-gray-500 mt-1">
                 <%= t("admin.categories.menu_item_count", count: cat.menu_items.size) %>

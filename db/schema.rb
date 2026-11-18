@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_17_140000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_19_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -179,10 +179,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_17_140000) do
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
     t.string "code", null: false
+    t.string "menu_visibility", default: "both", null: false
     t.index "company_id, lower((code)::text)", name: "index_categories_on_company_and_lower_code", unique: true
     t.index ["company_id", "name"], name: "index_categories_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_categories_on_company_id"
     t.index ["position"], name: "index_categories_on_position"
+    t.check_constraint "menu_visibility::text = ANY (ARRAY['both'::character varying, 'pos'::character varying, 'public'::character varying]::text[])", name: "categories_menu_visibility_check"
   end
 
   create_table "combo_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -345,6 +347,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_17_140000) do
     t.index ["company_id", "invoice_number"], name: "index_customer_invoices_on_company_id_and_invoice_number", unique: true
     t.index ["company_id", "legacy_number"], name: "index_customer_invoices_on_company_id_and_legacy_number", unique: true, where: "(legacy_number IS NOT NULL)"
     t.index ["company_id", "payment_method"], name: "index_customer_invoices_on_company_id_and_payment_method"
+    t.index ["company_id", "shipping_status"], name: "index_customer_invoices_on_company_id_and_shipping_status"
     t.index ["company_id", "status"], name: "index_customer_invoices_on_company_id_and_status"
     t.index ["company_id"], name: "index_customer_invoices_on_company_id"
     t.index ["customer_id"], name: "index_customer_invoices_on_customer_id"
@@ -352,10 +355,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_17_140000) do
     t.index ["sales_payment_method_id"], name: "index_customer_invoices_on_sales_payment_method_id"
     t.index ["salesperson_id"], name: "index_customer_invoices_on_salesperson_id"
     t.index ["shipping_company_id"], name: "index_customer_invoices_on_shipping_company_id"
+    t.index ["shipping_completed_by_id"], name: "index_customer_invoices_on_shipping_completed_by_id"
     t.index ["treasury_id"], name: "index_customer_invoices_on_treasury_id"
     t.index ["user_id"], name: "index_customer_invoices_on_user_id"
-    t.index ["company_id", "shipping_status"], name: "index_customer_invoices_on_company_id_and_shipping_status"
-    t.index ["shipping_completed_by_id"], name: "index_customer_invoices_on_shipping_completed_by_id"
   end
 
   create_table "customers", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2192,8 +2194,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_17_140000) do
   add_foreign_key "combos", "companies"
   add_foreign_key "company_settings", "companies"
   add_foreign_key "customer_addresses", "customers"
-  add_foreign_key "customer_invoices", "users", column: "shipping_completed_by_id"
   add_foreign_key "customer_invoices", "treasuries"
+  add_foreign_key "customer_invoices", "users", column: "shipping_completed_by_id"
   add_foreign_key "customers", "companies"
   add_foreign_key "customers", "users", column: "blocked_by_id"
   add_foreign_key "delivery_areas", "companies"
