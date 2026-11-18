@@ -25,7 +25,8 @@ module Accounting
         by_item: by_item,
         by_payment_method: by_payment_method,
         hourly_distribution: hourly_distribution,
-        daily_totals: daily_totals
+        daily_totals: daily_totals,
+        daily_order_counts: daily_order_counts
       }
     end
 
@@ -195,6 +196,12 @@ module Accounting
     def daily_totals
       sums = completed_orders.group(:business_date).sum(Arel.sql(RevenueCalculator::ORDER_NET_SALES))
       (@start_date..@end_date).index_with { |date| sums.fetch(date, 0) }
+    end
+
+    # Orders per business day, same days as daily_totals (for the trend table).
+    def daily_order_counts
+      counts = completed_orders.group(:business_date).count
+      (@start_date..@end_date).index_with { |date| counts.fetch(date, 0) }
     end
   end
 end

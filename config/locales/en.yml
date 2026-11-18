@@ -6044,6 +6044,10 @@ en:
       collapse_all: "Collapse all"
       payments_total: "Total collected"
       hourly_hint: "Orders by hour of day — hover a bar for its sales and share"
+      view_chart: "Chart"
+      view_table: "Table"
+      day: "Day"
+      hour: "Hour"
       export_pdf: "Export PDF"
     food_costs:
       title: "Food cost %"
