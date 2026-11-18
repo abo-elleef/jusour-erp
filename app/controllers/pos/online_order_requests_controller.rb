@@ -17,15 +17,18 @@ module Pos
     before_action(only: :accept) { require_open_drawer_to_order!(location: @pos_location) }
 
     def index
-      scope = OnlineOrderRequest.where(location: @pos_location).includes(:customer, :delivery_area, :order)
+      scope = OnlineOrderRequest.where(location: @pos_location).includes(:customer, :delivery_area, :order, :decided_by)
       @pending = scope.pending.where("expires_at > ?", Time.current).order(:created_at)
       @checks = @pending.to_h { |req| [req.id, OnlineOrders::CustomerCheck.new(req)] }
       @recent = scope.where.not(status: "pending").where(decided_at: 12.hours.ago..).order(decided_at: :desc).limit(20)
     end
 
+    # Waiting: the live check. Decided: the check as the cashier saw it then
+    # (live for requests from before checks were saved).
     def show
-      @check = OnlineOrders::CustomerCheck.new(@request)
-      @customer = @check.customer
+      @live_check = OnlineOrders::CustomerCheck.new(@request)
+      @check = (@request.check_snapshot(:decided) unless @request.pending?) || @live_check
+      @customer = @live_check.customer
     end
 
     def accept
@@ -45,7 +48,7 @@ module Pos
 
     def reject
       if OnlineOrders::RejectService.call(request: @request, user: current_user, reason: params[:reason],
-                                          block: params[:block] == "1")
+                                          block: params[:block] == "1", note: params[:note])
         redirect_to pos_online_order_requests_path, notice: t("pos.online_orders.rejected")
       else
         redirect_to pos_online_order_requests_path, alert: t("pos.online_orders.errors.not_pending")

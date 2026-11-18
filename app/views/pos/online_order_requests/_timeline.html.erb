@@ -1,0 +1,59 @@
+<%# What happened to a self-order, in order: it came in, then someone accepted or
+    rejected it (who, when, why) or it expired. Shared by the POS details page and
+    the admin details page.
+    locals: request, order_link: ->(order) { path }, user_link: nil (->(user) { path }) %>
+<% user_link = local_assigns[:user_link] %>
+<% sent_total = request.quote.fetch("total_cents", request.total_cents).to_i %>
+<% wait = request.decided_at && request.decided_at - request.created_at %>
+<% status = request.overdue? ? "expired" : request.status %>
+<section class="rounded-2xl border border-gray-200 bg-white p-5" data-testid="online-order-timeline">
+  <h2 class="mb-3 text-sm font-semibold text-gray-900"><%= t("pos.online_orders.story.title") %></h2>
+  <ol class="space-y-4 text-sm">
+    <li class="flex gap-3">
+      <span class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-gray-400"></span>
+      <div class="min-w-0 flex-1">
+      <p class="font-semibold text-gray-900"><%= t("pos.online_orders.story.came_in") %></p>
+      <p class="text-gray-600 tabular-nums"><%= l(request.created_at, format: :long_with_time) %> · <%= request.location.name %></p>
+      </div>
+    </li>
+
+    <li class="flex gap-3" data-testid="online-order-decision">
+      <% dot = { "accepted" => "bg-emerald-500", "rejected" => "bg-rose-500", "expired" => "bg-gray-400" }.fetch(status, "bg-amber-400") %>
+      <span class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full <%= dot %>"></span>
+      <div class="min-w-0 flex-1">
+      <% if status == "pending" %>
+        <p class="font-semibold text-amber-800"><%= t("pos.online_orders.story.waiting") %></p>
+        <p class="text-gray-600 tabular-nums"><%= t("pos.online_orders.story.expires_at", time: l(request.expires_at, format: :ticket)) %></p>
+      <% elsif status == "expired" %>
+        <p class="font-semibold text-gray-800"><%= t("pos.online_orders.story.expired") %></p>
+        <p class="text-gray-600 tabular-nums"><%= l(request.decided_at || request.expires_at, format: :long_with_time) %></p>
+      <% else %>
+        <p class="font-semibold <%= status == "accepted" ? "text-emerald-800" : "text-rose-800" %>">
+          <%= t("pos.online_orders.story.#{status}_by") %>
+          <% if request.decided_by %>
+            <% if user_link %><%= link_to request.decided_by.name, user_link.call(request.decided_by), class: "hover:underline" %><% else %><%= request.decided_by.name %><% end %>
+          <% else %>—<% end %>
+        </p>
+        <p class="text-gray-600 tabular-nums">
+          <%= l(request.decided_at, format: :long_with_time) %>
+          <% if wait %>· <%= t("pos.online_orders.story.after", time: distance_of_time_in_words(wait)) %><% end %>
+        </p>
+        <% if request.rejected? %>
+          <p class="mt-1.5"><span class="rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-semibold text-rose-800"><%= t("pos.online_orders.reasons.#{request.reject_reason}", default: request.reject_reason.to_s) %></span></p>
+          <% if request.reject_note.present? %>
+            <p class="mt-1.5 rounded-lg bg-gray-50 px-3 py-2 text-gray-800" data-testid="online-order-reject-note"><span class="font-semibold"><%= t("pos.online_orders.story.note") %>:</span> <%= request.reject_note %></p>
+          <% end %>
+          <% if request.blocked_phone? %>
+            <p class="mt-1.5 text-xs font-semibold text-rose-700"><%= t("pos.online_orders.story.blocked_phone") %></p>
+          <% end %>
+        <% elsif request.order %>
+          <p class="mt-1.5"><%= link_to t("pos.online_orders.open_order", number: request.order.order_number), order_link.call(request.order), class: "font-semibold text-emerald-700 hover:underline" %></p>
+          <% if sent_total != request.total_cents %>
+            <p class="mt-1 text-xs font-semibold text-amber-800"><%= t("pos.online_orders.story.price_changed", sent: format_money(sent_total), total: format_money(request.total_cents)) %></p>
+          <% end %>
+        <% end %>
+      <% end %>
+      </div>
+    </li>
+  </ol>
+</section>

@@ -31,6 +31,27 @@ RSpec.describe "Admin online orders", type: :request do
     expect(response.body).not_to include("01001234567")
   end
 
+  it "shows the whole story of a request: what was sent, checks then, and who decided" do
+    accepted = OnlineOrders::SubmitService.call(location: branch, params: online_params(item: item)).request
+    OnlineOrders::AcceptService.call(request: accepted, user: owner)
+    rejected = OnlineOrders::SubmitService.call(location: branch, params: online_params(item: item)).request
+    OnlineOrders::RejectService.call(request: rejected, user: owner, reason: "suspicious", note: "Same caller as yesterday")
+
+    get admin_online_order_requests_path
+    expect(response.body).to include(admin_online_order_request_path(rejected))
+
+    get admin_online_order_request_path(rejected)
+    expect(response).to have_http_status(:ok)
+    doc = Nokogiri::HTML(response.body)
+    expect(doc.at("[data-testid=online-order-decision]").text).to include(I18n.t("pos.online_orders.story.rejected_by"), owner.name, "Same caller as yesterday")
+    expect(doc.css("[data-testid=online-order-customer-check]").size).to eq(1) # as the cashier saw it when deciding
+    expect(response.body).to include("Koshary")
+    expect(response.body).to include(admin_online_order_request_path(accepted)) # same phone list
+
+    get admin_online_order_request_path(accepted)
+    expect(response.body).to include(admin_order_path(accepted.reload.order))
+  end
+
   it "filters admin orders by source" do
     request_record = OnlineOrders::SubmitService.call(location: branch, params: online_params(item: item)).request
     online = OnlineOrders::AcceptService.call(request: request_record, user: owner).order

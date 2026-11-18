@@ -42,6 +42,17 @@ class OnlineOrderRequest < ApplicationRecord
   # Past due and still waiting. ExpireJob flips these; the POS also hides them.
   def overdue?(now = Time.current) = pending? && expires_at <= now
 
+  # The "Who is this?" check saved when the request came in (:created) or was
+  # accepted/rejected (:decided); nil for requests from before it was saved.
+  def check_snapshot(stage)
+    data = checks[stage.to_s]
+    data.present? ? OnlineOrders::CustomerCheck::Snapshot.new(self, data) : nil
+  end
+
+  def record_check!(stage, now: Time.current)
+    update_columns(checks: checks.merge(stage.to_s => OnlineOrders::CustomerCheck.new(self, now: now).to_snapshot))
+  end
+
   # Previous requests from the same phone that a cashier turned down.
   def previous_rejections_count
     self.class.where(phone: phone, status: "rejected").where.not(id: id).count

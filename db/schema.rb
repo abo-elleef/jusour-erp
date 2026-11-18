@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_19_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_19_140000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1058,6 +1058,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_19_120000) do
     t.datetime "expires_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.jsonb "checks", default: {}, null: false
+    t.text "reject_note"
+    t.boolean "blocked_phone", default: false, null: false
     t.index ["company_id", "ip", "created_at"], name: "idx_on_company_id_ip_created_at_5cc7233531"
     t.index ["company_id", "phone", "created_at"], name: "idx_on_company_id_phone_created_at_09f9c425ff"
     t.index ["company_id"], name: "index_online_order_requests_on_company_id"

@@ -90,6 +90,7 @@ module OnlineOrders
         user_agent: @user_agent,
         expires_at: @now + @location.online_accept_timeout_minutes.minutes
       )
+      request.record_check!(:created, now: @now)
       OnlineOrders::ExpireJob.set(wait_until: request.expires_at).perform_later(request.id)
       OnlineOrders::Broadcast.inbox(@location)
       Result.new(request: request)

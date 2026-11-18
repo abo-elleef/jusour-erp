@@ -121,4 +121,17 @@ RSpec.describe OnlineOrders::CustomerCheck do
     expect(check(submit(area: area, address: "Somewhere else")).address_status).to eq(:new)
     expect(check(submit).address_status).to be_nil
   end
+
+  describe "saved snapshot" do
+    it "round-trips through CustomerCheck::Snapshot" do
+      req = OnlineOrders::SubmitService.call(location: branch, params: online_params(item: item)).request
+      live = OnlineOrders::CustomerCheck.new(req)
+      snap = req.reload.check_snapshot(:created)
+
+      expect(snap.level).to eq(live.level)
+      expect(snap.reasons).to eq(live.reasons)
+      expect(snap.completed_count).to eq(live.completed_count)
+      expect(snap.taken_at).to be_present
+    end
+  end
 end

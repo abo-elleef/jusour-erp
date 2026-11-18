@@ -5,4 +5,8 @@ class OnlineOrderRequestPolicy < ApplicationPolicy
   def index?
     user.can?("orders:view")
   end
+
+  def show?
+    index?
+  end
 end

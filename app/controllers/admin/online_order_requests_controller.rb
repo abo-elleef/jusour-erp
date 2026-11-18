@@ -31,5 +31,19 @@ module Admin
       @pagy, @requests = pagy(:offset, scope, limit: 50)
       @locations = Location.where(location_type: "branch").ordered
     end
+
+    # The whole story of one request: what the customer sent, what the system
+    # knew about the phone when it came in and when it was decided, and who
+    # accepted or rejected it and why.
+    def show
+      @request = OnlineOrderRequest.includes(:location, :order, :decided_by, :delivery_area).find_by!(token: params[:id])
+      authorize @request
+      @created_check = @request.check_snapshot(:created)
+      @decided_check = @request.check_snapshot(:decided)
+      @live_check = OnlineOrders::CustomerCheck.new(@request)
+      @customer = @live_check.customer
+      @same_phone = OnlineOrderRequest.where(phone: @request.phone).where.not(id: @request.id)
+                                      .includes(:location, :decided_by, :order).recent_first.limit(10)
+    end
   end
 end
