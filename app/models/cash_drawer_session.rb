@@ -59,6 +59,24 @@ class CashDrawerSession < ApplicationRecord
       .or(Order.where(id: payments.select(:order_id)))
   end
 
+  # This drawer's orders with no ending yet (drafts with items, placed, ready).
+  # The drawer cannot be closed while any is left — from the POS or from admin.
+  def unfinished_orders
+    Order.not_finalized.where(id: orders.select(:id))
+  end
+
+  # This drawer's orders that still owe money, finished or not. Same "owes money"
+  # test as Collect Payment. Also blocks the close.
+  def unpaid_orders
+    Order.not_fully_paid.where(id: orders.select(:id)).includes(:payments).to_a
+         .select { |order| order.amount_due_cents.positive? }
+  end
+
+  # Every order that stops this drawer closing, each once, oldest first.
+  def orders_blocking_close
+    (unfinished_orders.to_a + unpaid_orders).uniq(&:id).sort_by(&:created_at)
+  end
+
   # The cash the books put in the drawer at close.
   #
   # A documented drawer books what it should have held (expected); the gap to the

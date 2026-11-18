@@ -6569,6 +6569,12 @@ en:
       taxable_revenue: "Taxable revenue"
       tax_collected: "Tax collected"
     cash_drawer:
+      blocking_orders_title:
+        one: "1 order must be settled before this drawer can be closed"
+        other: "%{count} orders must be settled before this drawer can be closed"
+      blocking_orders_hint: "Finish, collect payment on, or void each order below — the same rule the cashier has at the register."
+      order: "Order"
+      amount_due: "Amount due"
       title: "Cash drawer"
       table_total: "Total"
       statuses:
@@ -7264,6 +7270,9 @@ en:
       drawer_reconciled: "Drawer reconciled."
       drawer_banked_to_treasury: "Drawer closed and the cash handed over to %{treasury}."
       drawer_reconciled_to_treasury: "Drawer reconciled. Counted cash is now in %{treasury} — transfer to Main when ready."
+      drawer_has_open_orders:
+        one: "This drawer still has 1 open or unpaid order. Settle it before closing."
+        other: "This drawer still has %{count} open or unpaid orders. Settle them before closing."
       digital_wallet_day_close_saved: "Digital wallet day totals saved."
       business_day_advanced: "%{branch}: advanced from %{from} to %{to}."
       business_day_advanced_many: "Advanced: %{list}."

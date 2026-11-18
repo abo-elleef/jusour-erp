@@ -143,10 +143,7 @@ class User < ApplicationRecord
   # session. One definition for the shift tab, the close/clock-out guard and
   # Complete all, so the cashier is never blocked by an order they cannot see.
   def unfinalized_shift_orders(location: nil)
-    drawer = current_drawer_session(location: location)
-    return Order.none unless drawer
-
-    Order.not_finalized.where(id: drawer.orders.select(:id))
+    current_drawer_session(location: location)&.unfinished_orders || Order.none
   end
 
   # This cashier's orders in the current drawer session that still owe money,
@@ -154,11 +151,7 @@ class User < ApplicationRecord
   # close; nobody else's register will collect them. Same "owes money" test as
   # Collect Payment, which is where the close guard sends them.
   def unpaid_shift_orders(location: nil)
-    drawer = current_drawer_session(location: location)
-    return [] unless drawer
-
-    Order.not_fully_paid.where(id: drawer.orders.select(:id)).includes(:payments).to_a
-         .select { |order| order.amount_due_cents.positive? }
+    current_drawer_session(location: location)&.unpaid_orders || []
   end
 
   def owner?
