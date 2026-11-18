@@ -67,7 +67,7 @@
       <tbody class="divide-y divide-gray-100">
         <% @requests.each do |req| %>
           <tr>
-            <td class="p-3 whitespace-nowrap tabular-nums"><%= l(req.created_at, format: :short) %></td>
+            <td class="p-3 whitespace-nowrap tabular-nums"><%= link_to l(req.created_at, format: :short), admin_online_order_request_path(req), class: "font-medium text-gray-900 hover:underline" %></td>
             <td class="p-3">
               <% if req.customer %><%= link_to req.customer_name, admin_customer_path(req.customer), class: "font-medium text-gray-900 hover:underline" %><% else %><span class="font-medium"><%= req.customer_name %></span><% end %>
               <span class="block text-xs text-gray-500 tabular-nums" dir="ltr"><%= req.phone %></span>
@@ -78,7 +78,7 @@
               <% status = req.overdue? ? "expired" : req.status %>
               <span class="rounded-full px-2.5 py-1 text-xs font-semibold <%= { "pending" => "bg-amber-100 text-amber-800", "accepted" => "bg-emerald-100 text-emerald-800", "rejected" => "bg-rose-100 text-rose-800" }.fetch(status, "bg-gray-100 text-gray-700") %>"><%= t("pos.online_orders.statuses.#{status}") %></span>
               <% if req.order %><%= link_to "##{req.order.order_number}", admin_order_path(req.order), class: "ms-1 font-semibold text-emerald-700 hover:underline" %><% end %>
-              <% if req.reject_reason %><span class="block mt-1 text-xs text-gray-500"><%= t("pos.online_orders.reasons.#{req.reject_reason}") %></span><% end %>
+              <% if req.reject_reason %><span class="block mt-1 text-xs text-gray-500"><%= t("pos.online_orders.reasons.#{req.reject_reason}") %><% if req.reject_note.present? %> — <%= truncate(req.reject_note, length: 60) %><% end %></span><% end %>
             </td>
             <td class="p-3"><% if req.decided_by %><%= link_to req.decided_by.name, admin_user_path(req.decided_by), class: "hover:underline" %><% else %><span class="text-gray-400">—</span><% end %></td>
             <td class="p-3 text-end tabular-nums"><%= format_amount(req.total_cents) %></td>

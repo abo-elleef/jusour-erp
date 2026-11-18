@@ -50,6 +50,8 @@ module OnlineOrders
         return Result.new(error: :price_changed, new_total_cents: quote.total_cents)
       end
 
+      # What the cashier saw, before accepting creates the customer record.
+      @request.record_check!(:decided)
       customer = FindOrCreateCustomer.call(@request)
       remember_address(customer)
       order = Orders::CreateService.call(

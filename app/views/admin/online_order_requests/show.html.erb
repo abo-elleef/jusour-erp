@@ -1,0 +1,113 @@
+<% content_for :title, t("admin.online_orders.show_title", name: @request.customer_name) %>
+<% status = @request.overdue? ? "expired" : @request.status %>
+<% status_class = { "pending" => "bg-amber-100 text-amber-800", "accepted" => "bg-emerald-100 text-emerald-800", "rejected" => "bg-rose-100 text-rose-800" }.fetch(status, "bg-gray-100 text-gray-700") %>
+
+<div class="max-w-6xl space-y-6">
+  <div>
+    <%= link_to t("admin.online_orders.back"), admin_online_order_requests_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
+  </div>
+
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+        <% if @customer %><%= link_to @request.customer_name, admin_customer_path(@customer), class: "hover:underline" %><% else %><%= @request.customer_name %><% end %>
+      </h1>
+      <p class="mt-1 text-sm text-gray-600">
+        <a href="tel:<%= @request.phone %>" class="font-semibold text-amber-800 tabular-nums" dir="ltr"><%= @request.phone %></a>
+        · <%= link_to @request.location.name, admin_location_path(@request.location), class: "hover:underline" %>
+        · <%= order_type_label(@request.fulfillment) %>
+        · <span class="tabular-nums"><%= format_amount(@request.total_cents) %></span>
+      </p>
+    </div>
+    <span class="rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide <%= status_class %>"><%= t("pos.online_orders.statuses.#{status}") %></span>
+  </div>
+
+  <div class="grid gap-6 lg:grid-cols-5">
+    <div class="space-y-6 lg:col-span-3">
+      <%= render "pos/online_order_requests/timeline", request: @request,
+            order_link: ->(order) { admin_order_path(order) }, user_link: ->(user) { admin_user_path(user) } %>
+
+      <section class="rounded-2xl border border-gray-200 bg-white p-5">
+        <h2 class="mb-3 text-sm font-semibold text-gray-900"><%= t("admin.online_orders.what_they_sent") %></h2>
+        <dl class="mb-4 space-y-2 text-sm">
+          <div class="flex justify-between gap-3"><dt class="text-gray-500"><%= t("admin.online_orders.name_typed") %></dt><dd class="font-semibold text-gray-900"><%= @request.customer_name %></dd></div>
+          <% if @request.delivery? %>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500"><%= t("admin.online_orders.area") %></dt><dd class="font-semibold text-gray-900"><%= @request.delivery_area&.display_name || "—" %></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500"><%= t("admin.online_orders.address") %></dt><dd class="text-end text-gray-900"><%= @request.address %></dd></div>
+          <% end %>
+          <% if @request.note.present? %>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500"><%= t("admin.online_orders.customer_note") %></dt><dd class="text-end text-amber-900"><%= @request.note %></dd></div>
+          <% end %>
+        </dl>
+        <ul class="divide-y divide-gray-100 border-t border-gray-100">
+          <% @request.lines.each do |line| %>
+            <li class="flex justify-between gap-3 py-2.5 text-sm">
+              <div>
+                <p class="font-semibold text-gray-900"><%= line["quantity"] %> × <%= line["name"] %></p>
+                <% extra = [Array(line["modifiers"]).map { |m| m["name"] }.join("، ").presence, line["notes"].presence].compact %>
+                <% if extra.any? %><p class="text-gray-500"><%= extra.join(" — ") %></p><% end %>
+              </div>
+              <span class="tabular-nums"><%= format_amount(line["line_total_cents"].to_i - line["discount_cents"].to_i) %></span>
+            </li>
+          <% end %>
+        </ul>
+        <dl class="mt-3 space-y-1 border-t border-gray-200 pt-3 text-sm">
+          <% if @request.delivery? %>
+            <div class="flex justify-between"><dt class="text-gray-600"><%= t("public.online_order.delivery_fee") %></dt><dd class="tabular-nums"><%= format_amount(@request.delivery_fee_cents) %></dd></div>
+          <% end %>
+          <div class="flex justify-between font-bold"><dt><%= t("admin.online_orders.total_sent") %></dt><dd class="tabular-nums"><%= format_amount(@request.quote.fetch("total_cents", @request.total_cents)) %></dd></div>
+        </dl>
+      </section>
+
+      <section class="rounded-2xl border border-gray-200 bg-white p-5">
+        <h2 class="mb-3 text-sm font-semibold text-gray-900"><%= t("admin.online_orders.device") %></h2>
+        <dl class="space-y-2 text-sm">
+          <div class="flex justify-between gap-3"><dt class="text-gray-500"><%= t("admin.online_orders.ip") %></dt><dd class="tabular-nums text-gray-900" dir="ltr"><%= @request.ip.presence || "—" %></dd></div>
+          <div class="flex justify-between gap-3"><dt class="shrink-0 text-gray-500"><%= t("admin.online_orders.browser") %></dt><dd class="break-all text-end text-xs text-gray-700" dir="ltr"><%= @request.user_agent.presence || "—" %></dd></div>
+        </dl>
+      </section>
+    </div>
+
+    <div class="space-y-6 lg:col-span-2">
+      <%# One card: waiting → live; decided → as the cashier saw it; expired → as it
+          came in; older requests with nothing saved → live, labelled as such. %>
+      <% if @request.pending? && !@request.overdue? %>
+        <%= render "pos/online_order_requests/customer_check", check: @live_check, note: t("pos.online_orders.story.check_now") %>
+      <% elsif @decided_check %>
+        <%= render "pos/online_order_requests/customer_check", check: @decided_check,
+              note: t("pos.online_orders.story.check_as_decided", time: l(@decided_check.taken_at, format: :ticket)) %>
+      <% elsif @created_check %>
+        <%= render "pos/online_order_requests/customer_check", check: @created_check,
+              note: t("admin.online_orders.check_created_note", time: l(@created_check.taken_at, format: :ticket)) %>
+      <% else %>
+        <%= render "pos/online_order_requests/customer_check", check: @live_check, note: t("admin.online_orders.check_not_saved") %>
+      <% end %>
+
+      <section class="rounded-2xl border border-gray-200 bg-white p-5">
+        <div class="mb-3 flex items-center justify-between gap-3">
+          <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.online_orders.same_phone") %></h2>
+          <%= link_to t("admin.online_orders.see_all"), admin_online_order_requests_path(q: { phone_cont: @request.phone }), class: "text-xs font-semibold text-amber-700 hover:underline" %>
+        </div>
+        <% if @same_phone.empty? %>
+          <p class="text-sm text-gray-500"><%= t("admin.online_orders.same_phone_none") %></p>
+        <% else %>
+          <ul class="divide-y divide-gray-100 text-sm">
+            <% @same_phone.each do |other| %>
+              <% other_status = other.overdue? ? "expired" : other.status %>
+              <li class="flex items-center justify-between gap-3 py-2">
+                <span>
+                  <%= link_to l(other.created_at, format: :ticket), admin_online_order_request_path(other), class: "font-medium text-gray-900 hover:underline" %>
+                  <span class="block text-xs text-gray-500"><%= other.location.name %><% if other.decided_by %> · <%= other.decided_by.name %><% end %><% if other.reject_reason %> · <%= t("pos.online_orders.reasons.#{other.reject_reason}", default: "") %><% end %></span>
+                </span>
+                <span class="flex shrink-0 items-center gap-2">
+                  <span class="tabular-nums"><%= format_amount(other.total_cents) %></span>
+                  <span class="rounded-full px-2 py-0.5 text-xs font-semibold <%= { "pending" => "bg-amber-100 text-amber-800", "accepted" => "bg-emerald-100 text-emerald-800", "rejected" => "bg-rose-100 text-rose-800" }.fetch(other_status, "bg-gray-100 text-gray-700") %>"><%= t("pos.online_orders.statuses.#{other_status}") %></span>
+                </span>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </section>
+    </div>
+  </div>
+</div>

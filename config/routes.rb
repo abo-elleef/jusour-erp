@@ -282,7 +282,7 @@ Rails.application.routes.draw do
     end
     get "print_agent/test_payload/:printer_id", to: "print_agent#test_payload", as: :print_agent_test_payload
     get "print_debug", to: "print_debug#show", as: :print_debug
-    resources :online_order_requests, path: "online-orders", only: :index
+    resources :online_order_requests, path: "online-orders", only: %i[index show]
     resources :orders, only: %i[index show] do
       member do
         post :void

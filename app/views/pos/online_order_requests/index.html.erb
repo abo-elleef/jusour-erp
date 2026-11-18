@@ -61,16 +61,21 @@
           <h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500"><%= t("pos.online_orders.recent") %></h2>
           <ul class="divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-white">
             <% @recent.each do |req| %>
-              <li class="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-                <span class="min-w-0 truncate"><%= req.customer_name %> <span class="text-gray-500 tabular-nums" dir="ltr"><%= req.phone %></span></span>
-                <span class="flex shrink-0 items-center gap-3">
-                  <span class="tabular-nums"><%= format_money(req.total_cents) %></span>
-                  <% if req.order %>
-                    <%= link_to "##{req.order.order_number}", pos_order_path(req.order), class: "font-semibold text-emerald-700 hover:underline" %>
-                  <% else %>
-                    <span class="rounded-full px-2 py-0.5 text-xs font-semibold <%= req.rejected? ? "bg-rose-100 text-rose-800" : "bg-gray-100 text-gray-700" %>"><%= t("pos.online_orders.statuses.#{req.status}") %></span>
-                  <% end %>
-                </span>
+              <li>
+                <%= link_to pos_online_order_request_path(req), class: "flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-gray-50" do %>
+                  <span class="min-w-0 truncate"><%= req.customer_name %> <span class="text-gray-500 tabular-nums" dir="ltr"><%= req.phone %></span>
+                    <% if req.decided_by %><span class="block text-xs text-gray-500"><%= t("pos.online_orders.story.#{req.status}_by") %> <%= req.decided_by.name %><% if req.rejected? %> · <%= t("pos.online_orders.reasons.#{req.reject_reason}", default: "") %><% end %></span><% end %>
+                  </span>
+                  <span class="flex shrink-0 items-center gap-3">
+                    <span class="tabular-nums"><%= format_money(req.total_cents) %></span>
+                    <% if req.order %>
+                      <span class="font-semibold text-emerald-700">#<%= req.order.order_number %></span>
+                    <% else %>
+                      <span class="rounded-full px-2 py-0.5 text-xs font-semibold <%= req.rejected? ? "bg-rose-100 text-rose-800" : "bg-gray-100 text-gray-700" %>"><%= t("pos.online_orders.statuses.#{req.status}") %></span>
+                    <% end %>
+                    <span aria-hidden="true" class="text-gray-400 rtl:rotate-180">›</span>
+                  </span>
+                <% end %>
               </li>
             <% end %>
           </ul>

@@ -1,4 +1,5 @@
-<%# locals: check %>
+<%# locals: check, title: nil, note: nil
+    check is a live OnlineOrders::CustomerCheck or a saved CustomerCheck::Snapshot. %>
 <%# "Who is this?" — what we know about the phone, so the cashier can tell a regular
     from a new number or a likely fake before accepting. See OnlineOrders::CustomerCheck. %>
 <% request = check.request %>
@@ -6,7 +7,10 @@
 <% by_status = check.requests_by_status %>
 <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden" data-testid="online-order-customer-check">
   <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 bg-gray-50/80 px-5 py-3">
-    <h2 class="text-sm font-semibold text-gray-900"><%= t("pos.online_orders.check.title") %></h2>
+    <div>
+      <h2 class="text-sm font-semibold text-gray-900"><%= local_assigns[:title] || t("pos.online_orders.check.title") %></h2>
+      <% if local_assigns[:note] %><p class="text-xs text-gray-500"><%= note %></p><% end %>
+    </div>
     <%= render "pos/online_order_requests/trust_badge", check: check, size: :lg %>
   </div>
 
@@ -19,8 +23,8 @@
           </li>
         <% end %>
       </ul>
-    <% elsif check.level == "blocked" && customer.blocked_reason.present? %>
-      <p class="rounded-xl bg-rose-50 px-3 py-2 text-rose-800 ring-1 ring-rose-200"><%= customer.blocked_reason %></p>
+    <% elsif check.level == "blocked" && check.blocked_reason.present? %>
+      <p class="rounded-xl bg-rose-50 px-3 py-2 text-rose-800 ring-1 ring-rose-200"><%= check.blocked_reason %></p>
     <% end %>
 
     <dl class="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">

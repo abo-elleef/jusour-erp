@@ -119,6 +119,85 @@ module OnlineOrders
       customer&.standing_note.presence
     end
 
+    def blocked_reason
+      customer&.blocked_reason.presence
+    end
+
+    # Everything the card shows, frozen as plain JSON — saved on the request when
+    # it comes in and when it is decided, so a later review sees what the cashier
+    # saw, not today's numbers. Read back with Snapshot.
+    def to_snapshot
+      last = last_order
+      {
+        "at" => @now.iso8601,
+        "level" => level,
+        "reasons" => reasons.to_h { |r| [r.to_s, reason_count(r)] },
+        "customer_id" => customer&.id,
+        "customer_name" => customer&.display_name,
+        "name_on_file" => name_on_file,
+        "name_mismatch" => name_mismatch?,
+        "address_status" => address_status&.to_s,
+        "completed_count" => completed_count,
+        "total_spent_cents" => total_spent_cents,
+        "voided_count" => voided_count,
+        "last_order" => last && {
+          "id" => last.id, "order_number" => last.order_number, "total_cents" => last.total_cents,
+          "at" => (last.placed_at || last.created_at).iso8601, "location_name" => last.location&.name
+        },
+        "requests_by_status" => requests_by_status,
+        "rejection_reasons" => rejection_reasons,
+        "shared_device_phones" => shared_device_phones,
+        "standing_note" => standing_note,
+        "blocked_reason" => blocked_reason
+      }
+    end
+
+    # A saved check, answering the same questions as CustomerCheck so the
+    # "Who is this?" partial renders it unchanged.
+    class Snapshot
+      LastOrder = Struct.new(:id, :order_number, :total_cents, :placed_at, :created_at, :location, keyword_init: true)
+      NamedLocation = Struct.new(:name)
+
+      attr_reader :request, :data
+
+      def initialize(request, data)
+        @request = request
+        @data = data || {}
+      end
+
+      def taken_at = Time.zone.parse(data["at"].to_s)
+      def level = data["level"]
+      def reasons = data.fetch("reasons", {}).keys.map(&:to_sym)
+      def reason_count(reason) = data.fetch("reasons", {})[reason.to_s].to_i
+      def name_on_file = data["name_on_file"]
+      def name_mismatch? = data["name_mismatch"] == true
+      def address_status = data["address_status"]&.to_sym
+      def completed_count = data["completed_count"].to_i
+      def total_spent_cents = data["total_spent_cents"].to_i
+      def voided_count = data["voided_count"].to_i
+      def requests_by_status = data.fetch("requests_by_status", {})
+      def rejection_reasons = data.fetch("rejection_reasons", {})
+      def shared_device_phones = data["shared_device_phones"].to_i
+      def standing_note = data["standing_note"]
+      def blocked_reason = data["blocked_reason"]
+
+      # The customer record as it is now (for the link); nil if there was none then.
+      def customer
+        return @customer if defined?(@customer)
+
+        @customer = data["customer_id"] && Customer.find_by(id: data["customer_id"])
+      end
+
+      def last_order
+        lo = data["last_order"]
+        return nil if lo.blank?
+
+        at = Time.zone.parse(lo["at"].to_s)
+        LastOrder.new(id: lo["id"], order_number: lo["order_number"], total_cents: lo["total_cents"].to_i,
+                      placed_at: at, created_at: at, location: lo["location_name"] && NamedLocation.new(lo["location_name"]))
+      end
+    end
+
     private
 
     def orders
