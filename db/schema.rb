@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_19_230100) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_20_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -293,6 +293,19 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_19_230100) do
     t.index ["customer_invoice_id"], name: "index_credit_notes_on_customer_invoice_id"
     t.index ["location_id"], name: "index_credit_notes_on_location_id"
     t.index ["user_id"], name: "index_credit_notes_on_user_id"
+  end
+
+  create_table "customer_activities", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "customer_id", null: false
+    t.uuid "user_id"
+    t.string "activity_type", null: false
+    t.text "note"
+    t.datetime "occurred_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["customer_id", "occurred_at"], name: "index_customer_activities_on_customer_id_and_occurred_at"
+    t.index ["customer_id"], name: "index_customer_activities_on_customer_id"
+    t.index ["user_id"], name: "index_customer_activities_on_user_id"
   end
 
   create_table "customer_addresses", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2207,6 +2220,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_19_230100) do
   add_foreign_key "combo_items", "menu_items"
   add_foreign_key "combos", "companies"
   add_foreign_key "company_settings", "companies"
+  add_foreign_key "customer_activities", "customers"
+  add_foreign_key "customer_activities", "users"
   add_foreign_key "customer_addresses", "customers"
   add_foreign_key "customer_invoices", "treasuries"
   add_foreign_key "customer_invoices", "users", column: "shipping_completed_by_id"

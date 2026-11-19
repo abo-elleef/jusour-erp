@@ -5,25 +5,18 @@
 # #change_stage!/#reassign!/#convert!/#mark_lost!). Not tenant-scoped directly —
 # always reached through its lead, which is.
 class LeadActivity < ApplicationRecord
-  ACTIVITY_TYPES = %w[call whatsapp email meeting note stage_change assignment_change].freeze
-  LOGGABLE_TYPES = %w[call whatsapp email meeting note].freeze
+  LOGGABLE_TYPES = TimelineActivity::LOGGABLE_TYPES
+  ACTIVITY_TYPES = (LOGGABLE_TYPES + %w[stage_change assignment_change]).freeze
+
+  include TimelineActivity
 
   belongs_to :lead
-  belongs_to :user, optional: true
-
-  validates :activity_type, inclusion: { in: ACTIVITY_TYPES }
-  validates :note, presence: true, if: -> { LOGGABLE_TYPES.include?(activity_type) }
 
   # The follow-up date the rep picked on the log form. Blank means "use the
   # cadence" (occurred day + Setting.lead_follow_up_every_days).
   attribute :next_follow_up_on, :date
 
-  before_validation :default_occurred_at
   after_create :move_lead_follow_up
-
-  scope :recent, -> { order(occurred_at: :desc) }
-
-  def loggable? = LOGGABLE_TYPES.include?(activity_type)
 
   # The date the log form pre-fills for this lead.
   def self.suggested_next_follow_up(lead, contact_on = Date.current)
@@ -45,9 +38,5 @@ class LeadActivity < ApplicationRecord
     # update_attribute: audited like any lead change, but an old lead that
     # fails a newer validation must not block logging the contact.
     lead.update_attribute(:next_follow_up_at, date)
-  end
-
-  def default_occurred_at
-    self.occurred_at ||= Time.current
   end
 end

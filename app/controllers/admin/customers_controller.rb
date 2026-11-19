@@ -58,6 +58,7 @@ module Admin
       end
       @loyalty_transactions = @customer.loyalty_transactions.order(created_at: :desc).limit(20)
       @online_request_counts = OnlineOrderRequest.where(customer: @customer).group(:status).count
+      load_activity_history if ::Sales::OwnershipScope.applies_to?(Current.company)
     end
 
     def new
@@ -150,6 +151,36 @@ module Admin
     end
 
     private
+
+    # Long timelines show the newest few; "show all" reloads that frame in full.
+    ACTIVITY_CAP = 20
+
+    # Bazzar slice F: where the customer came from (its lead and that lead's
+    # timeline, read-only) and the customer's own timeline since. Each list
+    # loads one row past the cap to know whether to offer "show all".
+    def load_activity_history
+      @show_activities = true
+      @activity = ::CustomerActivity.new(customer: @customer)
+      @can_log_activity = current_user.can?(::Admin::Customers::CustomerActivitiesController::PERMISSION)
+
+      @customer_activities, @customer_activities_more =
+        capped_timeline(@customer.customer_activities.includes(:user).recent, params[:customer_activities] == "all")
+
+      @lead = @customer.originating_lead
+      return unless @lead
+
+      @lead_activities, @lead_activities_more =
+        capped_timeline(@lead.lead_activities.includes(:user).reorder(nil).recent, params[:lead_activities] == "all")
+      @lead_linkable = Current.company.feature_enabled?(:leads) && current_user.can?("leads:view") &&
+        ownership.can_see_lead?(@lead)
+    end
+
+    def capped_timeline(relation, all)
+      return [relation.to_a, false] if all
+
+      rows = relation.limit(ACTIVITY_CAP + 1).to_a
+      [rows.first(ACTIVITY_CAP), rows.size > ACTIVITY_CAP]
+    end
 
     # Someone else's customer is a 404 for a limited rep (Sales::OwnershipScope).
     def set_customer

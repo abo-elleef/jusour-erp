@@ -5090,6 +5090,19 @@ en:
       filtered_hint: "Try a different search term."
       default_hint: "Add customers to track loyalty and order history."
       clear_search: "Clear search"
+    activities:
+      origin:
+        heading: "Origin — converted from a lead"
+        lead: "Lead"
+        created: "Created"
+        converted: "Converted"
+        rep: "Salesperson"
+      lead_heading: "Lead activity"
+      customer_heading: "Customer activity"
+      read_only: "Before conversion — read only"
+      none: "No activity logged yet."
+      show_all: "Show all"
+      logged: "Logged."
     show:
       loyalty_balance: "Loyalty balance"
       lifetime_spend: "Lifetime spend"

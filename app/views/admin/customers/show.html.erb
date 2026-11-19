@@ -121,6 +121,8 @@
     </ul>
   <% end %>
 
+  <%= render "activity_history" if @show_activities %>
+
   <% if @invoices&.any? %>
     <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
       <h2 class="text-lg font-bold"><%= t("customers.show.invoices") %></h2>

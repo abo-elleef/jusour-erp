@@ -5192,6 +5192,19 @@ ar:
       filtered_hint: "جرّب مصطلح بحث مختلف."
       default_hint: "أضف عملاء لتتبع الولاء وسجل الطلبات."
       clear_search: "مسح البحث"
+    activities:
+      origin:
+        heading: "أصل العميل — حُوِّل من عميل محتمل"
+        lead: "العميل المحتمل"
+        created: "تاريخ الإنشاء"
+        converted: "تاريخ التحويل"
+        rep: "مندوب المبيعات"
+      lead_heading: "نشاط العميل المحتمل"
+      customer_heading: "نشاط العميل"
+      read_only: "قبل التحويل — للعرض فقط"
+      none: "لا يوجد نشاط مُسجَّل بعد."
+      show_all: "عرض الكل"
+      logged: "تم التسجيل."
     show:
       loyalty_balance: "رصيد الولاء"
       lifetime_spend: "إجمالي الإنفاق"
