@@ -1,0 +1,48 @@
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-baseline justify-between gap-2">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("customers.show.invoices") %></h2>
+    <%= link_to t("customers.show.open_invoices_list"), admin_sales_customer_invoices_path(customer_id: @customer.id),
+          data: { turbo_frame: "_top" },
+          class: "text-sm font-semibold text-amber-700 hover:text-amber-800 hover:underline" %>
+  </div>
+  <% if @invoices.empty? %>
+    <p class="p-8 text-center text-sm text-gray-500"><%= t("customers.show.no_invoices") %></p>
+  <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("sales.customer_invoices.table.number") %></th>
+              <th class="p-3 text-start"><%= t("sales.customer_invoices.table.date") %></th>
+              <th class="p-3 text-start"><%= t("sales.customer_invoices.form.location") %></th>
+              <th class="p-3 text-start"><%= t("sales.customer_invoices.table.status") %></th>
+              <th class="p-3 text-end"><%= t("sales.customer_invoices.table.total") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("sales.customer_invoices.table.balance") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% @invoices.each do |inv| %>
+              <tr class="hover:bg-gray-100 transition-colors">
+                <td class="p-3 ps-5 font-medium tabular-nums">
+                  <%= link_to inv.invoice_number, admin_sales_customer_invoice_path(inv), data: { turbo_frame: "_top" },
+                        class: "text-amber-700 hover:text-amber-800 hover:underline" %>
+                </td>
+                <td class="p-3 text-gray-600 whitespace-nowrap"><%= l(inv.invoice_date, format: :long) %></td>
+                <td class="p-3 text-gray-600">
+                  <% if inv.location %>
+                    <%= link_to inv.location.name, admin_location_path(inv.location), data: { turbo_frame: "_top" }, class: "hover:text-gray-900 hover:underline" %>
+                  <% end %>
+                </td>
+                <td class="p-3"><%= render "admin/sales/customer_invoices/status_badge", invoice: inv %></td>
+                <td class="p-3 text-end tabular-nums"><%= format_amount(inv.total_cents) %></td>
+                <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= inv.balance_due_cents.positive? && !inv.historical? ? 'text-amber-700' : 'text-gray-400' %>">
+                  <%= inv.historical? ? "—" : format_amount(inv.balance_due_cents) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+  <% end %>
+  <%= render "admin/accounting/pagination", pagy: @invoices_pagy %>
+</section>

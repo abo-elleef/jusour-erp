@@ -1,0 +1,20 @@
+<%# Before conversion: the lead this customer came from and everything done
+    with it — rep-logged contacts plus stage/assignment entries. Read-only. %>
+<div class="space-y-6">
+  <%= render "admin/customers/origin", lead: @lead %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden" id="lead-activities">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("customers.activities.lead_heading") %></h2>
+      <span class="text-xs text-gray-500"><%= t("customers.activities.read_only") %></span>
+    </div>
+    <ul class="divide-y divide-gray-100" data-testid="lead-activities">
+      <% if @lead_activities.empty? %>
+        <li class="p-8 text-center text-sm text-gray-500"><%= t("sales.leads.show.no_activity") %></li>
+      <% else %>
+        <%= render partial: "admin/sales/leads/activity", collection: @lead_activities, as: :activity %>
+      <% end %>
+    </ul>
+    <%= render "admin/accounting/pagination", pagy: @lead_activities_pagy %>
+  </section>
+</div>

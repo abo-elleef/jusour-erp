@@ -20,10 +20,10 @@ module Admin
         activity.user = current_user
 
         if activity.save
-          redirect_to admin_customer_path(@customer, anchor: "customer-activities"),
+          redirect_to admin_customer_path(@customer, tab: "activity"),
             notice: t("customers.activities.logged")
         else
-          redirect_to admin_customer_path(@customer, anchor: "customer-activities"),
+          redirect_to admin_customer_path(@customer, tab: "activity"),
             alert: activity.errors.full_messages.to_sentence
         end
       end

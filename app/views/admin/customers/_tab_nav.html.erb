@@ -1,0 +1,15 @@
+<%# Tab links live inside the frame, so a click swaps only the frame and the
+    scroll position stays put. Each tab starts clean: page params belong to
+    the tab that set them and are not carried across. %>
+<nav class="flex gap-1 overflow-x-auto border-b border-gray-200" aria-label="<%= t("customers.show.tabs.label") %>">
+  <% tabs.each_with_index do |name, index| %>
+    <%= link_to admin_customer_path(customer, (index.zero? ? {} : { tab: name })),
+          class: admin_section_tab_class(name == active_tab),
+          aria: { current: (name == active_tab ? "page" : nil) } do %>
+      <%= t("customers.show.tabs.#{name}") %>
+      <% if tab_counts[name] %>
+        <span class="ms-1.5 text-xs tabular-nums rounded-full px-1.5 py-0.5 <%= name == active_tab ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-500' %>"><%= tab_counts[name] %></span>
+      <% end %>
+    <% end %>
+  <% end %>
+</nav>

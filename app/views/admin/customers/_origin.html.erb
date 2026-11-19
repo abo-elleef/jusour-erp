@@ -1,0 +1,36 @@
+<%# Where this customer came from: the lead Lead#convert! made it from. %>
+<section class="rounded-2xl border border-green-200 bg-green-50 p-4" data-testid="customer-origin">
+  <h2 class="text-sm font-semibold text-green-900"><%= t("customers.activities.origin.heading") %></h2>
+  <dl class="mt-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
+    <div>
+      <dt class="text-xs text-green-700"><%= t("customers.activities.origin.lead") %></dt>
+      <dd class="font-semibold text-gray-900">
+        <% if @lead_linkable %>
+          <%= link_to lead.name, admin_sales_lead_path(lead), data: { turbo_frame: "_top" },
+                class: "text-amber-700 hover:text-amber-800 hover:underline" %>
+        <% else %>
+          <%= lead.name %>
+        <% end %>
+      </dd>
+    </div>
+    <div>
+      <dt class="text-xs text-green-700"><%= t("customers.activities.origin.created") %></dt>
+      <dd class="text-gray-900"><%= l(lead.created_at.to_date, format: :long) %></dd>
+    </div>
+    <div>
+      <dt class="text-xs text-green-700"><%= t("customers.activities.origin.converted") %></dt>
+      <dd class="text-gray-900"><%= lead.converted_at ? l(lead.converted_at.to_date, format: :long) : t("customers.shared.em_dash") %></dd>
+    </div>
+    <div>
+      <dt class="text-xs text-green-700"><%= t("customers.activities.origin.rep") %></dt>
+      <dd class="text-gray-900">
+        <% if lead.assigned_user && policy(lead.assigned_user).show? %>
+          <%= link_to lead.assigned_user.name, admin_user_path(lead.assigned_user), data: { turbo_frame: "_top" },
+                class: "text-amber-700 hover:text-amber-800 hover:underline" %>
+        <% else %>
+          <%= lead.assigned_user&.name || t("customers.shared.em_dash") %>
+        <% end %>
+      </dd>
+    </div>
+  </dl>
+</section>

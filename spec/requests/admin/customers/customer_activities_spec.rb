@@ -26,6 +26,10 @@ RSpec.describe "Customer activities", type: :request do
   let!(:cust_a) { create(:customer, company: company, name: "Alpha Clinic", assigned_user: rep_a) }
   let!(:cust_b) { create(:customer, company: company, name: "Bravo Clinic", assigned_user: rep_b) }
 
+  def tab!(customer, tab = nil, **params)
+    get admin_customer_path(customer, tab: tab, **params), headers: { "Turbo-Frame" => "customer_tab" }
+  end
+
   def log!(customer, note:, type: "call")
     post admin_customer_customer_activities_path(customer),
       params: { customer_activity: { activity_type: type, note: note } }
@@ -38,9 +42,9 @@ RSpec.describe "Customer activities", type: :request do
 
       activity = CustomerActivity.last
       expect(activity).to have_attributes(customer: cust_a, user: rep_a, activity_type: "call")
-      expect(response).to redirect_to(admin_customer_path(cust_a, anchor: "customer-activities"))
+      expect(response).to redirect_to(admin_customer_path(cust_a, tab: "activity"))
 
-      get admin_customer_path(cust_a)
+      tab!(cust_a, "activity")
       expect(response.body).to include("Visited the clinic", "Rep Alpha")
     end
 
@@ -66,61 +70,67 @@ RSpec.describe "Customer activities", type: :request do
       expect { log!(cust_a, note: "x") }.not_to change(CustomerActivity, :count)
       expect(response).to redirect_to(admin_customers_path)
 
-      get admin_customer_path(cust_a)
+      tab!(cust_a, "activity")
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(I18n.t("customers.activities.customer_heading"))
+      expect(response.body).to include('data-testid="customer-activities"')
       expect(response.body).not_to include('data-testid="customer-activity-form"')
     end
   end
 
-  describe "the customer page history" do
+  describe "the customer page tabs" do
     let(:lead) do
       create(:lead, company: company, created_by: rep_a, assigned_user: rep_a, name: "Gamma Clinic",
         phone: "01011112222")
     end
 
-    it "shows the origin lead, its timeline, and the customer's own timeline apart" do
+    it "keeps the lead's history and the customer's own activity in separate tabs" do
       lead.lead_activities.create!(user: rep_a, activity_type: "call", note: "First call with the lead")
       customer = lead.convert!(by: rep_a)
       customer.customer_activities.create!(user: rep_a, activity_type: "meeting", note: "Signed the first order")
 
       sign_in rep_a
       get admin_customer_path(customer)
+      expect(response.body).to include('id="customer_tab"')
+      expect(response.body).not_to include("First call with the lead", "Signed the first order")
 
-      body = response.body
-      expect(body).to include('data-testid="customer-origin"')
-      expect(body).to include(admin_sales_lead_path(lead))
-      expect(body).to include(I18n.l(lead.converted_at.to_date, format: :long))
+      tab!(customer)
+      expect(response.body).to include('data-testid="customer-origin"', admin_sales_lead_path(lead))
+      expect(response.body).to include(admin_customer_path(customer, tab: "lead_history"))
+      expect(response.body[/data-testid="recent-activities".*?<\/ul>/m]).to include("Signed the first order")
 
-      lead_list = body[/data-testid="lead-activities".*?<\/ul>/m]
-      customer_list = body[/data-testid="customer-activities".*?<\/ul>/m]
-      expect(lead_list).to include("First call with the lead")
-      expect(lead_list).to include(I18n.t("sales.leads.activity.converted", customer: customer.name))
+      tab!(customer, "lead_history")
+      expect(response.body).to include(I18n.l(lead.converted_at.to_date, format: :long))
+      lead_list = response.body[/data-testid="lead-activities".*?<\/ul>/m]
+      expect(lead_list).to include("First call with the lead",
+        I18n.t("sales.leads.activity.converted", customer: customer.name))
       expect(lead_list).not_to include("Signed the first order")
+
+      tab!(customer, "activity")
+      customer_list = response.body[/data-testid="customer-activities".*?<\/ul>/m]
       expect(customer_list).to include("Signed the first order")
       expect(customer_list).not_to include("First call with the lead")
     end
 
-    it "shows only the customer's own timeline for a customer that never was a lead" do
+    it "has no lead history tab for a customer that never was a lead" do
       sign_in rep_a
-      get admin_customer_path(cust_a)
+      tab!(cust_a)
+      expect(response.body).to include(admin_customer_path(cust_a, tab: "activity"))
+      expect(response.body).not_to include(admin_customer_path(cust_a, tab: "lead_history"), 'data-testid="customer-origin"')
 
-      expect(response.body).to include('data-testid="customer-activities"')
-      expect(response.body).not_to include('data-testid="customer-origin"', 'data-testid="lead-activities"')
+      tab!(cust_a, "lead_history")
+      expect(response.body).not_to include('data-testid="lead-activities"')
     end
 
-    it "caps a long timeline and offers show all" do
-      21.times { |i| cust_a.customer_activities.create!(user: rep_a, activity_type: "note", note: "Entry #{i}") }
+    it "paginates a long timeline" do
+      26.times { |i| cust_a.customer_activities.create!(user: rep_a, activity_type: "note", note: "Entry #{i}") }
 
       sign_in rep_a
-      get admin_customer_path(cust_a)
-      expect(response.body.scan('data-testid="customer-activities"').size).to eq(1)
-      expect(response.body).to include(I18n.t("customers.activities.show_all"))
+      tab!(cust_a, "activity")
+      expect(response.body).to include("Entry 25<")
       expect(response.body).not_to include("Entry 0<")
 
-      get admin_customer_path(cust_a, customer_activities: "all")
+      tab!(cust_a, "activity", page: 2)
       expect(response.body).to include("Entry 0<")
-      expect(response.body).not_to include(I18n.t("customers.activities.show_all"))
     end
   end
 
@@ -133,9 +143,14 @@ RSpec.describe "Customer activities", type: :request do
       customer = create(:customer, company: restaurant, name: "Walk-in")
 
       sign_in manager
-      get admin_customer_path(customer)
+      tab!(customer)
       expect(response).to have_http_status(:ok)
-      expect(response.body).not_to include('data-testid="customer-activities"', 'data-testid="customer-origin"')
+      expect(response.body).to include(admin_customer_path(customer, tab: "orders"))
+      expect(response.body).not_to include(admin_customer_path(customer, tab: "activity"),
+        'data-testid="recent-activities"', 'data-testid="customer-origin"')
+
+      tab!(customer, "activity")
+      expect(response.body).not_to include('data-testid="customer-activities"')
 
       expect { log!(customer, note: "x") }.not_to change(CustomerActivity, :count)
       expect(response).to redirect_to(admin_root_path)

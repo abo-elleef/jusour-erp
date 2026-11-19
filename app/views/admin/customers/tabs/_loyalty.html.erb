@@ -1,0 +1,17 @@
+<% if @loyalty_transactions.any? %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <ul class="divide-y divide-gray-100">
+      <% @loyalty_transactions.each do |tx| %>
+        <li class="p-3 px-5 flex justify-between items-center gap-4 text-sm">
+          <span><%= tx.description || tx.transaction_type %></span>
+          <span class="<%= tx.points.positive? ? 'text-green-600' : 'text-red-600' %> font-medium tabular-nums shrink-0">
+            <%= tx.points.positive? ? "+" : "" %><%= customer_loyalty_points_label(tx.points.abs) %>
+          </span>
+        </li>
+      <% end %>
+    </ul>
+    <%= render "admin/accounting/pagination", pagy: @loyalty_pagy %>
+  </section>
+<% else %>
+  <p class="text-gray-500"><%= t("customers.show.no_loyalty") %></p>
+<% end %>

@@ -1,0 +1,25 @@
+<%# The customer's own timeline since it became a customer (Bazzar slice F). %>
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden" id="customer-activities">
+  <% if @can_log_activity %>
+    <div class="p-5 border-b border-gray-100 bg-gray-50/40">
+      <%= form_with model: @activity, url: admin_customer_customer_activities_path(@customer),
+            class: "flex flex-wrap items-start gap-2", data: { testid: "customer-activity-form" } do |f| %>
+        <%= f.select :activity_type, CustomerActivity::LOGGABLE_TYPES.map { |t_| [t("sales.leads.activity_types.#{t_}"), t_] },
+              {}, class: "rounded-xl border border-gray-200 px-3 py-2 text-sm" %>
+        <%= f.text_field :note, placeholder: t("sales.leads.show.log_placeholder"), required: true,
+              class: "flex-1 min-w-[12rem] rounded-xl border border-gray-200 px-3.5 py-2 text-sm" %>
+        <%= f.submit t("sales.leads.show.log"),
+              class: "px-4 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors cursor-pointer" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <ul class="divide-y divide-gray-100" data-testid="customer-activities">
+    <% if @activities.empty? %>
+      <li class="p-8 text-center text-sm text-gray-500"><%= t("customers.activities.none") %></li>
+    <% else %>
+      <%= render partial: "admin/sales/leads/activity", collection: @activities, as: :activity %>
+    <% end %>
+  </ul>
+  <%= render "admin/accounting/pagination", pagy: @activities_pagy %>
+</section>

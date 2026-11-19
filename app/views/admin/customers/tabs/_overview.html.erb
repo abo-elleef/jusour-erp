@@ -1,0 +1,45 @@
+<div class="space-y-6">
+  <%= render "admin/customers/origin", lead: @lead if @lead %>
+
+  <% if @sales_area %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden" data-testid="recent-activities">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-baseline justify-between gap-2">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("customers.activities.recent_heading") %></h2>
+        <%= link_to t("customers.activities.open_tab"), admin_customer_path(@customer, tab: "activity"),
+              class: "text-sm font-semibold text-amber-700 hover:text-amber-800 hover:underline" %>
+      </div>
+      <ul class="divide-y divide-gray-100">
+        <% if @recent_activities.empty? %>
+          <li class="p-6 text-center text-sm text-gray-500"><%= t("customers.activities.none") %></li>
+        <% else %>
+          <%= render partial: "admin/sales/leads/activity", collection: @recent_activities, as: :activity %>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
+  <section>
+    <h2 class="text-lg font-bold mb-3"><%= t("customers.addresses.heading") %></h2>
+    <% if @customer.addresses.any? %>
+      <ul class="rounded-2xl border border-gray-200 bg-white divide-y divide-gray-100">
+        <% @customer.addresses.ordered.each do |addr| %>
+          <li class="p-4">
+            <div class="flex flex-wrap justify-between gap-2">
+              <p class="font-semibold text-gray-900">
+                <%= addr.label.presence || t("customers.addresses.unlabeled") %>
+                <% if addr.is_default? %>
+                  <span class="ms-2 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5">
+                    <%= t("customers.addresses.default") %>
+                  </span>
+                <% end %>
+              </p>
+            </div>
+            <p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap"><%= addr.address %></p>
+          </li>
+        <% end %>
+      </ul>
+    <% else %>
+      <p class="text-gray-500 text-sm"><%= t("customers.addresses.none") %></p>
+    <% end %>
+  </section>
+</div>
