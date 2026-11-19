@@ -20,6 +20,17 @@ RSpec.describe CustomerInvoice do
     inv
   end
 
+  it "names the missing customer and product in Arabic instead of a bare \"must exist\"" do
+    inv = build_invoice(customer: nil)
+    inv.customer_invoice_lines.first.ingredient = nil
+
+    inv.valid?
+    messages = I18n.with_locale(:ar) { inv.errors.full_messages }
+
+    expect(messages).to include("العميل مطلوب", "المنتج مطلوب")
+    expect(messages.join).not_to include("must exist")
+  end
+
   it "folds the delivery fee actually charged into the total" do
     inv = build_invoice(fulfillment_method: "delivery", shipping_company: shipping_company,
       standard_delivery_fee_cents: 10_000, delivery_fee_cents: 10_000)

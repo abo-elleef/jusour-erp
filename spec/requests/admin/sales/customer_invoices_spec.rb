@@ -23,6 +23,17 @@ RSpec.describe "Admin::Sales::CustomerInvoices", type: :request do
     { "0" => { ingredient_id: ingredient.id, quantity: "5", unit: ingredient.unit, unit_price_pounds: "20" } }
   end
 
+  it "makes the quantity field refuse fractions unless the owner allows them" do
+    get new_admin_sales_customer_invoice_path
+    expect(response.body).to include('data-arabic-numerals-whole-value="true"')
+
+    Current.company = company # the request above resets it
+    Setting.set("allow_fractional_sales_quantities", true)
+    get new_admin_sales_customer_invoice_path
+    expect(response.body).to include('data-arabic-numerals-whole-value="false"')
+    expect(response.body).to include('inputmode="decimal"')
+  end
+
   it "lists and opens the new form" do
     get admin_sales_customer_invoices_path
     expect(response).to have_http_status(:ok)

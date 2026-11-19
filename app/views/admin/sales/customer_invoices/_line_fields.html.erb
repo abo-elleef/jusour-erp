@@ -34,10 +34,13 @@
       <label class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("sales.customer_invoices.form.quantity") %></label>
       <%# Text input so Arabic-Indic digits work; whole numbers unless the owner
           allows fractions (Settings → Sales), enforced on the line model. %>
+      <% fractions_allowed = Setting.allow_fractional_sales_quantities? %>
       <%= f.text_field :quantity, placeholder: "0", class: input_class, autocomplete: "off",
-            inputmode: Setting.allow_fractional_sales_quantities? ? "decimal" : "numeric",
+            inputmode: fractions_allowed ? "decimal" : "numeric",
             value: sales_quantity_value(f.object.quantity),
             data: { role: "qty", controller: "arabic-numerals",
+                    arabic_numerals_whole_value: !fractions_allowed,
+                    arabic_numerals_whole_message_value: t("sales.customer_invoices.form.whole_quantity_only"),
                     action: "input->arabic-numerals#normalize input->customer-invoice-lines#recalc" } %>
     </div>
     <div class="lg:col-span-2">

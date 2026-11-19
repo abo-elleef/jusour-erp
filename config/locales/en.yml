@@ -3037,6 +3037,7 @@ en:
         repeated: "Repeated"
         unit: "Unit"
         quantity: "Quantity"
+        whole_quantity_only: "Whole numbers only. To sell in fractions, turn them on in Settings → Sales."
         unit_price: "Unit price"
         unit_price_locked_hint: "Set by the product's selling price — not editable here."
         line_total: "Line total"
@@ -7376,6 +7377,9 @@ en:
   activerecord:
     errors:
       messages:
+        # belongs_to without a record. Arabic's errors.format drops the
+        # attribute name, so the message itself must carry it.
+        required: "must be chosen"
         whole_number_required: "must be a whole number. To sell in fractions, turn them on in Settings → Sales."
       models:
         location: &receipt_logo_errors
@@ -7721,11 +7725,21 @@ en:
         one: "Staff member"
         other: "Staff members"
     attributes:
+      customer_invoice:
+        customer: "Customer"
+        location: "Sale location"
+        user: "User"
+        salesperson: "Salesperson"
+        shipping_company: "Shipping company"
+        sales_payment_method: "E-payment method"
+        treasury: "Treasury"
       customer_invoice_line:
+        ingredient: "Product"
         quantity: "Quantity"
       credit_note_line:
         quantity: "Quantity"
       customer_invoice/customer_invoice_lines:
+        ingredient: "Product"
         quantity: "Quantity"
       credit_note/credit_note_lines:
         quantity: "Quantity"

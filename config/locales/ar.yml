@@ -3065,6 +3065,7 @@ ar:
         repeated: "مكرر"
         unit: "الوحدة"
         quantity: "الكمية"
+        whole_quantity_only: "أرقام صحيحة فقط. للبيع بالكسور فعّلها من الإعدادات ← المبيعات."
         unit_price: "سعر الوحدة"
         unit_price_locked_hint: "يُحدَّد من سعر بيع المنتج — غير قابل للتعديل هنا."
         line_total: "إجمالي السطر"
@@ -7499,6 +7500,9 @@ ar:
   activerecord:
     errors:
       messages:
+        # belongs_to without a record. Arabic's errors.format drops the
+        # attribute name, so the message itself must carry it.
+        required: "%{attribute} مطلوب"
         whole_number_required: "%{attribute} يجب أن تكون رقماً صحيحاً. للبيع بالكسور فعّلها من الإعدادات ← المبيعات."
       models:
         location: &receipt_logo_errors
@@ -7840,11 +7844,21 @@ ar:
         one: "موظف"
         other: "موظفون"
     attributes:
+      customer_invoice:
+        customer: "العميل"
+        location: "موقع البيع"
+        user: "المستخدم"
+        salesperson: "البائع"
+        shipping_company: "شركة الشحن"
+        sales_payment_method: "طريقة الدفع الإلكتروني"
+        treasury: "الخزينة"
       customer_invoice_line:
+        ingredient: "المنتج"
         quantity: "الكمية"
       credit_note_line:
         quantity: "الكمية"
       customer_invoice/customer_invoice_lines:
+        ingredient: "المنتج"
         quantity: "الكمية"
       credit_note/credit_note_lines:
         quantity: "الكمية"
