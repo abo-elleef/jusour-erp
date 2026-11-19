@@ -1130,6 +1130,10 @@ en:
       hint: "How quantities are entered on sales invoices and returns."
       allow_fractions: "Allow fractional quantities"
       allow_fractions_hint: "Off: invoices and returns take whole numbers only (sold by the piece). Turn on if you sell by weight or length, e.g. 2.5 kg."
+    notifications:
+      title: "Notifications"
+      hint: "How each kind of alert reaches owners and managers while they are in the system. Every alert is always kept in the notifications list."
+      default: "default"
     drawer_close:
       title: "Drawer close"
       hint: "What happens to the books when a cashier's count differs from what the drawer should hold. Drawers already closed keep the way they were closed."
@@ -3744,6 +3748,13 @@ en:
     popup:
       open: "Open"
       all: "All notifications"
+    levels:
+      alert: "Alert"
+      alert_hint: "A card that stays until opened or closed, with a sound."
+      popup: "Pop up"
+      popup_hint: "A card that disappears on its own after a few seconds, no sound."
+      quiet: "Quiet"
+      quiet_hint: "Only the bell count goes up."
     types:
       inventory: "Inventory"
       accounting: "Accounting"

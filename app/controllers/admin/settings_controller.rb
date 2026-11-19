@@ -14,6 +14,7 @@ module Admin
       @restrict_stock_transfers_to_source = Setting.restrict_stock_transfers_to_source?
       @allow_fractional_sales_quantities = Setting.allow_fractional_sales_quantities?
       @drawer_close_mode = Setting.drawer_close_mode
+      @notification_levels = ::Notifications::Levels.all
       @tax_rates = TaxRate.ordered
     end
 
@@ -37,6 +38,7 @@ module Admin
       if Setting::DRAWER_CLOSE_MODES.include?(params[:drawer_close_mode])
         Setting.set("drawer_close_mode", params[:drawer_close_mode])
       end
+      update_notification_levels if params[:notification_levels].present?
       Setting.set("print_agent_token", params[:print_agent_token].to_s) if params.key?(:print_agent_token)
       Setting.set("receipt_footer_text", params[:receipt_footer_text].to_s.strip) if params.key?(:receipt_footer_text)
       if (params[:receipt_logo].present? || params[:remove_receipt_logo].present?) && !update_receipt_logo
@@ -47,6 +49,13 @@ module Admin
     end
 
     private
+
+    # Overrides only; a kind set back to its default drops out (Notifications::Levels).
+    def update_notification_levels
+      setting = CompanySetting.current_or_initialize
+      setting.notification_levels = ::Notifications::Levels.sanitize(params[:notification_levels].to_unsafe_h)
+      setting.save!
+    end
 
     # Returns false (with the error message in @logo_error) when the upload is rejected.
     def update_receipt_logo

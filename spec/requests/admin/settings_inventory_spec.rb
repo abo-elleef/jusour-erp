@@ -54,4 +54,19 @@ RSpec.describe "Admin settings inventory", type: :request do
       expect(response.body).to include("allow_fractional_sales_quantities")
     end
   end
+
+  describe "notification levels" do
+    it "shows every kind with its level and saves only the overrides" do
+      get admin_settings_path
+      section = Nokogiri::HTML(response.body).at("[data-testid=settings-notification-levels]")
+      expect(section.at("select[name='notification_levels[low_stock]'] option[selected]")["value"]).to eq("quiet")
+
+      patch admin_settings_path, params: { notification_levels: {
+        low_stock: "popup", cash_variance: "alert", bogus: "quiet", price_change: "loud"
+      } }
+
+      expect(response).to redirect_to(admin_settings_path)
+      expect(CompanySetting.find_by!(company: company).notification_levels).to eq("low_stock" => "popup")
+    end
+  end
 end

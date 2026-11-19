@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_19_140000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_19_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -249,6 +249,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_19_140000) do
     t.boolean "restrict_stock_transfers_to_source", default: true, null: false
     t.boolean "allow_fractional_sales_quantities", default: false, null: false
     t.string "drawer_close_mode", default: "documented", null: false
+    t.jsonb "notification_levels", default: {}, null: false
     t.index ["company_id"], name: "index_company_settings_on_company_id", unique: true
   end
 

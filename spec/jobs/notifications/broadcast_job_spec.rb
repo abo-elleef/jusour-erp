@@ -12,11 +12,20 @@ RSpec.describe Notifications::BroadcastJob, type: :job do
     Turbo::StreamsChannel.send(:stream_name_from, Notifications::Broadcast.stream(user, locale))
   end
 
-  def notify!(read_at: nil)
+  # Message params for the other kinds used below, so their cards render.
+  let(:kind_params) do
+    {
+      "low_stock" => { name: "Flour", on_hand: 1, unit: "kg", threshold: 5 },
+      "price_change" => { name: "Flour", arrow: "↑", percent: 10, old_price: "10", new_price: "11",
+                          supplier: "Misr", invoice_number: "VI-1" }
+    }
+  end
+
+  def notify!(read_at: nil, message_key: "customer_invoice_payment_pending")
     Notification.create!(
       recipient: owner, company: company, notification_type: "sales", read_at: read_at,
-      params: { message_key: "customer_invoice_payment_pending",
-                message_params: { invoice_number: "INV-7", customer_invoice_id: 42 },
+      params: { message_key: message_key,
+                message_params: kind_params.fetch(message_key, { invoice_number: "INV-7", customer_invoice_id: 42 }),
                 customer_invoice_id: 42 }
     )
   end
@@ -73,6 +82,38 @@ RSpec.describe Notifications::BroadcastJob, type: :job do
 
       badge = ActionCable.server.pubsub.broadcasts(stream_for(owner, :en)).map { |m| JSON.parse(m) }.last
       expect(badge).to match(%r{>1</span>})
+    end
+
+    describe "delivery levels (Notifications::Levels)" do
+      def en_messages
+        ActionCable.server.pubsub.broadcasts(stream_for(owner, :en)).map { |m| JSON.parse(m) }.join
+      end
+
+      it "marks an alert kind's card as alert" do
+        described_class.perform_now(owner.id, notify!.id, popup: true)
+
+        expect(en_messages).to include(Notifications::Broadcast::POPUPS_ID, 'data-level="alert"')
+      end
+
+      it "marks a popup kind's card as popup, so it fades silently" do
+        described_class.perform_now(owner.id, notify!(message_key: "price_change").id, popup: true)
+
+        expect(en_messages).to include('data-level="popup"')
+      end
+
+      it "sends only the bell count for a quiet kind" do
+        described_class.perform_now(owner.id, notify!(message_key: "low_stock").id, popup: true)
+
+        expect(en_messages).to include(Notifications::Broadcast::BADGE_ID)
+        expect(en_messages).not_to include(Notifications::Broadcast::POPUPS_ID)
+      end
+
+      it "follows the company's override over the default" do
+        CompanySetting.create!(company: company, notification_levels: { "low_stock" => "alert" })
+        described_class.perform_now(owner.id, notify!(message_key: "low_stock").id, popup: true)
+
+        expect(en_messages).to include('data-level="alert"')
+      end
     end
 
     it "skips the popup for a notification already read by the time the job runs" do
