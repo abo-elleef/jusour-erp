@@ -96,7 +96,7 @@
               <%= label_tag key, t("settings.lead_follow_ups.#{label}"), class: "block text-sm font-semibold text-gray-900 mb-1" %>
               <div class="flex items-center gap-2">
                 <%= text_field_tag key, (value if value.positive?), inputmode: "numeric", dir: "ltr",
-                      class: "w-24 rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500/40",
+                      class: "w-24 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-amber-500 focus:ring-amber-500/40",
                       data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" } %>
                 <span class="text-sm text-gray-600"><%= t("settings.lead_follow_ups.days") %></span>
               </div>
