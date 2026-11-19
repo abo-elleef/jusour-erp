@@ -98,6 +98,13 @@
                 {}, class: "rounded-xl border border-gray-200 px-3 py-2 text-sm" %>
           <%= f.text_field :note, placeholder: t("sales.leads.show.log_placeholder"),
                 class: "flex-1 min-w-[12rem] rounded-xl border border-gray-200 px-3.5 py-2 text-sm" %>
+          <% if @lead.open? %>
+            <label class="flex items-center gap-2 text-xs text-gray-600">
+              <%= t("sales.leads.show.next_follow_up_on") %>
+              <%= f.date_field :next_follow_up_on, class: "rounded-xl border border-gray-200 px-3 py-2 text-sm",
+                    data: { testid: "activity-next-follow-up" } %>
+            </label>
+          <% end %>
           <%= f.submit t("sales.leads.show.log"),
                 class: "px-4 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors cursor-pointer" %>
         <% end %>

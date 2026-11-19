@@ -10,11 +10,13 @@ class Setting
     receipt_footer_text business_day_start_hour
     restrict_stock_transfers_to_source allow_fractional_sales_quantities
     drawer_close_mode require_eleven_digit_phones
+    lead_first_follow_up_days lead_follow_up_every_days
   ].freeze
 
   INTEGER_COLUMNS = %w[
     loyalty_earn_rate loyalty_redeem_threshold loyalty_redeem_value_cents
     print_agent_port print_code_page business_day_start_hour
+    lead_first_follow_up_days lead_follow_up_every_days
   ].freeze
 
   BOOLEAN_COLUMNS = %w[
@@ -78,6 +80,31 @@ class Setting
   def self.require_eleven_digit_phones?
     get_bool("require_eleven_digit_phones", false)
   end
+
+  # Lead follow-up cadence (see Lead). The first follow-up lands this many days
+  # after a lead is created; each logged contact moves the next one this many
+  # days past the contact. 0 (or blank) turns that part off. Column defaults
+  # are 1 and 3, so a company that never saved the form gets those.
+  def self.lead_first_follow_up_days
+    days_setting("lead_first_follow_up_days")
+  end
+
+  def self.lead_follow_up_every_days
+    days_setting("lead_follow_up_every_days")
+  end
+
+  # Either part on means the company runs the cadence, and the morning
+  # follow-up notification goes out (leads:notify_follow_ups).
+  def self.lead_follow_up_cadence?
+    lead_first_follow_up_days.positive? || lead_follow_up_every_days.positive?
+  end
+
+  def self.days_setting(key)
+    row = CompanySetting.current
+    value = row ? row.public_send(key) : CompanySetting.column_defaults[key]
+    [value.to_i, 0].max
+  end
+  private_class_method :days_setting
 
   DRAWER_CLOSE_MODES = %w[documented simple].freeze
 

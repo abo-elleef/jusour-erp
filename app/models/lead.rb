@@ -30,6 +30,7 @@ class Lead < ApplicationRecord
   has_many :lead_activities, -> { order(occurred_at: :desc) }, dependent: :destroy
 
   before_validation :default_assigned_user, on: :create
+  before_validation :default_next_follow_up, on: :create
 
   validates :name, presence: true
   validate :phone_or_email_present
@@ -46,9 +47,24 @@ class Lead < ApplicationRecord
     %w[name phone email stage source created_at]
   end
 
+  # Follow-up cadence (company settings, see Setting.lead_first_follow_up_days /
+  # .lead_follow_up_every_days). nil when that part is turned off.
+  def self.first_follow_up_date(from = Date.current)
+    days = Setting.lead_first_follow_up_days
+    from.to_date + days if days.positive?
+  end
+
+  def self.next_follow_up_date_after(contact_on)
+    days = Setting.lead_follow_up_every_days
+    contact_on.to_date + days if days.positive?
+  end
+
   def open?      = TERMINAL_STAGES.exclude?(stage)
   def converted? = stage == "converted"
   def lost?      = stage == "lost"
+
+  def follow_up_overdue?   = open? && next_follow_up_at.present? && next_follow_up_at < Date.current
+  def follow_up_due_today? = open? && next_follow_up_at == Date.current
 
   # Moves the lead to any non-terminal stage (new/contacted/qualified/
   # proposal_sent/negotiation). Use #convert!/#mark_lost! for the terminal ones.
@@ -80,14 +96,15 @@ class Lead < ApplicationRecord
         name: name, phone: phone, phone_secondary: phone_secondary, email: email,
         customer_type: customer_type, originating_lead: self, skip_phone_length_check: true
       )
-      update!(stage: "converted", customer: new_customer, converted_at: Time.current)
+      update!(stage: "converted", customer: new_customer, converted_at: Time.current, next_follow_up_at: nil)
       log_activity!(by, "stage_change", I18n.t("sales.leads.activity.converted", customer: new_customer.name))
       new_customer
     end
   end
 
   def mark_lost!(by:, lost_reason:, lost_reason_note: nil)
-    update!(stage: "lost", lost_reason: lost_reason, lost_reason_note: lost_reason_note, lost_at: Time.current)
+    update!(stage: "lost", lost_reason: lost_reason, lost_reason_note: lost_reason_note, lost_at: Time.current,
+      next_follow_up_at: nil)
     log_activity!(by, "stage_change", I18n.t("sales.leads.activity.lost",
       reason: I18n.t("sales.leads.lost_reasons.#{lost_reason}", default: lost_reason)))
   end
@@ -96,6 +113,15 @@ class Lead < ApplicationRecord
 
   def default_assigned_user
     self.assigned_user_id ||= created_by_id
+  end
+
+  # The form pre-fills this too; this covers leads created elsewhere (imports,
+  # console) and a form submitted with the date cleared. Terminal leads (a lead
+  # created already converted/lost) need no follow-up.
+  def default_next_follow_up
+    return if next_follow_up_at.present? || !open?
+
+    self.next_follow_up_at = self.class.first_follow_up_date(created_at || Date.current)
   end
 
   def phone_or_email_present

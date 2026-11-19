@@ -18,6 +18,7 @@ module Notifications
     DEFAULTS = {
       "customer_invoice_stage_entered" => "alert",
       "customer_invoice_payment_pending" => "alert",
+      "lead_follow_up_due" => "popup",
       "cash_variance" => "alert",
       "vendor_balance_negative" => "alert",
       "price_change" => "popup",

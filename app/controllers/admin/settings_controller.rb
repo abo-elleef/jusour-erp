@@ -15,6 +15,8 @@ module Admin
       @allow_fractional_sales_quantities = Setting.allow_fractional_sales_quantities?
       @require_eleven_digit_phones = Setting.require_eleven_digit_phones?
       @drawer_close_mode = Setting.drawer_close_mode
+      @lead_first_follow_up_days = Setting.lead_first_follow_up_days
+      @lead_follow_up_every_days = Setting.lead_follow_up_every_days
       @notification_levels = ::Notifications::Levels.all
       @tax_rates = TaxRate.ordered
     end
@@ -38,6 +40,14 @@ module Admin
       end
       if params.key?(:require_eleven_digit_phones)
         Setting.set("require_eleven_digit_phones", params[:require_eleven_digit_phones])
+      end
+      %w[lead_first_follow_up_days lead_follow_up_every_days].each do |key|
+        next unless params.key?(key)
+
+        # Blank means off. The arabic-numerals controller converts digits as
+        # the user types; convert here too in case JS didn't run.
+        days = params[key].to_s.tr("٠١٢٣٤٥٦٧٨٩", "0123456789").to_i
+        Setting.set(key, days.clamp(0, 365))
       end
       if Setting::DRAWER_CLOSE_MODES.include?(params[:drawer_close_mode])
         Setting.set("drawer_close_mode", params[:drawer_close_mode])

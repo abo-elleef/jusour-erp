@@ -35,7 +35,9 @@ module Admin
         scope = scope.where(stage: @stage) if @stage
         # Independent of stage — "due for follow-up" is a date condition, not a
         # pipeline status, so it can narrow whichever stage (or "All") is active.
-        scope = scope.where(next_follow_up_at: ..Date.current) if @due_only
+        # Same open-leads rule as the count beside the checkbox and the morning
+        # notification (Lead.due_for_follow_up).
+        scope = scope.due_for_follow_up if @due_only
         scope = apply_sort(scope)
 
         @pagy, @leads = pagy(:offset, scope, limit: 50)
@@ -47,12 +49,12 @@ module Admin
         # object doesn't get cached into @lead.lead_activities' in-memory target —
         # the timeline below iterates that same association and would otherwise
         # render this blank, unvalidated record alongside the real ones.
-        @activity = LeadActivity.new(lead: @lead)
+        @activity = LeadActivity.new(lead: @lead, next_follow_up_on: ::LeadActivity.suggested_next_follow_up(@lead))
         @assignable_users = assignable_users
       end
 
       def new
-        @lead = Lead.new(assigned_user_id: current_user.id)
+        @lead = Lead.new(assigned_user_id: current_user.id, next_follow_up_at: ::Lead.first_follow_up_date)
         load_form_data
       end
 

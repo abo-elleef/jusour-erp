@@ -1139,6 +1139,14 @@ ar:
       hint: "سلوك تحويلات المخزون عندما تكون كميات المصدر غير مكتملة."
       restrict_transfers: "تقييد التحويلات بمخزون المصدر"
       restrict_transfers_hint: "عند التفعيل، لا يمكن إرسال أكثر مما هو متوفر في موقع المصدر. عند الإيقاف يمكن الإرسال بشكل عادي وقد يصبح رصيد المصدر سالباً حتى يُصحَّح المخزون."
+    lead_follow_ups:
+      title: "متابعة العملاء المحتملين"
+      hint: "مواعيد المتابعة التلقائية، وتنبيه صباحي للمندوب المسؤول بكل عميل محتمل حان موعد متابعته."
+      days: "يوم"
+      first: "أول متابعة بعد"
+      first_hint: "يُملأ موعد المتابعة لكل عميل محتمل جديد بتاريخ الإضافة + هذا العدد. اتركه فارغًا لإيقافه."
+      every: "تابع كل"
+      every_hint: "عند تسجيل اتصال أو رسالة أو اجتماع أو ملاحظة يتحرك موعد المتابعة إلى تاريخها + هذا العدد. اتركه فارغًا لإيقافه."
     phones:
       title: "أرقام الهاتف"
       hint: "قواعد أرقام الهاتف للعملاء المحتملين والعملاء."
@@ -3158,6 +3166,8 @@ ar:
       due_only_label: "بانتظار المتابعة فقط"
       all_reps: "كل المندوبين"
       no_follow_up: "—"
+      follow_up_overdue: "متأخرة"
+      follow_up_today: "اليوم"
       no_contact_info: "لا يوجد هاتف أو بريد إلكتروني مسجَّل"
       empty_title: "لا يوجد عملاء محتملون بعد"
       empty_hint: "أضف أول عميل محتمل لبدء تتبّع القمع."
@@ -3199,6 +3209,7 @@ ar:
         lost_banner: "خسارة — %{reason}"
         timeline: "النشاط"
         log_placeholder: "ماذا حدث؟"
+        next_follow_up_on: "المتابعة التالية"
         log: "تسجيل"
         no_activity: "لا يوجد نشاط مُسجَّل بعد."
         change_history: "سجل التغييرات"
@@ -3847,6 +3858,7 @@ ar:
       cash_variance: "فرق نقدي"
       vendor_balance_negative: "رصيد المورد سالب"
       customer_invoice_payment_pending: "دفعة بانتظار الاعتماد"
+      lead_follow_up_due: "متابعة عميل محتمل"
       customer_invoice_stage_entered: "تغيّرت مرحلة فاتورة"
       unknown: "تنبيه"
     index:
@@ -3903,6 +3915,8 @@ ar:
       cash_variance: "فرق درج نقدي بقيمة %{variance} لـ %{name} بتاريخ %{date}."
       vendor_balance_negative: "أصبح رصيد %{supplier} سالباً (%{balance}) بعد تعديل فاتورة %{invoice_number} — أصبح المورد مديناً لك."
       customer_invoice_payment_pending: "الفاتورة %{invoice_number} بانتظار اعتماد الدفعة."
+      lead_follow_up_due: "حان موعد متابعة العميل المحتمل %{lead_name} اليوم."
+      lead_follow_up_overdue: "متابعة العميل المحتمل %{lead_name} متأخرة — كان موعدها %{date}."
       customer_invoice_stage_entered: "الفاتورة %{invoice_number} أصبحت: %{stage}."
 
   pos:

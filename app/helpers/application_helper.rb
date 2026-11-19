@@ -1810,6 +1810,9 @@ module ApplicationHelper
     if raw[:direction].present?
       raw[:arrow] = raw[:direction] == "up" ? "▲" : "▼"
     end
+    if raw[:follow_up_on].present?
+      raw[:date] = l(Date.parse(raw[:follow_up_on].to_s), format: :long)
+    end
     if raw[:stage].present?
       raw[:stage] = t("sales.customer_invoices.stages.#{raw[:stage]}", default: raw[:stage].to_s.humanize)
     end
@@ -1835,6 +1838,15 @@ module ApplicationHelper
       raw[:invoice_number] = link_to(raw[:invoice_number], admin_sales_customer_invoice_path(raw[:customer_invoice_id]),
                                      class: "font-medium text-blue-600 hover:underline").html_safe
       has_links = true
+    end
+
+    if raw[:lead_id].present? && raw[:lead_name].present?
+      raw[:lead_name] = link_to(raw[:lead_name], admin_sales_lead_path(raw[:lead_id]),
+                                class: "font-medium text-blue-600 hover:underline").html_safe
+      has_links = true
+    end
+    if key == "lead_follow_up_due"
+      key = ActiveModel::Type::Boolean.new.cast(raw[:overdue]) ? "lead_follow_up_overdue" : "lead_follow_up_due"
     end
 
     msg = t("notifications.messages.#{key}", **raw.symbolize_keys, default: legacy)

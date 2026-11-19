@@ -70,9 +70,15 @@
                 </td>
                 <td class="p-3 text-gray-600 tabular-nums">
                   <% if lead.next_follow_up_at %>
-                    <span class="<%= 'text-red-600 font-semibold' if lead.open? && lead.next_follow_up_at <= Date.current %>">
+                    <% if lead.follow_up_overdue? %>
+                      <span class="text-red-600 font-semibold"><%= l(lead.next_follow_up_at, format: :long) %></span>
+                      <span class="ms-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-700"><%= t("sales.leads.follow_up_overdue") %></span>
+                    <% elsif lead.follow_up_due_today? %>
+                      <span class="text-amber-700 font-semibold"><%= l(lead.next_follow_up_at, format: :long) %></span>
+                      <span class="ms-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800"><%= t("sales.leads.follow_up_today") %></span>
+                    <% else %>
                       <%= l(lead.next_follow_up_at, format: :long) %>
-                    </span>
+                    <% end %>
                   <% else %>
                     <%= t("sales.leads.no_follow_up") %>
                   <% end %>

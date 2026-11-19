@@ -50,6 +50,8 @@ class Notification < ApplicationRecord
     mp = (p[:message_params] || {}).with_indifferent_access
     if (id = p[:customer_invoice_id] || mp[:customer_invoice_id]).present?
       helpers.admin_sales_customer_invoice_path(id)
+    elsif (id = p[:lead_id] || mp[:lead_id]).present?
+      helpers.admin_sales_lead_path(id)
     elsif (id = mp[:vendor_invoice_id]).present?
       helpers.admin_inventory_vendor_invoice_path(id)
     elsif (id = p[:ingredient_id] || mp[:ingredient_id]).present?

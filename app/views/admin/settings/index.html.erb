@@ -81,6 +81,35 @@
     </div>
   </section>
 
+  <% if Current.company.feature_enabled?(:leads) %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6" data-testid="settings-lead-follow-ups">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("settings.lead_follow_ups.title") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("settings.lead_follow_ups.hint") %></p>
+    </div>
+    <div class="p-5">
+      <%= form_with url: admin_settings_path, method: :patch, class: "space-y-4" do %>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <% [["lead_first_follow_up_days", @lead_first_follow_up_days, "first"],
+              ["lead_follow_up_every_days", @lead_follow_up_every_days, "every"]].each do |key, value, label| %>
+            <div>
+              <%= label_tag key, t("settings.lead_follow_ups.#{label}"), class: "block text-sm font-semibold text-gray-900 mb-1" %>
+              <div class="flex items-center gap-2">
+                <%= text_field_tag key, (value if value.positive?), inputmode: "numeric", dir: "ltr",
+                      class: "w-24 rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500/40",
+                      data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" } %>
+                <span class="text-sm text-gray-600"><%= t("settings.lead_follow_ups.days") %></span>
+              </div>
+              <p class="text-xs text-gray-500 mt-1"><%= t("settings.lead_follow_ups.#{label}_hint") %></p>
+            </div>
+          <% end %>
+        </div>
+        <%= submit_tag t("actions.save"), class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+      <% end %>
+    </div>
+  </section>
+  <% end %>
+
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("settings.drawer_close.title") %></h2>
