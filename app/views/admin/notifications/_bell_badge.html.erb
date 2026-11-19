@@ -1,0 +1,4 @@
+<%# Unread count on the sidebar bell. Always rendered (hidden at 0) so the live
+    push in Notifications::Broadcast.badge has a target to replace. locals: count %>
+<span id="<%= Notifications::Broadcast::BADGE_ID %>"
+      class="<%= count.positive? ? "" : "hidden" %> absolute top-0 end-0 min-w-4 h-4 px-1 bg-red-500 text-white text-[10px] leading-4 text-center rounded-full"><%= count %></span>

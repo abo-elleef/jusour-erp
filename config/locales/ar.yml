@@ -3795,6 +3795,9 @@ ar:
         voided: "تم إلغاء الإشعار الدائن."
         cannot_void: "يمكن إلغاء المسودات فقط."
   notifications:
+    popup:
+      open: "فتح"
+      all: "كل الإشعارات"
     types:
       inventory: "المخزون"
       accounting: "المحاسبة"

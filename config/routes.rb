@@ -306,8 +306,14 @@ Rails.application.routes.draw do
     end
 
     resources :notifications, only: [:index] do
-      member { patch :mark_read }
-      collection { patch :mark_all_read }
+      member do
+        patch :mark_read
+        get :open
+      end
+      collection do
+        patch :mark_all_read
+        get :badge
+      end
     end
 
     namespace :accounting do

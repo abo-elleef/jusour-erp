@@ -108,4 +108,64 @@ RSpec.describe "Admin::Notifications", type: :request do
     get admin_notifications_path
     expect(response).to redirect_to(pos_path)
   end
+
+  describe "live notifications" do
+    it "subscribes the admin layout to the user's own notification stream" do
+      get admin_notifications_path
+
+      expect(response.body).to include('id="notification-popups"')
+      expect(response.body).to include('id="notifications-bell-badge"')
+      expect(response.body).to include("turbo-cable-stream-source")
+    end
+
+    it "opens a notification: marks it read and goes to the invoice it is about" do
+      notification = Notification.create!(
+        recipient: owner, company: company, notification_type: "sales",
+        params: { message_key: "customer_invoice_payment_pending",
+                  message_params: { invoice_number: "INV-1", customer_invoice_id: 77 },
+                  customer_invoice_id: 77 }
+      )
+
+      get open_admin_notification_path(notification)
+
+      expect(response).to redirect_to(admin_sales_customer_invoice_path(77))
+      expect(notification.reload).not_to be_unread
+    end
+
+    it "opens to the notifications list when there is nothing to link to" do
+      notification = notify!(type: "accounting", key: "drawer_variance", name: "x")
+
+      get open_admin_notification_path(notification)
+
+      expect(response).to redirect_to(admin_notifications_path)
+    end
+
+    it "cannot open another user's notification" do
+      other = create(:user, :owner, company: company)
+      notification = Notification.create!(recipient: other, company: company, notification_type: "sales", params: {})
+
+      get open_admin_notification_path(notification)
+
+      expect(response).to have_http_status(:not_found)
+      expect(notification.reload).to be_unread
+    end
+
+    it "returns the bell count as a turbo stream" do
+      notify!(type: "inventory", key: "low_stock", name: "Tomatoes")
+      notify!(type: "inventory", key: "low_stock", name: "Onions")
+
+      get badge_admin_notifications_path, headers: { "Accept" => "text/vnd.turbo-stream.html" }
+
+      expect(response.media_type).to eq("text/vnd.turbo-stream.html")
+      expect(response.body).to include("notifications-bell-badge")
+      expect(response.body).to match(%r{>2</span>})
+    end
+
+    it "refreshes the bell in every tab after mark all read" do
+      notify!(type: "inventory", key: "low_stock", name: "Tomatoes")
+
+      expect { patch mark_all_read_admin_notifications_path }
+        .to have_enqueued_job(Notifications::BroadcastJob).with(owner.id)
+    end
+  end
 end

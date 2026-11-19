@@ -3741,6 +3741,9 @@ en:
         voided: "Credit note voided."
         cannot_void: "This credit note is already void."
   notifications:
+    popup:
+      open: "Open"
+      all: "All notifications"
     types:
       inventory: "Inventory"
       accounting: "Accounting"
