@@ -25,6 +25,10 @@ class Customer < ApplicationRecord
   belongs_to :originating_lead, class_name: "Lead", optional: true
   # Who blocked this customer from self-ordering on the public menu, if anyone.
   belongs_to :blocked_by, class_name: "User", optional: true
+  # The salesperson who owns this customer. Reps without sales:see_all only see
+  # their own customers (Sales::OwnershipScope); unassigned ones wait for a
+  # manager to assign them.
+  belongs_to :assigned_user, class_name: "User", optional: true
   has_many :customer_invoices, dependent: :restrict_with_error
   has_many :addresses, class_name: "CustomerAddress", dependent: :destroy, inverse_of: :customer
 
@@ -45,12 +49,14 @@ class Customer < ApplicationRecord
   validate :email_or_phone_present
   validate :phones_must_differ
   validate :phones_unique_across_columns
+  validate :assigned_user_in_company
 
   monetize :total_spent_cents, allow_nil: false
   money_input :credit_warning_limit_cents, :credit_hard_limit_cents
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name email phone phone_secondary legacy_code loyalty_points total_spent_cents created_at updated_at]
+    %w[name email phone phone_secondary legacy_code loyalty_points total_spent_cents created_at updated_at
+       assigned_user_id]
   end
 
   def self.ransackable_associations(_auth_object = nil)
@@ -149,6 +155,12 @@ class Customer < ApplicationRecord
     return if email.present? || phone.present?
 
     errors.add(:base, I18n.t("customers.errors.email_or_phone_required"))
+  end
+
+  def assigned_user_in_company
+    return if assigned_user.blank? || assigned_user.company_id == company_id
+
+    errors.add(:assigned_user_id, :invalid)
   end
 
   def phones_must_differ

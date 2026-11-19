@@ -1098,6 +1098,7 @@ en:
         confirm_payments: "Confirm online payments"
         dispatch: "Hand deliveries to the shipping company"
         complete_shipping: "Confirm deliveries are completed"
+        see_all: "See every salesperson's leads, customers and invoices"
       storefront:
         manage: "Manage the storefront website"
   settings:
@@ -2931,6 +2932,9 @@ en:
           output_used: "Cannot undo — some of the produced stock has already been used or transferred. Adjust stock manually if needed."
 
   sales:
+    ownership:
+      customer_not_yours: "is not one of your customers"
+      invoice_not_yours: "is not one of your invoices"
     stage_accesses:
       title: "Invoice stages by role"
       description: "Choose, for each role, which sales invoices its members see and which stages notify them."
@@ -5017,6 +5021,21 @@ en:
     errors:
       eleven_digits: "must be exactly 11 digits" # errors.format adds the field name in English
   customers:
+    salesperson:
+      label: "Salesperson"
+      none: "Unassigned"
+      anyone: "Anyone"
+      hint: "Sales reps without “see all” see only their own customers. Unassigned customers are visible to managers only."
+    bulk_assign:
+      label: "Assign selected customers to"
+      prompt: "Choose a salesperson"
+      submit: "Assign"
+      hint: "Tick customers on this page, then assign them."
+      select_page: "Select every customer on this page"
+      nothing_selected: "Tick at least one customer and choose a salesperson."
+      done:
+        one: "1 customer assigned to %{name}."
+        other: "%{count} customers assigned to %{name}."
     online_orders:
       summary:
         one: "1 online order"

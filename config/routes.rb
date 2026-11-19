@@ -252,6 +252,9 @@ Rails.application.routes.draw do
     end
     resources :combos
     resources :customers do
+      collection do
+        patch :bulk_assign
+      end
       member do
         post :block
         post :unblock

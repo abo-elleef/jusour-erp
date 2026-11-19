@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_19_211700) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_19_230100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -392,6 +392,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_19_211700) do
     t.datetime "blocked_at"
     t.text "blocked_reason"
     t.uuid "blocked_by_id"
+    t.uuid "assigned_user_id"
+    t.index ["assigned_user_id"], name: "index_customers_on_assigned_user_id"
     t.index ["blocked_by_id"], name: "index_customers_on_blocked_by_id"
     t.index ["company_id", "email"], name: "index_customers_on_company_id_and_email", unique: true, where: "((email IS NOT NULL) AND ((email)::text <> ''::text))"
     t.index ["company_id", "legacy_code"], name: "index_customers_on_company_id_and_legacy_code", where: "((legacy_code IS NOT NULL) AND ((legacy_code)::text <> ''::text))"
@@ -2209,6 +2211,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_19_211700) do
   add_foreign_key "customer_invoices", "treasuries"
   add_foreign_key "customer_invoices", "users", column: "shipping_completed_by_id"
   add_foreign_key "customers", "companies"
+  add_foreign_key "customers", "users", column: "assigned_user_id"
   add_foreign_key "customers", "users", column: "blocked_by_id"
   add_foreign_key "delivery_areas", "companies"
   add_foreign_key "delivery_areas", "locations"

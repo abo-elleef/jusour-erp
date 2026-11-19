@@ -24,7 +24,7 @@ RSpec.describe "Admin::Sales shipping proof", type: :request do
 
   def custom_user(*permissions)
     role = Role.create!(company: company, name: "Sales #{permissions.size}", key: "sales_#{SecureRandom.hex(3)}",
-      permissions: permissions)
+      permissions: permissions + ["sales:see_all"]) # every role in the sales area holds it after the slice E migration
     create(:user, company: company, role: "custom", role_id: role.id)
   end
 

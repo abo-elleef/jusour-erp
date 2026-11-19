@@ -12,6 +12,15 @@
         <% if @customer.legacy_code.present? %>
           <span class="block text-sm text-gray-500"><%= t("customers.show.legacy_code") %>: <span class="tabular-nums"><%= @customer.legacy_code %></span></span>
         <% end %>
+        <% if ::Sales::OwnershipScope.applies_to?(Current.company) %>
+          <span class="block text-sm text-gray-500"><%= t("customers.salesperson.label") %>:
+            <% if @customer.assigned_user && policy(@customer.assigned_user).show? %>
+              <%= link_to @customer.assigned_user.name, admin_user_path(@customer.assigned_user), class: "text-amber-700 hover:text-amber-800 font-medium" %>
+            <% else %>
+              <%= @customer.assigned_user&.name || t("customers.salesperson.none") %>
+            <% end %>
+          </span>
+        <% end %>
         <% if @customer.email.present? %><span class="block"><%= @customer.email %></span><% end %>
         <% @customer.contact_phones.each do |num| %>
           <span class="block"><%= num %></span>

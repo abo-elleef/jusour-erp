@@ -19,7 +19,9 @@ module Admin
 
       def index
         parse_date_range(default_start: 30.days.ago.to_date)
-        @service = ::Sales::LeadsReportService.new(@start_date, @end_date)
+        # A rep without sales:see_all reads their own leads only.
+        @service = ::Sales::LeadsReportService.new(@start_date, @end_date,
+          leads: ::Sales::OwnershipScope.for(current_user).leads)
       end
 
       private

@@ -4,6 +4,7 @@ module Admin
   module Sales
     class CustomerInvoicesController < BaseController
       before_action :set_invoice, only: %i[show edit update confirm approve_payment reject_payment mark_dispatched complete_shipping void attach_payment_proof_image update_shipping_proof]
+      before_action :require_own_invoice, except: %i[index new create]
       before_action :require_stage_visible, only: %i[show edit update update_shipping_proof]
       before_action :require_draft_for_edit, only: %i[edit update]
       before_action :require_payment_approver, only: %i[approve_payment reject_payment]
@@ -14,11 +15,11 @@ module Admin
       def index
         @status = params[:status].presence_in(%w[draft pending_payment_confirmation confirmed historical void])
         @shipping = params[:shipping].presence_in(CustomerInvoice::SHIPPING_STATUSES)
-        visible = ::Sales::StageVisibility.scope_for(current_user)
+        visible = ownership.invoices
         scope = visible.recent.includes(:customer, :location)
         scope = scope.where(status: @status) if @status
         scope = scope.where(shipping_status: @shipping) if @shipping
-        @customer = Customer.find_by(id: params[:customer_id]) if params[:customer_id].present?
+        @customer = ownership.customers.find_by(id: params[:customer_id]) if params[:customer_id].present?
         scope = scope.where(customer: @customer) if @customer
         @from_date = parse_filter_date(params[:from_date])
         @to_date = parse_filter_date(params[:to_date])
@@ -29,7 +30,7 @@ module Admin
           scope = scope.where("customer_invoices.shipping_tracking_number ILIKE ?",
             "%#{CustomerInvoice.sanitize_sql_like(@tracking)}%")
         end
-        @customers = Customer.order(:name)
+        @customers = ownership.customers.order(:name)
         @pagy, @invoices = pagy(:offset, scope, limit: 50)
         @draft_count = visible.draft.count
         @pending_confirmation_count = visible.pending_payment_confirmation.count
@@ -40,7 +41,7 @@ module Admin
 
       def new
         @invoice = CustomerInvoice.new(invoice_date: Date.current, location_id: default_location&.id,
-          customer_id: params[:customer_id].presence)
+          customer_id: ownership.customers.find_by(id: params[:customer_id])&.id)
         @invoice.customer_invoice_lines.build
         load_form_data
       end
@@ -51,7 +52,7 @@ module Admin
         @invoice.company ||= Current.company
         @invoice.status = "draft"
 
-        if @invoice.save
+        if customer_allowed?(@invoice) && @invoice.save
           if params[:commit_action] == "confirm"
             confirm_now
           else
@@ -73,7 +74,8 @@ module Admin
       end
 
       def update
-        if @invoice.update(invoice_params)
+        @invoice.assign_attributes(invoice_params)
+        if customer_allowed?(@invoice) && @invoice.save
           if params[:commit_action] == "confirm"
             confirm_now
           else
@@ -252,7 +254,7 @@ module Admin
       # land them back on their list with the success message rather than on a
       # page that would refuse them.
       def redirect_after_change(invoice, notice:)
-        if ::Sales::StageVisibility.can_see?(current_user, invoice.reload)
+        if ownership.can_see_invoice?(invoice.reload)
           redirect_to admin_sales_customer_invoice_path(invoice), notice: notice
         elsif ::Sales::PaymentApproval.approver_anywhere?(current_user)
           redirect_to admin_sales_customer_invoices_path(status: "pending_payment_confirmation"), notice: notice
@@ -278,10 +280,30 @@ module Admin
       # The owner's role × stage grid (Sales::StageVisibility) — your own
       # invoices and approvals you're responsible for always stay visible.
       def require_stage_visible
-        return if ::Sales::StageVisibility.can_see?(current_user, @invoice)
+        return if ownership.can_see_invoice?(@invoice)
 
         flash[:alert] = t("flash.access_denied")
         redirect_to admin_sales_customer_invoices_path
+      end
+
+      # Someone else's invoice (Sales::OwnershipScope) — answer as if it didn't
+      # exist rather than say whose it is.
+      def require_own_invoice
+        raise ActiveRecord::RecordNotFound unless ownership.owns_invoice?(@invoice)
+      end
+
+      def ownership
+        @ownership ||= ::Sales::OwnershipScope.for(current_user)
+      end
+
+      # A rep can't invoice another rep's customer. Checked only when the
+      # customer is being set, so an old draft keeps saving.
+      def customer_allowed?(invoice)
+        return true unless invoice.new_record? || invoice.customer_id_changed?
+        return true if invoice.customer_id.blank? || ownership.customers.exists?(id: invoice.customer_id)
+
+        invoice.errors.add(:customer_id, t("sales.ownership.customer_not_yours"))
+        false
       end
 
       def require_payment_approver
@@ -302,7 +324,12 @@ module Admin
         # Every customer, not just commercial ones: the distribution vertical sells
         # to walk-in doctors through this same form, settling at the counter. Credit
         # is still controlled where it matters — at confirm, against the limits.
-        @customers = Customer.order(:name)
+        # A rep picks only their own customers; an existing draft keeps its own.
+        customers = ownership.customers
+        if @invoice&.persisted? && @invoice.customer_id_in_database
+          customers = customers.or(Customer.where(id: @invoice.customer_id_in_database))
+        end
+        @customers = customers.order(:name)
         @locations = Location.active.ordered
         @ingredients = Ingredient.active.order(:name)
         @shipping_companies = ShippingCompany.active.ordered

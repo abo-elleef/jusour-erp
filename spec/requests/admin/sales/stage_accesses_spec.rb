@@ -12,7 +12,7 @@ RSpec.describe "Admin::Sales::StageAccesses", type: :request do
   let!(:ingredient) { create(:ingredient, company: company, ingredient_category: category, name: "Kit", unit: "kg") }
   let(:customer) { create(:customer, company: company, name: "Clinic", customer_type: "regular") }
   let(:warehouse_role) do
-    Role.create!(company: company, name: "Warehouse", key: "warehouse", permissions: %w[customers:manage sales:dispatch])
+    Role.create!(company: company, name: "Warehouse", key: "warehouse", permissions: %w[customers:manage sales:dispatch sales:see_all])
   end
   let(:warehouse) { create(:user, company: company, role: "custom", role_id: warehouse_role.id) }
 

@@ -45,6 +45,16 @@
         <p class="text-xs text-gray-500 mt-0.5"><%= t("customers.form.commercial_hint") %></p>
       </div>
       <div class="p-5 space-y-5">
+        <% if @salespeople %>
+          <%# Only managers (sales:see_all) set this; a rep's new customer is theirs. %>
+          <div>
+            <%= f.label :assigned_user_id, t("customers.salesperson.label"), class: label_class %>
+            <%= f.collection_select :assigned_user_id, @salespeople, :id, :name,
+                  { include_blank: t("customers.salesperson.none") },
+                  class: "#{pos_input_class} appearance-none" %>
+            <p class="text-xs text-gray-500 mt-1"><%= t("customers.salesperson.hint") %></p>
+          </div>
+        <% end %>
         <div>
           <%= f.label :customer_type, t("customers.form.customer_type"), class: label_class %>
           <%= f.select :customer_type,

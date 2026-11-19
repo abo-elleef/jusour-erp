@@ -94,7 +94,8 @@ class Lead < ApplicationRecord
       # 11-digit rule existed), so the length rule must not block the sale here.
       new_customer = Customer.create!(
         name: name, phone: phone, phone_secondary: phone_secondary, email: email,
-        customer_type: customer_type, originating_lead: self, skip_phone_length_check: true
+        customer_type: customer_type, originating_lead: self, skip_phone_length_check: true,
+        assigned_user: assigned_user
       )
       update!(stage: "converted", customer: new_customer, converted_at: Time.current, next_follow_up_at: nil)
       log_activity!(by, "stage_change", I18n.t("sales.leads.activity.converted", customer: new_customer.name))
