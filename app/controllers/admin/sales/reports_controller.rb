@@ -24,7 +24,9 @@ module Admin
         parse_date_range(default_start: 30.days.ago.to_date)
 
         @customer_type = params[:customer_type] if Customer::CUSTOMER_TYPES.include?(params[:customer_type])
-        @service = ::Sales::SalesReportService.new(@start_date, @end_date, customer_type: @customer_type)
+        # A rep without sales:see_all gets their own sales only.
+        @service = ::Sales::SalesReportService.new(@start_date, @end_date, customer_type: @customer_type,
+          ownership: ::Sales::OwnershipScope.for(current_user))
 
         if SECTIONS.include?(params[:section])
           render_section(params[:section])

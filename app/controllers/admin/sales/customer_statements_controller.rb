@@ -26,6 +26,8 @@ module Admin
         listed = Customer.left_joins(:ar_treasury)
           .where(id: CustomerInvoice.select(:customer_id))
           .or(Customer.left_joins(:ar_treasury).where.not(treasuries: { balance_cents: 0 }))
+        # A rep's statements list is their own customers only (Sales::OwnershipScope).
+        listed = ::Sales::OwnershipScope.for(current_user).customers(listed)
         @total_ar_cents = listed.sum("COALESCE(treasuries.balance_cents, 0)")
 
         # Latest real sale per customer — drafts and voids aren't sales.
@@ -53,7 +55,7 @@ module Admin
       private
 
       def set_customer
-        @customer = Customer.find(params[:id])
+        @customer = ::Sales::OwnershipScope.for(current_user).customers.find(params[:id])
       end
     end
   end

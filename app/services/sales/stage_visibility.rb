@@ -74,6 +74,9 @@ module Sales
       end
 
       recipients.find_each do |user|
+        # A rep limited to their own content isn't told about other reps' invoices.
+        next unless OwnershipScope.for(user).owns_invoice?(invoice)
+
         Notification.create!(
           recipient: user, company: invoice.company, notification_type: "sales",
           params: { message_key: "customer_invoice_stage_entered",

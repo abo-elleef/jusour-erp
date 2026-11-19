@@ -18,9 +18,12 @@ module Sales
       end
     end
 
-    def initialize(start_date, end_date)
+    # `leads:` narrows the pool — a rep limited by Sales::OwnershipScope passes
+    # their own leads so every tab is their numbers only.
+    def initialize(start_date, end_date, leads: Lead.all)
       @start_date = start_date
       @end_date = end_date
+      @pool = leads
     end
 
     def funnel
@@ -95,7 +98,7 @@ module Sales
     private
 
     def leads
-      @leads ||= Lead.where(created_at: @start_date.beginning_of_day..@end_date.end_of_day)
+      @leads ||= @pool.where(created_at: @start_date.beginning_of_day..@end_date.end_of_day)
     end
 
     def period_for(date, granularity)

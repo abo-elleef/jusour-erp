@@ -55,6 +55,9 @@ module Permission
     { key: "sales:confirm_payments",  group: "sales" },
     { key: "sales:dispatch",          group: "sales" },
     { key: "sales:complete_shipping", group: "sales" },
+    # Without it, the sales/leads area shows only your own leads, customers and
+    # invoices (Sales::OwnershipScope). Distribution companies only.
+    { key: "sales:see_all",           group: "sales" },
     { key: "storefront:manage",       group: "sales" }
   ].freeze
 
@@ -83,7 +86,7 @@ module Permission
         attendance:log attendance:view attendance:penalties attendance:waive_penalties attendance:audit staff:view locations:manage printers:manage
         pos:access kitchen:access production:access
         leads:view leads:manage leads:reports sales:confirm_payments
-        sales:dispatch sales:complete_shipping storefront:manage
+        sales:dispatch sales:complete_shipping sales:see_all storefront:manage
       ]
     },
     "sub_manager" => {
@@ -94,7 +97,7 @@ module Permission
         dashboard:view orders:view menu:manage customers:manage inventory:view
         accounting:day_close
         attendance:log attendance:view pos:access kitchen:access
-        leads:view leads:manage sales:confirm_payments sales:dispatch
+        leads:view leads:manage sales:confirm_payments sales:dispatch sales:see_all
       ]
     },
     "accountant" => {
@@ -104,6 +107,7 @@ module Permission
         accounting:ledgers accounting:transactions accounting:day_close accounting:reports accounting:setup
         attendance:view attendance:penalties attendance:waive_penalties staff:view staff:manage payroll:view payroll:manage
         settings:general locations:manage printers:manage pos:access sales:confirm_payments
+        sales:see_all
       ]
     },
     "cashier" => {

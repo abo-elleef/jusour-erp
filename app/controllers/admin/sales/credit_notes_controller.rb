@@ -6,7 +6,7 @@ module Admin
       before_action :set_credit_note, only: %i[show confirm void]
 
       def index
-        @pagy, @credit_notes = pagy(:offset, CreditNote.recent.includes(:customer), limit: 50)
+        @pagy, @credit_notes = pagy(:offset, ownership.credit_notes(CreditNote.recent.includes(:customer)), limit: 50)
       end
 
       def new
@@ -22,7 +22,7 @@ module Admin
         @credit_note.company ||= Current.company
         @credit_note.status = "draft"
 
-        if @credit_note.save
+        if documents_allowed?(@credit_note) && @credit_note.save
           if params[:commit_action] == "confirm"
             confirm_now(@credit_note)
           else
@@ -60,15 +60,31 @@ module Admin
         redirect_to admin_sales_credit_note_path(credit_note), alert: e.message
       end
 
+      # Someone else's credit note is a 404 for a rep (Sales::OwnershipScope).
       def set_credit_note
-        @credit_note = CreditNote.find(params[:id])
+        @credit_note = ownership.credit_notes(CreditNote.all).find(params[:id])
+      end
+
+      def ownership
+        @ownership ||= ::Sales::OwnershipScope.for(current_user)
+      end
+
+      # A rep can credit only their own customer, against an invoice they can see.
+      def documents_allowed?(credit_note)
+        if credit_note.customer_id.present? && !ownership.customers.exists?(id: credit_note.customer_id)
+          credit_note.errors.add(:customer_id, t("sales.ownership.customer_not_yours"))
+        end
+        if credit_note.customer_invoice_id.present? && !ownership.invoices.exists?(id: credit_note.customer_invoice_id)
+          credit_note.errors.add(:customer_invoice_id, t("sales.ownership.invoice_not_yours"))
+        end
+        credit_note.errors.empty?
       end
 
       def load_form_data
-        @customers = Customer.where(customer_type: "commercial").order(:name)
+        @customers = ownership.customers.where(customer_type: "commercial").order(:name)
         @locations = Location.active.ordered
         @ingredients = Ingredient.active.order(:name)
-        @invoices = CustomerInvoice.confirmed.recent.limit(200)
+        @invoices = ownership.invoices(CustomerInvoice.confirmed).recent.limit(200)
       end
 
       def credit_note_params

@@ -24,7 +24,7 @@ module Admin
       private
 
       def set_lead
-        @lead = Lead.find(params[:lead_id])
+        @lead = ::Sales::OwnershipScope.for(current_user).leads.find(params[:lead_id])
       end
 
       def require_leads_manage

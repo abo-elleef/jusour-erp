@@ -29,13 +29,16 @@ namespace :demo do
       Current.company = company
 
       # --- Roles: one per job in Bazzar's flow -------------------------------
+      # Every role starts with sales:see_all, as the slice-E migration leaves
+      # them; take it off "Sales rep" to see a rep limited to their own content.
       roles = {
-        sales_rep:        ["Sales rep",         %w[dashboard:view customers:manage leads:view leads:manage]],
+        sales_rep:        ["Sales rep",         %w[dashboard:view customers:manage leads:view leads:manage leads:reports]],
         accounts:         ["Accounts",          %w[dashboard:view customers:manage sales:confirm_payments accounting:reports]],
         wallet_holder:    ["Wallet holder",     %w[customers:manage]],
         warehouse:        ["Warehouse",         %w[customers:manage sales:dispatch inventory:view]],
         delivery_checker: ["Delivery checker",  %w[customers:manage sales:complete_shipping]]
       }.to_h do |key, (name, perms)|
+        perms += %w[sales:see_all]
         [key, Role.create!(company: company, key: "demo_#{key}", name: name, permissions: perms)]
       end
 
@@ -53,6 +56,7 @@ namespace :demo do
       end
       add_user.call(:owner, "Demo Owner", builtin: "owner")
       add_user.call(:rep, "Mona (sales)", role: roles[:sales_rep])
+      add_user.call(:rep2, "Ali (sales)", role: roles[:sales_rep])
       add_user.call(:accounts, "Hany (accounts)", role: roles[:accounts])
       add_user.call(:saif, "Saif (wallet)", role: roles[:wallet_holder])
       add_user.call(:naggar, "El-Naggar (wallet)", role: roles[:wallet_holder])
@@ -89,9 +93,14 @@ namespace :demo do
                            cost_per_unit_cents: (price * 0.6).round, received_on: Date.current)
         [name, product]
       end
-      customers = ["Smile Clinic", "Dr. Ahmed Fathy", "Nile Dental Center"].map.with_index do |name, i|
+      # Mona owns the first two, Ali the third; the fourth waits for a manager.
+      owners = [people[:rep], people[:rep], people[:rep2], nil]
+      customers = ["Smile Clinic", "Dr. Ahmed Fathy", "Nile Dental Center", "Delta Smile (unassigned)"].map.with_index do |name, i|
         Customer.create!(company: company, name: name, customer_type: i.zero? ? "commercial" : "regular",
-                         phone: "0100000000#{i}")
+                         phone: "0100000000#{i}", assigned_user: owners[i])
+      end
+      [[people[:rep], "Cairo Ortho Lead"], [people[:rep2], "Giza Implants Lead"]].each_with_index do |(user, name), i|
+        Lead.create!(company: company, name: name, phone: "0120000000#{i}", created_by: people[:owner], assigned_user: user)
       end
       courier = ShippingCompany.create!(company: company, name: "Bosta (demo)")
 
@@ -115,7 +124,9 @@ namespace :demo do
 
       # --- Invoices at every stage, recorded by the sales rep ----------------
       new_invoice = lambda do |customer:, payment:, delivery:, lines:, sales_method: nil|
-        inv = CustomerInvoice.new(company: company, customer: customer, user: people[:rep], location: location,
+        recorder = customer.assigned_user || people[:rep]
+        inv = CustomerInvoice.new(company: company, customer: customer, user: recorder, salesperson: recorder,
+                                  location: location,
                                   invoice_date: Date.current, payment_method: payment,
                                   fulfillment_method: delivery ? "delivery" : "pickup",
                                   shipping_company: delivery ? courier : nil, sales_payment_method: sales_method,

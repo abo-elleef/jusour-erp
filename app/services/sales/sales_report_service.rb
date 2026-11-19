@@ -14,10 +14,13 @@ module Sales
       def net_cents = revenue_cents - returns_cents
     end
 
-    def initialize(start_date, end_date, customer_type: nil)
+    # `ownership:` (a Sales::OwnershipScope) narrows every figure to the
+    # documents that user owns; nil = the whole company.
+    def initialize(start_date, end_date, customer_type: nil, ownership: nil)
       @start_date = start_date
       @end_date = end_date
       @customer_type = customer_type if Customer::CUSTOMER_TYPES.include?(customer_type)
+      @ownership = ownership
     end
 
     # Computes every breakdown at once. Prefer calling the individual methods
@@ -156,11 +159,13 @@ module Sales
     private
 
     def invoices
-      @invoices ||= scoped_to_customer_type(CustomerInvoice.realized.where(invoice_date: @start_date..@end_date))
+      @invoices ||= owned(:report_invoices,
+        scoped_to_customer_type(CustomerInvoice.realized.where(invoice_date: @start_date..@end_date)))
     end
 
     def credit_notes
-      @credit_notes ||= scoped_to_customer_type(CreditNote.realized.where(credit_note_date: @start_date..@end_date))
+      @credit_notes ||= owned(:report_credit_notes,
+        scoped_to_customer_type(CreditNote.realized.where(credit_note_date: @start_date..@end_date)))
     end
 
     # Lets the owner read the same report as three different audiences: everyone,
@@ -171,6 +176,10 @@ module Sales
       return relation unless @customer_type
 
       relation.joins(:customer).where(customers: { customer_type: @customer_type })
+    end
+
+    def owned(kind, relation)
+      @ownership ? @ownership.public_send(kind, relation) : relation
     end
 
     def gross_cents  = @gross_cents  ||= invoices.sum(:total_cents).to_i

@@ -12,7 +12,7 @@
       <% header_link_class = "hover:text-gray-900 hover:underline" %>
       <% seller = @invoice.salesperson || @invoice.user %>
       <p class="text-gray-600 text-sm mt-1">
-        <%= link_to @invoice.customer.display_name, admin_customer_path(@invoice.customer), class: header_link_class %>
+        <%= link_to_if ::Sales::OwnershipScope.for(current_user).can_see_customer?(@invoice.customer), @invoice.customer.display_name, admin_customer_path(@invoice.customer), class: header_link_class %>
         · <%= l(@invoice.invoice_date, format: :long) %>
         <% if @invoice.location %>
           · <%= link_to @invoice.location.name, admin_location_path(@invoice.location), class: header_link_class %>

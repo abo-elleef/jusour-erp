@@ -9,12 +9,16 @@ module Admin
     def index
       authorize Customer
 
-      @q = Customer.ransack(params[:q])
+      # A sales rep without sales:see_all lists their own customers only
+      # (Sales::OwnershipScope); restaurants are never narrowed.
+      visible = ownership.customers
+      @q = visible.ransack(params[:q])
       @sort = parse_index_sort_param
       @direction = parse_index_sort_direction_param
       @joined_from = parse_date_param(:joined_from)
       @joined_to = parse_date_param(:joined_to)
       scope = joined_scope(@q.result)
+      scope = filter_by_salesperson(scope)
 
       if request.format.csv?
         return send_data customers_csv(scope.order(@sort => @direction, id: :asc)),
@@ -22,21 +26,24 @@ module Admin
                          type: "text/csv; charset=utf-8"
       end
 
-      @total_count = Customer.count
-      @loyalty_members_count = Customer.where("loyalty_points > 0").count
-      @total_lifetime_spend_cents = Customer.sum(:total_spent_cents)
+      @total_count = visible.count
+      @loyalty_members_count = visible.where("loyalty_points > 0").count
+      @total_lifetime_spend_cents = visible.sum(:total_spent_cents)
       @date_filtered = @joined_from.present? || @joined_to.present?
       # With a joined-date range the card counts that period instead of this month.
       @new_in_period_count =
         if @date_filtered
-          joined_scope(Customer.all).count
+          joined_scope(visible).count
         else
-          Customer.where(created_at: Time.current.all_month).count
+          visible.where(created_at: Time.current.all_month).count
         end
-      @filtered = @date_filtered || (params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?))
+      @filtered = @date_filtered || @salesperson_filter.present? ||
+        (params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?))
+      @show_salesperson = ::Sales::OwnershipScope.applies_to?(Current.company)
+      @salespeople = salespeople if ownership.manages_assignment?
       @pagy, @customers = pagy(
         :offset,
-        scope.order(@sort => @direction, id: :asc),
+        (@show_salesperson ? scope.includes(:assigned_user) : scope).order(@sort => @direction, id: :asc),
         limit: 25
       )
     end
@@ -56,15 +63,19 @@ module Admin
     def new
       @customer = Customer.new
       @customer.addresses.build
+      @salespeople = salespeople if ownership.manages_assignment?
       authorize @customer
     end
 
     def create
       @customer = Customer.new(customer_params)
+      # A limited rep's new customer is theirs, so it doesn't vanish on save.
+      @customer.assigned_user = current_user if ownership.limited?
       authorize @customer
       if @customer.save
         redirect_to admin_customer_path(@customer), notice: t("flash.customer.created")
       else
+        @salespeople = salespeople if ownership.manages_assignment?
         render :new, status: :unprocessable_entity
       end
     end
@@ -72,6 +83,7 @@ module Admin
     def edit
       authorize @customer
       @customer.addresses.build if @customer.addresses.empty?
+      @salespeople = salespeople if ownership.manages_assignment?
     end
 
     def update
@@ -79,6 +91,7 @@ module Admin
       if @customer.update(customer_params)
         redirect_to admin_customer_path(@customer), notice: t("flash.customer.updated")
       else
+        @salespeople = salespeople if ownership.manages_assignment?
         render :edit, status: :unprocessable_entity
       end
     end
@@ -93,6 +106,28 @@ module Admin
 
       @customer.destroy
       redirect_to admin_customers_path, notice: t("flash.customer.removed")
+    end
+
+    # Managers hand a page of customers to one salesperson (or back to nobody).
+    def bulk_assign
+      authorize Customer, :update?
+      unless ownership.manages_assignment?
+        redirect_to admin_customers_path, alert: t("flash.access_denied")
+        return
+      end
+
+      ids = Array(params[:customer_ids]).compact_blank
+      target = params[:assigned_user_id].to_s
+      user = salespeople.find_by(id: target) unless target == "none"
+      if ids.empty? || (target != "none" && user.nil?)
+        redirect_back fallback_location: admin_customers_path, alert: t("customers.bulk_assign.nothing_selected")
+        return
+      end
+
+      count = 0
+      Customer.where(id: ids).find_each { |customer| count += 1 if customer.update(assigned_user: user) }
+      redirect_back fallback_location: admin_customers_path,
+        notice: t("customers.bulk_assign.done", count: count, name: user&.name || t("customers.salesperson.none"))
     end
 
     # Blocks the customer from placing self-orders on the public menu.
@@ -116,8 +151,30 @@ module Admin
 
     private
 
+    # Someone else's customer is a 404 for a limited rep (Sales::OwnershipScope).
     def set_customer
-      @customer = Customer.includes(:addresses).find(params[:id])
+      @customer = ownership.customers(Customer.includes(:addresses)).find(params[:id])
+    end
+
+    def ownership
+      @ownership ||= ::Sales::OwnershipScope.for(current_user)
+    end
+
+    def salespeople
+      User.where(company_id: Current.company.id).active.order(:name)
+    end
+
+    # "Salesperson" filter: one person, or "none" for the unassigned ones a
+    # manager still has to hand out.
+    def filter_by_salesperson(scope)
+      return scope unless ownership.manages_assignment?
+
+      @salesperson_filter = params[:assigned_user_id].presence
+      case @salesperson_filter
+      when nil then scope
+      when "none" then scope.where(assigned_user_id: nil)
+      else scope.where(assigned_user_id: @salesperson_filter)
+      end
     end
 
     def parse_date_param(key)
@@ -173,6 +230,7 @@ module Admin
 
     def customer_params
       permitted = %i[name email phone phone_secondary standing_note]
+      permitted << :assigned_user_id if ownership.manages_assignment?
       # Commercial / credit fields only when the company runs credit sales.
       if Current.company&.feature_enabled?(:ar_credit_sales)
         permitted += %i[customer_type price_tier_id discount_override_percent

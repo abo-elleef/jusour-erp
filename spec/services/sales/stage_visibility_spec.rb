@@ -11,7 +11,7 @@ RSpec.describe Sales::StageVisibility do
   let(:customer) { create(:customer, company: company, name: "Clinic", customer_type: "regular") }
   let(:shipping_company) { create(:shipping_company, company: company) }
   let(:warehouse_role) do
-    Role.create!(company: company, name: "Warehouse", key: "warehouse", permissions: %w[customers:manage sales:dispatch])
+    Role.create!(company: company, name: "Warehouse", key: "warehouse", permissions: %w[customers:manage sales:dispatch sales:see_all])
   end
   let(:warehouse) { create(:user, company: company, role: "custom", role_id: warehouse_role.id) }
 

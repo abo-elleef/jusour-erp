@@ -20,7 +20,7 @@ module Admin
         @sort = params[:sort].presence_in(Lead::INDEX_SORTABLE_COLUMNS) || Lead::INDEX_DEFAULT_SORT
         @direction = params[:dir].presence_in(%w[asc desc]) || Lead::INDEX_DEFAULT_SORT_DIRECTION
 
-        base = Lead.all
+        base = ownership.leads
         base = base.where(location_id: current_user.accessible_location_ids) unless current_user.all_locations?
         base = base.where(assigned_user_id: @assigned_user_id) if @assigned_user_id
 
@@ -61,6 +61,7 @@ module Admin
       def create
         @lead = Lead.new(lead_params)
         @lead.created_by = current_user
+        @lead.assigned_user = current_user if ownership.limited?
 
         if @lead.save
           redirect_to admin_sales_lead_path(@lead), notice: t("sales.leads.flash.created")
@@ -136,8 +137,13 @@ module Admin
         @lead.reassign!(to: new_user, by: current_user) if new_user
       end
 
+      # Someone else's lead is a 404 for a rep (Sales::OwnershipScope).
       def set_lead
-        @lead = Lead.find(params[:id])
+        @lead = ownership.leads.find(params[:id])
+      end
+
+      def ownership
+        @ownership ||= ::Sales::OwnershipScope.for(current_user)
       end
 
       def load_form_data
@@ -145,8 +151,11 @@ module Admin
         @assignable_users = assignable_users
       end
 
+      # A rep limited to their own leads can only keep a lead on themselves;
+      # handing leads around is a manager's job.
       def assignable_users
-        User.where(company_id: Current.company.id).active.order(:name)
+        users = User.where(company_id: Current.company.id).active.order(:name)
+        ownership.limited? ? users.where(id: current_user.id) : users
       end
 
       def apply_sort(scope)
