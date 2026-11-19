@@ -5141,6 +5141,7 @@ ar:
       reason: "السبب"
       block_confirm: "حظر هذا العميل من الطلب أونلاين؟"
       blocked_heading: "محظور من الطلب أونلاين"
+      blocked_badge: "محظور"
       blocked_by: "بواسطة %{name} في %{time}"
       unblock: "إلغاء الحظر"
       unblock_confirm: "السماح لهذا العميل بالطلب أونلاين مجددًا؟"
@@ -5203,8 +5204,6 @@ ar:
       customer_heading: "نشاط العميل"
       read_only: "قبل التحويل — للعرض فقط"
       none: "لا يوجد نشاط مُسجَّل بعد."
-      recent_heading: "أحدث النشاط"
-      open_tab: "كل النشاط"
       logged: "تم التسجيل."
     show:
       tabs:

@@ -63,8 +63,6 @@ module Admin
         # The admin layout is set explicitly and would override turbo-rails'
         # bare frame layout.
         render "tab", layout: "turbo_rails/frame"
-      else
-        @online_request_counts = OnlineOrderRequest.where(customer: @customer).group(:status).count
       end
     end
 
@@ -160,7 +158,6 @@ module Admin
     private
 
     TAB_PAGE_SIZE = 25
-    RECENT_ACTIVITY_SIZE = 5
 
     # Which tabs this customer page has. Activity and the lead's history exist
     # only where the distribution sales area does (Sales::OwnershipScope); a
@@ -191,11 +188,11 @@ module Admin
       current_user.can?("customers:manage") && Current.company&.feature_enabled?(:ar_credit_sales)
     end
 
+    # The customer's details: block status, online-order summary, numbers,
+    # the lead it came from, addresses. The lists live in their own tabs.
     def load_overview_tab
-      return unless @sales_area
-
-      load_origin
-      @recent_activities = @customer.customer_activities.includes(:user).recent.limit(RECENT_ACTIVITY_SIZE)
+      @online_request_counts = OnlineOrderRequest.where(customer: @customer).group(:status).count
+      load_origin if @sales_area
     end
 
     # Bazzar slice F: the customer's own timeline since it became a customer.
@@ -208,9 +205,9 @@ module Admin
 
     # The lead it came from and that lead's timeline, read-only.
     def load_lead_history_tab
-      load_origin
       @lead_activities_pagy, @lead_activities = pagy(:offset,
-        @lead.lead_activities.includes(:user).reorder(nil).recent, limit: TAB_PAGE_SIZE)
+        ::LeadActivity.where(lead_id: @customer.originating_lead_id).includes(:user).recent,
+        limit: TAB_PAGE_SIZE)
     end
 
     def load_invoices_tab

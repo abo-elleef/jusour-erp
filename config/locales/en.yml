@@ -5047,6 +5047,7 @@ en:
       reason: "Reason"
       block_confirm: "Block this customer from ordering online?"
       blocked_heading: "Blocked from online ordering"
+      blocked_badge: "Blocked"
       blocked_by: "By %{name} on %{time}"
       unblock: "Unblock"
       unblock_confirm: "Let this customer order online again?"
@@ -5101,8 +5102,6 @@ en:
       customer_heading: "Customer activity"
       read_only: "Before conversion — read only"
       none: "No activity logged yet."
-      recent_heading: "Latest activity"
-      open_tab: "All activity"
       logged: "Logged."
     show:
       tabs:

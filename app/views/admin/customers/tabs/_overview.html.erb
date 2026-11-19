@@ -1,22 +1,52 @@
+<%# The customer's details: status, numbers, where it came from, addresses.
+    Lists (activity, the lead's timeline, invoices, orders) live in their tabs. %>
+<% stat_card_class = "rounded-2xl border border-gray-200 bg-white p-4" %>
+<% action_btn_class = "text-sm font-semibold px-4 py-2 rounded-xl transition-colors" %>
 <div class="space-y-6">
-  <%= render "admin/customers/origin", lead: @lead if @lead %>
-
-  <% if @sales_area %>
-    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden" data-testid="recent-activities">
-      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-baseline justify-between gap-2">
-        <h2 class="text-sm font-semibold text-gray-900"><%= t("customers.activities.recent_heading") %></h2>
-        <%= link_to t("customers.activities.open_tab"), admin_customer_path(@customer, tab: "activity"),
-              class: "text-sm font-semibold text-amber-700 hover:text-amber-800 hover:underline" %>
+  <% if @customer.blocked? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 p-4 flex flex-wrap items-start justify-between gap-4">
+      <div class="text-sm text-red-900">
+        <p class="font-bold"><%= t("customers.block.blocked_heading") %></p>
+        <p class="mt-1 whitespace-pre-wrap"><%= @customer.blocked_reason %></p>
+        <p class="mt-1 text-xs text-red-700">
+          <%= t("customers.block.blocked_by", name: @customer.blocked_by&.name || t("customers.shared.em_dash"),
+                time: l(@customer.blocked_at, format: :short)) %>
+        </p>
       </div>
-      <ul class="divide-y divide-gray-100">
-        <% if @recent_activities.empty? %>
-          <li class="p-6 text-center text-sm text-gray-500"><%= t("customers.activities.none") %></li>
-        <% else %>
-          <%= render partial: "admin/sales/leads/activity", collection: @recent_activities, as: :activity %>
-        <% end %>
-      </ul>
-    </section>
+      <% if policy(@customer).unblock? %>
+        <%= button_to t("customers.block.unblock"), unblock_admin_customer_path(@customer), method: :post,
+              form: { data: { turbo_confirm: t("customers.block.unblock_confirm"), turbo_frame: "_top" } },
+              class: "#{action_btn_class} bg-white border border-red-300 text-red-800 hover:bg-red-100" %>
+      <% end %>
+    </div>
   <% end %>
+
+  <% if @online_request_counts.present? %>
+    <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-sm text-sky-900">
+      <p>
+        <span class="font-semibold"><%= t("customers.online_orders.summary", count: @online_request_counts.values.sum) %></span>
+        <% OnlineOrderRequest::STATUSES.each do |status| %>
+          <% next unless @online_request_counts[status].to_i.positive? %>
+          · <%= t("pos.online_orders.statuses.#{status}") %> <span class="tabular-nums"><%= @online_request_counts[status] %></span>
+        <% end %>
+      </p>
+      <%= link_to t("customers.online_orders.view"), admin_online_order_requests_path(q: { customer_id_eq: @customer.id }), data: { turbo_frame: "_top" },
+            class: "font-semibold text-sky-800 hover:underline" %>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="<%= stat_card_class %>">
+      <p class="text-sm text-gray-500"><%= t("customers.show.loyalty_balance") %></p>
+      <p class="text-2xl font-bold text-amber-600 mt-1 tabular-nums"><%= customer_loyalty_points_label(@customer.loyalty_points) %></p>
+    </div>
+    <div class="<%= stat_card_class %>">
+      <p class="text-sm text-gray-500"><%= t("customers.show.lifetime_spend") %></p>
+      <p class="text-2xl font-bold mt-1 tabular-nums"><%= format_money(@customer.total_spent_cents) %></p>
+    </div>
+  </div>
+
+  <%= render "admin/customers/origin", lead: @lead if @lead %>
 
   <section>
     <h2 class="text-lg font-bold mb-3"><%= t("customers.addresses.heading") %></h2>
@@ -42,4 +72,21 @@
       <p class="text-gray-500 text-sm"><%= t("customers.addresses.none") %></p>
     <% end %>
   </section>
+
+  <% if policy(@customer).block? && !@customer.blocked? %>
+    <details class="rounded-2xl border border-gray-200 bg-white p-4">
+      <summary class="cursor-pointer text-sm font-semibold text-gray-700"><%= t("customers.block.block") %></summary>
+      <p class="text-xs text-gray-500 mt-2"><%= t("customers.block.hint") %></p>
+      <%= form_with url: block_admin_customer_path(@customer), method: :post, class: "mt-3 flex flex-wrap items-end gap-3",
+            data: { turbo_confirm: t("customers.block.block_confirm"), turbo_frame: "_top" } do %>
+        <div class="flex-1 min-w-[14rem]">
+          <%= label_tag :blocked_reason, t("customers.block.reason"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+          <%= text_field_tag :blocked_reason, nil, required: true, maxlength: 500,
+                class: "w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" %>
+        </div>
+        <%= submit_tag t("customers.block.block"), name: nil,
+              class: "#{action_btn_class} bg-red-600 hover:bg-red-700 text-white cursor-pointer" %>
+      <% end %>
+    </details>
+  <% end %>
 </div>

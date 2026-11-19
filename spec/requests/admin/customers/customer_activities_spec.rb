@@ -93,13 +93,16 @@ RSpec.describe "Customer activities", type: :request do
       expect(response.body).to include('id="customer_tab"')
       expect(response.body).not_to include("First call with the lead", "Signed the first order")
 
+      # Overview: the customer's details incl. the lead it came from — no lists.
       tab!(customer)
       expect(response.body).to include('data-testid="customer-origin"', admin_sales_lead_path(lead))
-      expect(response.body).to include(admin_customer_path(customer, tab: "lead_history"))
-      expect(response.body[/data-testid="recent-activities".*?<\/ul>/m]).to include("Signed the first order")
-
-      tab!(customer, "lead_history")
       expect(response.body).to include(I18n.l(lead.converted_at.to_date, format: :long))
+      expect(response.body).to include(admin_customer_path(customer, tab: "lead_history"))
+      expect(response.body).not_to include("Signed the first order", "First call with the lead")
+
+      # Lead history: the timeline only; the origin card is not repeated.
+      tab!(customer, "lead_history")
+      expect(response.body).not_to include('data-testid="customer-origin"')
       lead_list = response.body[/data-testid="lead-activities".*?<\/ul>/m]
       expect(lead_list).to include("First call with the lead",
         I18n.t("sales.leads.activity.converted", customer: customer.name))
@@ -147,7 +150,7 @@ RSpec.describe "Customer activities", type: :request do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(admin_customer_path(customer, tab: "orders"))
       expect(response.body).not_to include(admin_customer_path(customer, tab: "activity"),
-        'data-testid="recent-activities"', 'data-testid="customer-origin"')
+        'data-testid="customer-origin"')
 
       tab!(customer, "activity")
       expect(response.body).not_to include('data-testid="customer-activities"')
