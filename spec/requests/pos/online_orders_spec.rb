@@ -123,6 +123,11 @@ RSpec.describe "POS online orders inbox", type: :request do
     card = Nokogiri::HTML(response.body).at("[data-testid=online-order-customer-check]")
     expect(card.at("[data-testid=online-order-trust]")["data-level"]).to eq("trusted")
     expect(card.text).to include("Mona Saleh", "1,000.00", branch.name)
+    # The last order opens on the register, so the cashier can see what they usually take.
+    last = regular.orders.completed.order(:created_at).last
+    link = card.at("[data-testid=online-order-check-last-order]")
+    expect(link["href"]).to eq(pos_order_path(last))
+    expect(link.text).to include("##{last.order_number}")
 
     patch accept_pos_online_order_request_path(request_record)
     expect(request_record.reload).to be_accepted

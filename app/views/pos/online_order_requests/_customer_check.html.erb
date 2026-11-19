@@ -64,7 +64,17 @@
         <div class="flex justify-between gap-3 sm:col-span-2">
           <dt class="text-gray-500"><%= t("pos.online_orders.check.last_order") %></dt>
           <dd class="text-end font-semibold text-gray-900">
-            <%= l((last.placed_at || last.created_at).to_date) %><% if last.location %> · <%= last.location.name %><% end %>
+            <%# The order itself, so the cashier can see what this customer usually takes.
+                The admin request page opens it in admin; the register in the POS. %>
+            <% last_label = [last.order_number.presence && "##{last.order_number}", l((last.placed_at || last.created_at).to_date)].compact.join(" · ") %>
+            <% if last.id.present? %>
+              <%= link_to last_label, controller_path.start_with?("admin/") ? admin_order_path(last.id) : pos_order_path(last.id),
+                    class: "text-amber-700 underline decoration-amber-300 underline-offset-2 hover:text-amber-900",
+                    data: { turbo_frame: "_top", testid: "online-order-check-last-order" } %>
+            <% else %>
+              <%= last_label %>
+            <% end %>
+            <% if last.location %> · <%= last.location.name %><% end %>
             · <span class="tabular-nums"><%= format_money(last.total_cents) %></span>
           </dd>
         </div>

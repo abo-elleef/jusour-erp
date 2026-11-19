@@ -52,6 +52,18 @@ RSpec.describe "Admin online orders", type: :request do
     expect(response.body).to include(admin_order_path(accepted.reload.order))
   end
 
+  it "links the customer's last order to its admin order page" do
+    regular = create(:customer, company: company, name: "Mona Saleh", phone: "01001234567")
+    last = create(:order, user: owner, customer: regular, location: branch, status: "completed",
+                          total_cents: 15_000, placed_at: 2.days.ago)
+    request = OnlineOrders::SubmitService.call(location: branch, params: online_params(item: item)).request
+
+    get admin_online_order_request_path(request)
+    links = Nokogiri::HTML(response.body).css("[data-testid=online-order-check-last-order]")
+    expect(links).not_to be_empty
+    expect(links.map { |a| a["href"] }.uniq).to eq([admin_order_path(last)])
+  end
+
   it "filters admin orders by source" do
     request_record = OnlineOrders::SubmitService.call(location: branch, params: online_params(item: item)).request
     online = OnlineOrders::AcceptService.call(request: request_record, user: owner).order
