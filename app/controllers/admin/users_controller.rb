@@ -21,8 +21,9 @@ module Admin
       @accountant_count = scope.where(role: "accountant").count
       @cashier_count = scope.where(role: "cashier").count
       @kitchen_count = scope.where(role: "kitchen").count
+      @role_options = Role.ordered.to_a
       @filtered = ransack_filtered? || @location_filter.present?
-      @pagy, @users = pagy(:offset, @q.result.order(@sort => @sort_direction), limit: 25)
+      @pagy, @users = pagy(:offset, @q.result.includes(:assigned_role).order(@sort => @sort_direction), limit: 25)
     end
 
     def new

@@ -1010,6 +1010,7 @@ en:
     title: "Roles & permissions"
     description: "Define what each role can see and do. Assign roles to staff from their profile."
     new_button: "New role"
+    view_staff: "Show the staff in this role"
     name: "Role"
     permissions: "Permissions"
     staff: "Staff"

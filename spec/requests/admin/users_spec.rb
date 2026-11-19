@@ -35,6 +35,29 @@ RSpec.describe "Admin::Users", type: :request do
         expect(response.body).to include(I18n.t("staff.show.inactive"))
       end
 
+      it "filters by assigned role, including a custom role, and shows its name" do
+        role = Role.create!(company: company, name: "Floor Supervisor", permissions: %w[customers:manage])
+        create(:user, company: company, name: "Sam Supervisor", role_id: role.id)
+        create(:user, company: company, name: "Carl Cashier")
+
+        get admin_users_path, params: { q: { role_id_eq: role.id } }
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include("Sam Supervisor")
+        expect(response.body).to include("Floor Supervisor")
+        expect(response.body).not_to include("Carl Cashier")
+      end
+
+      it "links each role's staff count on the roles page to the filtered staff list" do
+        role = Role.create!(company: company, name: "Floor Supervisor", permissions: %w[customers:manage])
+        create(:user, company: company, role_id: role.id)
+
+        get admin_roles_path
+
+        expect(response).to have_http_status(:ok)
+        expect(response.body).to include(CGI.escapeHTML(admin_users_path(q: { role_id_eq: role.id })))
+      end
+
       it "filters by active status" do
         active_staff = create(:user, company: company, name: "Active Staff")
         create(:user, company: company, name: "Inactive Staff", active: false)

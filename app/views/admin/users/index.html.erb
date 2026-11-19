@@ -19,7 +19,7 @@
   <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
     <% location_params = { location_id: @location_filter.presence }.compact %>
     <%= link_to admin_users_path(**location_params),
-          class: orders_stat_card_class(@q.role_eq.blank? && @q.active_eq.blank? && @q.name_or_email_cont.blank?) do %>
+          class: orders_stat_card_class(@q.role_eq.blank? && @q.role_id_eq.blank? && @q.active_eq.blank? && @q.name_or_email_cont.blank?) do %>
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("staff.index.stats_total") %></p>
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
     <% end %>
@@ -69,9 +69,9 @@
           <%= f.search_field :name_or_email_cont, placeholder: t("staff.index.search_placeholder"), class: input_class %>
         </div>
         <div class="min-w-[10rem]">
-          <%= f.label :role_eq, t("staff.index.role"), class: label_class %>
-          <%= f.select :role_eq,
-                options_for_select(User::ROLES.map { |r| [user_role_label(r), r] }, @q.role_eq),
+          <%= f.label :role_id_eq, t("staff.index.role"), class: label_class %>
+          <%= f.select :role_id_eq,
+                options_for_select(@role_options.map { |r| [r.name, r.id] }, @q.role_id_eq),
                 { include_blank: t("staff.index.all_roles") },
                 class: "#{input_class} appearance-none" %>
         </div>
@@ -151,7 +151,7 @@
                 <td class="p-3 text-gray-600"><%= staff.email %></td>
                 <td class="p-3">
                   <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border <%= user_role_class(staff.role) %> <%= user_role_border_class(staff.role) %>">
-                    <%= staff.role_label %>
+                    <%= staff.assigned_role&.name || staff.role_label %>
                   </span>
                 </td>
                 <td class="p-3 text-end tabular-nums text-gray-700">

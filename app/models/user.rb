@@ -331,7 +331,7 @@ class User < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name email role active created_at]
+    %w[name email role role_id active created_at]
   end
 
   def self.ransackable_associations(_auth_object = nil)
