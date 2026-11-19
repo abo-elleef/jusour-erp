@@ -82,6 +82,36 @@
     </div>
   </section>
 
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6" data-testid="settings-notification-levels">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("settings.notifications.title") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("settings.notifications.hint") %></p>
+    </div>
+    <div class="p-5">
+      <ul class="mb-4 grid gap-2 sm:grid-cols-3 text-xs text-gray-600">
+        <% Notifications::Levels::LEVELS.each do |level| %>
+          <li class="rounded-xl bg-gray-50 px-3 py-2">
+            <span class="block font-semibold text-gray-900"><%= t("notifications.levels.#{level}") %></span>
+            <%= t("notifications.levels.#{level}_hint") %>
+          </li>
+        <% end %>
+      </ul>
+      <%= form_with url: admin_settings_path, method: :patch, class: "space-y-4" do %>
+        <div class="divide-y divide-gray-100">
+          <% @notification_levels.each do |key, level| %>
+            <label class="flex items-center justify-between gap-4 py-2">
+              <span class="text-sm text-gray-900"><%= t("notifications.keys.#{key}") %></span>
+              <%= select_tag "notification_levels[#{key}]",
+                    options_for_select(Notifications::Levels::LEVELS.map { |l| [t("notifications.levels.#{l}") + (Notifications::Levels::DEFAULTS[key] == l ? " (#{t("settings.notifications.default")})" : ""), l] }, level),
+                    class: "rounded-lg border-gray-300 text-sm focus:border-amber-500 focus:ring-amber-500/40" %>
+            </label>
+          <% end %>
+        </div>
+        <%= submit_tag t("actions.save"), class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
+      <% end %>
+    </div>
+  </section>
+
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
     <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
       <h2 class="text-sm font-semibold text-gray-900"><%= t("settings.loyalty") %></h2>

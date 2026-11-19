@@ -1,12 +1,15 @@
 import { Controller } from "@hotwired/stimulus"
 
 // Live notifications in the admin layout. Cards arrive over the user's own
-// Turbo stream (Notifications::Broadcast) and are prepended into the container;
-// each one slides in, rings once, and stays until the user opens or closes it.
+// Turbo stream (Notifications::Broadcast) and are prepended into the container.
+// Each card carries its kind's level (Notifications::Levels): an "alert" card
+// rings and stays until the user opens or closes it; a "popup" card is silent
+// and fades on its own (the timer pauses while the pointer is over it).
 //
 // When the live connection drops and comes back (bad Wi-Fi, laptop sleep), the
 // bell count is fetched again, since pushes sent meanwhile were lost.
 const MAX_VISIBLE = 4
+const POPUP_MS = 8000
 
 export default class extends Controller {
   static targets = ["container", "item"]
@@ -33,15 +36,30 @@ export default class extends Controller {
     if (twins.length > 0) { item.remove(); return }
 
     this.animateIn(item)
-    this.ring()
+    if (item.dataset.level === "popup") {
+      this.autoDismiss(item)
+    } else {
+      this.ring()
+    }
     // Newest first; drop the oldest beyond the cap — they stay in the bell list.
     this.itemTargets.slice(MAX_VISIBLE).forEach((old) => old.remove())
   }
 
   dismiss(event) {
     const item = event.currentTarget.closest("[data-notification-popups-target='item']")
-    if (!item) return
+    if (item) this.fadeOut(item)
+  }
 
+  // Fades a "popup" card after POPUP_MS; hovering holds it, leaving restarts.
+  autoDismiss(item) {
+    const start = () => { item._popupTimer = window.setTimeout(() => this.fadeOut(item), POPUP_MS) }
+    item.addEventListener("mouseenter", () => window.clearTimeout(item._popupTimer))
+    item.addEventListener("mouseleave", start)
+    start()
+  }
+
+  fadeOut(item) {
+    window.clearTimeout(item._popupTimer)
     item.style.transition = "opacity 0.2s ease, transform 0.2s ease"
     item.style.opacity = "0"
     item.style.transform = "translateY(-0.5rem)"

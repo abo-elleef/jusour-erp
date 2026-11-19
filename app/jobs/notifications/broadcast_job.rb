@@ -4,7 +4,8 @@ module Notifications
   # Pushes a notification to its recipient's open admin tabs, so it pops up
   # without a page reload (the same idea as the online-order badge on the POS).
   #
-  # popup: true  — a new notification: refresh the bell count and show a card.
+  # popup: true  — a new notification: refresh the bell count and, unless its
+  #                kind is quiet (Notifications::Levels), show a card.
   # popup: false — read state changed (mark read / mark all read): refresh the
   #                bell count only, so every open tab drops the badge together.
   #
@@ -23,7 +24,10 @@ module Notifications
 
       Current.set(company: user.company) do
         Broadcast.badge(user)
-        Broadcast.popup(user, notification) if popup
+        if popup
+          level = Levels.for(notification.params&.dig("message_key"))
+          Broadcast.popup(user, notification, level: level) unless level == "quiet"
+        end
       end
     end
   end

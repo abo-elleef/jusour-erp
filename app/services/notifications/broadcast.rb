@@ -24,11 +24,12 @@ module Notifications
       end
     end
 
-    def popup(user, notification)
+    # level: "alert" (stays, rings) or "popup" (fades, silent); see Levels.
+    def popup(user, notification, level: "alert")
       each_locale do |locale|
         Turbo::StreamsChannel.broadcast_prepend_to(
           stream(user, locale), target: POPUPS_ID,
-          partial: "admin/notifications/popup", locals: { notification: notification }
+          partial: "admin/notifications/popup", locals: { notification: notification, level: level }
         )
       end
     end
