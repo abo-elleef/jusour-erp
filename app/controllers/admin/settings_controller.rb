@@ -13,6 +13,7 @@ module Admin
       @receipt_logo = Current.company.company_setting&.receipt_logo
       @restrict_stock_transfers_to_source = Setting.restrict_stock_transfers_to_source?
       @allow_fractional_sales_quantities = Setting.allow_fractional_sales_quantities?
+      @require_eleven_digit_phones = Setting.require_eleven_digit_phones?
       @drawer_close_mode = Setting.drawer_close_mode
       @notification_levels = ::Notifications::Levels.all
       @tax_rates = TaxRate.ordered
@@ -34,6 +35,9 @@ module Admin
       end
       if params.key?(:allow_fractional_sales_quantities)
         Setting.set("allow_fractional_sales_quantities", params[:allow_fractional_sales_quantities])
+      end
+      if params.key?(:require_eleven_digit_phones)
+        Setting.set("require_eleven_digit_phones", params[:require_eleven_digit_phones])
       end
       if Setting::DRAWER_CLOSE_MODES.include?(params[:drawer_close_mode])
         Setting.set("drawer_close_mode", params[:drawer_close_mode])

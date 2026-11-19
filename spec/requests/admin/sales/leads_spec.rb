@@ -2,11 +2,7 @@
 
 require "rails_helper"
 
-# NOTE: every example here is currently blocked by a pre-existing, unrelated bug —
-# see spec/models/lead_spec.rb's header comment. Remove this skip once
-# users.wages_account_code is fixed.
-RSpec.describe "Admin::Sales::Leads", type: :request,
-  skip: "blocked by pre-existing users.wages_account_code NOT NULL bug (no migration/code sets it)" do
+RSpec.describe "Admin::Sales::Leads", type: :request do
   include Devise::Test::IntegrationHelpers
 
   let(:company) { create(:company, business_type: "distribution") }
@@ -91,5 +87,43 @@ RSpec.describe "Admin::Sales::Leads", type: :request,
 
     expect(response).to redirect_to(admin_sales_leads_path)
     expect(lead.reload).not_to be_converted
+  end
+
+  describe "phone rules" do
+    def error_box
+      Nokogiri::HTML(response.body).at("[data-testid=lead-errors]")
+    end
+
+    it "refuses a repeated phone and links to the existing lead" do
+      existing = create(:lead, created_by: owner, name: "Dr. Mona", phone: "01011111111")
+
+      expect {
+        post admin_sales_leads_path, params: { lead: { name: "Dr. Mona again", phone: "٠١٠ ١١١١ ١١١١" } }
+      }.not_to change(Lead, :count)
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(error_box.text).to include("Dr. Mona")
+      expect(error_box.at("a")["href"]).to eq(admin_sales_lead_path(existing))
+    end
+
+    it "refuses a customer's phone and links to the customer's page" do
+      customer = create(:customer, name: "Al Shifa Clinic", phone: "01033333333")
+
+      post admin_sales_leads_path, params: { lead: { name: "Al Shifa", phone: "01099999999", phone_secondary: "01033333333" } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(error_box.text).to include("Al Shifa Clinic")
+      expect(error_box.at("a")["href"]).to eq(admin_customer_path(customer))
+    end
+
+    it "refuses a 10-digit phone only when the company setting is on" do
+      post admin_sales_leads_path, params: { lead: { name: "Short one", phone: "0101234567" } }
+      expect(response).to have_http_status(:redirect)
+
+      patch admin_settings_path, params: { require_eleven_digit_phones: "1" }
+      post admin_sales_leads_path, params: { lead: { name: "Short two", phone: "0101234568" } }
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(error_box.text).to include(I18n.t("phones.errors.eleven_digits", field: Lead.human_attribute_name(:phone)))
+    end
   end
 end

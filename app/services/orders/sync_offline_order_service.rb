@@ -294,7 +294,9 @@ module Orders
 
     def create_customer
       Customer.transaction(requires_new: true) do
-        Customer.create!(name: @payload[:customer_name].to_s.strip.presence, phone: customer_phone)
+        # The order is already paid; a length rule must not fail its sync.
+        Customer.create!(name: @payload[:customer_name].to_s.strip.presence, phone: customer_phone,
+          skip_phone_length_check: true)
       end
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
       Customer.find_by(phone: customer_phone) || Customer.find_by(phone_secondary: customer_phone) || raise

@@ -2,14 +2,7 @@
 
 require "rails_helper"
 
-# NOTE: every example here is currently blocked by a pre-existing, unrelated bug:
-# `users.wages_account_code` is NOT NULL with no default and nothing in the app
-# (no migration, no model/controller code) ever sets it, so `create(:user)` fails
-# for any spec on main, not just this one (e.g. spec/models/voucher_numbering_spec.rb
-# fails the same way). Left for the user to fix separately — do not work around it
-# here. Remove this skip once that's resolved.
-RSpec.describe Lead, type: :model,
-  skip: "blocked by pre-existing users.wages_account_code NOT NULL bug (no migration/code sets it)" do
+RSpec.describe Lead, type: :model do
   let(:company) { create(:company) }
   let(:creator) { create(:user, company: company) }
 

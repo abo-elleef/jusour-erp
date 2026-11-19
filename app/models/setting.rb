@@ -9,7 +9,7 @@ class Setting
     print_encoding print_code_page arabic_font_path receipt_logo_url
     receipt_footer_text business_day_start_hour
     restrict_stock_transfers_to_source allow_fractional_sales_quantities
-    drawer_close_mode
+    drawer_close_mode require_eleven_digit_phones
   ].freeze
 
   INTEGER_COLUMNS = %w[
@@ -17,7 +17,9 @@ class Setting
     print_agent_port print_code_page business_day_start_hour
   ].freeze
 
-  BOOLEAN_COLUMNS = %w[restrict_stock_transfers_to_source allow_fractional_sales_quantities].freeze
+  BOOLEAN_COLUMNS = %w[
+    restrict_stock_transfers_to_source allow_fractional_sales_quantities require_eleven_digit_phones
+  ].freeze
 
   def self.get(key, default = nil)
     row = CompanySetting.current
@@ -69,6 +71,12 @@ class Setting
   # fractions (a client selling by weight). Off by default.
   def self.allow_fractional_sales_quantities?
     get_bool("allow_fractional_sales_quantities", false)
+  end
+
+  # Lead and customer phones must be exactly 11 digits (see ContactPhones).
+  # Off by default.
+  def self.require_eleven_digit_phones?
+    get_bool("require_eleven_digit_phones", false)
   end
 
   DRAWER_CLOSE_MODES = %w[documented simple].freeze

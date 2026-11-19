@@ -1139,6 +1139,11 @@ ar:
       hint: "سلوك تحويلات المخزون عندما تكون كميات المصدر غير مكتملة."
       restrict_transfers: "تقييد التحويلات بمخزون المصدر"
       restrict_transfers_hint: "عند التفعيل، لا يمكن إرسال أكثر مما هو متوفر في موقع المصدر. عند الإيقاف يمكن الإرسال بشكل عادي وقد يصبح رصيد المصدر سالباً حتى يُصحَّح المخزون."
+    phones:
+      title: "أرقام الهاتف"
+      hint: "قواعد أرقام الهاتف للعملاء المحتملين والعملاء."
+      require_eleven_digits: "رقم الهاتف يجب أن يكون ١١ رقمًا بالضبط"
+      require_eleven_digits_hint: "تُطبَّق عند إضافة رقم هاتف لعميل محتمل أو عميل أو تغييره؛ الأرقام المحفوظة سابقًا تبقى كما هي. طلبات المنيو الإلكتروني والكاشير دون إنترنت لا تُمنع."
     sales:
       title: "المبيعات"
       hint: "طريقة إدخال الكميات في فواتير البيع والمرتجعات."
@@ -3225,6 +3230,10 @@ ar:
       errors:
         phone_or_email_required: "أدخل رقم هاتف أو بريدًا إلكترونيًا."
         lost_reason_required: "مطلوب عند وضع علامة خسارة على عميل محتمل"
+        phone_used_by_lead: "%{phone} مسجَّل بالفعل على العميل المحتمل «%{name}»"
+        phone_used_by_customer: "%{phone} يخص العميل «%{name}» — سجّل هذا التواصل في صفحة العميل بدلًا من ذلك"
+        open_lead: "فتح العميل المحتمل"
+        open_customer: "فتح صفحة العميل"
       flash:
         created: "تم إنشاء العميل المحتمل."
         updated: "تم تحديث العميل المحتمل."
@@ -5047,6 +5056,9 @@ ar:
         vendor_basket_title: "انحراف أسعار الشراء"
         vendor_purchases_summary_title: "ملخص مشتريات الموردين"
 
+  phones:
+    errors:
+      eleven_digits: "%{field} يجب أن يكون ١١ رقمًا بالضبط"
   customers:
     online_orders:
       summary:
@@ -7858,6 +7870,12 @@ ar:
         one: "موظف"
         other: "موظفون"
     attributes:
+      lead:
+        phone: "الهاتف"
+        phone_secondary: "الهاتف الثاني"
+      customer:
+        phone: "الهاتف"
+        phone_secondary: "الهاتف الثاني"
       customer_invoice:
         customer: "العميل"
         location: "موقع البيع"
