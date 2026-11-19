@@ -3,12 +3,13 @@
 module Admin
   module Sales
     class CustomerInvoicesController < BaseController
-      before_action :set_invoice, only: %i[show edit update confirm approve_payment reject_payment mark_dispatched complete_shipping void attach_payment_proof_image]
-      before_action :require_stage_visible, only: %i[show edit update]
+      before_action :set_invoice, only: %i[show edit update confirm approve_payment reject_payment mark_dispatched complete_shipping void attach_payment_proof_image update_shipping_proof]
+      before_action :require_stage_visible, only: %i[show edit update update_shipping_proof]
       before_action :require_draft_for_edit, only: %i[edit update]
       before_action :require_payment_approver, only: %i[approve_payment reject_payment]
       before_action -> { require_sales_permission("sales:dispatch") }, only: :mark_dispatched
       before_action -> { require_sales_permission("sales:complete_shipping") }, only: :complete_shipping
+      before_action :require_shipping_proof_permission, only: :update_shipping_proof
 
       def index
         @status = params[:status].presence_in(%w[draft pending_payment_confirmation confirmed historical void])
@@ -23,6 +24,11 @@ module Admin
         @to_date = parse_filter_date(params[:to_date])
         scope = scope.where(invoice_date: @from_date..) if @from_date
         scope = scope.where(invoice_date: ..@to_date) if @to_date
+        @tracking = params[:tracking].to_s.strip.presence
+        if @tracking
+          scope = scope.where("customer_invoices.shipping_tracking_number ILIKE ?",
+            "%#{CustomerInvoice.sanitize_sql_like(@tracking)}%")
+        end
         @customers = Customer.order(:name)
         @pagy, @invoices = pagy(:offset, scope, limit: 50)
         @draft_count = visible.draft.count
@@ -104,7 +110,13 @@ module Admin
 
       # "dispatch" is reserved by ActionController::Metal (the core method that
       # invokes an action) — naming this action that would shadow it.
+      #
+      # The waybill photo and tracking number are optional here. They're
+      # assigned before the service runs so its own update! saves them in the
+      # same transaction: a bad image refuses the whole dispatch (nothing is
+      # charged) instead of leaving a shipped invoice with a half-saved proof.
       def mark_dispatched
+        @invoice.assign_attributes(shipping_proof_params)
         ::Sales::DispatchCustomerInvoiceService.new(@invoice, current_user).call
         redirect_after_change(@invoice, notice: t("sales.customer_invoices.flash.dispatched"))
       rescue ::Sales::DispatchCustomerInvoiceService::Error => e
@@ -160,7 +172,41 @@ module Admin
           notice: t("sales.customer_invoices.flash.payment_proof_attached")
       end
 
+      # Adds or changes the waybill photo / tracking number after dispatch.
+      # A blank tracking number clears it; a blank photo keeps the current one
+      # (replace to change, no delete — same as the payment proof).
+      def update_shipping_proof
+        unless @invoice.delivery? && @invoice.shipping_proof_editable?
+          redirect_to admin_sales_customer_invoice_path(@invoice),
+            alert: t("sales.customer_invoices.flash.cannot_update_shipping_proof")
+          return
+        end
+
+        attrs = shipping_proof_params
+        attrs[:shipping_tracking_number] = params.dig(:customer_invoice, :shipping_tracking_number).to_s
+        if @invoice.update(attrs)
+          redirect_to admin_sales_customer_invoice_path(@invoice),
+            notice: t("sales.customer_invoices.flash.shipping_proof_saved")
+        else
+          redirect_to admin_sales_customer_invoice_path(@invoice),
+            alert: @invoice.errors.full_messages.to_sentence
+        end
+      end
+
       private
+
+      # Only what was actually sent: a blank file field means "keep the photo".
+      def shipping_proof_params
+        raw = params.fetch(:customer_invoice, {}).permit(:shipping_tracking_number, :waybill_image)
+        raw.to_h.symbolize_keys.select { |_key, value| value.present? }
+      end
+
+      def require_shipping_proof_permission
+        return if current_user.can?("sales:dispatch") || current_user.can?("sales:complete_shipping")
+
+        flash[:alert] = t("flash.access_denied")
+        redirect_to admin_sales_customer_invoice_path(@invoice)
+      end
 
       # Stages the status/shipping filter chips and count cards are shown for:
       # every stage for the owner and unconfigured roles; otherwise the stages

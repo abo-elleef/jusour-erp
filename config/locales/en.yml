@@ -2957,6 +2957,8 @@ en:
       filters:
         shipping: "Shipping"
         all_shipping: "All"
+        tracking: "Tracking number"
+        tracking_placeholder: "Search by tracking number"
         all_customers: "All customers"
         from_date: "From"
         to_date: "To"
@@ -3118,6 +3120,18 @@ en:
         payment_proof_required: "Choose a photo to upload."
         cannot_attach_payment_proof: "Cannot attach a photo to a voided invoice."
         confirm_failed: "Could not confirm the sale: %{error}"
+        shipping_proof_saved: "Shipping details saved."
+        cannot_update_shipping_proof: "A waybill and tracking number can only be added to a delivery invoice once it has shipped."
+      shipping_proof:
+        title: "Shipping proof"
+        hint: "The courier's waybill photo and tracking number. Both optional; add or change them any time."
+        tracking_number: "Tracking number"
+        waybill_image: "Waybill photo"
+        optional: "optional"
+        save: "Save shipping details"
+        copy: "Copy"
+        copied: "Copied"
+        open_full_size: "Open full-size photo"
     leads:
       title: "Leads"
       description: "Prospects in your sales funnel, from first contact to their first purchase."
@@ -7429,6 +7443,11 @@ en:
               invalid_image_type: "must be a PNG, JPEG, GIF or WebP image"
               image_too_large: "must be 5 MB or smaller"
         company_setting: *receipt_logo_errors
+        customer_invoice:
+          attributes:
+            waybill_image:
+              invalid_image_type: "must be a JPEG, PNG, WebP or HEIC image"
+              image_too_large: "must be 10 MB or smaller"
         storefront_section:
           attributes:
             base:
@@ -7779,6 +7798,8 @@ en:
         salesperson: "Salesperson"
         shipping_company: "Shipping company"
         sales_payment_method: "E-payment method"
+        shipping_tracking_number: "Tracking number"
+        waybill_image: "Waybill photo"
         treasury: "Treasury"
       customer_invoice_line:
         ingredient: "Product"

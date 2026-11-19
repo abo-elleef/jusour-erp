@@ -2985,6 +2985,8 @@ ar:
       filters:
         shipping: "الشحن"
         all_shipping: "الكل"
+        tracking: "رقم الشحنة"
+        tracking_placeholder: "ابحث برقم الشحنة"
         all_customers: "كل العملاء"
         from_date: "من"
         to_date: "إلى"
@@ -3146,6 +3148,18 @@ ar:
         payment_proof_required: "اختر صورة لرفعها."
         cannot_attach_payment_proof: "لا يمكن إرفاق صورة بفاتورة ملغاة."
         confirm_failed: "تعذّر تأكيد البيع: %{error}"
+        shipping_proof_saved: "تم حفظ بيانات الشحن."
+        cannot_update_shipping_proof: "تُضاف صورة البوليصة ورقم الشحنة لفواتير التوصيل بعد شحنها فقط."
+      shipping_proof:
+        title: "إثبات الشحن"
+        hint: "صورة بوليصة الشحن ورقم الشحنة من شركة الشحن. اختياريان، ويمكن إضافتهما أو تغييرهما في أي وقت."
+        tracking_number: "رقم الشحنة"
+        waybill_image: "صورة بوليصة الشحن"
+        optional: "اختياري"
+        save: "حفظ بيانات الشحن"
+        copy: "نسخ"
+        copied: "تم النسخ"
+        open_full_size: "عرض الصورة بالحجم الكامل"
     leads:
       title: "العملاء المحتملون"
       description: "العملاء المحتملون في قمع مبيعاتك، من أول تواصل حتى أول عملية شراء."
@@ -7552,6 +7566,13 @@ ar:
               invalid_image_type: "يجب أن تكون صورة PNG أو JPEG أو GIF أو WebP"
               image_too_large: "يجب ألا تتجاوز 5 ميجابايت"
         company_setting: *receipt_logo_errors
+        customer_invoice:
+          attributes:
+            waybill_image:
+              invalid_image_type: "صورة بوليصة الشحن يجب أن تكون JPEG أو PNG أو WebP أو HEIC"
+              image_too_large: "صورة بوليصة الشحن يجب ألا تتجاوز 10 ميجابايت"
+            shipping_tracking_number:
+              too_long: "رقم الشحنة يجب ألا يتجاوز %{count} حرفاً"
         storefront_section:
           attributes:
             base:
@@ -7898,6 +7919,8 @@ ar:
         salesperson: "البائع"
         shipping_company: "شركة الشحن"
         sales_payment_method: "طريقة الدفع الإلكتروني"
+        shipping_tracking_number: "رقم الشحنة"
+        waybill_image: "صورة بوليصة الشحن"
         treasury: "الخزينة"
       customer_invoice_line:
         ingredient: "المنتج"

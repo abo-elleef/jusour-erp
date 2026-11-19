@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_19_200000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_19_210500) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -348,6 +348,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_19_200000) do
     t.string "shipping_status"
     t.datetime "shipping_completed_at"
     t.uuid "shipping_completed_by_id"
+    t.string "shipping_tracking_number"
     t.index ["company_id", "fulfillment_method"], name: "index_customer_invoices_on_company_id_and_fulfillment_method"
     t.index ["company_id", "invoice_number"], name: "index_customer_invoices_on_company_id_and_invoice_number", unique: true
     t.index ["company_id", "legacy_number"], name: "index_customer_invoices_on_company_id_and_legacy_number", unique: true, where: "(legacy_number IS NOT NULL)"
