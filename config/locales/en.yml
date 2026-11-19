@@ -1125,6 +1125,14 @@ en:
       hint: "How stock transfers behave when source quantities are incomplete."
       restrict_transfers: "Restrict transfers to source stock"
       restrict_transfers_hint: "When on, you cannot send more than the source location has on hand. Turn off to allow sending anyway — source balance can go negative until stock is corrected."
+    lead_follow_ups:
+      title: "Lead follow-ups"
+      hint: "Automatic follow-up dates, and a morning alert to the assigned rep for each lead that is due."
+      days: "days"
+      first: "First follow-up after"
+      first_hint: "A new lead's follow-up date is filled with its created date plus this many days. Leave blank to turn off."
+      every: "Follow up every"
+      every_hint: "Logging a call, WhatsApp, email, meeting or note moves the follow-up date to that day plus this many days. Leave blank to turn off."
     phones:
       title: "Phone numbers"
       hint: "Rules for the phone numbers on leads and customers."
@@ -3144,6 +3152,8 @@ en:
       due_only_label: "Due for follow-up only"
       all_reps: "All reps"
       no_follow_up: "—"
+      follow_up_overdue: "Overdue"
+      follow_up_today: "Today"
       no_contact_info: "No phone or email on file"
       empty_title: "No leads yet"
       empty_hint: "Add your first lead to start tracking the funnel."
@@ -3185,6 +3195,7 @@ en:
         lost_banner: "Lost — %{reason}"
         timeline: "Activity"
         log_placeholder: "What happened?"
+        next_follow_up_on: "Next follow-up"
         log: "Log"
         no_activity: "No activity logged yet."
         change_history: "Change history"
@@ -3807,6 +3818,7 @@ en:
       cash_variance: "Cash variance"
       vendor_balance_negative: "Vendor balance negative"
       customer_invoice_payment_pending: "Payment awaiting confirmation"
+      lead_follow_up_due: "Lead follow-up"
       customer_invoice_stage_entered: "Invoice stage changed"
       unknown: "Alert"
     index:
@@ -3863,6 +3875,8 @@ en:
       cash_variance: "Cash drawer variance of %{variance} detected for %{name} on %{date}."
       vendor_balance_negative: "%{supplier}'s balance has gone negative (%{balance}) after editing invoice %{invoice_number} — they now owe you money back."
       customer_invoice_payment_pending: "Invoice %{invoice_number} is awaiting payment confirmation."
+      lead_follow_up_due: "Follow up with lead %{lead_name} today."
+      lead_follow_up_overdue: "Follow-up with lead %{lead_name} is overdue — it was due %{date}."
       customer_invoice_stage_entered: "Invoice %{invoice_number} is now: %{stage}."
 
   pos:

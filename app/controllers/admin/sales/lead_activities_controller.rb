@@ -35,7 +35,7 @@ module Admin
       end
 
       def activity_params
-        params.require(:lead_activity).permit(:activity_type, :note, :occurred_at)
+        params.require(:lead_activity).permit(:activity_type, :note, :occurred_at, :next_follow_up_on)
           .merge(activity_type: params.dig(:lead_activity, :activity_type).to_s.presence_in(LeadActivity::LOGGABLE_TYPES))
       end
     end

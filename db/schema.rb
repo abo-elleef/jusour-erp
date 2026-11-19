@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_19_210500) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_19_211700) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -251,6 +251,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_19_210500) do
     t.string "drawer_close_mode", default: "documented", null: false
     t.jsonb "notification_levels", default: {}, null: false
     t.boolean "require_eleven_digit_phones", default: false, null: false
+    t.integer "lead_first_follow_up_days", default: 1
+    t.integer "lead_follow_up_every_days", default: 3
     t.index ["company_id"], name: "index_company_settings_on_company_id", unique: true
   end
 
