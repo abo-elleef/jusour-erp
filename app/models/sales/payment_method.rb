@@ -21,7 +21,7 @@ module Sales
       foreign_key: :sales_payment_method_id, inverse_of: :sales_payment_method, dependent: :destroy
     has_many :approvers, through: :approver_links, source: :user
 
-    INDEX_SORTABLE_COLUMNS = %w[name active requires_approval created_at].freeze
+    INDEX_SORTABLE_COLUMNS = %w[name active requires_approval requires_proof_image created_at].freeze
     INDEX_DEFAULT_SORT = "name"
     INDEX_DEFAULT_SORT_DIRECTION = "asc"
 
@@ -32,7 +32,7 @@ module Sales
     scope :ordered, -> { order(:name) }
 
     def self.ransackable_attributes(_auth_object = nil)
-      %w[name active requires_approval created_at]
+      %w[name active requires_approval requires_proof_image created_at]
     end
 
     # Used once a method has settled real invoices — deleting it would orphan

@@ -65,7 +65,7 @@ module Admin
       end
 
       def payment_method_params
-        params.require(:sales_payment_method).permit(:name, :treasury_id, :active, :requires_approval)
+        params.require(:sales_payment_method).permit(:name, :treasury_id, :active, :requires_approval, :requires_proof_image)
       end
 
       def load_form_data

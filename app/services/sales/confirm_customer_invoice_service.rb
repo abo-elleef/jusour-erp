@@ -141,6 +141,15 @@ module Sales
       end
       raise Error, I18n.t("sales.customer_invoices.errors.no_lines", default: "Add at least one line before confirming.") if @invoice.customer_invoice_lines.empty?
       raise Error, I18n.t("sales.customer_invoices.errors.no_location", default: "A selling location is required.") if @invoice.location.blank?
+
+      # Only a draft is checked: an invoice already waiting for approval was
+      # submitted under the old rule (or with its image) and must still be
+      # approvable.
+      if @invoice.draft? && @invoice.payment_proof_missing?
+        raise Error, I18n.t("sales.customer_invoices.errors.payment_proof_missing",
+                            method: @invoice.sales_payment_method.name,
+                            default: "Attach the payment proof image before confirming.")
+      end
     end
 
     def deduct_stock!

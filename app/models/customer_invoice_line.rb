@@ -18,6 +18,7 @@ class CustomerInvoiceLine < ApplicationRecord
   validate :unit_valid_for_ingredient
 
   before_validation :apply_product_selling_price
+  before_validation :record_list_price
   before_validation :derive_line_total
 
   scope :ordered, -> { order(:position, :created_at) }
@@ -32,18 +33,49 @@ class CustomerInvoiceLine < ApplicationRecord
     quantity.to_d
   end
 
+  # The product's standard cost (Ingredient#cost_per_unit_cents, per base unit)
+  # for one of this line's units; nil when the product has no cost set, so no
+  # warning is ever raised against a blank or zero cost.
+  def unit_cost_cents
+    return if ingredient.blank?
+
+    cost = ingredient.cost_per_unit_cents.to_i
+    return unless cost.positive?
+
+    factor = ingredient.base_units_per(unit) || 1
+    (cost * factor).round
+  end
+
+  # A warning, not a rule: the sale still saves and confirms.
+  def below_cost?
+    cost = unit_cost_cents
+    cost.present? && unit_price_cents.to_i < cost
+  end
+
   private
 
   def sales_document = customer_invoice
 
-  # The unit price is the product's selling price — sales can't set it, so it is
-  # enforced here rather than trusted from the form. Only applies while the price
-  # is unset/zero, so an existing line keeps the price it was invoiced at.
+  # A blank (or zero) price falls back to the product's selling price — the
+  # same starting value the form fills on product select. Sales may type any
+  # other price; record_list_price marks it as changed.
   def apply_product_selling_price
     return if ingredient.blank?
     return if unit_price_cents.to_i.positive?
 
     self.unit_price_cents = ingredient.selling_price_cents.to_i
+  end
+
+  # The auto-filled price is captured when the line is created or its product
+  # changes. Lines from before this existed keep a NULL list price and are
+  # never flagged, so old and imported invoices don't suddenly read as edited.
+  def record_list_price
+    return if ingredient.blank?
+    # Imported history carries the old system's prices; nothing was overridden here.
+    return if customer_invoice&.historical?
+
+    self.list_price_cents = ingredient.selling_price_cents.to_i if new_record? || ingredient_id_changed?
+    self.price_overridden = list_price_cents.present? && unit_price_cents.to_i != list_price_cents
   end
 
   # Unit price (firm, after any tier/override discount the seller applied) is the

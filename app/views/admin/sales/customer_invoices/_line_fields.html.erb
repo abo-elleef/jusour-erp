@@ -28,7 +28,7 @@
       <%= f.select :unit,
             options_for_select(unit_opts, line.unit.presence || ingredient&.unit),
             { include_blank: ingredient.nil? },
-            class: "#{input_class} appearance-none px-2", data: { role: "unit" } %>
+            class: "#{input_class} appearance-none px-2", data: { role: "unit", action: "change->customer-invoice-lines#recalc" } %>
     </div>
     <div class="lg:col-span-2">
       <label class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("sales.customer_invoices.form.quantity") %></label>
@@ -45,18 +45,22 @@
     </div>
     <div class="lg:col-span-2">
       <label class="block text-xs font-semibold text-gray-600 mb-1.5 lg:hidden"><%= t("sales.customer_invoices.form.unit_price") %></label>
-      <%# Fixed by the product's selling price — sales can't change it. Posts via a
-          hidden field (which the controller also fills on product select); the
-          visible box is a read-only display, same pattern as locked transfer units. %>
-      <%= f.hidden_field :unit_price_pounds, data: { role: "price" } %>
-      <div class="<%= input_class %> flex items-center gap-1.5 bg-gray-100 text-gray-600 cursor-not-allowed"
-           title="<%= t("sales.customer_invoices.form.unit_price_locked_hint") %>">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
-             class="w-3.5 h-3.5 shrink-0 text-gray-400">
-          <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z" clip-rule="evenodd" />
-        </svg>
-        <span class="truncate tabular-nums" data-role="price-display"><%= number_with_precision(line.unit_price_pounds.to_f, precision: 2) %></span>
-      </div>
+      <%# Filled with the product's selling price on product select (the
+          customer-invoice-lines controller); anyone who can edit the invoice may
+          type another price. Text input so Arabic-Indic digits work. %>
+      <% price_value = line.unit_price_cents.to_i.positive? ? format("%.2f", line.unit_price_cents / 100.0) : "" %>
+      <%= f.text_field :unit_price_pounds, value: price_value, placeholder: "0.00", class: input_class,
+            autocomplete: "off", inputmode: "decimal",
+            title: t("sales.customer_invoices.form.unit_price_hint"),
+            data: { role: "price", controller: "arabic-numerals",
+                    action: "input->arabic-numerals#normalize input->customer-invoice-lines#recalc" } %>
+      <%# Shown when the price is under the product's standard cost — a warning
+          only, the line still saves. The controller keeps it current. %>
+      <% below_cost = ingredient.present? && line.below_cost? %>
+      <p class="<%= "hidden" unless below_cost %> text-xs font-semibold text-red-700 mt-1" data-role="below-cost">
+        <%= t("sales.customer_invoices.form.below_cost_html",
+              cost: tag.span(below_cost ? format_amount(line.unit_cost_cents) : "", class: "tabular-nums", data: { role: "cost" })) %>
+      </p>
       <p class="text-xs text-gray-500 mt-1 lg:hidden">
         <%= t("sales.customer_invoices.form.line_total") %>:
         <span class="font-medium tabular-nums" data-role="line-total">0.00</span>

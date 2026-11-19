@@ -167,6 +167,56 @@ RSpec.describe Sales::ConfirmCustomerInvoiceService do
       expect(ingredient.stock_batches.sum(:quantity_remaining).to_d).to eq(95)
     end
 
+    context "when the method requires a payment proof image" do
+      let(:payment_method) do
+        create(:sales_payment_method, company: company, treasury: treasury, requires_proof_image: true)
+      end
+
+      it "refuses to submit a draft for approval without the image, changing nothing" do
+        inv = online_invoice
+
+        expect { described_class.new(inv, user).call }
+          .to raise_error(Sales::ConfirmCustomerInvoiceService::Error, /#{payment_method.name}/)
+        expect(inv.reload.status).to eq("draft")
+        expect(StockAdjustment.where(adjustment_type: "customer_sale")).to be_empty
+      end
+
+      it "submits once the image is attached" do
+        inv = online_invoice
+        inv.payment_proof_image.attach(io: File.open(Rails.root.join("spec/fixtures/files/storefront_product.png")),
+          filename: "proof.png", content_type: "image/png")
+
+        result = described_class.new(inv, user).call
+        expect(result.pending_confirmation).to be(true)
+        expect(inv.reload.status).to eq("pending_payment_confirmation")
+      end
+
+      it "still approves an invoice that was already pending before the rule" do
+        inv = online_invoice
+        inv.update!(status: "pending_payment_confirmation")
+
+        described_class.new(inv, user).call
+        expect(inv.reload.status).to eq("confirmed")
+      end
+
+      it "applies to a method that settles at once too" do
+        payment_method.update!(requires_approval: false)
+        inv = online_invoice
+
+        expect { described_class.new(inv, user).call }
+          .to raise_error(Sales::ConfirmCustomerInvoiceService::Error)
+        expect(inv.reload.status).to eq("draft")
+      end
+    end
+
+    it "does not ask for an image when the method doesn't require one" do
+      inv = online_invoice
+      expect(payment_method.requires_proof_image).to be(false)
+
+      described_class.new(inv, user).call
+      expect(inv.reload.status).to eq("pending_payment_confirmation")
+    end
+
     context "when the method settles at once (card machine)" do
       let(:payment_method) do
         create(:sales_payment_method, company: company, treasury: treasury, requires_approval: false)

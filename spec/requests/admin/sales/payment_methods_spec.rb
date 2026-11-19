@@ -24,6 +24,19 @@ RSpec.describe "Admin::Sales::PaymentMethods", type: :request do
     expect(Sales::PaymentMethod.find_by!(name: "InstaPay").requires_approval).to be(true)
   end
 
+  it "saves the payment-proof requirement and shows it on the list" do
+    post admin_sales_payment_methods_path,
+      params: { sales_payment_method: { name: "InstaPay", treasury_id: treasury.id, active: "1",
+                                        requires_proof_image: "1" } }
+
+    expect(Sales::PaymentMethod.find_by!(name: "InstaPay").requires_proof_image).to be(true)
+    get admin_sales_payment_methods_path
+    expect(response.body).to include(I18n.t("sales.payment_methods.proof_image_required"))
+
+    get new_admin_sales_payment_method_path
+    expect(response.body).to include("sales_payment_method[requires_proof_image]")
+  end
+
   it "creates a card machine that settles on confirm" do
     post admin_sales_payment_methods_path,
       params: { sales_payment_method: { name: "Card machine", treasury_id: treasury.id, active: "1",
