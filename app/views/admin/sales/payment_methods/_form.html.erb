@@ -31,6 +31,13 @@
           <span class="block text-xs text-gray-500 mt-1"><%= t("sales.payment_methods.form.requires_approval_hint") %></span>
         </span>
       </label>
+      <label class="flex items-start gap-3 cursor-pointer">
+        <%= f.check_box :requires_proof_image, class: "mt-0.5 rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+        <span>
+          <span class="block text-sm font-medium text-gray-900"><%= t("sales.payment_methods.form.requires_proof_image") %></span>
+          <span class="block text-xs text-gray-500 mt-1"><%= t("sales.payment_methods.form.requires_proof_image_hint") %></span>
+        </span>
+      </label>
       <fieldset>
         <legend class="<%= label_class %>"><%= t("sales.payment_methods.form.approvers") %></legend>
         <p class="text-xs text-gray-500 mb-2"><%= t("sales.payment_methods.form.approvers_hint") %></p>

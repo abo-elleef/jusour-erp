@@ -6,7 +6,7 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = [
     "fulfillmentSelect", "paymentSelect", "shippingCompanyWrap", "onlineMethodWrap",
-    "deliveryFeeWrap", "deliveryFeeAmountInput"
+    "deliveryFeeWrap", "deliveryFeeAmountInput", "onlineMethodSelect", "proofWrap"
   ]
 
   connect() {
@@ -29,5 +29,17 @@ export default class extends Controller {
 
   applyPaymentMethod() {
     this.onlineMethodWrapTarget.hidden = this.paymentSelectTarget.value !== "online"
+    this.applyProofRequirement()
+  }
+
+  // The proof image is required (at confirm) only for an online method with
+  // requires_proof_image; say so next to the upload field.
+  applyProofRequirement() {
+    if (!this.hasProofWrapTarget) return
+    const requiredIds = JSON.parse(this.proofWrapTarget.dataset.proofRequiredIds || "[]")
+    const methodId = this.hasOnlineMethodSelectTarget ? this.onlineMethodSelectTarget.value : ""
+    const required = this.paymentSelectTarget.value === "online" && requiredIds.includes(methodId)
+    this.proofWrapTarget.querySelector("[data-role='proof-required-hint']")?.classList.toggle("hidden", !required)
+    this.proofWrapTarget.querySelector("[data-role='proof-optional-hint']")?.classList.toggle("hidden", required)
   }
 }

@@ -3,6 +3,12 @@
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 <% available_units = @ingredients.to_h { |i| [i.id, i.available_units.map { |u| [ingredient_unit_label(u), u] }] } %>
 <% selling_prices = @ingredients.to_h { |i| [i.id, (i.selling_price_cents.to_i / 100.0).round(2)] } %>
+<%# Standard cost (cost_per_unit_cents, per base unit) for each unit a product
+    sells in, so the line can warn when its price falls below cost. Products
+    without a cost are left out — no warning against a blank cost. %>
+<% unit_costs = @ingredients.select { |i| i.cost_per_unit_cents.to_i.positive? }.to_h do |i|
+     [i.id, i.available_units.to_h { |u| [u, ((i.cost_per_unit_cents * (i.base_units_per(u) || 1)) / 100.0).round(2)] }]
+   end %>
 
 <%= form_with model: invoice,
       url: invoice.persisted? ? admin_sales_customer_invoice_path(invoice) : admin_sales_customer_invoices_path,
@@ -12,7 +18,8 @@
         controller: "customer-invoice-lines sale-fulfillment",
         searchable_select_options: ingredient_search_options(@ingredients),
         customer_invoice_lines_available_units_value: available_units.to_json,
-        customer_invoice_lines_selling_prices_value: selling_prices.to_json
+        customer_invoice_lines_selling_prices_value: selling_prices.to_json,
+        customer_invoice_lines_unit_costs_value: unit_costs.to_json
       } do |f| %>
   <% if invoice.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
@@ -96,7 +103,29 @@
         <%= f.label :sales_payment_method_id, t("sales.customer_invoices.form.online_payment_method"), class: label_class %>
         <%= f.collection_select :sales_payment_method_id, @sales_payment_methods, :id, :name,
               { prompt: t("sales.customer_invoices.form.select_online_payment_method") },
-              class: "#{input_class} appearance-none" %>
+              class: "#{input_class} appearance-none",
+              data: { sale_fulfillment_target: "onlineMethodSelect", action: "change->sale-fulfillment#applyProofRequirement" } %>
+      </div>
+      <%# Payment screenshot. Methods with requires_proof_image refuse to confirm
+          without it (Sales::ConfirmCustomerInvoiceService); a draft saves either way. %>
+      <% proof_required_ids = @sales_payment_methods.select(&:requires_proof_image?).map(&:id) %>
+      <div class="sm:col-span-2" data-sale-fulfillment-target="proofWrap"
+           data-proof-required-ids="<%= proof_required_ids.to_json %>">
+        <%= f.label :payment_proof_image, t("sales.customer_invoices.form.payment_proof_image"), class: label_class %>
+        <% if invoice.payment_proof_image.attached? && invoice.payment_proof_image.persisted? %>
+          <%= link_to url_for(invoice.payment_proof_image), target: "_blank", rel: "noopener", class: "inline-block mb-2" do %>
+            <%= image_tag invoice.payment_proof_image, class: "max-h-32 rounded-xl border border-gray-200 object-contain" %>
+          <% end %>
+        <% end %>
+        <div data-controller="image-preview">
+          <%= f.file_field :payment_proof_image, accept: "image/*", capture: "environment",
+                class: "text-sm text-gray-600 file:me-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-gray-100 file:font-semibold file:text-gray-700 hover:file:bg-gray-200",
+                data: { image_preview_target: "input", action: "change->image-preview#preview" } %>
+          <img data-image-preview-target="preview" alt="<%= t("sales.customer_invoices.form.payment_proof_image") %>"
+               class="hidden mt-2 max-h-32 rounded-xl border border-gray-200 object-contain">
+        </div>
+        <p class="hidden text-xs font-semibold text-red-700 mt-1" data-role="proof-required-hint"><%= t("sales.customer_invoices.form.payment_proof_image_required_hint") %></p>
+        <p class="text-xs text-gray-500 mt-1" data-role="proof-optional-hint"><%= t("sales.customer_invoices.form.payment_proof_image_optional_hint") %></p>
       </div>
       <div class="sm:col-span-2">
         <%= f.label :notes, t("sales.customer_invoices.form.notes"), class: label_class %>

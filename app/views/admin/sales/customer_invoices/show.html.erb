@@ -43,6 +43,11 @@
 
   <%# Draft: confirm either settles now, waits for payment approval, or (COD)
       deducts stock and leaves the shipping company to be charged at dispatch. %>
+  <% if @invoice.draft? && @invoice.payment_proof_missing? %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-3 mb-3 text-sm font-medium text-red-800" role="alert">
+      <%= t("sales.customer_invoices.show.payment_proof_missing", method: @invoice.sales_payment_method.name) %>
+    </div>
+  <% end %>
   <% if @invoice.draft? %>
     <div class="rounded-2xl border border-amber-200 bg-amber-50/50 px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3">
       <p class="text-sm text-amber-900">
@@ -158,7 +163,23 @@
                     class: "font-semibold text-amber-700 hover:text-amber-800" %>
             </td>
             <td class="p-3 text-end tabular-nums text-gray-700"><%= sales_quantity_value(line.quantity) %> <%= ingredient_unit_label(line.unit.presence || line.ingredient.unit) %></td>
-            <td class="p-3 text-end tabular-nums text-gray-700"><%= format_money(line.unit_price_cents) %></td>
+            <td class="p-3 text-end tabular-nums text-gray-700">
+              <%= format_money(line.unit_price_cents) %>
+              <%# Typed rather than auto-filled — for managers checking discounts. %>
+              <% if line.price_overridden? %>
+                <span class="block mt-0.5 text-[10px] font-semibold text-blue-800"
+                      title="<%= t("sales.customer_invoices.show.price_changed_title", price: format_amount(line.list_price_cents)) %>">
+                  <span class="bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5"><%= t("sales.customer_invoices.show.price_changed") %></span>
+                  <span class="text-gray-500 font-normal line-through ms-1 print-hide"><%= format_amount(line.list_price_cents) %></span>
+                </span>
+              <% end %>
+              <% if line.below_cost? %>
+                <span class="block mt-0.5 text-[10px] font-semibold text-red-700 print-hide"
+                      title="<%= t("sales.customer_invoices.show.below_cost_title", cost: format_amount(line.unit_cost_cents)) %>">
+                  <%= t("sales.customer_invoices.show.below_cost") %> (<%= format_amount(line.unit_cost_cents) %>)
+                </span>
+              <% end %>
+            </td>
             <td class="p-3 text-end pe-5 tabular-nums font-medium text-gray-900"><%= format_money(line.line_total_cents) %></td>
           </tr>
         <% end %>

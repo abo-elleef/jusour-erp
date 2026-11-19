@@ -52,6 +52,7 @@
               <th class="p-3 ps-5"><%= sort_header_link(t("sales.payment_methods.table.name"), :name, **sort_opts) %></th>
               <th class="p-3"><%= t("sales.payment_methods.table.treasury") %></th>
               <th class="p-3"><%= sort_header_link(t("sales.payment_methods.table.settlement"), :requires_approval, **sort_opts) %></th>
+              <th class="p-3"><%= sort_header_link(t("sales.payment_methods.table.proof_image"), :requires_proof_image, **sort_opts) %></th>
               <th class="p-3"><%= t("sales.payment_methods.table.approvers") %></th>
               <th class="p-3"><%= sort_header_link(t("sales.payment_methods.table.status"), :active, **sort_opts) %></th>
               <th class="p-3 pe-5 text-end"><%= t("sales.payment_methods.table.actions") %></th>
@@ -64,6 +65,9 @@
                 <td class="p-3 text-gray-700"><%= link_to payment_method.treasury.name, admin_accounting_treasury_path(payment_method.treasury), class: "hover:underline" %></td>
                 <td class="p-3 text-gray-700">
                   <%= payment_method.requires_approval? ? t("sales.payment_methods.needs_approval") : t("sales.payment_methods.settles_on_confirm") %>
+                </td>
+                <td class="p-3 text-gray-700">
+                  <%= payment_method.requires_proof_image? ? t("sales.payment_methods.proof_image_required") : t("sales.payment_methods.proof_image_optional") %>
                 </td>
                 <td class="p-3 text-gray-700">
                   <% if !payment_method.requires_approval? %>

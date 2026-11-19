@@ -172,6 +172,135 @@ RSpec.describe "Admin::Sales::CustomerInvoices", type: :request do
     expect(response).to redirect_to(admin_sales_customer_invoice_path(inv))
   end
 
+  describe "typed unit price" do
+    before { ingredient.update!(selling_price_cents: 2_000, cost_per_unit_cents: 1_500) }
+
+    it "offers an editable price box that takes Arabic-Indic digits" do
+      get new_admin_sales_customer_invoice_path
+      expect(response.body).to match(/<input[^>]*data-role="price"[^>]*>/)
+      price_input = response.body[/<input[^>]*data-role="price"[^>]*>/]
+      expect(price_input).to include('type="text"', 'inputmode="decimal"', "arabic-numerals")
+      expect(price_input).not_to include('type="hidden"')
+    end
+
+    it "saves a typed price, flags it as changed, and shows the badge" do
+      post admin_sales_customer_invoices_path, params: {
+        commit_action: "draft",
+        customer_invoice: { customer_id: customer.id, location_id: location.id, invoice_date: Date.current,
+          customer_invoice_lines_attributes: { "0" => { ingredient_id: ingredient.id, quantity: "2",
+                                                         unit: ingredient.unit, unit_price_pounds: "17.5" } } }
+      }
+
+      inv = CustomerInvoice.last
+      line = inv.customer_invoice_lines.first
+      expect(line.unit_price_cents).to eq(1_750)
+      expect(line.price_overridden).to be(true)
+      expect(inv.total_cents).to eq(3_500)
+
+      follow_redirect!
+      expect(response.body).to include(I18n.t("sales.customer_invoices.show.price_changed"))
+      expect(response.body).not_to include(I18n.t("sales.customer_invoices.show.below_cost"))
+    end
+
+    it "warns about a below-cost price but still saves and confirms" do
+      post admin_sales_customer_invoices_path, params: {
+        commit_action: "confirm",
+        customer_invoice: { customer_id: customer.id, location_id: location.id, invoice_date: Date.current,
+          customer_invoice_lines_attributes: { "0" => { ingredient_id: ingredient.id, quantity: "2",
+                                                         unit: ingredient.unit, unit_price_pounds: "10" } } }
+      }
+
+      inv = CustomerInvoice.last
+      expect(inv.status).to eq("confirmed")
+      expect(inv.total_cents).to eq(2_000)
+
+      get admin_sales_customer_invoice_path(inv)
+      expect(response.body).to include(I18n.t("sales.customer_invoices.show.below_cost"))
+    end
+
+    it "shows the below-cost warning on the edit form for a saved draft" do
+      inv = CustomerInvoice.new(company: company, customer: customer, user: owner, location: location, invoice_date: Date.current)
+      inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 1, unit: ingredient.unit, unit_price_cents: 1_000)
+      inv.save!
+
+      get edit_admin_sales_customer_invoice_path(inv)
+      warning = response.body[/<p class="([^"]*)"[^>]*data-role="below-cost"/, 1]
+      expect(warning).not_to include("hidden")
+    end
+
+    it "does not mark a line whose price was left at the selling price" do
+      post admin_sales_customer_invoices_path, params: {
+        commit_action: "draft",
+        customer_invoice: { customer_id: customer.id, location_id: location.id, invoice_date: Date.current,
+          customer_invoice_lines_attributes: { "0" => { ingredient_id: ingredient.id, quantity: "2",
+                                                         unit: ingredient.unit, unit_price_pounds: "20.00" } } }
+      }
+
+      expect(CustomerInvoice.last.customer_invoice_lines.first.price_overridden).to be(false)
+      follow_redirect!
+      expect(response.body).not_to include(I18n.t("sales.customer_invoices.show.price_changed"))
+    end
+  end
+
+  describe "payment proof image" do
+    let(:treasury) do
+      Treasury.create!(name: "Bank", treasury_type: "bank", balance_cents: 0, opening_balance_cents: 0, company: company)
+    end
+    let(:proof) { fixture_file_upload("storefront_product.png", "image/png") }
+
+    def online_params(method, **extra)
+      { customer_id: customer.id, location_id: location.id, invoice_date: Date.current,
+        payment_method: "online", sales_payment_method_id: method.id,
+        customer_invoice_lines_attributes: line_attrs }.merge(extra)
+    end
+
+    context "when the method requires it" do
+      let(:method) { create(:sales_payment_method, company: company, treasury: treasury, name: "InstaPay", requires_proof_image: true) }
+
+      it "saves the draft but refuses to confirm without the image, with an Arabic message" do
+        post admin_sales_customer_invoices_path, params: { commit_action: "confirm", locale: "ar",
+                                                           customer_invoice: online_params(method) }
+
+        inv = CustomerInvoice.last
+        expect(inv.status).to eq("draft")
+        expect(flash[:alert]).to eq(I18n.t("sales.customer_invoices.errors.payment_proof_missing", method: "InstaPay", locale: :ar))
+
+        get admin_sales_customer_invoice_path(inv)
+        expect(response.body).to include(I18n.t("sales.customer_invoices.show.payment_proof_missing", method: "InstaPay"))
+
+        post confirm_admin_sales_customer_invoice_path(inv)
+        expect(inv.reload.status).to eq("draft")
+      end
+
+      it "confirms once the image is attached from the show page" do
+        post admin_sales_customer_invoices_path, params: { commit_action: "draft", customer_invoice: online_params(method) }
+        inv = CustomerInvoice.last
+
+        patch attach_payment_proof_image_admin_sales_customer_invoice_path(inv),
+          params: { customer_invoice: { payment_proof_image: proof } }
+        post confirm_admin_sales_customer_invoice_path(inv)
+
+        expect(inv.reload.status).to eq("pending_payment_confirmation")
+      end
+
+      it "accepts the image on the form itself" do
+        post admin_sales_customer_invoices_path, params: { commit_action: "confirm",
+                                                           customer_invoice: online_params(method, payment_proof_image: proof) }
+
+        inv = CustomerInvoice.last
+        expect(inv.payment_proof_image).to be_attached
+        expect(inv.status).to eq("pending_payment_confirmation")
+      end
+    end
+
+    it "confirms without an image when the method doesn't require one" do
+      method = create(:sales_payment_method, company: company, treasury: treasury, name: "CIB")
+      post admin_sales_customer_invoices_path, params: { commit_action: "confirm", customer_invoice: online_params(method) }
+
+      expect(CustomerInvoice.last.status).to eq("pending_payment_confirmation")
+    end
+  end
+
   it "creates and confirms in one step (raises AR, deducts stock)" do
     post admin_sales_customer_invoices_path, params: {
       commit_action: "confirm",

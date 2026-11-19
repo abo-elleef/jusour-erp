@@ -165,6 +165,11 @@ class CustomerInvoice < ApplicationRecord
   # (Sales::PaymentMethod#requires_approval — e.g. a card machine).
   def requires_payment_approval? = online? && (sales_payment_method.nil? || sales_payment_method.requires_approval?)
 
+  # The method (Sales::PaymentMethod#requires_proof_image) wants a payment
+  # screenshot before the invoice can be confirmed or sent for approval.
+  def payment_proof_required? = online? && sales_payment_method&.requires_proof_image? == true
+  def payment_proof_missing?  = payment_proof_required? && !payment_proof_image.attached?
+
   def delivery? = fulfillment_method == "delivery"
   def pickup?   = fulfillment_method == "pickup"
   def dispatched? = dispatched_at.present?

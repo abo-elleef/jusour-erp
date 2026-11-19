@@ -314,6 +314,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_19_200000) do
     t.integer "position", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "list_price_cents"
+    t.boolean "price_overridden", default: false, null: false
     t.index ["customer_invoice_id"], name: "index_customer_invoice_lines_on_customer_invoice_id"
     t.index ["ingredient_id"], name: "index_customer_invoice_lines_on_ingredient_id"
   end
@@ -1444,6 +1446,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_19_200000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.boolean "requires_approval", default: true, null: false
+    t.boolean "requires_proof_image", default: false, null: false
     t.index ["company_id", "name"], name: "index_sales_payment_methods_on_company_id_and_name", unique: true
     t.index ["company_id"], name: "index_sales_payment_methods_on_company_id"
     t.index ["treasury_id"], name: "index_sales_payment_methods_on_treasury_id"

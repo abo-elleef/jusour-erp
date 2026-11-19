@@ -5,7 +5,11 @@ import { Controller } from "@hotwired/stimulus"
 // totals live from quantity × unit price.
 export default class extends Controller {
   static targets = ["list", "template", "row", "runningTotal", "deliveryFeeInput"]
-  static values = { availableUnits: Object, sellingPrices: Object }
+  static values = { availableUnits: Object, sellingPrices: Object, unitCosts: Object }
+
+  connect() {
+    this.rowTargets.forEach((row) => this.markBelowCost(row))
+  }
 
   add(event) {
     event.preventDefault()
@@ -42,16 +46,14 @@ export default class extends Controller {
       unitSelect.innerHTML = units.map(([label, val]) => `<option value="${val}">${label}</option>`).join("")
     }
 
-    // Prefill the unit price with the product's selling price (a guide). The
-    // field defaults to 0, so fill when it's empty OR still zero — but never
-    // clobber a price the user has already typed.
+    // Start the unit price at the product's selling price. A new product
+    // replaces the old one's price; the user may then type their own (the line
+    // is marked "price changed" on save when it differs).
     const priceInput = row.querySelector("[data-role='price']")
     const suggested = Number((this.sellingPricesValue || {})[hidden?.value])
-    const current = parseFloat(priceInput?.value) || 0
-    if (priceInput && suggested > 0 && current === 0) {
-      priceInput.value = suggested
+    if (priceInput && suggested > 0) {
+      priceInput.value = suggested.toFixed(2)
     }
-    this.syncPriceDisplay(row)
 
     this.markDuplicates()
     this.recalc()
@@ -77,12 +79,29 @@ export default class extends Controller {
     })
   }
 
-  // The unit price is locked: the value lives in a hidden field, so mirror it
-  // into the visible read-only box.
-  syncPriceDisplay(row) {
-    const price = parseFloat(row.querySelector("[data-role='price']")?.value) || 0
-    const display = row.querySelector("[data-role='price-display']")
-    if (display) display.textContent = this.format(price)
+  // Red warning when the price is under the product's standard cost for the
+  // chosen unit. A warning only — the line still saves. No cost, no warning.
+  markBelowCost(row) {
+    const warning = row.querySelector("[data-role='below-cost']")
+    if (!warning) return
+    const ingredientId = row.querySelector("input[name*='[ingredient_id]']")?.value
+    const unit = row.querySelector("select[data-role='unit']")?.value
+    const cost = Number(((this.unitCostsValue || {})[ingredientId] || {})[unit])
+    const price = this.toNumber(row.querySelector("[data-role='price']")?.value)
+    const below = cost > 0 && price < cost
+    warning.classList.toggle("hidden", !below)
+    const costEl = warning.querySelector("[data-role='cost']")
+    if (costEl && below) costEl.textContent = this.format(cost)
+  }
+
+  // Prices may be typed with Arabic-Indic digits; arabic-numerals normally
+  // converts them first, but don't rely on listener order.
+  toNumber(value) {
+    const ascii = String(value || "")
+      .replace(/[\u0660-\u0669]/g, (d) => d.charCodeAt(0) - 0x0660)
+      .replace(/[\u06F0-\u06F9]/g, (d) => d.charCodeAt(0) - 0x06F0)
+      .replace(/[\u066B]/g, ".")
+    return parseFloat(ascii) || 0
   }
 
   recalc() {
@@ -90,8 +109,9 @@ export default class extends Controller {
     this.rowTargets.forEach((row) => {
       if (row.style.display === "none") return
       const qty = parseFloat(row.querySelector("[data-role='qty']")?.value) || 0
-      const price = parseFloat(row.querySelector("[data-role='price']")?.value) || 0
+      const price = this.toNumber(row.querySelector("[data-role='price']")?.value)
       const line = qty * price
+      this.markBelowCost(row)
       total += line
       // A row has more than one line-total element (mobile + desktop) — update all.
       row.querySelectorAll("[data-role='line-total']").forEach((el) => { el.textContent = this.format(line) })
