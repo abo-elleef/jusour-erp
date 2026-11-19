@@ -15,10 +15,19 @@ class Role < ApplicationRecord
 
   before_destroy :prevent_builtin_destroy
 
+  # Built-in roles whose *name* (User#role) still grants behaviour that the
+  # permission ticks don't cover (owner?/manager?/… checks not yet migrated to
+  # can?). A copy is a custom role, so it does not inherit that behaviour.
+  NAME_DEPENDENT_KEYS = %w[owner manager accountant cashier super_manager].freeze
+
   scope :ordered, -> { order(built_in: :desc, name: :asc) }
 
   def can?(permission)
     permission_keys.include?(permission.to_s)
+  end
+
+  def name_dependent?
+    built_in? && NAME_DEPENDENT_KEYS.include?(key)
   end
 
   def permission_keys

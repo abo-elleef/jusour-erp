@@ -4,6 +4,13 @@
     <p class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
       <%= t("roles.copy_hint", name: source_role.name) %>
     </p>
+    <% if source_role.name_dependent? %>
+      <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900" role="alert">
+        <p class="font-semibold"><%= t("roles.copy_name_warning.title", name: source_role.name) %></p>
+        <p class="mt-1"><%= t("roles.copy_name_warning.lost.#{source_role.key}") %></p>
+        <p class="mt-1 text-red-800"><%= t("roles.copy_name_warning.advice", name: source_role.name) %></p>
+      </div>
+    <% end %>
   <% end %>
   <% if role.errors.any? %>
     <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">

@@ -1014,6 +1014,15 @@ en:
     duplicate: "Duplicate"
     copy_name: "%{name} (copy)"
     copy_hint: "Copy of %{name}: its permissions and invoice-stage settings are copied. Staff are not. Adjust what you need and save."
+    copy_name_warning:
+      title: "Not everything about %{name} carries over to a copy"
+      advice: "If this person needs that, keep them on %{name} instead of the copy."
+      lost:
+        owner: "Some things are tied to the Owner role itself, not to its permissions: the Roles page, settings, tax rates, staff management, vouchers, restricted treasuries, manager PIN approvals and owner notifications. The copy gets none of them."
+        manager: "Some things are tied to the Manager role itself, not to its permissions: approving with a manager PIN, restricted treasuries, refunds and voiding completed orders, appearing on the weekly payroll and overtime warnings, and manager notifications. The copy gets none of them."
+        accountant: "Some things are tied to the Accountant role itself, not to its permissions: managing staff, vouchers, editing expenses and incomes, settings, and seeing all orders. The copy gets none of them."
+        cashier: "Some things are tied to the Cashier role itself, not to its permissions: appearing on the weekly payroll and overtime warnings, and seeing their own orders and shifts. The copy gets none of them."
+        super_manager: "Some things are tied to the Super manager role itself, not to its permissions: closing a past drawer again. The copy will not be able to."
     name: "Role"
     permissions: "Permissions"
     staff: "Staff"

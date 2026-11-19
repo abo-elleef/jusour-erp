@@ -32,6 +32,20 @@ RSpec.describe "Admin::Roles duplicate", type: :request do
     expect(response.body).not_to match(/value="menu:manage"[^>]*checked/)
   end
 
+  it "warns that a copy of a name-dependent built-in role loses name-based behaviour" do
+    manager_role = Role.unscoped.find_by!(company_id: company.id, key: "manager")
+
+    get new_admin_role_path(copy_from: manager_role.id)
+
+    expect(response.body).to include(CGI.escapeHTML(I18n.t("roles.copy_name_warning.lost.manager")))
+  end
+
+  it "does not warn when copying a custom role" do
+    get new_admin_role_path(copy_from: source.id)
+
+    expect(response.body).not_to include(CGI.escapeHTML(I18n.t("roles.copy_name_warning.advice", name: "Floor Supervisor")))
+  end
+
   it "creates the copy with the edited permissions and stage settings, but no staff" do
     create(:user, company: company, role_id: source.id)
     Sales::StageAccess.create!(role: source, stage: "draft", can_see: true, notify: true)
