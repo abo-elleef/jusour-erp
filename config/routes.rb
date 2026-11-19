@@ -191,6 +191,7 @@ Rails.application.routes.draw do
           post :complete_shipping
           patch :void
           patch :attach_payment_proof_image
+          patch :update_shipping_proof
         end
       end
       resources :payment_methods, controller: "payment_methods", except: %i[show]

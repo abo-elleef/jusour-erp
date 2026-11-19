@@ -1,0 +1,27 @@
+<%# locals: invoice — tracking number (copyable) + waybill thumbnail, shown
+    beside the shipping status. Renders nothing for pickup or when neither is set. %>
+<% if invoice.shipping_status.present? && (invoice.shipping_tracking_number.present? || invoice.waybill_image.attached?) %>
+  <div class="flex flex-wrap items-center gap-3 mt-2 text-xs">
+    <% if invoice.shipping_tracking_number.present? %>
+      <div class="flex items-center gap-1.5" data-controller="clipboard"
+           data-clipboard-text-value="<%= invoice.shipping_tracking_number %>"
+           data-clipboard-copied-label-value="<%= t("sales.customer_invoices.shipping_proof.copied") %>">
+        <span class="text-gray-500"><%= t("sales.customer_invoices.shipping_proof.tracking_number") %>:</span>
+        <span class="font-mono font-semibold text-gray-800 tabular-nums select-all" dir="ltr"><%= invoice.shipping_tracking_number %></span>
+        <button type="button" data-action="clipboard#copy" data-clipboard-target="button"
+                class="font-semibold text-amber-700 hover:bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+          <%= t("sales.customer_invoices.shipping_proof.copy") %>
+        </button>
+      </div>
+    <% end %>
+    <% if invoice.waybill_image.attached? %>
+      <%= link_to url_for(invoice.waybill_image), target: "_blank", rel: "noopener",
+            class: "flex items-center gap-1.5 text-gray-600 hover:text-gray-900",
+            title: t("sales.customer_invoices.shipping_proof.open_full_size") do %>
+        <%= image_tag invoice.waybill_image, alt: t("sales.customer_invoices.shipping_proof.waybill_image"),
+              class: "h-10 w-10 object-cover rounded-lg border border-gray-200" %>
+        <span class="underline"><%= t("sales.customer_invoices.shipping_proof.waybill_image") %></span>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

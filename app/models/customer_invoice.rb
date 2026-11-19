@@ -65,6 +65,13 @@ class CustomerInvoice < ApplicationRecord
   # VendorInvoice#invoice_image: one attachment, replace to change, no delete.
   has_one_attached :payment_proof_image
 
+  # Shipping proof (optional): the courier's waybill photo and tracking
+  # number, added at dispatch or any time after on a shipped delivery. Pure
+  # record-keeping — no money, stock or shipping-status effect.
+  has_one_attached :waybill_image
+  WAYBILL_IMAGE_CONTENT_TYPES = %w[image/jpeg image/png image/webp image/heic image/heif].freeze
+  WAYBILL_IMAGE_MAX_SIZE = 10.megabytes
+
   before_validation :default_salesperson
   has_many :customer_invoice_lines, -> { order(:position, :created_at) },
     dependent: :destroy, inverse_of: :customer_invoice
@@ -94,6 +101,9 @@ class CustomerInvoice < ApplicationRecord
   validate :shipping_company_required_for_delivery
   validate :sales_payment_method_required_for_online
   validate :delivery_fee_within_standard
+  validate :waybill_image_acceptable
+  validates :shipping_tracking_number, length: { maximum: 100 }
+  normalizes :shipping_tracking_number, with: ->(value) { value.strip.presence }
 
   before_validation :assign_invoice_number, on: :create
   before_validation :default_blank_delivery_fees
@@ -177,6 +187,10 @@ class CustomerInvoice < ApplicationRecord
   def shipped?              = shipping_status == "shipped"
   def shipping_completed?   = shipping_status == "shipping_completed"
 
+  # Waybill/tracking can be recorded once the courier has it, and only on a
+  # live delivery (pickup has no shipping track).
+  def shipping_proof_editable? = confirmed? && (shipped? || shipping_completed?)
+
   def stage
     confirmed? && shipping_status.present? ? shipping_status : status
   end
@@ -259,6 +273,14 @@ class CustomerInvoice < ApplicationRecord
     return if invoice_number.present?
 
     self.invoice_number = self.class.next_invoice_number(company: company || Current.company)
+  end
+
+  def waybill_image_acceptable
+    return unless waybill_image.attached?
+
+    blob = waybill_image.blob
+    errors.add(:waybill_image, :invalid_image_type) unless WAYBILL_IMAGE_CONTENT_TYPES.include?(blob.content_type)
+    errors.add(:waybill_image, :image_too_large) if blob.byte_size > WAYBILL_IMAGE_MAX_SIZE
   end
 
   def shipping_company_required_for_delivery

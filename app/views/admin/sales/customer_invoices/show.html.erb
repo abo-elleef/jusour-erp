@@ -32,6 +32,7 @@
           <% end %>
         <% end %>
       </p>
+      <%= render "shipping_proof_summary", invoice: @invoice %>
     </div>
     <div class="flex items-center gap-2">
       <%= edit_button(edit_admin_sales_customer_invoice_path(@invoice),
@@ -104,10 +105,14 @@
               t("sales.customer_invoices.show.not_dispatched") %>
       </p>
       <% if current_user.can?("sales:dispatch") %>
-        <%= button_to t("sales.customer_invoices.show.dispatch"), mark_dispatched_admin_sales_customer_invoice_path(@invoice),
-              method: :post,
-              class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm",
-              form: { data: { turbo_confirm: t("sales.customer_invoices.show.dispatch_prompt") } } %>
+        <%# Waybill + tracking number are optional; they can also be added later. %>
+        <%= form_with url: mark_dispatched_admin_sales_customer_invoice_path(@invoice), method: :post,
+              data: { turbo_confirm: t("sales.customer_invoices.show.dispatch_prompt") },
+              html: { multipart: true, class: "w-full flex flex-wrap items-end gap-4 pt-3 border-t border-amber-200" } do %>
+          <%= render "shipping_proof_fields", invoice: @invoice %>
+          <%= submit_tag t("sales.customer_invoices.show.dispatch"),
+                class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm" %>
+        <% end %>
       <% else %>
         <p class="text-xs text-amber-800"><%= t("sales.customer_invoices.show.dispatch_needs_permission") %></p>
       <% end %>
@@ -262,6 +267,32 @@
               class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl" %>
       </section>
     <% end %>
+  <% end %>
+
+  <%# ── Shipping proof — waybill photo + tracking number, added at dispatch
+      or any time after. No money or stock effect. ─────────────────────────── %>
+  <% if @invoice.delivery? && @invoice.shipping_proof_editable? &&
+        (current_user.can?("sales:dispatch") || current_user.can?("sales:complete_shipping")) %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6 print-hide">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("sales.customer_invoices.shipping_proof.title") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("sales.customer_invoices.shipping_proof.hint") %></p>
+      </div>
+      <div class="p-5 space-y-5">
+        <% if @invoice.waybill_image.attached? %>
+          <%= link_to url_for(@invoice.waybill_image), target: "_blank", rel: "noopener" do %>
+            <%= image_tag @invoice.waybill_image, alt: t("sales.customer_invoices.shipping_proof.waybill_image"),
+                  class: "max-h-72 w-full object-contain rounded-xl border border-gray-200" %>
+          <% end %>
+        <% end %>
+        <%= form_with url: update_shipping_proof_admin_sales_customer_invoice_path(@invoice), method: :patch,
+              html: { multipart: true, class: "flex flex-wrap items-end gap-4" } do %>
+          <%= render "shipping_proof_fields", invoice: @invoice %>
+          <%= submit_tag t("sales.customer_invoices.shipping_proof.save"),
+                class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm transition-colors" %>
+        <% end %>
+      </div>
+    </section>
   <% end %>
 
   <%# ── Payment proof — mainly an InstaPay/bank-transfer screenshot ────────── %>
