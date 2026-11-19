@@ -8,6 +8,7 @@ class Role < ApplicationRecord
   include Tenantable
 
   has_many :users, foreign_key: :role_id, inverse_of: :assigned_role, dependent: :restrict_with_error
+  has_many :stage_accesses, class_name: "Sales::StageAccess", dependent: :delete_all
 
   validates :name, presence: true, uniqueness: { scope: :company_id, case_sensitive: false }
   validate :permissions_are_known

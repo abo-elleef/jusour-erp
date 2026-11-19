@@ -45,6 +45,8 @@
               <td class="p-3 pe-5 text-end whitespace-nowrap">
                 <%= link_to t("actions.edit"), edit_admin_role_path(role),
                       class: "text-xs font-semibold text-amber-700 hover:text-amber-800 me-3" %>
+                <%= link_to t("roles.duplicate"), new_admin_role_path(copy_from: role.id),
+                      class: "text-xs font-semibold text-gray-700 hover:text-gray-900 me-3" %>
                 <% if !role.built_in? && user_count.zero? %>
                   <%= button_to t("actions.delete"), admin_role_path(role), method: :delete,
                         class: "text-xs font-semibold text-red-700 hover:text-red-800 inline",

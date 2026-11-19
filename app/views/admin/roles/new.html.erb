@@ -4,5 +4,5 @@
     <span aria-hidden="true">&larr;</span> <%= t("roles.title") %>
   <% end %>
   <h1 class="text-2xl font-bold tracking-tight text-gray-900 mb-6"><%= t("roles.new_button") %></h1>
-  <%= render "form", role: @role %>
+  <%= render "form", role: @role, source_role: @source_role %>
 </div>
