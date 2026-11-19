@@ -70,6 +70,64 @@ RSpec.describe "Admin::Sales::StageAccesses", type: :request do
     expect(response).to redirect_to(admin_sales_customer_invoices_path)
   end
 
+  def chip_link(params)
+    CGI.escapeHTML(admin_sales_customer_invoices_path(**params))
+  end
+
+  def build_draft(recorded_by)
+    inv = CustomerInvoice.new(company: company, customer: customer, user: recorded_by, location: location,
+      invoice_date: Date.current)
+    inv.customer_invoice_lines.build(ingredient: ingredient, quantity: 1, unit: ingredient.unit, unit_price_cents: 1_000)
+    inv.save!
+    inv
+  end
+
+  it "shows only the filter chips and count cards for stages the role can see" do
+    CustomerInvoice::STAGES.each do |stage|
+      Sales::StageAccess.create!(role: warehouse_role, stage: stage, can_see: stage == "waiting_for_shipping")
+    end
+
+    sign_in warehouse
+    get admin_sales_customer_invoices_path
+
+    body = response.body
+    expect(body).to include(chip_link(status: "confirmed")) # its shipping step is visible
+    expect(body).to include(chip_link(shipping: "waiting_for_shipping"))
+    expect(body).not_to include(chip_link(status: "draft"))
+    expect(body).not_to include(chip_link(status: "void"))
+    expect(body).not_to include(chip_link(status: "historical"))
+    expect(body).not_to include(chip_link(shipping: "shipped"))
+    expect(body).not_to include(chip_link(shipping: "shipping_completed"))
+    expect(body).not_to include(I18n.t("sales.customer_invoices.stats.drafts"))
+    expect(body).to include(I18n.t("sales.customer_invoices.stats.waiting_for_shipping"))
+  end
+
+  it "keeps a chip for a hidden stage the user's own invoices are in" do
+    CustomerInvoice::STAGES.each do |stage|
+      Sales::StageAccess.create!(role: warehouse_role, stage: stage, can_see: false)
+    end
+    build_draft(warehouse)
+
+    sign_in warehouse
+    get admin_sales_customer_invoices_path
+
+    expect(response.body).to include(chip_link(status: "draft"))
+    expect(response.body).not_to include(chip_link(status: "confirmed"))
+    expect(response.body).not_to include("shipping=") # no shipping chips or card
+  end
+
+  it "shows every chip to the owner" do
+    sign_in owner
+    get admin_sales_customer_invoices_path
+
+    %w[draft pending_payment_confirmation confirmed historical void].each do |status|
+      expect(response.body).to include(chip_link(status: status))
+    end
+    CustomerInvoice::SHIPPING_STATUSES.each do |shipping|
+      expect(response.body).to include(chip_link(shipping: shipping))
+    end
+  end
+
   it "sends an approver back to the approvals queue when the approved invoice leaves their view" do
     wallet_role = Role.create!(company: company, name: "Wallet", key: "wallet", permissions: %w[customers:manage])
     saif = create(:user, company: company, role: "custom", role_id: wallet_role.id)

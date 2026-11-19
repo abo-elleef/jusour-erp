@@ -17,14 +17,18 @@
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.customer_invoices.stats.outstanding") %></p>
       <p class="text-2xl font-bold mt-1 text-amber-700 tabular-nums"><%= format_money(@outstanding_cents) %></p>
     </div>
-    <div class="bg-white rounded-2xl border border-gray-200 p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.customer_invoices.stats.drafts") %></p>
-      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @draft_count %></p>
-    </div>
-    <%= link_to admin_sales_customer_invoices_path(status: "confirmed", shipping: "waiting_for_shipping"),
-          class: "bg-white rounded-2xl border border-gray-200 p-4 hover:border-amber-300 transition-colors" do %>
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.customer_invoices.stats.waiting_for_shipping") %></p>
-      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @waiting_for_shipping_count %></p>
+    <% if @filter_stages.include?("draft") %>
+      <div class="bg-white rounded-2xl border border-gray-200 p-4">
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.customer_invoices.stats.drafts") %></p>
+        <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @draft_count %></p>
+      </div>
+    <% end %>
+    <% if @filter_stages.include?("waiting_for_shipping") %>
+      <%= link_to admin_sales_customer_invoices_path(status: "confirmed", shipping: "waiting_for_shipping"),
+            class: "bg-white rounded-2xl border border-gray-200 p-4 hover:border-amber-300 transition-colors" do %>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("sales.customer_invoices.stats.waiting_for_shipping") %></p>
+        <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @waiting_for_shipping_count %></p>
+      <% end %>
     <% end %>
   </div>
 
@@ -60,25 +64,35 @@
     <% end %>
   </section>
 
+  <%# Only stages this user can see get a chip (see #filter_stages). A
+      confirmed invoice's stage is its shipping step, so "confirmed" shows if
+      any of those is visible. %>
+  <% confirmed_stages = ["confirmed", *CustomerInvoice::SHIPPING_STATUSES] %>
+  <% status_chips = [[nil, "all"], ["draft", "draft"], ["pending_payment_confirmation", "pending_payment_confirmation"],
+                     ["confirmed", "confirmed"], ["historical", "historical"], ["void", "void"]].select do |val, _key|
+       val.nil? || (val == "confirmed" ? (@filter_stages & confirmed_stages).any? : @filter_stages.include?(val))
+     end %>
+  <% shipping_chips = CustomerInvoice::SHIPPING_STATUSES & @filter_stages %>
   <div class="flex flex-wrap items-center gap-2 text-sm mb-4">
     <span class="text-gray-500 me-1"><%= t("sales.customer_invoices.filter") %>:</span>
-    <% [[nil, "all"], ["draft", "draft"], ["pending_payment_confirmation", "pending_payment_confirmation"],
-        ["confirmed", "confirmed"], ["historical", "historical"], ["void", "void"]].each do |val, key| %>
+    <% status_chips.each do |val, key| %>
       <%= link_to t("sales.customer_invoices.statuses.#{key}"),
             admin_sales_customer_invoices_path(**filter_params, status: val, shipping: @shipping),
             class: "px-3 py-1.5 rounded-lg font-medium border transition-colors #{@status == val ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" %>
     <% end %>
   </div>
 
-  <div class="flex flex-wrap items-center gap-2 text-sm mb-4">
-    <span class="text-gray-500 me-1"><%= t("sales.customer_invoices.filters.shipping") %>:</span>
-    <% [[nil, t("sales.customer_invoices.filters.all_shipping")],
-        *CustomerInvoice::SHIPPING_STATUSES.map { |s| [s, t("sales.customer_invoices.shipping_statuses.#{s}")] }].each do |val, label| %>
-      <%= link_to label,
-            admin_sales_customer_invoices_path(**filter_params, status: @status, shipping: val),
-            class: "px-3 py-1.5 rounded-lg font-medium border transition-colors #{@shipping == val ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" %>
-    <% end %>
-  </div>
+  <% if shipping_chips.any? %>
+    <div class="flex flex-wrap items-center gap-2 text-sm mb-4">
+      <span class="text-gray-500 me-1"><%= t("sales.customer_invoices.filters.shipping") %>:</span>
+      <% [[nil, t("sales.customer_invoices.filters.all_shipping")],
+          *shipping_chips.map { |s| [s, t("sales.customer_invoices.shipping_statuses.#{s}")] }].each do |val, label| %>
+        <%= link_to label,
+              admin_sales_customer_invoices_path(**filter_params, status: @status, shipping: val),
+              class: "px-3 py-1.5 rounded-lg font-medium border transition-colors #{@shipping == val ? 'bg-gray-900 text-white border-gray-900' : 'text-gray-700 border-gray-200 hover:bg-gray-100'}" %>
+      <% end %>
+    </div>
+  <% end %>
 
   <% if @invoices.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">

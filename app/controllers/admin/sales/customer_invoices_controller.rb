@@ -29,6 +29,7 @@ module Admin
         @pending_confirmation_count = visible.pending_payment_confirmation.count
         @waiting_for_shipping_count = visible.confirmed.waiting_for_shipping.count
         @outstanding_cents = visible.outstanding.sum(Arel.sql("total_cents - amount_paid_cents"))
+        @filter_stages = filter_stages(visible)
       end
 
       def new
@@ -160,6 +161,19 @@ module Admin
       end
 
       private
+
+      # Stages the status/shipping filter chips and count cards are shown for:
+      # every stage for the owner and unconfigured roles; otherwise the stages
+      # the role may see (Sales::StageVisibility) plus any stage the user's own
+      # always-visible invoices are in, so a chip never leads only to nothing.
+      def filter_stages(visible)
+        return CustomerInvoice::STAGES if ::Sales::StageVisibility.all_stages?(current_user)
+
+        own = visible.distinct.pluck(:status, :shipping_status).map do |status, shipping|
+          status == "confirmed" && shipping.present? ? shipping : status
+        end
+        ::Sales::StageVisibility.visible_stages(current_user) | own
+      end
 
       def confirm_now
         result = ::Sales::ConfirmCustomerInvoiceService.new(@invoice || CustomerInvoice.find(params[:id]), current_user).call
