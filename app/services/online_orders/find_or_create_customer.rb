@@ -34,7 +34,9 @@ module OnlineOrders
 
     def create(request)
       Customer.transaction(requires_new: true) do
-        Customer.create!(name: request.customer_name, phone: request.phone)
+        # The customer typed this number on the public menu; a length rule must
+        # not stop a cashier from accepting their order.
+        Customer.create!(name: request.customer_name, phone: request.phone, skip_phone_length_check: true)
       end
     rescue ActiveRecord::RecordInvalid, ActiveRecord::RecordNotUnique
       lookup(request.phone) || raise

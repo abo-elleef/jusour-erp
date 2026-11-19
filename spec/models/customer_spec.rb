@@ -39,18 +39,18 @@ RSpec.describe Customer, type: :model do
       expect(duplicate.errors[:phone]).to include(I18n.t("customers.errors.phone_taken"))
     end
 
-    it "strips contact fields before validating" do
+    it "normalises contact fields before validating" do
       create(:customer, email: nil, phone: "555-3333")
-      duplicate = build(:customer, email: nil, phone: " 555-3333 ")
+      duplicate = build(:customer, email: nil, phone: " 555 3333 ")
       expect(duplicate).not_to be_valid
-      expect(duplicate.phone).to eq("555-3333")
+      expect(duplicate.phone).to eq("5553333")
     end
   end
 
   describe "unique constraint rescue" do
     it "turns RecordNotUnique into a validation error instead of raising" do
-      create(:customer, email: nil, phone: "555-4444")
-      duplicate = build(:customer, email: nil, phone: "555-4444")
+      create(:customer, email: nil, phone: "5554444")
+      duplicate = build(:customer, email: nil, phone: "5554444")
       allow(duplicate).to receive(:valid?).and_return(true)
 
       expect(duplicate.save).to eq(false)

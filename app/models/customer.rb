@@ -4,6 +4,7 @@ class Customer < ApplicationRecord
   include Tenantable
   include MoneyInputs
   include Accountable
+  include ContactPhones
 
   INDEX_SORTABLE_COLUMNS = %w[name phone loyalty_points total_spent_cents created_at].freeze
   INDEX_DEFAULT_SORT = "created_at"
@@ -139,6 +140,7 @@ class Customer < ApplicationRecord
   def normalize_contact_fields
     self.name = name.to_s.strip.presence
     self.email = email.to_s.strip.presence
+    # Digits and separators are handled by ContactPhones (only when a phone changes).
     self.phone = phone.to_s.strip.presence
     self.phone_secondary = phone_secondary.to_s.strip.presence
   end

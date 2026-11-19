@@ -55,6 +55,20 @@ RSpec.describe "Admin settings inventory", type: :request do
     end
   end
 
+  describe "eleven-digit phones" do
+    it "is off by default and the owner can turn it on and off" do
+      expect(Setting.require_eleven_digit_phones?).to be(false)
+      get admin_settings_path
+      expect(response.body).to include("require_eleven_digit_phones")
+
+      patch admin_settings_path, params: { require_eleven_digit_phones: "1" }
+      expect(CompanySetting.find_by!(company: company).require_eleven_digit_phones).to be(true)
+
+      patch admin_settings_path, params: { require_eleven_digit_phones: "0" }
+      expect(CompanySetting.find_by!(company: company).require_eleven_digit_phones).to be(false)
+    end
+  end
+
   describe "notification levels" do
     it "shows every kind with its level and saves only the overrides" do
       get admin_settings_path

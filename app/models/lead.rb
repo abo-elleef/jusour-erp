@@ -10,6 +10,7 @@
 # LeadActivity timeline, and keeps the model testable without request state.
 class Lead < ApplicationRecord
   include Tenantable
+  include ContactPhones
 
   audited associated_with: :company
 
@@ -36,6 +37,7 @@ class Lead < ApplicationRecord
   validates :stage, inclusion: { in: STAGES }
   validates :lost_reason, inclusion: { in: LOST_REASONS }, allow_blank: true
   validate :lost_reason_required_when_lost
+  validate :phones_not_used_by_another_lead_or_customer
 
   scope :open_leads, -> { where.not(stage: TERMINAL_STAGES) }
   scope :due_for_follow_up, -> { open_leads.where(next_follow_up_at: ..Date.current) }
@@ -72,9 +74,11 @@ class Lead < ApplicationRecord
     return customer if converted?
 
     transaction do
+      # The lead's phones were already accepted on the lead (maybe before the
+      # 11-digit rule existed), so the length rule must not block the sale here.
       new_customer = Customer.create!(
         name: name, phone: phone, phone_secondary: phone_secondary, email: email,
-        customer_type: customer_type, originating_lead: self
+        customer_type: customer_type, originating_lead: self, skip_phone_length_check: true
       )
       update!(stage: "converted", customer: new_customer, converted_at: Time.current)
       log_activity!(by, "stage_change", I18n.t("sales.leads.activity.converted", customer: new_customer.name))
@@ -105,6 +109,51 @@ class Lead < ApplicationRecord
     return if lost_reason.present?
 
     errors.add(:lost_reason, I18n.t("sales.leads.errors.lost_reason_required"))
+  end
+
+  # One phone number, one lead: neither of this lead's phones may match another
+  # lead's phone or phone_secondary (lost and converted leads included), nor a
+  # customer's — that person is already a customer, so the rep logs the contact
+  # on the customer instead. Each error carries the clashing record as
+  # `conflict:` so the form can link to it. Runs only for a phone being set or
+  # changed, so old duplicates don't lock anyone out of editing other fields.
+  def phones_not_used_by_another_lead_or_customer
+    return if company_id.blank?
+
+    contact_phone_columns_to_check.each do |column|
+      number = self[column]
+      if (lead = lead_with_phone(number))
+        errors.add(column, I18n.t("sales.leads.errors.phone_used_by_lead", phone: number, name: lead.name),
+          conflict: lead)
+      elsif (customer = customer_with_phone(number))
+        errors.add(column, I18n.t("sales.leads.errors.phone_used_by_customer", phone: number,
+          name: customer.display_name), conflict: customer)
+      end
+    end
+  end
+
+  def lead_with_phone(number)
+    scope = Lead.unscoped_by_company.where(company_id: company_id)
+    scope = scope.where.not(id: id) if persisted?
+    with_phone(scope, number).order(:id).first
+  end
+
+  # A converted lead shares its numbers with the customer it became; that one
+  # customer is not a clash.
+  def customer_with_phone(number)
+    scope = Customer.unscoped_by_company.where(company_id: company_id)
+    scope = scope.where.not(id: customer_id) if customer_id.present?
+    scope = scope.where("customers.originating_lead_id IS NULL OR customers.originating_lead_id <> ?", id) if persisted?
+    with_phone(scope, number).order(:id).first
+  end
+
+  def with_phone(scope, number)
+    table = scope.klass.table_name
+    scope.where(
+      "#{scope.klass.normalized_phone_sql("#{table}.phone")} = :number OR " \
+      "#{scope.klass.normalized_phone_sql("#{table}.phone_secondary")} = :number",
+      number: number
+    )
   end
 
   def log_activity!(user, activity_type, note)

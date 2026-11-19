@@ -4,8 +4,22 @@
 
 <%= form_with model: lead, url: lead.persisted? ? admin_sales_lead_path(lead) : admin_sales_leads_path, class: "space-y-6" do |f| %>
   <% if lead.errors.any? %>
-    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
-      <%= lead.errors.full_messages.to_sentence %>
+    <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert" data-testid="lead-errors">
+      <ul class="space-y-1">
+        <% lead.errors.each do |error| %>
+          <li>
+            <%= error.full_message %>
+            <% case (conflict = error.options[:conflict]) %>
+            <% when Lead %>
+              <%= link_to t("sales.leads.errors.open_lead"), admin_sales_lead_path(conflict),
+                    class: "font-semibold underline ms-1", data: { turbo_frame: "_top" } %>
+            <% when Customer %>
+              <%= link_to t("sales.leads.errors.open_customer"), admin_customer_path(conflict),
+                    class: "font-semibold underline ms-1", data: { turbo_frame: "_top" } %>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
     </div>
   <% end %>
 
@@ -25,11 +39,13 @@
       </div>
       <div>
         <%= f.label :phone, t("sales.leads.form.phone"), class: label_class %>
-        <%= f.text_field :phone, class: input_class %>
+        <%= f.telephone_field :phone, class: input_class, inputmode: "tel", autocomplete: "tel", dir: "ltr",
+              data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" } %>
       </div>
       <div>
         <%= f.label :phone_secondary, t("sales.leads.form.phone_secondary"), class: label_class %>
-        <%= f.text_field :phone_secondary, class: input_class %>
+        <%= f.telephone_field :phone_secondary, class: input_class, inputmode: "tel", autocomplete: "tel", dir: "ltr",
+              data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" } %>
       </div>
       <div>
         <%= f.label :email, t("sales.leads.form.email"), class: label_class %>

@@ -1125,6 +1125,11 @@ en:
       hint: "How stock transfers behave when source quantities are incomplete."
       restrict_transfers: "Restrict transfers to source stock"
       restrict_transfers_hint: "When on, you cannot send more than the source location has on hand. Turn off to allow sending anyway — source balance can go negative until stock is corrected."
+    phones:
+      title: "Phone numbers"
+      hint: "Rules for the phone numbers on leads and customers."
+      require_eleven_digits: "Phones must be exactly 11 digits"
+      require_eleven_digits_hint: "Applies when a lead or customer phone is added or changed; numbers already saved are left as they are. Orders from the online menu and the offline register are not blocked."
     sales:
       title: "Sales"
       hint: "How quantities are entered on sales invoices and returns."
@@ -3197,6 +3202,10 @@ en:
       errors:
         phone_or_email_required: "Enter a phone number or an email."
         lost_reason_required: "is required when marking a lead lost"
+        phone_used_by_lead: "%{phone} is already on the lead “%{name}”"
+        phone_used_by_customer: "%{phone} belongs to the customer “%{name}” — log this contact on the customer's page instead"
+        open_lead: "Open the lead"
+        open_customer: "Open the customer"
       flash:
         created: "Lead created."
         updated: "Lead updated."
@@ -4961,6 +4970,9 @@ en:
         vendor_basket_title: "Purchase price drift"
         vendor_purchases_summary_title: "Vendor purchases summary"
 
+  phones:
+    errors:
+      eleven_digits: "must be exactly 11 digits" # errors.format adds the field name in English
   customers:
     online_orders:
       summary:
@@ -7739,6 +7751,12 @@ en:
         one: "Staff member"
         other: "Staff members"
     attributes:
+      lead:
+        phone: "Phone"
+        phone_secondary: "Second phone"
+      customer:
+        phone: "Phone"
+        phone_secondary: "Second phone"
       customer_invoice:
         customer: "Customer"
         location: "Sale location"
