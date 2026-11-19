@@ -5,12 +5,18 @@
 # work with once sales:see_all is taken off their role.
 #
 #   1. The salesperson on the customer's most recent non-void invoice that
-#      names one.
-#   2. Otherwise the assigned user of the lead the customer was converted from.
+#      names one who isn't the company owner.
+#   2. Otherwise the assigned user of the lead the customer was converted from,
+#      again never the owner.
 #   3. Otherwise the customer stays unassigned (managers only, until assigned).
 #
 # Only companies running the sales area (credit sales or leads). Never
 # overwrites an existing assignment.
+#
+# The owner is skipped on purpose (user's decision, 2026-11-20): Bazzar's
+# imported sales history names the owner as salesperson on every invoice, so
+# "latest salesperson" would hand almost every customer to the owner, who sees
+# everything anyway. Those customers stay unassigned for a manager to hand out.
 #
 #   DRY_RUN=1 bin/rails sales:backfill_customer_owners                 # counts only, writes nothing
 #   bin/rails sales:backfill_customer_owners                           # write
@@ -48,12 +54,14 @@ namespace :sales do
         LEFT JOIN LATERAL (
           SELECT ci.salesperson_id FROM customer_invoices ci
           WHERE ci.customer_id = c.id AND ci.status <> 'void' AND ci.salesperson_id IS NOT NULL
+            AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = ci.salesperson_id AND u.role = 'owner')
           ORDER BY ci.invoice_date DESC, ci.created_at DESC
           LIMIT 1
         ) inv ON TRUE
         LEFT JOIN LATERAL (
           SELECT l.assigned_user_id FROM leads l
           WHERE l.company_id = c.company_id AND (l.id = c.originating_lead_id OR l.customer_id = c.id)
+            AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id = l.assigned_user_id AND u.role = 'owner')
           ORDER BY l.converted_at DESC NULLS LAST, l.created_at DESC
           LIMIT 1
         ) ld ON TRUE
