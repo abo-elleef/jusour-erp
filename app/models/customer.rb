@@ -30,6 +30,9 @@ class Customer < ApplicationRecord
   # manager to assign them.
   belongs_to :assigned_user, class_name: "User", optional: true
   has_many :customer_invoices, dependent: :restrict_with_error
+  # The customer's own timeline after it exists (Bazzar slice F); the lead's
+  # history before conversion stays on originating_lead.lead_activities.
+  has_many :customer_activities, dependent: :destroy
   has_many :addresses, class_name: "CustomerAddress", dependent: :destroy, inverse_of: :customer
 
   accepts_nested_attributes_for :addresses, allow_destroy: true,

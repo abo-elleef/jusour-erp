@@ -1,0 +1,18 @@
+<%# Frame responses use turbo-rails' bare frame layout. The frame advances the
+    URL, and Turbo then takes the document title from this response, so give it
+    the same title the full page has. %>
+<% content_for :head, tag.title(@customer.name.presence || t("customers.default_name")) %>
+<%= turbo_frame_tag Admin::CustomersController::TAB_FRAME, data: { turbo_action: "advance" } do %>
+  <%# Logging an activity submits inside this frame and redirects back to it,
+      so the page keeps its scroll. The bare frame layout drops the flash, so
+      show it with a stream that runs as the frame content lands. %>
+  <% { notice: :notice, alert: :alert }.each do |key, type| %>
+    <% if flash[key].present? %>
+      <%= turbo_stream.append "toast-container", partial: "shared/toast", locals: { message: flash[key], type: type } %>
+    <% end %>
+  <% end %>
+  <%= render "admin/customers/tab_nav", customer: @customer, tabs: @tabs, tab_counts: @tab_counts, active_tab: @tab %>
+  <div class="mt-6">
+    <%= render "admin/customers/tabs/#{@tab}" %>
+  </div>
+<% end %>

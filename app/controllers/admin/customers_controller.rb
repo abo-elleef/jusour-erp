@@ -4,6 +4,8 @@ require "csv"
 
 module Admin
   class CustomersController < BaseController
+    TAB_FRAME = "customer_tab"
+
     before_action :set_customer, only: %i[show edit update destroy block unblock]
 
     def index
@@ -48,16 +50,20 @@ module Admin
       )
     end
 
+    # Shell (header, stat cards) + one Turbo frame that lazy-loads the active
+    # tab from this same URL (?tab=), like the supplier and staff pages: a
+    # customer we keep selling to and following up with collects long lists.
     def show
       authorize @customer
-      @orders = @customer.orders.order(created_at: :desc).limit(50)
-      if current_user.can?("customers:manage") && Current.company&.feature_enabled?(:ar_credit_sales)
-        invoices = @customer.customer_invoices
-        @invoices_count = invoices.count
-        @invoices = invoices.includes(:location).order(invoice_date: :desc, created_at: :desc).limit(20)
+      @tabs = visible_tabs
+      @tab = @tabs.include?(params[:tab]) ? params[:tab] : @tabs.first
+
+      if turbo_frame_request_id == TAB_FRAME
+        send(:"load_#{@tab}_tab")
+        # The admin layout is set explicitly and would override turbo-rails'
+        # bare frame layout.
+        render "tab", layout: "turbo_rails/frame"
       end
-      @loyalty_transactions = @customer.loyalty_transactions.order(created_at: :desc).limit(20)
-      @online_request_counts = OnlineOrderRequest.where(customer: @customer).group(:status).count
     end
 
     def new
@@ -150,6 +156,82 @@ module Admin
     end
 
     private
+
+    TAB_PAGE_SIZE = 25
+
+    # Which tabs this customer page has. Activity and the lead's history exist
+    # only where the distribution sales area does (Sales::OwnershipScope); a
+    # sales customer shows Orders/Loyalty only once it has any.
+    def visible_tabs
+      sales = ::Sales::OwnershipScope.applies_to?(Current.company)
+      @sales_area = sales
+      @tab_counts = {}
+      tabs = ["overview"]
+      if sales
+        tabs << "activity"
+        @tab_counts["activity"] = @customer.customer_activities.count
+        if @customer.originating_lead_id
+          tabs << "lead_history"
+          @tab_counts["lead_history"] = ::LeadActivity.where(lead_id: @customer.originating_lead_id).count
+        end
+      end
+      if invoices_visible?
+        tabs << "invoices"
+        @tab_counts["invoices"] = @customer.customer_invoices.count
+      end
+      tabs << "orders" if !sales || @customer.orders.exists?
+      tabs << "loyalty" if !sales || @customer.loyalty_transactions.exists?
+      tabs
+    end
+
+    def invoices_visible?
+      current_user.can?("customers:manage") && Current.company&.feature_enabled?(:ar_credit_sales)
+    end
+
+    # The customer's details: block status, online-order summary, numbers,
+    # the lead it came from, addresses. The lists live in their own tabs.
+    def load_overview_tab
+      @online_request_counts = OnlineOrderRequest.where(customer: @customer).group(:status).count
+      load_origin if @sales_area
+    end
+
+    # Bazzar slice F: the customer's own timeline since it became a customer.
+    def load_activity_tab
+      @activity = ::CustomerActivity.new(customer: @customer)
+      @can_log_activity = current_user.can?(::Admin::Customers::CustomerActivitiesController::PERMISSION)
+      @activities_pagy, @activities = pagy(:offset, @customer.customer_activities.includes(:user).recent,
+        limit: TAB_PAGE_SIZE)
+    end
+
+    # The lead it came from and that lead's timeline, read-only.
+    def load_lead_history_tab
+      @lead_activities_pagy, @lead_activities = pagy(:offset,
+        ::LeadActivity.where(lead_id: @customer.originating_lead_id).includes(:user).recent,
+        limit: TAB_PAGE_SIZE)
+    end
+
+    def load_invoices_tab
+      @invoices_pagy, @invoices = pagy(:offset,
+        @customer.customer_invoices.includes(:location).order(invoice_date: :desc, created_at: :desc),
+        limit: TAB_PAGE_SIZE)
+    end
+
+    def load_orders_tab
+      @orders_pagy, @orders = pagy(:offset, @customer.orders.order(created_at: :desc), limit: TAB_PAGE_SIZE)
+    end
+
+    def load_loyalty_tab
+      @loyalty_pagy, @loyalty_transactions = pagy(:offset, @customer.loyalty_transactions.order(created_at: :desc),
+        limit: TAB_PAGE_SIZE)
+    end
+
+    def load_origin
+      @lead = @customer.originating_lead
+      return unless @lead
+
+      @lead_linkable = Current.company.feature_enabled?(:leads) && current_user.can?("leads:view") &&
+        ownership.can_see_lead?(@lead)
+    end
 
     # Someone else's customer is a 404 for a limited rep (Sales::OwnershipScope).
     def set_customer

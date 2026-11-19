@@ -1,5 +1,4 @@
 <% content_for :title, @customer.name.presence || t("customers.default_name") %>
-<% stat_card_class = "rounded-2xl border border-gray-200 bg-white p-4" %>
 <% action_btn_class = "text-sm font-semibold px-4 py-2 rounded-xl transition-colors" %>
 
 <div class="max-w-6xl">
@@ -7,6 +6,11 @@
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900">
         <%= @customer.name.presence || t("customers.default_name") %>
+        <% if @customer.blocked? %>
+          <span class="ms-2 align-middle text-xs font-semibold text-red-800 bg-red-50 border border-red-200 rounded-lg px-2 py-0.5">
+            <%= t("customers.block.blocked_badge") %>
+          </span>
+        <% end %>
       </h1>
       <p class="text-gray-600 mt-1 space-y-0.5">
         <% if @customer.legacy_code.present? %>
@@ -42,182 +46,15 @@
     </div>
   </div>
 
-  <% if @customer.blocked? %>
-    <div class="rounded-2xl border border-red-200 bg-red-50 p-4 mb-6 flex flex-wrap items-start justify-between gap-4">
-      <div class="text-sm text-red-900">
-        <p class="font-bold"><%= t("customers.block.blocked_heading") %></p>
-        <p class="mt-1 whitespace-pre-wrap"><%= @customer.blocked_reason %></p>
-        <p class="mt-1 text-xs text-red-700">
-          <%= t("customers.block.blocked_by", name: @customer.blocked_by&.name || t("customers.shared.em_dash"),
-                time: l(@customer.blocked_at, format: :short)) %>
-        </p>
-      </div>
-      <% if policy(@customer).unblock? %>
-        <%= button_to t("customers.block.unblock"), unblock_admin_customer_path(@customer), method: :post,
-              form: { data: { turbo_confirm: t("customers.block.unblock_confirm") } },
-              class: "#{action_btn_class} bg-white border border-red-300 text-red-800 hover:bg-red-100" %>
-      <% end %>
+  <%# The active tab loads lazily into this frame from the same URL — see
+      CustomersController#show. Until it arrives, the placeholder holds the
+      space so the page doesn't jump. %>
+  <%= turbo_frame_tag Admin::CustomersController::TAB_FRAME,
+        src: admin_customer_path(@customer, request.query_parameters),
+        data: { turbo_action: "advance" } do %>
+    <%= render "tab_nav", customer: @customer, tabs: @tabs, tab_counts: @tab_counts, active_tab: @tab %>
+    <div class="rounded-2xl border border-gray-200 bg-white px-5 py-12 mt-6 text-center text-sm text-gray-500 animate-pulse">
+      <%= t("customers.show.tabs.loading") %>
     </div>
-  <% elsif policy(@customer).block? %>
-    <details class="rounded-2xl border border-gray-200 bg-white p-4 mb-6">
-      <summary class="cursor-pointer text-sm font-semibold text-gray-700"><%= t("customers.block.block") %></summary>
-      <p class="text-xs text-gray-500 mt-2"><%= t("customers.block.hint") %></p>
-      <%= form_with url: block_admin_customer_path(@customer), method: :post, class: "mt-3 flex flex-wrap items-end gap-3",
-            data: { turbo_confirm: t("customers.block.block_confirm") } do %>
-        <div class="flex-1 min-w-[14rem]">
-          <%= label_tag :blocked_reason, t("customers.block.reason"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
-          <%= text_field_tag :blocked_reason, nil, required: true, maxlength: 500,
-                class: "w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none" %>
-        </div>
-        <%= submit_tag t("customers.block.block"), name: nil,
-              class: "#{action_btn_class} bg-red-600 hover:bg-red-700 text-white cursor-pointer" %>
-      <% end %>
-    </details>
-  <% end %>
-
-  <% if @online_request_counts.present? %>
-    <div class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 mb-6 flex flex-wrap items-center justify-between gap-3 text-sm text-sky-900">
-      <p>
-        <span class="font-semibold"><%= t("customers.online_orders.summary", count: @online_request_counts.values.sum) %></span>
-        <% OnlineOrderRequest::STATUSES.each do |status| %>
-          <% next unless @online_request_counts[status].to_i.positive? %>
-          · <%= t("pos.online_orders.statuses.#{status}") %> <span class="tabular-nums"><%= @online_request_counts[status] %></span>
-        <% end %>
-      </p>
-      <%= link_to t("customers.online_orders.view"), admin_online_order_requests_path(q: { customer_id_eq: @customer.id }),
-            class: "font-semibold text-sky-800 hover:underline" %>
-    </div>
-  <% end %>
-
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-    <div class="<%= stat_card_class %>">
-      <p class="text-sm text-gray-500"><%= t("customers.show.loyalty_balance") %></p>
-      <p class="text-2xl font-bold text-amber-600 mt-1 tabular-nums"><%= customer_loyalty_points_label(@customer.loyalty_points) %></p>
-    </div>
-    <div class="<%= stat_card_class %>">
-      <p class="text-sm text-gray-500"><%= t("customers.show.lifetime_spend") %></p>
-      <p class="text-2xl font-bold mt-1 tabular-nums"><%= format_money(@customer.total_spent_cents) %></p>
-    </div>
-  </div>
-
-  <% if @customer.addresses.any? %>
-    <h2 class="text-lg font-bold mb-3"><%= t("customers.addresses.heading") %></h2>
-    <ul class="rounded-2xl border border-gray-200 bg-white divide-y divide-gray-100 mb-8">
-      <% @customer.addresses.ordered.each do |addr| %>
-        <li class="p-4">
-          <div class="flex flex-wrap justify-between gap-2">
-            <p class="font-semibold text-gray-900">
-              <%= addr.label.presence || t("customers.addresses.unlabeled") %>
-              <% if addr.is_default? %>
-                <span class="ms-2 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-0.5">
-                  <%= t("customers.addresses.default") %>
-                </span>
-              <% end %>
-            </p>
-          </div>
-          <p class="text-sm text-gray-600 mt-1 whitespace-pre-wrap"><%= addr.address %></p>
-        </li>
-      <% end %>
-    </ul>
-  <% end %>
-
-  <% if @invoices&.any? %>
-    <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
-      <h2 class="text-lg font-bold"><%= t("customers.show.invoices") %></h2>
-      <% if @invoices_count > @invoices.size %>
-        <%= link_to t("customers.show.view_all_invoices", count: @invoices_count),
-              admin_sales_customer_invoices_path(customer_id: @customer.id),
-              class: "text-sm font-semibold text-amber-700 hover:text-amber-800 hover:underline" %>
-      <% end %>
-    </div>
-    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-8">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            <tr>
-              <th class="p-3 ps-5 text-start"><%= t("sales.customer_invoices.table.number") %></th>
-              <th class="p-3 text-start"><%= t("sales.customer_invoices.table.date") %></th>
-              <th class="p-3 text-start"><%= t("sales.customer_invoices.form.location") %></th>
-              <th class="p-3 text-start"><%= t("sales.customer_invoices.table.status") %></th>
-              <th class="p-3 text-end"><%= t("sales.customer_invoices.table.total") %></th>
-              <th class="p-3 pe-5 text-end"><%= t("sales.customer_invoices.table.balance") %></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100 table-zebra">
-            <% @invoices.each do |inv| %>
-              <tr class="hover:bg-gray-100 transition-colors">
-                <td class="p-3 ps-5 font-medium tabular-nums">
-                  <%= link_to inv.invoice_number, admin_sales_customer_invoice_path(inv),
-                        class: "text-amber-700 hover:text-amber-800 hover:underline" %>
-                </td>
-                <td class="p-3 text-gray-600 whitespace-nowrap"><%= l(inv.invoice_date, format: :long) %></td>
-                <td class="p-3 text-gray-600">
-                  <% if inv.location %>
-                    <%= link_to inv.location.name, admin_location_path(inv.location), class: "hover:text-gray-900 hover:underline" %>
-                  <% end %>
-                </td>
-                <td class="p-3"><%= render "admin/sales/customer_invoices/status_badge", invoice: inv %></td>
-                <td class="p-3 text-end tabular-nums"><%= format_amount(inv.total_cents) %></td>
-                <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= inv.balance_due_cents.positive? && !inv.historical? ? 'text-amber-700' : 'text-gray-400' %>">
-                  <%= inv.historical? ? "—" : format_amount(inv.balance_due_cents) %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  <% end %>
-
-  <% if @orders.any? || !@invoices&.any? %>
-  <h2 class="text-lg font-bold mb-3"><%= t("customers.show.order_history") %></h2>
-  <% if @orders.any? %>
-    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-8">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            <tr>
-              <th class="p-3 ps-5 text-start"><%= t("order.labels.order_number") %></th>
-              <th class="p-3 text-start"><%= t("customers.show.order_date") %></th>
-              <th class="p-3 text-end"><%= t("order.labels.total") %></th>
-              <th class="p-3 pe-5 text-start"><%= t("order.labels.status") %></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-100 table-zebra">
-            <% @orders.each do |o| %>
-              <tr class="hover:bg-gray-100 transition-colors">
-                <td class="p-3 ps-5 font-medium"><%= o.order_number %></td>
-                <td class="p-3 text-gray-600 whitespace-nowrap"><%= l(o.created_at, format: :short) %></td>
-                <td class="p-3 text-end tabular-nums"><%= format_money(o.total_cents) %></td>
-                <td class="p-3 pe-5">
-                  <span class="text-xs font-semibold px-2 py-1 rounded-lg <%= order_status_class(o.status) %>">
-                    <%= order_status_label(o.status) %>
-                  </span>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  <% else %>
-    <p class="text-gray-500 mb-8"><%= t("customers.show.no_orders") %></p>
-  <% end %>
-  <% end %>
-
-  <h2 class="text-lg font-bold mb-3"><%= t("customers.show.loyalty_activity") %></h2>
-  <% if @loyalty_transactions.any? %>
-    <ul class="rounded-2xl border border-gray-200 bg-white divide-y divide-gray-100">
-      <% @loyalty_transactions.each do |tx| %>
-        <li class="p-3 flex justify-between items-center gap-4 text-sm">
-          <span><%= tx.description || tx.transaction_type %></span>
-          <span class="<%= tx.points.positive? ? 'text-green-600' : 'text-red-600' %> font-medium tabular-nums shrink-0">
-            <%= tx.points.positive? ? "+" : "" %><%= customer_loyalty_points_label(tx.points.abs) %>
-          </span>
-        </li>
-      <% end %>
-    </ul>
-  <% else %>
-    <p class="text-gray-500"><%= t("customers.show.no_loyalty") %></p>
   <% end %>
 </div>

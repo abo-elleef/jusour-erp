@@ -17,7 +17,7 @@ RSpec.describe "Admin customer blocking", type: :request do
     before { sign_in manager }
 
     it "offers the block form on the customer page" do
-      get admin_customer_path(customer)
+      get admin_customer_path(customer), headers: { "Turbo-Frame" => "customer_tab" }
       expect(response.body).to include(I18n.t("customers.block.block"), block_admin_customer_path(customer))
     end
 
@@ -30,9 +30,13 @@ RSpec.describe "Admin customer blocking", type: :request do
       expect(customer.blocked_by).to eq(manager)
       expect(customer.blocked_reason).to eq("Three fake orders")
 
-      get admin_customer_path(customer)
+      get admin_customer_path(customer), headers: { "Turbo-Frame" => "customer_tab" }
       expect(response.body).to include(I18n.t("customers.block.blocked_heading"), "Three fake orders", "Mona Manager")
       expect(response.body).to include(unblock_admin_customer_path(customer))
+
+      # The page header flags it on every tab.
+      get admin_customer_path(customer)
+      expect(response.body).to include(I18n.t("customers.block.blocked_badge"))
     end
 
     it "needs a reason" do
@@ -54,7 +58,7 @@ RSpec.describe "Admin customer blocking", type: :request do
     before { sign_in accountant }
 
     it "hides the buttons and refuses the actions" do
-      get admin_customer_path(customer)
+      get admin_customer_path(customer), headers: { "Turbo-Frame" => "customer_tab" }
       expect(response.body).not_to include(block_admin_customer_path(customer))
 
       post block_admin_customer_path(customer), params: { blocked_reason: "Nope" }

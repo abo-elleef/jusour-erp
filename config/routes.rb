@@ -259,6 +259,7 @@ Rails.application.routes.draw do
         post :block
         post :unblock
       end
+      resources :customer_activities, only: %i[create], module: :customers
     end
     resources :users do
       member do

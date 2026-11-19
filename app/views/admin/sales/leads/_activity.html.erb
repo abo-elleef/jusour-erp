@@ -1,0 +1,12 @@
+<%# One timeline entry — a lead's (LeadActivity) or a customer's (CustomerActivity). %>
+<li class="p-4 px-5 flex items-start gap-3">
+  <span class="text-xs font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border bg-gray-50 text-gray-600 border-gray-200 shrink-0 w-36 text-center">
+    <%= t("sales.leads.activity_types.#{activity.activity_type}") %>
+  </span>
+  <div class="flex-1 text-sm">
+    <p class="text-gray-800 whitespace-pre-wrap"><%= activity.note %></p>
+    <p class="text-xs text-gray-400 mt-0.5">
+      <%= l(activity.occurred_at, format: :short) %> · <%= activity.user&.name || t("sales.shared.em_dash") %>
+    </p>
+  </div>
+</li>

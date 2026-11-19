@@ -127,12 +127,12 @@ RSpec.describe "Admin::Sales::CustomerInvoices", type: :request do
       expect(response.body).to include(historical.invoice_number)
     end
 
-    it "lists them on the customer page, with a link to the invoice" do
-      get admin_customer_path(customer, locale: "en")
+    it "lists them on the customer page's Invoices tab, with a link to the invoice; no Orders tab without orders" do
+      get admin_customer_path(customer, locale: "en", tab: "invoices"), headers: { "Turbo-Frame" => "customer_tab" }
       expect(response).to have_http_status(:ok)
       expect(response.body).to include("Sales invoices")
       expect(response.body).to include(admin_sales_customer_invoice_path(historical))
-      expect(response.body).not_to include("Order history")
+      expect(response.body).not_to include(admin_customer_path(customer, tab: "orders"))
     end
 
     it "links the customer, location and seller from the invoice header" do
