@@ -1053,6 +1053,7 @@ ar:
       settings: "الإعدادات"
       apps: "التطبيقات"
       sales: "المبيعات"
+      tickets: "الشكاوى والتذاكر"
     keys:
       dashboard:
         view: "عرض لوحة التحكم"
@@ -1115,6 +1116,9 @@ ar:
         see_all: "رؤية العملاء المحتملين والعملاء والفواتير لكل المندوبين"
       storefront:
         manage: "إدارة الموقع الإلكتروني"
+      tickets:
+        manage: "فتح التذاكر والتعليق عليها وحلّها"
+        assign: "إسناد التذاكر وإغلاقها وإعادة فتحها ورؤية كل التذاكر"
   settings:
     title: "إعدادات النظام"
     description: "الولاء والضرائب والمخزون وإعدادات المالك فقط."
@@ -1123,6 +1127,7 @@ ar:
       roles: "الأدوار"
       integrations: "التكاملات"
       online_payments: "المدفوعات الإلكترونية"
+      ticket_categories: "فئات التذاكر"
     business_profile:
       title: "نوع النشاط"
       hint: "نوع نشاطك يحدد الوحدات الظاهرة — المطاعم تحصل على التصنيع والحضور؛ التوزيع يحصل على البيع الآجل وشرائح الأسعار."
@@ -3260,6 +3265,10 @@ ar:
         note: "ملاحظة"
         stage_change: "تغيير المرحلة"
         assignment_change: "إعادة إسناد"
+        ticket_opened: "تذكرة جديدة"
+        ticket_resolved: "تذكرة محلولة"
+        ticket_closed: "تذكرة مغلقة"
+        ticket_reopened: "إعادة فتح تذكرة"
       activity:
         stage_changed: "انتقل من %{from} إلى %{to}."
         reassigned: "أُعيد إسناده من %{from} إلى %{to}."
@@ -3302,6 +3311,7 @@ ar:
       lead_reports: "تقارير العملاء المحتملين"
       reports: "التقارير"
       storefront: "إعدادات الموقع"
+      tickets: "التذاكر والشكاوى"
       storefront_listings: "منتجات الموقع"
     storefront:
       image_hints:
@@ -3877,6 +3887,9 @@ ar:
       vendor_balance_negative: "رصيد المورد سالب"
       customer_invoice_payment_pending: "دفعة بانتظار الاعتماد"
       lead_follow_up_due: "متابعة عميل محتمل"
+      ticket_assigned: "تذكرة مُسندة إليك"
+      ticket_resolved: "تم حل تذكرة"
+      ticket_commented: "تعليق على تذكرة"
       customer_invoice_stage_entered: "تغيّرت مرحلة فاتورة"
       unknown: "تنبيه"
     index:
@@ -3934,6 +3947,9 @@ ar:
       vendor_balance_negative: "أصبح رصيد %{supplier} سالباً (%{balance}) بعد تعديل فاتورة %{invoice_number} — أصبح المورد مديناً لك."
       customer_invoice_payment_pending: "الفاتورة %{invoice_number} بانتظار اعتماد الدفعة."
       lead_follow_up_due: "حان موعد متابعة العميل المحتمل %{lead_name} اليوم."
+      ticket_assigned: "أُسندت إليك التذكرة %{ticket_number}: %{subject}"
+      ticket_resolved: "قام %{by} بحل التذكرة %{ticket_number}: %{subject}"
+      ticket_commented: "علّق %{by} على التذكرة %{ticket_number}: %{subject}"
       lead_follow_up_overdue: "متابعة العميل المحتمل %{lead_name} متأخرة — كان موعدها %{date}."
       customer_invoice_stage_entered: "الفاتورة %{invoice_number} أصبحت: %{stage}."
 
@@ -5212,6 +5228,7 @@ ar:
         overview: "نظرة عامة"
         activity: "نشاط العميل"
         lead_history: "تاريخ العميل المحتمل"
+        tickets: "التذاكر"
         invoices: "الفواتير"
         orders: "الطلبات"
         loyalty: "الولاء"
@@ -7057,6 +7074,16 @@ ar:
         "true": "نعم"
         "false": "لا"
       fields:
+        number: "الرقم"
+        subject: "الموضوع"
+        priority: "الأولوية"
+        status: "الحالة"
+        opened_by_id: "فتحها"
+        ticket_category_id: "الفئة"
+        customer_invoice_id: "الفاتورة"
+        credit_note_id: "إشعار الدائن"
+        resolved_at: "تاريخ الحل"
+        closed_at: "تاريخ الإغلاق"
         description: "الوصف"
         amount_cents: "المبلغ"
         expense_date: "تاريخ المصروف"
@@ -7111,6 +7138,15 @@ ar:
         balance_deduction_cents: "الخصم الشهري من المديونية"
         wages_account_code: "رقم حساب الموظف"
       values:
+        status:
+          open: "مفتوحة"
+          in_progress: "قيد العمل"
+          resolved: "تم الحل"
+          closed: "مغلقة"
+        priority:
+          low: "منخفضة"
+          normal: "عادية"
+          urgent: "عاجلة"
         recurrence:
           one_time: "مرة واحدة"
           daily: "يومي"
@@ -7631,6 +7667,23 @@ ar:
         required: "%{attribute} مطلوب"
         whole_number_required: "%{attribute} يجب أن تكون رقماً صحيحاً. للبيع بالكسور فعّلها من الإعدادات ← المبيعات."
       models:
+        ticket:
+          attributes:
+            subject:
+              blank: "الموضوع مطلوب"
+            images: &ticket_image_errors
+              invalid_image_type: "الصور يجب أن تكون JPEG أو PNG أو WebP أو HEIC"
+              image_too_large: "يجب ألا تتجاوز كل صورة 10 ميجابايت"
+              too_many: "لا يمكن إرفاق أكثر من %{count} صور"
+            customer_invoice:
+              not_this_customer: "الفاتورة ليست لهذا العميل"
+            credit_note:
+              not_this_customer: "إشعار الدائن ليس لهذا العميل"
+        ticket_comment:
+          attributes:
+            body:
+              blank: "اكتب تعليقاً أو أرفق صورة"
+            images: *ticket_image_errors
         location: &receipt_logo_errors
           attributes:
             receipt_logo:
@@ -7977,6 +8030,16 @@ ar:
         one: "موظف"
         other: "موظفون"
     attributes:
+      ticket:
+        customer: "العميل"
+        opened_by: "من فتح التذكرة"
+        subject: "الموضوع"
+        images: "الصور"
+        customer_invoice: "الفاتورة"
+        credit_note: "إشعار الدائن"
+      ticket_category:
+        name: "الاسم بالإنجليزية"
+        name_ar: "الاسم بالعربية"
       lead:
         phone: "الهاتف"
         phone_secondary: "الهاتف الثاني"
@@ -8080,3 +8143,117 @@ ar:
     treasury_flow_section: "حركة الخزينة — اليوم"
     treasury_in_today: "الأموال الواردة"
     treasury_out_today: "الأموال الصادرة"
+  tickets:
+    title: "التذاكر والشكاوى"
+    new_title: "تذكرة جديدة"
+    edit_title: "تعديل التذكرة %{number}"
+    new_button: "تذكرة جديدة"
+    back: "← كل التذاكر"
+    unassigned: "غير مُسندة"
+    statuses:
+      open: "مفتوحة"
+      in_progress: "قيد العمل"
+      resolved: "تم الحل"
+      closed: "مغلقة"
+    priorities:
+      low: "منخفضة"
+      normal: "عادية"
+      urgent: "عاجلة"
+    actions:
+      in_progress: "بدء العمل"
+      resolved: "تم الحل"
+      closed: "إغلاق"
+      reopen: "إعادة فتح"
+    table:
+      number: "الرقم"
+      subject: "الموضوع"
+      customer: "العميل"
+      category: "الفئة"
+      status: "الحالة"
+      priority: "الأولوية"
+      assignee: "المسؤول"
+      opened: "تاريخ الفتح"
+    index:
+      hint: "شكاوى العملاء ومتابعة رضاهم. تُفتح التذكرة من صفحة العميل أو الفاتورة."
+      mine: "تذاكري"
+      active: "النشطة"
+      search: "بحث"
+      search_placeholder: "رقم التذكرة، الموضوع، العميل"
+      anyone: "الكل"
+      any_category: "كل الفئات"
+      any_priority: "كل الأولويات"
+      from: "من"
+      to: "إلى"
+      filter: "تصفية"
+      for_customer: "تذاكر العميل"
+      all_customers: "كل العملاء"
+      empty_title: "لا توجد تذاكر"
+      empty_hint: "افتح تذكرة من صفحة العميل (تبويب التذاكر) أو من صفحة الفاتورة."
+    form:
+      subject: "الموضوع"
+      subject_placeholder: "ملخص قصير للشكوى"
+      description: "التفاصيل"
+      description_placeholder: "ماذا حدث؟ ماذا يطلب العميل؟"
+      no_category: "بدون فئة"
+      invoice: "الفاتورة"
+      no_invoice: "بدون فاتورة"
+      credit_note: "إشعار دائن مرتبط"
+      no_credit_note: "بدون"
+      credit_note_hint: "للإشارة فقط — الاسترداد يتم بإشعار الدائن أو السند كالمعتاد."
+      default_handler: "المسؤول الافتراضي للفئة"
+      images: "الصور"
+      images_hint: "حتى 10 صور، كل صورة 10 ميجابايت كحد أقصى."
+      create: "فتح التذكرة"
+      save: "حفظ"
+    show:
+      opened_by: "فتحها %{name} في %{date}"
+      details: "التفاصيل"
+      resolved_at: "تاريخ الحل"
+      closed_at: "تاريخ الإغلاق"
+      reassign: "إسناد"
+      move_to: "تغيير الحالة"
+      status_note_placeholder: "ملاحظة (اختيارية) تظهر في السجل"
+      close_needs_manager: "الإغلاق للمدير (صلاحية إسناد التذاكر)."
+      closed_hint: "التذكرة مغلقة. إعادة فتحها للمدير."
+      timeline: "السجل والتعليقات"
+      no_comments: "لا توجد تعليقات بعد."
+      comment_placeholder: "اكتب تعليقاً…"
+      add_comment: "إضافة تعليق"
+      change_history: "سجل التعديلات"
+    timeline:
+      status_changed: "غيّر الحالة من %{from} إلى %{to}"
+      reassigned: "أعاد الإسناد من %{from} إلى %{to}"
+    customer_tab:
+      all: "عرض في قائمة التذاكر"
+      none: "لا توجد تذاكر لهذا العميل."
+    invoice:
+      none: "لا توجد تذاكر مرتبطة بهذه الفاتورة."
+    flash:
+      created: "تم فتح التذكرة %{number}."
+      updated: "تم حفظ التذكرة."
+      status_changed: "أصبحت التذكرة: %{status}."
+      reassigned: "تم إسناد التذكرة إلى %{name}."
+      commented: "تمت إضافة التعليق."
+      not_allowed: "لا تملك صلاحية هذا الإجراء على التذكرة."
+    categories:
+      title: "فئات التذاكر"
+      hint: "الفئات المعروضة عند فتح تذكرة، ومن يستلم تذاكر كل فئة تلقائياً."
+      new: "فئة جديدة"
+      edit: "تعديل الفئة"
+      name: "الاسم بالإنجليزية"
+      name_ar: "الاسم بالعربية"
+      default_handler: "المسؤول الافتراضي"
+      default_handler_hint: "تُسند إليه التذكرة الجديدة في هذه الفئة إذا لم يُختر مسؤول."
+      no_handler: "لا أحد"
+      position: "الترتيب"
+      tickets: "التذاكر"
+      status: "الحالة"
+      active: "مفعّلة"
+      inactive: "معطّلة"
+      active_label: "مفعّلة (تظهر عند فتح تذكرة جديدة)"
+      delete_confirm: "حذف هذه الفئة؟"
+      flash:
+        created: "تمت إضافة الفئة."
+        updated: "تم حفظ الفئة."
+        deleted: "تم حذف الفئة."
+        in_use: "الفئة مستخدمة في تذاكر — عطّلها بدلاً من حذفها."

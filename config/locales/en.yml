@@ -1039,6 +1039,7 @@ en:
       settings: "Settings"
       apps: "Apps"
       sales: "Sales"
+      tickets: "Tickets"
     keys:
       dashboard:
         view: "View dashboard"
@@ -1101,6 +1102,9 @@ en:
         see_all: "See every salesperson's leads, customers and invoices"
       storefront:
         manage: "Manage the storefront website"
+      tickets:
+        manage: "Open, comment on and resolve tickets"
+        assign: "Assign, close and reopen tickets; see every ticket"
   settings:
     title: "System settings"
     description: "Loyalty, tax rates, inventory, and owner-only configuration."
@@ -1109,6 +1113,7 @@ en:
       roles: "Roles"
       integrations: "Integrations"
       online_payments: "Online payments"
+      ticket_categories: "Ticket categories"
     business_profile:
       title: "Business profile"
       hint: "Your industry type. It decides which modules appear — e.g. restaurants get manufacturing and attendance; distributors get credit sales and pricing tiers."
@@ -3232,6 +3237,10 @@ en:
         note: "Note"
         stage_change: "Stage change"
         assignment_change: "Reassigned"
+        ticket_opened: "Ticket opened"
+        ticket_resolved: "Ticket resolved"
+        ticket_closed: "Ticket closed"
+        ticket_reopened: "Ticket reopened"
       activity:
         stage_changed: "Moved from %{from} to %{to}."
         reassigned: "Reassigned from %{from} to %{to}."
@@ -3274,6 +3283,7 @@ en:
       lead_reports: "Leads reports"
       reports: "Reports"
       storefront: "Website settings"
+      tickets: "Tickets"
       storefront_listings: "Website products"
     storefront:
       image_hints:
@@ -3823,6 +3833,9 @@ en:
       vendor_balance_negative: "Vendor balance negative"
       customer_invoice_payment_pending: "Payment awaiting confirmation"
       lead_follow_up_due: "Lead follow-up"
+      ticket_assigned: "Ticket assigned to you"
+      ticket_resolved: "Ticket resolved"
+      ticket_commented: "Ticket comment"
       customer_invoice_stage_entered: "Invoice stage changed"
       unknown: "Alert"
     index:
@@ -3880,6 +3893,9 @@ en:
       vendor_balance_negative: "%{supplier}'s balance has gone negative (%{balance}) after editing invoice %{invoice_number} — they now owe you money back."
       customer_invoice_payment_pending: "Invoice %{invoice_number} is awaiting payment confirmation."
       lead_follow_up_due: "Follow up with lead %{lead_name} today."
+      ticket_assigned: "Ticket %{ticket_number} was assigned to you: %{subject}"
+      ticket_resolved: "%{by} resolved ticket %{ticket_number}: %{subject}"
+      ticket_commented: "%{by} commented on ticket %{ticket_number}: %{subject}"
       lead_follow_up_overdue: "Follow-up with lead %{lead_name} is overdue — it was due %{date}."
       customer_invoice_stage_entered: "Invoice %{invoice_number} is now: %{stage}."
 
@@ -5110,6 +5126,7 @@ en:
         overview: "Overview"
         activity: "Customer activity"
         lead_history: "Lead history"
+        tickets: "Tickets"
         invoices: "Invoices"
         orders: "Orders"
         loyalty: "Loyalty"
@@ -6944,6 +6961,16 @@ en:
         "true": "Yes"
         "false": "No"
       fields:
+        number: "Number"
+        subject: "Subject"
+        priority: "Priority"
+        status: "Status"
+        opened_by_id: "Opened by"
+        ticket_category_id: "Category"
+        customer_invoice_id: "Invoice"
+        credit_note_id: "Credit note"
+        resolved_at: "Resolved at"
+        closed_at: "Closed at"
         description: "Description"
         amount_cents: "Amount"
         expense_date: "Expense date"
@@ -6998,6 +7025,15 @@ en:
         balance_deduction_cents: "Monthly repayment plan"
         wages_account_code: "Staff account code"
       values:
+        status:
+          open: "Open"
+          in_progress: "In progress"
+          resolved: "Resolved"
+          closed: "Closed"
+        priority:
+          low: "Low"
+          normal: "Normal"
+          urgent: "Urgent"
         recurrence:
           one_time: "One time"
           daily: "Daily"
@@ -7504,6 +7540,21 @@ en:
         required: "must be chosen"
         whole_number_required: "must be a whole number. To sell in fractions, turn them on in Settings → Sales."
       models:
+        ticket:
+          attributes:
+            images: &ticket_image_errors
+              invalid_image_type: "must be JPEG, PNG, WebP or HEIC images"
+              image_too_large: "must each be 10 MB or smaller"
+              too_many: "can't be more than %{count}"
+            customer_invoice:
+              not_this_customer: "is not this customer's"
+            credit_note:
+              not_this_customer: "is not this customer's"
+        ticket_comment:
+          attributes:
+            body:
+              blank: "can't be blank — write a comment or attach an image"
+            images: *ticket_image_errors
         location: &receipt_logo_errors
           attributes:
             receipt_logo:
@@ -7852,6 +7903,18 @@ en:
         one: "Staff member"
         other: "Staff members"
     attributes:
+      ticket:
+        customer: "Customer"
+        opened_by: "Opened by"
+        subject: "Subject"
+        images: "Images"
+        customer_invoice: "Invoice"
+        credit_note: "Credit note"
+      ticket_comment:
+        body: "Comment"
+      ticket_category:
+        name: "English name"
+        name_ar: "Arabic name"
       lead:
         phone: "Phone"
         phone_secondary: "Second phone"
@@ -7947,3 +8010,117 @@ en:
     treasury_flow_section: "Treasury flow — today"
     treasury_in_today: "Money in"
     treasury_out_today: "Money out"
+  tickets:
+    title: "Tickets"
+    new_title: "New ticket"
+    edit_title: "Edit ticket %{number}"
+    new_button: "New ticket"
+    back: "← All tickets"
+    unassigned: "Unassigned"
+    statuses:
+      open: "Open"
+      in_progress: "In progress"
+      resolved: "Resolved"
+      closed: "Closed"
+    priorities:
+      low: "Low"
+      normal: "Normal"
+      urgent: "Urgent"
+    actions:
+      in_progress: "Start work"
+      resolved: "Resolve"
+      closed: "Close"
+      reopen: "Reopen"
+    table:
+      number: "No."
+      subject: "Subject"
+      customer: "Customer"
+      category: "Category"
+      status: "Status"
+      priority: "Priority"
+      assignee: "Assignee"
+      opened: "Opened"
+    index:
+      hint: "Customer complaints and satisfaction cases. Open a ticket from a customer or an invoice."
+      mine: "My tickets"
+      active: "Active"
+      search: "Search"
+      search_placeholder: "Ticket no., subject, customer"
+      anyone: "Anyone"
+      any_category: "All categories"
+      any_priority: "All priorities"
+      from: "From"
+      to: "To"
+      filter: "Filter"
+      for_customer: "Tickets of"
+      all_customers: "All customers"
+      empty_title: "No tickets"
+      empty_hint: "Open a ticket from a customer's page (Tickets tab) or from an invoice."
+    form:
+      subject: "Subject"
+      subject_placeholder: "A short summary of the complaint"
+      description: "Details"
+      description_placeholder: "What happened? What does the customer ask for?"
+      no_category: "No category"
+      invoice: "Invoice"
+      no_invoice: "No invoice"
+      credit_note: "Related credit note"
+      no_credit_note: "None"
+      credit_note_hint: "A reference only — refunds still go through credit notes and vouchers."
+      default_handler: "Category's default handler"
+      images: "Images"
+      images_hint: "Up to 10 images, 10 MB each."
+      create: "Open ticket"
+      save: "Save"
+    show:
+      opened_by: "Opened by %{name} on %{date}"
+      details: "Details"
+      resolved_at: "Resolved"
+      closed_at: "Closed"
+      reassign: "Assign"
+      move_to: "Change status"
+      status_note_placeholder: "Note (optional), shown on the timeline"
+      close_needs_manager: "Closing is a manager's step (tickets:assign)."
+      closed_hint: "This ticket is closed. A manager can reopen it."
+      timeline: "Timeline and comments"
+      no_comments: "No comments yet."
+      comment_placeholder: "Write a comment…"
+      add_comment: "Add comment"
+      change_history: "Change history"
+    timeline:
+      status_changed: "changed the status from %{from} to %{to}"
+      reassigned: "reassigned from %{from} to %{to}"
+    customer_tab:
+      all: "Open in tickets list"
+      none: "No tickets for this customer."
+    invoice:
+      none: "No tickets linked to this invoice."
+    flash:
+      created: "Ticket %{number} opened."
+      updated: "Ticket saved."
+      status_changed: "Ticket is now %{status}."
+      reassigned: "Ticket assigned to %{name}."
+      commented: "Comment added."
+      not_allowed: "You can't do that on this ticket."
+    categories:
+      title: "Ticket categories"
+      hint: "The categories offered when a ticket is opened, and who gets each category's tickets automatically."
+      new: "New category"
+      edit: "Edit category"
+      name: "English name"
+      name_ar: "Arabic name"
+      default_handler: "Default handler"
+      default_handler_hint: "A new ticket in this category goes to them when nobody is picked."
+      no_handler: "Nobody"
+      position: "Order"
+      tickets: "Tickets"
+      status: "Status"
+      active: "Active"
+      inactive: "Inactive"
+      active_label: "Active (offered on new tickets)"
+      delete_confirm: "Delete this category?"
+      flash:
+        created: "Category added."
+        updated: "Category saved."
+        deleted: "Category deleted."
+        in_use: "This category is used by tickets — switch it off instead."

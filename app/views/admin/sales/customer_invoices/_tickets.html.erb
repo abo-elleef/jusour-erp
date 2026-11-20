@@ -1,0 +1,20 @@
+<%# Bazzar slice G1: tickets that point at this invoice, and opening one from here. %>
+<% if ::Sales::OwnershipScope.applies_to?(Current.company) && Ticket.worker?(current_user) %>
+  <% tickets = ::Sales::OwnershipScope.for(current_user).tickets(invoice.tickets)
+                 .includes(:assigned_user, :ticket_category, :customer).order(number: :desc) %>
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6 print-hide" data-testid="invoice-tickets">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("tickets.title") %></h2>
+      <%= link_to new_admin_sales_ticket_path(customer_id: invoice.customer_id, customer_invoice_id: invoice.id),
+            data: { testid: "new-ticket-from-invoice" },
+            class: "inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-800 hover:underline" do %>
+        <span aria-hidden="true">+</span> <%= t("tickets.new_button") %>
+      <% end %>
+    </div>
+    <% if tickets.empty? %>
+      <p class="p-6 text-center text-sm text-gray-500"><%= t("tickets.invoice.none") %></p>
+    <% else %>
+      <%= render "admin/sales/tickets/table", tickets: tickets, show_customer: false %>
+    <% end %>
+  </section>
+<% end %>

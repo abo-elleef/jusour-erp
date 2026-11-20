@@ -1,0 +1,20 @@
+<%# Bazzar slice G1: the customer's tickets (complaints), open ones first. %>
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden" data-testid="customer-tickets">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap items-center justify-between gap-2">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("tickets.title") %></h2>
+    <div class="flex items-center gap-3">
+      <%= link_to t("tickets.customer_tab.all"), admin_sales_tickets_path(customer_id: @customer.id), data: { turbo_frame: "_top" },
+            class: "text-sm font-semibold text-gray-600 hover:text-gray-900 hover:underline" %>
+      <%= link_to new_admin_sales_ticket_path(customer_id: @customer.id), data: { turbo_frame: "_top", testid: "new-ticket" },
+            class: "inline-flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors" do %>
+        <span aria-hidden="true">+</span> <%= t("tickets.new_button") %>
+      <% end %>
+    </div>
+  </div>
+  <% if @tickets.empty? %>
+    <p class="p-8 text-center text-sm text-gray-500"><%= t("tickets.customer_tab.none") %></p>
+  <% else %>
+    <%= render "admin/sales/tickets/table", tickets: @tickets, show_customer: false %>
+  <% end %>
+  <%= render "admin/accounting/pagination", pagy: @tickets_pagy %>
+</section>

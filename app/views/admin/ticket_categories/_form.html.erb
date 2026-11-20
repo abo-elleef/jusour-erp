@@ -1,0 +1,39 @@
+<% input_class = "w-full rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm" %>
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<%= form_with model: category, url: (category.new_record? ? admin_ticket_categories_path : admin_ticket_category_path(category)),
+      class: "space-y-5" do |f| %>
+  <% if category.errors.any? %>
+    <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <%= category.errors.full_messages.to_sentence %>
+    </div>
+  <% end %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <%= f.label :name_ar, t("tickets.categories.name_ar"), class: label_class %>
+      <%= f.text_field :name_ar, dir: "rtl", class: input_class %>
+    </div>
+    <div>
+      <%= f.label :name, t("tickets.categories.name"), class: label_class %>
+      <%= f.text_field :name, required: true, dir: "ltr", class: input_class %>
+    </div>
+    <div>
+      <%= f.label :default_handler_id, t("tickets.categories.default_handler"), class: label_class %>
+      <%= f.select :default_handler_id, @handlers.map { |u| [u.name, u.id] },
+            { include_blank: t("tickets.categories.no_handler") }, class: input_class %>
+      <p class="text-xs text-gray-400 mt-1"><%= t("tickets.categories.default_handler_hint") %></p>
+    </div>
+    <div>
+      <%= f.label :position, t("tickets.categories.position"), class: label_class %>
+      <%= f.text_field :position, inputmode: "numeric", class: input_class, data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" } %>
+    </div>
+  </div>
+  <label class="flex items-center gap-2 text-sm text-gray-700">
+    <%= f.check_box :active, class: "rounded border-gray-300 text-amber-600" %>
+    <%= t("tickets.categories.active_label") %>
+  </label>
+  <div class="flex items-center gap-3">
+    <%= f.submit t("tickets.form.save"),
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-sm cursor-pointer" %>
+    <%= link_to t("actions.cancel"), admin_ticket_categories_path, class: "text-sm font-semibold text-gray-600 hover:text-gray-900 px-4 py-2" %>
+  </div>
+<% end %>

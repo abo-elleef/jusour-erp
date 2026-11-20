@@ -1,0 +1,61 @@
+<%# A list of tickets — the index, the customer's Tickets tab and the invoice
+    page. Links break out of any frame. local: sortable (index only). %>
+<% sortable = local_assigns.fetch(:sortable, false) %>
+<% show_customer = local_assigns.fetch(:show_customer, true) %>
+<% header = ->(label, key) { sortable ? sort_header_link(label, key, sort: @sort, direction: @direction) : label } %>
+<div class="overflow-x-auto">
+  <table class="w-full text-start text-sm min-w-[52rem]">
+    <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+      <tr>
+        <th class="p-3 ps-5 text-start"><%= header.(t("tickets.table.number"), "number") %></th>
+        <th class="p-3 text-start"><%= header.(t("tickets.table.subject"), "subject") %></th>
+        <% if show_customer %>
+          <th class="p-3 text-start"><%= header.(t("tickets.table.customer"), "customer") %></th>
+        <% end %>
+        <th class="p-3 text-start"><%= t("tickets.table.category") %></th>
+        <th class="p-3 text-start"><%= header.(t("tickets.table.status"), "status") %></th>
+        <th class="p-3 text-start"><%= header.(t("tickets.table.priority"), "priority") %></th>
+        <th class="p-3 text-start"><%= header.(t("tickets.table.assignee"), "assigned_user") %></th>
+        <th class="p-3 pe-5 text-start"><%= header.(t("tickets.table.opened"), "created_at") %></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100" data-testid="tickets-table">
+      <% tickets.each do |ticket| %>
+        <tr class="hover:bg-gray-100 transition-colors">
+          <td class="p-3 ps-5 font-semibold tabular-nums whitespace-nowrap">
+            <%= link_to ticket.display_number, admin_sales_ticket_path(ticket), data: { turbo_frame: "_top" },
+                  class: "text-amber-700 hover:text-amber-800 hover:underline" %>
+          </td>
+          <td class="p-3">
+            <%= link_to ticket.subject, admin_sales_ticket_path(ticket), data: { turbo_frame: "_top" },
+                  class: "text-gray-900 hover:underline" %>
+            <% if ticket.customer_invoice %>
+              <span class="block text-xs text-gray-500 tabular-nums">
+                <%= link_to ticket.customer_invoice.invoice_number, admin_sales_customer_invoice_path(ticket.customer_invoice),
+                      data: { turbo_frame: "_top" }, class: "hover:underline" %>
+              </span>
+            <% end %>
+          </td>
+          <% if show_customer %>
+            <td class="p-3">
+              <%= link_to ticket.customer.display_name, admin_customer_path(ticket.customer), data: { turbo_frame: "_top" },
+                    class: "text-gray-700 hover:text-gray-900 hover:underline" %>
+            </td>
+          <% end %>
+          <td class="p-3 text-gray-600"><%= ticket.ticket_category&.display_name || t("sales.shared.em_dash") %></td>
+          <td class="p-3"><%= render "admin/sales/tickets/status_badge", ticket: ticket %></td>
+          <td class="p-3"><%= render "admin/sales/tickets/priority_badge", ticket: ticket %></td>
+          <td class="p-3">
+            <% if ticket.assigned_user %>
+              <%= link_to ticket.assigned_user.name, admin_user_path(ticket.assigned_user), data: { turbo_frame: "_top" },
+                    class: "text-gray-700 hover:text-gray-900 hover:underline" %>
+            <% else %>
+              <span class="text-gray-400"><%= t("tickets.unassigned") %></span>
+            <% end %>
+          </td>
+          <td class="p-3 pe-5 text-gray-500 tabular-nums whitespace-nowrap"><%= l(ticket.created_at, format: :short) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

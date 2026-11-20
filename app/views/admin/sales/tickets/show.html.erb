@@ -1,0 +1,163 @@
+<% content_for :title, "#{@ticket.display_number} · #{@ticket.subject}" %>
+<% dt_class = "text-xs font-semibold text-gray-500 uppercase tracking-wide" %>
+<% link_class = "text-amber-700 hover:text-amber-800 hover:underline font-medium" %>
+<% ownership = ::Sales::OwnershipScope.for(current_user) %>
+<% status_btn = {
+     "in_progress" => "bg-gray-900 hover:bg-gray-800 text-white",
+     "resolved" => "bg-green-600 hover:bg-green-700 text-white",
+     "closed" => "bg-gray-600 hover:bg-gray-700 text-white",
+     "open" => "border border-gray-300 text-gray-700 hover:bg-gray-50"
+   } %>
+
+<div class="max-w-5xl">
+  <%= link_to t("tickets.back"), admin_sales_tickets_path, class: "text-sm text-gray-500 hover:text-gray-800 mb-4 inline-block" %>
+
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
+    <div class="min-w-0">
+      <div class="flex flex-wrap items-center gap-3">
+        <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+          <span class="tabular-nums text-gray-500"><%= @ticket.display_number %></span> <%= @ticket.subject %>
+        </h1>
+        <%= render "status_badge", ticket: @ticket %>
+      </div>
+      <p class="text-sm text-gray-600 mt-1">
+        <%= link_to_if ownership.can_see_customer?(@ticket.customer), @ticket.customer.display_name,
+              admin_customer_path(@ticket.customer), class: link_class %>
+        · <%= t("tickets.show.opened_by", name: @ticket.opened_by.name, date: l(@ticket.created_at, format: :short)) %>
+      </p>
+    </div>
+    <%= link_to t("actions.edit"), edit_admin_sales_ticket_path(@ticket),
+          class: "px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors" %>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+    <section class="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-5">
+      <h2 class="text-sm font-semibold text-gray-900 mb-4"><%= t("tickets.show.details") %></h2>
+      <dl class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+        <div>
+          <dt class="<%= dt_class %>"><%= t("tickets.table.category") %></dt>
+          <dd class="text-gray-900 mt-0.5"><%= @ticket.ticket_category&.display_name || t("sales.shared.em_dash") %></dd>
+        </div>
+        <div>
+          <dt class="<%= dt_class %>"><%= t("tickets.table.priority") %></dt>
+          <dd class="mt-0.5"><%= render "priority_badge", ticket: @ticket %></dd>
+        </div>
+        <div>
+          <dt class="<%= dt_class %>"><%= t("tickets.form.invoice") %></dt>
+          <dd class="mt-0.5 tabular-nums">
+            <% if @ticket.customer_invoice %>
+              <%= link_to_if ownership.can_see_invoice?(@ticket.customer_invoice), @ticket.customer_invoice.invoice_number,
+                    admin_sales_customer_invoice_path(@ticket.customer_invoice), class: link_class %>
+            <% else %>
+              <%= t("sales.shared.em_dash") %>
+            <% end %>
+          </dd>
+        </div>
+        <div>
+          <dt class="<%= dt_class %>"><%= t("tickets.form.credit_note") %></dt>
+          <dd class="mt-0.5 tabular-nums">
+            <% if @ticket.credit_note %>
+              <%= link_to_if ownership.can_see_credit_note?(@ticket.credit_note), @ticket.credit_note.credit_note_number,
+                    admin_sales_credit_note_path(@ticket.credit_note), class: link_class %>
+            <% else %>
+              <%= t("sales.shared.em_dash") %>
+            <% end %>
+          </dd>
+        </div>
+        <% if @ticket.resolved_at %>
+          <div>
+            <dt class="<%= dt_class %>"><%= t("tickets.show.resolved_at") %></dt>
+            <dd class="text-gray-900 mt-0.5"><%= l(@ticket.resolved_at, format: :short) %></dd>
+          </div>
+        <% end %>
+        <% if @ticket.closed_at %>
+          <div>
+            <dt class="<%= dt_class %>"><%= t("tickets.show.closed_at") %></dt>
+            <dd class="text-gray-900 mt-0.5"><%= l(@ticket.closed_at, format: :short) %></dd>
+          </div>
+        <% end %>
+        <div class="sm:col-span-2">
+          <dt class="<%= dt_class %>"><%= t("tickets.form.description") %></dt>
+          <dd class="text-gray-800 mt-0.5 whitespace-pre-line"><%= @ticket.description.presence || t("sales.shared.em_dash") %></dd>
+        </div>
+        <% if @ticket.images.attached? %>
+          <div class="sm:col-span-2">
+            <dt class="<%= dt_class %>"><%= t("tickets.form.images") %></dt>
+            <dd><%= render "images", images: @ticket.images %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 space-y-5" data-testid="ticket-actions">
+      <div>
+        <h2 class="<%= dt_class %> mb-1"><%= t("tickets.table.assignee") %></h2>
+        <p class="text-sm" data-testid="ticket-assignee">
+          <% if @ticket.assigned_user %>
+            <%= link_to @ticket.assigned_user.name, admin_user_path(@ticket.assigned_user), class: link_class %>
+          <% else %>
+            <span class="text-gray-400"><%= t("tickets.unassigned") %></span>
+          <% end %>
+        </p>
+        <% if @can_reassign %>
+          <%= form_with url: reassign_admin_sales_ticket_path(@ticket), method: :patch, class: "flex gap-2 mt-2" do %>
+            <%= select_tag :assigned_user_id, options_for_select(@assignees.map { |u| [u.name, u.id] }, @ticket.assigned_user_id),
+                  include_blank: t("tickets.unassigned"), class: "flex-1 min-w-0 text-sm border border-gray-200 rounded-lg px-2 py-1.5" %>
+            <%= submit_tag t("tickets.show.reassign"), class: "text-sm font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 cursor-pointer" %>
+          <% end %>
+        <% end %>
+      </div>
+
+      <% if @next_statuses.any? %>
+        <div>
+          <h2 class="<%= dt_class %> mb-2"><%= t("tickets.show.move_to") %></h2>
+          <%= form_with url: change_status_admin_sales_ticket_path(@ticket), method: :patch, class: "space-y-2" do %>
+            <%= text_area_tag :note, nil, rows: 2, placeholder: t("tickets.show.status_note_placeholder"),
+                  class: "w-full text-sm border border-gray-200 rounded-lg px-3 py-2" %>
+            <div class="flex flex-wrap gap-2">
+              <% @next_statuses.each do |to| %>
+                <%= button_tag t("tickets.actions.#{to == 'open' ? 'reopen' : to}"), name: "status", value: to,
+                      class: "text-sm font-semibold px-3 py-1.5 rounded-lg transition-colors cursor-pointer #{status_btn[to]}",
+                      data: { testid: "ticket-move-#{to}" } %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+      <% if @ticket.resolved? && !Ticket.manager?(current_user) %>
+        <p class="text-xs text-gray-500" data-testid="close-needs-manager"><%= t("tickets.show.close_needs_manager") %></p>
+      <% elsif @ticket.closed? && @next_statuses.empty? %>
+        <p class="text-xs text-gray-500"><%= t("tickets.show.closed_hint") %></p>
+      <% end %>
+    </section>
+  </div>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6" id="ticket-timeline">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("tickets.show.timeline") %></h2>
+    </div>
+    <ul class="divide-y divide-gray-100" data-testid="ticket-timeline">
+      <% if @comments.empty? %>
+        <li class="p-8 text-center text-sm text-gray-500"><%= t("tickets.show.no_comments") %></li>
+      <% else %>
+        <%= render partial: "comment", collection: @comments, as: :comment %>
+      <% end %>
+    </ul>
+    <div class="p-5 border-t border-gray-100 bg-gray-50/40">
+      <%= form_with model: @comment, url: admin_sales_ticket_ticket_comments_path(@ticket), class: "space-y-2",
+            data: { testid: "ticket-comment-form" } do |f| %>
+        <%= f.text_area :body, rows: 3, placeholder: t("tickets.show.comment_placeholder"),
+              class: "w-full rounded-xl border border-gray-200 px-3.5 py-2 text-sm" %>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <%= f.file_field :images, multiple: true, accept: "image/*",
+                class: "text-sm text-gray-600 file:me-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-gray-100 file:font-semibold file:text-gray-700 hover:file:bg-gray-200" %>
+          <%= f.submit t("tickets.show.add_comment"),
+                class: "px-4 py-2 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors cursor-pointer" %>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <%= render "shared/audit_history", audits: @ticket.audits.includes(:user).reorder(version: :desc),
+        title: t("tickets.show.change_history") %>
+</div>

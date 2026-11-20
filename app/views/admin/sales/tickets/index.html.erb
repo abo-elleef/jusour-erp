@@ -1,0 +1,86 @@
+<% content_for :title, t("tickets.title") %>
+<% filter_params = request.query_parameters.except("status", "page") %>
+<% input_class = "text-sm border border-gray-200 rounded-lg px-3 py-1.5" %>
+
+<div class="max-w-full">
+  <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight text-gray-900"><%= t("tickets.title") %></h1>
+      <p class="text-sm text-gray-500 mt-0.5"><%= t("tickets.index.hint") %></p>
+    </div>
+    <%= link_to admin_sales_tickets_path(filter_params.merge("mine" => (@mine ? nil : "1")).compact),
+          class: "inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors #{@mine ? 'bg-amber-600 border-amber-600 text-white hover:bg-amber-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}",
+          data: { testid: "my-tickets" } do %>
+      <%= t("tickets.index.mine") %>
+    <% end %>
+  </div>
+
+  <div class="flex flex-wrap gap-1 mb-3 border-b border-gray-200" data-testid="ticket-status-chips">
+    <%= link_to admin_sales_tickets_path(filter_params), class: admin_section_tab_class(@status.nil?) do %>
+      <%= t("actions.all") %><%= admin_tab_count(@all_count, active: @status.nil?) %>
+    <% end %>
+    <%= link_to admin_sales_tickets_path(filter_params.merge("status" => "active")), class: admin_section_tab_class(@status == "active") do %>
+      <%= t("tickets.index.active") %><%= admin_tab_count(@active_count, active: @status == "active") %>
+    <% end %>
+    <% Ticket::STATUSES.each do |status| %>
+      <%= link_to admin_sales_tickets_path(filter_params.merge("status" => status)), class: admin_section_tab_class(@status == status) do %>
+        <%= t("tickets.statuses.#{status}") %><%= admin_tab_count(@status_counts[status].to_i, active: @status == status) %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%= form_with url: admin_sales_tickets_path, method: :get, class: "flex flex-wrap items-end gap-3 mb-4" do %>
+    <%= hidden_field_tag :status, @status if @status %>
+    <%= hidden_field_tag :mine, "1" if @mine %>
+    <%= hidden_field_tag :customer_id, @customer_id if @customer_id %>
+    <label class="text-xs text-gray-500"><%= t("tickets.index.search") %>
+      <%= search_field_tag :q, @query, placeholder: t("tickets.index.search_placeholder"), class: "block mt-1 #{input_class} min-w-[14rem]" %>
+    </label>
+    <label class="text-xs text-gray-500"><%= t("tickets.table.assignee") %>
+      <%= select_tag :assigned_user_id,
+            options_for_select([[t("tickets.index.anyone"), ""], [t("tickets.unassigned"), "none"]] + @assignees.map { |u| [u.name, u.id] }, @assigned_user_id),
+            class: "block mt-1 #{input_class}" %>
+    </label>
+    <label class="text-xs text-gray-500"><%= t("tickets.table.category") %>
+      <%= select_tag :category_id,
+            options_for_select([[t("tickets.index.any_category"), ""]] + @categories.map { |c| [c.display_name, c.id] }, @category_id),
+            class: "block mt-1 #{input_class}" %>
+    </label>
+    <label class="text-xs text-gray-500"><%= t("tickets.table.priority") %>
+      <%= select_tag :priority,
+            options_for_select([[t("tickets.index.any_priority"), ""]] + Ticket::PRIORITIES.map { |p| [t("tickets.priorities.#{p}"), p] }, @priority),
+            class: "block mt-1 #{input_class}" %>
+    </label>
+    <label class="text-xs text-gray-500"><%= t("tickets.index.from") %>
+      <%= date_field_tag :from, @from, class: "block mt-1 #{input_class}" %>
+    </label>
+    <label class="text-xs text-gray-500"><%= t("tickets.index.to") %>
+      <%= date_field_tag :to, @to, class: "block mt-1 #{input_class}" %>
+    </label>
+    <%= submit_tag t("tickets.index.filter"), name: nil,
+          class: "text-sm font-semibold px-4 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 cursor-pointer" %>
+    <% if @filtered %>
+      <%= link_to t("actions.clear"), admin_sales_tickets_path(status: @status), class: "text-sm text-gray-500 hover:text-gray-900 py-1.5" %>
+    <% end %>
+  <% end %>
+
+  <% if @customer %>
+    <p class="text-sm text-gray-600 mb-3">
+      <%= t("tickets.index.for_customer") %>
+      <%= link_to @customer.display_name, admin_customer_path(@customer), class: "font-semibold text-amber-700 hover:underline" %>
+      · <%= link_to t("tickets.index.all_customers"), admin_sales_tickets_path(request.query_parameters.except("customer_id", "page")), class: "text-gray-500 hover:underline" %>
+    </p>
+  <% end %>
+
+  <% if @tickets.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <%= render "table", tickets: @tickets, sortable: true %>
+      <%= render "admin/accounting/pagination", pagy: @pagy %>
+    </section>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-12 text-center">
+      <p class="text-gray-900 font-semibold mb-1"><%= t("tickets.index.empty_title") %></p>
+      <p class="text-gray-500 text-sm"><%= t("tickets.index.empty_hint") %></p>
+    </section>
+  <% end %>
+</div>

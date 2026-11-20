@@ -170,6 +170,10 @@ module Admin
       if sales
         tabs << "activity"
         @tab_counts["activity"] = @customer.customer_activities.count
+        if ::Ticket.worker?(current_user)
+          tabs << "tickets"
+          @tab_counts["tickets"] = ::Sales::OwnershipScope.for(current_user).tickets(@customer.tickets).count
+        end
         if @customer.originating_lead_id
           tabs << "lead_history"
           @tab_counts["lead_history"] = ::LeadActivity.where(lead_id: @customer.originating_lead_id).count
@@ -201,6 +205,15 @@ module Admin
       @can_log_activity = current_user.can?(::Admin::Customers::CustomerActivitiesController::PERMISSION)
       @activities_pagy, @activities = pagy(:offset, @customer.customer_activities.includes(:user).recent,
         limit: TAB_PAGE_SIZE)
+    end
+
+    # Bazzar slice G1: this customer's tickets (the ones this user may see),
+    # open ones first, and the button to open a new one.
+    def load_tickets_tab
+      scope = ownership.tickets(@customer.tickets)
+        .includes(:assigned_user, :ticket_category, :customer_invoice, :customer)
+        .order(Arel.sql("CASE WHEN tickets.status IN ('open', 'in_progress') THEN 0 ELSE 1 END"), number: :desc)
+      @tickets_pagy, @tickets = pagy(:offset, scope, limit: TAB_PAGE_SIZE)
     end
 
     # The lead it came from and that lead's timeline, read-only.
