@@ -15,6 +15,9 @@
                      @pos_location.name
                    end %>
 <% online_count = pos_online_pending_count(@pos_location) %>
+<%# Paid-but-open and placed-but-unpaid counts for this cashier's drawer, so the
+    backlog is visible all shift, not only on My Shift at closing time. %>
+<% nudges = pos_shift_nudge_counts(@pos_location) || {} %>
 <% tab_count = 3 + (@pos_location&.table_service? ? 1 : 0) + (online_count ? 1 : 0) %>
 <nav class="@container flex-1" style="min-width: <%= tab_count * 2.625 + 5 %>rem" aria-label="<%= t("nav.pos") %>">
   <div class="flex items-center justify-end gap-2">
@@ -26,14 +29,17 @@
               "M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" %>
       <% end %>
       <%= pos_nav_tab t("nav.collect_payment"), pos_orders_path, request.path.start_with?("/pos/orders"),
-            "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" %>
+            "M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z",
+            badge: pos_nudge_badge(:unpaid, nudges[:unpaid]) %>
       <% if online_count %>
         <%= pos_nav_tab t("nav.online_orders"), pos_online_order_requests_path, request.path.start_with?("/pos/online"),
               "M12 21a9 9 0 100-18 9 9 0 000 18zm0 0c2.5-2.5 3.5-5.5 3.5-9S14.5 5.5 12 3m0 18c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3M3.6 9h16.8M3.6 15h16.8",
               badge: render("pos/online_order_requests/badge", count: online_count, location: @pos_location, ring: false) %>
       <% end %>
-      <%= pos_nav_tab t("nav.my_shift"), pos_shift_path, request.path.start_with?("/pos/shift"),
-            "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" %>
+      <%# Opens straight on the Open list, where Complete paid is. %>
+      <%= pos_nav_tab t("nav.my_shift"), (nudges[:paid_to_complete].to_i.positive? ? pos_shift_path(tab: "orders", filter: "open") : pos_shift_path), request.path.start_with?("/pos/shift"),
+            "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
+            badge: pos_nudge_badge(:paid_to_complete, nudges[:paid_to_complete]) %>
     </div>
 
     <button type="button"

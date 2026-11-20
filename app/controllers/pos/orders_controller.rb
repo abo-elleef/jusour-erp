@@ -222,11 +222,15 @@ module Pos
       authorize @order, :complete?
 
       if Orders::CompleteService.call(@order)
-        # Clearing a table from the board goes back to the board.
-        destination = params[:from] == "tables" ? pos_tables_path : pos_order_path(@order, from: params[:from])
+        # Clearing a table from the board goes back to the board; a row on My Shift
+        # goes back to the same list.
+        destination = if params[:from] == "tables" then pos_tables_path
+                      elsif shift_return_path then shift_return_path
+                      else pos_order_path(@order, from: params[:from])
+                      end
         redirect_to destination, notice: t("flash.pos.order_completed")
       else
-        redirect_to pos_order_path(@order, from: params[:from]), alert: t("flash.pos.order_not_completable")
+        redirect_to shift_return_path || pos_order_path(@order, from: params[:from]), alert: t("flash.pos.order_not_completable")
       end
     end
 
@@ -314,6 +318,16 @@ module Pos
     # The same set that blocks the shift from closing, so pressing the button
     # always clears the blocker rather than leaving a remainder the cashier cannot
     # see. Drafts are in it: a cart with food in it is an unfinished sale.
+    # The My Shift list a row's Complete came from, if it is one (never an
+    # arbitrary URL: this goes straight into a redirect).
+    def shift_return_path
+      path = params[:return_to].to_s
+      return unless params[:from] == "shift"
+      return unless path == pos_shift_path || path.start_with?("#{pos_shift_path}?")
+
+      path
+    end
+
     def open_orders_for(user)
       user.unfinalized_shift_orders(location: @pos_location).includes(:order_items)
     end

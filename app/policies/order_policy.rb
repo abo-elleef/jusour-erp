@@ -55,13 +55,25 @@ class OrderPolicy < ApplicationPolicy
     user.can_access_pos? && (record.editing_placed? || record.unlockable_for_edit?)
   end
 
-  # Deliberately not conditional on payment: an order handed over now and settled
-  # later is exactly what this is for. It stays on Collect Payment either way.
+  # Completing an order that still owes money (hand it over now, settle later) needs
+  # orders:complete_unpaid. A cashier without it completes only fully paid orders,
+  # so nothing leaves their shift unpaid by mistake; the rest goes to Collect Payment.
   def complete?
     return false if record.cancelled? || record.completed?
     return false if record.draft? && record.order_items.empty?
+    return false unless user.can_access_pos?
 
-    user.can_access_pos?
+    record.fully_paid? || user.can?("orders:complete_unpaid")
+  end
+
+  # Why the Complete button is greyed out (nil when it works or isn't relevant).
+  # Only "unpaid" is worth explaining; the other refusals just hide the button.
+  def complete_blocked_reason
+    return if complete?
+    return if record.cancelled? || record.completed? || record.draft?
+    return unless user.can_access_pos?
+
+    :needs_payment
   end
 
   def complete_all?
