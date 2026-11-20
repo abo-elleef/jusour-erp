@@ -198,4 +198,38 @@ RSpec.describe "The admin drawer day view", type: :request do
       expect(response.body).to include(I18n.t("accounting.cash_drawer.still_open", count: 1))
     end
   end
+
+  describe "receipt-size day totals print" do
+    def close!(session)
+      session.update!(status: "reconciled", expected_cash_cents: 15_000, counted_cash_cents: 15_000, variance_cents: 0)
+    end
+
+    it "prints the branch day on 80mm paper once every drawer is closed" do
+      close!(shift(treasury: till_one, cash: 5_000))
+      close!(shift(treasury: till_two, cash: 3_000))
+      shift(treasury: till_one, cash: 9_000, location: other_branch) # still open, other branch
+
+      get admin_accounting_cash_drawer_index_path(date: Date.current, location_id: branch.id)
+      expect(response.body).to include("print=receipt")
+
+      get admin_accounting_cash_drawer_index_path(date: Date.current, location_id: branch.id, print: "receipt")
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("size: 80mm auto")
+      expect(response.body).to include(I18n.t("accounting.cash_drawer.receipt.title"))
+      expect(response.body).to include("80.00") # 50 + 30 for Branch A only
+    end
+
+    it "is refused while a drawer of the shown day is still open" do
+      close!(shift(treasury: till_one, cash: 5_000))
+      shift(treasury: till_two, cash: 3_000, location: other_branch)
+
+      get admin_accounting_cash_drawer_index_path(date: Date.current)
+      expect(response.body).not_to include("print=receipt")
+
+      get admin_accounting_cash_drawer_index_path(date: Date.current, print: "receipt")
+      expect(response).to redirect_to(admin_accounting_cash_drawer_index_path(date: Date.current))
+      expect(flash[:alert]).to eq(I18n.t("accounting.cash_drawer.print_receipt_closed_only"))
+    end
+  end
 end

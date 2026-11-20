@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<%# A bare page sized for an 80mm receipt printer, printed from the browser. %>
+<html lang="<%= html_lang %>" dir="<%= html_dir %>">
+  <head>
+    <title><%= content_for?(:title) ? yield(:title) : t("app.name") %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csp_meta_tag %>
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+    <style>
+      @page { size: 80mm auto; margin: 3mm; }
+      body { width: 72mm; margin: 0 auto; color: #000; }
+      @media screen { body { margin: 16px auto; } }
+    </style>
+  </head>
+  <body class="bg-white text-[12px] leading-snug">
+    <%= yield %>
+  </body>
+</html>

@@ -29,7 +29,9 @@ module Admin
         @sessions = @rows.map(&:session)
 
         respond_to do |format|
-          format.html
+          format.html do
+            render_day_receipt if params[:print] == "receipt"
+          end
           format.csv do
             send_data "\uFEFF#{day_csv}", filename: "cash-drawer-#{@date}.csv", type: "text/csv; charset=utf-8"
           end
@@ -140,6 +142,19 @@ module Admin
       # print dialog, like the ledger reports.
       def print_mode?
         params[:print].present?
+      end
+
+      # ?print=receipt: the day's totals on 80mm receipt paper, printed from the
+      # browser. Same rows and totals as the page, so it follows the branch / drawer
+      # filters. Only for a finished day: a total with a drawer still open would be
+      # read as final when it is not.
+      def render_day_receipt
+        unless @totals.fully_closed?
+          return redirect_to admin_accounting_cash_drawer_index_path(request.query_parameters.except("print")),
+                             alert: t("accounting.cash_drawer.print_receipt_closed_only")
+        end
+
+        render :receipt, layout: "print_receipt"
       end
 
       # The same rows and totals the table shows, so it follows the same filters.

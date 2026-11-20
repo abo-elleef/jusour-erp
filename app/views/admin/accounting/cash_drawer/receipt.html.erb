@@ -1,0 +1,58 @@
+<%# The day's totals on 80mm receipt paper. Same rows and totals as the Drawers page. %>
+<% content_for :title, t("accounting.cash_drawer.receipt.title") %>
+<% line = "flex justify-between gap-2" %>
+<% rule = "border-t border-dashed border-black my-1.5" %>
+<div data-controller="auto-print">
+  <div class="text-center">
+    <p class="font-bold"><%= Current.company&.name %></p>
+    <p class="text-base font-bold"><%= t("accounting.cash_drawer.receipt.title") %></p>
+  </div>
+  <div class="<%= rule %>"></div>
+
+  <div class="<%= line %>"><span><%= t("accounting.cash_drawer.receipt.branch") %></span><span><%= @location&.name || t("accounting.cash_drawer.all_locations") %></span></div>
+  <% if @treasury %>
+    <div class="<%= line %>"><span><%= t("accounting.cash_drawer.drawer_filter") %></span><span><%= @treasury.name %></span></div>
+  <% end %>
+  <div class="<%= line %>"><span><%= t("accounting.cash_drawer.receipt.day") %></span><span class="tabular-nums"><%= l(@date, format: :long) %></span></div>
+  <div class="<%= line %>"><span><%= t("accounting.cash_drawer.shifts") %></span><span class="tabular-nums"><%= @totals.shifts %></span></div>
+  <div class="<%= rule %>"></div>
+
+  <% if @location.nil? && @rows.map { |r| r.session.location_id }.uniq.size > 1 %>
+    <p class="font-bold"><%= t("accounting.cash_drawer.receipt.by_branch") %></p>
+    <% @rows.group_by { |r| r.session.location }.each do |location, rows| %>
+      <div class="<%= line %>"><span><%= location&.name %></span><span class="tabular-nums"><%= format_amount(rows.sum(&:total_sales_cents)) %></span></div>
+    <% end %>
+    <div class="<%= rule %>"></div>
+  <% end %>
+
+  <p class="font-bold"><%= t("accounting.cash_drawer.receipt.by_shift") %></p>
+  <% @rows.each do |row| %>
+    <div class="<%= line %>">
+      <span><%= row.session.user.name %> <span class="tabular-nums"><%= l(row.session.created_at, format: :short_time) %></span><%= " · #{row.session.location&.name}" if @location.nil? %></span>
+      <span class="tabular-nums"><%= format_amount(row.total_sales_cents) %></span>
+    </div>
+  <% end %>
+  <div class="<%= rule %>"></div>
+
+  <div class="<%= line %>"><span><%= t("payment.methods.cash") %></span><span class="tabular-nums"><%= format_amount(@totals.cash_cents) %></span></div>
+  <div class="<%= line %>"><span><%= t("payment.methods.instapay") %></span><span class="tabular-nums"><%= format_amount(@totals.instapay_cents) %></span></div>
+  <div class="<%= line %>"><span><%= t("payment.methods.vodafone_cash") %></span><span class="tabular-nums"><%= format_amount(@totals.vodafone_cash_cents) %></span></div>
+  <div class="<%= line %> font-bold"><span><%= t("accounting.cash_drawer.total_sales") %></span><span class="tabular-nums"><%= format_amount(@totals.total_sales_cents) %></span></div>
+  <% if @totals.driver_payout_cents.positive? %>
+    <div class="<%= line %>"><span><%= t("accounting.cash_drawer.driver_payouts") %></span><span class="tabular-nums"><%= format_amount(-@totals.driver_payout_cents) %></span></div>
+  <% end %>
+  <div class="<%= line %> font-bold"><span><%= t("accounting.cash_drawer.net_takings") %></span><span class="tabular-nums"><%= format_amount(@totals.net_takings_cents) %></span></div>
+  <div class="<%= rule %>"></div>
+
+  <div class="<%= line %>"><span><%= t("accounting.cash_drawer.opening_float") %></span><span class="tabular-nums"><%= format_amount(@totals.opening_float_cents) %></span></div>
+  <div class="<%= line %>"><span><%= t("accounting.cash_drawer.expected") %></span><span class="tabular-nums"><%= format_amount(@totals.expected_cents) %></span></div>
+  <div class="<%= line %>"><span><%= t("accounting.cash_drawer.counted") %></span><span class="tabular-nums"><%= format_amount(@totals.counted_cents) %></span></div>
+  <div class="<%= line %> font-bold"><span><%= t("accounting.cash_drawer.variance") %></span><span class="tabular-nums"><%= format_amount(@totals.variance_cents) %></span></div>
+  <div class="<%= line %> font-bold"><span><%= t("accounting.cash_drawer.actual_takings") %></span><span class="tabular-nums"><%= format_amount(@totals.actual_takings_cents) %></span></div>
+  <div class="<%= line %>"><span><%= t("accounting.cash_drawer.banked") %></span><span class="tabular-nums"><%= format_amount(@totals.deposited_cents) %></span></div>
+  <div class="<%= rule %>"></div>
+
+  <p class="mt-3"><%= t("accounting.cash_drawer.receipt.manager_signature") %></p>
+  <div class="border-b border-black mt-6 mb-3"></div>
+  <p class="text-center text-[10px]"><%= t("inventory.reports.shared.printed_at", time: l(Time.current, format: :short)) %></p>
+</div>
