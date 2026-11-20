@@ -178,6 +178,15 @@ RSpec.describe "POS order completion", type: :request do
       expect(response.body).to match(/data-testid="pos-nudge-unpaid"[^>]*>\s*2\s*</)
     end
 
+    it "turns a badge red and pulsing once the backlog is large" do
+      10.times { open_order }
+
+      get pos_shift_path(tab: "orders")
+
+      expect(response.body).to match(/data-testid="pos-nudge-unpaid"[^>]*class="[^"]*bg-rose-600[^"]*motion-safe:animate-pulse/)
+      expect(response.body).not_to match(/data-testid="pos-nudge-paid-to-complete"/)
+    end
+
     it "shows no badges when nothing is waiting" do
       get pos_shift_path(tab: "orders")
 

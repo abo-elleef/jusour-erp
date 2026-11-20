@@ -1037,7 +1037,8 @@ module ApplicationHelper
   # Nav badges that nudge a cashier to finish orders through the shift instead of
   # leaving 100+ for closing time. Counts are for the cashier's current drawer, the
   # same set My Shift and the close guard use. nil when there is no drawer yet.
-  # Colour rises with the backlog: [amber from, red from].
+  # Colour rises with the backlog: [amber from, red from]. Red also pulses (no
+  # sound), unless the device asks for reduced motion.
   POS_NUDGE_THRESHOLDS = {
     paid_to_complete: [10, 25],
     unpaid: [5, 10]
@@ -1057,7 +1058,7 @@ module ApplicationHelper
     return if count.to_i.zero?
 
     amber_from, red_from = POS_NUDGE_THRESHOLDS.fetch(kind)
-    colour = if count >= red_from then "bg-rose-600 text-white"
+    colour = if count >= red_from then "bg-rose-600 text-white motion-safe:animate-pulse"
              elsif count >= amber_from then "bg-amber-500 text-white"
              else "bg-gray-200 text-gray-800"
              end
