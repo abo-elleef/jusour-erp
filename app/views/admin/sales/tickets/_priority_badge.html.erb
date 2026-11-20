@@ -1,0 +1,5 @@
+<% classes = { "low" => "text-gray-500", "normal" => "text-gray-700", "urgent" => "text-red-700 font-semibold" } %>
+<span class="text-sm whitespace-nowrap <%= classes[ticket.priority] %>">
+  <% if ticket.priority == "urgent" %><span aria-hidden="true">●</span><% end %>
+  <%= t("tickets.priorities.#{ticket.priority}") %>
+</span>

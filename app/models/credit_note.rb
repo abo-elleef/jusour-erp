@@ -14,6 +14,7 @@ class CreditNote < ApplicationRecord
   belongs_to :user
   belongs_to :location
   belongs_to :customer_invoice, optional: true
+  has_many :tickets, dependent: :nullify
   has_many :credit_note_lines, -> { order(:position, :created_at) },
     dependent: :destroy, inverse_of: :credit_note
 

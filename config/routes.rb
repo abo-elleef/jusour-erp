@@ -213,6 +213,14 @@ Rails.application.routes.draw do
         resources :lead_activities, only: %i[create]
       end
       resources :lead_reports, only: %i[index]
+      # Customer tickets (complaints) — Bazzar slice G1.
+      resources :tickets, only: %i[index show new create edit update] do
+        member do
+          patch :change_status
+          patch :reassign
+        end
+        resources :ticket_comments, only: %i[create]
+      end
       # The public catalog website — gated on the `storefront` feature.
       resource :storefront, only: %i[show update]
       # Keyed by the inventory category's id: the storefront row is created on
@@ -251,6 +259,7 @@ Rails.application.routes.draw do
       end
     end
     resources :combos
+    resources :ticket_categories, except: %i[show]
     resources :customers do
       collection do
         patch :bulk_assign

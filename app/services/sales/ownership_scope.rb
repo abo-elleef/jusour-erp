@@ -25,6 +25,10 @@ module Sales
   #                 Plus, always, invoices waiting on a payment they approve
   #                 (Sales::PaymentApproval).
   #   Credit notes — of a customer assigned to them, or recorded by them.
+  #   Tickets     — every ticket for a tickets:assign holder (or the owner).
+  #                 Anyone else: tickets on customers they can see (all of
+  #                 them unless limited), plus tickets assigned to or opened
+  #                 by them (Bazzar slice G1).
   #
   # Reports read #report_invoices / #report_credit_notes: the same ownership
   # rule without the stage grid, which governs the workflow pages, not a rep's
@@ -87,6 +91,14 @@ module Sales
       relation.where(customer_id: owned_customer_ids).or(relation.where(user_id: user.id))
     end
 
+    def tickets(relation = Ticket.all)
+      return relation if ::Ticket.manager?(user) || !limited?
+
+      relation.where(customer_id: owned_customer_ids)
+        .or(relation.where(assigned_user_id: user.id))
+        .or(relation.where(opened_by_id: user.id))
+    end
+
     def report_invoices(relation)
       return relation unless limited?
 
@@ -119,6 +131,13 @@ module Sales
       return true if invoice.pending_payment_confirmation? && PaymentApproval.can_approve?(user, invoice)
 
       owned_invoice?(invoice)
+    end
+
+    def can_see_ticket?(ticket)
+      return true if ::Ticket.manager?(user) || !limited?
+
+      ticket.assigned_user_id == user.id || ticket.opened_by_id == user.id ||
+        ticket.customer&.assigned_user_id == user.id
     end
 
     def can_see_credit_note?(credit_note)

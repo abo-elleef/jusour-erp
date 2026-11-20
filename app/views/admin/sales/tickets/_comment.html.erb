@@ -1,0 +1,39 @@
+<%# One timeline entry: a comment, or a status / assignment system entry worded here, in the reader's language. %>
+<li class="p-4 px-5 flex items-start gap-3" id="<%= dom_id(comment) %>">
+  <% if comment.comment? %>
+    <span class="shrink-0 h-8 w-8 rounded-full bg-amber-100 text-amber-800 text-xs font-bold grid place-items-center">
+      <%= comment.user&.name.to_s.first.presence || "?" %>
+    </span>
+    <div class="flex-1 min-w-0 text-sm">
+      <p class="text-xs text-gray-500">
+        <span class="font-semibold text-gray-800"><%= comment.user&.name || t("sales.shared.em_dash") %></span>
+        · <%= l(comment.created_at, format: :short) %>
+      </p>
+      <% if comment.body.present? %>
+        <p class="text-gray-800 whitespace-pre-wrap mt-1"><%= comment.body %></p>
+      <% end %>
+      <%= render "admin/sales/tickets/images", images: comment.images %>
+    </div>
+  <% else %>
+    <span class="shrink-0 h-8 w-8 rounded-full bg-gray-100 text-gray-500 grid place-items-center" aria-hidden="true">↻</span>
+    <div class="flex-1 min-w-0 text-sm text-gray-600">
+      <p>
+        <span class="font-semibold text-gray-800"><%= comment.user&.name || t("sales.shared.em_dash") %></span>
+        <% data = comment.data || {} %>
+        <% if comment.kind == "status_change" %>
+          <%= t("tickets.timeline.status_changed",
+                from: t("tickets.statuses.#{data['from']}", default: data["from"].to_s),
+                to: t("tickets.statuses.#{data['to']}", default: data["to"].to_s)) %>
+        <% else %>
+          <%= t("tickets.timeline.reassigned",
+                from: data["from_name"].presence || t("tickets.unassigned"),
+                to: data["to_name"].presence || t("tickets.unassigned")) %>
+        <% end %>
+        <span class="text-xs text-gray-400">· <%= l(comment.created_at, format: :short) %></span>
+      </p>
+      <% if comment.body.present? %>
+        <p class="text-gray-800 whitespace-pre-wrap mt-1"><%= comment.body %></p>
+      <% end %>
+    </div>
+  <% end %>
+</li>

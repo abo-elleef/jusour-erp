@@ -42,6 +42,7 @@ class Company < ApplicationRecord
   after_create :seed_default_units
   after_create :seed_default_attendance_statuses
   after_create :seed_default_roles
+  after_create :seed_default_ticket_categories
 
   # Subscription. `paid_until` NULL = no expiry (internal / demo / legacy).
   # After the date passes the company keeps working for a grace period, with
@@ -136,5 +137,9 @@ class Company < ApplicationRecord
 
   def seed_default_roles
     Roles::Seeder.call(self)
+  end
+
+  def seed_default_ticket_categories
+    TicketCategory.seed_defaults!(self)
   end
 end

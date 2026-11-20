@@ -58,7 +58,13 @@ module Permission
     # Without it, the sales/leads area shows only your own leads, customers and
     # invoices (Sales::OwnershipScope). Distribution companies only.
     { key: "sales:see_all",           group: "sales" },
-    { key: "storefront:manage",       group: "sales" }
+    { key: "storefront:manage",       group: "sales" },
+
+    # Customer tickets (complaints). manage = open, comment, move up to
+    # resolved on tickets you can see; assign = reassign, close, reopen and
+    # see every ticket. See Ticket.
+    { key: "tickets:manage",          group: "tickets" },
+    { key: "tickets:assign",          group: "tickets" }
   ].freeze
 
   KEYS = CATALOG.map { |p| p[:key] }.freeze
@@ -87,6 +93,7 @@ module Permission
         pos:access kitchen:access production:access
         leads:view leads:manage leads:reports sales:confirm_payments
         sales:dispatch sales:complete_shipping sales:see_all storefront:manage
+        tickets:manage tickets:assign
       ]
     },
     "sub_manager" => {
@@ -98,6 +105,7 @@ module Permission
         accounting:day_close
         attendance:log attendance:view pos:access kitchen:access
         leads:view leads:manage sales:confirm_payments sales:dispatch sales:see_all
+        tickets:manage tickets:assign
       ]
     },
     "accountant" => {

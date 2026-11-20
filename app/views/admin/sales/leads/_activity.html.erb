@@ -4,7 +4,13 @@
     <%= t("sales.leads.activity_types.#{activity.activity_type}") %>
   </span>
   <div class="flex-1 text-sm">
-    <p class="text-gray-800 whitespace-pre-wrap"><%= activity.note %></p>
+    <% if activity.respond_to?(:ticket_id) && activity.ticket_id %>
+      <%# A ticket opened/resolved/closed — link to it (Bazzar slice G1). %>
+      <p class="text-gray-800"><%= link_to activity.note, admin_sales_ticket_path(activity.ticket_id), data: { turbo_frame: "_top" },
+            class: "text-amber-700 hover:text-amber-800 hover:underline font-medium" %></p>
+    <% else %>
+      <p class="text-gray-800 whitespace-pre-wrap"><%= activity.note %></p>
+    <% end %>
     <p class="text-xs text-gray-400 mt-0.5">
       <%= l(activity.occurred_at, format: :short) %> · <%= activity.user&.name || t("sales.shared.em_dash") %>
     </p>

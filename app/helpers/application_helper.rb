@@ -600,7 +600,11 @@ module ApplicationHelper
     "location_id" => [Location, :name],
     "assigned_user_id" => [User, :name],
     "created_by_id" => [User, :name],
-    "customer_id" => [Customer, :name]
+    "customer_id" => [Customer, :name],
+    "opened_by_id" => [User, :name],
+    "ticket_category_id" => [TicketCategory, :display_name],
+    "customer_invoice_id" => [CustomerInvoice, :invoice_number],
+    "credit_note_id" => [CreditNote, :credit_note_number]
   }.freeze
 
   def audit_history_rows(audit)
@@ -1498,6 +1502,10 @@ module ApplicationHelper
       items << { controller: "leads", label: "sales.nav.leads", path: :admin_sales_leads_path }
     end
 
+    if ::Sales::OwnershipScope.applies_to?(Current.company) && ::Ticket.worker?(current_user)
+      items << { controller: "tickets", label: "sales.nav.tickets", path: :admin_sales_tickets_path }
+    end
+
     if Current.company&.feature_enabled?(:storefront) && current_user.can?("storefront:manage")
       items << { controller: "storefront_listings", label: "sales.nav.storefront_listings", path: :admin_sales_storefront_listings_path }
       items << { controller: "storefront_categories", label: "sales.nav.storefront_categories", path: :admin_sales_storefront_categories_path }
@@ -1610,6 +1618,9 @@ module ApplicationHelper
       items << { label: t("settings.nav.roles"), path: admin_roles_path, controller: "roles" }
       items << { label: t("settings.nav.integrations"), path: admin_accounting_integrations_path, controller: "integrations" }
       items << { label: t("settings.nav.online_payments"), path: admin_accounting_payment_method_treasuries_path, controller: "payment_method_treasuries" }
+    end
+    if ::Sales::OwnershipScope.applies_to?(Current.company) && ::Ticket.manager?(current_user)
+      items << { label: t("settings.nav.ticket_categories"), path: admin_ticket_categories_path, controller: "ticket_categories" }
     end
     items
   end
@@ -1840,6 +1851,14 @@ module ApplicationHelper
       has_links = true
     end
 
+    if raw[:ticket_id].present? && raw[:ticket_number].present?
+      raw[:ticket_number] = link_to(raw[:ticket_number], admin_sales_ticket_path(raw[:ticket_id]),
+                                    class: "font-medium text-blue-600 hover:underline").html_safe
+      # Typed by staff, and the message is marked html_safe below.
+      raw[:subject] = ERB::Util.html_escape(raw[:subject].to_s)
+      raw[:by] = ERB::Util.html_escape(raw[:by].to_s)
+      has_links = true
+    end
     if raw[:lead_id].present? && raw[:lead_name].present?
       raw[:lead_name] = link_to(raw[:lead_name], admin_sales_lead_path(raw[:lead_id]),
                                 class: "font-medium text-blue-600 hover:underline").html_safe

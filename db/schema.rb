@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_20_090000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_20_100200) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -303,8 +303,10 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_20_090000) do
     t.datetime "occurred_at", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.uuid "ticket_id"
     t.index ["customer_id", "occurred_at"], name: "index_customer_activities_on_customer_id_and_occurred_at"
     t.index ["customer_id"], name: "index_customer_activities_on_customer_id"
+    t.index ["ticket_id"], name: "index_customer_activities_on_ticket_id"
     t.index ["user_id"], name: "index_customer_activities_on_user_id"
   end
 
@@ -1916,6 +1918,62 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_20_090000) do
     t.index ["tax_category"], name: "index_tax_rates_on_tax_category"
   end
 
+  create_table "ticket_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.string "key"
+    t.string "name", null: false
+    t.string "name_ar"
+    t.boolean "active", default: true, null: false
+    t.integer "position", default: 0, null: false
+    t.uuid "default_handler_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id", "key"], name: "index_ticket_categories_on_company_id_and_key", unique: true, where: "(key IS NOT NULL)"
+    t.index ["company_id"], name: "index_ticket_categories_on_company_id"
+    t.index ["default_handler_id"], name: "index_ticket_categories_on_default_handler_id"
+  end
+
+  create_table "ticket_comments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "ticket_id", null: false
+    t.uuid "user_id"
+    t.string "kind", default: "comment", null: false
+    t.text "body"
+    t.jsonb "data", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["ticket_id", "created_at"], name: "index_ticket_comments_on_ticket_id_and_created_at"
+    t.index ["ticket_id"], name: "index_ticket_comments_on_ticket_id"
+    t.index ["user_id"], name: "index_ticket_comments_on_user_id"
+  end
+
+  create_table "tickets", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.integer "number", null: false
+    t.uuid "customer_id", null: false
+    t.uuid "customer_invoice_id"
+    t.uuid "credit_note_id"
+    t.uuid "ticket_category_id"
+    t.string "priority", default: "normal", null: false
+    t.string "status", default: "open", null: false
+    t.string "subject", null: false
+    t.text "description"
+    t.uuid "assigned_user_id"
+    t.uuid "opened_by_id", null: false
+    t.datetime "resolved_at"
+    t.datetime "closed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["assigned_user_id"], name: "index_tickets_on_assigned_user_id"
+    t.index ["company_id", "number"], name: "index_tickets_on_company_id_and_number", unique: true
+    t.index ["company_id", "status"], name: "index_tickets_on_company_id_and_status"
+    t.index ["company_id"], name: "index_tickets_on_company_id"
+    t.index ["credit_note_id"], name: "index_tickets_on_credit_note_id"
+    t.index ["customer_id"], name: "index_tickets_on_customer_id"
+    t.index ["customer_invoice_id"], name: "index_tickets_on_customer_invoice_id"
+    t.index ["opened_by_id"], name: "index_tickets_on_opened_by_id"
+    t.index ["ticket_category_id"], name: "index_tickets_on_ticket_category_id"
+  end
+
   create_table "treasuries", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.string "treasury_type", null: false
@@ -2221,6 +2279,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_20_090000) do
   add_foreign_key "combos", "companies"
   add_foreign_key "company_settings", "companies"
   add_foreign_key "customer_activities", "customers"
+  add_foreign_key "customer_activities", "tickets", on_delete: :nullify
   add_foreign_key "customer_activities", "users"
   add_foreign_key "customer_addresses", "customers"
   add_foreign_key "customer_invoices", "treasuries"
@@ -2444,6 +2503,17 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_20_090000) do
   add_foreign_key "suppliers", "companies"
   add_foreign_key "suppliers", "treasuries"
   add_foreign_key "tax_rates", "companies"
+  add_foreign_key "ticket_categories", "companies"
+  add_foreign_key "ticket_categories", "users", column: "default_handler_id", on_delete: :nullify
+  add_foreign_key "ticket_comments", "tickets"
+  add_foreign_key "ticket_comments", "users"
+  add_foreign_key "tickets", "companies"
+  add_foreign_key "tickets", "credit_notes"
+  add_foreign_key "tickets", "customer_invoices"
+  add_foreign_key "tickets", "customers"
+  add_foreign_key "tickets", "ticket_categories"
+  add_foreign_key "tickets", "users", column: "assigned_user_id"
+  add_foreign_key "tickets", "users", column: "opened_by_id"
   add_foreign_key "treasuries", "companies"
   add_foreign_key "treasury_transactions", "companies"
   add_foreign_key "treasury_transactions", "treasuries"
