@@ -1037,7 +1037,7 @@ module ApplicationHelper
   # Nav badges that nudge a cashier to finish orders through the shift instead of
   # leaving 100+ for closing time. Counts are for the cashier's current drawer, the
   # same set My Shift and the close guard use. nil when there is no drawer yet.
-  # Colour rises with the backlog: [amber from, red from]. Red also pulses (no
+  # Colour rises with the backlog: [amber from, red from]. Red also ripples (no
   # sound), unless the device asks for reduced motion.
   POS_NUDGE_THRESHOLDS = {
     paid_to_complete: [10, 25],
@@ -1058,13 +1058,20 @@ module ApplicationHelper
     return if count.to_i.zero?
 
     amber_from, red_from = POS_NUDGE_THRESHOLDS.fetch(kind)
-    colour = if count >= red_from then "bg-rose-600 text-white motion-safe:animate-pulse"
+    red = count >= red_from
+    colour = if red then "bg-rose-600 text-white"
              elsif count >= amber_from then "bg-amber-500 text-white"
              else "bg-gray-200 text-gray-800"
              end
     label = t("nav.nudge.#{kind}", count: count)
-    tag.span(count, title: label, aria: { label: label }, data: { testid: "pos-nudge-#{kind.to_s.dasherize}" },
-             class: "inline-flex min-w-[1.25rem] h-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold tabular-nums #{colour}")
+    badge = tag.span(count, title: label, aria: { label: label }, data: { testid: "pos-nudge-#{kind.to_s.dasherize}" },
+                     class: "relative inline-flex min-w-[1.25rem] h-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold tabular-nums #{colour}")
+    return badge unless red
+
+    # Red: a ring ripples out from behind the badge (no sound).
+    ripple = tag.span(class: "absolute inset-0 rounded-full bg-rose-500 opacity-75 pointer-events-none motion-safe:animate-ping",
+                      aria: { hidden: true }, data: { testid: "pos-nudge-ripple" })
+    tag.span(ripple + badge, class: "relative inline-flex")
   end
 
   def pos_viewport_min_h_class
