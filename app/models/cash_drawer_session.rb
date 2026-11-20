@@ -18,6 +18,9 @@ class CashDrawerSession < ApplicationRecord
   # A short drawer's payment voucher to the cashier (see Accounting::DrawerVarianceDocuments).
   belongs_to :shortage_voucher, class_name: "Voucher", optional: true
   belongs_to :shortage_waived_by, class_name: "User", optional: true
+  # Who closed (counted) the drawer and when: the cashier at the POS, or a manager
+  # from admin. A count correction keeps the original close; a reopen clears it.
+  belongs_to :closed_by, class_name: "User", optional: true
   # An over drawer's Income, and a waived shortage's Expense, both point back here.
   has_many :variance_incomes, class_name: "Income", as: :source_record, dependent: nil
   has_many :variance_expenses, class_name: "Expense", as: :source_record, dependent: nil
@@ -43,10 +46,15 @@ class CashDrawerSession < ApplicationRecord
   end
 
   # No order is rung without an open drawer, so the drawer's lifetime is the
-  # cashier's shift: from opening until now, or until it was counted. There is no
-  # closed_at, so a counted drawer ends at its last update.
+  # cashier's shift: from opening until now, or until it was closed.
   def order_window
-    created_at..(open? ? Time.current : updated_at)
+    created_at..(open? ? Time.current : closed_time)
+  end
+
+  # When the drawer was closed. Falls back to updated_at only for a closed drawer
+  # with no closed_at (none should have one after the backfill).
+  def closed_time
+    closed_at || updated_at
   end
 
   # The cashier's orders from this drawer session. There is no FK from orders to

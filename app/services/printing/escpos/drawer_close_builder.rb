@@ -56,7 +56,7 @@ module Printing
         doc.row(I18n.t("printing.drawer_close.drawer"), @session.treasury&.name.to_s)
         doc.row(I18n.t("printing.drawer_close.date"), @session.session_date.strftime("%d/%m/%Y"))
         doc.row(I18n.t("printing.drawer_close.opened"), time(@session.created_at))
-        doc.row(I18n.t("printing.drawer_close.closed"), @session.counted_cash_cents.nil? ? "-" : time(@session.updated_at))
+        doc.row(I18n.t("printing.drawer_close.closed"), @session.counted_cash_cents.nil? ? "-" : time(@session.closed_time))
         doc.separator
 
         doc.row(I18n.t("printing.drawer_close.opening_float"), money(summary.opening_float_cents))

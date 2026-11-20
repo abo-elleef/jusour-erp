@@ -47,7 +47,9 @@ module Accounting
           variance_cents: nil,
           variance_documented: false,
           shortage_waived_at: nil,
-          shortage_waived_by_id: nil
+          shortage_waived_by_id: nil,
+          closed_at: nil,
+          closed_by_id: nil
         )
         # The chosen safe stays: nothing moves to it until a new count is saved.
         # The expected figure is recomputed from the payments as they stand now.

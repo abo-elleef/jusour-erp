@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_20_100200) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_20_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -161,6 +161,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_20_100200) do
     t.uuid "shortage_voucher_id"
     t.datetime "shortage_waived_at"
     t.uuid "shortage_waived_by_id"
+    t.datetime "closed_at"
+    t.uuid "closed_by_id"
+    t.index ["closed_by_id"], name: "index_cash_drawer_sessions_on_closed_by_id"
     t.index ["company_id"], name: "index_cash_drawer_sessions_on_company_id"
     t.index ["deposit_treasury_id"], name: "index_cash_drawer_sessions_on_deposit_treasury_id"
     t.index ["float_source_treasury_id"], name: "index_cash_drawer_sessions_on_float_source_treasury_id"
@@ -2271,6 +2274,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_20_100200) do
   add_foreign_key "cash_drawer_sessions", "treasuries", column: "deposit_treasury_id"
   add_foreign_key "cash_drawer_sessions", "treasuries", column: "float_source_treasury_id"
   add_foreign_key "cash_drawer_sessions", "users"
+  add_foreign_key "cash_drawer_sessions", "users", column: "closed_by_id"
   add_foreign_key "cash_drawer_sessions", "users", column: "shortage_waived_by_id"
   add_foreign_key "cash_drawer_sessions", "vouchers", column: "shortage_voucher_id"
   add_foreign_key "categories", "companies"

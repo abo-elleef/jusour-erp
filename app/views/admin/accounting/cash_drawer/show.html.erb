@@ -13,6 +13,13 @@
         <%= link_to session.treasury.name, admin_accounting_treasury_path(session.treasury), class: "text-amber-700 hover:text-amber-800" %>
         · <%= l(session.session_date, format: :long) %>
         · <%= t("accounting.cash_drawer.opened_at") %> <%= l(session.created_at, format: :short_time) %>
+        <% if session.closed_at %>
+          · <%= t("accounting.cash_drawer.closed_at") %> <%= l(session.closed_at, format: :short_time) %>
+          <% if session.closed_by %>
+            <%= t("accounting.cash_drawer.closed_by") %>
+            <%= link_to session.closed_by.name, admin_user_path(session.closed_by), class: "text-amber-700 hover:text-amber-800" %>
+          <% end %>
+        <% end %>
         · <%= accounting_drawer_status(session.status) %>
       </p>
     </div>

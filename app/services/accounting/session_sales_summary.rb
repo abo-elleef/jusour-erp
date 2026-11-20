@@ -116,7 +116,7 @@ module Accounting
       return @end_time if @end_time
       return Time.current if @session.nil? || @session.status == "open"
 
-      @session.updated_at
+      @session.closed_time
     end
 
     # Money taken and not given back. A refunded payment still counts for whatever

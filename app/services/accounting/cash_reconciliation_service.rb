@@ -32,13 +32,17 @@ module Accounting
       # A count correction keeps the mode the drawer was first closed under, so
       # changing the company setting never rewrites a closed drawer's books.
       documented = @session.status == "reconciled" ? @session.variance_documented? : Setting.document_drawer_variance?
+      # Likewise a correction keeps when and by whom the drawer was first closed.
+      first_close = @session.closed_at.nil?
 
       CashDrawerSession.transaction do
         @session.update!(
           counted_cash_cents: counted_cents,
           variance_cents: variance,
           variance_documented: documented,
-          status: "reconciled"
+          status: "reconciled",
+          closed_at: first_close ? Time.current : @session.closed_at,
+          closed_by_id: first_close ? (by || @session.user)&.id : @session.closed_by_id
         )
 
         ::Accounting::TreasuryLedgerService.sync_drawer_reconcile!(@session)
@@ -51,7 +55,8 @@ module Accounting
       AuditLogEntry.record!(
         action: "cash_drawer.reconciled",
         record: @session,
-        user: @session.user,
+        # Whoever saved the count — the cashier, or a manager from admin.
+        user: by || @session.user,
         changes_snapshot: {
           variance_cents: variance,
           counted: counted_cents,

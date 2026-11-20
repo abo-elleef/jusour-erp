@@ -6872,6 +6872,8 @@ en:
       opening_float: "Opening float"
       cashier: "Cashier"
       opened_at: "Opened"
+      closed_at: "Closed"
+      closed_by: "by"
       status: "Status"
       expected: "Expected"
       counted: "Counted"

@@ -6985,6 +6985,8 @@ ar:
       opening_float: "رصيد الافتتاح"
       cashier: "أمين الصندوق"
       opened_at: "وقت الفتح"
+      closed_at: "وقت الإغلاق"
+      closed_by: "بواسطة"
       status: "الحالة"
       expected: "المتوقع"
       counted: "المعدود"
