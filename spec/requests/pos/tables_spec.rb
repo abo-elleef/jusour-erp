@@ -91,6 +91,30 @@ RSpec.describe "POS tables board", type: :request do
     expect(Order.busy_tables(cafe)).to eq({})
   end
 
+  it "frees the table on the board as soon as the cashier takes full payment" do
+    order = table_order(status: "submitted")
+
+    post pos_payments_path, params: { order_id: order.id, payment_method: "cash",
+                                      amount_pounds: (order.total_cents / 100.0).to_s }
+
+    expect(order.reload).to be_fully_paid
+    expect(order.status).not_to eq("completed")
+    get pos_tables_path
+    expect(response.body).to include(I18n.t("pos.tables.summary", busy: 0, free: 6))
+  end
+
+  it "keeps a paid table busy until completion where the branch turned freeing off" do
+    cafe.update!(free_table_on_payment: false)
+    order = table_order(status: "submitted")
+
+    post pos_payments_path, params: { order_id: order.id, payment_method: "cash",
+                                      amount_pounds: (order.total_cents / 100.0).to_s }
+
+    expect(order.reload).to be_fully_paid
+    get pos_tables_path
+    expect(response.body).to include(I18n.t("pos.tables.summary", busy: 1, free: 5))
+  end
+
   it "rejects moving an order onto a busy table and keeps its own table" do
     table_order(owner: other_cashier, table: "3")
     mine = create(:order, user: cashier, company: company, location: cafe, order_type: "table", table_number: "4")

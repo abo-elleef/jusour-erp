@@ -170,6 +170,19 @@ class Order < ApplicationRecord
   # A table is busy from the first item until its order is completed or cancelled.
   # Only meaningful at branches with table service on; see Location#table_service.
   scope :open_table_orders, -> { not_finalized.where(order_type: "table").where.not(table_number: [nil, ""]) }
+  # The orders actually holding a table at this branch. Where the branch frees tables
+  # on payment (Location#free_table_on_payment, the default), a fully paid order lets
+  # its table go even though it is not completed yet: the kitchen and the cashier's
+  # lists still carry it, the floor plan does not. Same "fully paid" test as
+  # #fully_paid?, except a zero total never frees a table — nothing was paid.
+  # Derived rather than stored, so every way money arrives (register, bulk collect,
+  # offline sync) frees the table, and an order that owes again holds it again.
+  scope :holding_tables, ->(location) {
+    scope = open_table_orders.where(location_id: location.id)
+    next scope unless location.free_table_on_payment?
+
+    scope.where("orders.total_cents IS NULL OR orders.total_cents <= 0 OR #{BALANCE_DUE_SQL}")
+  }
   scope :kitchen_queue, -> { where(status: %w[submitted in_progress ready]) }
   scope :awaiting_payment, -> {
     where.not(status: %w[draft cancelled]).order(created_at: :desc)
@@ -208,7 +221,7 @@ class Order < ApplicationRecord
   def self.table_orders(location)
     return {} unless location&.table_service?
 
-    open_table_orders.where(location_id: location.id).includes(:user, :order_items).group_by { |order| order.table_number.to_s }
+    holding_tables(location).includes(:user, :order_items).group_by { |order| order.table_number.to_s }
   end
 
   def self.ransackable_attributes(_auth_object = nil)
@@ -396,8 +409,7 @@ class Order < ApplicationRecord
     return if FINAL_STATUSES.include?(status)
 
     lock_table!
-    Order.open_table_orders.where(location_id: location_id, table_number: table_number.to_s)
-         .where.not(id: id).first
+    Order.holding_tables(location).where(table_number: table_number.to_s).where.not(id: id).first
   end
 
   # A draft has no number yet, and a draft cancelled before it was ever placed

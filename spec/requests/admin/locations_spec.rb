@@ -146,6 +146,20 @@ RSpec.describe "Admin::Locations", type: :request do
       patch admin_location_path(location), params: { location: { pos_top_sellers_enabled: "0" } }
       expect(location.reload.pos_top_sellers_enabled).to be false
     end
+
+    it "switches freeing a table on payment off and back on" do
+      location = create(:location, company: company)
+      expect(location.free_table_on_payment).to be true
+
+      get edit_admin_location_path(location)
+      expect(response.body).to include("location[free_table_on_payment]")
+
+      patch admin_location_path(location), params: { location: { free_table_on_payment: "0" } }
+      expect(location.reload.free_table_on_payment).to be false
+
+      patch admin_location_path(location), params: { location: { free_table_on_payment: "1" } }
+      expect(location.reload.free_table_on_payment).to be true
+    end
   end
 
   describe "DELETE /admin/locations/:id" do

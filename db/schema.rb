@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_20_150000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_20_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -875,6 +875,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_20_150000) do
     t.time "online_close_time"
     t.integer "online_accept_timeout_minutes", default: 10, null: false
     t.integer "online_max_order_cents"
+    t.boolean "free_table_on_payment", default: true, null: false
     t.index ["active"], name: "index_locations_on_active"
     t.index ["cash_over_income_category_id"], name: "index_locations_on_cash_over_income_category_id"
     t.index ["cash_over_treasury_id"], name: "index_locations_on_cash_over_treasury_id"
