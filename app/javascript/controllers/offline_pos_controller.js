@@ -319,6 +319,10 @@ export default class extends Controller {
       // a snapshot cached before labels existed only has the number.
       busy[String(n)] = holder.label || `#${holder.number}`
     }
+    // Every offline order is paid when it is rung up, so where the branch frees a
+    // table on payment none of them holds one. A snapshot cached before the setting
+    // existed has no flag: keep the old rule (they hold their table).
+    if (this.snapshot.location?.free_table_on_payment === true) return busy
     for (const order of this.orders) {
       if (order.order_type === "table" && order.table_number) busy[String(order.table_number)] = order.offline_number
     }

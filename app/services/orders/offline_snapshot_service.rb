@@ -27,7 +27,8 @@ module Orders
         generated_at: Time.current.iso8601,
         csrf_token: @csrf_token,
         user: { id: @user.id, name: @user.name },
-        location: @location && { id: @location.id, name: @location.name, table_count: @location.table_count },
+        location: @location && { id: @location.id, name: @location.name, table_count: @location.table_count,
+                                  free_table_on_payment: @location.free_table_on_payment },
         busy_tables: busy_tables,
         workstation: @workstation && { id: @workstation.id, name: @workstation.name, code: register_code },
         drawer_session_id: drawer_session&.id,
@@ -71,8 +72,9 @@ module Orders
       code
     end
 
-    # Tables holding an open order as of this snapshot, so the offline register can
-    # warn before seating one. Only as fresh as the last snapshot, and blind to what
+    # Tables holding an order as of this snapshot (Order.holding_tables, so a paid
+    # order has already let its table go where the branch frees tables on payment),
+    # so the offline register can warn before seating one. Only as fresh as the last snapshot, and blind to what
     # other registers do offline, so the register warns rather than blocks.
     def busy_tables
       # label is ready to show ("#12", or "Draft" before the order is placed and

@@ -361,13 +361,22 @@ RSpec.describe Orders::SyncOfflineOrderService do
   end
 
   describe "a table someone else took while the internet was down" do
-    let(:branch) { create(:location, company: company, table_service: true, table_count: 6) }
+    # Freeing a table on payment off: the paid offline order then holds the table too.
+    let(:branch) { create(:location, company: company, table_service: true, table_count: 6, free_table_on_payment: false) }
 
     let!(:holder) do
       order = create(:order, user: other_cashier, company: company, location: branch,
                              order_type: "table", table_number: "3", status: "submitted")
       create(:order_item, order: order)
       order
+    end
+
+    it "leaves the table to the holder where paying frees a table: the synced order is already paid" do
+      branch.update!(free_table_on_payment: true)
+      result = described_class.call(user: cashier, payload: payload(order_type: "table", table_number: "3"))
+
+      expect(result).to be_success
+      expect(Order.table_orders(branch)["3"]).to contain_exactly(holder)
     end
 
     it "still syncs the paid order, and flags the clash for a manager" do

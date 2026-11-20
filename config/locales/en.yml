@@ -4641,6 +4641,8 @@ en:
         table_count_hint: "The cashier picks a table from numbered buttons (1 to this number). Leave blank to type the table number by hand."
         table_service: "Table service (open table orders)"
         table_service_hint: "Table orders stay open and unpaid while customers sit. Adds the Tables screen and allows only one open order per table. Needs a table count. Leave off for pay-first branches."
+        free_table_on_payment: "Free the table when the order is fully paid"
+        free_table_on_payment_hint: "Table service only. On: paying the whole order frees its table right away; the order stays open for the kitchen and is completed as usual. Off: the table stays busy until the cashier completes the order."
         public_menu_enabled: "Public menu"
         public_menu_enabled_hint: "When enabled, customers can browse this branch's menu at the public link."
         pos_top_sellers_enabled: "Most sold row on the register"

@@ -70,6 +70,24 @@ RSpec.describe Orders::OfflineSnapshotService do
                                                   label: order.display_reference })
   end
 
+  it "tells the offline register whether paying frees a table, and leaves paid tables out" do
+    branch.update!(table_service: true, table_count: 6)
+    order = create(:order, user: cashier, company: company, location: branch, order_type: "table",
+                           table_number: "5", status: "submitted")
+    create(:order_item, order: order)
+    order.update_columns(total_cents: 3_000)
+    create(:payment, order: order, amount_cents: 3_000)
+
+    snapshot = described_class.call(user: cashier, location: branch, workstation: nil, csrf_token: "t")
+    expect(snapshot[:location][:free_table_on_payment]).to be(true)
+    expect(snapshot[:busy_tables]).to eq({})
+
+    branch.update!(free_table_on_payment: false)
+    snapshot = described_class.call(user: cashier, location: branch.reload, workstation: nil, csrf_token: "t")
+    expect(snapshot[:location][:free_table_on_payment]).to be(false)
+    expect(snapshot[:busy_tables].keys).to eq(["5"])
+  end
+
   it "labels a table held by an unplaced draft without a number" do
     branch.update!(table_service: true, table_count: 6)
     draft = create(:order, user: cashier, company: company, location: branch, order_type: "table",
