@@ -277,6 +277,11 @@ class Order < ApplicationRecord
   # What the customer has paid toward this bill, refunds or not. This — not
   # paid_cents, which is the money actually kept — decides whether anything is owed.
   def settled_cents
+    # Lists preload payments; use them rather than one query per row.
+    if payments.loaded?
+      return payments.select { |payment| SETTLING_PAYMENT_STATUSES.include?(payment.status) }.sum(&:amount_cents)
+    end
+
     payments.where(status: SETTLING_PAYMENT_STATUSES).sum(:amount_cents)
   end
 

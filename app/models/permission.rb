@@ -13,6 +13,9 @@ module Permission
     { key: "dashboard:view",          group: "operations" },
     { key: "orders:view",             group: "operations" },
     { key: "orders:refund",           group: "operations" },
+    # Complete an order that still owes money (hand it over now, collect later).
+    # Without it a POS user completes only fully paid orders — see OrderPolicy#complete?.
+    { key: "orders:complete_unpaid",  group: "operations" },
     { key: "menu:manage",             group: "operations" },
     { key: "customers:manage",        group: "operations" },
 
@@ -86,7 +89,7 @@ module Permission
     "manager" => {
       name: "Manager",
       permissions: %w[
-        dashboard:view orders:view orders:refund menu:manage customers:manage
+        dashboard:view orders:view orders:refund orders:complete_unpaid menu:manage customers:manage
         inventory:view inventory:manage inventory:settings inventory:manufacturing
         accounting:transactions accounting:day_close accounting:reports
         attendance:log attendance:view attendance:penalties attendance:waive_penalties attendance:audit staff:view locations:manage printers:manage
@@ -101,7 +104,7 @@ module Permission
       # Runs the floor, logs attendance, and closes out the day's drawers — but no
       # other accounting: recording spend stays with the roles above.
       permissions: %w[
-        dashboard:view orders:view menu:manage customers:manage inventory:view
+        dashboard:view orders:view orders:complete_unpaid menu:manage customers:manage inventory:view
         accounting:day_close
         attendance:log attendance:view pos:access kitchen:access
         leads:view leads:manage sales:confirm_payments sales:dispatch sales:see_all

@@ -42,7 +42,7 @@ RSpec.describe "POS order completion", type: :request do
 
   describe "POST /pos/orders/:id/complete" do
     it "completes an order the cashier marks done" do
-      order = open_order
+      order = paid_open_order
 
       post complete_pos_order_path(order)
 
@@ -50,25 +50,80 @@ RSpec.describe "POS order completion", type: :request do
       expect(order.reload.status).to eq("completed")
     end
 
-    it "completes an order that has not been paid" do
+    # Cashiers complete paid orders only; handing over now and collecting later is
+    # a manager's call (orders:complete_unpaid).
+    it "refuses a cashier completing an order that has not been paid" do
+      order = open_order
+
+      post complete_pos_order_path(order)
+
+      expect(flash[:alert]).to eq(I18n.t("flash.unauthorized"))
+      expect(order.reload.status).to eq("submitted")
+    end
+
+    it "refuses a part-paid order too" do
+      order = open_order
+      create(:payment, order: order, amount_cents: order.total_cents - 1)
+
+      post complete_pos_order_path(order)
+
+      expect(order.reload.status).to eq("submitted")
+    end
+
+    context "as a manager" do
+      let(:manager) { create(:user, company: company, role: "manager") }
+
+      before { sign_in manager }
+
+      it "completes an order that has not been paid" do
+        order = open_order
+
+        post complete_pos_order_path(order)
+
+        expect(order.reload).to be_completed
+        expect(order.amount_due_cents).to be_positive
+      end
+
+      it "keeps that unpaid order on Collect Payment" do
+        order = open_order(owner: manager)
+        post complete_pos_order_path(order)
+
+        get pos_orders_path
+        expect(response.body).to include(order.order_number)
+      end
+    end
+
+    it "lets a cashier role given orders:complete_unpaid complete an unpaid order" do
+      role = Role.find_or_create_by!(company: company, key: "cashier") { |r| r.name = "Cashier" }
+      role.update!(permissions: %w[pos:access orders:complete_unpaid])
+      cashier.update!(role_id: role.id)
       order = open_order
 
       post complete_pos_order_path(order)
 
       expect(order.reload).to be_completed
-      expect(order.amount_due_cents).to be_positive
     end
 
-    it "keeps that unpaid order on Collect Payment" do
-      order = open_order
-      post complete_pos_order_path(order)
+    it "goes back to the My Shift list a row's Complete came from" do
+      order = paid_open_order
+      back = pos_shift_path(tab: "orders", filter: "open")
 
-      get pos_orders_path
-      expect(response.body).to include(order.order_number)
+      post complete_pos_order_path(order, from: "shift", return_to: back)
+
+      expect(response).to redirect_to(back)
+      expect(order.reload).to be_completed
+    end
+
+    it "ignores a return_to that is not the My Shift page" do
+      order = paid_open_order
+
+      post complete_pos_order_path(order, from: "shift", return_to: "https://evil.example/pos/shift")
+
+      expect(response).to redirect_to(pos_order_path(order, from: "shift"))
     end
 
     it "reports an order it cannot move instead of blowing up" do
-      order = open_order(status: "draft")
+      order = paid_open_order(status: "draft")
       order.update!(order_type: "table", table_number: nil)
 
       post complete_pos_order_path(order)
@@ -84,8 +139,8 @@ RSpec.describe "POS order completion", type: :request do
   describe "the buttons that reach those actions" do
     before { open_drawer_for(cashier) }
 
-    it "offers Mark completed on an open order" do
-      order = open_order
+    it "offers Mark completed on a paid open order" do
+      order = paid_open_order
 
       get pos_order_path(order)
 
@@ -93,8 +148,54 @@ RSpec.describe "POS order completion", type: :request do
       expect(response.body).to include(complete_pos_order_path(order))
     end
 
-    it "drops it once the order is closed" do
+    it "greys out Mark completed on an unpaid order and says why" do
       order = open_order
+
+      get pos_order_path(order)
+
+      expect(response.body).not_to include(complete_pos_order_path(order))
+      expect(response.body).to include('data-testid="complete-needs-payment"')
+    end
+
+    it "offers Complete on a paid row of My Shift, not on an unpaid one" do
+      paid = paid_open_order
+      unpaid = open_order
+
+      get pos_shift_path(tab: "orders", filter: "open")
+
+      expect(response.body).to include(complete_pos_order_path(paid, from: "shift"))
+      expect(response.body).not_to include(complete_pos_order_path(unpaid, from: "shift"))
+    end
+
+    it "badges the nav with paid-to-complete and placed-unpaid counts" do
+      3.times { paid_open_order }
+      2.times { open_order }
+      open_order(status: "draft") # a cart still being rung up is not counted
+
+      get pos_shift_path(tab: "orders")
+
+      expect(response.body).to match(/data-testid="pos-nudge-paid-to-complete"[^>]*>\s*3\s*</)
+      expect(response.body).to match(/data-testid="pos-nudge-unpaid"[^>]*>\s*2\s*</)
+    end
+
+    it "turns a badge red with a ripple once the backlog is large" do
+      10.times { open_order }
+
+      get pos_shift_path(tab: "orders")
+
+      expect(response.body).to match(/data-testid="pos-nudge-unpaid"[^>]*class="[^"]*bg-rose-600/)
+      expect(response.body).to match(/class="[^"]*motion-safe:animate-ping[^"]*"[^>]*data-testid="pos-nudge-ripple"/)
+      expect(response.body).not_to match(/data-testid="pos-nudge-paid-to-complete"/)
+    end
+
+    it "shows no badges when nothing is waiting" do
+      get pos_shift_path(tab: "orders")
+
+      expect(response.body).not_to include("pos-nudge-")
+    end
+
+    it "drops it once the order is closed" do
+      order = paid_open_order
       post complete_pos_order_path(order)
 
       get pos_order_path(order, from: "shift")
@@ -229,7 +330,7 @@ RSpec.describe "POS order completion", type: :request do
     end
 
     it "is not printed a second time when the cashier closes the order" do
-      order = open_order
+      order = paid_open_order
 
       expect {
         post complete_pos_order_path(order)

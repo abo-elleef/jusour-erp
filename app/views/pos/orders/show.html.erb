@@ -22,6 +22,15 @@
           </svg>
           <%= t("pos.orders.mark_completed") %>
         <% end %>
+      <% elsif policy(@order).complete_blocked_reason == :needs_payment %>
+        <%# A cashier cannot complete an unpaid order; say why rather than hide it. %>
+        <span title="<%= t("pos.orders.complete_needs_payment") %>" data-testid="complete-needs-payment"
+              class="flex items-center gap-1.5 text-sm font-semibold text-gray-400 bg-gray-100 px-3 py-1.5 rounded-xl cursor-not-allowed">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+          <%= t("pos.orders.mark_completed") %>
+        </span>
       <% end %>
       <% unless @order.cancelled? %>
         <button type="button"

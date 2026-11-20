@@ -73,6 +73,22 @@ class CashDrawerSession < ApplicationRecord
     Order.not_finalized.where(id: orders.select(:id))
   end
 
+  # How many of this drawer's open orders are fully paid and only wait for the
+  # cashier to complete them. Counted in SQL for the POS nav badge, which renders
+  # on every register page. Same test as Order#fully_paid? (a total, all settled).
+  def paid_unfinished_orders_count
+    unfinished_orders.unscope(:order).where.not(total_cents: nil)
+      .where.not(Order::BALANCE_DUE_SQL).count
+  end
+
+  # How many of this drawer's placed orders still owe money, for the POS nav badge.
+  # Same "owes money" test as #unpaid_orders, minus drafts: a cart still being rung
+  # up is not a debt yet.
+  def unpaid_placed_orders_count
+    Order.not_fully_paid.unscope(:order).where.not(status: "draft")
+      .where(id: orders.select(:id)).count
+  end
+
   # This drawer's orders that still owe money, finished or not. Same "owes money"
   # test as Collect Payment. Also blocks the close.
   def unpaid_orders

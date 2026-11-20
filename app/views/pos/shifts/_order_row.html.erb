@@ -58,6 +58,17 @@
       </div>
     <% else %>
       <div class="inline-flex items-center justify-end gap-2">
+        <%# One tap per paid order as it goes out, so they don't pile up for closing.
+            Paid only, for everyone: an unpaid one is completed from its own page
+            (managers) after a warning. Posts inside the shift_orders frame and comes
+            back to the same list, so the page keeps its scroll. %>
+        <% if !order.completed? && !order.cancelled? && order.fully_paid? && policy(order).complete? %>
+          <%= button_to t("pos.shift.orders.complete"), complete_pos_order_path(order, from: "shift", return_to: request.fullpath),
+                method: :post,
+                form: { data: { turbo_frame: "shift_orders", controller: "submit-once", action: "submit->submit-once#guard" } },
+                data: { submit_once_target: "submit", testid: "shift-order-complete" },
+                class: "inline-flex items-center bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+        <% end %>
         <%= render "pos/orders/edit_items_button", order: order, from: "shift" %>
         <%= link_to t("actions.view"), pos_order_path(order, from: "shift"),
               class: "inline-flex items-center bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>

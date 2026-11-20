@@ -677,6 +677,13 @@ en:
     collect_payment: "Collect Payment"
     online_orders: "Online"
     my_shift: "My shift"
+    nudge:
+      paid_to_complete:
+        one: "%{count} paid order waiting to be completed"
+        other: "%{count} paid orders waiting to be completed"
+      unpaid:
+        one: "%{count} placed order not paid yet"
+        other: "%{count} placed orders not paid yet"
     kitchen: "Kitchen"
     production: "Production"
     admin: "Admin"
@@ -1046,6 +1053,7 @@ en:
       orders:
         view: "View orders"
         refund: "Void & refund orders"
+        complete_unpaid: "Complete unpaid orders"
       menu:
         manage: "Manage menu"
       customers:
@@ -4318,6 +4326,7 @@ en:
         complete_paid_confirm:
           one: "Complete the %{count} open order that is fully paid? Unpaid orders stay open."
           other: "Complete the %{count} open orders that are fully paid? Unpaid orders stay open."
+        complete: "Complete"
     orders:
       edit_items: "Edit items"
       continue_editing: "Continue editing"
@@ -4347,6 +4356,7 @@ en:
           no_access: "You don't have access to void this order."
       edit_details: "Edit details"
       mark_completed: "Mark completed"
+      complete_needs_payment: "Collect the payment first. Only a manager can complete an unpaid order."
       complete_unpaid_confirm: "This order still has a balance due. Complete it anyway? It stays on Collect Payment until it is settled."
       change_payment_method: "Change payment method"
 
