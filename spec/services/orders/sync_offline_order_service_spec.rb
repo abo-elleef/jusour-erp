@@ -262,6 +262,37 @@ RSpec.describe Orders::SyncOfflineOrderService do
       expect(Order.where(client_uuid: uuid)).to be_none
     end
 
+    it "adds the delivery fee to the total, the payment and the drawer's driver payout" do
+      treasury = Treasury.create!(company: company, name: "Register", treasury_type: "cash_drawer",
+                                  balance_cents: 0, opening_balance_cents: 0)
+      drawer = CashDrawerSession.create!(user: cashier, treasury: treasury, location: branch,
+                                         session_date: BusinessDay.today(location: branch),
+                                         opening_float_cents: 0, status: "open")
+
+      order = described_class.call(user: cashier, payload: delivery(delivery_fee_cents: 3000, tendered_cents: 10_000,
+                                                                     drawer_session_id: drawer.id)).order
+
+      food = 2 * 1200 + 336 # two burgers with cheese, 14% VAT
+      expect(order.delivery_fee_cents).to eq(3000)
+      expect(order.total_cents).to eq(food + 3000)
+      expect(order.delivery_fee_drawer_session_id).to eq(drawer.id)
+    end
+
+    it "takes a wallet payment for food plus fee" do
+      order = described_class.call(user: cashier, payload: delivery(delivery_fee_cents: 3000, payment_method: "vodafone_cash")).order
+
+      expect(order.payments.sole).to have_attributes(payment_method: "vodafone_cash", amount_cents: order.total_cents)
+      expect(order.total_cents).to eq(2 * 1200 + 336 + 3000)
+    end
+
+    it "ignores a fee on a non-delivery order and a negative fee" do
+      pickup = described_class.call(user: cashier, payload: payload(delivery_fee_cents: 3000)).order
+      negative = described_class.call(user: cashier, payload: delivery(client_uuid: SecureRandom.uuid, delivery_fee_cents: -500)).order
+
+      expect(pickup.delivery_fee_cents).to eq(0)
+      expect(negative.delivery_fee_cents).to eq(0)
+    end
+
     it "does not attach a customer to table or pickup orders" do
       order = described_class.call(user: cashier, payload: payload(customer_phone: "01012345678", delivery_address: "x")).order
 

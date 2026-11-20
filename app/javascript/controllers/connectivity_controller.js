@@ -72,7 +72,7 @@ export default class extends Controller {
   }
 
   bannerOfflineMessage() {
-    return this.element.dataset.offlineMessage || "You are offline. Cash payments only."
+    return this.element.dataset.offlineMessage || "You are offline. Orders will sync when reconnected."
   }
 
   bannerOnlineMessage() {

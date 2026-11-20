@@ -438,6 +438,17 @@ export function buildReceipt(order, { labels, restaurant, footer, rtl, widthChar
   doc.row(r.subtotal, money(totals.subtotal_cents))
   if (totals.discount_cents > 0) doc.row(r.discount, `-${money(totals.discount_cents)}`)
   if (totals.tax_cents > 0) doc.row(r.tax, money(totals.tax_cents))
+  // As ReceiptBuilder: on a delivery the dispatcher's number (what the driver
+  // hands over, the fee being theirs) comes first, big and boxed, then the fee.
+  const fee = totals.delivery_fee_cents || 0
+  if (fee > 0) {
+    if (order.order_type === "delivery") {
+      doc.separator()
+      doc.row(r.total_without_delivery, money(totals.total_cents - fee), { boldLabel: true, boldValue: true })
+      doc.separator()
+    }
+    doc.row(r.delivery_fee, money(fee))
+  }
   // Big and boxed in, like the server receipt's total.
   doc.separator()
   doc.row(r.total, money(totals.total_cents), { boldLabel: true, boldValue: true })

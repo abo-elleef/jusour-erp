@@ -62,6 +62,7 @@ module Orders
           user: cashier,
           customer: customer,
           delivery_address: (@payload[:delivery_address].to_s.strip if order_type == "delivery"),
+          delivery_fee_cents: delivery_fee_cents,
           location: location,
           workstation: workstation,
           order_type: order_type,
@@ -262,6 +263,16 @@ module Orders
 
     def workstation
       @workstation ||= Workstation.find_by(id: @payload[:workstation_id])
+    end
+
+    # Typed by the cashier on a delivery order, as on the online register. The
+    # customer paid food + fee, so it is part of the total the payment is for; the
+    # first payment charges it to the cashier's drawer as the driver's payout
+    # (Payment#charge_delivery_fee_to_drawer).
+    def delivery_fee_cents
+      return 0 unless order_type == "delivery"
+
+      [@payload[:delivery_fee_cents].to_i, 0].max
     end
 
     def order_type

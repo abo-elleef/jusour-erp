@@ -82,6 +82,23 @@ RSpec.describe "POS offline mode", type: :request do
       expect(response.parsed_body).to include("duplicate" => true, "order_id" => first["order_id"])
     end
 
+    # The browser sends these; a permit list that drops them turns every
+    # InstaPay / Vodafone Cash sale into cash and loses the driver's fee.
+    it "keeps the payment method and the delivery fee the register sent" do
+      post pos_offline_orders_path, params: { order: {
+        client_uuid: SecureRandom.uuid, offline_number: "OFF-A2", user_id: cashier.id, location_id: branch.id,
+        order_type: "delivery", customer_name: "Mona", customer_phone: "01012345678", delivery_address: "12 Nile St",
+        delivery_fee_cents: 2500, payment_method: "instapay",
+        items: [{ menu_item_id: burger.id, quantity: 1, unit_price_cents: 1200 }]
+      } }, as: :json
+
+      expect(response).to have_http_status(:created)
+      order = Order.find(response.parsed_body["order_id"])
+      expect(order.delivery_fee_cents).to eq(2500)
+      expect(order.total_cents).to eq(1200 + 168 + 2500)
+      expect(order.payments.sole).to have_attributes(payment_method: "instapay", amount_cents: 1200 + 168 + 2500)
+    end
+
     describe "carrying the open order over when the internet drops" do
       before { open_drawer_for(cashier, location: branch) }
 

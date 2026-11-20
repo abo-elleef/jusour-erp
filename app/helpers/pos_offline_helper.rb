@@ -60,6 +60,7 @@ module PosOfflineHelper
       customer_name: order.customer&.name.to_s,
       customer_phone: order.customer&.phone.to_s,
       delivery_address: order.delivery_address.to_s,
+      delivery_fee_cents: order.delivery_fee_cents.to_i,
       items: order.order_items.includes(:order_item_modifiers).order(:created_at, :id).map do |item|
         {
           menu_item_id: item.menu_item_id,

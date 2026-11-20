@@ -6,7 +6,7 @@
 //   discount = promo markdown per unit × quantity
 //   tax      = Σ per line, per active rate of that line's tax category:
 //              round(line × rate)          (rounded half up, rate a decimal)
-//   total    = subtotal − discount + tax
+//   total    = subtotal − discount + tax + delivery fee
 //
 // Tax is done in integers: the rate arrives as a decimal string and a float would
 // turn a legitimate .5 into .4999999.
@@ -36,7 +36,9 @@ export function taxOn(cents, rateText) {
   return Number((product * 2n + scale) / (scale * 2n))
 }
 
-export function computeTotals(lines, taxRates) {
+// The delivery fee is not taxed and not discounted, as on the server; it is in
+// the total because the customer pays it with the order.
+export function computeTotals(lines, taxRates, deliveryFeeCents = 0) {
   let subtotal = 0
   let discount = 0
   let tax = 0
@@ -52,7 +54,8 @@ export function computeTotals(lines, taxRates) {
       })
   })
 
-  return { subtotal_cents: subtotal, discount_cents: discount, tax_cents: tax, total_cents: subtotal - discount + tax }
+  const fee = Math.max(0, deliveryFeeCents || 0)
+  return { subtotal_cents: subtotal, discount_cents: discount, tax_cents: tax, delivery_fee_cents: fee, total_cents: subtotal - discount + tax + fee }
 }
 
 export function formatMoney(cents) {

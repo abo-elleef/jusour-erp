@@ -120,6 +120,7 @@ function orderPayload(order) {
     customer_name: order.customer_name,
     customer_phone: order.customer_phone,
     delivery_address: order.delivery_address,
+    delivery_fee_cents: order.totals?.delivery_fee_cents || 0,
     notes: order.notes,
     replaces_order_id: order.replaces_order_id || null,
     tendered_cents: order.tendered_cents,

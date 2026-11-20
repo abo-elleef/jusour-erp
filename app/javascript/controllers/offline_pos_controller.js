@@ -258,14 +258,26 @@ export default class extends Controller {
         ${isDelivery ? this.deliveryFieldsHtml() : ""}
         ${isTable ? this.tableFieldHtml() : ""}
         <input type="text" data-field="notes" value="${esc(this.cart.notes)}" placeholder="${esc(this.t("order_notes"))}" class="${INPUT}">
+        <div data-cart-totals class="space-y-2.5">${this.cartTotalsHtml(totals, empty)}</div>
+      </div>`
+  }
+
+  cartTotalsHtml(totals, empty) {
+    return `
         <dl class="text-sm space-y-1 tabular-nums">
           <div class="flex justify-between text-gray-600"><dt>${esc(this.t("subtotal"))}</dt><dd>${formatMoney(totals.subtotal_cents)}</dd></div>
           ${totals.discount_cents > 0 ? `<div class="flex justify-between text-rose-700"><dt>${esc(this.t("discount"))}</dt><dd>-${formatMoney(totals.discount_cents)}</dd></div>` : ""}
           ${totals.tax_cents > 0 ? `<div class="flex justify-between text-gray-600"><dt>${esc(this.t("tax"))}</dt><dd>${formatMoney(totals.tax_cents)}</dd></div>` : ""}
+          ${totals.delivery_fee_cents > 0 ? `<div class="flex justify-between text-gray-600"><dt>${esc(this.t("delivery_fee"))}</dt><dd>${formatMoney(totals.delivery_fee_cents)}</dd></div>` : ""}
           <div class="flex justify-between font-bold text-gray-900 text-base"><dt>${esc(this.t("total"))}</dt><dd>${formatMoney(totals.total_cents)}</dd></div>
         </dl>
-        <button type="button" data-act="open-payment" class="w-full ${BTN_DARK} !rounded-full !py-3" ${empty ? "disabled" : ""}>${esc(this.t("charge", { amount: formatMoney(totals.total_cents) }))}</button>
-      </div>`
+        <button type="button" data-act="open-payment" class="w-full ${BTN_DARK} !rounded-full !py-3" ${empty ? "disabled" : ""}>${esc(this.t("charge", { amount: formatMoney(totals.total_cents) }))}</button>`
+  }
+
+  // Typing the fee changes the total; redraw only the totals so the field keeps focus.
+  refreshCartTotals() {
+    const box = this.region("cart")?.querySelector("[data-cart-totals]")
+    if (box) box.innerHTML = this.cartTotalsHtml(this.cartTotals(), this.cart.lines.length === 0)
   }
 
   // Numbered buttons when the branch has a table count (one tap, no typing in a
@@ -322,11 +334,15 @@ export default class extends Controller {
   }
 
   deliveryFieldsHtml() {
-    const { customer_name: name, customer_phone: phone, delivery_address: address } = this.cart
+    const { customer_name: name, customer_phone: phone, delivery_address: address, delivery_fee: fee } = this.cart
     return `
       <input type="text" data-field="customer_name" value="${esc(name)}" placeholder="${esc(this.t("customer_name"))}" class="${INPUT}">
       <input type="text" inputmode="tel" data-field="customer_phone" value="${esc(phone)}" placeholder="${esc(this.t("customer_phone"))}" class="${INPUT}" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">
-      <input type="text" data-field="delivery_address" value="${esc(address)}" placeholder="${esc(this.t("delivery_address"))}" class="${INPUT}">`
+      <input type="text" data-field="delivery_address" value="${esc(address)}" placeholder="${esc(this.t("delivery_address"))}" class="${INPUT}">
+      <label class="flex items-center gap-2">
+        <span class="text-sm font-semibold text-gray-700 shrink-0">${esc(this.t("delivery_fee"))}</span>
+        <input type="text" inputmode="decimal" data-field="delivery_fee" value="${esc(fee)}" placeholder="${esc(this.t("delivery_fee_placeholder"))}" class="${INPUT} tabular-nums" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">
+      </label>`
   }
 
   lineHtml(line) {
@@ -432,7 +448,8 @@ export default class extends Controller {
   }
 
   paymentModalHtml() {
-    const total = this.cartTotals().total_cents
+    const totals = this.cartTotals()
+    const total = totals.total_cents
     const method = this.modal.method || "cash"
     const tabs = this.paymentMethods()
       .map((value) => {
@@ -446,7 +463,8 @@ export default class extends Controller {
         <h3 class="text-xl font-bold tracking-tight">${esc(this.t("payment_title"))}</h3>
         <button type="button" data-act="close-modal" class="text-gray-500 hover:text-gray-900 text-2xl leading-none w-10 h-10 rounded-xl hover:bg-gray-100" aria-label="${esc(this.t("close"))}">×</button>
       </div>
-      <p class="text-2xl font-bold text-green-700 mb-4 tabular-nums">${esc(this.t("total"))}: ${formatMoney(total)}</p>
+      <p class="text-2xl font-bold text-green-700 ${totals.delivery_fee_cents > 0 ? "mb-1" : "mb-4"} tabular-nums">${esc(this.t("total"))}: ${formatMoney(total)}</p>
+      ${totals.delivery_fee_cents > 0 ? `<p class="text-sm text-gray-600 mb-4 tabular-nums">${esc(this.t("delivery_fee"))}: ${formatMoney(totals.delivery_fee_cents)}</p>` : ""}
       <div class="grid grid-cols-2 gap-2 mb-4">${tabs}</div>
       ${this.paymentBodyHtml(method, total)}
       <p data-modal-error class="text-sm text-red-600 mt-2 hidden"></p>
@@ -580,6 +598,10 @@ export default class extends Controller {
     if (field === "customer_name") this.cart.customer_name = event.target.value
     if (field === "customer_phone") this.cart.customer_phone = event.target.value
     if (field === "delivery_address") this.cart.delivery_address = event.target.value
+    if (field === "delivery_fee") {
+      this.cart.delivery_fee = event.target.value
+      this.refreshCartTotals()
+    }
     if (field === "tendered") this.updateChangeDue()
     if (field === "staff_meal_user_id" && this.modal) this.modal.staffUserId = event.target.value
   }
@@ -587,7 +609,7 @@ export default class extends Controller {
   // ── Cart ──────────────────────────────────────────────────────────────────
 
   emptyCart() {
-    return { lines: [], order_type: "pickup", table_number: "", notes: "", customer_name: "", customer_phone: "", delivery_address: "", server_order_id: null, server_order_number: null }
+    return { lines: [], order_type: "pickup", table_number: "", notes: "", customer_name: "", customer_phone: "", delivery_address: "", delivery_fee: "", server_order_id: null, server_order_number: null }
   }
 
   // ── Order carried over from the online register ──────────────────────────
@@ -633,6 +655,7 @@ export default class extends Controller {
       customer_name: handoff.customer_name || "",
       customer_phone: handoff.customer_phone || "",
       delivery_address: handoff.delivery_address || "",
+      delivery_fee: handoff.delivery_fee_cents > 0 ? (handoff.delivery_fee_cents / 100).toFixed(2) : "",
       server_order_id: handoff.server_order_id,
       server_order_number: handoff.order_number
     })
@@ -682,7 +705,16 @@ export default class extends Controller {
   }
 
   cartTotals() {
-    return computeTotals(this.cart.lines, this.snapshot.tax_rates)
+    return computeTotals(this.cart.lines, this.snapshot.tax_rates, this.deliveryFeeCents() || 0)
+  }
+
+  // The fee as typed (empty = free delivery); null when it is not an amount.
+  // Only a delivery carries one, so switching type drops it from the total.
+  deliveryFeeCents() {
+    if (this.cart.order_type !== "delivery") return 0
+    const text = (this.cart.delivery_fee || "").trim()
+    if (!text) return 0
+    return parseAmountToCents(text)
   }
 
   addItem(id) {
@@ -858,6 +890,10 @@ export default class extends Controller {
     }
     if (this.cart.order_type === "delivery" && (!this.cleanPhone() || !this.cart.delivery_address.trim())) {
       this.toast(this.t("delivery_required"), "alert")
+      return
+    }
+    if (this.deliveryFeeCents() === null) {
+      this.toast(this.t("delivery_fee_invalid"), "alert")
       return
     }
     this.modal = { kind: "payment", method: "cash", staffUserId: "" }

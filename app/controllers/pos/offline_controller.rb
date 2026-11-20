@@ -54,6 +54,7 @@ module Pos
         :client_uuid, :offline_number, :created_at, :order_type, :table_number, :notes,
         :customer_name, :customer_phone, :delivery_address,
         :user_id, :location_id, :workstation_id, :drawer_session_id, :tendered_cents, :replaces_order_id,
+        :payment_method, :staff_meal_user_id, :delivery_fee_cents,
         items: [
           :menu_item_id, :combo_id, :quantity, :unit_price_cents, :notes,
           :promo_id, :promo_label, :promo_discount_cents,
