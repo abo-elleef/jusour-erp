@@ -74,7 +74,7 @@ RSpec.describe "Admin recipe matrix", type: :request do
       added, changed, removed = %w[added changed removed].map { |k| I18n.t("menu.recipe_matrix.change_#{k}", locale: :ar) }
       row = matrix_rows.find { |r| r.start_with?("Double Spicy") }
       # Added: "+", changed: "~" with the automatic quantity (1) before the new one (2).
-      expect(row).to include("Hot sauce + #{added} 0.04", "Bun ~ #{changed} 1 2", "Beef 0.2", "Regular sauce #{removed}")
+      expect(row).to include("Hot sauce + #{added} 0.04", "Bun ~ #{changed} 1 2", "Beef 0.2", "Regular sauce − #{removed}")
 
       get edit_admin_menu_item_combination_recipe_path(sandwich, recipe)
       expect(response).to have_http_status(:ok)
