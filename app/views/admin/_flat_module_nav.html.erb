@@ -2,7 +2,8 @@
     A module with no natural sub-groups (or whose groups have been merged on
     purpose — Inventory and Accounting flatten Reports out to the dedicated
     Reports hub and merge what's left into one list): expand the module, then
-    pick a page directly. Shared by Inventory, Accounting, Sales, Menu and Settings. %>
+    pick a page directly. Shared by Inventory, Accounting, Sales, Website, Menu
+    and Settings. An item with a :heading key is a small label between links. %>
 <div class="flex flex-col gap-0.5"
      data-controller="nested-nav"
      data-nested-nav-key-value="<%= module_key %>"
@@ -23,6 +24,10 @@
 
   <div data-nested-nav-target="modulePanel" class="<%= "hidden" unless active %> ms-2 flex flex-col gap-0.5 rounded-lg bg-black/35 ring-1 ring-black/20 p-1">
     <% items.each do |item| %>
+      <% if item[:heading] %>
+        <span class="block px-2 pt-2 pb-0.5 text-[11px] uppercase tracking-wide text-gray-500"><%= item[:heading] %></span>
+        <% next %>
+      <% end %>
       <% item_active = item_active_proc.call(item) %>
       <%= link_to item_label_proc.call(item), item_path_proc.call(item),
             class: "block py-1.5 px-2 rounded-lg text-sm transition-colors #{item_active ? "bg-gray-700 text-white" : "text-gray-300 hover:bg-gray-800 hover:text-white"}" %>

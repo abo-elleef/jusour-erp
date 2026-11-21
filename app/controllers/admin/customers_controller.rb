@@ -180,6 +180,7 @@ module Admin
         end
       end
       if invoices_visible?
+        tabs << "statement"
         tabs << "invoices"
         @tab_counts["invoices"] = @customer.customer_invoices.count
       end
@@ -221,6 +222,11 @@ module Admin
       @lead_activities_pagy, @lead_activities = pagy(:offset,
         ::LeadActivity.where(lead_id: @customer.originating_lead_id).includes(:user).recent,
         limit: TAB_PAGE_SIZE)
+    end
+
+    # What the customer owes: credit limits, aging buckets, receive payment.
+    def load_statement_tab
+      @statement = ::Sales::CustomerAgingService.new(@customer).call
     end
 
     def load_invoices_tab

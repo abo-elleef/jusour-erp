@@ -11,6 +11,7 @@ RSpec.describe "Admin::Sales step-2 UI", type: :request do
   let(:category) { create(:ingredient_category, company: company) }
   let!(:ingredient) { create(:ingredient, company: company, ingredient_category: category, name: "Kit", unit: "kg") }
   let(:customer) { create(:customer, company: company, name: "Clinic", customer_type: "commercial") }
+  let(:tab_frame) { { "Turbo-Frame" => Admin::CustomersController::TAB_FRAME } }
 
   before do
     Current.company = company
@@ -54,19 +55,21 @@ RSpec.describe "Admin::Sales step-2 UI", type: :request do
       get admin_sales_customer_statements_path
       expect(response.body).to include("Clinic")
 
-      get admin_sales_customer_statement_path(customer, locale: "en")
+      get admin_sales_customer_statement_path(customer)
+      expect(response).to redirect_to(admin_customer_path(customer, tab: "statement"))
+
+      get admin_customer_path(customer, tab: "statement", locale: "en"), headers: tab_frame
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include(inv.invoice_number)
       expect(response.body).to include("No limit", "Due on receipt")
 
       # Balance is 1,000.00: past the 500.00 warning limit, inside the 2,000.00 hard limit.
       customer.update!(credit_warning_limit_cents: 50_000, credit_hard_limit_cents: 200_000, credit_terms_days: 30)
-      get admin_sales_customer_statement_path(customer, locale: "en")
+      get admin_customer_path(customer, tab: "statement", locale: "en"), headers: tab_frame
       expect(response.body).to include("30 days", "Over warning limit")
       expect(response.body).to include(ApplicationController.helpers.format_money(200_000 - customer.ar_balance_cents))
 
       customer.update!(credit_hard_limit_cents: 60_000)
-      get admin_sales_customer_statement_path(customer, locale: "en")
+      get admin_customer_path(customer, tab: "statement", locale: "en"), headers: tab_frame
       expect(response.body).to include("Over credit limit")
     end
 
@@ -119,7 +122,7 @@ RSpec.describe "Admin::Sales step-2 UI", type: :request do
       treasury = Treasury.create!(name: "Cash", treasury_type: "cash_drawer", balance_cents: 0, opening_balance_cents: 0, company: company)
 
       oldest_first = Admin::Accounting::VouchersController::OLDEST_FIRST
-      get admin_sales_customer_statement_path(customer)
+      get admin_customer_path(customer, tab: "statement"), headers: tab_frame
       link = new_admin_accounting_voucher_path(direction: Voucher::RECEIPT, party: "Customer:#{customer.id}", settles: oldest_first)
       expect(response.body).to include(ERB::Util.html_escape(link))
 

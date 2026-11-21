@@ -13,7 +13,8 @@
 
 <%# ── Sell & serve ─────────────────────────────────────────── %>
 <% menu_selling = tab_feature_enabled?(feature: :menu) %>
-<% if (menu_selling && (current_user.can?("orders:view") || current_user.can?("menu:manage"))) || current_user.can?("customers:manage") %>
+<% if (menu_selling && (current_user.can?("orders:view") || current_user.can?("menu:manage"))) || current_user.can?("customers:manage") ||
+      tickets_nav_visible? || sales_any_access? || website_sidebar_items.any? %>
   <span class="<%= section %>"><%= t("nav.groups.sell_serve") %></span>
   <% if menu_selling && current_user.can?("orders:view") %>
     <%= link_to admin_orders_path, class: admin_nav_link_class(admin_nav_active?("admin/orders")) do %>
@@ -39,13 +40,29 @@
       <%= admin_nav_icon(:customers) %><span><%= t("nav.customers") %></span>
     <% end %>
   <% end %>
+  <% if tickets_nav_visible? %>
+    <%= link_to admin_sales_tickets_path, class: admin_nav_link_class(tickets_section_active?) do %>
+      <%= admin_nav_icon(:tickets) %><span><%= t("sales.nav.tickets") %></span>
+    <% end %>
+  <% end %>
   <% if sales_any_access? %>
     <%= render "admin/flat_module_nav",
           module_key: "sales",
           label: t("nav.sales"),
           icon: :orders,
-          active: admin_nav_active?("admin/sales"),
+          active: sales_section_active?,
           items: sales_sidebar_items,
+          item_active_proc: ->(tab) { sales_tab_active?(tab) },
+          item_label_proc: ->(tab) { t(tab[:label]) },
+          item_path_proc: ->(tab) { public_send(tab[:path]) } %>
+  <% end %>
+  <% if website_sidebar_items.any? %>
+    <%= render "admin/flat_module_nav",
+          module_key: "website",
+          label: t("nav.website"),
+          icon: :website,
+          active: website_section_active?,
+          items: website_sidebar_items,
           item_active_proc: ->(tab) { sales_tab_active?(tab) },
           item_label_proc: ->(tab) { t(tab[:label]) },
           item_path_proc: ->(tab) { public_send(tab[:path]) } %>

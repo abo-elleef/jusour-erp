@@ -651,6 +651,13 @@ en:
         handled: "Printed by hand"
 
   nav:
+    website: "Website"
+    website_items:
+      products: "Products"
+      categories: "Categories"
+      home_page: "Home page"
+      pages: "Pages"
+      settings: "Settings"
     online_orders_admin: "Online orders"
     open_menu: "Open menu"
     dashboard: "Dashboard"
@@ -5206,6 +5213,7 @@ en:
         activity: "Customer activity"
         lead_history: "Lead history"
         tickets: "Tickets"
+        statement: "Statement of account"
         invoices: "Invoices"
         orders: "Orders"
         loyalty: "Loyalty"

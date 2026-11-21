@@ -48,7 +48,7 @@
               <% balance = customer.ar_balance_cents %>
               <tr class="hover:bg-gray-100 transition-colors">
                 <td class="p-3 ps-5">
-                  <%= link_to customer.display_name, admin_sales_customer_statement_path(customer),
+                  <%= link_to customer.display_name, admin_customer_path(customer, tab: "statement"),
                         class: "font-semibold text-amber-700 hover:text-amber-800" %>
                   <%# The search also matches these, so show them: otherwise a row
                       found by phone or old code looks like a wrong match. %>

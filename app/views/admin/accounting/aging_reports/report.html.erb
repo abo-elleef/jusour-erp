@@ -85,7 +85,7 @@
           <tbody class="divide-y divide-gray-100" data-sortable-table-target="body">
             <% @result.rows.each do |row| %>
               <% name = Accounting::AgingReportService.party_name(row.party) %>
-              <% party_path = @side == :receivable ? admin_sales_customer_statement_path(row.party) : admin_inventory_supplier_path(row.party, tab: "statement") %>
+              <% party_path = @side == :receivable ? admin_customer_path(row.party, tab: "statement") : admin_inventory_supplier_path(row.party, tab: "statement") %>
               <tr>
                 <td class="<%= cell %> ps-5 font-medium text-gray-900" data-sort-key="party" data-sort-value="<%= name %>">
                   <%= link_to name, party_path, class: "hover:text-amber-700 hover:underline" %>
