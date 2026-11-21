@@ -267,7 +267,9 @@
   <%# Sales by category and item. A Turbo Frame, so sorting, switching view and
       "show all" swap only this table and leave the page where the user is.
       Grouped (default): each category with its units and revenue, its items under it.
-      Flat: the sortable items list, top 10 unless asked for all. %>
+      Flat: the sortable items list, top 10 unless asked for all.
+      Revenue reads as three columns: menu price before promos, the promo
+      discount, and net (what was charged); share is of net. %>
   <%= turbo_frame_tag "items-sold", data: { turbo_action: "advance" } do %>
     <% grouped = @item_view == "grouped" %>
     <% base_params = request.query_parameters.symbolize_keys %>
@@ -326,15 +328,17 @@
                 <th class="p-3 text-start"><%= item_sort.call(t("accounting.shared.category"), "category", default_dir: "asc") %></th>
               <% end %>
               <th class="p-3 text-end"><%= item_sort.call(t("accounting.sales_reports.units_sold"), "units") %></th>
-              <th class="p-3 text-end"><%= item_sort.call(t("accounting.sales_reports.revenue"), "revenue") %></th>
+              <th class="p-3 text-end"><%= item_sort.call(t("accounting.sales_reports.revenue_before_discount"), "revenue") %></th>
+              <th class="p-3 text-end"><%= item_sort.call(t("accounting.sales_reports.promo_discount"), "discount") %></th>
+              <th class="p-3 text-end"><%= item_sort.call(t("accounting.sales_reports.net_revenue"), "net") %></th>
               <th class="p-3 pe-5 text-end text-gray-500 w-40"><%= t("accounting.sales_reports.share") %></th>
             </tr>
           </thead>
           <% if grouped %>
-            <% grand_total = @category_groups.sum { |g| g[:revenue_cents] } %>
+            <% grand_total = @category_groups.sum { |g| g[:net_cents] } %>
             <% if @category_groups.any? %>
               <% @category_groups.each_with_index do |group, group_index| %>
-                <% share = pct.call(group[:revenue_cents], grand_total) %>
+                <% share = pct.call(group[:net_cents], grand_total) %>
                 <tbody class="border-b border-gray-100" data-row-groups-target="group">
                   <tr class="cursor-pointer hover:bg-amber-50/40 transition-colors" data-action="click->row-groups#toggle">
                     <td class="p-3 ps-5">
@@ -348,7 +352,9 @@
                       <% end %>
                     </td>
                     <td class="p-3 text-end font-semibold tabular-nums"><%= number_with_delimiter(group[:units_sold]) %></td>
-                    <td class="p-3 text-end font-bold tabular-nums"><%= copyable_amount(group[:revenue_cents]) %></td>
+                    <td class="p-3 text-end font-semibold tabular-nums text-gray-600"><%= copyable_amount(group[:revenue_cents]) %></td>
+                    <%= render "discount_cell", cents: group[:discount_cents], css: "p-3 font-semibold" %>
+                    <td class="p-3 text-end font-bold tabular-nums"><%= copyable_amount(group[:net_cents]) %></td>
                     <td class="p-3 pe-5">
                       <div class="flex items-center justify-end gap-2">
                         <div class="w-20 h-1.5 rounded-full bg-gray-100 overflow-hidden">
@@ -364,15 +370,17 @@
                         <% if row[:modifier_groups].present? %>data-row-groups-item="<%= item_key %>" data-action="click->row-groups#toggleItem"<% end %>>
                       <%= render "item_name_cell", row: row, css: "py-2 px-3 ps-12" %>
                       <td class="py-2 px-3 text-end tabular-nums"><%= number_with_delimiter(row[:units_sold]) %></td>
-                      <td class="py-2 px-3 text-end tabular-nums"><%= copyable_amount(row[:revenue_cents]) %></td>
-                      <td class="py-2 px-3 pe-5 text-end text-xs text-gray-500 tabular-nums"><%= number_with_precision(pct.call(row[:revenue_cents], grand_total), precision: 1) %>%</td>
+                      <td class="py-2 px-3 text-end tabular-nums text-gray-500"><%= copyable_amount(row[:revenue_cents]) %></td>
+                      <%= render "discount_cell", cents: row[:discount_cents], css: "py-2 px-3" %>
+                      <td class="py-2 px-3 text-end tabular-nums"><%= copyable_amount(row[:net_cents]) %></td>
+                      <td class="py-2 px-3 pe-5 text-end text-xs text-gray-500 tabular-nums"><%= number_with_precision(pct.call(row[:net_cents], grand_total), precision: 1) %>%</td>
                     </tr>
                     <%= render "item_modifier_rows", row: row, key: item_key, flat: false if row[:modifier_groups].present? %>
                   <% end %>
                 </tbody>
               <% end %>
             <% else %>
-              <tbody><tr><td colspan="4" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_reports.no_sales") %></td></tr></tbody>
+              <tbody><tr><td colspan="6" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_reports.no_sales") %></td></tr></tbody>
             <% end %>
           <% else %>
             <tbody class="divide-y divide-gray-100 table-zebra">
@@ -384,15 +392,17 @@
                     <%= render "item_name_cell", row: row, css: "p-3 ps-5 font-medium text-gray-900" %>
                     <td class="p-3 text-gray-600"><%= row[:category] || "—" %></td>
                     <td class="p-3 text-end tabular-nums"><%= number_with_delimiter(row[:units_sold]) %></td>
-                    <td class="p-3 text-end font-semibold tabular-nums"><%= copyable_amount(row[:revenue_cents]) %></td>
+                    <td class="p-3 text-end tabular-nums text-gray-500"><%= copyable_amount(row[:revenue_cents]) %></td>
+                    <%= render "discount_cell", cents: row[:discount_cents], css: "p-3" %>
+                    <td class="p-3 text-end font-semibold tabular-nums"><%= copyable_amount(row[:net_cents]) %></td>
                     <td class="p-3 pe-5 text-end tabular-nums text-gray-500">
-                      <%= @item_total_cents.positive? ? "#{number_with_precision(pct.call(row[:revenue_cents], @item_total_cents), precision: 1)}%" : "—" %>
+                      <%= @item_total_cents.positive? ? "#{number_with_precision(pct.call(row[:net_cents], @item_total_cents), precision: 1)}%" : "—" %>
                     </td>
                   </tr>
                   <%= render "item_modifier_rows", row: row, key: item_key, flat: true if row[:modifier_groups].present? %>
                 <% end %>
               <% else %>
-                <tr><td colspan="5" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_reports.no_sales") %></td></tr>
+                <tr><td colspan="7" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_reports.no_sales") %></td></tr>
               <% end %>
             </tbody>
           <% end %>

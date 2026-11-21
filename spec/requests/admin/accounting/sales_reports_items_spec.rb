@@ -88,14 +88,14 @@ RSpec.describe "Admin::Accounting sales report items view", type: :request do
         expect(section).to include("data-row-groups-item=")
         sub_rows = section.scan(/<tr[^>]*data-row-groups-sub=[^>]*>.*?<\/tr>/m)
         expect(sub_rows.map { |r| r.gsub(/<[^>]+>/, " ").squish })
-          .to eq(["Size", "Double 2 30.00 100.0%"])
+          .to eq(["Size", "Double 2 30.00 — 30.00 100.0%"])
         expect(sub_rows).to all(include("hidden"))
       end
     end
 
     it "adds them to the CSV export" do
       get admin_accounting_sales_reports_path(range.merge(format: :csv))
-      expect(response.body).to include("Item,Modifier group,Choice,Units sold,Revenue")
+      expect(response.body).to include("Item,Modifier group,Choice,Units sold,Revenue before discount,Promo discount,Net revenue")
       expect(response.body).to match(/Burger,Size,Double,2,/)
     end
   end

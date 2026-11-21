@@ -1,0 +1,5 @@
+<%# A row's promo discount: a dash when nothing was discounted, so the few
+    promo'd rows stand out. Locals: cents, css (padding/size classes). %>
+<td class="<%= css %> text-end tabular-nums <%= cents.positive? ? 'text-red-600' : 'text-gray-300' %>">
+  <%= cents.positive? ? format_amount(cents) : "—" %>
+</td>

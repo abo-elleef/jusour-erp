@@ -67,6 +67,23 @@ RSpec.describe Accounting::SalesReportService do
       expect(report[:summary][:promo_cost_cents]).to eq(500)
     end
 
+    it "splits item and category revenue into before-discount, promo discount and net" do
+      order = create(:order, user: user, company: company, status: "completed",
+        subtotal_cents: 3000, discount_cents: 600, total_cents: 2400, created_at: today.noon)
+      promo_line = create(:order_item, order: order, menu_item: menu_item, quantity: 2, unit_price_cents: 1000)
+      create(:order_item, order: order, menu_item: menu_item, quantity: 1, unit_price_cents: 1000)
+      promo = create(:menu_promo, company: company, menu_item: menu_item, promo_price_cents: 700)
+      order.order_discounts.create!(menu_promo: promo, order_item: promo_line, description: "Promo", amount_cents: 600)
+      # An order-wide discount has no line, so it stays out of the item rows.
+      order.order_discounts.create!(description: "Manual", amount_cents: 100)
+
+      report = described_class.new(today, today).call
+
+      expect(report[:by_item].sole).to include(units_sold: 3, revenue_cents: 3000, discount_cents: 600, net_cents: 2400)
+      expect(report[:by_category].find { |r| r[:category] == "Mains" })
+        .to include(revenue_cents: 3000, discount_cents: 600, net_cents: 2400)
+    end
+
     it "gives order count and net sales per hour of the day" do
       [[today.noon, 1000], [today.noon + 20.minutes, 500], [today.noon + 3.hours, 2500]].each do |at, cents|
         create(:order, user: user, company: company, status: "completed",
@@ -208,6 +225,22 @@ RSpec.describe Accounting::SalesReportService do
           expect(g[:choices].sum { |c| c[:units_sold] }).to eq(3)
           expect(g[:choices].sum { |c| c[:revenue_cents] }).to eq(3500)
         end
+      end
+
+      it "gives each choice its own promo discount and net, the no-choice row taking the rest" do
+        promo = create(:menu_promo, company: company, menu_item: menu_item, promo_price_cents: 700)
+        sell(order, [single, hot], quantity: 2)
+        doubled = sell(order, [double])
+        order.order_discounts.create!(menu_promo: promo, order_item: doubled, description: "Promo", amount_cents: 300)
+
+        item = described_class.new(today, today).call[:by_item].first
+        expect(item).to include(revenue_cents: 3500, discount_cents: 300, net_cents: 3200)
+
+        size_choices = item[:modifier_groups].find { |g| g[:name] == "Size" }[:choices]
+        expect(size_choices.map { |c| [c[:name], c[:discount_cents], c[:net_cents]] })
+          .to eq([["Single", 0, 2000], ["Double", 300, 1200]])
+        heat_choices = item[:modifier_groups].find { |g| g[:name] == "Heat" }[:choices]
+        expect(heat_choices.last).to include(no_choice: true, discount_cents: 300, net_cents: 1200)
       end
 
       it "merges groups and choices that share a name" do
