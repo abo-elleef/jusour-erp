@@ -12,7 +12,7 @@ module Admin
       "status" => "menu_items.available"
     }.freeze
 
-    before_action :set_menu_item, only: %i[edit update destroy]
+    before_action :set_menu_item, only: %i[edit update destroy recipe_matrix]
 
     def index
       scope = policy_scope(MenuItem).includes(:category, :modifier_groups, image_attachment: :blob)
@@ -78,6 +78,24 @@ module Admin
       end
     end
 
+    # Which of the item's option groups change the recipe together. Changing
+    # the choice starts the matrix over (MenuItemModifierGroup clears the rows).
+    def recipe_matrix
+      authorize @menu_item, :update?
+      ticked = Array(params[:group_ids]).reject(&:blank?)
+      errors = []
+      MenuItemModifierGroup.transaction do
+        @menu_item.menu_item_modifier_groups.includes(:modifier_group).each do |attachment|
+          next if attachment.update(recipe_matrix: ticked.include?(attachment.modifier_group_id))
+
+          errors << "#{attachment.modifier_group.name}: #{attachment.errors.full_messages.to_sentence}"
+        end
+        raise ActiveRecord::Rollback if errors.any?
+      end
+      redirect_to edit_admin_menu_item_path(@menu_item, anchor: "recipe-matrix"),
+                  **(errors.any? ? { alert: errors.to_sentence } : { notice: t("menu.recipe_matrix.groups_saved") })
+    end
+
     def destroy
       authorize @menu_item
       if @menu_item.order_items.exists? || @menu_item.combo_items.exists?
@@ -101,6 +119,7 @@ module Admin
     end
 
     def load_recipes_for_form
+      @recipe_matrix = ::Inventory::RecipeMatrix.new(@menu_item)
       @recipes = @menu_item.recipes.joins(:ingredient).includes(:ingredient).order("ingredients.name")
       assigned_ids = @recipes.map(&:ingredient_id)
       @recipe_ingredients = Ingredient.active.includes(:ingredient_units).where.not(id: assigned_ids).order(:name)

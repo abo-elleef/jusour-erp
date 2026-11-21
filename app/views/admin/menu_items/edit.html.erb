@@ -22,5 +22,6 @@
   <%= render "admin/menu_nav", flush: false %>
   <%= render "form", menu_item: @menu_item %>
   <%= render "recipes", menu_item: @menu_item, recipes: @recipes, recipe_ingredients: @recipe_ingredients %>
+  <%= render "recipe_matrix", menu_item: @menu_item, matrix: @recipe_matrix %>
   <%= render "shared/audit_history", audits: @audits %>
 </div>

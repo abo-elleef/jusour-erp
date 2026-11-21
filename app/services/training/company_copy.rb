@@ -393,6 +393,28 @@ module Training
 
         track!(:modifier_recipes, src, record)
       end
+
+      # Recipe matrix rows: keyed by option ids, so each one is mapped; a row
+      # whose option was not copied no longer describes a real combination.
+      children(CombinationRecipe, menu_item_id: @map[:menu_items].keys).each do |src|
+        modifier_ids = src.modifier_ids.map { |id| mapped(:modifiers, id) }
+        next if modifier_ids.any?(&:nil?)
+
+        record = CombinationRecipe.new(menu_item_id: mapped(:menu_items, src.menu_item_id), modifier_ids: modifier_ids)
+        track!(:combination_recipes, src, record)
+      end
+
+      children(CombinationRecipeLine, combination_recipe_id: @map[:combination_recipes].keys).each do |src|
+        record = CombinationRecipeLine.new(attrs_of(src, except: %w[combination_recipe_id ingredient_id unit_id]))
+        record.combination_recipe_id = mapped(:combination_recipes, src.combination_recipe_id)
+        record.ingredient_id = mapped(:ingredients, src.ingredient_id)
+        record.unit_id = mapped(:units, src.unit_id)
+        next if record.ingredient_id.nil?
+        next skip!(:combination_recipe_lines, src, "unit is no longer one of the ingredient's units") unless
+          unit_available?(record.ingredient_id, record.unit_id)
+
+        track!(:combination_recipe_lines, src, record)
+      end
     end
 
     def copy_combos!

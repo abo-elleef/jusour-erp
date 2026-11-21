@@ -1,0 +1,125 @@
+<%# locals: menu_item, matrix %>
+<%# A recipe per combination of the options that change the recipe together
+    (size and spice, usually). Rows not customised use the recipe above plus
+    each option's own ingredients. %>
+<%# In a frame so saving the groups redraws only this section and the page
+    stays put; everything else in it (Customise, Edit, links) leaves the frame. %>
+<%= turbo_frame_tag "recipe_matrix", target: "_top" do %>
+<section id="recipe-matrix" data-controller="scroll-here" class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6 scroll-mt-6">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("menu.recipe_matrix.heading") %></h2>
+    <p class="text-xs text-gray-500 mt-0.5"><%= t("menu.recipe_matrix.hint") %></p>
+  </div>
+
+  <% if matrix.attachments.empty? %>
+    <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("menu.recipe_matrix.no_groups") %></p>
+  <% else %>
+    <%= form_with url: recipe_matrix_admin_menu_item_path(menu_item), method: :patch,
+          class: "px-5 py-4 border-b border-gray-100 flex flex-wrap items-end gap-x-6 gap-y-3",
+          data: { turbo_frame: "recipe_matrix" }
+            .merge(matrix.rows.any?(&:custom?) ? { turbo_confirm: t("menu.recipe_matrix.groups_confirm") } : {}) do %>
+      <fieldset class="flex flex-wrap gap-x-6 gap-y-2">
+        <legend class="block text-xs font-semibold text-gray-600 mb-2"><%= t("menu.recipe_matrix.groups_label") %></legend>
+        <% matrix.attachments.each do |attachment| %>
+          <% group = attachment.modifier_group %>
+          <label class="inline-flex items-center gap-2 <%= group.multi_select ? "opacity-60 cursor-not-allowed" : "cursor-pointer" %>">
+            <%= check_box_tag "group_ids[]", group.id, attachment.recipe_matrix,
+                  id: "matrix_group_#{group.id}", disabled: group.multi_select,
+                  class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/40" %>
+            <span class="text-sm text-gray-900"><%= group.name %></span>
+            <% if group.multi_select %>
+              <span class="text-xs text-gray-500"><%= t("menu.recipe_matrix.multi_select_note") %></span>
+            <% end %>
+          </label>
+        <% end %>
+      </fieldset>
+      <%= submit_tag t("actions.save_changes"),
+            class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors" %>
+    <% end %>
+
+    <% if flash[:alert].present? %>
+      <p class="px-5 py-3 text-sm text-red-800 bg-red-50 border-b border-red-100" role="alert"><%= flash[:alert] %></p>
+    <% end %>
+    <% if matrix.groups.empty? %>
+      <p class="px-5 py-6 text-sm text-gray-500"><%= t("menu.recipe_matrix.none_ticked") %></p>
+    <% else %>
+      <% if matrix.many_rows? %>
+        <div class="mx-5 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+          <%= t("menu.recipe_matrix.many_rows", count: matrix.rows.size) %>
+        </div>
+      <% end %>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead class="bg-gray-50 text-xs font-semibold text-gray-600">
+            <tr>
+              <% matrix.groups.each do |group| %>
+                <th class="px-4 py-2.5 text-start whitespace-nowrap">
+                  <%= link_to group.name, admin_modifier_group_path(group), class: "hover:text-amber-700" %>
+                </th>
+              <% end %>
+              <th class="px-4 py-2.5 text-start"><%= t("menu.recipe_matrix.uses") %></th>
+              <th class="px-4 py-2.5 text-end whitespace-nowrap"><%= t("menu.recipe_matrix.cost") %></th>
+              <th class="px-4 py-2.5"><span class="sr-only"><%= t("menu.recipe_matrix.actions") %></span></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% matrix.rows.each do |row| %>
+              <tr class="align-top hover:bg-gray-50">
+                <% row.choices.each do |choice| %>
+                  <td class="px-4 py-3 whitespace-nowrap <%= choice.modifier ? "font-semibold text-gray-900" : "text-gray-500" %>">
+                    <% if choice.modifier %>
+                      <%= link_to choice.label, edit_admin_modifier_group_modifier_path(choice.group, choice.modifier),
+                            class: "hover:text-amber-700" %>
+                    <% else %>
+                      <%= choice.label %>
+                    <% end %>
+                  </td>
+                <% end %>
+                <td class="px-4 py-3">
+                  <% if row.quantities.any? %>
+                    <ul class="flex flex-wrap gap-x-3 gap-y-1">
+                      <% row.quantities.each do |ingredient, quantity| %>
+                        <li class="tabular-nums whitespace-nowrap">
+                          <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient),
+                                class: "text-gray-900 hover:text-amber-700" %>
+                          <span class="text-gray-500">
+                            <%= number_with_precision(quantity, precision: 4, strip_insignificant_zeros: true) %>
+                            <%= ingredient_unit_label(ingredient.unit) %>
+                          </span>
+                        </li>
+                      <% end %>
+                    </ul>
+                  <% else %>
+                    <span class="text-gray-400">—</span>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3 text-end tabular-nums font-semibold text-gray-900 whitespace-nowrap">
+                  <%= format_amount(row.cost_cents) %>
+                </td>
+                <td class="px-4 py-3 text-end whitespace-nowrap">
+                  <% if row.custom? %>
+                    <span class="inline-flex text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 me-2">
+                      <%= t("menu.recipe_matrix.custom") %>
+                    </span>
+                    <%= link_to t("actions.edit"), edit_admin_menu_item_combination_recipe_path(menu_item, row.combination),
+                          class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                  <% else %>
+                    <span class="inline-flex text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 border border-gray-200 me-2">
+                      <%= t("menu.recipe_matrix.auto") %>
+                    </span>
+                    <%= button_to t("menu.recipe_matrix.customise"), admin_menu_item_combination_recipes_path(menu_item),
+                          params: { modifier_ids: row.key },
+                          form: { class: "inline" },
+                          class: "inline-flex text-xs font-semibold text-amber-800 hover:bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors" %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <p class="px-5 py-3 border-t border-gray-100 text-xs text-gray-500"><%= t("menu.recipe_matrix.auto_hint") %></p>
+    <% end %>
+  <% end %>
+</section>
+<% end %>

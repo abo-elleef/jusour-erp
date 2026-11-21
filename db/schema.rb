@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_20_170000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_21_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -188,6 +188,30 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_20_170000) do
     t.index ["company_id"], name: "index_categories_on_company_id"
     t.index ["position"], name: "index_categories_on_position"
     t.check_constraint "menu_visibility::text = ANY (ARRAY['both'::character varying, 'pos'::character varying, 'public'::character varying]::text[])", name: "categories_menu_visibility_check"
+  end
+
+  create_table "combination_recipe_lines", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "combination_recipe_id", null: false
+    t.uuid "ingredient_id", null: false
+    t.decimal "quantity", precision: 10, scale: 4, null: false
+    t.uuid "unit_id"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["combination_recipe_id", "ingredient_id"], name: "index_combination_recipe_lines_on_recipe_and_ingredient", unique: true
+    t.index ["company_id"], name: "index_combination_recipe_lines_on_company_id"
+    t.index ["ingredient_id"], name: "index_combination_recipe_lines_on_ingredient_id"
+    t.index ["unit_id"], name: "index_combination_recipe_lines_on_unit_id"
+  end
+
+  create_table "combination_recipes", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "menu_item_id", null: false
+    t.uuid "modifier_ids", default: [], null: false, array: true
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_combination_recipes_on_company_id"
+    t.index ["menu_item_id", "modifier_ids"], name: "index_combination_recipes_on_menu_item_id_and_modifier_ids", unique: true
   end
 
   create_table "combo_items", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -964,6 +988,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_20_170000) do
     t.integer "position"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.boolean "recipe_matrix", default: false, null: false
     t.index ["menu_item_id", "modifier_group_id"], name: "index_menu_item_modifier_groups_unique", unique: true
     t.index ["menu_item_id"], name: "index_menu_item_modifier_groups_on_menu_item_id"
     t.index ["modifier_group_id"], name: "index_menu_item_modifier_groups_on_modifier_group_id"
@@ -2279,6 +2304,12 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_20_170000) do
   add_foreign_key "cash_drawer_sessions", "users", column: "shortage_waived_by_id"
   add_foreign_key "cash_drawer_sessions", "vouchers", column: "shortage_voucher_id"
   add_foreign_key "categories", "companies"
+  add_foreign_key "combination_recipe_lines", "combination_recipes"
+  add_foreign_key "combination_recipe_lines", "companies"
+  add_foreign_key "combination_recipe_lines", "ingredients"
+  add_foreign_key "combination_recipe_lines", "units"
+  add_foreign_key "combination_recipes", "companies"
+  add_foreign_key "combination_recipes", "menu_items"
   add_foreign_key "combo_items", "combos"
   add_foreign_key "combo_items", "menu_items"
   add_foreign_key "combos", "companies"

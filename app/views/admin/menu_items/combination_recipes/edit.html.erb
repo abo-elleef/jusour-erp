@@ -1,0 +1,122 @@
+<% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
+<% chip_destructive = "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
+
+<div class="max-w-3xl">
+  <div class="mb-4">
+    <%= link_to @menu_item.name, edit_admin_menu_item_path(@menu_item, at: "recipe-matrix"),
+          class: "text-sm font-semibold text-amber-700 hover:text-amber-800 transition-colors" %>
+  </div>
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @row&.label || t("menu.recipe_matrix.heading") %></h1>
+  <p class="text-gray-600 text-sm mt-1 mb-6"><%= t("menu.recipe_matrix.edit_hint", item: @menu_item.name) %></p>
+
+  <%= turbo_frame_tag "combination_lines" do %>
+    <% recipe_units_map = @line_ingredients.to_h { |i| [i.id, i.available_units.map { |u| [ingredient_unit_label(u), u] }] } %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("menu.recipe_matrix.uses") %></h2>
+        <p class="text-xs font-semibold text-gray-600 tabular-nums">
+          <%= t("menu.recipe_matrix.cost_per_unit", amount: format_amount(@lines.sum { |l| (l.base_quantity * l.ingredient.cost_per_unit_cents).round })) %>
+        </p>
+      </div>
+
+      <% if flash[:alert].present? %>
+        <p class="px-5 py-3 text-sm text-red-800 bg-red-50 border-b border-red-100" role="alert"><%= flash[:alert] %></p>
+      <% end %>
+
+      <% if @lines.any? %>
+        <ul class="divide-y divide-gray-100">
+          <% @lines.each do |line| %>
+            <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-50 transition-colors">
+              <div class="min-w-0">
+                <%= link_to line.ingredient.name, admin_inventory_ingredient_path(line.ingredient),
+                      class: "font-semibold text-amber-700 hover:text-amber-800", data: { turbo_frame: "_top" } %>
+                <p class="text-xs text-gray-500 mt-0.5 tabular-nums">
+                  <%= format_amount((line.base_quantity * line.ingredient.cost_per_unit_cents).round) %>
+                </p>
+              </div>
+              <div class="flex flex-wrap items-center gap-2">
+                <%= form_with url: admin_menu_item_combination_recipe_line_path(@menu_item, @combination_recipe, line),
+                      method: :patch, class: "flex items-center gap-2" do %>
+                  <%= text_field_tag "line[quantity]",
+                        number_with_precision(line.quantity, precision: 4, strip_insignificant_zeros: true),
+                        inputmode: "decimal", autocomplete: "off", required: true,
+                        aria: { label: t("menu.recipe_matrix.quantity_for", ingredient: line.ingredient.name) },
+                        class: "#{pos_input_class} w-28 tabular-nums",
+                        data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" } %>
+                  <span class="text-sm text-gray-600"><%= ingredient_unit_label(line.unit.presence || line.ingredient.unit) %></span>
+                  <%= submit_tag t("actions.save"),
+                        class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+                <% end %>
+                <%= button_to t("actions.remove"),
+                      admin_menu_item_combination_recipe_line_path(@menu_item, @combination_recipe, line),
+                      method: :delete, form: { class: "inline" }, class: chip_destructive %>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("menu.recipe_matrix.no_lines") %></p>
+      <% end %>
+
+      <div class="p-5 border-t border-gray-100 bg-gray-50/50">
+        <% ingredient_options = @line_ingredients.map { |i| { value: i.id, label: i.name } }.to_json %>
+        <%= form_with url: admin_menu_item_combination_recipe_lines_path(@menu_item, @combination_recipe),
+              class: "flex flex-wrap gap-3 items-end",
+              data: { controller: "recipe-unit", recipe_unit_units_value: recipe_units_map.to_json,
+                      searchable_select_options: ingredient_options } do %>
+          <div class="flex-1 min-w-[12rem]"
+               data-controller="searchable-select"
+               data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>">
+            <%= label_tag "line[ingredient_id]", t("admin.menu_items.recipe_ingredient"), class: label_class %>
+            <%= hidden_field_tag "line[ingredient_id]", nil,
+                  data: { searchable_select_target: "hidden", recipe_unit_target: "ingredient",
+                          action: "change->recipe-unit#ingredientChanged" } %>
+            <input type="text" autocomplete="off" spellcheck="false" role="combobox"
+                   aria-expanded="false" aria-autocomplete="list"
+                   placeholder="<%= t("admin.menu_items.recipe_ingredient") %>"
+                   class="<%= pos_input_class %>"
+                   data-searchable-select-target="input"
+                   data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+            <ul data-searchable-select-target="menu" role="listbox"
+                class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
+          </div>
+          <div class="min-w-[7rem]">
+            <%= label_tag "line[quantity]", t("admin.menu_items.recipe_quantity"), class: label_class %>
+            <%= text_field_tag "line[quantity]", nil, required: true, inputmode: "decimal", autocomplete: "off",
+                  class: "#{pos_input_class} tabular-nums",
+                  data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" } %>
+          </div>
+          <div class="min-w-[6rem]">
+            <%= label_tag "line[unit]", t("admin.menu_items.recipe_unit"), class: label_class %>
+            <%= select_tag "line[unit]", nil, class: "#{pos_input_class} appearance-none",
+                  data: { recipe_unit_target: "unit" } %>
+          </div>
+          <%= submit_tag t("actions.add"),
+                class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shrink-0" %>
+        <% end %>
+      </div>
+    </section>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white mt-6 p-5 flex flex-wrap items-end justify-between gap-4">
+    <% if @copy_sources.any? %>
+      <%= form_with url: copy_admin_menu_item_combination_recipe_path(@menu_item, @combination_recipe),
+            class: "flex flex-wrap items-end gap-3",
+            data: { turbo_confirm: t("menu.recipe_matrix.copy_confirm") } do %>
+        <div>
+          <%= label_tag :source_id, t("menu.recipe_matrix.copy_from"), class: label_class %>
+          <%= select_tag :source_id, options_for_select(@copy_sources.map { |row| [row.label, row.combination.id] }),
+                class: "#{pos_input_class} appearance-none" %>
+        </div>
+        <%= submit_tag t("menu.recipe_matrix.copy_button"),
+              class: "inline-flex text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" %>
+      <% end %>
+    <% else %>
+      <span></span>
+    <% end %>
+    <%= button_to t("menu.recipe_matrix.reset"), admin_menu_item_combination_recipe_path(@menu_item, @combination_recipe),
+          method: :delete,
+          form: { class: "inline", data: { turbo_confirm: t("menu.recipe_matrix.reset_confirm") } },
+          class: chip_destructive %>
+  </section>
+</div>

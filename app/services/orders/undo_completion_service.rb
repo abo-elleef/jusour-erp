@@ -54,7 +54,8 @@ module Orders
       totals = Hash.new(0)
       @order.order_items
             .includes(
-              menu_item: { recipes: [:unit_ref, { ingredient: :ingredient_units }] },
+              menu_item: [{ recipes: [:unit_ref, { ingredient: :ingredient_units }] }, :menu_item_modifier_groups,
+                          { combination_recipes: { lines: [:unit_ref, { ingredient: :ingredient_units }] } }],
               order_item_modifiers: { modifier: { modifier_recipes: [:unit_ref, { ingredient: :ingredient_units }] } }
             )
             .each do |item|

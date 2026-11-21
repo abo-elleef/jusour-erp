@@ -62,7 +62,9 @@ module Inventory
     def menu_items
       @menu_items ||= MenuItem
         .where(id: combos.map(&:first).uniq)
-        .includes(recipes: [:unit_ref, { ingredient: :ingredient_units }])
+        .includes(:menu_item_modifier_groups,
+          recipes: [:unit_ref, { ingredient: :ingredient_units }],
+          combination_recipes: { lines: [:unit_ref, { ingredient: :ingredient_units }] })
         .index_by(&:id)
     end
 
