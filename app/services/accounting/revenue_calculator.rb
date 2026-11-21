@@ -10,10 +10,24 @@ module Accounting
          WHERE order_item_modifiers.order_item_id = order_items.id), 0))
     SQL
 
+    # A line's promo discount (Promos::SyncOrderItemDiscount keeps one row per
+    # promo'd line). Order-wide discounts have no line, so they are not here.
+    ORDER_ITEM_PROMO_DISCOUNT = <<~SQL.squish.freeze
+      COALESCE(
+        (SELECT SUM(order_discounts.amount_cents)
+         FROM order_discounts
+         WHERE order_discounts.order_item_id = order_items.id
+           AND order_discounts.menu_promo_id IS NOT NULL), 0)
+    SQL
+
     ORDER_NET_SALES = "(orders.subtotal_cents - orders.discount_cents)"
 
     def self.order_item_revenue(scope)
       scope.sum(Arel.sql(ORDER_ITEM_LINE_REVENUE)).to_i
+    end
+
+    def self.order_item_promo_discount(scope)
+      scope.sum(Arel.sql(ORDER_ITEM_PROMO_DISCOUNT)).to_i
     end
 
     def self.order_net_sales(scope)

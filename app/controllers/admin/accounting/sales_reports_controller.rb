@@ -36,22 +36,25 @@ module Admin
         "name"     => ->(r) { r[:name].to_s.downcase },
         "category" => ->(r) { r[:category].to_s.downcase },
         "units"    => ->(r) { r[:units_sold] },
-        "revenue"  => ->(r) { r[:revenue_cents] }
+        "revenue"  => ->(r) { r[:revenue_cents] },
+        "discount" => ->(r) { r[:discount_cents] },
+        "net"      => ->(r) { r[:net_cents] }
       }.freeze
 
       ITEMS_PREVIEW = 10
 
       # The items table: optional category filter, sortable columns (whitelisted
-      # — the key comes from the URL), and each item's share of item revenue.
+      # — the key comes from the URL), and each item's share of net item sales
+      # (after promo discounts), so a promo'd item is not overstated.
       def prepare_items
         all_items = @report[:by_item]
         @item_categories = all_items.filter_map { |r| r[:category] }.uniq.sort_by(&:downcase)
         @item_category = params[:item_category] if @item_categories.include?(params[:item_category])
-        @item_sort = ITEM_SORTS.key?(params[:sort]) ? params[:sort] : "revenue"
+        @item_sort = ITEM_SORTS.key?(params[:sort]) ? params[:sort] : "net"
         @item_dir = params[:dir] == "asc" ? "asc" : "desc"
 
         items = @item_category ? all_items.select { |r| r[:category] == @item_category } : all_items
-        @item_total_cents = items.sum { |r| r[:revenue_cents] }
+        @item_total_cents = items.sum { |r| r[:net_cents] }
         sorted = items.sort_by { |r| [ITEM_SORTS[@item_sort].call(r), r[:name].to_s.downcase] }
         @items = @item_dir == "asc" ? sorted : sorted.reverse
         # The page shows the top rows unless asked for all; the CSV always has all.
@@ -76,6 +79,8 @@ module Admin
             category_key: rows.first[:category_key],
             units_sold: rows.sum { |r| r[:units_sold] },
             revenue_cents: rows.sum { |r| r[:revenue_cents] },
+            discount_cents: rows.sum { |r| r[:discount_cents] },
+            net_cents: rows.sum { |r| r[:net_cents] },
             items: @item_dir == "asc" ? sorted : sorted.reverse
           }
         end
@@ -129,18 +134,18 @@ module Admin
           csv << ["Tips", helpers.format_money(summary[:tip_cents])]
           csv << ["Net Sales", helpers.format_money(summary[:net_sales_cents])]
           csv << []
-          csv << ["Category", "Units sold", "Revenue"]
-          @report[:by_category].each { |r| csv << [r[:category], r[:units_sold], helpers.format_money(r[:revenue_cents])] }
+          csv << ["Category", "Units sold", "Revenue before discount", "Promo discount", "Net revenue"]
+          @report[:by_category].each { |r| csv << [r[:category], r[:units_sold], *revenue_cells(r)] }
           csv << []
-          csv << ["Item", "Category", "Units sold", "Revenue"]
-          @items.each { |r| csv << [r[:name], r[:category], r[:units_sold], helpers.format_money(r[:revenue_cents])] }
+          csv << ["Item", "Category", "Units sold", "Revenue before discount", "Promo discount", "Net revenue"]
+          @items.each { |r| csv << [r[:name], r[:category], r[:units_sold], *revenue_cells(r)] }
           if @items.any? { |r| r[:modifier_groups].present? }
             csv << []
-            csv << ["Item", "Modifier group", "Choice", "Units sold", "Revenue"]
+            csv << ["Item", "Modifier group", "Choice", "Units sold", "Revenue before discount", "Promo discount", "Net revenue"]
             @items.each do |r|
               r[:modifier_groups].each do |group|
                 group[:choices].each do |choice|
-                  csv << [r[:name], group[:name], choice[:name], choice[:units_sold], helpers.format_money(choice[:revenue_cents])]
+                  csv << [r[:name], group[:name], choice[:name], choice[:units_sold], *revenue_cells(choice)]
                 end
               end
             end
@@ -149,6 +154,10 @@ module Admin
           csv << %w[Payment\ Method Total]
           @report[:by_payment_method].each { |method, cents| csv << [method.titleize, helpers.format_money(cents)] }
         end
+      end
+
+      def revenue_cells(row)
+        [row[:revenue_cents], row[:discount_cents], row[:net_cents]].map { |cents| helpers.format_money(cents) }
       end
     end
   end

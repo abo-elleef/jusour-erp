@@ -80,17 +80,23 @@ module Accounting
         scope = OrderItem.joins(:order, :menu_item)
           .where(orders: { id: order_ids })
           .where(menu_items: { category_id: cat.id })
-        { category: cat.name, units_sold: scope.sum(:quantity).to_i, revenue_cents: RevenueCalculator.order_item_revenue(scope) }
+        category_row(cat.name, scope)
       end
 
       combo_scope = OrderItem.joins(:order).where(orders: { id: order_ids }).where.not(combo_id: nil)
-      combo_revenue = RevenueCalculator.order_item_revenue(combo_scope)
-      if combo_revenue.positive?
-        rows << { category: I18n.t("accounting.sales_reports.combos_category"),
-                  units_sold: combo_scope.sum(:quantity).to_i, revenue_cents: combo_revenue }
-      end
+      combo_row = category_row(I18n.t("accounting.sales_reports.combos_category"), combo_scope)
+      rows << combo_row if combo_row[:revenue_cents].positive?
 
       rows.sort_by { |r| -r[:revenue_cents] }
+    end
+
+    # revenue_cents is the menu price (before promos); discount_cents the promo
+    # discount on those lines; net_cents what was actually charged for them.
+    def category_row(name, scope)
+      revenue = RevenueCalculator.order_item_revenue(scope)
+      discount = RevenueCalculator.order_item_promo_discount(scope)
+      { category: name, units_sold: scope.sum(:quantity).to_i, revenue_cents: revenue,
+        discount_cents: discount, net_cents: revenue - discount }
     end
 
     # One row per menu item or combo (grouped by id, so two items that share a
@@ -113,12 +119,14 @@ module Accounting
           Arel.sql("order_items.menu_item_id"),
           Arel.sql("order_items.combo_id"),
           Arel.sql("SUM(order_items.quantity)"),
-          Arel.sql("SUM(#{RevenueCalculator::ORDER_ITEM_LINE_REVENUE})")
+          Arel.sql("SUM(#{RevenueCalculator::ORDER_ITEM_LINE_REVENUE})"),
+          Arel.sql("SUM(#{RevenueCalculator::ORDER_ITEM_PROMO_DISCOUNT})")
         )
 
-      rows.map do |name, category, category_id, menu_item_id, combo_id, units, revenue|
+      rows.map do |name, category, category_id, menu_item_id, combo_id, units, revenue, discount|
         units = units.to_i
         revenue = revenue.to_i
+        discount = discount.to_i
         {
           name: name,
           # Ids for links (the notes page filters by them); the key is what
@@ -127,8 +135,11 @@ module Accounting
           category_key: OrderNotesService.category_key(category_id, combo_id),
           category: combo_id ? combos_label : category,
           units_sold: units,
+          # Menu price before promos, the promo discount, and what was charged.
           revenue_cents: revenue,
-          modifier_groups: modifier_groups_for(breakdown[[menu_item_id, combo_id]], units, revenue)
+          discount_cents: discount,
+          net_cents: revenue - discount,
+          modifier_groups: modifier_groups_for(breakdown[[menu_item_id, combo_id]], units, revenue, discount)
         }
       end.sort_by { |r| -r[:revenue_cents] }
     end
@@ -148,7 +159,8 @@ module Accounting
           Arel.sql("MIN(COALESCE(modifier_groups.position, 0))"),
           Arel.sql("order_item_modifiers.name"),
           Arel.sql("SUM(order_items.quantity)"),
-          Arel.sql("SUM(#{RevenueCalculator::ORDER_ITEM_LINE_REVENUE})")
+          Arel.sql("SUM(#{RevenueCalculator::ORDER_ITEM_LINE_REVENUE})"),
+          Arel.sql("SUM(#{RevenueCalculator::ORDER_ITEM_PROMO_DISCOUNT})")
         )
 
       rows.group_by { |menu_item_id, combo_id, *| [menu_item_id, combo_id] }
@@ -157,19 +169,25 @@ module Accounting
     # The item's groups, each with its choices (most sold first) and, when some
     # of the item's lines had no choice in that group, a "no choice" row for the
     # rest, so every group adds up to the item row above it.
-    def modifier_groups_for(rows, item_units, item_revenue)
+    def modifier_groups_for(rows, item_units, item_revenue, item_discount)
       return [] if rows.blank?
 
       rows.group_by { |_, _, group_name, *| group_name }.map do |group_name, choices|
         position = choices.map { |r| r[3].to_i }.min
-        list = choices.map { |*, choice, units, revenue| { name: choice, units_sold: units.to_i, revenue_cents: revenue.to_i } }
+        list = choices.map do |*, choice, units, revenue, discount|
+          revenue = revenue.to_i
+          discount = discount.to_i
+          { name: choice, units_sold: units.to_i, revenue_cents: revenue, discount_cents: discount, net_cents: revenue - discount }
+        end
           .sort_by { |c| [-c[:units_sold], -c[:revenue_cents], c[:name].to_s] }
 
         rest_units = item_units - list.sum { |c| c[:units_sold] }
         rest_revenue = item_revenue - list.sum { |c| c[:revenue_cents] }
+        rest_discount = item_discount - list.sum { |c| c[:discount_cents] }
         if rest_units.positive?
           list << { name: I18n.t("accounting.sales_reports.no_choice"), units_sold: rest_units,
-                    revenue_cents: rest_revenue, no_choice: true }
+                    revenue_cents: rest_revenue, discount_cents: rest_discount,
+                    net_cents: rest_revenue - rest_discount, no_choice: true }
         end
 
         { name: group_name, position: position, choices: list }
