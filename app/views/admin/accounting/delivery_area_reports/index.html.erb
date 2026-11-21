@@ -1,0 +1,150 @@
+<% content_for :title, t("accounting.delivery_area_reports.title") %>
+<% scope = "accounting.delivery_area_reports" %>
+<% th = "p-3 text-end whitespace-nowrap" %>
+<% show_branch = @location.nil? && @locations.size > 1 %>
+<% sort_link = ->(label, key, default_dir: "desc") {
+     active = @sort == key
+     next_dir = active ? (@direction == "asc" ? "desc" : "asc") : default_dir
+     link_to admin_accounting_delivery_area_reports_path(request.query_parameters.merge("sort" => key, "dir" => next_dir)),
+             class: "inline-flex items-center gap-1 hover:text-gray-900 #{active ? 'text-gray-900' : 'text-gray-500'}" do
+       safe_join([label, tag.span(active ? (@direction == "asc" ? "↑" : "↓") : "", class: "text-amber-600")])
+     end
+   } %>
+<% share = ->(orders) { @totals.orders.zero? ? 0 : (100.0 * orders / @totals.orders) } %>
+
+<div class="max-w-full">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("#{scope}.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("#{scope}.description") %></p>
+    </div>
+    <%= link_to t("actions.export_csv"), admin_accounting_delivery_area_reports_path(request.query_parameters.merge(format: :csv)),
+          class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" %>
+  </div>
+
+  <%= render "admin/accounting/date_range_form",
+        extra_fields: ("admin/accounting/sales_reports/branch_field" if @locations.size > 1), extra_keys: [:location_id] %>
+
+  <% toggle_params = request.query_parameters.except("include_open").merge(@include_open ? {} : { include_open: "1" }) %>
+  <div class="flex flex-wrap items-center gap-3 mb-4 -mt-2">
+    <%= link_to admin_accounting_delivery_area_reports_path(toggle_params), role: "switch", "aria-checked": @include_open.to_s,
+          class: "inline-flex items-center gap-2 text-sm font-medium text-gray-700", data: { turbo_action: "replace" } do %>
+      <span class="relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors <%= @include_open ? 'bg-indigo-600' : 'bg-gray-300' %>">
+        <span class="absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all <%= @include_open ? 'start-[1.125rem]' : 'start-0.5' %>"></span>
+      </span>
+      <%= t("accounting.sales_reports.include_open") %>
+    <% end %>
+    <span class="text-xs <%= @include_open ? 'text-amber-700' : 'text-gray-500' %>">
+      <%= t(@include_open ? "accounting.sales_reports.include_open_on_hint" : "accounting.sales_reports.include_open_off_hint") %>
+    </span>
+  </div>
+
+  <%# Top areas at a glance. The Orders / Fees switch reloads only this frame, so
+      the page keeps its scroll; the frame updates the URL so the choice is
+      bookmarkable. %>
+  <% if @chart_bars.any? %>
+    <%= turbo_frame_tag "delivery-area-chart", data: { turbo_action: "advance" } do %>
+      <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6" data-testid="delivery-area-chart">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <h2 class="text-sm font-semibold text-gray-900">
+            <%= t("#{scope}.chart_title", count: ::Accounting::DeliveryAreaReportService::CHART_TOP) %>
+          </h2>
+          <div class="inline-flex p-1 rounded-full bg-gray-100 text-xs font-semibold" role="tablist">
+            <% ::Accounting::DeliveryAreaReportService::CHART_METRICS.each do |metric| %>
+              <%= link_to t("#{scope}.chart_metrics.#{metric}"),
+                    admin_accounting_delivery_area_reports_path(request.query_parameters.merge("chart" => metric)),
+                    role: "tab", "aria-selected": (@chart_metric == metric).to_s,
+                    class: "px-3 py-1.5 rounded-full transition-colors #{@chart_metric == metric ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-800'}" %>
+            <% end %>
+          </div>
+        </div>
+        <% bar_label = ->(bar) {
+             case bar[:kind]
+             when :other then t("#{scope}.chart_other", count: bar[:count])
+             when :no_area then t("#{scope}.no_area")
+             else bar[:label]
+             end
+           } %>
+        <%# Areas amber, the lumped "other areas" grey, "No area" pale so it reads
+            as a gap to close rather than a place. %>
+        <% colors = @chart_bars.map { |b| { area: "#d97706", other: "#9ca3af", no_area: "#fcd34d" }[b[:kind]] } %>
+        <%# Drawn by the chartkick-bar controller, not Chartkick's inline script,
+            which leaves a blank canvas after a Turbo Frame swap. %>
+        <%= tag.div id: "delivery-area-bar-chart",
+              style: "height: #{[@chart_bars.size * 34 + 40, 160].max}px",
+              data: { controller: "chartkick-bar",
+                      chartkick_bar_data_value: @chart_bars.map { |b| [bar_label.call(b), b[:value]] }.to_json,
+                      chartkick_bar_options_value: {
+                        dataset: { backgroundColor: colors, borderColor: colors, borderRadius: 6, barPercentage: 0.8 },
+                        library: { plugins: { legend: { display: false } } }
+                      }.to_json } %>
+      </section>
+    <% end %>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <% if @rows.empty? %>
+      <p class="p-8 text-center text-sm text-gray-500"><%= t("#{scope}.empty") %></p>
+    <% else %>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= sort_link.call(t("#{scope}.area"), "name", default_dir: "asc") %></th>
+              <% if show_branch %>
+                <th class="p-3 text-start"><%= sort_link.call(t("accounting.sales_reports.branch"), "branch", default_dir: "asc") %></th>
+              <% end %>
+              <th class="<%= th %>"><%= sort_link.call(t("#{scope}.orders"), "orders") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("#{scope}.share"), "share") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("#{scope}.fees"), "fees") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("#{scope}.avg_fee"), "avg_fee") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("#{scope}.food"), "food") %></th>
+              <th class="<%= th %> pe-5"><%= sort_link.call(t("#{scope}.avg_food"), "avg_food") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% @rows.each do |row| %>
+              <tr class="<%= 'text-gray-400' if row.orders.zero? %>" data-testid="delivery-area-row">
+                <td class="p-3 ps-5">
+                  <% if row.area %>
+                    <%= link_to row.area.display_name, edit_admin_location_delivery_area_path(row.area.location, row.area),
+                          class: "font-medium #{row.orders.zero? ? 'text-gray-500' : 'text-gray-900'} hover:text-amber-700" %>
+                    <% unless row.area.active? %>
+                      <span class="ms-1 text-xs text-gray-400">(<%= t("#{scope}.inactive") %>)</span>
+                    <% end %>
+                  <% else %>
+                    <span class="font-medium text-amber-800" title="<%= t("#{scope}.no_area_hint") %>"><%= t("#{scope}.no_area") %></span>
+                    <span class="block text-xs text-gray-500"><%= t("#{scope}.no_area_hint") %></span>
+                  <% end %>
+                </td>
+                <% if show_branch %>
+                  <td class="p-3">
+                    <%= link_to row.location.name, admin_location_path(row.location), class: "hover:text-amber-700" if row.location %>
+                  </td>
+                <% end %>
+                <td class="p-3 text-end tabular-nums font-semibold"><%= row.orders %></td>
+                <td class="p-3 text-end tabular-nums"><%= number_with_precision(share.call(row.orders), precision: 1) %>%</td>
+                <td class="p-3 text-end tabular-nums"><%= format_amount(row.fee_cents) %></td>
+                <td class="p-3 text-end tabular-nums"><%= format_amount(row.avg_fee_cents) %></td>
+                <td class="p-3 text-end tabular-nums"><%= format_amount(row.food_cents) %></td>
+                <td class="p-3 pe-5 text-end tabular-nums"><%= format_amount(row.avg_food_cents) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          <tfoot class="border-t-2 border-gray-200 bg-gray-50 font-semibold">
+            <tr data-testid="delivery-area-totals">
+              <td class="p-3 ps-5" colspan="<%= show_branch ? 2 : 1 %>"><%= t("#{scope}.total") %></td>
+              <td class="p-3 text-end tabular-nums"><%= @totals.orders %></td>
+              <td class="p-3 text-end tabular-nums"><%= @totals.orders.zero? ? "—" : "100%" %></td>
+              <td class="p-3 text-end tabular-nums"><%= format_amount(@totals.fee_cents) %></td>
+              <td class="p-3 text-end tabular-nums"><%= format_amount(@totals.avg_fee_cents) %></td>
+              <td class="p-3 text-end tabular-nums"><%= format_amount(@totals.food_cents) %></td>
+              <td class="p-3 pe-5 text-end tabular-nums"><%= format_amount(@totals.avg_food_cents) %></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    <% end %>
+  </section>
+  <p class="text-xs text-gray-500 mt-3"><%= t("#{scope}.fee_note") %></p>
+</div>
