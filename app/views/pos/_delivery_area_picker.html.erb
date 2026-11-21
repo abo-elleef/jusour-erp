@@ -1,0 +1,26 @@
+<%# Searchable delivery area picker (a branch can deliver to 60+ areas). Typing
+    matches the English or Arabic name; Enter picks the first match; emptying
+    the box clears the area. The hidden field fires `change`, and `action` puts
+    the picked area's fee into the fee box.
+    locals: options (pos_delivery_area_options), selected, id, action,
+            testid, input_class (optional), autofocus (optional) %>
+<div class="relative"
+     data-controller="searchable-select"
+     data-searchable-select-clear-on-empty-value="true"
+     data-searchable-select-no-results="<%= t("shared.searchable_select.no_results") %>"
+     data-searchable-select-options="<%= options.to_json %>"
+     data-testid="<%= testid %>">
+  <%= hidden_field_tag :delivery_area_id, selected,
+        id: id,
+        data: { searchable_select_target: "hidden", action: action }.merge(local_assigns.fetch(:hidden_data, {})) %>
+  <input type="text" autocomplete="off" spellcheck="false" role="combobox"
+         aria-expanded="false" aria-autocomplete="list"
+         aria-label="<%= t("pos.delivery.area") %>"
+         placeholder="<%= t("pos.delivery.area_search") %>"
+         class="<%= local_assigns[:input_class] || pos_input_class %>"
+         <%= "autofocus" if local_assigns[:autofocus] %>
+         data-searchable-select-target="input"
+         data-action="input->searchable-select#filter focus->searchable-select#open keydown->searchable-select#keydown" />
+  <ul data-searchable-select-target="menu" role="listbox"
+      class="hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"></ul>
+</div>

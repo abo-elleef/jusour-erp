@@ -16,7 +16,7 @@ export default class extends Controller {
     // listeners: permanently unsearchable. It bit whichever row connected while the
     // parent was still initialising, i.e. the first line, which is why adding a row
     // and deleting the first one "fixed" it.
-    if (this._connected && this.menu && document.body.contains(this.menu)) {
+    if (this._connected && this.menu && this.menu.isConnected) {
       // Genuine double-connect on a healthy instance — nothing to rebuild.
       this.syncInputFromSelected()
       return
@@ -44,8 +44,15 @@ export default class extends Controller {
     const inElement = this.element.querySelector("[data-searchable-select-target='menu']")
     if (!inElement) return null
 
-    document.body.appendChild(inElement)
+    this.menuHost.appendChild(inElement)
     return inElement
+  }
+
+  // A modal <dialog> sits in the browser's top layer, above everything on
+  // <body>, so a picker inside one (POS Order details) keeps its menu inside the
+  // dialog. Everywhere else the menu goes to <body> as before.
+  get menuHost() {
+    return this.element.closest("dialog") || document.body
   }
 
   // Recreate it when a previous disconnect already destroyed it. Mirrors the markup
@@ -55,7 +62,7 @@ export default class extends Controller {
     menu.setAttribute("data-searchable-select-target", "menu")
     menu.setAttribute("role", "listbox")
     menu.className = "hidden overflow-auto rounded-xl border border-gray-200 bg-white shadow-lg py-1"
-    document.body.appendChild(menu)
+    this.menuHost.appendChild(menu)
     return menu
   }
 

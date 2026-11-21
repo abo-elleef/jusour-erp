@@ -58,7 +58,7 @@ module OnlineOrders
         user: @user, customer: customer, location: @request.location, workstation: @workstation,
         order_type: @request.fulfillment, delivery_address: @request.address
       )
-      order.update!(source: "online", notes: order_notes)
+      order.update!(source: "online", notes: order_notes, delivery_area: (@request.delivery_area if @request.delivery?))
       quote.lines.each { |line| Orders::AddLineService.call(order: order, line: line) }
       order.apply_delivery_fee!(@request.delivery_fee_cents) if @request.delivery?
       order.recalculate_totals!

@@ -59,6 +59,17 @@ RSpec.describe "POS online orders inbox", type: :request do
     expect(request_record.reload.order.workstation).to eq(register)
   end
 
+  it "keeps the customer's delivery area on the accepted order" do
+    area = DeliveryArea.create!(company: company, location: branch, name: "Zamalek", fee_cents: 3_000)
+    delivery = OnlineOrders::SubmitService.call(location: branch, params: online_params(item: item, area: area)).request
+
+    patch accept_pos_online_order_request_path(delivery)
+
+    order = delivery.reload.order
+    expect(order.delivery_area).to eq(area)
+    expect(order.delivery_fee_cents).to eq(3_000)
+  end
+
   it "won't accept without an open drawer" do
     CashDrawerSession.where(user: cashier).update_all(status: "closed")
 

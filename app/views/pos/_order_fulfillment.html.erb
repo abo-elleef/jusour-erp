@@ -73,7 +73,19 @@
               data: { order_type_target: "deliveryAddress", action: "blur->order-type#submitForm" } %>
         <%# Typed here with the address, so the payment modal is not needed just to
             save the fee. Fixed once money is taken (Order#delivery_fee_editable?). %>
+        <%# Picking a branch delivery area fills in its fee; the cashier may still
+            change the number. Shown only when the branch has areas, so other
+            branches see no change. %>
+        <% area_options = pos_delivery_area_options(order) %>
         <% if order.delivery_fee_editable? %>
+          <% if area_options.any? %>
+            <%= label_tag :delivery_area_id, t("pos.delivery.area"), for: "fulfillment_delivery_area_id",
+                  class: "block text-xs font-semibold text-gray-600 mt-3 mb-1.5" %>
+            <%= render "pos/delivery_area_picker", options: area_options, selected: order.delivery_area_id,
+                  id: "fulfillment_delivery_area_id", testid: "delivery-area-picker",
+                  action: "change->order-type#applyDeliveryArea",
+                  hidden_data: { order_type_target: "deliveryArea" } %>
+          <% end %>
           <%= label_tag :delivery_fee_pounds, t("payment.delivery_fee"), for: "fulfillment_delivery_fee_pounds",
                 class: "block text-xs font-semibold text-gray-600 mt-3 mb-1.5" %>
           <%= text_field_tag :delivery_fee_pounds,
@@ -81,10 +93,15 @@
                 id: "fulfillment_delivery_fee_pounds",
                 inputmode: "decimal", autocomplete: "off", placeholder: "0",
                 class: "#{pos_input_class} tabular-nums",
-                data: { controller: "arabic-numerals",
+                data: { controller: "arabic-numerals", order_type_target: "deliveryFee",
                         action: "input->arabic-numerals#normalize focus->arabic-numerals#select blur->order-type#submitForm keydown.enter->arabic-numerals#commit" } %>
-        <% elsif order.delivery_fee_cents.positive? %>
-          <p class="text-xs text-gray-600 mt-3"><%= t("payment.delivery_fee") %>: <span class="font-semibold tabular-nums"><%= format_amount(order.delivery_fee_cents) %></span></p>
+        <% else %>
+          <% if order.delivery_area %>
+            <p class="text-xs text-gray-600 mt-3"><%= t("pos.delivery.area") %>: <span class="font-semibold"><%= order.delivery_area.display_name %></span></p>
+          <% end %>
+          <% if order.delivery_fee_cents.positive? %>
+            <p class="text-xs text-gray-600 mt-3"><%= t("payment.delivery_fee") %>: <span class="font-semibold tabular-nums"><%= format_amount(order.delivery_fee_cents) %></span></p>
+          <% end %>
         <% end %>
       <% else %>
         <p class="text-xs text-amber-700 bg-amber-50 rounded-xl px-3 py-2">

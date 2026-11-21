@@ -44,6 +44,10 @@ class Order < ApplicationRecord
   belongs_to :unlocked_for_edit_by, class_name: "User", optional: true
   # The drawer the delivery fee was paid out of to the driver — see #apply_delivery_fee!.
   belongs_to :delivery_fee_drawer_session, class_name: "CashDrawerSession", optional: true
+  # The branch delivery area picked for this order (POS dropdown or an accepted
+  # online request). A record of the choice only: the fee is copied onto
+  # delivery_fee_cents, and the cashier may change it.
+  belongs_to :delivery_area, optional: true
   has_many :order_items, dependent: :destroy
   has_many :order_discounts, dependent: :destroy
   has_many :payments, dependent: :destroy
@@ -73,6 +77,7 @@ class Order < ApplicationRecord
   before_save :clear_fulfillment_fields_for_type
   before_save :default_placed_at
   validate :table_must_be_free, if: :table_slot_changed?, unless: :allow_table_clash
+  validate :delivery_area_belongs_to_branch, if: :delivery_area_id_changed?
 
   # Set only by Orders::SyncOfflineOrderService. An order rung up while the
   # internet was down has already been paid for and sent to the kitchen, so a
@@ -505,11 +510,19 @@ class Order < ApplicationRecord
     self.receipt_token ||= SecureRandom.urlsafe_base64(16)
   end
 
+  def delivery_area_belongs_to_branch
+    return if delivery_area_id.nil?
+    return if delivery_area && delivery_area.location_id == location_id
+
+    errors.add(:delivery_area, :invalid)
+  end
+
   def clear_fulfillment_fields_for_type
     self.table_number = nil unless table?
     return if delivery?
 
     self.delivery_address = nil
+    self.delivery_area_id = nil
     # An order switched away from delivery stops owing its fee. The total is
     # adjusted here rather than recalculated, since this runs inside a save.
     if delivery_fee_cents.positive?

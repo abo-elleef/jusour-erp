@@ -4160,8 +4160,11 @@ en:
       saved_addresses: "Saved address"
       custom_address: "Enter address manually"
       customer_required_for_delivery: "Select a customer first to enter a delivery address."
+      area: "Delivery area"
+      area_search: "Type to search areas…"
       fee_prompt_title: "Delivery fee"
       fee_prompt_hint: "Type this order's delivery fee, or press Enter for free delivery."
+      fee_prompt_area_hint: "Search the delivery area to fill in its fee, or type the fee. Leave both empty for free delivery."
     tables:
       title: "Tables"
       summary: "%{busy} busy · %{free} free"
