@@ -32,7 +32,7 @@ module SettledRecordsHelper
     when Income          then admin_accounting_income_path(record)
     when VendorInvoice   then admin_inventory_vendor_invoice_path(record)
     when CustomerInvoice then admin_sales_customer_invoice_path(record)
-    when Customer        then admin_sales_customer_statement_path(record)
+    when Customer        then admin_customer_path(record, tab: "statement")
     when Supplier        then admin_inventory_supplier_path(record)
     when PayrollAdvance  then admin_user_path(record.user)
     when Order           then admin_order_path(record)

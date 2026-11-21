@@ -47,9 +47,10 @@ module Admin
         @pagy, @customers = pagy(:offset, scope.order(order), limit: 50)
       end
 
+      # The statement lives on the customer page now (Statement tab); this
+      # keeps old links working. set_customer still 404s another rep's customer.
       def show
-        @statement = ::Sales::CustomerAgingService.new(@customer).call
-        @invoices = @customer.customer_invoices.recent.limit(50)
+        redirect_to admin_customer_path(@customer, tab: "statement")
       end
 
       private

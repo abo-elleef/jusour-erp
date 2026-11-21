@@ -1397,7 +1397,9 @@ module ApplicationHelper
     reports: '<path d="M4 20h16"/><rect x="6" y="12" width="3" height="5"/><rect x="10.5" y="8" width="3" height="9"/><rect x="15" y="14" width="3" height="3"/>',
     gear: '<path d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 0 1 1.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.11v1.093c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 0 1-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 0 1-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.11v-1.094c0-.55.398-1.019.94-1.11l.894-.148c.424-.071.765-.384.93-.781.165-.398.143-.854-.108-1.204l-.526-.738a1.125 1.125 0 0 1 .12-1.45l.773-.773a1.125 1.125 0 0 1 1.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z"/><path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>',
     operations: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3.5A.5.5 0 0 1 9.5 3h5a.5.5 0 0 1 .5.5V4"/><path d="M9 10h6M9 13.5h6M9 17h4"/>',
-    search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>'
+    search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+    website: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    tickets: '<path d="M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4V7z"/><path d="M14 5v12" stroke-dasharray="2 2"/>'
   }.freeze
 
   def admin_nav_icon(name, css: "w-5 h-5 shrink-0")
@@ -1420,6 +1422,7 @@ module ApplicationHelper
   SETTINGS_SECTION_CONTROLLERS = %w[
     admin/settings admin/users admin/locations admin/printers admin/workstations admin/roles
     admin/accounting/integrations admin/accounting/payment_method_treasuries
+    admin/ticket_categories admin/sales/price_tiers admin/sales/payment_methods admin/sales/stage_accesses
   ].freeze
 
   def in_settings_section?
@@ -1539,43 +1542,32 @@ module ApplicationHelper
   end
 
   # ── Permission-driven sales nav ───────────────────────────────────
-  # No natural sub-groups (unlike Inventory/Accounting) — one flat list,
-  # same as Settings. Sales reports and Leads reports are dedicated pages
-  # reachable only from the Reports hub (see sales_report_items above), not
-  # listed here.
+  # Sales lists only the day-to-day selling work, in funnel order. The public
+  # website has its own module (website_sidebar_items), set-once setup lives in
+  # Settings (sales_settings_items) and Tickets is its own link next to
+  # Customers (tickets_nav_visible?). Sales reports and Leads reports are
+  # reachable only from the Reports hub (see sales_report_items below).
   def sales_sidebar_items
     items = []
-
-    if current_user.can?("customers:manage") && Current.company&.feature_enabled?(:ar_credit_sales)
-      items << { controller: "customer_invoices", label: "sales.nav.invoices", path: :admin_sales_customer_invoices_path }
-      items << { controller: "customer_statements", label: "sales.nav.statements", path: :admin_sales_customer_statements_path }
-      items << { controller: "credit_notes", label: "sales.nav.credit_notes", path: :admin_sales_credit_notes_path }
-      items << { controller: "price_tiers", label: "sales.nav.price_tiers", path: :admin_sales_price_tiers_path }
-      items << { controller: "shipping_companies", label: "sales.nav.shipping_companies", path: :admin_sales_shipping_companies_path }
-      items << { controller: "payment_methods", label: "sales.nav.payment_methods", path: :admin_sales_payment_methods_path }
-      if current_user.owner?
-        items << { controller: "stage_accesses", label: "sales.nav.stage_accesses", path: :admin_sales_stage_access_path }
-      end
-    end
-
-    if Current.company&.feature_enabled?(:ar_credit_sales) && ::Sales::PaymentApproval.approver_anywhere?(current_user)
-      items << { controller: "payment_approvals", label: "sales.nav.payment_approvals", path: :admin_sales_payment_approvals_path }
-    end
+    credit_sales = Current.company&.feature_enabled?(:ar_credit_sales)
+    manages_customers = current_user.can?("customers:manage")
 
     if Current.company&.feature_enabled?(:leads) && current_user.can?("leads:view")
       items << { controller: "leads", label: "sales.nav.leads", path: :admin_sales_leads_path }
     end
 
-    if ::Sales::OwnershipScope.applies_to?(Current.company) && ::Ticket.worker?(current_user)
-      items << { controller: "tickets", label: "sales.nav.tickets", path: :admin_sales_tickets_path }
+    if credit_sales && manages_customers
+      items << { controller: "customer_invoices", label: "sales.nav.invoices", path: :admin_sales_customer_invoices_path }
     end
 
-    if Current.company&.feature_enabled?(:storefront) && current_user.can?("storefront:manage")
-      items << { controller: "storefront_listings", label: "sales.nav.storefront_listings", path: :admin_sales_storefront_listings_path }
-      items << { controller: "storefront_categories", label: "sales.nav.storefront_categories", path: :admin_sales_storefront_categories_path }
-      items << { controller: "storefront_sections", label: "sales.nav.storefront_sections", path: :admin_sales_storefront_sections_path }
-      items << { controller: "storefront_pages", label: "sales.nav.storefront_pages", path: :admin_sales_storefront_pages_path }
-      items << { controller: "storefronts", label: "sales.nav.storefront", path: :admin_sales_storefront_path }
+    if credit_sales && ::Sales::PaymentApproval.approver_anywhere?(current_user)
+      items << { controller: "payment_approvals", label: "sales.nav.payment_approvals", path: :admin_sales_payment_approvals_path }
+    end
+
+    if credit_sales && manages_customers
+      items << { controller: "credit_notes", label: "sales.nav.credit_notes", path: :admin_sales_credit_notes_path }
+      items << { controller: "customer_statements", label: "sales.nav.statements", path: :admin_sales_customer_statements_path }
+      items << { controller: "shipping_companies", label: "sales.nav.shipping_companies", path: :admin_sales_shipping_companies_path }
     end
 
     items
@@ -1590,10 +1582,67 @@ module ApplicationHelper
     admin_sales_customer_invoices_path(status: "pending_payment_confirmation")
   end
 
+  # Sales controllers that show under another sidebar entry, so the Sales
+  # module doesn't also light up for them.
+  SALES_ELSEWHERE_CONTROLLERS = %w[
+    admin/sales/storefronts admin/sales/storefront_listings admin/sales/storefront_categories
+    admin/sales/storefront_sections admin/sales/storefront_pages
+    admin/sales/price_tiers admin/sales/payment_methods admin/sales/stage_accesses
+    admin/sales/tickets admin/sales/ticket_comments
+  ].freeze
+
+  def sales_section_active?
+    admin_nav_active?("admin/sales") && !admin_nav_active?(*SALES_ELSEWHERE_CONTROLLERS)
+  end
+
   def sales_tab_active?(tab)
     return false unless controller.controller_path.start_with?("admin/sales")
 
     controller.controller_name == tab[:controller]
+  end
+
+  # ── Website nav (storefront) ──────────────────────────────────────
+  # The public website is its own job, so it gets its own module.
+  WEBSITE_SIDEBAR_ITEMS = [
+    { controller: "storefront_listings", label: "nav.website_items.products", path: :admin_sales_storefront_listings_path },
+    { controller: "storefront_categories", label: "nav.website_items.categories", path: :admin_sales_storefront_categories_path },
+    { controller: "storefront_sections", label: "nav.website_items.home_page", path: :admin_sales_storefront_sections_path },
+    { controller: "storefront_pages", label: "nav.website_items.pages", path: :admin_sales_storefront_pages_path },
+    { controller: "storefronts", label: "nav.website_items.settings", path: :admin_sales_storefront_path }
+  ].freeze
+
+  def website_sidebar_items
+    return [] unless Current.company&.feature_enabled?(:storefront) && current_user.can?("storefront:manage")
+
+    WEBSITE_SIDEBAR_ITEMS
+  end
+
+  def website_section_active?
+    admin_nav_active?(*WEBSITE_SIDEBAR_ITEMS.map { |item| "admin/sales/#{item[:controller]}" })
+  end
+
+  # ── Tickets (distribution customer service) ───────────────────────
+  def tickets_nav_visible?
+    ::Sales::OwnershipScope.applies_to?(Current.company) && ::Ticket.worker?(current_user)
+  end
+
+  def tickets_section_active?
+    admin_nav_active?("admin/sales/tickets", "admin/sales/ticket_comments")
+  end
+
+  # Sales setup that is set once and rarely touched — listed in Settings under
+  # a "Sales" heading. Same permissions as when it lived in the Sales list.
+  def sales_settings_items
+    return [] unless Current.company&.feature_enabled?(:ar_credit_sales) && current_user.can?("customers:manage")
+
+    items = [
+      { label: t("sales.nav.price_tiers"), path: admin_sales_price_tiers_path, controller: "price_tiers" },
+      { label: t("sales.nav.payment_methods"), path: admin_sales_payment_methods_path, controller: "payment_methods" }
+    ]
+    if current_user.owner?
+      items << { label: t("sales.nav.stage_accesses"), path: admin_sales_stage_access_path, controller: "stage_accesses" }
+    end
+    items
   end
 
   # ── Reports hub — one page for every report across modules ───────
@@ -1686,7 +1735,17 @@ module ApplicationHelper
     if ::Sales::OwnershipScope.applies_to?(Current.company) && ::Ticket.manager?(current_user)
       items << { label: t("settings.nav.ticket_categories"), path: admin_ticket_categories_path, controller: "ticket_categories" }
     end
+    sales_setup = sales_settings_items
+    if sales_setup.any?
+      items << { heading: t("nav.sales") }
+      items.concat(sales_setup)
+    end
     items
+  end
+
+  # Settings entries that are pages (not the sub-headings between them).
+  def settings_nav_links
+    settings_nav_items.reject { |item| item[:heading] }
   end
 
   def settings_nav_item_active?(item)
@@ -1694,7 +1753,7 @@ module ApplicationHelper
   end
 
   def settings_any_access?
-    settings_nav_items.any?
+    settings_nav_links.any?
   end
 
   # ── Command palette (Cmd/Ctrl+K) ─────────────────────────────────
@@ -1720,8 +1779,16 @@ module ApplicationHelper
       items << { label: t("nav.customers"), path: admin_customers_path, group: t("nav.groups.sell_serve") }
     end
 
+    if tickets_nav_visible?
+      items << { label: t("sales.nav.tickets"), path: admin_sales_tickets_path, group: t("nav.groups.sell_serve") }
+    end
+
     sales_sidebar_items.each do |tab|
       items << { label: t(tab[:label]), path: public_send(tab[:path]), group: t("nav.sales") }
+    end
+
+    website_sidebar_items.each do |tab|
+      items << { label: t(tab[:label]), path: public_send(tab[:path]), group: t("nav.website") }
     end
 
     if reports_any_access?
@@ -1740,7 +1807,7 @@ module ApplicationHelper
       end
     end
 
-    settings_nav_items.each do |item|
+    settings_nav_links.each do |item|
       items << { label: item[:label], path: item[:path], group: t("nav.settings") }
     end
 

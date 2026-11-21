@@ -24,7 +24,7 @@ RSpec.describe "Admin::Accounting aging reports", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include(I18n.t("accounting.aging.receivable.title"))
-    expect(response.body).to include(admin_sales_customer_statement_path(customer))
+    expect(response.body).to include(admin_customer_path(customer, tab: "statement"))
     expect(response.body).to include("12,345")
   end
 

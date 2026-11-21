@@ -665,6 +665,13 @@ ar:
         handled: "تمت يدويًا"
 
   nav:
+    website: "الموقع الإلكتروني"
+    website_items:
+      products: "المنتجات"
+      categories: "الفئات"
+      home_page: "الصفحة الرئيسية"
+      pages: "الصفحات"
+      settings: "الإعدادات"
     online_orders_admin: "طلبات أونلاين"
     open_menu: "فتح القائمة"
     dashboard: "لوحة التحكم"
@@ -5316,6 +5323,7 @@ ar:
         activity: "نشاط العميل"
         lead_history: "تاريخ العميل المحتمل"
         tickets: "التذاكر"
+        statement: "كشف الحساب"
         invoices: "الفواتير"
         orders: "الطلبات"
         loyalty: "الولاء"
