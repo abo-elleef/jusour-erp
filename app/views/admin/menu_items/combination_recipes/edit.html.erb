@@ -1,6 +1,8 @@
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 <% chip_destructive = "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
 
+<%= render "admin/menu_nav" %>
+
 <div class="max-w-3xl">
   <div class="mb-4">
     <%= link_to @menu_item.name, edit_admin_menu_item_path(@menu_item, at: "recipe-matrix"),
