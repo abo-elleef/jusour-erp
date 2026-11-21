@@ -34,8 +34,8 @@ RSpec.describe "Modifier recipes in cost figures" do
   # Base: 3 burgers × (400 + 100) = 1500. Double: +400 × 2 = 800. No onion: −100 × 1.
   let(:expected_cents) { 1500 + 800 - 100 }
 
-  it "counts modifier recipes, signed, times the line quantity" do
-    expect(Accounting::ModifierRecipeCost.by_menu_item(OrderItem.all)).to eq(burger.id => 700)
+  it "counts item and modifier recipes, signed, times the line quantity" do
+    expect(Inventory::ConsumptionByCombo.new(OrderItem.all).cost_cents_by_menu_item).to eq(burger.id => expected_cents)
   end
 
   it "adds them to the food cost report" do

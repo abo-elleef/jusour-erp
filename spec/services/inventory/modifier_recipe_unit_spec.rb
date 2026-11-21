@@ -66,8 +66,8 @@ RSpec.describe "Modifier recipes in an alternate unit", type: :model do
     it "costs and counts the converted quantity in the reports" do
       sell(status: "completed")
 
-      # 2 × 0.05 batch × 2000 = 200 cents for the Doubles
-      expect(Accounting::ModifierRecipeCost.by_menu_item(OrderItem.all)).to eq(menu_item.id => 200)
+      # 2 × (0.05 batch item + 0.05 batch Double) × 2000 = 400 cents
+      expect(Inventory::ConsumptionByCombo.new(OrderItem.all).cost_cents_by_menu_item).to eq(menu_item.id => 400)
 
       row = Inventory::IngredientConsumptionService.new(Date.current, Date.current).call[:rows]
         .find { |r| r[:ingredient] == ball }

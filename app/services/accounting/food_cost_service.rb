@@ -10,20 +10,17 @@ module Accounting
     def call
       completed_orders = Order.completed.on_business_days(@start, @end)
       order_ids = completed_orders.select(:id)
-      # What the chosen modifiers' own recipes cost (a Double's extra patty).
-      modifier_cost = ModifierRecipeCost.by_menu_item(OrderItem.where(order_id: order_ids))
+      # Each line's recipe — the item's own plus its chosen modifiers' — at standard cost.
+      recipe_cost = ::Inventory::ConsumptionByCombo.new(OrderItem.where(order_id: order_ids)).cost_cents_by_menu_item
 
-      items = MenuItem.available.includes(recipes: :ingredient).filter_map do |item|
+      items = MenuItem.available.filter_map do |item|
         scope = OrderItem.where(order_id: order_ids, menu_item_id: item.id)
         units_sold = scope.sum(:quantity)
         next if units_sold.zero?
 
         revenue_cents = RevenueCalculator.order_item_revenue(scope)
 
-        ingredient_cost_per_unit = item.recipes.sum do |r|
-          (r.base_quantity_used * r.ingredient.cost_per_unit_cents).round
-        end
-        total_cost_cents = (ingredient_cost_per_unit * units_sold) + modifier_cost.fetch(item.id, 0)
+        total_cost_cents = recipe_cost.fetch(item.id, 0)
         food_cost_pct = revenue_cents.positive? ? (total_cost_cents.to_f / revenue_cents * 100).round(1) : 0
 
         {

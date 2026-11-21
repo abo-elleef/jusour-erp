@@ -9,24 +9,18 @@ module Inventory
     def call
       @order.order_items
             .includes(
-              menu_item: { recipes: :ingredient },
-              order_item_modifiers: { modifier: { modifier_recipes: { ingredient: :ingredient_units } } }
+              menu_item: { recipes: [:unit_ref, { ingredient: :ingredient_units }] },
+              order_item_modifiers: { modifier: { modifier_recipes: [:unit_ref, { ingredient: :ingredient_units }] } }
             )
             .each do |item|
         next unless item.menu_item_id
 
-        # Accumulate all ingredient quantities in one pass to avoid double FIFO entries
-        totals = Hash.new(0)
-
-        item.menu_item.recipes.each do |recipe|
-          totals[recipe.ingredient] += recipe.base_quantity_used * item.quantity
-        end
-
-        item.order_item_modifiers.each do |oim|
-          oim.modifier.modifier_recipes.each do |mr|
-            totals[mr.ingredient] += mr.base_quantity * item.quantity
-          end
-        end
+        # Netted per ingredient in one pass, so one FIFO draw per ingredient per line.
+        totals = Inventory::LineConsumption.totals(
+          menu_item: item.menu_item,
+          modifiers: item.order_item_modifiers.map(&:modifier),
+          units: item.quantity
+        )
 
         totals.each do |ingredient, quantity|
           next if quantity.zero?

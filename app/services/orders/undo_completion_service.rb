@@ -54,20 +54,17 @@ module Orders
       totals = Hash.new(0)
       @order.order_items
             .includes(
-              menu_item: { recipes: :ingredient },
-              order_item_modifiers: { modifier: { modifier_recipes: { ingredient: :ingredient_units } } }
+              menu_item: { recipes: [:unit_ref, { ingredient: :ingredient_units }] },
+              order_item_modifiers: { modifier: { modifier_recipes: [:unit_ref, { ingredient: :ingredient_units }] } }
             )
             .each do |item|
         next unless item.menu_item_id
 
-        item.menu_item.recipes.each do |recipe|
-          totals[recipe.ingredient] += recipe.base_quantity_used * item.quantity
-        end
-        item.order_item_modifiers.each do |oim|
-          oim.modifier.modifier_recipes.each do |mr|
-            totals[mr.ingredient] += mr.base_quantity * item.quantity
-          end
-        end
+        Inventory::LineConsumption.totals(
+          menu_item: item.menu_item,
+          modifiers: item.order_item_modifiers.map(&:modifier),
+          units: item.quantity
+        ).each { |ingredient, quantity| totals[ingredient] += quantity }
       end
       totals
     end

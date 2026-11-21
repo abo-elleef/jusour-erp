@@ -13,10 +13,10 @@ module Accounting
   # branch-day also puts cost on the same footing as revenue, which has posted
   # that way since `record_daily_sales!`.
   #
-  # Costed the way FoodCostService costs — units sold per menu item times that
-  # item's recipe cost, plus the recipes of the modifiers chosen on those lines
-  # (ModifierRecipeCost), at the ingredient's standard cost — so the food-cost
-  # report and this row quote the same number. Re-running replaces the day's row, so
+  # Costed the way FoodCostService costs — each line's recipe, the item's own
+  # plus its chosen modifiers' (Inventory::ConsumptionByCombo), at the
+  # ingredient's standard cost — so the food-cost report and this row quote the
+  # same number. Re-running replaces the day's row, so
   # backfilling a range stays idempotent.
   class DailyCogsService
     CATEGORY_NAME = "COGS"
@@ -80,33 +80,11 @@ module Accounting
       @cost_of_sales_cents ||= calculate_cost_of_sales_cents
     end
 
+    # Every line's recipe (item + chosen modifiers) at standard cost. Includes
+    # items since taken off the menu — a line sold that day still cost what it cost.
     def calculate_cost_of_sales_cents
-      units = units_sold_by_menu_item
-      return 0 if units.empty?
-
-      # Not `MenuItem.available` — an item sold that day still cost what it cost
-      # after someone takes it off the menu.
-      item_cost = MenuItem.where(id: units.keys).includes(recipes: :ingredient).sum do |item|
-        unit_cost_cents(item) * units.fetch(item.id, 0)
-      end
-      item_cost + modifier_cost_cents
-    end
-
-    def modifier_cost_cents
-      ModifierRecipeCost.by_menu_item(OrderItem.where(order_id: completed_orders.select(:id))).values.sum
-    end
-
-    def units_sold_by_menu_item
-      OrderItem.where(order_id: completed_orders.select(:id))
-               .where.not(menu_item_id: nil)
-               .group(:menu_item_id)
-               .sum(:quantity)
-    end
-
-    def unit_cost_cents(item)
-      item.recipes.sum do |recipe|
-        (recipe.base_quantity_used * recipe.ingredient.cost_per_unit_cents).round
-      end
+      ::Inventory::ConsumptionByCombo.new(OrderItem.where(order_id: completed_orders.select(:id)))
+        .cost_cents_by_menu_item.values.sum
     end
 
     # The same orders the day's sales entry recognises, so cost and revenue can
