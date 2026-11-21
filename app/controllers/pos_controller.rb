@@ -4,6 +4,7 @@ class PosController < ApplicationController
   include PosLocationScoped
   include OpenDrawerGate
   include AbandonedCartCleanup
+  include PosCart
 
   layout "pos"
 
@@ -231,9 +232,11 @@ class PosController < ApplicationController
   end
 
   def current_draft_order
-    return unless session[:current_order_id]
+    pos_cart_order
+  end
 
-    Order.cart_editable.find_by(id: session[:current_order_id])
+  def pos_register_render?
+    action_name == "index"
   end
 
   # Persists the pending order if it hasn't been saved yet (e.g. when the cashier

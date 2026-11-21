@@ -1,4 +1,6 @@
-<div class="flex flex-col lg:flex-row <%= pos_viewport_h_class %> min-h-0 overflow-hidden" data-controller="pos pos-shortcuts">
+<div class="flex flex-col lg:flex-row <%= pos_viewport_h_class %> min-h-0 overflow-hidden" data-controller="pos pos-shortcuts pos-cart">
+  <%# The cart this page shows; see utils/pos_cart.js. %>
+  <span id="pos-cart-ref" hidden data-order-id="<%= @order.persisted? ? @order.id : "" %>"></span>
   <section class="flex flex-col min-h-0 flex-1 lg:flex-none lg:w-3/4 lg:h-full bg-gray-50 min-w-0">
     <div data-controller="pos-queue" class="flex flex-col flex-1 min-h-0">
       <header class="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-gray-200 bg-white shrink-0">

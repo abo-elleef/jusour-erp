@@ -3,6 +3,7 @@
 module Pos
   class CustomersController < ApplicationController
     include PosLocationScoped
+    include PosCart
 
     layout "pos"
 
@@ -46,9 +47,7 @@ module Pos
     end
 
     def load_current_order
-      return unless session[:current_order_id]
-
-      Order.cart_editable.find_by(id: session[:current_order_id])
+      pos_cart_order
     end
 
     def require_pos_access!

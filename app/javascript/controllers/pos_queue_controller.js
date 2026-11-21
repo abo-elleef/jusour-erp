@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { posCartHeaders, rememberPosCart } from "utils/pos_cart"
 // turbo-rails' bundle doesn't expose renderStreamMessage as a named export, but
 // it registers Turbo on the global — use that instead of a (failing) import.
 
@@ -67,11 +68,13 @@ export default class extends Controller {
         headers: {
           Accept: "text/vnd.turbo-stream.html, text/html, application/xhtml+xml",
           "X-CSRF-Token": this._csrf(),
+          ...posCartHeaders(),
         },
         body: entry.body,
         credentials: "same-origin",
       })
 
+      rememberPosCart(resp)
       // A stream is applied whatever the status: a refusal (no open drawer, table
       // already taken) comes back as a stream carrying the message for the cashier.
       const contentType = resp.headers.get("content-type") || ""

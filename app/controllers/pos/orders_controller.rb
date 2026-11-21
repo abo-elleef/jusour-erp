@@ -312,12 +312,14 @@ module Pos
       return [] unless drawer
 
       shift_ids = drawer.orders.pluck(:id).to_set
-      outstanding_orders.select { |order| shift_ids.include?(order.id) }
+      # Never a draft: a cart nobody placed is often one the register lost track of
+      # (the cashier rang the same food up again in a new order), so sweeping it in
+      # cash books money that never came in and leaves the drawer short. A draft
+      # still stops the shift closing; the cashier resumes it and charges it, or
+      # deletes it.
+      outstanding_orders.select { |order| shift_ids.include?(order.id) && !order.draft? }
     end
 
-    # The same set that blocks the shift from closing, so pressing the button
-    # always clears the blocker rather than leaving a remainder the cashier cannot
-    # see. Drafts are in it: a cart with food in it is an unfinished sale.
     # The My Shift list a row's Complete came from, if it is one (never an
     # arbitrary URL: this goes straight into a redirect).
     def shift_return_path
