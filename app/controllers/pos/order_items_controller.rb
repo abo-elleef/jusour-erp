@@ -4,6 +4,7 @@ module Pos
   class OrderItemsController < ApplicationController
     include PosLocationScoped
     include OpenDrawerGate
+    include PosCart
 
     before_action :require_pos_access!
     # Before set_order, which would otherwise create the order this is meant to stop.
@@ -107,7 +108,7 @@ module Pos
 
     def set_order
       # Only the cart, or a placed order a manager unlocked, takes item changes.
-      @order = Order.cart_editable.find_by(id: session[:current_order_id])
+      @order = pos_cart_order
       # Only adding an item saves a new cart. Opening the add popup (modifier_form)
       # used to save one too, so every popup the cashier cancelled left an empty
       # takeaway draft behind; the popup only needs the branch.

@@ -10,7 +10,8 @@ module AbandonedCartCleanup
   private
 
   def discard_abandoned_cart!(keep_id: nil)
-    id = session[:current_order_id]
+    # On the register the page names its own cart (PosCart); elsewhere it is the session's.
+    id = respond_to?(:pos_cart_id, true) ? pos_cart_id : session[:current_order_id]
     return if id.blank? || id.to_s == keep_id.to_s
 
     order = Order.find_by(id: id, user_id: current_user.id)
