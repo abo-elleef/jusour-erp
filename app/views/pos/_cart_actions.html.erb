@@ -27,10 +27,11 @@
     <% else %>
     <%# Place order sends everything to print and locks the items; Charge takes the
         money (and places the order, if it was not placed yet). %>
-    <% if order.persisted? && order.order_items.any? && order.delivery? && order.delivery_fee_cents.zero? && order.delivery_fee_editable? %>
+    <% if order.persisted? && order.order_items.any? && order.delivery? && order.delivery_fee_cents.zero? && order.delivery_area_id.nil? && order.delivery_fee_editable? %>
       <%# A delivery order with no fee yet: Place order (F8) asks for it first, so
           the cashier never opens the payment modal just to save the fee. Enter on
-          an empty field places it as free delivery. %>
+          an empty field places it as free delivery. A free delivery area
+          picked in Order details counts as an answer. %>
       <button type="button"
               class="<%= pos_cart_outlined_btn_class %>"
               data-pos-shortcut="place-order"
@@ -40,18 +41,37 @@
       <dialog id="place-order-fee-dialog"
               class="m-auto rounded-[28px] shadow-2xl border-0 p-0 w-[21rem] max-w-[90vw] backdrop:bg-black/50 backdrop:backdrop-blur-sm"
               onclick="if(event.target===this)this.close()">
+        <%# With branch delivery areas, the popup also offers the searchable area
+            list: picking one fills in its fee (still editable) and is saved with
+            the order. The cursor starts in the area search; Enter picks the first
+            match, then Enter again places the order. %>
+        <% area_options = pos_delivery_area_options(order) %>
         <%= form_with url: pos_submit_path, method: :patch,
-              data: { turbo_frame: "_top", controller: "submit-once", action: "submit->submit-once#guard" } do %>
+              data: { turbo_frame: "_top", controller: "submit-once delivery-area-fee", action: "submit->submit-once#guard" } do %>
           <div class="px-6 pt-6 pb-4">
             <h3 class="text-base font-semibold text-stone-900"><%= t("pos.delivery.fee_prompt_title") %></h3>
-            <p class="text-sm text-stone-500 mt-0.5"><%= t("pos.delivery.fee_prompt_hint") %></p>
+            <p class="text-sm text-stone-500 mt-0.5"><%= t(area_options.any? ? "pos.delivery.fee_prompt_area_hint" : "pos.delivery.fee_prompt_hint") %></p>
           </div>
+          <% if area_options.any? %>
+            <div class="px-6 pb-3">
+              <%= label_tag :place_order_delivery_area_id, t("pos.delivery.area"), for: "place_order_delivery_area_id",
+                    class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+              <%= render "pos/delivery_area_picker", options: area_options, selected: nil,
+                    id: "place_order_delivery_area_id", testid: "place-order-area-picker",
+                    action: "change->delivery-area-fee#apply", autofocus: true %>
+            </div>
+          <% end %>
           <div class="px-6 pb-4">
+            <% if area_options.any? %>
+              <%= label_tag :place_order_delivery_fee_pounds, t("payment.delivery_fee"), for: "place_order_delivery_fee_pounds",
+                    class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+            <% end %>
             <%= text_field_tag :delivery_fee_pounds, "",
                   id: "place_order_delivery_fee_pounds",
-                  inputmode: "decimal", autocomplete: "off", placeholder: "0", autofocus: true,
+                  inputmode: "decimal", autocomplete: "off", placeholder: "0", autofocus: area_options.none?,
                   class: "#{pos_input_class} text-2xl text-center min-h-14 tabular-nums",
-                  data: { controller: "arabic-numerals", action: "input->arabic-numerals#normalize" } %>
+                  data: { controller: "arabic-numerals", delivery_area_fee_target: "fee",
+                          action: "input->arabic-numerals#normalize" } %>
           </div>
           <div class="flex justify-end gap-2 px-6 pb-6">
             <button type="button" onclick="this.closest('dialog').close()"

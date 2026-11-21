@@ -103,8 +103,8 @@ class PosController < ApplicationController
     end
 
     authorize order, :submit?
-    # A delivery order placed with no fee yet asks for one on the way out.
-    if (fee_error = apply_typed_delivery_fee(order))
+    # A delivery order placed with no fee yet asks for one (and its area) on the way out.
+    if (fee_error = apply_picked_delivery_area(order) || apply_typed_delivery_fee(order))
       return redirect_to pos_path, alert: fee_error, status: :see_other
     end
     replacing = order.editing_placed?
@@ -408,7 +408,19 @@ class PosController < ApplicationController
   end
 
   def fulfillment_params
-    params.permit(:order_type, :table_number, :delivery_address)
+    params.permit(:order_type, :table_number, :delivery_address, :delivery_area_id)
+  end
+
+  # Saves the delivery area picked in the Place order popup. The fee it filled
+  # in arrives as the typed fee. Returns an error message, or nil.
+  def apply_picked_delivery_area(order)
+    area_id = params[:delivery_area_id].presence
+    return nil if area_id.nil? || !order.delivery? || !order.delivery_fee_editable?
+    return nil if order.update(delivery_area_id: area_id)
+
+    message = order.errors.full_messages.to_sentence
+    order.restore_attributes
+    message
   end
 
   # Saves a delivery fee typed next to the address or in the Place order popup,

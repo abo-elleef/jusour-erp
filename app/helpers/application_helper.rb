@@ -1099,6 +1099,21 @@ module ApplicationHelper
     POS_INPUT_CLASS
   end
 
+  # Options for the POS delivery area picker (Order details and the Place order
+  # fee popup): the branch's active areas, plus the order's own area even if it
+  # was switched off since. Searchable by English and Arabic name; `fee` is what
+  # the browser puts into the fee box. Empty when the branch has no areas, and
+  # then the picker is not shown at all.
+  def pos_delivery_area_options(order)
+    areas = (order.location || @pos_location)&.delivery_areas&.active&.ordered.to_a || []
+    areas |= [order.delivery_area] if order.delivery_area
+    areas.map do |a|
+      { value: a.id, label: "#{a.display_name} — #{format_amount(a.fee_cents)}",
+        keywords: [a.name, a.name_ar].compact.join(" "),
+        fee: format("%.2f", a.fee_cents / 100.0) }
+    end
+  end
+
   def pos_btn_primary_class
     "w-full min-h-11 bg-gray-900 hover:bg-gray-800 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors"
   end
