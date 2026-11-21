@@ -1,0 +1,119 @@
+<% content_for :title, t("accounting.shortage_moves_report.title") %>
+<%
+  sort_link = lambda do |label, column|
+    next_direction = @sort == column && @sort_direction == "desc" ? "asc" : "desc"
+    link_class = "inline-flex items-center gap-1 hover:text-gray-900 transition-colors #{@sort == column ? 'text-gray-900' : 'text-gray-500'}"
+    link_to admin_accounting_shortage_moves_reports_path(
+              request.query_parameters.except("page").merge(sort: column, direction: next_direction)
+            ), class: link_class do
+      safe_join([label, payroll_sort_indicator(@sort, @sort_direction, column)])
+    end
+  end
+  @range_sums = [{ cents: @total_cents, label: t("accounting.shortage_moves_report.total_moved"), tone: :danger }]
+  @count_labels = { total: t("accounting.shortage_moves_report.moves") }
+%>
+
+<div class="max-w-full">
+  <div class="mb-6">
+    <%= link_to t("reports_hub.title"), admin_reports_path, class: "text-xs font-semibold text-gray-500 hover:text-gray-900" %>
+    <h1 class="text-2xl font-bold tracking-tight text-gray-900 mt-1"><%= t("accounting.shortage_moves_report.title") %></h1>
+    <p class="text-sm text-gray-600 mt-1"><%= t("accounting.shortage_moves_report.subtitle") %></p>
+  </div>
+
+  <%= render "admin/accounting/date_range_form",
+        extra_fields: "admin/accounting/shortage_moves_reports/filters", extra_keys: %i[location_id user_id page] %>
+
+  <% if @total_count.zero? %>
+    <div class="rounded-2xl border border-gray-200 bg-white p-10 text-center text-sm text-gray-500">
+      <%= t("accounting.shortage_moves_report.empty") %>
+    </div>
+  <% else %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+      <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/80">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.shortage_moves_report.by_person") %></h2>
+        <p class="text-xs text-gray-500 mt-0.5"><%= t("accounting.shortage_moves_report.by_person_hint") %></p>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 text-xs font-semibold uppercase text-gray-500">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= t("accounting.shift_logs.employee") %></th>
+              <th class="p-3 text-end"><%= t("accounting.shortage_moves_report.moved_off") %></th>
+              <th class="p-3 text-end"><%= t("accounting.shortage_moves_report.moved_onto") %></th>
+              <th class="p-3 pe-5 text-end"><%= t("accounting.shortage_moves_report.net") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% @people.each do |person| %>
+              <tr>
+                <td class="p-3 ps-5">
+                  <%= link_to person.user.name, admin_user_path(person.user), class: "font-semibold text-gray-900 hover:text-amber-700 hover:underline" %>
+                </td>
+                <td class="p-3 text-end tabular-nums text-emerald-700">
+                  <%= format_amount(person.off_cents) %>
+                  <span class="block text-[0.65rem] text-gray-400"><%= t("accounting.shortage_moves_report.count", count: person.off_count) %></span>
+                </td>
+                <td class="p-3 text-end tabular-nums text-red-700">
+                  <%= format_amount(person.onto_cents) %>
+                  <span class="block text-[0.65rem] text-gray-400"><%= t("accounting.shortage_moves_report.count", count: person.onto_count) %></span>
+                </td>
+                <td class="p-3 pe-5 text-end tabular-nums font-semibold <%= person.net_cents.positive? ? 'text-red-700' : 'text-emerald-700' %>">
+                  <%= format_amount(person.net_cents) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mb-6">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold uppercase">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= sort_link.call(t("accounting.shortage_moves_report.drawer_day"), "date") %></th>
+              <th class="p-3 text-start text-gray-500"><%= t("accounting.shortage_moves_report.drawer") %></th>
+              <th class="p-3 text-start text-gray-500"><%= t("accounting.shortage_moves_report.from") %></th>
+              <th class="p-3 text-start text-gray-500"><%= t("accounting.shortage_moves_report.to") %></th>
+              <th class="p-3 text-end"><%= sort_link.call(t("accounting.shortage_moves_report.amount"), "amount") %></th>
+              <th class="p-3 text-start text-gray-500"><%= t("accounting.shortage_moves_report.reason") %></th>
+              <th class="p-3 pe-5 text-start"><%= sort_link.call(t("accounting.shortage_moves_report.moved_by"), "moved_at") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 table-zebra">
+            <% @moves.each do |move| %>
+              <% drawer = move.cash_drawer_session %>
+              <tr class="align-top">
+                <td class="p-3 ps-5 tabular-nums whitespace-nowrap"><%= l(drawer.session_date, format: :long) %></td>
+                <td class="p-3">
+                  <%= link_to drawer.treasury.name, admin_accounting_cash_drawer_path(drawer), class: "text-amber-700 hover:text-amber-800" %>
+                  <span class="block text-xs text-gray-500"><%= drawer.location&.name %></span>
+                </td>
+                <td class="p-3">
+                  <%= link_to move.from_user.name, admin_user_path(move.from_user), class: "text-gray-900 hover:text-amber-700 hover:underline" %>
+                  <% if move.old_voucher %>
+                    <span class="block text-xs"><%= link_to move.old_voucher.number, admin_accounting_voucher_path(move.old_voucher), class: "font-mono text-gray-400 line-through hover:text-amber-700" %></span>
+                  <% end %>
+                </td>
+                <td class="p-3">
+                  <%= link_to move.to_user.name, admin_user_path(move.to_user), class: "font-semibold text-gray-900 hover:text-amber-700 hover:underline" %>
+                  <% if move.new_voucher %>
+                    <span class="block text-xs"><%= link_to move.new_voucher.number, admin_accounting_voucher_path(move.new_voucher), class: "font-mono text-amber-700 hover:text-amber-800" %></span>
+                  <% end %>
+                </td>
+                <td class="p-3 text-end tabular-nums font-semibold text-gray-900"><%= format_amount(move.amount_cents) %></td>
+                <td class="p-3 text-gray-700 max-w-xs"><%= move.reason %></td>
+                <td class="p-3 pe-5 whitespace-nowrap">
+                  <%= link_to move.reassigned_by.name, admin_user_path(move.reassigned_by), class: "text-gray-900 hover:text-amber-700 hover:underline" %>
+                  <span class="block text-xs text-gray-500 tabular-nums"><%= l(move.created_at, format: :short) %></span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <%= render "admin/accounting/pagination", pagy: @pagy %>
+  <% end %>
+</div>

@@ -1712,7 +1712,10 @@ module ApplicationHelper
        description: t("accounting.staff_payments_report.description") },
      { label: t("accounting.staff_debts_report.title"),
        path: admin_accounting_staff_debts_reports_path,
-       description: t("accounting.staff_debts_report.description") }]
+       description: t("accounting.staff_debts_report.description") },
+     { label: t("accounting.shortage_moves_report.title"),
+       path: admin_accounting_shortage_moves_reports_path,
+       description: t("accounting.shortage_moves_report.description") }]
   end
 
   def reports_any_access?

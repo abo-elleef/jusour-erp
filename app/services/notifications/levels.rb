@@ -23,6 +23,8 @@ module Notifications
       "ticket_resolved" => "popup",
       "ticket_commented" => "popup",
       "cash_variance" => "alert",
+      "drawer_shortage_moved_to_you" => "alert",
+      "drawer_shortage_moved_off_you" => "popup",
       "vendor_balance_negative" => "alert",
       "price_change" => "popup",
       "batch_expiring" => "popup",

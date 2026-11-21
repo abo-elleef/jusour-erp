@@ -48,6 +48,8 @@ module Accounting
           variance_documented: false,
           shortage_waived_at: nil,
           shortage_waived_by_id: nil,
+          # A recount starts from the cashier again; the moves stay as history.
+          shortage_charged_to_id: nil,
           closed_at: nil,
           closed_by_id: nil
         )
