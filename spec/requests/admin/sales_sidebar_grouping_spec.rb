@@ -36,7 +36,6 @@ RSpec.describe "Admin sidebar: Sales, Website, Settings grouping", type: :reques
       admin_sales_customer_invoices_path,
       admin_sales_customer_invoices_path(status: "pending_payment_confirmation"),
       admin_sales_credit_notes_path,
-      admin_sales_customer_statements_path,
       admin_sales_shipping_companies_path
     ])
     expect(module_open?("sales")).to be(true)
@@ -84,6 +83,16 @@ RSpec.describe "Admin sidebar: Sales, Website, Settings grouping", type: :reques
     expect(module_links("sales")).not_to include(admin_sales_tickets_path)
     expect(Nokogiri::HTML(response.body).css("nav > a").map { |a| a["href"] }).to include(admin_sales_tickets_path)
     expect(module_open?("sales")).to be(false)
+  end
+
+  it "lists customer statements in the Reports hub, not in Sales" do
+    get admin_reports_path
+    expect(response.body).to include(admin_sales_customer_statements_path)
+
+    get admin_sales_customer_statements_path
+    expect(module_links("sales")).not_to include(admin_sales_customer_statements_path)
+    expect(module_open?("sales")).to be(false)
+    expect(response.body).to include(%(href="#{admin_reports_path}"))
   end
 
   it "has no Website module for a restaurant" do
