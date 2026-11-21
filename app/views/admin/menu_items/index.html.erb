@@ -1,8 +1,6 @@
 <% input_class = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500 transition-shadow" %>
 <% label_class = "block text-xs font-semibold text-gray-600 mb-1.5" %>
 
-<%= render "admin/menu_nav" %>
-
 <div class="max-w-full">
   <div class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
@@ -103,10 +101,12 @@
                   <% end %>
                 </td>
                 <td class="p-3">
-                  <span class="font-mono text-xs font-semibold text-amber-700 whitespace-nowrap"><%= item.code %></span>
+                  <%= link_to item.code, admin_menu_item_path(item),
+                        class: "font-mono text-xs font-semibold text-amber-700 hover:text-amber-800 hover:underline whitespace-nowrap" %>
                 </td>
                 <td class="p-3">
-                  <span class="font-semibold text-gray-900"><%= item.name %></span>
+                  <%= link_to item.name, admin_menu_item_path(item),
+                        class: "font-semibold text-gray-900 hover:text-amber-700 hover:underline" %>
                   <% if item.modifier_groups.any? %>
                     <p class="text-xs text-gray-500 mt-1">
                       <%= t("admin.menu_items.modifier_group_count", count: item.modifier_groups.size) %>

@@ -12,7 +12,20 @@ module Admin
       "status" => "menu_items.available"
     }.freeze
 
-    before_action :set_menu_item, only: %i[edit update destroy]
+    before_action :set_menu_item, only: %i[show edit update destroy recipe_matrix]
+
+    # Show page: a shell plus one Turbo frame that lazy-loads the active tab
+    # from the same URL (?tab=), like the customer and supplier pages.
+    TAB_FRAME = "menu_item_tab"
+    TABS = %w[overview recipe sales history].freeze
+    TAB_PAGE_SIZE = 25
+    SALES_SORTS = {
+      "date" => "orders.business_date %{dir}, orders.created_at %{dir}",
+      "quantity" => "order_items.quantity %{dir}",
+      # The expression, not its alias: pagy's count query keeps the ORDER BY
+      # but drops the select that defines the alias.
+      "amount" => "(#{::Accounting::RevenueCalculator::ORDER_ITEM_LINE_REVENUE}) %{dir}"
+    }.freeze
 
     def index
       scope = policy_scope(MenuItem).includes(:category, :modifier_groups, image_attachment: :blob)
@@ -34,6 +47,18 @@ module Admin
       end
       @categories = Category.active.ordered
       authorize MenuItem
+    end
+
+    def show
+      authorize @menu_item
+      @tabs = TABS
+      @tab = TABS.include?(params[:tab]) ? params[:tab] : TABS.first
+      return unless turbo_frame_request_id == TAB_FRAME
+
+      send(:"load_#{@tab}_tab")
+      # The admin layout is set explicitly and would override turbo-rails'
+      # bare frame layout.
+      render "tab", layout: "turbo_rails/frame"
     end
 
     def new
@@ -78,6 +103,24 @@ module Admin
       end
     end
 
+    # Which of the item's option groups change the recipe together. Changing
+    # the choice starts the matrix over (MenuItemModifierGroup clears the rows).
+    def recipe_matrix
+      authorize @menu_item, :update?
+      ticked = Array(params[:group_ids]).reject(&:blank?)
+      errors = []
+      MenuItemModifierGroup.transaction do
+        @menu_item.menu_item_modifier_groups.includes(:modifier_group).each do |attachment|
+          next if attachment.update(recipe_matrix: ticked.include?(attachment.modifier_group_id))
+
+          errors << "#{attachment.modifier_group.name}: #{attachment.errors.full_messages.to_sentence}"
+        end
+        raise ActiveRecord::Rollback if errors.any?
+      end
+      redirect_to edit_admin_menu_item_path(@menu_item, anchor: "recipe-matrix"),
+                  **(errors.any? ? { alert: errors.to_sentence } : { notice: t("menu.recipe_matrix.groups_saved") })
+    end
+
     def destroy
       authorize @menu_item
       if @menu_item.order_items.exists? || @menu_item.combo_items.exists?
@@ -95,12 +138,58 @@ module Admin
       @menu_item = MenuItem.includes(:modifier_groups).find(params[:id])
     end
 
+    # Details, where it sells and at what price, and its option groups.
+    def load_overview_tab
+      @branch_rows = @menu_item.location_menu_items.includes(:location).sort_by { |row| row.location.name.to_s }
+      @attachments = @menu_item.menu_item_modifier_groups.includes(modifier_group: :modifiers)
+    end
+
+    # What one of it uses: the item recipe, and per combination when the item
+    # has a recipe matrix. Read-only; changes are made on the edit page.
+    def load_recipe_tab
+      @recipes = @menu_item.recipes.joins(:ingredient).includes(:unit_ref, ingredient: :unit_ref).order("ingredients.name")
+      @recipe_matrix = ::Inventory::RecipeMatrix.new(@menu_item)
+    end
+
+    # Completed sales of the item between two business days (this month by
+    # default), totals first, then each line, newest first.
+    def load_sales_tab
+      @sales_to = parse_date(params[:to]) || Date.current
+      @sales_from = parse_date(params[:from]) || @sales_to.beginning_of_month
+      @sales_from, @sales_to = @sales_to, @sales_from if @sales_from > @sales_to
+
+      lines = OrderItem.joins(:order)
+        .where(menu_item_id: @menu_item.id, orders: { status: "completed", business_date: @sales_from..@sales_to })
+      @sales_units = lines.sum(:quantity)
+      @sales_revenue_cents = ::Accounting::RevenueCalculator.order_item_revenue(lines)
+      @sales_cost_cents = ::Inventory::ConsumptionByCombo.new(lines).cost_cents_by_menu_item.fetch(@menu_item.id, 0)
+
+      @sales_sort = SALES_SORTS.key?(params[:sort]) ? params[:sort] : "date"
+      @sales_dir = params[:dir] == "asc" ? "asc" : "desc"
+      scope = lines
+        .select("order_items.*", "(#{::Accounting::RevenueCalculator::ORDER_ITEM_LINE_REVENUE}) AS line_revenue_cents")
+        .includes(:order, :order_item_modifiers)
+        .order(Arel.sql(format(SALES_SORTS[@sales_sort], dir: @sales_dir.upcase)))
+      @sales_pagy, @sales_lines = pagy(:offset, scope, limit: TAB_PAGE_SIZE)
+    end
+
+    def load_history_tab
+      @audits = @menu_item.audits.includes(:user).reorder(version: :desc)
+    end
+
+    def parse_date(value)
+      Date.iso8601(value.to_s)
+    rescue ArgumentError
+      nil
+    end
+
     def load_modifier_groups_for_form
       @all_modifier_groups = ModifierGroup.includes(:modifiers).ordered
       @assigned_modifier_group_ids = @menu_item.modifier_group_ids
     end
 
     def load_recipes_for_form
+      @recipe_matrix = ::Inventory::RecipeMatrix.new(@menu_item)
       @recipes = @menu_item.recipes.joins(:ingredient).includes(:ingredient).order("ingredients.name")
       assigned_ids = @recipes.map(&:ingredient_id)
       @recipe_ingredients = Ingredient.active.includes(:ingredient_units).where.not(id: assigned_ids).order(:name)

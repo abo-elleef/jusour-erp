@@ -1,11 +1,8 @@
 <div class="max-w-3xl">
-  <div class="mb-4">
-    <%= link_to t("admin.categories.back_to_list"), admin_categories_path, class: "text-sm text-gray-600 hover:text-gray-900" %>
-  </div>
-
   <div class="flex flex-wrap justify-between items-start gap-3 mb-6">
     <div>
-      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= admin_page_title("edit") %>: <%= @category.name %></h1>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+        <%= render "admin/title_crumbs", crumbs: [[t("admin.menu_nav.categories"), admin_categories_path]] %><%= admin_page_title("edit") %>: <%= @category.name %></h1>
       <p class="text-gray-600 text-sm mt-1">
         <%= t("admin.categories.menu_items_in_category", count: @category.menu_items.size) %>
       </p>

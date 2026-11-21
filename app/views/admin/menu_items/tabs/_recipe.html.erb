@@ -1,0 +1,55 @@
+<% recipe_cost_cents = @recipes.sum { |r| (r.base_quantity_used * r.ingredient.cost_per_unit_cents).round } %>
+
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex flex-wrap justify-between items-center gap-2">
+    <div>
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.menu_items.recipes_heading") %></h2>
+      <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.menu_items.recipes_hint") %></p>
+    </div>
+    <div class="flex flex-wrap items-center gap-3">
+      <% if @recipes.any? %>
+        <p class="text-xs font-semibold text-gray-600 tabular-nums">
+          <%= t("menu.recipe_matrix.cost_per_unit", amount: format_amount(recipe_cost_cents)) %>
+        </p>
+      <% end %>
+      <% if policy(@menu_item).update? %>
+        <%= link_to t("admin.menu_items.show.edit_recipe"), edit_admin_menu_item_path(@menu_item),
+              class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors",
+              data: { turbo_frame: "_top" } %>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @recipes.any? %>
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-gray-50/50 text-xs font-semibold text-gray-500">
+        <tr>
+          <th class="p-3 ps-5 text-start"><%= t("admin.menu_items.recipe_ingredient") %></th>
+          <th class="p-3 text-end"><%= t("admin.menu_items.recipe_quantity") %></th>
+          <th class="p-3 pe-5 text-end"><%= t("menu.recipe_matrix.cost") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @recipes.each do |recipe| %>
+          <tr>
+            <td class="p-3 ps-5">
+              <%= link_to recipe.ingredient.name, admin_inventory_ingredient_path(recipe.ingredient),
+                    class: "font-medium text-amber-700 hover:text-amber-800", data: { turbo_frame: "_top" } %>
+            </td>
+            <td class="p-3 text-end tabular-nums whitespace-nowrap">
+              <%= number_with_precision(recipe.quantity_used, precision: 4, strip_insignificant_zeros: true) %>
+              <%= ingredient_unit_label(recipe.unit.presence || recipe.ingredient.unit) %>
+            </td>
+            <td class="p-3 pe-5 text-end tabular-nums">
+              <%= format_amount((recipe.base_quantity_used * recipe.ingredient.cost_per_unit_cents).round) %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="px-5 py-6 text-sm text-gray-500"><%= t("admin.menu_items.recipes_empty") %></p>
+  <% end %>
+</section>
+
+<%= render "admin/menu_items/recipe_matrix", menu_item: @menu_item, matrix: @recipe_matrix, readonly: true %>

@@ -1,0 +1,10 @@
+<%# Tab links live inside the frame, so a click swaps only the frame and the
+    page keeps its scroll. Each tab starts clean: its own params only. %>
+<nav class="flex gap-1 overflow-x-auto border-b border-gray-200" aria-label="<%= t("admin.menu_items.show.tabs.label") %>">
+  <% tabs.each_with_index do |name, index| %>
+    <%= link_to t("admin.menu_items.show.tabs.#{name}"),
+          admin_menu_item_path(menu_item, (index.zero? ? {} : { tab: name })),
+          class: admin_section_tab_class(name == active_tab),
+          aria: { current: (name == active_tab ? "page" : nil) } %>
+  <% end %>
+</nav>

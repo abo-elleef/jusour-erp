@@ -127,7 +127,7 @@
               <ul class="flex flex-wrap gap-2 px-5 pb-4 ps-11">
                 <% items.each do |item| %>
                   <li>
-                    <%= link_to item.name, edit_admin_menu_item_path(item),
+                    <%= link_to item.name, admin_menu_item_path(item),
                           class: "inline-flex text-sm text-gray-800 bg-gray-50 hover:bg-amber-50 hover:text-amber-800 border border-gray-200 rounded-lg px-2.5 py-1 transition-colors" %>
                   </li>
                 <% end %>

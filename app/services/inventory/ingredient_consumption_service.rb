@@ -16,9 +16,12 @@ module Inventory
       range = @start.beginning_of_day..@end.end_of_day
       completed_orders = Order.where(status: "completed").on_business_days(@start, @end)
       order_ids = completed_orders.select(:id)
+      # The item recipes plus the recipes of the modifiers chosen on each line —
+      # what stock deduction draws down, so neither shows up as unexplained variance.
+      usage = ConsumptionByCombo.new(OrderItem.where(order_id: order_ids)).quantity_by_ingredient
 
       rows = Ingredient.active.includes(:unit_ref).map do |ingredient|
-        theoretical = theoretical_usage(ingredient, order_ids)
+        theoretical = usage.fetch(ingredient.id, 0).to_d
         actual = ingredient.stock_adjustments
           .where(adjustment_type: "consumption", created_at: range)
           # Netted, not ABS: a voided completed order puts its stock back as a
@@ -43,28 +46,6 @@ module Inventory
         total_theoretical: rows.sum { |r| r[:theoretical] },
         total_actual: rows.sum { |r| r[:actual] }
       }
-    end
-
-    private
-
-    # The item recipes plus the recipes of the modifiers chosen on each line (a
-    # Double's extra patty), each converted to the ingredient's base unit — what
-    # stock deduction draws down, so neither shows up as unexplained variance.
-    def theoretical_usage(ingredient, order_ids)
-      from_items = OrderItem
-        .joins(:order, menu_item: :recipes)
-        .where(orders: { id: order_ids })
-        .where(recipes: { ingredient_id: ingredient.id })
-        .sum(Arel.sql("#{BaseQuantitySql.for('recipes', 'quantity_used')} * order_items.quantity"))
-        .to_d
-      from_modifiers = OrderItem
-        .joins(:order, order_item_modifiers: { modifier: :modifier_recipes })
-        .where(orders: { id: order_ids })
-        .where.not(menu_item_id: nil)
-        .where(modifier_recipes: { ingredient_id: ingredient.id })
-        .sum(Arel.sql("#{BaseQuantitySql.for('modifier_recipes', 'quantity')} * order_items.quantity"))
-        .to_d
-      from_items + from_modifiers
     end
   end
 end

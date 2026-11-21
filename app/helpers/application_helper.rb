@@ -1514,6 +1514,30 @@ module ApplicationHelper
     tab[:action].nil? || params[:action] == tab[:action]
   end
 
+  # ── Menu nav (restaurant) ──────────────────────────────────────────
+  # The Menu section's pages, listed in the sidebar like Inventory and Sales.
+  # One permission (menu:manage) gates the whole section; the caller checks it.
+  MENU_SIDEBAR_ITEMS = [
+    { controllers: %w[menu_items combination_recipes], label: "admin.menu_nav.menu_items", path: :admin_menu_items_path },
+    { controllers: %w[categories], label: "admin.menu_nav.categories", path: :admin_categories_path },
+    { controllers: %w[modifier_groups modifiers], label: "admin.menu_nav.modifier_groups", path: :admin_modifier_groups_path },
+    { controllers: %w[combos], label: "admin.menu_nav.combos", path: :admin_combos_path },
+    { controllers: %w[menu_promos], label: "admin.menu_nav.menu_promos", path: :admin_menu_promos_path }
+  ].freeze
+
+  def menu_sidebar_items
+    MENU_SIDEBAR_ITEMS
+  end
+
+  def menu_section_active?
+    admin_nav_active?("admin/menu_items", "admin/categories", "admin/combos", "admin/menu_promos",
+      "admin/modifiers", "admin/modifier_groups", "admin/tax_rates")
+  end
+
+  def menu_tab_active?(tab)
+    menu_section_active? && tab[:controllers].include?(controller.controller_name)
+  end
+
   # ── Permission-driven sales nav ───────────────────────────────────
   # No natural sub-groups (unlike Inventory/Accounting) — one flat list,
   # same as Settings. Sales reports and Leads reports are dedicated pages

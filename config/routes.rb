@@ -249,8 +249,15 @@ Rails.application.routes.draw do
     resources :categories do
       patch :reorder, on: :collection
     end
-    resources :menu_items, except: [:show] do
-      resources :recipes, only: %i[create destroy], module: :menu_items
+    resources :menu_items do
+      patch :recipe_matrix, on: :member
+      scope module: :menu_items do
+        resources :recipes, only: %i[create destroy]
+        resources :combination_recipes, only: %i[create edit destroy] do
+          post :copy, on: :member
+          resources :lines, only: %i[create update destroy], controller: "combination_recipe_lines"
+        end
+      end
     end
     resources :menu_promos, except: [:show]
     resources :modifier_groups, except: [] do

@@ -1,0 +1,118 @@
+<% dt = "text-xs font-semibold text-gray-500" %>
+<% dd = "text-sm text-gray-900 mt-0.5" %>
+
+<div class="grid gap-6 lg:grid-cols-3">
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden lg:col-span-2">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.menu_items.show.details") %></h2>
+    </div>
+    <dl class="p-5 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+      <div>
+        <dt class="<%= dt %>"><%= t("admin.menu_items.category") %></dt>
+        <dd class="<%= dd %>"><%= @menu_item.category.name %></dd>
+      </div>
+      <div>
+        <dt class="<%= dt %>"><%= t("admin.menu_items.table.code") %></dt>
+        <dd class="<%= dd %> font-mono"><%= @menu_item.code.presence || "—" %></dd>
+      </div>
+      <div>
+        <dt class="<%= dt %>"><%= t("admin.menu_items.price") %></dt>
+        <dd class="<%= dd %> tabular-nums font-semibold"><%= format_amount(@menu_item.base_price_cents) %></dd>
+      </div>
+      <div>
+        <dt class="<%= dt %>"><%= t("admin.menu_items.tax_category") %></dt>
+        <dd class="<%= dd %>"><%= menu_item_tax_category(@menu_item.tax_category) %></dd>
+      </div>
+      <div>
+        <dt class="<%= dt %>"><%= t("admin.menu_items.display_position") %></dt>
+        <dd class="<%= dd %> tabular-nums"><%= @menu_item.position || "—" %></dd>
+      </div>
+      <div class="sm:col-span-2">
+        <dt class="<%= dt %>"><%= t("admin.menu_items.field_description") %></dt>
+        <dd class="<%= dd %> whitespace-pre-line"><%= @menu_item.description.presence || "—" %></dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+      <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.menu_items.image") %></h2>
+    </div>
+    <div class="p-5">
+      <% if @menu_item.image.attached? %>
+        <%= image_tag @menu_item.image, alt: @menu_item.name, class: "w-full max-h-64 object-contain rounded-xl bg-gray-50" %>
+      <% else %>
+        <p class="text-sm text-gray-500"><%= t("admin.menu_items.show.no_image") %></p>
+      <% end %>
+    </div>
+  </section>
+</div>
+
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.menu_items.show.branches") %></h2>
+    <p class="text-xs text-gray-500 mt-0.5"><%= t("admin.menu_items.show.branches_hint") %></p>
+  </div>
+  <% if @branch_rows.any? %>
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-100 bg-gray-50/50 text-xs font-semibold text-gray-500">
+        <tr>
+          <th class="p-3 ps-5 text-start"><%= t("admin.menu_items.show.branch") %></th>
+          <th class="p-3 text-start"><%= t("admin.menu_items.show.on_sale") %></th>
+          <th class="p-3 pe-5 text-end"><%= t("admin.menu_items.price") %></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @branch_rows.each do |row| %>
+          <tr>
+            <td class="p-3 ps-5 font-medium text-gray-900"><%= row.location.name %></td>
+            <td class="p-3"><%= row.available? ? t("admin.menu_items.available") : t("admin.menu_items.unavailable") %></td>
+            <td class="p-3 pe-5 text-end tabular-nums">
+              <%= format_amount(row.effective_price_cents) %>
+              <% if row.price_override_cents.present? %>
+                <span class="text-xs text-gray-500">(<%= t("admin.menu_items.show.branch_price") %>)</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="px-5 py-6 text-sm text-gray-500"><%= t("admin.menu_items.show.no_branches") %></p>
+  <% end %>
+</section>
+
+<section class="rounded-2xl border border-gray-200 bg-white overflow-hidden mt-6">
+  <div class="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+    <h2 class="text-sm font-semibold text-gray-900"><%= t("admin.menu_items.show.option_groups") %></h2>
+  </div>
+  <% if @attachments.any? %>
+    <ul class="divide-y divide-gray-100">
+      <% @attachments.each do |attachment| %>
+        <% group = attachment.modifier_group %>
+        <li class="px-5 py-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <%= link_to group.name, admin_modifier_group_path(group),
+                  class: "font-semibold text-amber-700 hover:text-amber-800", data: { turbo_frame: "_top" } %>
+            <% if group.required %>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200"><%= t("menu.modifier_groups.required") %></span>
+            <% end %>
+            <% if group.multi_select %>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded-lg bg-gray-100 text-gray-700 border border-gray-200"><%= t("menu.modifier_groups.multi_select") %></span>
+            <% end %>
+          </div>
+          <p class="text-sm text-gray-600 mt-1">
+            <%= safe_join(group.modifiers.map { |m|
+                  next m.name if m.price_adjustment_cents.zero?
+
+                  # The price stays left-to-right so the plus sign reads first in Arabic too.
+                  safe_join([m.name, " (", tag.bdi("+#{format_amount(m.price_adjustment_cents)}", dir: "ltr"), ")"])
+                }, " · ") %>
+          </p>
+        </li>
+      <% end %>
+    </ul>
+  <% else %>
+    <p class="px-5 py-6 text-sm text-gray-500"><%= t("admin.menu_items.show.no_option_groups") %></p>
+  <% end %>
+</section>
