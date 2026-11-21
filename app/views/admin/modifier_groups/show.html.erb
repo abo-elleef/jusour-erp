@@ -1,13 +1,9 @@
 <% content_for :title, @modifier_group.name %>
 <div class="max-w-4xl">
-  <div class="mb-4">
-    <%= link_to t("menu.modifier_groups.back_to_list"), admin_modifier_groups_path,
-          class: "text-sm font-semibold text-amber-700 hover:text-amber-800 transition-colors" %>
-  </div>
-
   <header class="flex flex-wrap justify-between items-start gap-4 mb-6">
     <div>
-      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @modifier_group.name %></h1>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+        <%= render "admin/title_crumbs", crumbs: [[t("admin.menu_nav.modifier_groups"), admin_modifier_groups_path]] %><%= @modifier_group.name %></h1>
       <div class="flex flex-wrap gap-2 mt-2">
         <% if @modifier_group.required? %>
           <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
@@ -71,7 +67,7 @@
       <ul class="divide-y divide-gray-100">
         <% @modifier_group.menu_items.order(:name).each do |item| %>
           <li class="px-5 py-3">
-            <%= link_to item.name, edit_admin_menu_item_path(item),
+            <%= link_to item.name, admin_menu_item_path(item),
                   class: "font-semibold text-amber-700 hover:text-amber-800" %>
             <span class="text-xs text-gray-500 ms-2"><%= item.category.name %></span>
           </li>

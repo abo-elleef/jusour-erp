@@ -1,0 +1,9 @@
+<%# Frame responses use turbo-rails' bare frame layout; the frame advances the
+    URL and Turbo takes the document title from this response. %>
+<% content_for :head, tag.title(@menu_item.name) %>
+<%= turbo_frame_tag Admin::MenuItemsController::TAB_FRAME, data: { turbo_action: "advance" } do %>
+  <%= render "admin/menu_items/tab_nav", menu_item: @menu_item, tabs: @tabs, active_tab: @tab %>
+  <div class="mt-6">
+    <%= render "admin/menu_items/tabs/#{@tab}" %>
+  </div>
+<% end %>

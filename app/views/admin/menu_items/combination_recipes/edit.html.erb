@@ -2,11 +2,8 @@
 <% chip_destructive = "inline-flex text-xs font-semibold text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-xl border border-red-200 transition-colors" %>
 
 <div class="max-w-3xl">
-  <div class="mb-4">
-    <%= link_to @menu_item.name, edit_admin_menu_item_path(@menu_item, at: "recipe-matrix"),
-          class: "text-sm font-semibold text-amber-700 hover:text-amber-800 transition-colors" %>
-  </div>
-  <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= @row&.label || t("menu.recipe_matrix.heading") %></h1>
+  <h1 class="text-2xl font-bold tracking-tight text-gray-900">
+        <%= render "admin/title_crumbs", crumbs: [[t("admin.menu_nav.menu_items"), admin_menu_items_path], [@menu_item.name, admin_menu_item_path(@menu_item)], [t("menu.recipe_matrix.heading"), edit_admin_menu_item_path(@menu_item, at: "recipe-matrix")]] %><%= @row&.label || t("menu.recipe_matrix.heading") %></h1>
   <p class="text-gray-600 text-sm mt-1 mb-6"><%= t("menu.recipe_matrix.edit_hint", item: @menu_item.name) %></p>
 
   <%= turbo_frame_tag "combination_lines" do %>

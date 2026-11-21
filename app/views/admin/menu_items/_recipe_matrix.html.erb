@@ -1,4 +1,5 @@
-<%# locals: menu_item, matrix %>
+<%# locals: menu_item, matrix, readonly: false %>
+<% readonly = local_assigns.fetch(:readonly, false) %>
 <%# A recipe per combination of the options that change the recipe together
     (size and spice, usually). Rows not customised use the recipe above plus
     each option's own ingredients. %>
@@ -14,6 +15,7 @@
   <% if matrix.attachments.empty? %>
     <p class="px-5 py-8 text-center text-sm text-gray-500"><%= t("menu.recipe_matrix.no_groups") %></p>
   <% else %>
+    <% unless readonly %>
     <%= form_with url: recipe_matrix_admin_menu_item_path(menu_item), method: :patch,
           class: "px-5 py-4 border-b border-gray-100 flex flex-wrap items-end gap-x-6 gap-y-3",
           data: { turbo_frame: "recipe_matrix" }
@@ -36,12 +38,13 @@
       <%= submit_tag t("actions.save_changes"),
             class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors" %>
     <% end %>
+    <% end %>
 
     <% if flash[:alert].present? %>
       <p class="px-5 py-3 text-sm text-red-800 bg-red-50 border-b border-red-100" role="alert"><%= flash[:alert] %></p>
     <% end %>
     <% if matrix.groups.empty? %>
-      <p class="px-5 py-6 text-sm text-gray-500"><%= t("menu.recipe_matrix.none_ticked") %></p>
+      <p class="px-5 py-6 text-sm text-gray-500"><%= t(readonly ? "menu.recipe_matrix.none_ticked_readonly" : "menu.recipe_matrix.none_ticked") %></p>
     <% else %>
       <% if matrix.many_rows? %>
         <div class="mx-5 mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
@@ -76,19 +79,50 @@
                   </td>
                 <% end %>
                 <td class="px-4 py-3">
-                  <% if row.quantities.any? %>
-                    <ul class="flex flex-wrap gap-x-3 gap-y-1">
-                      <% row.quantities.each do |ingredient, quantity| %>
-                        <li class="tabular-nums whitespace-nowrap">
-                          <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient),
-                                class: "text-gray-900 hover:text-amber-700" %>
-                          <span class="text-gray-500">
-                            <%= number_with_precision(quantity, precision: 4, strip_insignificant_zeros: true) %>
-                            <%= ingredient_unit_label(ingredient.unit) %>
-                          </span>
-                        </li>
-                      <% end %>
-                    </ul>
+                  <% if row.quantities.any? || row.removed.any? %>
+                    <%# One line per ingredient, so quantities line up and read at a glance.
+                        In a custom row each difference from the automatic recipe has its
+                        own colour: added green, changed blue (the automatic
+                        quantity struck through beside the new one), removed red and
+                        struck through. %>
+                    <% change_styles = {
+                         added: { text: "text-emerald-800 font-semibold", chip: "bg-emerald-100 text-emerald-800", sign: "+" },
+                         changed: { text: "text-blue-800 font-semibold", chip: "bg-blue-100 text-blue-800", sign: "~" }
+                       } %>
+                    <table class="w-full max-w-md text-sm">
+                      <tbody>
+                        <% row.quantities.each do |ingredient, quantity| %>
+                          <% change = row.change_for(ingredient) %>
+                          <% style = change && change_styles[change[:kind]] %>
+                          <tr class="<%= style[:text] if style %>">
+                            <td class="py-0.5 pe-3">
+                              <%= link_to ingredient.name, admin_inventory_ingredient_path(ingredient),
+                                    class: "#{style ? "" : "text-gray-900"} hover:underline" %>
+                              <% if style %>
+                                <span class="ms-1 whitespace-nowrap text-[11px] font-semibold tracking-wide px-1.5 py-0.5 rounded <%= style[:chip] %>">
+                                  <span aria-hidden="true"><%= style[:sign] %></span> <%= t("menu.recipe_matrix.change_#{change[:kind]}") %>
+                                </span>
+                              <% end %>
+                            </td>
+                            <td class="py-0.5 pe-2 text-end tabular-nums whitespace-nowrap">
+                              <% if change && change[:from] %>
+                                <span class="me-1 font-normal text-gray-400 line-through"><%= number_with_precision(change[:from], precision: 4, strip_insignificant_zeros: true) %></span>
+                              <% end %>
+                              <%= number_with_precision(quantity, precision: 4, strip_insignificant_zeros: true) %>
+                            </td>
+                            <td class="py-0.5 whitespace-nowrap <%= style ? "" : "text-gray-500" %>"><%= ingredient_unit_label(ingredient.unit) %></td>
+                          </tr>
+                        <% end %>
+                        <% row.removed.each do |ingredient| %>
+                          <tr class="text-red-700">
+                            <td class="py-0.5 pe-3" colspan="3">
+                              <span class="line-through"><%= ingredient.name %></span>
+                              <span class="ms-1 whitespace-nowrap text-[11px] font-semibold tracking-wide px-1.5 py-0.5 rounded bg-red-100 text-red-700"><span aria-hidden="true">−</span> <%= t("menu.recipe_matrix.change_removed") %></span>
+                            </td>
+                          </tr>
+                        <% end %>
+                      </tbody>
+                    </table>
                   <% else %>
                     <span class="text-gray-400">—</span>
                   <% end %>
@@ -97,8 +131,12 @@
                   <%= format_amount(row.cost_cents) %>
                 </td>
                 <td class="px-4 py-3 text-end whitespace-nowrap">
-                  <% if row.custom? %>
-                    <span class="inline-flex text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 me-2">
+                  <% if readonly %>
+                    <span class="inline-flex text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full <%= row.custom? ? "bg-yellow-100 text-yellow-800 border border-yellow-300" : "bg-gray-100 text-gray-600 border border-gray-200" %>">
+                      <%= t(row.custom? ? "menu.recipe_matrix.custom" : "menu.recipe_matrix.auto") %>
+                    </span>
+                  <% elsif row.custom? %>
+                    <span class="inline-flex text-[11px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-300 me-2">
                       <%= t("menu.recipe_matrix.custom") %>
                     </span>
                     <%= link_to t("actions.edit"), edit_admin_menu_item_combination_recipe_path(menu_item, row.combination),

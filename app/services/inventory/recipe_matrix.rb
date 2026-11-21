@@ -17,8 +17,13 @@ module Inventory
       end
     end
 
-    Row = Data.define(:choices, :key, :combination, :quantities, :cost_cents) do
+    # changes: for a custom row, how it differs from the automatic recipe —
+    # { ingredient => { kind: :changed / :added, from: automatic quantity } } —
+    # and removed: the ingredients it dropped.
+    Row = Data.define(:choices, :key, :combination, :quantities, :cost_cents, :changes, :removed) do
       def custom? = combination.present?
+
+      def change_for(ingredient) = changes[ingredient]
 
       def label = choices.map(&:label).join(" · ")
     end
@@ -83,13 +88,28 @@ module Inventory
       consumption = LineConsumption.new(@menu_item, modifiers)
       lines = consumption.lines
       quantities = lines.each_with_object(Hash.new(0)) { |line, totals| totals[line.ingredient] += line.base_quantity }
+      changes, removed = consumption.combination ? differences(quantities, modifiers) : [{}, []]
       Row.new(
         choices: choices,
         key: CombinationRecipe.key_for(modifiers.map(&:id)),
         combination: consumption.combination,
         quantities: quantities.reject { |_ingredient, quantity| quantity.zero? }.sort_by { |ingredient, _| ingredient.name },
-        cost_cents: lines.sum(&:cost_cents)
+        cost_cents: lines.sum(&:cost_cents),
+        changes: changes,
+        removed: removed
       )
+    end
+
+    # What the owner changed in a custom row compared with the automatic recipe.
+    def differences(quantities, modifiers)
+      auto = starting_quantities(modifiers)
+      changes = quantities.each_with_object({}) do |(ingredient, quantity), out|
+        if !auto.key?(ingredient) then out[ingredient] = { kind: :added, from: nil }
+        elsif auto[ingredient].round(4) != quantity.round(4) then out[ingredient] = { kind: :changed, from: auto[ingredient] }
+        end
+      end
+      removed = auto.keys.reject { |ingredient| quantities[ingredient].to_d.positive? }.sort_by(&:name)
+      [changes, removed]
     end
   end
 end
