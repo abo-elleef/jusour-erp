@@ -29,6 +29,9 @@ module Permission
     { key: "accounting:transactions", group: "accounting" },
     { key: "accounting:reports",      group: "accounting" },
     { key: "accounting:day_close",    group: "accounting" },
+    # Move a drawer shortage (the voucher charging it) from one staff member to
+    # another, with a reason. See Accounting::ReassignDrawerShortage.
+    { key: "accounting:reassign_shortage", group: "accounting" },
     { key: "accounting:setup",        group: "accounting" },
     { key: "accounting:audit",        group: "accounting" },
 
@@ -115,7 +118,7 @@ module Permission
       name: "Accountant",
       permissions: %w[
         dashboard:view orders:view inventory:view inventory:finance inventory:manufacturing
-        accounting:ledgers accounting:transactions accounting:day_close accounting:reports accounting:setup
+        accounting:ledgers accounting:transactions accounting:day_close accounting:reassign_shortage accounting:reports accounting:setup
         attendance:view attendance:penalties attendance:waive_penalties staff:view staff:manage payroll:view payroll:manage
         settings:general locations:manage printers:manage pos:access sales:confirm_payments
         sales:see_all

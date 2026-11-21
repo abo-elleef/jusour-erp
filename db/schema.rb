@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_21_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_21_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -163,11 +163,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_21_100000) do
     t.uuid "shortage_waived_by_id"
     t.datetime "closed_at"
     t.uuid "closed_by_id"
+    t.uuid "shortage_charged_to_id"
     t.index ["closed_by_id"], name: "index_cash_drawer_sessions_on_closed_by_id"
     t.index ["company_id"], name: "index_cash_drawer_sessions_on_company_id"
     t.index ["deposit_treasury_id"], name: "index_cash_drawer_sessions_on_deposit_treasury_id"
     t.index ["float_source_treasury_id"], name: "index_cash_drawer_sessions_on_float_source_treasury_id"
     t.index ["location_id"], name: "index_cash_drawer_sessions_on_location_id"
+    t.index ["shortage_charged_to_id"], name: "index_cash_drawer_sessions_on_shortage_charged_to_id"
     t.index ["shortage_voucher_id"], name: "index_cash_drawer_sessions_on_shortage_voucher_id"
     t.index ["shortage_waived_by_id"], name: "index_cash_drawer_sessions_on_shortage_waived_by_id"
     t.index ["treasury_id"], name: "index_cash_drawer_sessions_on_treasury_id"
@@ -495,6 +497,28 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_21_100000) do
     t.index ["active"], name: "index_discount_rules_on_active"
     t.index ["company_id", "code"], name: "index_discount_rules_on_company_id_and_code", unique: true, where: "(code IS NOT NULL)"
     t.index ["company_id"], name: "index_discount_rules_on_company_id"
+  end
+
+  create_table "drawer_shortage_reassignments", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "cash_drawer_session_id", null: false
+    t.uuid "from_user_id", null: false
+    t.uuid "to_user_id", null: false
+    t.uuid "reassigned_by_id", null: false
+    t.uuid "old_voucher_id"
+    t.uuid "new_voucher_id"
+    t.integer "amount_cents", null: false
+    t.text "reason", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["cash_drawer_session_id"], name: "index_drawer_shortage_reassignments_on_cash_drawer_session_id"
+    t.index ["company_id", "created_at"], name: "idx_on_company_id_created_at_d0fc73ecc2"
+    t.index ["company_id"], name: "index_drawer_shortage_reassignments_on_company_id"
+    t.index ["from_user_id"], name: "index_drawer_shortage_reassignments_on_from_user_id"
+    t.index ["new_voucher_id"], name: "index_drawer_shortage_reassignments_on_new_voucher_id"
+    t.index ["old_voucher_id"], name: "index_drawer_shortage_reassignments_on_old_voucher_id"
+    t.index ["reassigned_by_id"], name: "index_drawer_shortage_reassignments_on_reassigned_by_id"
+    t.index ["to_user_id"], name: "index_drawer_shortage_reassignments_on_to_user_id"
   end
 
   create_table "expense_categories", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2301,6 +2325,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_21_100000) do
   add_foreign_key "cash_drawer_sessions", "treasuries", column: "float_source_treasury_id"
   add_foreign_key "cash_drawer_sessions", "users"
   add_foreign_key "cash_drawer_sessions", "users", column: "closed_by_id"
+  add_foreign_key "cash_drawer_sessions", "users", column: "shortage_charged_to_id"
   add_foreign_key "cash_drawer_sessions", "users", column: "shortage_waived_by_id"
   add_foreign_key "cash_drawer_sessions", "vouchers", column: "shortage_voucher_id"
   add_foreign_key "categories", "companies"
@@ -2329,6 +2354,13 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_21_100000) do
   add_foreign_key "digital_wallet_day_closes", "locations"
   add_foreign_key "digital_wallet_day_closes", "users", column: "recorded_by_id"
   add_foreign_key "discount_rules", "companies"
+  add_foreign_key "drawer_shortage_reassignments", "cash_drawer_sessions"
+  add_foreign_key "drawer_shortage_reassignments", "companies"
+  add_foreign_key "drawer_shortage_reassignments", "users", column: "from_user_id"
+  add_foreign_key "drawer_shortage_reassignments", "users", column: "reassigned_by_id"
+  add_foreign_key "drawer_shortage_reassignments", "users", column: "to_user_id"
+  add_foreign_key "drawer_shortage_reassignments", "vouchers", column: "new_voucher_id"
+  add_foreign_key "drawer_shortage_reassignments", "vouchers", column: "old_voucher_id"
   add_foreign_key "expense_categories", "companies"
   add_foreign_key "expenses", "companies"
   add_foreign_key "expenses", "expense_categories"

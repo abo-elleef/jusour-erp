@@ -6,7 +6,7 @@ module Admin
   module Accounting
     class CashDrawerController < BaseController
       before_action :set_session, only: %i[show count reconcile payments attach_payments print_slip reopen
-                                                 waive_shortage unwaive_shortage]
+                                                 waive_shortage unwaive_shortage reassign_shortage]
       # Same rule as closing from the POS: no open, draft or unpaid order may be
       # left on the drawer. Admin used to skip it.
       before_action :block_open_orders!, only: :reconcile
@@ -51,6 +51,9 @@ module Admin
                                       .group_by(&:payment_method)
                                       .transform_values { |ps| ps.sum { |p| p.amount_cents - p.refunded_amount_cents } }
         @refunded_cents = @payments.sum(&:refunded_amount_cents)
+        @shortage_reassignments = @session.shortage_reassignments.includes(:from_user, :to_user, :reassigned_by)
+                                          .recent_first.to_a
+        @reassign_candidates = reassign_candidates if policy(@session).reassign_shortage?
       end
 
       def count
@@ -95,6 +98,25 @@ module Admin
         authorize @session, :unwaive_shortage?
         change_shortage_waiver!(waived: false)
         redirect_to admin_accounting_cash_drawer_path(@session), notice: t("flash.accounting.drawer_shortage_unwaived")
+      rescue Pundit::NotAuthorizedError
+        redirect_to admin_accounting_cash_drawer_path(@session), alert: t("flash.accounting.drawer_shortage_waive_failed")
+      end
+
+      # The accountant moves the shortage to whoever really handled the cash:
+      # the voucher is voided and re-issued to them, with a reason on record.
+      def reassign_shortage
+        authorize @session, :reassign_shortage?
+        to_user = User.find_by(id: params[:to_user_id])
+        result = ::Accounting::ReassignDrawerShortage.call(
+          session: @session, to_user: to_user, by: current_user, reason: params[:reason]
+        )
+        if result.success?
+          redirect_to admin_accounting_cash_drawer_path(@session),
+                      notice: t("flash.accounting.drawer_shortage_reassigned", name: to_user.name)
+        else
+          redirect_to admin_accounting_cash_drawer_path(@session),
+                      alert: t("flash.accounting.drawer_shortage_reassign_failed.#{result.error}")
+        end
       rescue Pundit::NotAuthorizedError
         redirect_to admin_accounting_cash_drawer_path(@session), alert: t("flash.accounting.drawer_shortage_waive_failed")
       end
@@ -221,6 +243,17 @@ module Admin
             changes_snapshot: { variance_cents: @session.variance_cents }
           )
         end
+      end
+
+      # Staff who could have worked this branch: everyone active with access to it,
+      # minus whoever carries the shortage now.
+      def reassign_candidates
+        User.active
+            .left_joins(:user_locations)
+            .where(all_locations: true).or(User.active.left_joins(:user_locations)
+                                               .where(user_locations: { location_id: @session.location_id }))
+            .where.not(id: @session.shortage_bearer.id)
+            .distinct.order(:name)
       end
 
       def block_open_orders!

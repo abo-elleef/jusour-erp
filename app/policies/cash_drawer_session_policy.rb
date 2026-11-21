@@ -36,6 +36,15 @@ class CashDrawerSessionPolicy < ApplicationPolicy
       record.status == "reconciled" && record.short? && record.shortage_waived?
   end
 
+  # Moving a shortage to another staff member is the accountant's call when
+  # reviewing the day. Only a live voucher can move (not a waived shortage),
+  # and never on one's own drawer.
+  def reassign_shortage?
+    user.can?("accounting:reassign_shortage") && !own_session? &&
+      record.status == "reconciled" && record.short? && !record.shortage_waived? &&
+      record.shortage_voucher_id.present?
+  end
+
   def open_drawer?
     user.can_access_pos?
   end

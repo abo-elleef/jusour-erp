@@ -12,6 +12,8 @@ module Accounting
   #   short → a payment voucher from the safe to the cashier's staff account, as
   #           if they took the missing cash. It is money given to them, so the
   #           payroll month nets it like any other voucher — nobody adds a penalty.
+  #           If the accountant moved the shortage to someone else, the voucher
+  #           goes to that person instead (CashDrawerSession#shortage_bearer).
   #   short, waived by a manager → an Expense in the branch's "cash short"
   #           category instead, paid from the same safe.
   #
@@ -78,7 +80,7 @@ module Accounting
     end
 
     def record_shortage_voucher!
-      cashier = @session.user
+      cashier = @session.shortage_bearer
       voucher = RecordVoucherService.new(
         direction: Voucher::PAYMENT,
         treasury: @session.variance_treasury,
@@ -86,7 +88,7 @@ module Accounting
         amount_cents: amount_cents,
         voucher_date: @session.session_date,
         counterparty: cashier.name,
-        notes: description(:short),
+        notes: description(@session.shortage_charged_to_id.present? ? :short_moved : :short),
         purpose: Voucher::CASH_SHORTAGE,
         party_type: "User",
         party_id: cashier.id,
@@ -116,6 +118,7 @@ module Accounting
         "accounting.cash_drawer.variance_docs.description.#{kind}",
         amount: format_amount(amount_cents),
         cashier: @session.user.name,
+        bearer: @session.shortage_bearer.name,
         branch: @session.location&.name,
         drawer: @session.treasury.name,
         date: I18n.l(@session.session_date, format: :long),

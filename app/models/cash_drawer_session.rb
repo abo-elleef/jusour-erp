@@ -18,6 +18,11 @@ class CashDrawerSession < ApplicationRecord
   # A short drawer's payment voucher to the cashier (see Accounting::DrawerVarianceDocuments).
   belongs_to :shortage_voucher, class_name: "Voucher", optional: true
   belongs_to :shortage_waived_by, class_name: "User", optional: true
+  # Who carries the shortage when it is not the drawer's own cashier: set when the
+  # accountant moves it to someone else (Accounting::ReassignDrawerShortage), so a
+  # re-sync keeps the voucher on that person. Blank means the cashier.
+  belongs_to :shortage_charged_to, class_name: "User", optional: true
+  has_many :shortage_reassignments, class_name: "DrawerShortageReassignment", dependent: :restrict_with_error
   # Who closed (counted) the drawer and when: the cashier at the POS, or a manager
   # from admin. A count correction keeps the original close; a reopen clears it.
   belongs_to :closed_by, class_name: "User", optional: true
@@ -139,6 +144,11 @@ class CashDrawerSession < ApplicationRecord
   def over? = variance_documented? && variance_cents.to_i.positive?
   def short? = variance_documented? && variance_cents.to_i.negative?
   def shortage_waived? = shortage_waived_at.present?
+
+  # The staff member whose account a shortage voucher goes to.
+  def shortage_bearer
+    shortage_charged_to || user
+  end
 
   private
 

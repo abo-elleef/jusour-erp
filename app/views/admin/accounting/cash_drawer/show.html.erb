@@ -113,10 +113,13 @@
                 · <%= link_to income.treasury.name, admin_accounting_treasury_path(income.treasury), class: "text-amber-700 hover:text-amber-800" %>
               </p>
             <% elsif voucher %>
-              <p class="font-semibold text-red-700"><%= t("accounting.cash_drawer.variance_docs.short_voucher") %> · <%= money.(voucher.amount_cents) %></p>
+              <p class="font-semibold text-red-700"><%= t(session.shortage_charged_to_id.present? ? "accounting.cash_drawer.variance_docs.short_voucher_moved" : "accounting.cash_drawer.variance_docs.short_voucher") %> · <%= money.(voucher.amount_cents) %></p>
               <p class="text-gray-600">
                 <%= link_to voucher.number, admin_accounting_voucher_path(voucher), class: "font-mono text-amber-700 hover:text-amber-800" %>
-                · <%= link_to session.user.name, admin_user_path(session.user), class: "text-amber-700 hover:text-amber-800" %>
+                · <%= link_to session.shortage_bearer.name, admin_user_path(session.shortage_bearer), class: "text-amber-700 hover:text-amber-800" %>
+                <% if session.shortage_charged_to_id.present? %>
+                  <span class="text-gray-500">· <%= t("accounting.cash_drawer.variance_docs.moved_from_cashier", name: session.user.name) %></span>
+                <% end %>
               </p>
             <% elsif expense %>
               <p class="font-semibold text-red-700"><%= t("accounting.cash_drawer.variance_docs.short_waived") %> · <%= money.(expense.amount_cents) %></p>
@@ -143,6 +146,49 @@
             <% end %>
           </div>
         </div>
+
+        <%# The accountant moves the shortage to whoever really handled the cash. %>
+        <% if policy(session).reassign_shortage? %>
+          <details class="border-t border-gray-100 px-5 py-4" <%= "open" if flash[:alert].present? %>>
+            <summary class="cursor-pointer text-sm font-semibold text-amber-700 hover:text-amber-800">
+              <%= t("accounting.cash_drawer.variance_docs.reassign") %>
+            </summary>
+            <p class="text-xs text-gray-500 mt-2"><%= t("accounting.cash_drawer.variance_docs.reassign_hint", name: session.shortage_bearer.name) %></p>
+            <%= form_with url: reassign_shortage_admin_accounting_cash_drawer_path(session), method: :post,
+                  data: { turbo_confirm: t("accounting.cash_drawer.variance_docs.reassign_confirm") },
+                  class: "mt-3 grid gap-3 sm:grid-cols-[minmax(12rem,16rem)_1fr_auto] items-end" do %>
+              <div>
+                <label for="to_user_id" class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.cash_drawer.variance_docs.reassign_to") %></label>
+                <%= select_tag :to_user_id, options_from_collection_for_select(@reassign_candidates, :id, :name),
+                      include_blank: true, required: true, class: "#{pos_input_class} w-full appearance-none" %>
+              </div>
+              <div>
+                <label for="reason" class="block text-xs font-semibold text-gray-600 mb-1.5"><%= t("accounting.cash_drawer.variance_docs.reassign_reason") %></label>
+                <%= text_field_tag :reason, nil, required: true, class: "#{pos_input_class} w-full" %>
+              </div>
+              <%= submit_tag t("accounting.cash_drawer.variance_docs.reassign_submit"),
+                    class: "bg-gray-900 text-white px-4 py-2 rounded-xl text-sm font-semibold" %>
+            <% end %>
+          </details>
+        <% end %>
+
+        <% if @shortage_reassignments.any? %>
+          <div class="border-t border-gray-100 px-5 py-4">
+            <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2"><%= t("accounting.cash_drawer.variance_docs.moves_title") %></h3>
+            <ul class="space-y-2 text-sm">
+              <% @shortage_reassignments.each do |move| %>
+                <li class="text-gray-700">
+                  <%= t("accounting.cash_drawer.variance_docs.move_line",
+                        amount: format_amount(move.amount_cents), from: move.from_user.name, to: move.to_user.name) %>
+                  <span class="text-gray-500">— <%= move.reason %></span>
+                  <span class="block text-xs text-gray-400">
+                    <%= t("accounting.cash_drawer.variance_docs.moved_by", name: move.reassigned_by.name, time: l(move.created_at, format: :short)) %>
+                  </span>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
       <% end %>
     </section>
   <% end %>

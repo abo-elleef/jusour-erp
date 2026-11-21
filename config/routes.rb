@@ -443,6 +443,7 @@ Rails.application.routes.draw do
       get "monthly_payroll/export", to: "monthly_payroll#export", as: :monthly_payroll_export
       resources :staff_payments_reports, only: [:index]
       resources :staff_debts_reports, only: [:index]
+      resources :shortage_moves_reports, only: [:index]
 
       resources :tax_reports, only: [:index]
 
@@ -456,6 +457,7 @@ Rails.application.routes.draw do
           post :reopen
           post :waive_shortage
           post :unwaive_shortage
+          post :reassign_shortage
         end
       end
 
