@@ -95,7 +95,7 @@
           item_path_proc: ->(tab) { public_send(tab[:path]) } %>
   <% end %>
   <% if reports_any_access? %>
-    <%= link_to admin_reports_path, class: admin_nav_link_class(admin_nav_active?("admin/reports")) do %>
+    <%= link_to admin_reports_path, class: admin_nav_link_class(reports_section_active?) do %>
       <%= admin_nav_icon(:reports) %><span><%= t("nav.reports") %></span>
     <% end %>
   <% end %>

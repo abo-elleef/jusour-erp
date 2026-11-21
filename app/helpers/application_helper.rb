@@ -1545,8 +1545,9 @@ module ApplicationHelper
   # Sales lists only the day-to-day selling work, in funnel order. The public
   # website has its own module (website_sidebar_items), set-once setup lives in
   # Settings (sales_settings_items) and Tickets is its own link next to
-  # Customers (tickets_nav_visible?). Sales reports and Leads reports are
-  # reachable only from the Reports hub (see sales_report_items below).
+  # Customers (tickets_nav_visible?). Sales reports, Leads reports and the
+  # customer statements (balances) list are reachable only from the Reports
+  # hub (see sales_report_items below).
   def sales_sidebar_items
     items = []
     credit_sales = Current.company&.feature_enabled?(:ar_credit_sales)
@@ -1566,7 +1567,6 @@ module ApplicationHelper
 
     if credit_sales && manages_customers
       items << { controller: "credit_notes", label: "sales.nav.credit_notes", path: :admin_sales_credit_notes_path }
-      items << { controller: "customer_statements", label: "sales.nav.statements", path: :admin_sales_customer_statements_path }
       items << { controller: "shipping_companies", label: "sales.nav.shipping_companies", path: :admin_sales_shipping_companies_path }
     end
 
@@ -1589,6 +1589,7 @@ module ApplicationHelper
     admin/sales/storefront_sections admin/sales/storefront_pages
     admin/sales/price_tiers admin/sales/payment_methods admin/sales/stage_accesses
     admin/sales/tickets admin/sales/ticket_comments
+    admin/sales/customer_statements
   ].freeze
 
   def sales_section_active?
@@ -1622,6 +1623,11 @@ module ApplicationHelper
   end
 
   # ── Tickets (distribution customer service) ───────────────────────
+  # The Reports link stays lit on the hub's pages that live under Sales.
+  def reports_section_active?
+    admin_nav_active?("admin/reports", "admin/sales/customer_statements")
+  end
+
   def tickets_nav_visible?
     ::Sales::OwnershipScope.applies_to?(Current.company) && ::Ticket.worker?(current_user)
   end
@@ -1658,6 +1664,8 @@ module ApplicationHelper
 
     if Current.company&.feature_enabled?(:ar_credit_sales) && current_user.can?("customers:manage")
       items << { label: t("sales.nav.reports"), path: admin_sales_reports_path, description: t("sales.reports.description") }
+      items << { label: t("sales.statements.title"), path: admin_sales_customer_statements_path,
+                 description: t("sales.statements.description") }
     end
 
     if Current.company&.feature_enabled?(:leads) && current_user.can?("leads:reports")
