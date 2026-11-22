@@ -187,4 +187,45 @@ RSpec.describe "Admin::Accounting delivery area report", type: :request do
       expect(chart_data).to be_nil
     end
   end
+  describe "links to the orders behind each number" do
+    def link_hrefs(selector)
+      Nokogiri::HTML(response.body).css("#{selector} a[href^='/admin/orders']").map { |a| a["href"] }
+    end
+
+    it "opens an orders list that adds up to the clicked row and total" do
+      delivery(area: zamalek, fee: 3_000, food: 10_000)
+      delivery(area: zamalek, fee: 3_500, food: 20_000, discount: 2_000)
+      delivery(area: maadi, fee: 4_000, food: 15_000)
+      delivery(area: nil, fee: 2_500, food: 5_000)
+      delivery(area: nil, fee: 0, food: 9_000, type: "pickup")
+      delivery(area: zamalek, fee: 3_000, food: 9_000, status: "submitted") # open: left out by default
+
+      get admin_accounting_delivery_area_reports_path(range)
+      zamalek_href = link_hrefs("[data-testid=delivery-area-row]").first
+      no_area_href = link_hrefs("[data-testid=delivery-area-row]").last
+      total_href = link_hrefs("[data-testid=delivery-area-totals]").first
+
+      get zamalek_href
+      expect(response).to have_http_status(:ok)
+      summary = Nokogiri::HTML(response.body).at("[data-testid=orders-delivery-summary]").text.squish
+      expect(summary).to include("2").and include("65").and include("280")
+      expect(response.body).to include(I18n.t("admin.orders.report_filters.area", name: "Zamalek", locale: :ar))
+
+      get no_area_href
+      expect(Nokogiri::HTML(response.body).at("[data-testid=orders-delivery-summary]").text.squish).to include("25")
+
+      get total_href
+      summary = Nokogiri::HTML(response.body).at("[data-testid=orders-delivery-summary]").text.squish
+      expect(summary).to include("4").and include("130")
+    end
+
+    it "carries the include-open switch into the orders list" do
+      delivery(area: zamalek, fee: 3_000, food: 10_000, status: "submitted")
+
+      get admin_accounting_delivery_area_reports_path(range.merge(include_open: "1"))
+      get link_hrefs("[data-testid=delivery-area-row]").first
+
+      expect(Nokogiri::HTML(response.body).at("[data-testid=orders-delivery-summary]").text.squish).to include("30")
+    end
+  end
 end

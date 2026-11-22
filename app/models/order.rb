@@ -230,7 +230,8 @@ class Order < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[status order_number order_type source created_at user_id customer_id total_cents subtotal_cents]
+    %w[status order_number order_type source created_at user_id customer_id total_cents subtotal_cents
+       location_id delivery_area_id business_date]
   end
 
   def self.ransackable_associations(_auth_object = nil)
