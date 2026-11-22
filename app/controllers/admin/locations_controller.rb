@@ -74,7 +74,8 @@ module Admin
         :default_production_location, :table_count, :table_service, :free_table_on_payment, :pos_top_sellers_enabled, :receipt_logo, :remove_receipt_logo,
         :edit_orders_pin, :void_orders_pin,
         :online_ordering_enabled, :online_open_time, :online_close_time,
-        :online_accept_timeout_minutes, :online_max_order_pounds
+        :online_accept_timeout_minutes, :online_max_order_pounds,
+        online_payment_methods_attributes: %i[id payment_method enabled requires_proof pay_to]
       )
     end
   end

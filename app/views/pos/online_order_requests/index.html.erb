@@ -40,6 +40,11 @@
                     <% check = @checks[req.id] %>
                     <p class="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
                       <%= render "pos/online_order_requests/trust_badge", check: check %>
+                      <% if req.payment_method != "cash" || req.prepaid? %>
+                        <span class="rounded-full px-2 py-0.5 font-semibold <%= req.prepaid? ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-700" %>">
+                          <%= t("payment.methods.#{req.payment_method}") %><% if req.prepaid? %> · <%= t("pos.online_orders.payment.prepaid") %><% end %>
+                        </span>
+                      <% end %>
                       <% check.reasons.first(2).each do |reason| %>
                         <span class="text-orange-800"><%= t("pos.online_orders.check.short_reasons.#{reason}") %></span>
                       <% end %>

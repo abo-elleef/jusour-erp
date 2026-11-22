@@ -64,6 +64,8 @@
         </dl>
       </section>
 
+      <%= render "pos/online_order_requests/payment", request: @request %>
+
       <% if @request.pending? && !@request.overdue? %>
         <div class="grid gap-3 sm:grid-cols-2">
           <%= form_with url: accept_pos_online_order_request_path(@request), method: :patch, data: { controller: "submit-once" } do %>
@@ -71,6 +73,11 @@
               <p class="mb-2 rounded-xl bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900">
                 <%= t("pos.online_orders.price_changed", total: format_money(params[:new_total].to_i)) %>
               </p>
+              <% if @request.prepaid? %>
+                <p class="mb-2 rounded-xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800">
+                  <%= t("pos.online_orders.payment.prepaid_price_changed", sent: format_money(@request.quote.fetch("total_cents", @request.total_cents))) %>
+                </p>
+              <% end %>
               <%= hidden_field_tag :confirm_price_change, "1" %>
             <% end %>
             <button type="submit" class="h-14 w-full rounded-2xl bg-emerald-600 text-base font-bold text-white hover:bg-emerald-700">

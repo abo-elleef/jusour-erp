@@ -11,6 +11,12 @@ module OnlineOrders
   #
   # If prices moved since the customer sent it (a promo ended, a price changed),
   # nothing is created until the cashier confirms the new total.
+  #
+  # A prepaid request (the customer chose a "pay before ordering" method and sent
+  # a screenshot) is paid in full on accept, by that method, into the accepting
+  # cashier's drawer: checking the screenshot is part of accepting. The payment is
+  # the order's total, so if prices moved the cashier settles the difference with
+  # the customer (the POS warns them before they confirm).
   class AcceptService
     Result = Struct.new(:order, :error, :new_total_cents, :details, keyword_init: true) do
       def ok? = error.nil?
@@ -32,6 +38,7 @@ module OnlineOrders
       return result unless result.ok?
 
       Orders::PlaceService.call(result.order, user: @user)
+      record_prepayment(result.order) if @request.prepaid?
       @request.update!(total_cents: result.order.reload.total_cents)
       Broadcast.inbox(@request.location)
       result
@@ -67,6 +74,15 @@ module OnlineOrders
       AuditLogEntry.record!(action: "online_order.accept", record: order, user: @user,
                             changes_snapshot: { "online_order_request_id" => @request.id })
       Result.new(order: order)
+    end
+
+    def record_prepayment(order)
+      order.reload
+      return unless order.amount_due_cents.positive?
+
+      Payments::CashPaymentService.call(order: order, amount_cents: order.amount_due_cents, tip_cents: 0,
+                                        user: @user, payment_method: @request.payment_method)
+      Orders::FinalizePaidService.call(order)
     end
 
     def quote_total_sent

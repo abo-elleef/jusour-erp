@@ -72,8 +72,23 @@
           <div class="flex justify-between"><dt class="text-stone-600"><%= t("public.online_order.delivery_fee") %> (<%= @request.delivery_area&.display_name %>)</dt><dd class="tabular-nums"><%= format_money(@request.delivery_fee_cents) %></dd></div>
         <% end %>
         <div class="flex justify-between text-base font-semibold"><dt><%= t("public.online_order.total") %></dt><dd class="tabular-nums"><%= format_money(@request.total_cents) %></dd></div>
+        <% unless @request.payment_method == "cash" %>
+          <div class="flex justify-between"><dt class="text-stone-600"><%= t("public.online_order.payment.title") %></dt><dd><%= t("payment.methods.#{@request.payment_method}") %> · <%= t(@request.prepaid? ? "public.online_order.payment.paid_now" : "public.online_order.payment.on_receipt") %></dd></div>
+        <% end %>
       </dl>
-      <p class="mt-2 text-xs text-stone-500"><%= t("public.online_order.cash_note") %></p>
+      <% if @request.payment_method == "cash" %>
+        <p class="mt-2 text-xs text-stone-500"><%= t("public.online_order.cash_note") %></p>
+      <% end %>
+      <%# The screenshot the customer sent, so they can see what the restaurant is checking. %>
+      <% if @request.payment_proof_image.attached? %>
+        <div class="mt-3 border-t border-stone-200 pt-3" data-testid="online-order-payment-proof">
+          <p class="mb-2 text-sm text-stone-600"><%= t("public.online_order.payment.proof_label") %></p>
+          <%= link_to rails_blob_path(@request.payment_proof_image), target: "_blank", rel: "noopener", class: "block" do %>
+            <%= image_tag rails_blob_path(@request.payment_proof_image), alt: t("public.online_order.payment.proof_label"),
+                  class: "max-h-64 w-full rounded-lg border border-stone-200 bg-stone-50 object-contain" %>
+          <% end %>
+        </div>
+      <% end %>
     </section>
 
     <%= link_to t("public.online_order.order_again"), public_menu_path(company_slug: @company.slug, location_slug: @location.slug),

@@ -26,8 +26,7 @@ module Public
     def create
       result = OnlineOrders::SubmitService.call(
         location: @location,
-        params: params.permit(:customer_name, :phone, :fulfillment, :delivery_area_id, :address, :note,
-                              :website, :started_at, items: [:menu_item_id, :combo_id, :quantity, :notes, { modifier_ids: [] }]),
+        params: order_params,
         ip: request.remote_ip,
         user_agent: request.user_agent
       )
@@ -47,6 +46,26 @@ module Public
 
     def set_request
       @request = OnlineOrderRequest.includes(:location, :order, :delivery_area).find_by!(token: params[:token])
+    end
+
+    # The checkout posts multipart form data, because a prepaid order carries the
+    # payment screenshot: the order itself arrives as one JSON field ("order") next
+    # to the file. A plain JSON body (an older open tab) is still read.
+    ORDER_FIELDS = [:customer_name, :phone, :fulfillment, :delivery_area_id, :address, :note, :payment_method,
+                    :website, :started_at, { items: [:menu_item_id, :combo_id, :quantity, :notes, { modifier_ids: [] }] }].freeze
+
+    def order_params
+      source = params[:order].is_a?(String) ? ActionController::Parameters.new(parse_order_json) : params
+      permitted = source.permit(*ORDER_FIELDS)
+      permitted[:payment_proof_image] = params[:payment_proof_image] if params[:payment_proof_image].respond_to?(:content_type)
+      permitted
+    end
+
+    def parse_order_json
+      parsed = JSON.parse(params[:order])
+      parsed.is_a?(Hash) ? parsed : {}
+    rescue JSON::ParserError
+      {}
     end
 
     def cart_items

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_22_100000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_22_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1139,6 +1139,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_22_100000) do
     t.jsonb "checks", default: {}, null: false
     t.text "reject_note"
     t.boolean "blocked_phone", default: false, null: false
+    t.string "payment_method", default: "cash", null: false
+    t.boolean "prepaid", default: false, null: false
     t.index ["company_id", "ip", "created_at"], name: "idx_on_company_id_ip_created_at_5cc7233531"
     t.index ["company_id", "phone", "created_at"], name: "idx_on_company_id_phone_created_at_09f9c425ff"
     t.index ["company_id"], name: "index_online_order_requests_on_company_id"
@@ -1149,6 +1151,20 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_22_100000) do
     t.index ["location_id"], name: "index_online_order_requests_on_location_id"
     t.index ["order_id"], name: "index_online_order_requests_on_order_id", unique: true
     t.index ["token"], name: "index_online_order_requests_on_token", unique: true
+  end
+
+  create_table "online_payment_methods", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "company_id", null: false
+    t.uuid "location_id", null: false
+    t.string "payment_method", null: false
+    t.boolean "enabled", default: false, null: false
+    t.boolean "requires_proof", default: false, null: false
+    t.text "pay_to"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["company_id"], name: "index_online_payment_methods_on_company_id"
+    t.index ["location_id", "payment_method"], name: "index_online_payment_methods_on_location_id_and_payment_method", unique: true
+    t.index ["location_id"], name: "index_online_payment_methods_on_location_id"
   end
 
   create_table "order_discounts", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -2448,6 +2464,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_22_100000) do
   add_foreign_key "online_order_requests", "locations"
   add_foreign_key "online_order_requests", "orders"
   add_foreign_key "online_order_requests", "users", column: "decided_by_id"
+  add_foreign_key "online_payment_methods", "companies"
+  add_foreign_key "online_payment_methods", "locations"
   add_foreign_key "order_discounts", "discount_rules"
   add_foreign_key "order_discounts", "menu_promos"
   add_foreign_key "order_discounts", "order_items"

@@ -109,7 +109,49 @@
         <div class="hidden justify-between" data-online-order-target="feeRow"><dt class="text-stone-600"><%= t("public.online_order.delivery_fee") %></dt><dd class="tabular-nums" data-online-order-target="fee" data-choose-text="<%= t("public.online_order.choose_area") %>">—</dd></div>
         <div class="flex justify-between border-t border-stone-200 pt-1.5 text-base font-semibold"><dt><%= t("public.online_order.total") %></dt><dd class="tabular-nums" data-online-order-target="total">—</dd></div>
       </dl>
-      <p class="text-xs text-stone-500"><%= t("public.online_order.cash_note") %></p>
+      <%# Payment: the methods the branch offers (OnlinePaymentMethod). A "pay before
+          ordering" method asks for a screenshot of the transfer; Send waits for it. %>
+      <% if @payment_methods.size == 1 && @payment_methods.first.cash? && !@payment_methods.first.requires_proof? %>
+        <input type="hidden" name="payment_method" value="cash">
+        <p class="text-xs text-stone-500"><%= t("public.online_order.cash_note") %></p>
+      <% else %>
+        <fieldset class="space-y-2">
+          <legend class="mb-2 text-sm font-semibold text-stone-900"><%= t("public.online_order.payment.title") %></legend>
+          <% @payment_methods.each_with_index do |method, index| %>
+            <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-300 px-3 py-3 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50">
+              <input type="radio" name="payment_method" value="<%= method.payment_method %>" <%= "checked" if index.zero? %>
+                     class="mt-0.5 h-4 w-4 border-stone-300 text-amber-700 focus:ring-amber-600"
+                     data-prepaid="<%= method.requires_proof? %>" data-pay-to="<%= method.pay_to %>"
+                     data-action="online-order#paymentChanged">
+              <span>
+                <span class="block text-sm font-medium text-stone-900"><%= t("payment.methods.#{method.payment_method}") %></span>
+                <span class="block text-xs text-stone-500">
+                  <%= method.requires_proof? ? t("public.online_order.payment.prepaid") : t("public.online_order.payment.on_receipt") %>
+                </span>
+              </span>
+            </label>
+          <% end %>
+        </fieldset>
+
+        <div class="hidden space-y-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3" data-online-order-target="proofFields">
+          <div>
+            <p class="text-sm text-amber-900" data-online-order-target="payToLabel"
+               data-template="<%= t("public.online_order.payment.pay_to", total: "%{total}") %>"></p>
+            <p class="mt-1 whitespace-pre-line text-base font-bold text-stone-900 select-all" dir="auto"
+               data-online-order-target="payTo" data-missing-text="<%= t("public.online_order.payment.pay_to_missing") %>"></p>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-stone-900" for="online-order-proof"><%= t("public.online_order.payment.proof_label") %></label>
+            <p class="mt-0.5 text-xs text-stone-600"><%= t("public.online_order.payment.proof_hint") %></p>
+            <input type="file" id="online-order-proof" name="payment_proof_image" accept="image/jpeg,image/png,image/webp"
+                   data-online-order-target="proofInput" data-action="change->online-order#proofChanged"
+                   data-missing-text="<%= t("public.online_order.errors.missing_proof") %>"
+                   data-bad-text="<%= t("public.online_order.errors.bad_proof") %>"
+                   class="mt-2 block w-full text-sm text-stone-700 file:me-3 file:rounded-full file:border-0 file:bg-amber-700 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-amber-800">
+            <img alt="" class="mt-3 hidden max-h-56 rounded-lg border border-amber-200 object-contain" data-online-order-target="proofPreview">
+          </div>
+        </div>
+      <% end %>
     </div>
 
     <div class="space-y-2 border-t border-stone-200 px-5 py-4">
