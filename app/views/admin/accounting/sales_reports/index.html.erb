@@ -30,6 +30,9 @@
             class: export_btn_class %>
       <%= link_to t("accounting.sales_reports.export_pdf"), admin_accounting_sales_reports_path(request.query_parameters.merge(format: :pdf)),
             class: export_btn_class %>
+      <%# Same PDF without the modifier choices under each item: a few pages instead of many. %>
+      <%= link_to t("accounting.sales_reports.export_pdf_short"), admin_accounting_sales_reports_path(request.query_parameters.merge(format: :pdf, modifiers: "0")),
+            class: export_btn_class %>
     </div>
   </div>
   <%= render "admin/accounting/date_range_form",

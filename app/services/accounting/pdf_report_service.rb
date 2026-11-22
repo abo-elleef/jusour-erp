@@ -26,7 +26,7 @@ module Accounting
 
     def initialize(report:, start_date:, end_date:, previous:, previous_start:, previous_end:,
                    orders_by_hour:, item_view:, items:, category_groups: nil, item_category: nil,
-                   location: nil, include_open: false, company: nil)
+                   location: nil, include_open: false, company: nil, modifiers: true)
       @report = report
       @summary = report[:summary]
       @start = start_date
@@ -42,6 +42,8 @@ module Accounting
       @location = location
       @include_open = include_open
       @company = company
+      # modifiers: false drops the modifier choices under each item (the short PDF).
+      @modifiers = modifiers
       # Labels and direction come from the language the report was asked in,
       # whenever #render / #item_rows are called.
       @locale = I18n.locale
@@ -67,6 +69,7 @@ module Accounting
         render_header
         render_summary
         render_payments
+        render_categories
         render_items
         render_daily if multi_day?
         render_hourly
@@ -113,13 +116,13 @@ module Accounting
       parts << (@include_open ? t("include_open") : t("pdf.completed_only"))
       parts << (grouped? ? t("view_grouped") : t("view_flat"))
       parts << "#{t('pdf.category')}: #{@item_category}" if @item_category
+      parts << t("pdf.without_modifiers") unless @modifiers
       parts.join("  ·  ")
     end
 
     # ── Summary vs previous period ────────────────────────────────────────
 
     def render_summary
-      heading t("pdf.summary")
       s = @summary
       prev = @previous
       rows = [
@@ -139,7 +142,7 @@ module Accounting
         [ar(label), fmt.call(now), fmt.call(before), change(now, before, lower_is_better: kind == :money_less)]
       end
 
-      table(data, column_widths: [150, 120, 150], numeric_from: 1) do |tbl|
+      section(t("pdf.summary"), data, column_widths: [150, 120, 150], numeric_from: 1) do |tbl|
         net_index = rows.index { |r| r[3] == :money_total } + 1
         tbl.row(net_index).background_color = CATEGORY_BG
         tbl.row(net_index).size = 10.5
@@ -174,8 +177,8 @@ module Accounting
 
     def render_payments
       payments = @report[:by_payment_method].select { |_, c| c.positive? }.sort_by { |_, c| -c }
-      heading t("payment_methods")
       if payments.empty?
+        heading t("payment_methods")
         empty_line t("no_payments")
         return
       end
@@ -187,15 +190,69 @@ module Accounting
       end
       data << [ar(t("payments_total")), amount(total), "100%"]
 
-      table(data, column_widths: [200, 120, 80], numeric_from: 1) do |tbl|
+      section(t("payment_methods"), data, column_widths: [200, 120, 80], numeric_from: 1, extra: 36) do |tbl|
+        tbl.row(-1).background_color = CATEGORY_BG
+      end
+      reconciliation_line(total)
+      @pdf.move_down 16
+    end
+
+    # Collected money is more than net sales: it also carries the drivers'
+    # delivery fees, tips and tax. Spell the sum out so the gap doesn't read
+    # as missing money; anything still unexplained is shown as is.
+    def reconciliation_line(collected)
+      s = @summary
+      return if collected == s[:net_sales_cents]
+
+      parts = [[t("net_sales"), s[:net_sales_cents]]]
+      parts << [t("pdf.delivery_fees"), s[:delivery_fee_cents]] if s[:delivery_fee_cents].to_i.positive?
+      parts << [t("pdf.tips"), s[:tip_cents]] if s[:tip_cents].to_i.positive?
+      parts << [t("pdf.tax"), s[:tax_cents]] if s[:tax_cents].to_i.positive?
+      explained = parts.sum { |_, cents| cents.to_i }
+      line = parts.map { |label, cents| "#{label} #{amount(cents)}" }.join(" + ")
+      line += " = #{t('payments_total')} #{amount(explained)}"
+      diff = collected - explained
+
+      # One short line each: a wrapped Arabic line would come out bottom-up.
+      @pdf.move_down 4
+      @pdf.text ar(line), size: 8.5, color: GRAY, align: side
+      @pdf.text ar("#{t('pdf.other_difference')} #{signed_amount(diff)}"), size: 8.5, color: AMBER, align: side unless diff.zero?
+    end
+
+    def signed_amount(cents)
+      cents.negative? ? "-#{amount(-cents)}" : "+#{amount(cents)}"
+    end
+
+    # ── Category summary ──────────────────────────────────────────────────
+
+    # Every category at a glance (units, net, share), whatever view or
+    # filter the item table below is in. Built from the item rows so it adds
+    # up to them.
+    def render_categories
+      groups = category_summary
+      return if groups.empty?
+
+      total = groups.sum { |g| g[:net_cents] }
+      data = [[ar(t("pdf.category")), ar(t("pdf.units")), ar(t("net_revenue")), ar(t("share"))]]
+      data += groups.map { |g| [ar(g[:name]), number(g[:units_sold]), amount(g[:net_cents]), percent(g[:net_cents], total)] }
+      data << [ar(t("total")), number(groups.sum { |g| g[:units_sold] }), amount(total), "100%"]
+
+      section(t("pdf.by_category"), data, column_widths: [200, 60, 110, 70], numeric_from: 1) do |tbl|
         tbl.row(-1).background_color = CATEGORY_BG
       end
       @pdf.move_down 16
     end
 
+    def category_summary
+      @report[:by_item].group_by { |r| r[:category] || t("uncategorized") }.map do |name, rows|
+        { name: name, units_sold: rows.sum { |r| r[:units_sold] }, net_cents: rows.sum { |r| r[:net_cents] } }
+      end.sort_by { |g| [-g[:net_cents], g[:name].to_s] }
+    end
+
     # ── Category / item / modifier table ──────────────────────────────────
 
     def render_items
+      @pdf.start_new_page if @pdf.cursor < 90
       heading t("by_category_and_item")
       rows = item_rows
       if rows.size == 1
@@ -203,7 +260,7 @@ module Accounting
         return
       end
 
-      head = [t("category_item"), t("units_sold"), t("revenue_before_discount"), t("promo_discount"), t("net_revenue"), t("share")]
+      head = [t("category_item"), t("pdf.units"), t("revenue_before_discount"), t("promo_discount"), t("net_revenue"), t("share")]
       head.insert(1, t("pdf.category")) unless grouped?
       data = [head.map { |h| ar(h) }]
       styles = []
@@ -257,10 +314,12 @@ module Accounting
     def item_and_choice_rows(item)
       category = grouped? ? [] : [item[:category] || t("uncategorized")]
       rows = [[:item, item[:name], *category, *figures(item, net_total)]]
+      return rows unless @modifiers
+
       Array(item[:modifier_groups]).each do |group|
         rows << [:group, group[:name], *Array.new(category.size, ""), "", "", "", "", ""]
         group[:choices].each do |choice|
-          rows << [:choice, choice[:name], *Array.new(category.size, ""), *figures(choice, nil)]
+          rows << [:choice, choice[:name], *Array.new(category.size, ""), *choice_figures(choice)]
         end
       end
       rows
@@ -270,6 +329,14 @@ module Accounting
     def figures(row, base)
       [number(row[:units_sold]), amount(row[:revenue_cents]), discount_amount(row[:discount_cents]),
        amount(row[:net_cents]), base ? percent(row[:net_cents], base) : ""]
+    end
+
+    # A choice shows its units and net; before-discount and discount only when
+    # a promo touched it — otherwise they just repeat the net and a dash.
+    def choice_figures(choice)
+      promo = choice[:discount_cents].to_i.nonzero?
+      [number(choice[:units_sold]), promo ? amount(choice[:revenue_cents]) : "",
+       promo ? discount_amount(choice[:discount_cents]) : "", amount(choice[:net_cents]), ""]
     end
 
     def totals_row
@@ -295,13 +362,12 @@ module Accounting
       totals = @report[:daily_totals]
       counts = @report[:daily_order_counts]
       sum = totals.values.sum
-      heading t("pdf.by_day")
       data = [[ar(t("day")), ar(t("orders")), ar(t("net_sales")), ar(t("share"))]]
       data += totals.map do |date, cents|
         [ar(I18n.l(date, format: "%a %d %b")), number(counts[date]), amount(cents), percent(cents, sum)]
       end
       data << [ar(t("total")), number(counts.values.sum), amount(sum), "100%"]
-      table(data, column_widths: [140, 70, 110, 70], numeric_from: 1, header: true) do |tbl|
+      section(t("pdf.by_day"), data, column_widths: [140, 70, 110, 70], numeric_from: 1) do |tbl|
         tbl.row(-1).background_color = CATEGORY_BG
       end
       @pdf.move_down 16
@@ -311,12 +377,11 @@ module Accounting
       hours = @orders_by_hour.select { |h| h[:count].positive? }
       return if hours.empty?
 
-      heading t("pdf.by_hour")
       data = [[ar(t("hour")), ar(t("orders")), ar(t("net_sales")), ar(t("share"))]]
       data += hours.map do |h|
         [format("%02d:00", h[:hour]), number(h[:count]), amount(h[:sales_cents]), "#{h[:share_percent]}%"]
       end
-      table(data, column_widths: [140, 70, 110, 70], numeric_from: 1, header: true)
+      section(t("pdf.by_hour"), data, column_widths: [140, 70, 110, 70], numeric_from: 1)
     end
 
     # ── Footer ────────────────────────────────────────────────────────────
@@ -354,7 +419,23 @@ module Accounting
     # from column numeric_from on, header repeated on every page. In Arabic the
     # table is mirrored (names on the right); styling blocks name columns
     # through #col so they land on the right cells either way.
-    def table(data, column_widths:, numeric_from:, header: true, &block)
+    def table(data, **opts, &block)
+      build_table(data, **opts, &block).draw
+    end
+
+    # Heading + table kept on one page: when they don't fit in what's left of
+    # this page but would fit on a fresh one, start a fresh one. A table longer
+    # than a page (a month of days) just flows on. extra: room for a line
+    # drawn right after the table.
+    def section(title, data, extra: 0, **opts, &block)
+      tbl = build_table(data, **opts, &block)
+      needed = tbl.height + 30 + extra
+      @pdf.start_new_page if needed > @pdf.cursor && needed < @pdf.bounds.height
+      heading title
+      tbl.draw
+    end
+
+    def build_table(data, column_widths:, numeric_from:, header: true, &block)
       # One width short: the last column takes the rest of the page.
       widths = column_widths.dup
       widths << (@pdf.bounds.width - widths.sum) if widths.size < data.first.size
@@ -364,7 +445,7 @@ module Accounting
         widths = widths.reverse
       end
 
-      @pdf.table(data, header: header, width: widths.sum, column_widths: widths, position: side,
+      @pdf.make_table(data, header: header, width: widths.sum, column_widths: widths, position: side,
         cell_style: { size: 8.5, padding: [3, 6], border_color: BORDER, border_width: 0.5, text_color: DARK }) do |tbl|
         (0...@cols).each do |i|
           column = tbl.column(col(i))

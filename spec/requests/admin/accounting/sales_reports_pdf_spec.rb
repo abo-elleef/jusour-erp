@@ -36,6 +36,7 @@ RSpec.describe "Admin::Accounting sales report PDF", type: :request do
     get admin_accounting_sales_reports_path(range.merge(locale: :en).merge(params).merge(format: :pdf))
     expect(response).to have_http_status(:ok)
     expect(response.body).to start_with("%PDF")
+    @pdf_service = service
     service.item_rows.map { |kind, name, *| [kind, name] }
   end
 
@@ -57,6 +58,23 @@ RSpec.describe "Admin::Accounting sales report PDF", type: :request do
   it "follows the page's sort" do
     rows = pdf_rows(view: "flat", sort: "name", dir: "asc").select { |kind, _| kind == :item }
     expect(rows.map(&:last)).to eq(%w[Burger Cola])
+  end
+
+  it "shows a choice's units and net, without repeating before-discount and a dash" do
+    pdf_rows({})
+    choice = @pdf_service.item_rows.find { |kind, *| kind == :choice }
+    # [kind, name, units, before discount, discount, net, share]
+    expect(choice[2..]).to eq(["2", "", "", choice[5], ""])
+    expect(choice[5]).not_to be_empty
+  end
+
+  it "leaves the modifier choices out of the short PDF, and the page links to it" do
+    rows = pdf_rows(modifiers: "0")
+    expect(rows.map(&:first)).not_to include(:group, :choice)
+    expect(rows).to include([:item, "Burger"])
+
+    get admin_accounting_sales_reports_path(range)
+    expect(response.body).to include("modifiers=0")
   end
 
   it "labels the PDF in the interface language" do

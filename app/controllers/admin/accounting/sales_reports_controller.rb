@@ -125,13 +125,15 @@ module Admin
 
       # The PDF follows the page: same view, category filter and sort, but always
       # every item (the page's "top 10" preview is a screen convenience).
+      # modifiers=0 is the short PDF: items without their modifier choices.
       def sales_pdf
         ::Accounting::PdfReportService.new(
           report: @report, start_date: @start_date, end_date: @end_date,
           previous: @previous, previous_start: @previous_start, previous_end: @previous_end,
           orders_by_hour: @orders_by_hour, item_view: @item_view, items: @items,
           category_groups: @category_groups, item_category: @item_category,
-          location: @location, include_open: @include_open, company: Current.company
+          location: @location, include_open: @include_open, company: Current.company,
+          modifiers: params[:modifiers] != "0"
         )
       end
 
