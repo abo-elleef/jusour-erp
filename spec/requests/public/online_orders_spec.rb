@@ -122,4 +122,60 @@ RSpec.describe "Public self-ordering", type: :request do
     expect(response.body).to include("##{order.order_number}")
     expect(response.body).not_to include("auto-refresh")
   end
+
+  describe "paying before ordering" do
+    before do
+      branch.online_payment_methods.create!(payment_method: "instapay", enabled: true, requires_proof: true,
+                                            pay_to: "saqr@instapay")
+    end
+
+    it "offers the method with where to pay and a screenshot field" do
+      get menu_path
+
+      doc = Nokogiri::HTML(response.body)
+      radio = doc.at("input[name='payment_method'][value='instapay']")
+      expect(radio["data-prepaid"]).to eq("true")
+      expect(radio["data-pay-to"]).to eq("saqr@instapay")
+      expect(doc.at("input[type='file'][name='payment_proof_image']")).to be_present
+    end
+
+    it "takes the multipart checkout with the screenshot" do
+      body = online_params(item: item, area: area, payment_method: "instapay")
+      post public_online_orders_path(company_slug: company.slug, location_slug: branch.slug),
+           params: { order: body.to_json, payment_proof_image: fixture_file_upload("storefront_product.png", "image/png") }
+
+      expect(response).to have_http_status(:created)
+      request_record = OnlineOrderRequest.last
+      expect(request_record).to be_prepaid
+      expect(request_record.payment_proof_image).to be_attached
+    end
+
+    it "shows the customer their screenshot on the status page" do
+      body = online_params(item: item, area: area, payment_method: "instapay")
+      post public_online_orders_path(company_slug: company.slug, location_slug: branch.slug),
+           params: { order: body.to_json, payment_proof_image: fixture_file_upload("storefront_product.png", "image/png") }
+
+      get response.parsed_body["url"]
+      proof = Nokogiri::HTML(response.body).at("[data-testid=online-order-payment-proof]")
+      expect(proof.at("img")["src"]).to include("storefront_product.png")
+    end
+
+    it "shows no screenshot block on a cash order" do
+      branch.online_payment_methods.create!(payment_method: "cash", enabled: true)
+      post public_online_orders_path(company_slug: company.slug, location_slug: branch.slug),
+           params: online_params(item: item, area: area), as: :json
+
+      get response.parsed_body["url"]
+      expect(Nokogiri::HTML(response.body).at("[data-testid=online-order-payment-proof]")).to be_nil
+    end
+
+    it "refuses it without the screenshot and says why" do
+      body = online_params(item: item, area: area, payment_method: "instapay")
+      post public_online_orders_path(company_slug: company.slug, location_slug: branch.slug), params: { order: body.to_json }
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body["message"]).to eq(I18n.t("public.online_order.errors.missing_proof"))
+      expect(OnlineOrderRequest.count).to eq(0)
+    end
+  end
 end

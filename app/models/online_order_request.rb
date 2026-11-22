@@ -10,6 +10,10 @@ class OnlineOrderRequest < ApplicationRecord
   STATUSES = %w[pending accepted rejected expired].freeze
   FULFILLMENTS = %w[delivery pickup].freeze
   REJECT_REASONS = %w[closed out_of_area item_unavailable suspicious no_answer other].freeze
+  # The payment screenshot is shown to the cashier in the browser, so only formats
+  # every browser draws (iPhone screenshots are PNG; HEIC would not display).
+  PROOF_CONTENT_TYPES = %w[image/jpeg image/png image/webp].freeze
+  PROOF_MAX_SIZE = 10.megabytes
 
   belongs_to :location
   belongs_to :customer, optional: true
@@ -17,11 +21,17 @@ class OnlineOrderRequest < ApplicationRecord
   belongs_to :order, optional: true
   belongs_to :decided_by, class_name: "User", optional: true
 
+  # Screenshot of the customer's transfer, required when the method they chose
+  # is "pay before ordering" (prepaid). Kept after the decision as the record.
+  has_one_attached :payment_proof_image
+
   validates :status, inclusion: { in: STATUSES }
   validates :fulfillment, inclusion: { in: FULFILLMENTS }
   validates :customer_name, :phone, :token, :expires_at, presence: true
   validates :address, presence: true, if: :delivery?
   validates :delivery_area, presence: true, if: :delivery?
+  validates :payment_method, inclusion: { in: OnlinePaymentMethod::METHODS }
+  validates :payment_proof_image, presence: true, if: :prepaid?
 
   before_validation { self.token ||= SecureRandom.urlsafe_base64(18) }
 
@@ -34,6 +44,12 @@ class OnlineOrderRequest < ApplicationRecord
 
   def delivery? = fulfillment == "delivery"
   def pickup? = fulfillment == "pickup"
+
+  # Whether a file is a screenshot the cashier can look at (type and size).
+  def self.acceptable_proof?(file)
+    file.respond_to?(:content_type) && PROOF_CONTENT_TYPES.include?(file.content_type) &&
+      file.size.to_i.between?(1, PROOF_MAX_SIZE)
+  end
 
   def to_param = token
 
@@ -59,7 +75,7 @@ class OnlineOrderRequest < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[status fulfillment customer_name phone created_at total_cents location_id customer_id reject_reason]
+    %w[status fulfillment customer_name phone created_at total_cents location_id customer_id reject_reason payment_method prepaid]
   end
 
   private

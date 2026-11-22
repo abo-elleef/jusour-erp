@@ -18,7 +18,10 @@ module Public
       @combos = menu.combos
       @promos_by_item_id = menu.promos_by_item_id
       @accepting_orders = @location.accepting_online_orders?
-      @delivery_areas = @location.delivery_areas.active.ordered if @accepting_orders
+      return unless @accepting_orders
+
+      @delivery_areas = @location.delivery_areas.active.ordered
+      @payment_methods = @location.offered_online_payment_methods
     end
   end
 end

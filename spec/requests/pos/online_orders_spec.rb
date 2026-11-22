@@ -160,4 +160,23 @@ RSpec.describe "POS online orders inbox", type: :request do
     expect(card.text).to include("#{I18n.t("pos.online_orders.statuses.accepted")}: 2")
     expect(request_record.check_snapshot(:created).requests_by_status).to eq("accepted" => 2)
   end
+
+  it "shows the screenshot of a prepaid order and records the payment on accept" do
+    branch.online_payment_methods.create!(payment_method: "instapay", enabled: true, requires_proof: true)
+    prepaid = OnlineOrders::SubmitService.call(
+      location: branch,
+      params: online_params(item: item, payment_method: "instapay",
+                            payment_proof_image: fixture_file_upload("storefront_product.png", "image/png"))
+    ).request
+
+    get pos_online_order_requests_path
+    expect(response.body).to include(I18n.t("pos.online_orders.payment.prepaid"))
+
+    get pos_online_order_request_path(prepaid)
+    expect(response.body).to include(I18n.t("pos.online_orders.payment.check_proof"))
+    expect(Nokogiri::HTML(response.body).at("img[src*='storefront_product.png']")).to be_present
+
+    patch accept_pos_online_order_request_path(prepaid)
+    expect(prepaid.reload.order).to be_fully_paid
+  end
 end

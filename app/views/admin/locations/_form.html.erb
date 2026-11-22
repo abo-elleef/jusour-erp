@@ -203,6 +203,54 @@
         </div>
       </div>
 
+      <%# One row per method the checkout can offer (OnlinePaymentMethod::METHODS).
+          A branch that never saved these offers cash only. %>
+      <div>
+        <p class="text-sm font-semibold text-gray-700"><%= t("admin.locations.online_ordering.payment_methods") %></p>
+        <p class="text-xs text-gray-500 mt-1 mb-2"><%= t("admin.locations.online_ordering.payment_methods_hint") %></p>
+        <div class="overflow-x-auto rounded-xl border border-gray-200">
+          <table class="min-w-full text-sm">
+            <thead class="bg-gray-50 text-xs text-gray-500">
+              <tr>
+                <th class="px-3 py-2 text-start font-semibold"><%= t("admin.locations.online_ordering.payment_method") %></th>
+                <th class="px-3 py-2 text-center font-semibold"><%= t("admin.locations.online_ordering.payment_offered") %></th>
+                <th class="px-3 py-2 text-center font-semibold"><%= t("admin.locations.online_ordering.payment_requires_proof") %></th>
+                <th class="px-3 py-2 text-start font-semibold"><%= t("admin.locations.online_ordering.payment_pay_to") %></th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <%= f.fields_for :online_payment_methods, location.online_payment_options, include_id: false do |pf| %>
+                <% method = pf.object %>
+                <tr>
+                  <td class="px-3 py-2 font-medium text-gray-900 whitespace-nowrap">
+                    <%= pf.hidden_field :id if method.persisted? %>
+                    <%= pf.hidden_field :payment_method %>
+                    <%= t("payment.methods.#{method.payment_method}") %>
+                  </td>
+                  <td class="px-3 py-2 text-center">
+                    <%= pf.check_box :enabled, class: "w-4 h-4 text-amber-600 border-gray-300 rounded",
+                          aria: { label: "#{t("payment.methods.#{method.payment_method}")} — #{t("admin.locations.online_ordering.payment_offered")}" } %>
+                  </td>
+                  <td class="px-3 py-2 text-center">
+                    <% unless method.cash? %>
+                      <%= pf.check_box :requires_proof, class: "w-4 h-4 text-amber-600 border-gray-300 rounded",
+                            aria: { label: "#{t("payment.methods.#{method.payment_method}")} — #{t("admin.locations.online_ordering.payment_requires_proof")}" } %>
+                    <% end %>
+                  </td>
+                  <td class="px-3 py-2">
+                    <% unless method.cash? %>
+                      <%= pf.text_area :pay_to, rows: 2, maxlength: 300, dir: "auto",
+                            placeholder: t("admin.locations.online_ordering.payment_pay_to_placeholder"),
+                            class: "w-full min-w-[14rem] rounded-xl border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none" %>
+                    <% end %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <% if location.persisted? %>
         <p class="text-sm">
           <%= link_to t("admin.locations.online_ordering.manage_delivery_areas"), admin_location_delivery_areas_path(location),

@@ -23,6 +23,8 @@ module OnlineOrders
     end
 
     # params: customer_name, phone, fulfillment, delivery_area_id, address, note,
+    #         payment_method (one the branch offers; blank = cash),
+    #         payment_proof_image (an upload; required when that method is prepaid),
     #         items (array of { menu_item_id | combo_id, modifier_ids, quantity, notes }),
     #         website (honeypot — must stay blank), started_at (signed, see .page_stamp)
     def initialize(location:, params:, ip: nil, user_agent: nil, now: Time.current)
@@ -73,6 +75,15 @@ module OnlineOrders
         return fail(:too_large, { "max_cents" => @location.online_max_order_cents })
       end
 
+      payment = @location.offered_online_payment_methods.find { |m| m.payment_method == payment_method_param }
+      return fail(:bad_payment_method) if payment.nil?
+
+      proof = @params[:payment_proof_image] if payment.requires_proof?
+      if payment.requires_proof?
+        return fail(:missing_proof) if proof.blank? || proof.is_a?(String)
+        return fail(:bad_proof) unless OnlineOrderRequest.acceptable_proof?(proof)
+      end
+
       request = OnlineOrderRequest.create!(
         location: @location,
         customer: customer,
@@ -86,6 +97,9 @@ module OnlineOrders
         quote: quote.snapshot,
         total_cents: quote.total_cents,
         delivery_fee_cents: quote.delivery_fee_cents,
+        payment_method: payment.payment_method,
+        prepaid: payment.requires_proof?,
+        payment_proof_image: proof,
         ip: @ip,
         user_agent: @user_agent,
         expires_at: @now + @location.online_accept_timeout_minutes.minutes
@@ -104,6 +118,10 @@ module OnlineOrders
 
     def recent
       OnlineOrderRequest.where(created_at: (@now - 1.day)..)
+    end
+
+    def payment_method_param
+      @params[:payment_method].presence || "cash"
     end
 
     def customer_name

@@ -61,4 +61,42 @@ RSpec.describe "Admin location online ordering settings", type: :request do
     expect(response).to have_http_status(:unprocessable_entity)
     expect(response.body).to include(I18n.t("admin.locations.online_ordering.errors.hours_both_or_neither"))
   end
+
+  it "saves which payment methods are offered and which must be paid first" do
+    get edit_admin_location_path(branch)
+    expect(Nokogiri::HTML(response.body).css("input[name$='[payment_method]']").map { |i| i["value"] })
+      .to eq(%w[cash instapay vodafone_cash])
+
+    patch admin_location_path(branch), params: {
+      location: {
+        online_payment_methods_attributes: {
+          "0" => { payment_method: "cash", enabled: "0" },
+          "1" => { payment_method: "instapay", enabled: "1", requires_proof: "1", pay_to: "saqr@instapay" },
+          "2" => { payment_method: "vodafone_cash", enabled: "1", requires_proof: "0" }
+        }
+      }
+    }
+
+    expect(response).to redirect_to(admin_location_path(branch))
+    offered = branch.reload.offered_online_payment_methods
+    expect(offered.map(&:payment_method)).to eq(%w[instapay vodafone_cash])
+    expect(offered.first).to have_attributes(requires_proof: true, pay_to: "saqr@instapay")
+
+    # Saving again updates the same rows.
+    instapay = offered.first
+    patch admin_location_path(branch), params: {
+      location: { online_payment_methods_attributes: { "0" => { id: instapay.id, payment_method: "instapay", enabled: "1", requires_proof: "0" } } }
+    }
+    expect(instapay.reload.requires_proof).to be(false)
+    expect(branch.online_payment_methods.count).to eq(3)
+  end
+
+  it "refuses to turn every payment method off" do
+    patch admin_location_path(branch), params: {
+      location: { online_payment_methods_attributes: { "0" => { payment_method: "cash", enabled: "0" } } }
+    }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response.body).to include(I18n.t("admin.locations.online_ordering.errors.no_payment_method"))
+  end
 end

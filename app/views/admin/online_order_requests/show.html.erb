@@ -59,6 +59,8 @@
         </dl>
       </section>
 
+      <%= render "pos/online_order_requests/payment", request: @request %>
+
       <section class="rounded-2xl border border-gray-200 bg-white p-5">
         <h2 class="mb-3 text-sm font-semibold text-gray-900"><%= t("admin.online_orders.device") %></h2>
         <dl class="space-y-2 text-sm">

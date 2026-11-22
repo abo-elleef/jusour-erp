@@ -12,7 +12,8 @@ export default class extends Controller {
     "itemDialog", "itemName", "itemPrice", "itemGroups", "itemNote", "itemError", "itemQuantity",
     "cartBar", "cartCount",
     "checkoutDialog", "checkoutForm", "lines", "deliveryFields", "feeRow",
-    "subtotal", "fee", "total", "checkoutError", "sendButton", "limitWarning"
+    "subtotal", "fee", "total", "checkoutError", "sendButton", "limitWarning",
+    "proofFields", "payToLabel", "payTo", "proofInput", "proofPreview"
   ]
 
   static values = {
@@ -289,6 +290,7 @@ export default class extends Controller {
     this.hideError(this.checkoutErrorTarget)
     this.renderLines()
     this.checkoutDialogTarget.showModal()
+    this.paymentChanged()
     this.refreshQuote()
   }
 
@@ -347,6 +349,7 @@ export default class extends Controller {
       this.renderLines(quote.lines, quote.errors)
       this.subtotalTarget.textContent = quote.subtotal
       this.totalTarget.textContent = quote.total
+      this.renderPayTo()
       this.showLimit(quote.over_limit)
       const areaPicked = this.checkoutFormTarget.elements.delivery_area_id?.value
       this.feeTarget.textContent = body.fulfillment === "delivery" && !areaPicked
@@ -357,11 +360,66 @@ export default class extends Controller {
     }
   }
 
+  // ---- payment ----------------------------------------------------------
+
+  // The radio the customer picked (a branch offering cash only has a hidden field).
+  selectedPayment() {
+    return this.checkoutFormTarget.querySelector("input[name=payment_method]:checked") ||
+      this.checkoutFormTarget.querySelector("input[name=payment_method][type=hidden]")
+  }
+
+  prepaid() {
+    return this.selectedPayment()?.dataset.prepaid === "true"
+  }
+
+  // A "pay before ordering" method shows where to transfer and asks for the screenshot.
+  paymentChanged() {
+    if (!this.hasProofFieldsTarget) return
+    this.proofFieldsTarget.classList.toggle("hidden", !this.prepaid())
+    this.renderPayTo()
+  }
+
+  renderPayTo() {
+    if (!this.hasPayToTarget) return
+    const total = this.totalTarget.textContent
+    this.payToLabelTarget.textContent = this.payToLabelTarget.dataset.template.replace("%{total}", total)
+    this.payToTarget.textContent = this.selectedPayment()?.dataset.payTo || this.payToTarget.dataset.missingText
+  }
+
+  // Checked here only to tell the customer early; the server checks again.
+  proofChanged() {
+    const input = this.proofInputTarget
+    const file = input.files[0]
+    this.hideError(this.checkoutErrorTarget)
+    if (file && !this.acceptableProof(file)) {
+      input.value = ""
+      this.showError(this.checkoutErrorTarget, input.dataset.badText)
+    }
+    this.showProofPreview(input.files[0])
+  }
+
+  acceptableProof(file) {
+    return ["image/jpeg", "image/png", "image/webp"].includes(file.type) && file.size > 0 && file.size <= 10 * 1024 * 1024
+  }
+
+  showProofPreview(file) {
+    if (!this.hasProofPreviewTarget) return
+    if (this.previewUrl) URL.revokeObjectURL(this.previewUrl)
+    this.previewUrl = file ? URL.createObjectURL(file) : null
+    this.proofPreviewTarget.src = this.previewUrl || ""
+    this.proofPreviewTarget.classList.toggle("hidden", !file)
+  }
+
   async send(event) {
     event.preventDefault()
     const form = this.checkoutFormTarget
     const button = this.sendButtonTarget
     const label = button.textContent
+    const proof = this.prepaid() ? this.proofInputTarget.files[0] : null
+    if (this.prepaid() && !proof) {
+      this.showError(this.checkoutErrorTarget, this.proofInputTarget.dataset.missingText)
+      return
+    }
     button.disabled = true
     button.textContent = button.dataset.sendingText
     this.hideError(this.checkoutErrorTarget)
@@ -374,12 +432,17 @@ export default class extends Controller {
       delivery_area_id: form.elements.delivery_area_id?.value,
       address: form.elements.address?.value,
       note: form.elements.note.value,
+      payment_method: this.selectedPayment()?.value || "cash",
       website: form.elements.website.value,
       started_at: this.startedAtValue
     }
 
     try {
-      const response = await this.post(this.createUrlValue, body)
+      // Multipart, so a prepaid order can carry its screenshot; the order is one JSON field.
+      const formData = new FormData()
+      formData.append("order", JSON.stringify(body))
+      if (proof) formData.append("payment_proof_image", proof)
+      const response = await this.postForm(this.createUrlValue, formData)
       const data = await response.json()
       if (response.ok) {
         this.cart = []
@@ -407,6 +470,17 @@ export default class extends Controller {
         "X-CSRF-Token": document.querySelector("meta[name=csrf-token]")?.content
       },
       body: JSON.stringify(body)
+    })
+  }
+
+  postForm(url, formData) {
+    return fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "X-CSRF-Token": document.querySelector("meta[name=csrf-token]")?.content
+      },
+      body: formData
     })
   }
 

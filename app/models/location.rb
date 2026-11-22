@@ -35,6 +35,8 @@ class Location < ApplicationRecord
   has_many :workstations, dependent: :destroy
   has_many :location_operating_days, dependent: :destroy
   has_many :delivery_areas, dependent: :destroy
+  has_many :online_payment_methods, dependent: :destroy
+  accepts_nested_attributes_for :online_payment_methods
   has_many :outgoing_stock_transfers, class_name: "StockTransfer", foreign_key: :from_location_id, dependent: :restrict_with_error
   has_many :incoming_stock_transfers, class_name: "StockTransfer", foreign_key: :to_location_id, dependent: :restrict_with_error
 
@@ -50,6 +52,7 @@ class Location < ApplicationRecord
   validates :online_accept_timeout_minutes, numericality: { only_integer: true, in: 1..120 }
   validates :online_max_order_cents, numericality: { only_integer: true, greater_than: 0, allow_nil: true }
   validate :online_hours_both_or_neither
+  validate :at_least_one_online_payment_method
   validate :edit_orders_pin_is_six_digits
   validate :void_orders_pin_is_six_digits
 
@@ -229,6 +232,24 @@ class Location < ApplicationRecord
     online_open_time.present? && online_close_time.present?
   end
 
+  # One row per method the public checkout can offer (OnlinePaymentMethod::METHODS),
+  # saved or not, for the settings form. A branch that never saved any offers cash
+  # only, which is how self-ordering worked before methods were configurable.
+  def online_payment_options
+    saved = online_payment_methods.index_by(&:payment_method)
+    OnlinePaymentMethod::METHODS.map do |method|
+      saved[method] || online_payment_methods.build(payment_method: method, enabled: method == "cash")
+    end
+  end
+
+  # What the customer can choose at checkout, in METHODS order.
+  def offered_online_payment_methods
+    saved = online_payment_methods.to_a
+    return [OnlinePaymentMethod.new(location: self, payment_method: "cash", enabled: true)] if saved.empty?
+
+    saved.select(&:enabled?).sort_by { |m| OnlinePaymentMethod::METHODS.index(m.payment_method) }
+  end
+
   private
 
   def edit_orders_pin_is_six_digits
@@ -324,6 +345,14 @@ class Location < ApplicationRecord
   def normalize_online_ordering
     self.online_ordering_enabled = false unless branch?
     self.online_accept_timeout_minutes = 10 if online_accept_timeout_minutes.blank?
+  end
+
+  # Turning every method off would leave customers a checkout they can never send.
+  def at_least_one_online_payment_method
+    rows = online_payment_methods.reject(&:marked_for_destruction?)
+    return if rows.empty? || rows.any?(&:enabled?)
+
+    errors.add(:base, I18n.t("admin.locations.online_ordering.errors.no_payment_method"))
   end
 
   def online_hours_both_or_neither
