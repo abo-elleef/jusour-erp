@@ -6397,6 +6397,13 @@ en:
       export_pdf_short: "PDF without modifiers"
       pdf:
         without_modifiers: "Without modifiers"
+        company: "Company"
+        from: "From"
+        to: "To"
+        orders_counted: "Orders counted"
+        view: "View"
+        generated: "Generated"
+        modifier_choices: "Modifier choices"
         by_category: "Sales by category"
         units: "Qty"
         delivery_fees: "Delivery fees"

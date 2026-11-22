@@ -6518,6 +6518,13 @@ ar:
       export_pdf_short: "PDF بدون الإضافات"
       pdf:
         without_modifiers: "بدون الإضافات"
+        company: "الشركة"
+        from: "من"
+        to: "إلى"
+        orders_counted: "الطلبات المحسوبة"
+        view: "العرض"
+        generated: "تاريخ الإنشاء"
+        modifier_choices: "اختيارات الإضافات"
         by_category: "المبيعات حسب التصنيف"
         units: "الكمية"
         delivery_fees: "رسوم الدليفري"

@@ -201,17 +201,12 @@ module Accounting
     # delivery fees, tips and tax. Spell the sum out so the gap doesn't read
     # as missing money; anything still unexplained is shown as is.
     def reconciliation_line(collected)
-      s = @summary
-      return if collected == s[:net_sales_cents]
+      return if collected == @summary[:net_sales_cents]
 
-      parts = [[t("net_sales"), s[:net_sales_cents]]]
-      parts << [t("pdf.delivery_fees"), s[:delivery_fee_cents]] if s[:delivery_fee_cents].to_i.positive?
-      parts << [t("pdf.tips"), s[:tip_cents]] if s[:tip_cents].to_i.positive?
-      parts << [t("pdf.tax"), s[:tax_cents]] if s[:tax_cents].to_i.positive?
-      explained = parts.sum { |_, cents| cents.to_i }
-      line = parts.map { |label, cents| "#{label} #{amount(cents)}" }.join(" + ")
-      line += " = #{t('payments_total')} #{amount(explained)}"
-      diff = collected - explained
+      rec = SalesReportFigures.reconciliation(@summary, collected)
+      line = rec[:parts].map { |key, cents| "#{SalesReportFigures.reconciliation_label(key)} #{amount(cents)}" }.join(" + ")
+      line += " = #{t('payments_total')} #{amount(rec[:explained_cents])}"
+      diff = rec[:difference_cents]
 
       # One short line each: a wrapped Arabic line would come out bottom-up.
       @pdf.move_down 4
@@ -244,9 +239,7 @@ module Accounting
     end
 
     def category_summary
-      @report[:by_item].group_by { |r| r[:category] || t("uncategorized") }.map do |name, rows|
-        { name: name, units_sold: rows.sum { |r| r[:units_sold] }, net_cents: rows.sum { |r| r[:net_cents] } }
-      end.sort_by { |g| [-g[:net_cents], g[:name].to_s] }
+      SalesReportFigures.category_summary(@report[:by_item], uncategorized: t("uncategorized"))
     end
 
     # ── Category / item / modifier table ──────────────────────────────────
