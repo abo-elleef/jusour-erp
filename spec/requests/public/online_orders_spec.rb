@@ -137,6 +137,9 @@ RSpec.describe "Public self-ordering", type: :request do
       expect(radio["data-prepaid"]).to eq("true")
       expect(radio["data-pay-to"]).to eq("saqr@instapay")
       expect(doc.at("input[type='file'][name='payment_proof_image']")).to be_present
+      pay_to = doc.at("[data-online-order-target='payTo']")
+      expect(pay_to["data-action"]).to eq("click->online-order#copyPayTo")
+      expect(pay_to["data-copy-text"]).to eq(I18n.t("public.online_order.payment.copy"))
     end
 
     it "takes the multipart checkout with the screenshot" do

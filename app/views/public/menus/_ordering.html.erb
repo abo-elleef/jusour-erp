@@ -137,8 +137,12 @@
           <div>
             <p class="text-sm text-amber-900" data-online-order-target="payToLabel"
                data-template="<%= t("public.online_order.payment.pay_to", total: "%{total}") %>"></p>
-            <p class="mt-1 whitespace-pre-line text-base font-bold text-stone-900 select-all" dir="auto"
-               data-online-order-target="payTo" data-missing-text="<%= t("public.online_order.payment.pay_to_missing") %>"></p>
+            <%# One row per line of the branch's "pay to" text, each with its own Copy
+                button so the customer can paste the number into the wallet app. %>
+            <ul class="mt-2 space-y-2" data-online-order-target="payTo" data-action="click->online-order#copyPayTo"
+                data-missing-text="<%= t("public.online_order.payment.pay_to_missing") %>"
+                data-copy-text="<%= t("public.online_order.payment.copy") %>"
+                data-copied-text="<%= t("public.online_order.payment.copied") %>"></ul>
           </div>
           <div>
             <label class="block text-sm font-semibold text-stone-900" for="online-order-proof"><%= t("public.online_order.payment.proof_label") %></label>

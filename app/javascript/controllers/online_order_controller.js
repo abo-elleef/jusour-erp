@@ -383,7 +383,49 @@ export default class extends Controller {
     if (!this.hasPayToTarget) return
     const total = this.totalTarget.textContent
     this.payToLabelTarget.textContent = this.payToLabelTarget.dataset.template.replace("%{total}", total)
-    this.payToTarget.textContent = this.selectedPayment()?.dataset.payTo || this.payToTarget.dataset.missingText
+    this.renderPayToLines(this.selectedPayment()?.dataset.payTo || "")
+  }
+
+  // Each line of the branch's "pay to" text gets a Copy button. Built with
+  // textContent: the text is typed by the branch, never treated as HTML.
+  renderPayToLines(text) {
+    const list = this.payToTarget
+    list.replaceChildren()
+    const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+    if (lines.length === 0) {
+      const item = document.createElement("li")
+      item.className = "text-sm text-stone-700"
+      item.textContent = list.dataset.missingText
+      list.append(item)
+      return
+    }
+
+    lines.forEach((line) => {
+      const item = document.createElement("li")
+      item.className = "flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-white px-3 py-2"
+      const value = document.createElement("span")
+      value.className = "min-w-0 break-all text-base font-bold text-stone-900 select-all"
+      value.dir = "auto"
+      value.textContent = line
+      const button = document.createElement("button")
+      button.type = "button"
+      button.className = "shrink-0 rounded-full border border-amber-600 px-3 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-50"
+      button.dataset.copyValue = copyValueFor(line)
+      button.textContent = list.dataset.copyText
+      item.append(value, button)
+      list.append(item)
+    })
+  }
+
+  async copyPayTo(event) {
+    const button = event.target.closest("button[data-copy-value]")
+    if (!button) return
+
+    const copied = await copyToClipboard(button.dataset.copyValue)
+    if (!copied) return
+    button.textContent = this.payToTarget.dataset.copiedText
+    clearTimeout(button.copyTimer)
+    button.copyTimer = setTimeout(() => { button.textContent = this.payToTarget.dataset.copyText }, 2000)
   }
 
   // Checked here only to tell the customer early; the server checks again.
@@ -501,5 +543,33 @@ export default class extends Controller {
   hideError(target) {
     target.textContent = ""
     target.classList.add("hidden")
+  }
+}
+
+// A phone or account number is copied as bare digits (Arabic-Indic digits turned
+// into 0-9, spaces and dashes dropped) so it pastes cleanly into the wallet app.
+// Anything else (an InstaPay address, a name) is copied as typed.
+function copyValueFor(line) {
+  const western = line.replace(/[\u0660-\u0669]/g, (d) => String(d.charCodeAt(0) - 0x0660))
+    .replace(/[\u06F0-\u06F9]/g, (d) => String(d.charCodeAt(0) - 0x06F0))
+  return /^[+\d\s-]+$/.test(western) ? western.replace(/[\s-]/g, "") : line
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    // Older phone browsers, or a page not served over https.
+    const area = document.createElement("textarea")
+    area.value = text
+    area.setAttribute("readonly", "")
+    area.style.position = "fixed"
+    area.style.opacity = "0"
+    document.body.append(area)
+    area.select()
+    const ok = document.execCommand("copy")
+    area.remove()
+    return ok
   }
 }
