@@ -4,6 +4,9 @@
     <div>
       <h1 class="text-2xl font-bold tracking-tight text-gray-900">
         <%= render "admin/title_crumbs", crumbs: [[t("admin.menu_nav.modifier_groups"), admin_modifier_groups_path]] %><%= @modifier_group.name %></h1>
+      <% if @modifier_group.public_name.present? %>
+        <p class="text-sm text-gray-500 mt-1"><%= t("menu.modifier_groups.public_name_shown_as", name: @modifier_group.public_name) %></p>
+      <% end %>
       <div class="flex flex-wrap gap-2 mt-2">
         <% if @modifier_group.required? %>
           <span class="text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200">

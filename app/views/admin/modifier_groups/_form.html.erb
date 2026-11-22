@@ -21,6 +21,13 @@
       </div>
 
       <div>
+        <%= f.label :public_name, t("menu.modifier_groups.public_name"), class: label_class %>
+        <%= f.text_field :public_name, class: input_class, autocomplete: "off",
+              placeholder: modifier_group.name.presence %>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("menu.modifier_groups.public_name_hint") %></p>
+      </div>
+
+      <div>
         <%= f.label :position, t("menu.modifier_groups.position"), class: label_class %>
         <%= f.number_field :position, min: 0, class: input_class %>
         <p class="text-xs text-gray-500 mt-1.5"><%= t("menu.modifier_groups.position_hint") %></p>
