@@ -10,6 +10,18 @@
        safe_join([label, tag.span(active ? (@direction == "asc" ? "↑" : "↓") : "", class: "text-amber-600")])
      end
    } %>
+<%# Every number links to the orders behind it: the same orders the report
+    counts (SalesReportService.orders_scope narrowed to delivery). %>
+<% orders_link = ->(content, row = nil) {
+     q = { order_type_eq: "delivery", business_date_gteq: @start_date.to_s, business_date_lteq: @end_date.to_s,
+           status_in: %w[completed] + (@include_open ? ::Accounting::SalesReportService::OPEN_STATUSES : []) }
+     location_id = row&.area&.location_id || @location&.id
+     q[:location_id_eq] = location_id if location_id
+     if row
+       row.area ? q[:delivery_area_id_eq] = row.area.id : q[:delivery_area_id_null] = 1
+     end
+     link_to content, admin_orders_path(q: q), class: "hover:text-amber-700 hover:underline", data: { turbo_frame: "_top" }
+   } %>
 <% share = ->(orders) { @totals.orders.zero? ? 0 : (100.0 * orders / @totals.orders) } %>
 
 <div class="max-w-full">
@@ -122,11 +134,11 @@
                     <%= link_to row.location.name, admin_location_path(row.location), class: "hover:text-amber-700" if row.location %>
                   </td>
                 <% end %>
-                <td class="p-3 text-end tabular-nums font-semibold"><%= row.orders %></td>
+                <td class="p-3 text-end tabular-nums font-semibold"><%= row.orders.zero? ? row.orders : orders_link.call(row.orders, row) %></td>
                 <td class="p-3 text-end tabular-nums"><%= number_with_precision(share.call(row.orders), precision: 1) %>%</td>
-                <td class="p-3 text-end tabular-nums"><%= format_amount(row.fee_cents) %></td>
+                <td class="p-3 text-end tabular-nums"><%= row.orders.zero? ? format_amount(row.fee_cents) : orders_link.call(format_amount(row.fee_cents), row) %></td>
                 <td class="p-3 text-end tabular-nums"><%= format_amount(row.avg_fee_cents) %></td>
-                <td class="p-3 text-end tabular-nums"><%= format_amount(row.food_cents) %></td>
+                <td class="p-3 text-end tabular-nums"><%= row.orders.zero? ? format_amount(row.food_cents) : orders_link.call(format_amount(row.food_cents), row) %></td>
                 <td class="p-3 pe-5 text-end tabular-nums"><%= format_amount(row.avg_food_cents) %></td>
               </tr>
             <% end %>
@@ -134,11 +146,11 @@
           <tfoot class="border-t-2 border-gray-200 bg-gray-50 font-semibold">
             <tr data-testid="delivery-area-totals">
               <td class="p-3 ps-5" colspan="<%= show_branch ? 2 : 1 %>"><%= t("#{scope}.total") %></td>
-              <td class="p-3 text-end tabular-nums"><%= @totals.orders %></td>
+              <td class="p-3 text-end tabular-nums"><%= @totals.orders.zero? ? @totals.orders : orders_link.call(@totals.orders) %></td>
               <td class="p-3 text-end tabular-nums"><%= @totals.orders.zero? ? "—" : "100%" %></td>
-              <td class="p-3 text-end tabular-nums"><%= format_amount(@totals.fee_cents) %></td>
+              <td class="p-3 text-end tabular-nums"><%= orders_link.call(format_amount(@totals.fee_cents)) %></td>
               <td class="p-3 text-end tabular-nums"><%= format_amount(@totals.avg_fee_cents) %></td>
-              <td class="p-3 text-end tabular-nums"><%= format_amount(@totals.food_cents) %></td>
+              <td class="p-3 text-end tabular-nums"><%= orders_link.call(format_amount(@totals.food_cents)) %></td>
               <td class="p-3 pe-5 text-end tabular-nums"><%= format_amount(@totals.avg_food_cents) %></td>
             </tr>
           </tfoot>

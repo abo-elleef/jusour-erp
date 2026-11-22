@@ -30,9 +30,12 @@ module Admin
       @focus = params[:focus].presence
       @filter_date = params[:date].presence
       @q = Order.ransack(params[:q])
-      scope = @q.result.includes(:user, :customer, :payments, :order_items)
+      scope = @q.result
       scope = scope.on_date(@filter_date) if @filter_date.present?
       scope = apply_focus_filter(scope)
+      load_report_filters
+      @delivery_summary = delivery_summary(scope) if @q.order_type_eq == "delivery"
+      scope = scope.includes(:user, :customer, :payments, :order_items, :delivery_area)
       @sort = INDEX_SORTS.key?(params[:sort].to_s) ? params[:sort].to_s : INDEX_DEFAULT_SORT
       @direction = %w[asc desc].include?(params[:dir].to_s) ? params[:dir].to_s : INDEX_DEFAULT_DIRECTION
       scope = apply_sort(scope)
@@ -181,6 +184,29 @@ module Admin
       when "unpaid" then scope.unpaid
       else scope
       end
+    end
+
+    # Filters a report link sets (e.g. the Delivery areas report): a business-date
+    # range, the report's statuses, a branch and a delivery area. They have no field
+    # on the form, so the page shows them as chips and keeps them as hidden fields.
+    REPORT_FILTER_KEYS = %w[business_date_gteq business_date_lteq status_in location_id_eq
+                            delivery_area_id_eq delivery_area_id_null].freeze
+
+    def load_report_filters
+      q = params[:q].respond_to?(:to_unsafe_h) ? params[:q].to_unsafe_h : {}
+      @report_filters = q.slice(*REPORT_FILTER_KEYS).compact_blank
+      @report_location = Location.find_by(id: @report_filters["location_id_eq"]) if @report_filters["location_id_eq"]
+      @report_area = DeliveryArea.find_by(id: @report_filters["delivery_area_id_eq"]) if @report_filters["delivery_area_id_eq"]
+    end
+
+    # The same three numbers the Delivery areas report shows for these orders, so a
+    # click from the report lands on a list that adds up to the number clicked.
+    def delivery_summary(scope)
+      count, fees, food = scope.reorder(nil).pick(
+        Arel.sql("COUNT(*)"), Arel.sql("COALESCE(SUM(delivery_fee_cents), 0)"),
+        Arel.sql("COALESCE(SUM(COALESCE(subtotal_cents, 0) - COALESCE(discount_cents, 0)), 0)")
+      )
+      { orders: count.to_i, fee_cents: fees.to_i, food_cents: food.to_i }
     end
 
     def load_order_stats

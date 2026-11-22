@@ -4763,6 +4763,11 @@ en:
       focus_unpaid: "Unpaid"
       remove_open_filter: "Remove open filter"
       remove_unpaid_filter: "Remove unpaid filter"
+      remove_filter: "Remove filter"
+      delivery_fee: "fee %{amount}"
+      report_filters:
+        business_dates: "Business days %{from} → %{to}"
+        area: "Area: %{name}"
       remove_date_filter: "Remove date filter"
       showing_orders:
         one: "Showing %{count} order"

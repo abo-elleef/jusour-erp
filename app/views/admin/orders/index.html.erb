@@ -55,6 +55,11 @@
         <%= hidden_field_tag :focus, @focus if @focus.present? %>
         <%= hidden_field_tag :sort, params[:sort] if params[:sort].present? %>
         <%= hidden_field_tag :dir, params[:dir] if params[:dir].present? %>
+        <% @report_filters.each do |key, value| %>
+          <% Array(value).each do |v| %>
+            <%= hidden_field_tag "q[#{key}]#{'[]' if value.is_a?(Array)}", v, id: nil %>
+          <% end %>
+        <% end %>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <div>
             <%= label_tag :date, t("admin.orders.day"), class: label_class %>
@@ -128,6 +133,29 @@
                     class: "hover:text-gray-900 ml-0.5", aria: { label: t("admin.orders.remove_date_filter") } %>
             </span>
           <% end %>
+          <% if @report_filters.any? %>
+            <% chip = ->(label, *keys) {
+                 tag.span(class: "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 text-xs font-semibold", data: { testid: "orders-report-filter" }) do
+                   safe_join([label, link_to("×", admin_orders_path(admin_orders_filter_params.merge("q" => admin_orders_filter_params.fetch("q", {}).except(*keys))),
+                                             class: "hover:text-amber-950 ms-0.5", aria: { label: t("admin.orders.remove_filter") })])
+                 end
+               } %>
+            <% from, to = @report_filters.values_at("business_date_gteq", "business_date_lteq") %>
+            <% if from || to %>
+              <%= chip.call(t("admin.orders.report_filters.business_dates", from: from || "…", to: to || "…"), "business_date_gteq", "business_date_lteq") %>
+            <% end %>
+            <% if @report_filters["status_in"] %>
+              <%= chip.call(Array(@report_filters["status_in"]).map { |st| order_status_label(st) }.join(" + "), "status_in") %>
+            <% end %>
+            <% if @report_location %>
+              <%= chip.call(@report_location.name, "location_id_eq") %>
+            <% end %>
+            <% if @report_area %>
+              <%= chip.call(t("admin.orders.report_filters.area", name: @report_area.display_name), "delivery_area_id_eq") %>
+            <% elsif @report_filters["delivery_area_id_null"] %>
+              <%= chip.call(t("accounting.delivery_area_reports.no_area"), "delivery_area_id_null") %>
+            <% end %>
+          <% end %>
           <span class="text-sm text-gray-500 ml-auto tabular-nums">
             <%= t("admin.orders.showing_orders", count: @pagy.count) %>
           </span>
@@ -135,6 +163,19 @@
       <% end %>
     </div>
   </section>
+
+  <% if @delivery_summary && @delivery_summary[:orders].positive? %>
+    <div class="grid grid-cols-3 gap-4 mb-6" data-testid="orders-delivery-summary">
+      <% [[t("accounting.delivery_area_reports.orders"), @delivery_summary[:orders]],
+          [t("accounting.delivery_area_reports.fees"), format_amount(@delivery_summary[:fee_cents])],
+          [t("accounting.delivery_area_reports.food"), format_amount(@delivery_summary[:food_cents])]].each do |label, value| %>
+        <div class="rounded-2xl border border-gray-200 bg-white p-4">
+          <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= label %></p>
+          <p class="text-xl font-bold mt-1 text-gray-900 tabular-nums"><%= value %></p>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 
   <% if @orders.any? %>
     <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
@@ -183,7 +224,13 @@
                   <% if order.source == "online" %>
                     <span class="ms-1 text-xs uppercase font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-800"><%= t("order.sources.online") %></span>
                   <% end %>
-                  <span class="text-xs text-gray-500 block mt-1"><%= order.fulfillment_summary %></span>
+                  <span class="text-xs text-gray-500 block mt-1">
+                    <%= order.fulfillment_summary %>
+                    <% if order.order_type == "delivery" %>
+                      · <%= order.delivery_area&.display_name || t("accounting.delivery_area_reports.no_area") %>
+                      · <%= t("admin.orders.delivery_fee", amount: format_amount(order.delivery_fee_cents.to_i)) %>
+                    <% end %>
+                  </span>
                 </td>
                 <td class="p-3">
                   <span class="text-xs uppercase font-semibold px-2.5 py-1 rounded-full <%= order_status_class(order.status) %>">

@@ -4863,6 +4863,11 @@ ar:
       focus_unpaid: "غير مدفوعة"
       remove_open_filter: "إزالة تصفية المفتوحة"
       remove_unpaid_filter: "إزالة تصفية غير المدفوعة"
+      remove_filter: "إزالة التصفية"
+      delivery_fee: "رسوم %{amount}"
+      report_filters:
+        business_dates: "أيام العمل %{from} ← %{to}"
+        area: "المنطقة: %{name}"
       remove_date_filter: "إزالة تصفية التاريخ"
       showing_orders:
         one: "عرض %{count} طلب"
