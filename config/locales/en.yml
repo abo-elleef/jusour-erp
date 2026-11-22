@@ -86,6 +86,8 @@ en:
         prepaid: "Pay now and send a screenshot"
         pay_to: "Transfer %{total} to:"
         pay_to_missing: "Call the branch for the transfer details."
+        copy: "Copy"
+        copied: "Copied ✓"
         proof_label: "Screenshot of the transfer"
         proof_hint: "A screenshot from the app showing the amount. The restaurant checks it before confirming your order."
         paid_now: "Paid (screenshot sent)"
