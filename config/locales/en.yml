@@ -6389,6 +6389,18 @@ en:
       day: "Day"
       hour: "Hour"
       export_pdf: "Export PDF"
+      pdf:
+        title: "Sales report"
+        generated_at: "Generated %{time}"
+        completed_only: "Completed orders only"
+        category: "Category"
+        summary: "Summary"
+        this_period: "This period"
+        previous_period: "Previous (%{range})"
+        change: "Change"
+        amount: "Amount"
+        by_day: "Sales by day"
+        by_hour: "Sales by hour"
     food_costs:
       title: "Food cost %"
       description: "Food cost as a percentage of revenue, by menu item."
