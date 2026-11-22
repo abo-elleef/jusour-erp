@@ -27,8 +27,17 @@
       <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= @total_count %></p>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
-      <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("customers.stats.lifetime_spend") %></p>
-      <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@total_lifetime_spend_cents) %></p>
+      <% if @orders_filtered %>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("customers.stats.period_spend") %></p>
+        <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_amount(@period_spent_cents) %></p>
+        <p class="text-xs text-gray-500 mt-1.5">
+          <%= t("customers.stats.period_orders", count: @period_orders_count) %> ·
+          <%= [@orders_from, @orders_to].map { |d| d ? l(d, format: :long) : t("customers.shared.em_dash") }.join(" → ") %>
+        </p>
+      <% else %>
+        <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("customers.stats.lifetime_spend") %></p>
+        <p class="text-2xl font-bold mt-1 text-gray-900 tabular-nums"><%= format_money(@total_lifetime_spend_cents) %></p>
+      <% end %>
     </div>
     <div class="rounded-2xl border border-gray-200 bg-white p-4">
       <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide"><%= t("customers.stats.with_points") %></p>
@@ -79,6 +88,14 @@
         <div>
           <%= label_tag :joined_to, t("customers.search.joined_to"), class: label_class %>
           <%= date_field_tag :joined_to, @joined_to, class: pos_input_class %>
+        </div>
+        <div>
+          <%= label_tag :orders_from, t("customers.search.orders_from"), class: label_class %>
+          <%= date_field_tag :orders_from, @orders_from, class: pos_input_class %>
+        </div>
+        <div>
+          <%= label_tag :orders_to, t("customers.search.orders_to"), class: label_class %>
+          <%= date_field_tag :orders_to, @orders_to, class: pos_input_class %>
         </div>
         <%= f.submit t("customers.search.apply"),
               class: "bg-gray-900 hover:bg-gray-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors" %>
@@ -132,9 +149,26 @@
               </th>
               <th class="p-3 text-end">
                 <div class="flex justify-end">
+                  <%= sort_header_link(t("customers.table.orders"), :orders_count, **sort_opts) %>
+                </div>
+              </th>
+              <th class="p-3 text-end">
+                <div class="flex justify-end">
                   <%= sort_header_link(t("customers.table.lifetime_spend"), :total_spent_cents, **sort_opts) %>
                 </div>
               </th>
+              <% if @orders_filtered %>
+                <th class="p-3 text-end bg-amber-50/60">
+                  <div class="flex justify-end">
+                    <%= sort_header_link(t("customers.table.period_orders"), :period_orders_count, **sort_opts) %>
+                  </div>
+                </th>
+                <th class="p-3 text-end bg-amber-50/60">
+                  <div class="flex justify-end">
+                    <%= sort_header_link(t("customers.table.period_spend"), :period_spent_cents, **sort_opts) %>
+                  </div>
+                </th>
+              <% end %>
               <% if @show_salesperson %>
                 <th class="p-3 text-start"><%= t("customers.salesperson.label") %></th>
               <% end %>
@@ -173,9 +207,16 @@
                     <span class="text-gray-400 tabular-nums">0</span>
                   <% end %>
                 </td>
+                <td class="p-3 text-end text-gray-700 tabular-nums"><%= c.orders_count %></td>
                 <td class="p-3 text-end font-semibold text-gray-900 tabular-nums whitespace-nowrap">
                   <%= format_money(c.total_spent_cents) %>
                 </td>
+                <% if @orders_filtered %>
+                  <td class="p-3 text-end text-gray-900 tabular-nums bg-amber-50/40"><%= c.period_orders_count %></td>
+                  <td class="p-3 text-end font-semibold text-gray-900 tabular-nums whitespace-nowrap bg-amber-50/40">
+                    <%= format_amount(c.period_spent_cents) %>
+                  </td>
+                <% end %>
                 <% if @show_salesperson %>
                   <td class="p-3 text-gray-700 whitespace-nowrap">
                     <% if c.assigned_user && policy(c.assigned_user).show? %>

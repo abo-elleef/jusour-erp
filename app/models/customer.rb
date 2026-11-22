@@ -67,6 +67,35 @@ class Customer < ApplicationRecord
     %w[addresses]
   end
 
+  # Orders a customer counts on the customers list: completed POS orders plus
+  # realized (confirmed/historical) customer invoices — the same sources that
+  # feed total_spent_cents (Loyalty::AwardPointsService, invoice/credit-note
+  # confirmation). Spend = orders net of tips + invoices − realized credit notes.
+  # from/to (dates, either may be nil) narrow it to orders on those days: the
+  # order's business_date, the invoice_date, the credit_note_date.
+  def self.order_count_sql(from: nil, to: nil)
+    "((#{stats_subquery("orders", "COUNT(*)", "status = 'completed'", "business_date", from, to)}) + " \
+      "(#{stats_subquery("customer_invoices", "COUNT(*)", "status IN ('confirmed', 'historical')",
+                         "invoice_date", from, to)}))"
+  end
+
+  def self.order_spend_sql(from: nil, to: nil)
+    "(#{stats_subquery("orders", "COALESCE(SUM(total_cents - tip_cents), 0)", "status = 'completed'",
+                       "business_date", from, to)}) + " \
+      "(#{stats_subquery("customer_invoices", "COALESCE(SUM(total_cents), 0)",
+                         "status IN ('confirmed', 'historical')", "invoice_date", from, to)}) - " \
+      "(#{stats_subquery("credit_notes", "COALESCE(SUM(total_cents), 0)",
+                         "status IN ('confirmed', 'historical')", "credit_note_date", from, to)})"
+  end
+
+  def self.stats_subquery(table, aggregate, condition, date_column, from, to)
+    sql = "SELECT #{aggregate} FROM #{table} s WHERE s.customer_id = customers.id AND s.#{condition}"
+    sql += " AND s.#{date_column} >= #{connection.quote(from.to_date)}" if from
+    sql += " AND s.#{date_column} <= #{connection.quote(to.to_date)}" if to
+    sql
+  end
+  private_class_method :stats_subquery
+
   scope :blocked, -> { where.not(blocked_at: nil) }
 
   # A blocked customer cannot place online (self-)orders. Staff can still sell to

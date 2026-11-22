@@ -19,11 +19,15 @@ module Admin
       @direction = parse_index_sort_direction_param
       @joined_from = parse_date_param(:joined_from)
       @joined_to = parse_date_param(:joined_to)
+      @orders_from = parse_date_param(:orders_from)
+      @orders_to = parse_date_param(:orders_to)
+      @orders_filtered = @orders_from.present? || @orders_to.present?
       scope = joined_scope(@q.result)
       scope = filter_by_salesperson(scope)
+      scope = with_order_stats(scope)
 
       if request.format.csv?
-        return send_data customers_csv(scope.order(@sort => @direction, id: :asc)),
+        return send_data customers_csv(sorted(scope)),
                          filename: "customers-#{Date.current.iso8601}.csv",
                          type: "text/csv; charset=utf-8"
       end
@@ -39,13 +43,19 @@ module Admin
         else
           visible.where(created_at: Time.current.all_month).count
         end
-      @filtered = @date_filtered || @salesperson_filter.present? ||
+      if @orders_filtered
+        period = { from: @orders_from, to: @orders_to }
+        unpaged = scope.unscope(:select)
+        @period_orders_count = unpaged.sum(Arel.sql(Customer.order_count_sql(**period))).to_i
+        @period_spent_cents = unpaged.sum(Arel.sql(Customer.order_spend_sql(**period))).to_i
+      end
+      @filtered = @date_filtered || @orders_filtered || @salesperson_filter.present? ||
         (params[:q].present? && params[:q].to_unsafe_h.values.any?(&:present?))
       @show_salesperson = ::Sales::OwnershipScope.applies_to?(Current.company)
       @salespeople = salespeople if ownership.manages_assignment?
       @pagy, @customers = pagy(
         :offset,
-        (@show_salesperson ? scope.includes(:assigned_user) : scope).order(@sort => @direction, id: :asc),
+        sorted(@show_salesperson ? scope.includes(:assigned_user) : scope),
         limit: 25
       )
     end
@@ -236,7 +246,9 @@ module Admin
     end
 
     def load_orders_tab
-      @orders_pagy, @orders = pagy(:offset, @customer.orders.order(created_at: :desc), limit: TAB_PAGE_SIZE)
+      @orders_pagy, @orders = pagy(:offset, @customer.orders
+        .includes(:location, :delivery_area, :payments, :order_items, :order_discounts)
+        .order(created_at: :desc), limit: TAB_PAGE_SIZE)
     end
 
     def load_loyalty_tab
@@ -284,6 +296,31 @@ module Admin
       nil
     end
 
+    # Every row carries orders_count (all time). With an orders date range the
+    # list keeps only customers who bought in it, and each row also carries
+    # period_orders_count / period_spent_cents for that range.
+    def with_order_stats(scope)
+      selects = ["customers.*", "#{Customer.order_count_sql} AS orders_count"]
+      if @orders_filtered
+        period = { from: @orders_from, to: @orders_to }
+        selects << "#{Customer.order_count_sql(**period)} AS period_orders_count"
+        selects << "#{Customer.order_spend_sql(**period)} AS period_spent_cents"
+        scope = scope.where("#{Customer.order_count_sql(**period)} > 0")
+      end
+      scope.select(*selects)
+    end
+
+    # The computed columns sort by their select alias; real columns as before.
+    def sorted(scope)
+      if COMPUTED_SORTS.include?(@sort)
+        scope.order(Arel.sql("#{@sort} #{@direction}"), id: :asc)
+      else
+        scope.order(@sort => @direction, id: :asc)
+      end
+    end
+
+    COMPUTED_SORTS = %w[orders_count period_orders_count period_spent_cents].freeze
+
     # Joined-date range is inclusive of both days, in the app time zone.
     def joined_scope(scope)
       scope = scope.where(created_at: @joined_from.beginning_of_day..) if @joined_from
@@ -298,8 +335,9 @@ module Admin
           t("customers.csv.legacy_code"), t("customers.form.name"), t("customers.form.email"),
           t("customers.form.phone"), t("customers.form.phone_secondary"),
           t("customers.csv.default_address"), t("customers.table.loyalty"),
-          t("customers.table.lifetime_spend"), t("customers.table.joined")
+          t("customers.table.orders"), t("customers.table.lifetime_spend"), t("customers.table.joined")
         ]
+        header += [t("customers.table.period_orders"), t("customers.table.period_spend")] if @orders_filtered
         header += [t("customers.form.customer_type"), t("customers.csv.ar_balance")] if credit
         csv << header
 
@@ -308,9 +346,12 @@ module Admin
           default_address = customer.addresses.find(&:is_default?) || customer.addresses.first
           row = [
             customer.legacy_code, customer.name, customer.email, customer.phone, customer.phone_secondary,
-            default_address&.address, customer.loyalty_points,
+            default_address&.address, customer.loyalty_points, customer.orders_count,
             helpers.format_amount(customer.total_spent_cents), customer.created_at.to_date
           ]
+          if @orders_filtered
+            row += [customer.period_orders_count, helpers.format_amount(customer.period_spent_cents)]
+          end
           if credit
             row += [t("customers.form.types.#{customer.customer_type}"),
                     helpers.format_amount(customer.ar_balance_cents)]
@@ -322,6 +363,10 @@ module Admin
 
     def parse_index_sort_param
       sort = params[:sort].to_s
+      return sort if sort == "orders_count"
+      return sort if sort.start_with?("period_") && COMPUTED_SORTS.include?(sort) &&
+        (parse_date_param(:orders_from) || parse_date_param(:orders_to))
+
       Customer::INDEX_SORTABLE_COLUMNS.include?(sort) ? sort : Customer::INDEX_DEFAULT_SORT
     end
 
