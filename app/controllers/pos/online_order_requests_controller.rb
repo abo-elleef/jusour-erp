@@ -17,8 +17,8 @@ module Pos
     before_action(only: :accept) { require_open_drawer_to_order!(location: @pos_location) }
 
     def index
-      scope = OnlineOrderRequest.where(location: @pos_location).includes(:customer, :delivery_area, :order, :decided_by)
-      @pending = scope.pending.where("expires_at > ?", Time.current).order(:created_at)
+      scope = OnlineOrderRequest.where(location: @pos_location).includes(:customer, :delivery_area, :order, :decided_by, :created_by)
+      @pending = scope.waiting.order(:created_at)
       @checks = @pending.to_h { |req| [req.id, OnlineOrders::CustomerCheck.new(req)] }
       @recent = scope.where.not(status: "pending").where(decided_at: 12.hours.ago..).order(decided_at: :desc).limit(20)
     end

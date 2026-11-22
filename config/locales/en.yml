@@ -74,6 +74,7 @@ en:
       phone_hint: "We may call to confirm your order."
       area: "Delivery area"
       choose_area: "Choose your area"
+      search_area: "Search for your area…"
       address: "Address (street, building, floor, flat)"
       note: "Note for the restaurant (optional)"
       subtotal: "Items"
@@ -664,6 +665,38 @@ en:
         skipped: "Skipped"
         handled: "Printed by hand"
 
+  call_center:
+    title: "Call center"
+    new_order: "New order for"
+    ordering_for: "Order for %{branch}"
+    back_to_admin: "Admin"
+    no_branches: "No branch takes call-center orders yet. A manager turns it on in the branch settings."
+    no_access: "You don't have access to the call center."
+    branch_unavailable: "This branch doesn't take call-center orders."
+    today: "Sent today"
+    none_today: "Nothing sent yet today."
+    sent: "Sent to %{branch} for %{name}. It shows here when the branch accepts it."
+    waiting_for: "Waiting %{time}"
+    call_branch: "Not answered yet — call the branch:"
+    accepted: "Accepted #%{number}"
+    cancel: "Cancel"
+    cancel_confirm: "Cancel this order? The branch hasn't accepted it yet."
+    cancelled: "Order cancelled."
+    checkout:
+      your_order: "Customer's order"
+      name: "Customer name"
+      phone: "Customer mobile"
+      phone_hint: "The branch may call this number to confirm."
+      note: "Note for the branch (optional)"
+      no_areas: "This branch has no delivery areas yet, so it takes pickup only."
+      add_areas: "Add delivery areas"
+      search_area: "Search for the customer's area…"
+    columns:
+      sent_at: "Sent"
+      branch: "Branch"
+      customer: "Customer"
+      total: "Total"
+      status: "Status"
   nav:
     website: "Website"
     website_items:
@@ -707,6 +740,7 @@ en:
         other: "%{count} placed orders not paid yet"
     kitchen: "Kitchen"
     production: "Production"
+    call_center: "Call center"
     admin: "Admin"
     groups:
       sell_serve: "Sell & serve"
@@ -738,6 +772,7 @@ en:
       pos: "Register"
       offline: "Offline register"
       online: "Online"
+      call_center: "Call center"
     errors:
       table_busy: "Table %{table} already has an open order (%{number})."
     types:
@@ -1075,6 +1110,7 @@ en:
         view: "View orders"
         refund: "Void & refund orders"
         complete_unpaid: "Complete unpaid orders"
+        take_remote: "Call center: send orders to branches"
       menu:
         manage: "Manage menu"
       customers:
@@ -4003,6 +4039,8 @@ en:
         came_in: "Request came in"
         waiting: "Waiting for a cashier"
         expires_at: "Expires at %{time} if nobody answers"
+        no_expiry: "Call-center order — it doesn't expire; the branch is reminded every 3 minutes"
+        cancelled_by: "Cancelled by"
         expired: "Expired — nobody answered in time"
         accepted_by: "Accepted by"
         rejected_by: "Rejected by"
@@ -4024,6 +4062,12 @@ en:
       price_changed: "Prices changed since the customer ordered. New total: %{total}. Call the customer if needed, then accept again."
       open_order: "Open order #%{number}"
       order_note_prefix: "Online order — %{phone}"
+      call_center_note_prefix: "Call center (%{agent}) — %{phone}"
+      call_center_tag: "Call center · %{agent}"
+      late_tag: "Waiting too long"
+      late_badge:
+        one: "1 call-center order waiting too long"
+        other: "%{count} call-center orders waiting too long"
       reasons:
         closed: "Closed / too busy"
         out_of_area: "Outside delivery area"
@@ -4036,6 +4080,7 @@ en:
         accepted: "Accepted"
         rejected: "Rejected"
         expired: "Expired"
+        cancelled: "Cancelled"
       errors:
         not_pending: "This order was already handled."
         expired: "This order expired before it was accepted."
@@ -4581,6 +4626,11 @@ en:
       same_phone: "Other requests from this phone"
       same_phone_none: "No other requests from this phone."
       see_all: "See all"
+      channel: "Sent from"
+      channels:
+        public: "Public menu"
+        call_center: "Call center"
+      sent_by: "Sent by"
     delivery_areas:
       title: "Delivery areas"
       description: "The areas this branch delivers online orders to, each with its own delivery fee."
@@ -4633,6 +4683,10 @@ en:
         remove_confirm: "Remove this mapping? Online payments via this method won't be booked to any treasury until you reassign."
         hint: "Totals are booked automatically when a cashier closes the drawer. If no treasury is mapped for a method, that method's payments are skipped."
     locations:
+      call_center:
+        heading: "Call center"
+        enabled: "Take call-center orders"
+        hint: "Staff with the call-center permission can send phone and WhatsApp orders to this branch from anywhere. Each one arrives on the register's Online tab like an online order; the cashier who accepts it owns it, and it prints here. Works even when the public menu is off."
       online_ordering:
         heading: "Online ordering"
         description: "Lets customers order delivery or pickup from this branch's public menu, paying by the methods below. Each order arrives at the register as a request a cashier accepts or rejects. Needs the public menu on."

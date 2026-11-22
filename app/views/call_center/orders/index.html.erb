@@ -1,0 +1,96 @@
+<% content_for :title, t("call_center.title") %>
+<%= turbo_stream_from OnlineOrders::Broadcast.call_center_stream_name(current_user.company_id) %>
+
+<main class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+  <% if @sent %>
+    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
+      <%= t("call_center.sent", branch: @sent.location.name, name: @sent.customer_name) %>
+    </div>
+  <% end %>
+
+  <section aria-labelledby="call-center-branches">
+    <h1 id="call-center-branches" class="text-base font-semibold text-stone-900 mb-3"><%= t("call_center.new_order") %></h1>
+    <% if @locations.any? %>
+      <div class="flex flex-wrap gap-2">
+        <% @locations.each do |location| %>
+          <%= link_to location.name, new_call_center_order_path(location),
+                class: "inline-flex min-h-[3rem] items-center rounded-xl bg-amber-700 px-5 text-sm font-semibold text-white hover:bg-amber-800" %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="text-sm text-stone-600"><%= t("call_center.no_branches") %></p>
+    <% end %>
+  </section>
+
+  <section aria-labelledby="call-center-today">
+    <h2 id="call-center-today" class="text-base font-semibold text-stone-900 mb-3"><%= t("call_center.today") %></h2>
+    <% if @requests.empty? %>
+      <p class="text-sm text-stone-500"><%= t("call_center.none_today") %></p>
+    <% else %>
+      <div class="overflow-x-auto rounded-2xl border border-stone-200 bg-white">
+        <table class="min-w-full text-sm">
+          <thead class="bg-stone-50 text-xs uppercase text-stone-500">
+            <tr>
+              <th class="p-3 text-start"><%= t("call_center.columns.sent_at") %></th>
+              <th class="p-3 text-start"><%= t("call_center.columns.branch") %></th>
+              <th class="p-3 text-start"><%= t("call_center.columns.customer") %></th>
+              <th class="p-3 text-end"><%= t("call_center.columns.total") %></th>
+              <th class="p-3 text-start"><%= t("call_center.columns.status") %></th>
+              <th class="p-3"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-100">
+            <% @requests.each do |req| %>
+              <% late = req.late? %>
+              <tr id="<%= dom_id(req) %>" class="<%= "bg-amber-50" if late %>">
+                <td class="p-3 tabular-nums whitespace-nowrap"><%= l(req.created_at, format: "%-I:%M %p") %></td>
+                <td class="p-3"><%= req.location.name %></td>
+                <td class="p-3">
+                  <%= req.customer_name %>
+                  <span class="block text-xs text-stone-500 tabular-nums" dir="ltr"><%= req.phone %></span>
+                </td>
+                <td class="p-3 text-end tabular-nums"><%= format_amount(req.total_cents) %></td>
+                <td class="p-3">
+                  <% if req.pending? %>
+                    <span class="rounded-full px-2.5 py-1 text-xs font-semibold <%= late ? "bg-amber-200 text-amber-900" : "bg-amber-100 text-amber-800" %>">
+                      <%= t("call_center.waiting_for", time: time_ago_in_words(req.created_at)) %>
+                    </span>
+                    <% if late %>
+                      <p class="mt-1 text-xs text-amber-900">
+                        <%= t("call_center.call_branch") %>
+                        <% if req.location.phone.present? %>
+                          <%= link_to req.location.phone, req.location.phone_url, class: "font-semibold underline tabular-nums", dir: "ltr" %>
+                        <% end %>
+                      </p>
+                    <% end %>
+                  <% elsif req.accepted? %>
+                    <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                      <%= t("call_center.accepted", number: req.order&.order_number) %>
+                    </span>
+                    <% if req.order %>
+                      <span class="block mt-1 text-xs text-stone-500"><%= t("order.statuses.#{req.order.status}", default: req.order.status.humanize) %></span>
+                    <% end %>
+                  <% elsif req.rejected? %>
+                    <span class="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-800"><%= t("pos.online_orders.statuses.rejected") %></span>
+                    <span class="block mt-1 text-xs text-rose-800">
+                      <%= t("pos.online_orders.reasons.#{req.reject_reason}", default: "") %><% if req.decided_by %> · <%= req.decided_by.name %><% end %>
+                    </span>
+                  <% else %>
+                    <span class="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-semibold text-stone-700"><%= t("pos.online_orders.statuses.#{req.status}") %></span>
+                  <% end %>
+                </td>
+                <td class="p-3 text-end">
+                  <% if req.pending? %>
+                    <%= button_to t("call_center.cancel"), cancel_call_center_order_path(req.token), method: :patch,
+                          form: { data: { turbo_confirm: t("call_center.cancel_confirm") } },
+                          class: "rounded-lg border border-stone-300 px-3 py-1.5 text-xs text-stone-700 hover:bg-stone-50" %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </section>
+</main>

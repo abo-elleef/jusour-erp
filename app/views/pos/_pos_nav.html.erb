@@ -34,7 +34,7 @@
       <% if online_count %>
         <%= pos_nav_tab t("nav.online_orders"), pos_online_order_requests_path, request.path.start_with?("/pos/online"),
               "M12 21a9 9 0 100-18 9 9 0 000 18zm0 0c2.5-2.5 3.5-5.5 3.5-9S14.5 5.5 12 3m0 18c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3M3.6 9h16.8M3.6 15h16.8",
-              badge: render("pos/online_order_requests/badge", count: online_count, location: @pos_location, ring: false) %>
+              badge: render("pos/online_order_requests/badge", count: online_count, late: pos_online_late_count(@pos_location), location: @pos_location, ring: false) %>
       <% end %>
       <%# Opens straight on the Open list, where Complete paid is. %>
       <%= pos_nav_tab t("nav.my_shift"), (nudges[:paid_to_complete].to_i.positive? ? pos_shift_path(tab: "orders", filter: "open") : pos_shift_path), request.path.start_with?("/pos/shift"),

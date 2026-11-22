@@ -18,17 +18,21 @@
     </li>
 
     <li class="flex gap-3" data-testid="online-order-decision">
-      <% dot = { "accepted" => "bg-emerald-500", "rejected" => "bg-rose-500", "expired" => "bg-gray-400" }.fetch(status, "bg-amber-400") %>
+      <% dot = { "accepted" => "bg-emerald-500", "rejected" => "bg-rose-500", "expired" => "bg-gray-400", "cancelled" => "bg-gray-400" }.fetch(status, "bg-amber-400") %>
       <span class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full <%= dot %>"></span>
       <div class="min-w-0 flex-1">
       <% if status == "pending" %>
         <p class="font-semibold text-amber-800"><%= t("pos.online_orders.story.waiting") %></p>
-        <p class="text-gray-600 tabular-nums"><%= t("pos.online_orders.story.expires_at", time: l(request.expires_at, format: :ticket)) %></p>
+        <% if request.expires_at %>
+          <p class="text-gray-600 tabular-nums"><%= t("pos.online_orders.story.expires_at", time: l(request.expires_at, format: :ticket)) %></p>
+        <% else %>
+          <p class="text-gray-600"><%= t("pos.online_orders.story.no_expiry") %></p>
+        <% end %>
       <% elsif status == "expired" %>
         <p class="font-semibold text-gray-800"><%= t("pos.online_orders.story.expired") %></p>
         <p class="text-gray-600 tabular-nums"><%= l(request.decided_at || request.expires_at, format: :long_with_time) %></p>
       <% else %>
-        <p class="font-semibold <%= status == "accepted" ? "text-emerald-800" : "text-rose-800" %>">
+        <p class="font-semibold <%= { "accepted" => "text-emerald-800", "cancelled" => "text-gray-800" }.fetch(status, "text-rose-800") %>">
           <%= t("pos.online_orders.story.#{status}_by") %>
           <% if request.decided_by %>
             <% if user_link %><%= link_to request.decided_by.name, user_link.call(request.decided_by), class: "hover:underline" %><% else %><%= request.decided_by.name %><% end %>

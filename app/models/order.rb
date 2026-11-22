@@ -13,7 +13,7 @@ class Order < ApplicationRecord
   ORDER_TYPES = %w[delivery pickup table].freeze
   # Where the order was keyed in: the register, the offline register (synced
   # later), or a customer's self-order from the public menu.
-  SOURCES = %w[pos offline online].freeze
+  SOURCES = %w[pos offline online call_center].freeze
 
   # Advisory-lock namespace, so order numbering can never contend with another
   # part of the app that reaches for an advisory lock of its own.

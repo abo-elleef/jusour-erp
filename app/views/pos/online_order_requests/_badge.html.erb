@@ -1,10 +1,16 @@
 <%# The pending-count pill on the "Online" tab. Replaced over the pos_online_* stream
     whenever a request arrives or is decided; online_badge_controller beeps when the
-    count goes up. locals: count, location, ring %>
+    count goes up, and again on each "nudge" (a call-center request still waiting,
+    OnlineOrders::EscalateJob). Late call-center requests turn it pulsing amber.
+    locals: count, location, ring, late (optional), nudge (optional) %>
+<% late = local_assigns[:late].to_i %>
 <span id="online-orders-badge"
       data-controller="online-badge"
       data-online-badge-count-value="<%= count %>"
       data-online-badge-key-value="<%= location.id %>"
-      class="<%= count.positive? ? "inline-flex" : "hidden" %> min-w-[1.25rem] h-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-bold text-white tabular-nums">
+      data-online-badge-nudge-value="<%= local_assigns[:nudge] %>"
+      data-online-badge-late-value="<%= late %>"
+      <% if late.positive? %>title="<%= t("pos.online_orders.late_badge", count: late) %>"<% end %>
+      class="<%= count.positive? ? "inline-flex" : "hidden" %> min-w-[1.25rem] h-5 items-center justify-center rounded-full <%= late.positive? ? "bg-amber-500 ring-4 ring-amber-300 animate-pulse" : "bg-rose-600" %> px-1.5 text-[11px] font-bold text-white tabular-nums">
   <%= count %>
 </span>

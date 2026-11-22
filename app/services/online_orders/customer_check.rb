@@ -83,9 +83,11 @@ module OnlineOrders
     # cycling numbers is the usual fake-order pattern.
     def shared_device_phones
       @shared_device_phones ||=
-        if request.ip.blank? then 0
+        # A call-center request carries the call-center room's address, shared by
+        # every order its staff type, so it says nothing about the customer.
+        if request.ip.blank? || request.call_center? then 0
         else
-          OnlineOrderRequest.where(ip: request.ip, created_at: (@now - SHARED_DEVICE_WINDOW)..)
+          OnlineOrderRequest.where(channel: "public", ip: request.ip, created_at: (@now - SHARED_DEVICE_WINDOW)..)
                             .where.not(phone: request.phone).distinct.count(:phone)
         end
     end

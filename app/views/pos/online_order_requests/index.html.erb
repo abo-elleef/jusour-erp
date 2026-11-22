@@ -29,8 +29,15 @@
           <ul class="space-y-3">
             <% @pending.each do |req| %>
               <li>
-                <%= link_to pos_online_order_request_path(req), class: "flex items-center justify-between gap-4 rounded-2xl border border-amber-300 bg-white p-4 shadow-sm hover:bg-amber-50" do %>
+                <% late = req.late? %>
+                <%= link_to pos_online_order_request_path(req), class: "flex items-center justify-between gap-4 rounded-2xl border #{late ? "border-amber-500 ring-2 ring-amber-300" : "border-amber-300"} bg-white p-4 shadow-sm hover:bg-amber-50" do %>
                   <div class="min-w-0">
+                    <% if req.call_center? %>
+                      <p class="mb-1 flex flex-wrap items-center gap-1.5 text-xs">
+                        <span class="rounded-full bg-indigo-100 px-2 py-0.5 font-semibold text-indigo-800"><%= t("pos.online_orders.call_center_tag", agent: req.created_by&.name.to_s) %></span>
+                        <% if late %><span class="rounded-full bg-amber-500 px-2 py-0.5 font-semibold text-white"><%= t("pos.online_orders.late_tag") %></span><% end %>
+                      </p>
+                    <% end %>
                     <p class="font-semibold text-gray-900"><%= req.customer_name %> <span class="font-normal text-gray-500 tabular-nums" dir="ltr"><%= req.phone %></span></p>
                     <p class="text-sm text-gray-600">
                       <%= order_type_label(req.fulfillment) %><% if req.delivery? %> · <%= req.delivery_area&.display_name %><% end %>

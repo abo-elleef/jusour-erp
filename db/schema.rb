@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_22_120000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_22_200100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -924,6 +924,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_22_120000) do
     t.integer "online_accept_timeout_minutes", default: 10, null: false
     t.integer "online_max_order_cents"
     t.boolean "free_table_on_payment", default: true, null: false
+    t.boolean "call_center_enabled", default: false, null: false
     t.index ["active"], name: "index_locations_on_active"
     t.index ["cash_over_income_category_id"], name: "index_locations_on_cash_over_income_category_id"
     t.index ["cash_over_treasury_id"], name: "index_locations_on_cash_over_treasury_id"
@@ -1133,7 +1134,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_22_120000) do
     t.string "user_agent"
     t.string "reject_reason"
     t.datetime "decided_at"
-    t.datetime "expires_at", null: false
+    t.datetime "expires_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.jsonb "checks", default: {}, null: false
@@ -1141,6 +1142,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_22_120000) do
     t.boolean "blocked_phone", default: false, null: false
     t.string "payment_method", default: "cash", null: false
     t.boolean "prepaid", default: false, null: false
+    t.string "channel", default: "public", null: false
+    t.uuid "created_by_id"
+    t.index ["company_id", "created_by_id", "created_at"], name: "idx_on_company_id_created_by_id_created_at_f5142bc2c2"
     t.index ["company_id", "ip", "created_at"], name: "idx_on_company_id_ip_created_at_5cc7233531"
     t.index ["company_id", "phone", "created_at"], name: "idx_on_company_id_phone_created_at_09f9c425ff"
     t.index ["company_id"], name: "index_online_order_requests_on_company_id"
@@ -2463,6 +2467,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_22_120000) do
   add_foreign_key "online_order_requests", "delivery_areas"
   add_foreign_key "online_order_requests", "locations"
   add_foreign_key "online_order_requests", "orders"
+  add_foreign_key "online_order_requests", "users", column: "created_by_id"
   add_foreign_key "online_order_requests", "users", column: "decided_by_id"
   add_foreign_key "online_payment_methods", "companies"
   add_foreign_key "online_payment_methods", "locations"

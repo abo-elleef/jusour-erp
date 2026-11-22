@@ -65,7 +65,7 @@ module OnlineOrders
         user: @user, customer: customer, location: @request.location, workstation: @workstation,
         order_type: @request.fulfillment, delivery_address: @request.address
       )
-      order.update!(source: "online", notes: order_notes, delivery_area: (@request.delivery_area if @request.delivery?))
+      order.update!(source: @request.call_center? ? "call_center" : "online", notes: order_notes, delivery_area: (@request.delivery_area if @request.delivery?))
       quote.lines.each { |line| Orders::AddLineService.call(order: order, line: line) }
       order.apply_delivery_fee!(@request.delivery_fee_cents) if @request.delivery?
       order.recalculate_totals!
@@ -90,7 +90,12 @@ module OnlineOrders
     end
 
     def order_notes
-      [I18n.t("pos.online_orders.order_note_prefix", phone: @request.phone), @request.note].compact.join(" — ")
+      prefix = if @request.call_center?
+                 I18n.t("pos.online_orders.call_center_note_prefix", phone: @request.phone, agent: @request.created_by&.name.to_s)
+               else
+                 I18n.t("pos.online_orders.order_note_prefix", phone: @request.phone)
+               end
+      [prefix, @request.note].compact.join(" — ")
     end
 
     def remember_address(customer)
