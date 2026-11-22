@@ -29,7 +29,12 @@ module Admin
 
     def update
       authorize @modifier
-      if @modifier.update(modifier_params)
+      if params[:toggle_active].present?
+        # One-click Activate/Deactivate from the group page: only flips active.
+        @modifier.update!(active: !@modifier.active?)
+        key = @modifier.active? ? "activated" : "deactivated"
+        redirect_to admin_modifier_group_path(@modifier_group), notice: t("flash.modifier.#{key}", name: @modifier.name)
+      elsif @modifier.update(modifier_params)
         redirect_to admin_modifier_group_path(@modifier_group), notice: t("flash.modifier.updated")
       else
         render :edit, status: :unprocessable_entity
@@ -58,7 +63,7 @@ module Admin
     end
 
     def modifier_params
-      params.require(:modifier).permit(:name, :price_adjustment_pounds, :position)
+      params.require(:modifier).permit(:name, :price_adjustment_pounds, :position, :active)
     end
   end
 end

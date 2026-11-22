@@ -133,7 +133,7 @@ module Orders
         tax_category: item.tax_category.presence || "food",
         promo: promo && promo_json(promo),
         promos: promos.map { |row| promo_json(row) },
-        modifier_groups: item.modifier_groups.map { |group| group_json(group) }
+        modifier_groups: item.orderable_modifier_groups.map { |group| group_json(group) }
       }
     end
 
@@ -156,7 +156,7 @@ module Orders
         required: group.required ? true : false,
         multi_select: group.multi_select ? true : false,
         max_selections: group.max_selections,
-        modifiers: group.modifiers.map do |modifier|
+        modifiers: group.available_modifiers.map do |modifier|
           { id: modifier.id, name: modifier.name, price_adjustment_cents: modifier.price_adjustment_cents }
         end
       }

@@ -20,6 +20,12 @@ class ModifierGroup < ApplicationRecord
   # group is always "pick one".
   before_validation { self.max_selections = nil unless multi_select }
 
+  # The options a cashier or customer may pick. Filters the loaded list, so a
+  # `includes(:modifiers)` preload still covers it. Admin screens use `modifiers`.
+  def available_modifiers
+    modifiers.select(&:active?)
+  end
+
   def display_name_for_public
     public_name.presence || name
   end

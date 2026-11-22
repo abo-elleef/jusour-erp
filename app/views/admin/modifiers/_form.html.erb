@@ -28,6 +28,13 @@
         <%= f.label :position, t("menu.modifiers.position"), class: label_class %>
         <%= f.number_field :position, min: 0, class: input_class %>
       </div>
+      <div>
+        <label class="flex items-center gap-2 text-sm font-semibold text-gray-900">
+          <%= f.check_box :active, class: "rounded border-gray-300 text-amber-600 focus:ring-amber-500/30" %>
+          <%= t("menu.modifiers.active") %>
+        </label>
+        <p class="text-xs text-gray-500 mt-1.5"><%= t("menu.modifiers.active_hint") %></p>
+      </div>
     </div>
   </section>
 
