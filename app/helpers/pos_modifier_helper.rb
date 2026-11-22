@@ -15,7 +15,7 @@ module PosModifierHelper
           id: group.id,
           multi_select: group.multi_select ? true : false,
           max_selections: group.max_selections,
-          modifiers: group.modifiers.map { |m| { id: m.id, price_adjustment_cents: m.price_adjustment_cents } }
+          modifiers: group.available_modifiers.map { |m| { id: m.id, price_adjustment_cents: m.price_adjustment_cents } }
         }
       end,
       promos: promos.map { |row| { modifier_id: row.modifier_id, discount_cents: row.discount_cents } }
@@ -25,6 +25,6 @@ module PosModifierHelper
   # Same rule as groupShowsPrices in utils/modifier_pricing.js.
   def modifier_group_shows_prices?(group, config)
     targeted = config[:promos].filter_map { |row| row[:modifier_id] }
-    group.modifiers.any? { |m| m.price_adjustment_cents != 0 || targeted.include?(m.id) }
+    group.available_modifiers.any? { |m| m.price_adjustment_cents != 0 || targeted.include?(m.id) }
   end
 end

@@ -38,9 +38,12 @@
     <% if @modifiers.any? %>
       <ul class="divide-y divide-gray-100">
         <% @modifiers.each do |mod| %>
-          <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-100 transition-colors">
+          <li class="px-5 py-3 flex flex-wrap justify-between items-center gap-3 hover:bg-gray-100 transition-colors<%= ' bg-gray-50' unless mod.active? %>">
             <div>
-              <p class="font-semibold text-gray-900"><%= mod.name %></p>
+              <p class="font-semibold <%= mod.active? ? 'text-gray-900' : 'text-gray-500' %>">
+                <%= mod.name %>
+                <% unless mod.active? %><span class="ms-2 rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-semibold text-gray-700"><%= t("menu.modifiers.inactive_badge") %></span><% end %>
+              </p>
               <p class="text-xs text-gray-500 mt-0.5 tabular-nums">
                 <%= t("menu.modifiers.price_adjustment") %>: <%= format_money(mod.price_adjustment_cents) %>
               </p>
@@ -48,6 +51,12 @@
             <div class="flex gap-2">
               <%= link_to t("actions.edit"), edit_admin_modifier_group_modifier_path(@modifier_group, mod),
                     class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+              <% if policy(mod).update? %>
+                <%= button_to t(mod.active? ? "menu.modifiers.deactivate" : "menu.modifiers.activate"),
+                      admin_modifier_group_modifier_path(@modifier_group, mod), method: :patch,
+                      params: { toggle_active: 1 }, form: { class: "inline" },
+                      class: "inline-flex text-xs font-semibold text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-xl border border-gray-200 transition-colors" %>
+              <% end %>
               <% if policy(mod).destroy? && mod.order_item_modifiers.none? %>
                 <%= button_to t("actions.delete"), admin_modifier_group_modifier_path(@modifier_group, mod), method: :delete,
                       form: { data: { turbo_confirm: t("menu.modifiers.confirm_delete", name: mod.name) }, class: "inline" },

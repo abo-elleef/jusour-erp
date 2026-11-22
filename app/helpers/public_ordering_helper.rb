@@ -8,7 +8,7 @@ module PublicOrderingHelper
   # "+35.00") and keeps the header price in step with what is picked, promo
   # included. The checkout total still comes from the server's quote.
   def orderable_item_json(item, location)
-    groups = item.modifier_groups.to_a
+    groups = item.orderable_modifier_groups
     {
       kind: "menu_item", id: item.id, name: item.name,
       price: format_money(item.price_cents_at(location)),
@@ -17,7 +17,7 @@ module PublicOrderingHelper
         {
           id: group.id, name: group.display_name_for_public, required: group.required, multi: group.multi_select,
           max: group.max_selections,
-          modifiers: group.modifiers.map { |mod| { id: mod.id, name: mod.name } }
+          modifiers: group.available_modifiers.map { |mod| { id: mod.id, name: mod.name } }
         }
       end
     }.to_json

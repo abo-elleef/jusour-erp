@@ -16,6 +16,11 @@ class MenuItem < ApplicationRecord
   has_many :menu_item_modifier_groups, -> { order(:position) }, dependent: :destroy
   has_many :modifier_groups, through: :menu_item_modifier_groups
   has_many :modifiers, through: :modifier_groups
+
+  # Groups shown when ordering: a group whose options are all inactive is hidden.
+  def orderable_modifier_groups
+    modifier_groups.select { |group| group.available_modifiers.any? }
+  end
   has_many :order_items, dependent: :restrict_with_error
   has_many :combo_items, dependent: :restrict_with_error
   has_many :recipes, dependent: :destroy

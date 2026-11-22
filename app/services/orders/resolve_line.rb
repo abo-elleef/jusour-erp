@@ -92,14 +92,21 @@ module Orders
     def allowed_modifiers(menu_item)
       return [] if @modifier_ids.empty?
 
-      Modifier.where(id: @modifier_ids, modifier_group_id: menu_item.modifier_group_ids).to_a
+      modifiers = Modifier.where(id: @modifier_ids, modifier_group_id: menu_item.modifier_group_ids).to_a
+      # An option switched off since the screen was loaded. The public menu (and the
+      # call center, and accepting an online request) refuses the line rather than
+      # quietly charging for something else; the POS just leaves it off.
+      raise Invalid, :unavailable if @strict && modifiers.any? { |mod| !mod.active? }
+
+      modifiers.select(&:active?)
     end
 
     def check_groups!(menu_item, modifiers)
       picked_by_group = modifiers.group_by(&:modifier_group_id)
       menu_item.menu_item_modifier_groups.map(&:modifier_group).each do |group|
         picks = picked_by_group.fetch(group.id, [])
-        raise Invalid.new(:required_choice, group.name) if group.required && picks.empty?
+        # A required group with every option switched off is hidden, so it can't be required.
+        raise Invalid.new(:required_choice, group.name) if group.required && picks.empty? && group.modifiers.active.exists?
         raise Invalid.new(:single_choice, group.name) if !group.multi_select && picks.size > 1
         raise Invalid.new(:too_many_choices, group.name) if group.max_selections && picks.size > group.max_selections
       end

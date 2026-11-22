@@ -15,6 +15,11 @@ class Modifier < ApplicationRecord
   monetize :price_adjustment_cents, allow_nil: false
 
   validates :name, presence: true
+
+  # Inactive: hidden from the POS, the offline register, the public menu and the
+  # call center, and refused on new lines. Old orders still point at it, which is
+  # why an ordered option is deactivated rather than deleted.
+  scope :active, -> { where(active: true) }
   validates :price_adjustment_cents, numericality: { only_integer: true }
 
   private
