@@ -15,7 +15,7 @@ module Accounting
   # Takes the same inputs as PdfReportService (the controller's page data),
   # so it follows the page's view, category filter and sort too.
   class SalesReportCsv
-    BOM = "﻿"
+    BOM = "\uFEFF"
 
     def initialize(report:, start_date:, end_date:, previous:, previous_start:, previous_end:,
                    orders_by_hour:, item_view:, items:, category_groups: nil, item_category: nil,
