@@ -4,8 +4,10 @@ require "prawn/table"
 
 module Accounting
   class PdfReportService
+    FONT_PATH = Rails.root.join("vendor/fonts/NotoNaskhArabic-Regular.ttf").to_s
+
     # one_branch: the report was filtered to a single branch. Said in words, not
-    # by name — the PDF font has no Arabic glyphs and branch names often do.
+    # by name, so the header stays short.
     def initialize(report, start_date, end_date, one_branch: false)
       @one_branch = one_branch
       @report = report
@@ -15,6 +17,11 @@ module Accounting
 
     def render
       Prawn::Document.new(page_size: "LETTER", margin: [36, 36, 36, 36]) do |pdf|
+        # Prawn's built-in fonts can't draw Arabic (category names, the
+        # currency sign), so embed the same font the other accounting PDFs use.
+        pdf.font_families.update("Noto" => { normal: FONT_PATH, bold: FONT_PATH })
+        pdf.font "Noto"
+
         pdf.text "Sales Report", size: 20, style: :bold
         pdf.text "#{@start.strftime('%B %d, %Y')} – #{@end.strftime('%B %d, %Y')}", size: 12, color: "555555"
         pdf.text "One branch only", size: 10, color: "B45309" if @one_branch
@@ -34,13 +41,13 @@ module Accounting
         ]
         pdf.table(summary_data, width: pdf.bounds.width,
           cell_style: { size: 10, padding: [4, 8] },
-          column_widths: [200, 200])
+          column_widths: [200, pdf.bounds.width - 200])
 
         pdf.move_down 16
         pdf.text "Revenue by Category", size: 14, style: :bold
         pdf.move_down 6
         cat_data = [["Category", "Revenue"]] +
-          @report[:by_category].map { |r| [r[:category], format_money(r[:revenue_cents])] }
+          @report[:by_category].map { |r| [arabic(r[:category]), format_money(r[:revenue_cents])] }
         pdf.table(cat_data, width: pdf.bounds.width,
           header: true,
           cell_style: { size: 10, padding: [4, 8] },
@@ -51,7 +58,13 @@ module Accounting
     private
 
     def format_money(cents)
-      Money.new(cents || 0).format(symbol: 'ج.م.')
+      arabic(Money.new(cents || 0).format(symbol: 'ج.م.'))
+    end
+
+    # Prawn draws characters left to right as stored, so Arabic needs joining
+    # and right-to-left ordering first — the same step the receipt printer uses.
+    def arabic(text)
+      ::Printing::Escpos::Bidi.visual_for_print(text)
     end
   end
 end
