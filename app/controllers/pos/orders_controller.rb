@@ -19,6 +19,7 @@ module Pos
 
       @orders = outstanding_orders
       @shift_orders = shift_outstanding_orders
+      @shift_drafts = shift_drafts
     end
 
     # Settles, in cash, in one press, the listed orders from the current shift —
@@ -31,6 +32,15 @@ module Pos
       unless current_user.open_cash_drawer_session(location: @pos_location)
         return redirect_to pos_orders_path(order_type: @filter_type),
                            alert: t("flash.pos.shift.no_open_drawer")
+      end
+
+      # Like closing the shift: no sweep while a draft is left. A cashier who taps
+      # the button without reading would otherwise take the drafts as counted and
+      # find the drawer short. The page shows them in the button's place.
+      drafts = shift_drafts.size
+      if drafts.positive?
+        return redirect_to pos_orders_path(order_type: @filter_type),
+                           alert: t("flash.pos.collect_drafts_first", count: drafts)
       end
 
       result = Payments::BulkCashCollectService.call(orders: shift_outstanding_orders, user: current_user)
@@ -274,8 +284,8 @@ module Pos
       @order.destroy!
       session.delete(:current_order_id) if session[:current_order_id] == order_id
 
-      redirect_to pos_shift_path(tab: "orders"),
-                  notice: t("flash.pos.order_discarded", number: number)
+      destination = params[:from] == "collect" ? pos_orders_path : pos_shift_path(tab: "orders")
+      redirect_to destination, notice: t("flash.pos.order_discarded", number: number)
     end
 
     def print_receipt
@@ -318,6 +328,16 @@ module Pos
       # still stops the shift closing; the cashier resumes it and charges it, or
       # deletes it.
       outstanding_orders.select { |order| shift_ids.include?(order.id) && !order.draft? }
+    end
+
+    # This cashier's drafts with items in the open drawer session, of every order
+    # type whatever the filter: any one of them stops Collect all cash, as it stops
+    # the shift closing.
+    def shift_drafts
+      drawer = current_user.open_cash_drawer_session(location: @pos_location)
+      return [] unless drawer
+
+      drawer.unfinished_orders.where(status: "draft").includes(:order_items).to_a
     end
 
     # The My Shift list a row's Complete came from, if it is one (never an

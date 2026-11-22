@@ -37,7 +37,39 @@
 
     <%# Settles the listed orders from the current shift — the filters apply, and the
         total in the button and confirmation is exactly what will be collected. %>
-    <% if @shift_orders.any? && policy(Order).collect_all_cash? %>
+    <%# A draft left in the shift takes the button's place, like the close-shift
+        guard: the cashier opens it to charge it, or deletes a lost cart, right here.
+        The button comes back once none is left. %>
+    <% if @shift_drafts.any? && policy(Order).collect_all_cash? %>
+      <div class="rounded-2xl border border-amber-300 bg-amber-50 p-4 mb-6" data-testid="collect-all-drafts">
+        <p class="font-semibold text-amber-900"><%= t("pos.collect_payment.drafts_title", count: @shift_drafts.size) %></p>
+        <p class="text-sm text-amber-800 mt-0.5"><%= t("pos.collect_payment.drafts_hint") %></p>
+        <ul class="mt-3 divide-y divide-amber-200 rounded-xl border border-amber-200 bg-white">
+          <% @shift_drafts.each do |draft| %>
+            <li class="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5">
+              <div class="text-sm text-gray-700">
+                <span class="font-semibold text-gray-900"><%= l(draft.created_at.in_time_zone, format: "%H:%M") %></span>
+                · <%= draft.order_type_label %>
+                · <%= t("pos.collect_payment.draft_items", count: draft.order_items.sum(&:quantity)) %>
+                · <span class="font-bold tabular-nums"><%= format_money(draft.total_cents) %></span>
+              </div>
+              <div class="inline-flex items-center gap-2">
+                <%= button_to t("pos.shift.orders.resume"), resume_pos_order_path(draft),
+                      method: :post,
+                      form: { data: { turbo: false } },
+                      class: "inline-flex items-center bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+                <% if policy(draft).destroy? %>
+                  <%= button_to t("actions.delete"), pos_order_path(draft, from: "collect"),
+                        method: :delete,
+                        form: { data: { turbo_confirm: t("pos.shift.orders.discard_confirm", number: draft.display_number) } },
+                        class: "inline-flex items-center border border-red-200 text-red-700 hover:bg-red-50 px-3 py-2 rounded-xl text-sm font-semibold transition-colors" %>
+                <% end %>
+              </div>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% elsif @shift_orders.any? && policy(Order).collect_all_cash? %>
       <% due_total = @shift_orders.sum(&:amount_due_cents) %>
       <div class="rounded-2xl border border-green-200 bg-green-50/70 p-4 mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>

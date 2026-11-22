@@ -63,23 +63,50 @@ RSpec.describe "Collecting outstanding orders in cash", type: :request do
     end
 
     # A draft is often a cart the register lost track of and the cashier rang up
-    # again: sweeping it books cash that never came in (SAQR, 2026-11-21).
-    it "leaves a draft unpaid and out of the button's total" do
-      draft = outstanding(total_cents: 4_000)
-      draft.update!(status: "draft")
-      placed = outstanding(total_cents: 5_000)
+    # again: sweeping it books cash that never came in (SAQR, 2026-11-21). Skipping
+    # it quietly misleads a cashier who taps without reading, so — like closing the
+    # shift — the sweep waits until every draft is charged or deleted.
+    describe "with a draft left in the shift" do
+      let!(:draft) { outstanding(total_cents: 4_000).tap { |order| order.update!(status: "draft") } }
+      let!(:placed) { outstanding(total_cents: 5_000) }
 
-      get pos_orders_path
-      expect(response.body).to include(CGI.escapeHTML(I18n.t("pos.collect_payment.collect_all", amount: helper_money(5_000))))
+      it "shows the draft in the button's place" do
+        get pos_orders_path
 
-      post collect_all_cash_pos_orders_path
+        expect(response.body).to include('data-testid="collect-all-drafts"')
+        expect(response.body).to include(resume_pos_order_path(draft))
+        expect(response.body).not_to include(collect_all_cash_pos_orders_path)
+      end
 
-      expect(draft.reload.status).to eq("draft")
-      expect(draft.payments).to be_empty
-      expect(placed.reload.amount_due_cents).to eq(0)
-      expect(flash[:notice]).to eq(
-        I18n.t("flash.pos.cash_collected", count: 1, amount: helper_money(5_000))
-      )
+      it "refuses the sweep and touches nothing" do
+        post collect_all_cash_pos_orders_path
+
+        expect(flash[:alert]).to eq(I18n.t("flash.pos.collect_drafts_first", count: 1))
+        expect(draft.reload.payments).to be_empty
+        expect(placed.reload.amount_due_cents).to eq(5_000)
+      end
+
+      it "counts a draft of another order type whatever the filter shows" do
+        draft.update!(order_type: "table", table_number: "4")
+
+        post collect_all_cash_pos_orders_path(order_type: "pickup")
+
+        expect(flash[:alert]).to eq(I18n.t("flash.pos.collect_drafts_first", count: 1))
+        expect(placed.reload.amount_due_cents).to eq(5_000)
+      end
+
+      it "brings the button back once the draft is deleted from the page" do
+        delete pos_order_path(draft, from: "collect")
+        expect(response).to redirect_to(pos_orders_path)
+        expect(Order.exists?(draft.id)).to be(false)
+
+        post collect_all_cash_pos_orders_path
+
+        expect(placed.reload.amount_due_cents).to eq(0)
+        expect(flash[:notice]).to eq(
+          I18n.t("flash.pos.cash_collected", count: 1, amount: helper_money(5_000))
+        )
+      end
     end
 
     it "collects only what the filter is showing" do

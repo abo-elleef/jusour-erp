@@ -4219,6 +4219,13 @@ en:
       title: "Collect Payment"
       description: "Orders sent to the kitchen that still need payment. All order types are shown by default."
       awaiting_payment: "Awaiting payment"
+      drafts_title:
+        one: "Finish 1 draft before collecting in cash"
+        other: "Finish %{count} drafts before collecting in cash"
+      drafts_hint: "A draft was never charged, so it is not in the drawer. Open it to charge it, or delete it if the food was rung up in another order."
+      draft_items:
+        one: "1 item"
+        other: "%{count} items"
       collect_all_title: "Collect everything in cash"
       collect_all_hint: "Records a cash payment for the balance on every listed order from your current shift. Older orders are collected one at a time. Orders stay open until you complete them."
       collect_all: "Collect %{amount} in cash"
@@ -7395,6 +7402,9 @@ en:
       cash_collected:
         one: "Collected %{amount} in cash for %{count} order."
         other: "Collected %{amount} in cash for %{count} orders."
+      collect_drafts_first:
+        one: "Finish your draft first: open it to charge it, or delete it."
+        other: "Finish your %{count} drafts first: open each to charge it, or delete it."
       nothing_to_collect: "Nothing left to collect here."
       orders_not_completable:
         one: "%{count} order still needs a table number or delivery address before it can be completed. Open it below to fix it."
