@@ -1,0 +1,48 @@
+<% content_for :title, t("call_center.ordering_for", branch: @location.name) %>
+<%# The branch's public menu with the self-ordering cart (online_order_controller.js),
+    posting to the call-center endpoints: the request is sent as this agent's. %>
+<div data-controller="public-menu online-order" class="flex flex-col pb-24"
+     data-online-order-quote-url-value="<%= call_center_order_quote_path(@location) %>"
+     data-online-order-create-url-value="<%= call_center_orders_path(@location) %>"
+     data-online-order-storage-key-value="call-center-cart:<%= current_user.id %>:<%= @location.id %>"
+     data-online-order-started-at-value=""
+     data-online-order-pick-required-value="<%= t("public.online_order.pick_required", group: "%{group}") %>"
+     data-online-order-required-label-value="<%= t("public.online_order.required") %>"
+     data-online-order-up-to-value="<%= t("public.online_order.up_to", count: "%{count}") %>">
+
+  <% if @categories.any? || @combos.any? %>
+    <nav class="sticky top-0 z-10 border-b border-stone-200/80 bg-white/95 shadow-sm backdrop-blur-sm"
+         aria-label="<%= t("public.menu.category_filters") %>">
+      <div class="max-w-3xl mx-auto flex gap-2 overflow-x-auto px-4 py-3">
+        <button type="button" class="public-menu-category-btn h-8 shrink-0 rounded-lg border px-3 text-sm font-medium transition-colors"
+                data-action="public-menu#filterCategory" data-category="all"><%= t("actions.all") %></button>
+        <% @categories.each do |category| %>
+          <button type="button" class="public-menu-category-btn h-8 shrink-0 rounded-lg border px-3 text-sm font-medium transition-colors"
+                  data-action="public-menu#filterCategory" data-category="<%= category.id %>"><%= category.name %></button>
+        <% end %>
+        <% if @combos.any? %>
+          <button type="button" class="public-menu-category-btn h-8 shrink-0 rounded-lg border px-3 text-sm font-medium transition-colors"
+                  data-action="public-menu#filterCategory" data-category="combos"><%= t("pos.categories.combos") %></button>
+        <% end %>
+      </div>
+    </nav>
+  <% end %>
+
+  <main class="flex-1 max-w-3xl mx-auto w-full px-4 py-6">
+    <% if @menu_items.empty? && @combos.empty? %>
+      <p class="text-center text-gray-500 py-20 text-sm"><%= t("public.menu.empty", branch: @location.name) %></p>
+    <% else %>
+      <div class="space-y-4" id="public-menu-grid" data-public-menu-target="menuGrid">
+        <% @menu_items.each do |item| %>
+          <%= render "public/menus/menu_item_card", item: item, location: @location,
+                promo: @promos_by_item_id&.[](item.id), category: item.category_id, ordering: true %>
+        <% end %>
+        <% @combos.each do |combo| %>
+          <%= render "public/menus/combo_card", combo: combo, category: "combos", ordering: true %>
+        <% end %>
+      </div>
+    <% end %>
+  </main>
+
+  <%= render "public/menus/ordering", staff: true %>
+</div>

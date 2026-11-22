@@ -116,7 +116,7 @@
 <% end %>
 
 <%# ── Launch (operational apps — switch into a different workspace) %>
-<% if Current.company.restaurant? && (current_user.can?("pos:access") || current_user.can?("kitchen:access") || current_user.can?("production:access")) %>
+<% if Current.company.restaurant? && (current_user.can?("pos:access") || current_user.can?("kitchen:access") || current_user.can?("production:access") || current_user.can?("orders:take_remote")) %>
   <div class="my-2 border-t border-gray-800"></div>
   <span class="<%= section %>"><%= t("nav.groups.launch") %></span>
   <div class="flex flex-wrap gap-1.5 px-1 mt-1">
@@ -133,6 +133,11 @@
     <% if current_user.can?("production:access") %>
       <%= link_to production_path, class: launch_pill do %>
         <%= admin_nav_icon(:production, css: "w-4 h-4 shrink-0") %><span><%= t("nav.production") %></span>
+      <% end %>
+    <% end %>
+    <% if current_user.can?("orders:take_remote") %>
+      <%= link_to call_center_path, class: launch_pill do %>
+        <%= admin_nav_icon(:pos, css: "w-4 h-4 shrink-0") %><span><%= t("nav.call_center") %></span>
       <% end %>
     <% end %>
   </div>

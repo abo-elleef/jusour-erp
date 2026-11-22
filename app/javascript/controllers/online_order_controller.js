@@ -317,9 +317,19 @@ export default class extends Controller {
   showAreaFee() {
     if (this.fulfillment() !== "delivery") return
     const area = this.checkoutFormTarget.elements.delivery_area_id
-    const option = area?.selectedOptions[0]
-    this.feeTarget.textContent = option?.value ? option.dataset.fee : this.feeTarget.dataset.chooseText
+    const option = area?.value ? this.areaOptions().find((o) => String(o.value) === String(area.value)) : null
+    this.feeTarget.textContent = option ? option.fee : this.feeTarget.dataset.chooseText
     this.totalTarget.textContent = "…"
+  }
+
+  // The areas offered in the searchable picker, each with its fee for display.
+  areaOptions() {
+    const holder = this.checkoutFormTarget.querySelector("[data-searchable-select-options]")
+    try {
+      return JSON.parse(holder?.dataset.searchableSelectOptions || "[]")
+    } catch (_e) {
+      return []
+    }
   }
 
   fulfillment() {

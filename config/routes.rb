@@ -139,6 +139,14 @@ Rails.application.routes.draw do
     end
   end
 
+  # Call center: staff away from the branches send phone / WhatsApp orders to a
+  # branch as requests (CallCenter::OrdersController).
+  get "call-center", to: "call_center/orders#index", as: :call_center
+  get "call-center/:location_id/new", to: "call_center/orders#new", as: :new_call_center_order
+  post "call-center/:location_id/quote", to: "call_center/orders#quote", as: :call_center_order_quote
+  post "call-center/:location_id/orders", to: "call_center/orders#create", as: :call_center_orders
+  patch "call-center/requests/:token/cancel", to: "call_center/orders#cancel", as: :cancel_call_center_order
+
   get "kitchen", to: "kitchen#index"
   patch "kitchen/:id/start", to: "kitchen#start", as: :kitchen_start
   patch "kitchen/:id/ready", to: "kitchen#ready", as: :kitchen_ready

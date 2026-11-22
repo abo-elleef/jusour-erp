@@ -221,6 +221,13 @@ class Location < ApplicationRecord
   # inside the online hours in the company's timezone. No hours set = any time.
   # A window whose close is earlier than its open runs past midnight
   # (18:00–02:00 is open at 23:00 and at 01:00).
+  # Call-center staff may send orders here (OnlineOrders::SubmitService staff:).
+  # Separate from the public-menu switch and hours: the branch decides on each
+  # request anyway, and a closed public menu shouldn't stop the phone room.
+  def taking_call_center_orders?
+    call_center_enabled? && active? && branch?
+  end
+
   def accepting_online_orders?(now = Time.current)
     return false unless online_ordering_enabled? && active? && branch? && public_menu_enabled?
     return true if online_open_time.nil? || online_close_time.nil?

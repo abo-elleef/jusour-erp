@@ -37,8 +37,8 @@
                   <span class="text-xs uppercase font-semibold px-2.5 py-1 rounded-full <%= order_type_class(o.order_type) %>">
                     <%= o.order_type_label %>
                   </span>
-                  <% if o.source == "online" %>
-                    <span class="ms-1 text-xs uppercase font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-800"><%= t("order.sources.online") %></span>
+                  <% if o.source.in?(%w[online call_center]) %>
+                    <span class="ms-1 text-xs uppercase font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-800"><%= t("order.sources.#{o.source}") %></span>
                   <% end %>
                   <div class="text-xs text-gray-600 mt-1.5 space-y-0.5">
                     <% if o.order_type == "table" && o.table_number.present? %>

@@ -71,6 +71,8 @@ class ApplicationController < ActionController::Base
       pos_path
     elsif resource.can_access_kds?
       kitchen_path
+    elsif resource.can?("orders:take_remote")
+      call_center_path
     else
       root_path
     end

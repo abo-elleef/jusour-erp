@@ -221,8 +221,8 @@
                   <span class="text-xs uppercase font-semibold px-2.5 py-1 rounded-full <%= order_type_class(order.order_type) %>">
                     <%= order.order_type_label %>
                   </span>
-                  <% if order.source == "online" %>
-                    <span class="ms-1 text-xs uppercase font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-800"><%= t("order.sources.online") %></span>
+                  <% if order.source.in?(%w[online call_center]) %>
+                    <span class="ms-1 text-xs uppercase font-semibold px-2.5 py-1 rounded-full bg-sky-100 text-sky-800"><%= t("order.sources.#{order.source}") %></span>
                   <% end %>
                   <span class="text-xs text-gray-500 block mt-1">
                     <%= order.fulfillment_summary %>

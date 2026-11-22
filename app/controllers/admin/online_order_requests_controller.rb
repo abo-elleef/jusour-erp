@@ -18,7 +18,7 @@ module Admin
       authorize OnlineOrderRequest
 
       @q = OnlineOrderRequest.ransack(params[:q])
-      scope = @q.result.includes(:location, :order, :decided_by, :customer)
+      scope = @q.result.includes(:location, :order, :decided_by, :customer, :created_by)
       @filter_date = params[:date].presence
       if @filter_date && (day = Date.parse(@filter_date) rescue nil)
         scope = scope.where(created_at: day.in_time_zone.all_day)

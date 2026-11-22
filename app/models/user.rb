@@ -231,7 +231,8 @@ class User < ApplicationRecord
   # "Admin area" = holding any capability that isn't a pure operational-app
   # launch (POS/KDS/Production). Permission-based so new/custom roles route
   # correctly instead of falling through to an infinite redirect.
-  ADMIN_PERMISSION_KEYS = (Permission::KEYS - %w[pos:access kitchen:access production:access]).freeze
+  # App-only keys: each opens its own workspace, not the admin area.
+  ADMIN_PERMISSION_KEYS = (Permission::KEYS - %w[pos:access kitchen:access production:access orders:take_remote]).freeze
 
   def admin_access?
     (permission_keys & ADMIN_PERMISSION_KEYS).any?

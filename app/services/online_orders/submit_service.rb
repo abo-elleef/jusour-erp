@@ -8,6 +8,12 @@ module OnlineOrders
   # No customer is created here; a new phone only becomes a Customer when a
   # cashier accepts its first order. An existing customer is linked so blocks and
   # history apply.
+  #
+  # staff: a call-center agent sending the order for the customer (channel
+  # "call_center"). The branch must take call-center orders (its own switch, not
+  # the public-menu hours); the spam guards and the online maximum are skipped
+  # because a staff member typed it; and it never expires — EscalateJob nudges the
+  # branch instead.
   class SubmitService
     MAX_PENDING_PER_PHONE = 2
     MAX_PER_PHONE_PER_DAY = 5
@@ -27,8 +33,9 @@ module OnlineOrders
     #         payment_proof_image (an upload; required when that method is prepaid),
     #         items (array of { menu_item_id | combo_id, modifier_ids, quantity, notes }),
     #         website (honeypot — must stay blank), started_at (signed, see .page_stamp)
-    def initialize(location:, params:, ip: nil, user_agent: nil, now: Time.current)
+    def initialize(location:, params:, ip: nil, user_agent: nil, now: Time.current, staff: nil)
       @location = location
+      @staff = staff
       @params = params.to_h.with_indifferent_access
       @ip = ip
       @user_agent = user_agent.to_s.first(255)
@@ -45,8 +52,12 @@ module OnlineOrders
     end
 
     def call
-      return fail(:closed) unless @location.accepting_online_orders?(@now)
-      return fail(:spam) if @params[:website].present? || too_fast?
+      if staff?
+        return fail(:closed) unless @location.taking_call_center_orders?
+      else
+        return fail(:closed) unless @location.accepting_online_orders?(@now)
+        return fail(:spam) if @params[:website].present? || too_fast?
+      end
 
       @phone = Phones::EgyptianMobile.normalize(@params[:phone])
       return fail(:invalid_phone) if @phone.nil?
@@ -54,9 +65,11 @@ module OnlineOrders
 
       customer = FindOrCreateCustomer.lookup(@phone)
       return fail(:blocked) if customer&.blocked?
-      return fail(:too_many_pending) if recent.pending.where(phone: @phone).count >= MAX_PENDING_PER_PHONE
-      return fail(:too_many_today) if recent.where(phone: @phone).where(created_at: @now.beginning_of_day..).count >= MAX_PER_PHONE_PER_DAY
-      return fail(:too_many_requests) if @ip.present? && recent.where(ip: @ip, created_at: (@now - 1.hour)..).count >= MAX_PER_IP_PER_HOUR
+      unless staff?
+        return fail(:too_many_pending) if recent.pending.where(phone: @phone).count >= MAX_PENDING_PER_PHONE
+        return fail(:too_many_today) if recent.where(phone: @phone).where(created_at: @now.beginning_of_day..).count >= MAX_PER_PHONE_PER_DAY
+        return fail(:too_many_requests) if @ip.present? && recent.where(ip: @ip, created_at: (@now - 1.hour)..).count >= MAX_PER_IP_PER_HOUR
+      end
 
       fulfillment = @params[:fulfillment].to_s
       return fail(:bad_fulfillment) unless OnlineOrderRequest::FULFILLMENTS.include?(fulfillment)
@@ -71,7 +84,7 @@ module OnlineOrders
       quote = Orders::QuoteService.call(location: @location, items: items, delivery_fee_cents: area&.fee_cents.to_i)
       return fail(:empty_cart) if quote.lines.empty? && quote.errors.empty?
       return fail(:bad_items, quote.errors) unless quote.ok?
-      if @location.online_max_order_cents.present? && quote.total_cents > @location.online_max_order_cents
+      if !staff? && @location.online_max_order_cents.present? && quote.total_cents > @location.online_max_order_cents
         return fail(:too_large, { "max_cents" => @location.online_max_order_cents })
       end
 
@@ -102,15 +115,24 @@ module OnlineOrders
         payment_proof_image: proof,
         ip: @ip,
         user_agent: @user_agent,
-        expires_at: @now + @location.online_accept_timeout_minutes.minutes
+        channel: staff? ? "call_center" : "public",
+        created_by: @staff,
+        expires_at: (@now + @location.online_accept_timeout_minutes.minutes unless staff?)
       )
       request.record_check!(:created, now: @now)
-      OnlineOrders::ExpireJob.set(wait_until: request.expires_at).perform_later(request.id)
+      if staff?
+        OnlineOrders::EscalateJob.set(wait_until: request.created_at + OnlineOrderRequest::ESCALATE_AFTER)
+                                 .perform_later(request.id)
+      else
+        OnlineOrders::ExpireJob.set(wait_until: request.expires_at).perform_later(request.id)
+      end
       OnlineOrders::Broadcast.inbox(@location)
       Result.new(request: request)
     end
 
     private
+
+    def staff? = @staff.present?
 
     def fail(code, details = nil)
       Result.new(error: code, details: details)

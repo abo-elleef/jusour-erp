@@ -157,6 +157,19 @@
       </div>
     </div>
 
+    <%# Call center: staff away from the branch send phone / WhatsApp orders here
+        as requests a cashier accepts (CallCenter::OrdersController). %>
+    <fieldset class="rounded-xl border border-stone-200 p-4 space-y-2">
+      <legend class="px-1 text-sm font-bold text-gray-900"><%= t("admin.locations.call_center.heading") %></legend>
+      <div class="flex items-start gap-3">
+        <%= f.check_box :call_center_enabled, class: "w-4 h-4 mt-0.5 text-amber-600 border-gray-300 rounded" %>
+        <div>
+          <%= f.label :call_center_enabled, t("admin.locations.call_center.enabled"), class: "text-sm font-semibold text-gray-700" %>
+          <p class="text-xs text-gray-500 mt-1"><%= t("admin.locations.call_center.hint") %></p>
+        </div>
+      </div>
+    </fieldset>
+
     <%# Customer self-ordering from the public menu. Orders arrive as requests a
         cashier accepts or rejects at the register; these settings gate them. %>
     <fieldset class="rounded-xl border border-stone-200 p-4 space-y-4">

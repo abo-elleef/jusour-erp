@@ -16,6 +16,9 @@ module Permission
     # Complete an order that still owes money (hand it over now, collect later).
     # Without it a POS user completes only fully paid orders — see OrderPolicy#complete?.
     { key: "orders:complete_unpaid",  group: "operations" },
+    # Call center: send phone / WhatsApp orders to a branch as requests a cashier
+    # there accepts (CallCenter::OrdersController). No drawer, no register.
+    { key: "orders:take_remote",      group: "operations" },
     { key: "menu:manage",             group: "operations" },
     { key: "customers:manage",        group: "operations" },
 

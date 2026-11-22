@@ -1030,8 +1030,17 @@ module ApplicationHelper
   def pos_online_pending_count(location)
     return nil if location.nil?
 
-    count = OnlineOrderRequest.where(location: location).pending.where("expires_at > ?", Time.current).count
-    location.online_ordering_enabled? || count.positive? ? count : nil
+    count = OnlineOrderRequest.where(location: location).waiting.count
+    location.online_ordering_enabled? || location.call_center_enabled? || count.positive? ? count : nil
+  end
+
+  # Call-center requests at the branch nobody has answered for a while (they never
+  # expire, so the badge shows them as late instead).
+  def pos_online_late_count(location)
+    return 0 if location.nil?
+
+    OnlineOrderRequest.where(location: location).waiting.call_center
+                      .where(created_at: ..(Time.current - OnlineOrderRequest::ESCALATE_AFTER)).count
   end
 
   # Nav badges that nudge a cashier to finish orders through the shift instead of

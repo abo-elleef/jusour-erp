@@ -4,7 +4,7 @@ require "rails_helper"
 
 RSpec.describe Order, "source" do
   it "accepts only the known sources" do
-    expect(described_class::SOURCES).to eq(%w[pos offline online])
+    expect(described_class::SOURCES).to eq(%w[pos offline online call_center])
     order = described_class.new(source: "telepathy")
     order.validate
     expect(order.errors[:source]).to be_present

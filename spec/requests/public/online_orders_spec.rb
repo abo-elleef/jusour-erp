@@ -25,7 +25,8 @@ RSpec.describe "Public self-ordering", type: :request do
     card = doc.at("article.public-menu-card[role='button']")
     expect(card["data-action"]).to include("click->online-order#open")
     expect(card["data-item"]).to include(item.id)
-    expect(doc.at("select[name='delivery_area_id']").text).to include("Dokki")
+    expect(doc.at("[data-searchable-select-options]")["data-searchable-select-options"]).to include("Dokki")
+    expect(doc.at("input[type=hidden][name='delivery_area_id']")).to be_present
     expect(doc.at("[data-controller='recent-orders']")["data-recent-orders-storage-key-value"])
       .to eq("online-orders:#{company.slug}:#{branch.slug}")
   end

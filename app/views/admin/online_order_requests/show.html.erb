@@ -30,6 +30,9 @@
       <section class="rounded-2xl border border-gray-200 bg-white p-5">
         <h2 class="mb-3 text-sm font-semibold text-gray-900"><%= t("admin.online_orders.what_they_sent") %></h2>
         <dl class="mb-4 space-y-2 text-sm">
+          <% if @request.call_center? %>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500"><%= t("admin.online_orders.sent_by") %></dt><dd class="font-semibold text-indigo-800"><%= t("admin.online_orders.channels.call_center") %><% if @request.created_by %> · <%= link_to @request.created_by.name, admin_user_path(@request.created_by), class: "hover:underline" %><% end %></dd></div>
+          <% end %>
           <div class="flex justify-between gap-3"><dt class="text-gray-500"><%= t("admin.online_orders.name_typed") %></dt><dd class="font-semibold text-gray-900"><%= @request.customer_name %></dd></div>
           <% if @request.delivery? %>
             <div class="flex justify-between gap-3"><dt class="text-gray-500"><%= t("admin.online_orders.area") %></dt><dd class="font-semibold text-gray-900"><%= @request.delivery_area&.display_name || "—" %></dd></div>

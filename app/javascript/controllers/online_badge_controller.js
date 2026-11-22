@@ -1,17 +1,27 @@
 import { Controller } from "@hotwired/stimulus"
 
-// Beeps on the register when a new self-order arrives (the badge count went up).
-// The last seen count is kept per branch for this tab, so a page change doesn't
-// beep again for the same orders.
+// Beeps on the register when a new self-order arrives (the badge count went up),
+// and again on each nudge for a call-center order still waiting (a fresh nudge id
+// from OnlineOrders::EscalateJob). What was last seen is kept per branch for this
+// tab, so a page change doesn't beep again for the same orders or nudge.
 export default class extends Controller {
-  static values = { count: Number, key: String }
+  static values = { count: Number, key: String, nudge: String, late: Number }
 
   connect() {
     const storageKey = `online-orders-seen:${this.keyValue}`
+    const nudgeKey = `online-orders-nudge:${this.keyValue}`
     let seen = 0
-    try { seen = Number(window.sessionStorage.getItem(storageKey) || 0) } catch (_e) { /* no storage */ }
-    if (this.countValue > seen) this.beep()
-    try { window.sessionStorage.setItem(storageKey, String(this.countValue)) } catch (_e) { /* no storage */ }
+    let seenNudge = ""
+    try {
+      seen = Number(window.sessionStorage.getItem(storageKey) || 0)
+      seenNudge = window.sessionStorage.getItem(nudgeKey) || ""
+    } catch (_e) { /* no storage */ }
+    const nudged = this.nudgeValue && this.nudgeValue !== seenNudge && this.lateValue > 0
+    if (this.countValue > seen || nudged) this.beep()
+    try {
+      window.sessionStorage.setItem(storageKey, String(this.countValue))
+      if (this.nudgeValue) window.sessionStorage.setItem(nudgeKey, this.nudgeValue)
+    } catch (_e) { /* no storage */ }
   }
 
   beep() {
