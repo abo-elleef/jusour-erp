@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_21_140000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_22_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -1066,6 +1066,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_21_140000) do
     t.datetime "updated_at", null: false
     t.uuid "company_id", null: false
     t.integer "max_selections"
+    t.string "public_name"
     t.index ["company_id"], name: "index_modifier_groups_on_company_id"
   end
 

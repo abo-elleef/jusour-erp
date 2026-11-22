@@ -15,7 +15,7 @@ module PublicOrderingHelper
       pricing: modifier_pricing_config(item, location, groups, active_promo: public_menu_active_promo(location)),
       groups: groups.map do |group|
         {
-          id: group.id, name: group.name, required: group.required, multi: group.multi_select,
+          id: group.id, name: group.display_name_for_public, required: group.required, multi: group.multi_select,
           max: group.max_selections,
           modifiers: group.modifiers.map { |mod| { id: mod.id, name: mod.name } }
         }

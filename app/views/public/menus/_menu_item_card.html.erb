@@ -25,16 +25,8 @@
       <% if item.description.present? %>
         <p class="text-sm text-gray-500 mt-1 line-clamp-3"><%= item.description %></p>
       <% end %>
-      <% if item.modifier_groups.any? %>
-        <div class="mt-2 space-y-1">
-          <% item.modifier_groups.each do |group| %>
-            <p class="text-xs text-gray-400">
-              <span class="font-medium text-gray-500"><%= group.name %>:</span>
-              <%= group.modifiers.map(&:name).join(", ") %>
-            </p>
-          <% end %>
-        </div>
-      <% end %>
+      <%# Modifier groups are not listed on the card; customers pick them in the
+          order popup, which shows each group's public name. %>
       <% if promo %>
         <p class="mt-2 flex items-baseline gap-2 tabular-nums">
           <span class="text-sm text-stone-400 line-through"><%= format_money(promo.list_price_cents) %></span>
