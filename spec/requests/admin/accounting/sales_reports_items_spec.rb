@@ -94,9 +94,9 @@ RSpec.describe "Admin::Accounting sales report items view", type: :request do
     end
 
     it "adds them to the CSV export" do
-      get admin_accounting_sales_reports_path(range.merge(format: :csv))
-      expect(response.body).to include("Item,Modifier group,Choice,Units sold,Revenue before discount,Promo discount,Net revenue")
-      expect(response.body).to match(/Burger,Size,Double,2,/)
+      get admin_accounting_sales_reports_path(range.merge(format: :csv, locale: :en))
+      expect(response.body).to include("Item,Category,Modifier group,Choice,Units sold,Before discount,Promo discount,Net")
+      expect(response.body).to match(/Burger,Mains,Size,Double,2,/)
     end
   end
 
@@ -123,7 +123,7 @@ RSpec.describe "Admin::Accounting sales report items view", type: :request do
     end
 
     it "names the branch in the CSV" do
-      get admin_accounting_sales_reports_path(range.merge(location_id: mall.id, format: :csv))
+      get admin_accounting_sales_reports_path(range.merge(location_id: mall.id, format: :csv, locale: :en))
       expect(response.body).to include("Branch,Mall")
       expect(response.body).not_to include("Burger")
     end

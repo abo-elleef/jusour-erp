@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "csv"
-
 module Admin
   module Accounting
     class SalesReportsController < BaseController
@@ -20,7 +18,10 @@ module Admin
 
         respond_to do |format|
           format.html { prepare_note_counts }
-          format.csv { send_data generate_sales_csv, filename: "sales-#{@start_date}-#{@end_date}.csv" }
+          format.csv do
+            send_data ::Accounting::SalesReportCsv.new(**export_args).render,
+              filename: "sales-#{@start_date}-#{@end_date}.csv", type: "text/csv; charset=utf-8"
+          end
           format.pdf do
             send_data sales_pdf.render,
               filename: "sales-#{@start_date}-#{@end_date}.pdf",
@@ -123,55 +124,22 @@ module Admin
         end
       end
 
-      # The PDF follows the page: same view, category filter and sort, but always
-      # every item (the page's "top 10" preview is a screen convenience).
-      # modifiers=0 is the short PDF: items without their modifier choices.
+      # The PDF and CSV follow the page: same view, category filter and sort,
+      # but always every item (the page's "top 10" preview is a screen
+      # convenience). modifiers=0 leaves out the modifier choices.
       def sales_pdf
-        ::Accounting::PdfReportService.new(
+        ::Accounting::PdfReportService.new(**export_args)
+      end
+
+      def export_args
+        {
           report: @report, start_date: @start_date, end_date: @end_date,
           previous: @previous, previous_start: @previous_start, previous_end: @previous_end,
           orders_by_hour: @orders_by_hour, item_view: @item_view, items: @items,
           category_groups: @category_groups, item_category: @item_category,
           location: @location, include_open: @include_open, company: Current.company,
           modifiers: params[:modifiers] != "0"
-        )
-      end
-
-      def generate_sales_csv
-        summary = @report[:summary]
-        CSV.generate(headers: true) do |csv|
-          csv << %w[Metric Value]
-          csv << ["Branch", @location&.name || "All branches"]
-          csv << ["Gross Sales", helpers.format_money(summary[:gross_sales_cents])]
-          csv << ["Discounts", helpers.format_money(summary[:discount_cents])]
-          csv << ["Tax", helpers.format_money(summary[:tax_cents])]
-          csv << ["Tips", helpers.format_money(summary[:tip_cents])]
-          csv << ["Net Sales", helpers.format_money(summary[:net_sales_cents])]
-          csv << []
-          csv << ["Category", "Units sold", "Revenue before discount", "Promo discount", "Net revenue"]
-          @report[:by_category].each { |r| csv << [r[:category], r[:units_sold], *revenue_cells(r)] }
-          csv << []
-          csv << ["Item", "Category", "Units sold", "Revenue before discount", "Promo discount", "Net revenue"]
-          @items.each { |r| csv << [r[:name], r[:category], r[:units_sold], *revenue_cells(r)] }
-          if @items.any? { |r| r[:modifier_groups].present? }
-            csv << []
-            csv << ["Item", "Modifier group", "Choice", "Units sold", "Revenue before discount", "Promo discount", "Net revenue"]
-            @items.each do |r|
-              r[:modifier_groups].each do |group|
-                group[:choices].each do |choice|
-                  csv << [r[:name], group[:name], choice[:name], choice[:units_sold], *revenue_cells(choice)]
-                end
-              end
-            end
-          end
-          csv << []
-          csv << %w[Payment\ Method Total]
-          @report[:by_payment_method].each { |method, cents| csv << [method.titleize, helpers.format_money(cents)] }
-        end
-      end
-
-      def revenue_cells(row)
-        [row[:revenue_cents], row[:discount_cents], row[:net_cents]].map { |cents| helpers.format_money(cents) }
+        }
       end
     end
   end
