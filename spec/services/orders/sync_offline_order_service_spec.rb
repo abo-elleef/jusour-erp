@@ -299,6 +299,30 @@ RSpec.describe Orders::SyncOfflineOrderService do
       expect(order.customer).to be_nil
       expect(order.delivery_address).to be_nil
     end
+
+    context "when the branch asks for the customer on pickup" do
+      before { branch.update!(pickup_customer_prompt: true) }
+
+      it "attaches a pickup order's customer by phone, without saving an address" do
+        existing = create(:customer, company: company, phone: "01012345678")
+        order = described_class.call(user: cashier, payload: payload(customer_phone: "010 1234-5678", delivery_address: "x")).order
+
+        expect(order.customer).to eq(existing)
+        expect(order.delivery_address).to be_nil
+        expect(existing.addresses).to be_empty
+      end
+
+      it "creates the customer from a new phone" do
+        order = described_class.call(user: cashier, payload: payload(customer_phone: "01099887766", customer_name: "Hana")).order
+        expect(order.customer).to have_attributes(phone: "01099887766", name: "Hana")
+      end
+
+      it "still syncs a pickup order with no phone, customer-less" do
+        result = described_class.call(user: cashier, payload: payload(customer_phone: ""))
+        expect(result).to be_success
+        expect(result.order.customer).to be_nil
+      end
+    end
   end
 
   it "refuses an order with no items" do

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_22_210000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_23_090000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -925,6 +925,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_22_210000) do
     t.integer "online_max_order_cents"
     t.boolean "free_table_on_payment", default: true, null: false
     t.boolean "call_center_enabled", default: false, null: false
+    t.boolean "pickup_customer_prompt", default: false, null: false
     t.index ["active"], name: "index_locations_on_active"
     t.index ["cash_over_income_category_id"], name: "index_locations_on_cash_over_income_category_id"
     t.index ["cash_over_treasury_id"], name: "index_locations_on_cash_over_treasury_id"
@@ -1256,6 +1257,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_22_210000) do
     t.datetime "placed_at"
     t.string "source", default: "pos", null: false
     t.uuid "delivery_area_id"
+    t.string "customer_skip_reason"
     t.index "company_id, COALESCE(location_id, '00000000-0000-0000-0000-000000000000'::uuid), business_date, order_number", name: "index_orders_on_branch_day_order_number", unique: true, where: "(business_date IS NOT NULL)"
     t.index ["company_id", "business_date"], name: "index_orders_on_company_id_and_business_date"
     t.index ["company_id", "client_uuid"], name: "index_orders_on_company_id_and_client_uuid", unique: true, where: "(client_uuid IS NOT NULL)"

@@ -256,6 +256,7 @@ export default class extends Controller {
       <div class="px-3 py-3 space-y-2.5 shrink-0 bg-white border-t border-stone-200/80">
         <div class="flex gap-2">${toggle("pickup", this.t("order_type_pickup"))}${toggle("table", this.t("order_type_table"))}${toggle("delivery", this.t("order_type_delivery"))}</div>
         ${isDelivery ? this.deliveryFieldsHtml() : ""}
+        ${this.pickupCustomerFields() ? this.customerFieldsHtml() : ""}
         ${isTable ? this.tableFieldHtml() : ""}
         <input type="text" data-field="notes" value="${esc(this.cart.notes)}" placeholder="${esc(this.t("order_notes"))}" class="${INPUT}">
         <div data-cart-totals class="space-y-2.5">${this.cartTotalsHtml(totals, empty)}</div>
@@ -337,11 +338,24 @@ export default class extends Controller {
     if (changed && holder) this.toast(this.t("table_busy_warning", { table: value, number: holder }), "alert")
   }
 
-  deliveryFieldsHtml() {
-    const { customer_name: name, customer_phone: phone, delivery_address: address, delivery_fee: fee } = this.cart
+  // A pickup order at a branch that asks for the customer online
+  // (Location#pickup_customer_prompt) offers the same name + phone fields here,
+  // but never requires them: an outage must not hold up the queue.
+  pickupCustomerFields() {
+    return this.cart.order_type === "pickup" && this.snapshot.location?.pickup_customer_prompt === true
+  }
+
+  customerFieldsHtml() {
+    const { customer_name: name, customer_phone: phone } = this.cart
     return `
       <input type="text" data-field="customer_name" value="${esc(name)}" placeholder="${esc(this.t("customer_name"))}" class="${INPUT}">
-      <input type="text" inputmode="tel" data-field="customer_phone" value="${esc(phone)}" placeholder="${esc(this.t("customer_phone"))}" class="${INPUT}" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">
+      <input type="text" inputmode="tel" data-field="customer_phone" value="${esc(phone)}" placeholder="${esc(this.t("customer_phone"))}" class="${INPUT}" data-controller="arabic-numerals" data-action="input->arabic-numerals#normalize">`
+  }
+
+  deliveryFieldsHtml() {
+    const { delivery_address: address, delivery_fee: fee } = this.cart
+    return `
+      ${this.customerFieldsHtml()}
       <input type="text" data-field="delivery_address" value="${esc(address)}" placeholder="${esc(this.t("delivery_address"))}" class="${INPUT}">
       <label class="flex items-center gap-2">
         <span class="text-sm font-semibold text-gray-700 shrink-0">${esc(this.t("delivery_fee"))}</span>
@@ -974,6 +988,9 @@ export default class extends Controller {
     const { snapshot, cart } = this
     // Every register counts from 1, so the register's code keeps the numbers apart.
     const register = snapshot.workstation?.code || (await deviceCode())
+    // Delivery always carries the customer; pickup only when the branch asks and a
+    // phone was typed (Orders::SyncOfflineOrderService#order_customer).
+    const withCustomer = cart.order_type === "delivery" || (this.pickupCustomerFields() && !!this.cleanPhone())
 
     const order = {
       client_uuid: uuid(),
@@ -985,8 +1002,8 @@ export default class extends Controller {
       drawer_session_id: snapshot.drawer_session_id || null,
       order_type: cart.order_type,
       table_number: cart.order_type === "table" ? cart.table_number.trim() : null,
-      customer_name: cart.order_type === "delivery" ? cart.customer_name.trim() || null : null,
-      customer_phone: cart.order_type === "delivery" ? this.cleanPhone() : null,
+      customer_name: withCustomer ? cart.customer_name.trim() || null : null,
+      customer_phone: withCustomer ? this.cleanPhone() || null : null,
       delivery_address: cart.order_type === "delivery" ? cart.delivery_address.trim() : null,
       notes: cart.notes.trim() || null,
       // The online draft this order replaces, if it was carried over; the server

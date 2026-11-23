@@ -151,6 +151,59 @@
       </div>
     </section>
 
+  <% elsif @tab == "pickup" %>
+    <p class="text-sm text-gray-600 mb-4"><%= t("accounting.sales_performance.pickup.hint") %></p>
+    <% pct = ->(row) { row.capture_rate ? "#{number_with_precision(row.capture_rate, precision: 0)}%" : "—" } %>
+    <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide">
+            <tr>
+              <th class="p-3 ps-5 text-start"><%= sort_link.call(t("accounting.sales_performance.cashier"), "name", default_dir: "asc") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.pickup.orders"), "orders") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.pickup.captured"), "captured") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.pickup.capture_rate"), "capture_rate", default_dir: "asc") %></th>
+              <% Order::CUSTOMER_SKIP_REASONS.each do |reason| %>
+                <th class="<%= th %> text-gray-500"><%= t("order.customer_skip_reasons.#{reason}") %></th>
+              <% end %>
+              <th class="<%= th %> pe-5 text-gray-500"><%= t("accounting.sales_performance.pickup.no_reason") %></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            <% @rows.each do |row| %>
+              <tr>
+                <td class="p-3 ps-5 font-medium text-gray-900"><%= row.user_id ? link_to(row.name.presence || "—", admin_user_path(row.user_id), class: "hover:underline") : "—" %></td>
+                <td class="<%= th %> tabular-nums"><%= row.orders %></td>
+                <td class="<%= th %> tabular-nums"><%= row.captured %></td>
+                <td class="<%= th %> tabular-nums font-semibold"><%= pct.call(row) %></td>
+                <% Order::CUSTOMER_SKIP_REASONS.each do |reason| %>
+                  <td class="<%= th %> tabular-nums"><%= row.skipped[reason] %></td>
+                <% end %>
+                <td class="<%= th %> pe-5 tabular-nums text-gray-500"><%= row.no_reason %></td>
+              </tr>
+            <% end %>
+            <% if @rows.empty? %>
+              <tr><td colspan="<%= 5 + Order::CUSTOMER_SKIP_REASONS.size %>" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_performance.empty") %></td></tr>
+            <% end %>
+          </tbody>
+          <% if @rows.any? %>
+            <tfoot class="bg-gray-50 font-semibold border-t border-gray-200">
+              <tr>
+                <td class="p-3 ps-5"><%= t("accounting.sales_performance.pickup.total") %></td>
+                <td class="<%= th %> tabular-nums"><%= @totals.orders %></td>
+                <td class="<%= th %> tabular-nums"><%= @totals.captured %></td>
+                <td class="<%= th %> tabular-nums"><%= pct.call(@totals) %></td>
+                <% Order::CUSTOMER_SKIP_REASONS.each do |reason| %>
+                  <td class="<%= th %> tabular-nums"><%= @totals.skipped[reason] %></td>
+                <% end %>
+                <td class="<%= th %> pe-5 tabular-nums"><%= @totals.no_reason %></td>
+              </tr>
+            </tfoot>
+          <% end %>
+        </table>
+      </div>
+    </section>
+
   <% else %>
     <% s = @summary %>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">

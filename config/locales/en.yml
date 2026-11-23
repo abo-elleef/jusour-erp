@@ -769,6 +769,10 @@ en:
     staff: "Staff"
 
   order:
+    customer_skip_reasons:
+      refused: "Refused to give a number"
+      in_a_hurry: "Walk-in, in a hurry"
+      other: "Other"
     refund_voucher_notes: "Refund for voided order %{number} (%{date}), paid in a shift already closed. Reason: %{reason}"
     sources:
       pos: "Register"
@@ -829,6 +833,7 @@ en:
       errors:
         table_number_required: "Table number is required for table orders."
         delivery_address_required: "Delivery address is required for delivery orders."
+        pickup_customer_required: "Enter the customer's phone, or skip with a reason."
 
   user:
     roles:
@@ -4226,6 +4231,17 @@ en:
       addresses_count:
         one: "%{count} saved address"
         other: "%{count} saved addresses"
+    pickup_customer:
+      title: "Customer phone"
+      hint: "For their points and order history."
+      phone: "Phone or name"
+      search_hint: "Type 4+ digits or a name to search. ↓ to pick, Enter for a new customer."
+      name: "Name (optional)"
+      continue: "Continue"
+      skip: "Skip"
+      skip_title: "Why no customer?"
+      matched: "Existing customer"
+      new_customer: "New customer"
     delivery:
       saved_addresses: "Saved address"
       custom_address: "Enter address manually"
@@ -4794,6 +4810,8 @@ en:
         table_service_hint: "Table orders stay open and unpaid while customers sit. Adds the Tables screen and allows only one open order per table. Needs a table count. Leave off for pay-first branches."
         free_table_on_payment: "Free the table when the order is fully paid"
         free_table_on_payment_hint: "Table service only. On: paying the whole order frees its table right away; the order stays open for the kitchen and is completed as usual. Off: the table stays busy until the cashier completes the order."
+        pickup_customer_prompt: "Ask for the customer on pickup orders"
+        pickup_customer_prompt_hint: "On: Place order and Charge ask for the customer's phone on a pickup order with no customer. The cashier can skip with a reason; skips show on the Sales performance report."
         public_menu_enabled: "Public menu"
         public_menu_enabled_hint: "When enabled, customers can browse this branch's menu at the public link."
         pos_top_sellers_enabled: "Most sold row on the register"
@@ -6370,6 +6388,14 @@ en:
         branch: "Branch & order type"
         cashier: "Cashiers"
         exceptions: "Voids & refunds"
+        pickup: "Pickup customers"
+      pickup:
+        orders: "Pickup orders"
+        captured: "With customer"
+        capture_rate: "Capture"
+        no_reason: "No reason"
+        total: "Total"
+        hint: "Completed pickup orders by cashier. Skips come from the phone popup on branches that ask for the customer; \"No reason\" is an order taken before the branch asked, or offline with no phone."
       all_branches: "All branches"
       branch: "Branch"
       no_branch: "No branch"
@@ -7566,6 +7592,8 @@ en:
       already_paid: "This order is already paid in full."
       customer_required: "Enter a phone or email for the new customer."
       customer_not_found: "Customer not found."
+      pickup_phone_required: "Pick a customer from the list, type their full phone number, or press Skip."
+      pickup_skip_reason_invalid: "Pick a reason to skip."
       shift:
         closing_slip_queued: "Closing slip sent to the printer."
         closing_slip_unavailable: "The closing slip is only available for a drawer that has been counted."

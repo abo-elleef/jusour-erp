@@ -18,7 +18,7 @@ RSpec.describe "Admin::Accounting sales performance", type: :request do
   end
 
   it "renders each tab" do
-    %w[branch cashier exceptions].each do |tab|
+    %w[branch cashier pickup exceptions].each do |tab|
       get admin_accounting_sales_performance_index_path(tab: tab, start_date: Date.current, end_date: Date.current)
       expect(response).to have_http_status(:ok)
     end

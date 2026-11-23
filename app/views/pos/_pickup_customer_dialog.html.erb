@@ -1,0 +1,74 @@
+<%# Pickup order at a branch that asks for the customer (Order#needs_pickup_customer?).
+    Place (F8) and Charge (F9) open this first. Enter on the phone continues;
+    Skip asks for a reason (keys 1-3) and continues. `next` is set by whichever
+    button opened it: place the order, or reopen the register on the payment modal. %>
+<dialog id="pickup-customer-dialog"
+        class="m-auto rounded-[28px] shadow-2xl border-0 p-0 w-[22rem] max-w-[90vw] backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+        data-controller="pickup-customer"
+        data-pickup-customer-lookup-url-value="<%= customers_search_path(format: :json) %>"
+        data-pickup-customer-matched-label-value="<%= t("pos.pickup_customer.matched") %>"
+        data-pickup-customer-new-label-value="<%= t("pos.pickup_customer.new_customer") %>"
+        data-action="keydown->pickup-customer#keydown"
+        onclick="if(event.target===this)this.close()">
+  <%= form_with url: pos_pickup_customer_path, method: :patch,
+        data: { turbo_frame: "_top", controller: "submit-once", action: "submit->submit-once#guard", pickup_customer_target: "form" } do %>
+    <%= hidden_field_tag :next, "place", data: { pickup_customer_target: "next" } %>
+    <%= hidden_field_tag :skip_reason, "", data: { pickup_customer_target: "skipReason" } %>
+    <%= hidden_field_tag :customer_id, "", id: "pickup_customer_id", data: { pickup_customer_target: "customerId" } %>
+
+    <div data-pickup-customer-target="phoneStep">
+      <div class="px-6 pt-6 pb-4">
+        <h3 class="text-base font-semibold text-stone-900"><%= t("pos.pickup_customer.title") %></h3>
+        <p class="text-sm text-stone-500 mt-0.5"><%= t("pos.pickup_customer.hint") %></p>
+      </div>
+      <div class="px-6 pb-3">
+        <%= label_tag :pickup_phone, t("pos.pickup_customer.phone"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= text_field_tag :phone, "", id: "pickup_phone", inputmode: "tel", autocomplete: "off",
+              class: "#{pos_input_class} text-2xl text-center min-h-14 tabular-nums", dir: "ltr",
+              data: { controller: "arabic-numerals", pickup_customer_target: "phone", testid: "pickup-phone",
+                      action: "input->arabic-numerals#normalize input->pickup-customer#lookup keydown->pickup-customer#phoneKeydown" } %>
+        <p class="text-xs mt-1.5 min-h-4 text-stone-500" data-pickup-customer-target="matchLine"><%= t("pos.pickup_customer.search_hint") %></p>
+        <%# Search results: filled by pickup_customer_controller.js. %>
+        <ul class="hidden mt-1 rounded-2xl border border-stone-200 divide-y divide-stone-100 overflow-hidden"
+            role="listbox" data-pickup-customer-target="results" data-testid="pickup-results"></ul>
+      </div>
+      <div class="px-6 pb-4">
+        <%= label_tag :pickup_name, t("pos.pickup_customer.name"), class: "block text-xs font-semibold text-gray-600 mb-1.5" %>
+        <%= text_field_tag :name, "", id: "pickup_name", autocomplete: "off", class: pos_input_class,
+              data: { pickup_customer_target: "name", testid: "pickup-name", action: "input->pickup-customer#nameTyped" } %>
+      </div>
+      <div class="flex justify-between gap-2 px-6 pb-6">
+        <button type="button" data-action="pickup-customer#showSkip" data-testid="pickup-skip"
+                class="rounded-full px-5 py-2 text-sm font-medium text-stone-700 border border-stone-300 hover:bg-stone-100 transition-colors">
+          <%= t("pos.pickup_customer.skip") %>
+        </button>
+        <button type="submit" data-submit-once-target="submit" data-testid="pickup-continue"
+                class="rounded-full px-5 py-2 text-sm font-medium bg-stone-800 text-white hover:bg-stone-700 transition-colors cursor-pointer">
+          <%= t("pos.pickup_customer.continue") %>
+        </button>
+      </div>
+    </div>
+
+    <div class="hidden" data-pickup-customer-target="skipStep">
+      <div class="px-6 pt-6 pb-4">
+        <h3 class="text-base font-semibold text-stone-900"><%= t("pos.pickup_customer.skip_title") %></h3>
+      </div>
+      <div class="px-6 pb-4 space-y-2">
+        <% Order::CUSTOMER_SKIP_REASONS.each_with_index do |reason, i| %>
+          <button type="button" data-action="pickup-customer#skip" data-reason="<%= reason %>"
+                  data-testid="pickup-skip-<%= reason %>"
+                  class="w-full flex items-center gap-3 rounded-2xl border border-stone-200 px-4 py-3 text-sm text-start hover:bg-stone-50 transition-colors">
+            <kbd class="pos-key-hint"><%= i + 1 %></kbd>
+            <span><%= t("order.customer_skip_reasons.#{reason}") %></span>
+          </button>
+        <% end %>
+      </div>
+      <div class="flex justify-end px-6 pb-6">
+        <button type="button" data-action="pickup-customer#showPhone"
+                class="rounded-full px-5 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 transition-colors">
+          <%= t("actions.back") %>
+        </button>
+      </div>
+    </div>
+  <% end %>
+</dialog>

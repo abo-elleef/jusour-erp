@@ -9,7 +9,7 @@ module Admin
     class SalesPerformanceController < BaseController
       before_action { require_feature!(:menu) }
 
-      TABS = %w[branch cashier exceptions].freeze
+      TABS = %w[branch cashier pickup exceptions].freeze
 
       def index
         parse_date_range(default_start: Date.current.beginning_of_week(:saturday))
@@ -26,6 +26,10 @@ module Admin
           @rows, @totals = @service.by_branch(sort: @sort, direction: @direction)
         when "cashier"
           @rows = @service.by_cashier(sort: @sort, direction: @direction)
+        when "pickup"
+          # Lowest capture first by default: the cashiers to talk to.
+          @direction = "asc" if params[:dir].blank?
+          @rows, @totals = @service.pickup_capture(sort: @sort, direction: @direction)
         else
           @kind = params[:kind] if ::Accounting::SalesPerformanceService::EXCEPTION_KINDS.include?(params[:kind])
           @summary = @service.exceptions_summary

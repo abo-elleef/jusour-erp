@@ -13,7 +13,7 @@ class PosController < ApplicationController
   before_action { require_feature!(:menu) }
   before_action :require_cashier!
   before_action :set_order, except: %i[new_order submit set_location set_workstation]
-  before_action :ensure_order_persisted!, only: %i[update_fulfillment update_notes attach_customer apply_coupon manager_discount split merge]
+  before_action :ensure_order_persisted!, only: %i[update_fulfillment update_notes attach_customer pickup_customer apply_coupon manager_discount split merge]
   before_action :no_cache, only: :index
 
   def index
@@ -188,6 +188,52 @@ class PosController < ApplicationController
     end
   rescue ActiveRecord::RecordNotFound
     redirect_to pos_path, alert: t("flash.pos.customer_not_found")
+  end
+
+  # The pickup phone popup (pos/_pickup_customer_dialog): the cashier either types
+  # the customer's phone (matched, or a new customer made from it) or skips with a
+  # reason, then carries straight on to what they pressed: place the order (F8) or
+  # take the payment (F9, reopened on the register through ?open_payment=1).
+  def pickup_customer
+    authorize @order, :update?
+
+    if params[:skip_reason].present?
+      unless Order::CUSTOMER_SKIP_REASONS.include?(params[:skip_reason])
+        return redirect_to pos_path, alert: t("flash.pos.pickup_skip_reason_invalid"), status: :see_other
+      end
+
+      @order.update!(customer_skip_reason: params[:skip_reason])
+    else
+      customer = if params[:customer_id].present?
+                   # Picked from the search list under the phone field.
+                   Customer.find_by(id: params[:customer_id])
+                 else
+                   phone = params[:phone].to_s.gsub(/[\s-]+/, "")
+                   # The field also searches by name; a name is never a new
+                   # customer's phone.
+                   unless phone.match?(/\A\+?\d{8,15}\z/)
+                     return redirect_to pos_path, alert: t("flash.pos.pickup_phone_required"), status: :see_other
+                   end
+
+                   find_or_create_customer(phone: phone, name: params[:name])
+                 end
+      return redirect_to pos_path, alert: t("flash.pos.customer_not_found"), status: :see_other if customer.nil?
+      unless customer.persisted? && customer.errors.empty?
+        return redirect_to pos_path, alert: customer.errors.full_messages.to_sentence, status: :see_other
+      end
+
+      # The popup prefills an existing customer's name; a typed name only fills
+      # one the customer does not have yet (it never renames a known customer).
+      name = params[:name].to_s.strip
+      customer.update(name: name) if customer.name.blank? && name.present?
+
+      @order.update!(customer: customer)
+      apply_customer_defaults!(customer)
+    end
+
+    return submit if params[:next] == "place"
+
+    redirect_to pos_path(open_payment: 1), status: :see_other
   end
 
   def split
