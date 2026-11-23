@@ -5475,6 +5475,7 @@ ar:
       no_orders: "لا توجد طلبات بعد."
       no_loyalty: "لا توجد معاملات ولاء بعد."
       order_date: "التاريخ"
+      order_location: "الفرع"
       order_type: "النوع"
       order_details: "التفاصيل"
       order_items: "الأصناف"

@@ -5350,6 +5350,7 @@ en:
       no_orders: "No orders yet."
       no_loyalty: "No loyalty transactions yet."
       order_date: "Date"
+      order_location: "Location"
       order_type: "Type"
       order_details: "Details"
       order_items: "Items"

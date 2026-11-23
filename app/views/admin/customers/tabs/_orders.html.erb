@@ -1,17 +1,21 @@
 <% if @orders.any? %>
+  <%# Sorting keeps the tab (and any other params) but starts again at page 1. %>
+  <% sort_opts = { sort: @orders_sort, direction: @orders_direction,
+                   base_params: request.query_parameters.except("page", "sort", "dir") } %>
   <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
       <div class="overflow-x-auto">
-        <table class="w-full text-sm min-w-[960px]">
+        <table class="w-full text-sm min-w-[1080px]">
           <thead class="border-b border-gray-100 bg-gray-50/80 text-xs font-semibold text-gray-500 uppercase tracking-wide">
             <tr>
               <th class="p-3 ps-5 text-start"><%= t("order.labels.order_number") %></th>
-              <th class="p-3 text-start"><%= t("customers.show.order_date") %></th>
-              <th class="p-3 text-start"><%= t("customers.show.order_type") %></th>
-              <th class="p-3 text-end"><%= t("customers.show.order_items") %></th>
-              <th class="p-3 text-end"><%= t("customers.show.order_discount") %></th>
-              <th class="p-3 text-end"><%= t("order.labels.total") %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("customers.show.order_date"), :date, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("customers.show.order_location"), :location, **sort_opts) %></th>
+              <th class="p-3 text-start"><%= sort_header_link(t("customers.show.order_type"), :order_type, **sort_opts) %></th>
+              <th class="p-3 text-end"><%= sort_header_link(t("customers.show.order_items"), :items, **sort_opts) %></th>
+              <th class="p-3 text-end"><%= sort_header_link(t("customers.show.order_discount"), :discount, **sort_opts) %></th>
+              <th class="p-3 text-end"><%= sort_header_link(t("order.labels.total"), :total, **sort_opts) %></th>
               <th class="p-3 text-start"><%= t("customers.show.order_payment") %></th>
-              <th class="p-3 pe-5 text-start"><%= t("order.labels.status") %></th>
+              <th class="p-3 pe-5 text-start"><%= sort_header_link(t("order.labels.status"), :status, **sort_opts) %></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 table-zebra">
@@ -29,8 +33,13 @@
                 <td class="p-3 text-gray-600 whitespace-nowrap">
                   <%= l(at.to_date, format: :long) %>
                   <span class="text-gray-400 block text-xs"><%= l(at, format: :short_time) %></span>
+                </td>
+                <td class="p-3 text-gray-700 whitespace-nowrap">
                   <% if o.location %>
-                    <span class="text-gray-500 block text-xs"><%= o.location.name %></span>
+                    <%= link_to o.location.name, admin_location_path(o.location), data: { turbo_frame: "_top" },
+                          class: "hover:text-gray-900 hover:underline" %>
+                  <% else %>
+                    <span class="text-gray-400"><%= t("customers.shared.em_dash") %></span>
                   <% end %>
                 </td>
                 <td class="p-3 max-w-xs">
