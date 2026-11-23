@@ -78,4 +78,30 @@ RSpec.describe "Public menus", type: :request do
       expect(response).to have_http_status(:not_found)
     end
   end
+
+  describe "Most popular row" do
+    let(:pinned_item) do
+      create(:menu_item, company: company, category: category, name: "Chef Pick", base_price_cents: 2000, available: true)
+    end
+
+    before do
+      create(:location_menu_item, location: branch, menu_item: pinned_item, available: true)
+      branch.update!(top_seller_pinned_item_ids: [pinned_item.id])
+    end
+
+    def row
+      get public_menu_path(company_slug: company.slug, location_slug: branch.slug)
+      Nokogiri::HTML(response.body).at("#top-sellers-section")
+    end
+
+    it "shows pinned items when the branch turned it on for the online menu" do
+      branch.update!(online_top_sellers_enabled: true)
+      expect(row.text).to include("Chef Pick")
+    end
+
+    it "is left out when only the register has it" do
+      branch.update!(pos_top_sellers_enabled: true, online_top_sellers_enabled: false)
+      expect(row).to be_nil
+    end
+  end
 end

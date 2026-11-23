@@ -125,6 +125,8 @@
     <% if @menu_items.empty? && @combos.empty? %>
       <p class="text-center text-gray-500 py-20 text-sm"><%= t("public.menu.empty", branch: @location.name) %></p>
     <% else %>
+      <%= render "public/menus/top_sellers", items: @top_seller_items, location: @location,
+            promos_by_item_id: @promos_by_item_id, ordering: @accepting_orders %>
       <% if has_offers %>
         <section class="mb-8" data-public-menu-target="offersSection" data-offers-section>
           <div class="mb-3 flex items-end justify-between gap-3">
@@ -149,7 +151,7 @@
       <% end %>
 
       <div class="space-y-4" id="public-menu-grid" data-public-menu-target="menuGrid">
-        <% if has_offers %>
+        <% if has_offers || @top_seller_items.present? %>
           <h2 class="text-lg font-semibold text-stone-900 pt-1"><%= t("public.menu.full_menu") %></h2>
         <% end %>
         <% @menu_items.each do |item| %>

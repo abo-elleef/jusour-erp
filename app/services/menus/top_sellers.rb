@@ -2,7 +2,7 @@
 
 module Menus
   # The menu items this branch sold most over the last two weeks, best first, for
-  # the "Most sold" row on the register. Counts units (quantity), only from
+  # the "Most sold" row (see Menus::TopSellerRow). Counts units (quantity), only from
   # completed orders: drafts, open and cancelled orders are left out on purpose.
   # Combos are not counted. Cached for an hour per branch, so the register does
   # not run the sum on every page load.

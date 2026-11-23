@@ -27,6 +27,8 @@ module CallCenter
       @menu_items = menu.menu_items
       @combos = menu.combos
       @promos_by_item_id = menu.promos_by_item_id
+      # Same row as the online menu, since agents order from that menu.
+      @top_seller_items = Menus::TopSellerRow.call(location: @location, channel: :public, menu_items: @menu_items)
       @delivery_areas = @location.delivery_areas.active.ordered
       @payment_methods = @location.offered_online_payment_methods
     end
