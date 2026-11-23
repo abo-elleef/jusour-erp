@@ -12,7 +12,7 @@ module Public
 
     # Checkout preview: prices the cart and the delivery fee, saves nothing.
     def quote
-      render_quote(@location, over_limit: ->(total_cents) { over_limit_message(total_cents) })
+      render_quote(@location, limits: ->(total_cents) { checkout_limits(total_cents) })
     end
 
     def create
@@ -40,13 +40,19 @@ module Public
       @request = OnlineOrderRequest.includes(:location, :order, :delivery_area).find_by!(token: params[:token])
     end
 
-    # Same rule as OnlineOrders::SubmitService (the max itself is allowed), shown
-    # in the checkout so the customer learns it before typing their details.
-    def over_limit_message(total_cents)
-      max = @location.online_max_order_cents
-      return if max.blank? || total_cents <= max
+    # Same rule as OnlineOrders::SubmitService (the amount itself allows every
+    # method), shown in the checkout so the customer learns it before typing
+    # their details. prepay_only: the checkout offers only the "pay before
+    # ordering" methods. over_limit: the branch offers none, so Send is held.
+    def checkout_limits(total_cents)
+      return {} unless @location.online_prepay_required?(total_cents)
 
-      t("public.online_order.errors.too_large", max: helpers.format_money(max))
+      max = helpers.format_money(@location.online_max_order_cents)
+      if @location.online_payment_methods_for(total_cents).any?
+        { prepay_only: true, prepay_note: t("public.online_order.payment.prepay_required", max: max) }
+      else
+        { over_limit: t("public.online_order.errors.too_large", max: max) }
+      end
     end
   end
 end

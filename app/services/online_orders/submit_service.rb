@@ -11,7 +11,7 @@ module OnlineOrders
   #
   # staff: a call-center agent sending the order for the customer (channel
   # "call_center"). The branch must take call-center orders (its own switch, not
-  # the public-menu hours); the spam guards and the online maximum are skipped
+  # the public-menu hours); the spam guards and the pay-first amount are skipped
   # because a staff member typed it; and it never expires — EscalateJob nudges the
   # branch instead.
   class SubmitService
@@ -84,12 +84,15 @@ module OnlineOrders
       quote = Orders::QuoteService.call(location: @location, items: items, delivery_fee_cents: area&.fee_cents.to_i)
       return fail(:empty_cart) if quote.lines.empty? && quote.errors.empty?
       return fail(:bad_items, quote.errors) unless quote.ok?
-      if !staff? && @location.online_max_order_cents.present? && quote.total_cents > @location.online_max_order_cents
-        return fail(:too_large, { "max_cents" => @location.online_max_order_cents })
-      end
-
       payment = @location.offered_online_payment_methods.find { |m| m.payment_method == payment_method_param }
       return fail(:bad_payment_method) if payment.nil?
+
+      # Above the branch's pay-first amount only a "pay before ordering" method
+      # may be used. A branch offering none of those can't take such an order.
+      if !staff? && @location.online_prepay_required?(quote.total_cents) && !payment.requires_proof?
+        code = @location.online_payment_methods_for(quote.total_cents).any? ? :prepay_required : :too_large
+        return fail(code, { "max_cents" => @location.online_max_order_cents })
+      end
 
       proof = @params[:payment_proof_image] if payment.requires_proof?
       if payment.requires_proof?

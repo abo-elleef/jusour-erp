@@ -105,6 +105,49 @@ RSpec.describe "Online order payment methods and proof" do
     end
   end
 
+  # online_max_order_cents: above it (food + delivery) only pay-first methods.
+  describe "pay-first amount" do
+    before do
+      offer("cash")
+      offer("instapay", requires_proof: true, pay_to: "saqr@instapay")
+      branch.update!(online_max_order_cents: 10_000)
+    end
+
+    it "offers every method up to the amount and only pay-first methods above it" do
+      expect(branch.online_payment_methods_for(10_000).map(&:payment_method)).to eq(%w[cash instapay])
+      expect(branch.online_payment_methods_for(10_001).map(&:payment_method)).to eq(["instapay"])
+    end
+
+    it "takes cash at exactly the amount" do
+      expect(submit(payment_method: "cash")).to be_ok # 2 x 50 = 100
+    end
+
+    it "refuses cash above the amount but takes a pay-first order of any size" do
+      big = [{ "menu_item_id" => item.id, "quantity" => 10 }]
+
+      result = submit(items: big, payment_method: "cash")
+      expect(result.error).to eq(:prepay_required)
+      expect(result.details).to eq("max_cents" => 10_000)
+
+      result = submit(items: big, payment_method: "instapay", payment_proof_image: png)
+      expect(result).to be_ok
+      expect(result.request).to be_prepaid
+    end
+
+    it "counts the delivery fee toward the amount" do
+      area = branch.delivery_areas.create!(company: company, name: "Dokki", fee_cents: 1_500)
+
+      expect(submit(area: area, payment_method: "cash").error).to eq(:prepay_required)
+    end
+
+    it "refuses an order above the amount when the branch offers no pay-first method" do
+      branch.online_payment_methods.find_by!(payment_method: "instapay").update!(enabled: false)
+      branch.reload
+
+      expect(submit(items: [{ "menu_item_id" => item.id, "quantity" => 3 }], payment_method: "cash").error).to eq(:too_large)
+    end
+  end
+
   describe OnlineOrders::AcceptService do
     before { open_drawer_for(cashier, location: branch) }
 

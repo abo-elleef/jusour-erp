@@ -257,6 +257,19 @@ class Location < ApplicationRecord
     saved.select(&:enabled?).sort_by { |m| OnlinePaymentMethod::METHODS.index(m.payment_method) }
   end
 
+  # online_max_order_cents is not a ceiling: above it (food plus delivery fee) a
+  # public order must be paid first, so only the "pay before ordering" methods
+  # are offered. The amount itself still allows every method.
+  def online_prepay_required?(total_cents)
+    online_max_order_cents.present? && total_cents.to_i > online_max_order_cents
+  end
+
+  # The methods a public checkout of this total may use.
+  def online_payment_methods_for(total_cents)
+    methods = offered_online_payment_methods
+    online_prepay_required?(total_cents) ? methods.select(&:requires_proof?) : methods
+  end
+
   private
 
   def edit_orders_pin_is_six_digits
