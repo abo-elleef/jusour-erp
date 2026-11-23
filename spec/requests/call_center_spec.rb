@@ -93,4 +93,19 @@ RSpec.describe "Call center", type: :request do
     get pos_online_order_request_path(req)
     expect(response).to have_http_status(:ok)
   end
+
+  describe "Most popular row" do
+    before { sign_in agent }
+
+    it "follows the branch's online menu setting" do
+      branch.update!(top_seller_pinned_item_ids: [item.id])
+
+      get new_call_center_order_path(branch)
+      expect(response.body).not_to include("top-sellers-section")
+
+      branch.update!(online_top_sellers_enabled: true)
+      get new_call_center_order_path(branch)
+      expect(Nokogiri::HTML(response.body).at("#top-sellers-section").text).to include("Koshary")
+    end
+  end
 end

@@ -5,7 +5,7 @@ const INACTIVE_CLASSES = ["bg-stone-50", "text-stone-700", "border-stone-200"]
 const OFFERS_INACTIVE = ["bg-white", "text-rose-800", "border-rose-200"]
 
 export default class extends Controller {
-  static targets = ["offersSection", "menuGrid"]
+  static targets = ["topSellersSection", "offersSection", "menuGrid"]
 
   connect() {
     this.highlightCategory("all")
@@ -17,6 +17,11 @@ export default class extends Controller {
       const show = category === "all" || card.dataset.category === category
       card.classList.toggle("hidden", !show)
     })
+
+    // Most popular repeats cards from the full menu, so it shows under "All" only.
+    if (this.hasTopSellersSectionTarget) {
+      this.topSellersSectionTarget.classList.toggle("hidden", category !== "all")
+    }
 
     if (this.hasOffersSectionTarget) {
       const showOffers = category === "all" || category === "offers"

@@ -32,7 +32,12 @@
     <% if @menu_items.empty? && @combos.empty? %>
       <p class="text-center text-gray-500 py-20 text-sm"><%= t("public.menu.empty", branch: @location.name) %></p>
     <% else %>
+      <%= render "public/menus/top_sellers", items: @top_seller_items, location: @location,
+            promos_by_item_id: @promos_by_item_id, ordering: true %>
       <div class="space-y-4" id="public-menu-grid" data-public-menu-target="menuGrid">
+        <% if @top_seller_items.present? %>
+          <h2 class="text-lg font-semibold text-stone-900 pt-1"><%= t("public.menu.full_menu") %></h2>
+        <% end %>
         <% @menu_items.each do |item| %>
           <%= render "public/menus/menu_item_card", item: item, location: @location,
                 promo: @promos_by_item_id&.[](item.id), category: item.category_id, ordering: true %>

@@ -147,6 +147,36 @@ RSpec.describe "Admin::Locations", type: :request do
       expect(location.reload.pos_top_sellers_enabled).to be false
     end
 
+    it "turns the online menu's Most sold row on and saves pinned items in order" do
+      location = create(:location, company: company)
+      first = create(:menu_item, company: company, name: "Pin One")
+      second = create(:menu_item, company: company, name: "Pin Two")
+      [first, second].each { |item| create(:location_menu_item, location: location, menu_item: item, available: true) }
+
+      get edit_admin_location_path(location)
+      expect(response.body).to include("location[online_top_sellers_enabled]").and include("Pin One")
+
+      patch admin_location_path(location), params: {
+        location: { online_top_sellers_enabled: "1", top_seller_pinned_item_ids: ["", second.id, first.id, second.id] }
+      }
+      location.reload
+      expect(location.online_top_sellers_enabled).to be true
+      expect(location.top_seller_pinned_item_ids).to eq([second.id, first.id])
+
+      patch admin_location_path(location), params: { location: { top_seller_pinned_item_ids: [""] } }
+      expect(location.reload.top_seller_pinned_item_ids).to eq([])
+    end
+
+    it "refuses more pins than the row holds" do
+      location = create(:location, company: company)
+      ids = create_list(:menu_item, Location::TOP_SELLERS_ROW_SIZE + 1, company: company).map(&:id)
+
+      patch admin_location_path(location), params: { location: { top_seller_pinned_item_ids: ids } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(location.reload.top_seller_pinned_item_ids).to eq([])
+    end
+
     it "switches freeing a table on payment off and back on" do
       location = create(:location, company: company)
       expect(location.free_table_on_payment).to be true

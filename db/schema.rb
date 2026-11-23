@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_23_090000) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pgcrypto"
@@ -926,6 +926,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_23_090000) do
     t.boolean "free_table_on_payment", default: true, null: false
     t.boolean "call_center_enabled", default: false, null: false
     t.boolean "pickup_customer_prompt", default: false, null: false
+    t.boolean "online_top_sellers_enabled", default: false, null: false
+    t.uuid "top_seller_pinned_item_ids", default: [], null: false, array: true
     t.index ["active"], name: "index_locations_on_active"
     t.index ["cash_over_income_category_id"], name: "index_locations_on_cash_over_income_category_id"
     t.index ["cash_over_treasury_id"], name: "index_locations_on_cash_over_treasury_id"

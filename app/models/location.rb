@@ -6,6 +6,9 @@ class Location < ApplicationRecord
   include MoneyInputs
 
   TYPES = %w[central_kitchen branch].freeze
+  # How many cards the "Most sold" row holds: pinned items first, the rest filled
+  # in from sales (Menus::TopSellerRow).
+  TOP_SELLERS_ROW_SIZE = 10
 
   belongs_to :company
   # Where this branch's drawers are banked when a shift closes. Set by an admin,
@@ -55,11 +58,13 @@ class Location < ApplicationRecord
   validate :at_least_one_online_payment_method
   validate :edit_orders_pin_is_six_digits
   validate :void_orders_pin_is_six_digits
+  validate :top_seller_pins_within_row
 
   before_validation :generate_slug, if: -> { slug.blank? && name.present? }
   before_validation :normalize_business_day_start_hour
   before_validation :normalize_business_day_mode
   before_validation :normalize_online_ordering
+  before_validation :normalize_top_seller_pins
 
   scope :active, -> { where(active: true) }
   scope :ordered, -> { order(:position, :name) }
@@ -270,7 +275,25 @@ class Location < ApplicationRecord
     online_prepay_required?(total_cents) ? methods.select(&:requires_proof?) : methods
   end
 
+  # Where the "Most sold" row shows: the register (:pos) and/or the online menu
+  # (:public), which the call center also orders from.
+  def top_sellers_on?(channel)
+    channel.to_sym == :pos ? pos_top_sellers_enabled? : online_top_sellers_enabled?
+  end
+
   private
+
+  # The form sends one hidden blank so an emptied list still saves; drop it and
+  # any repeat, keeping the order the manager set.
+  def normalize_top_seller_pins
+    self.top_seller_pinned_item_ids = Array(top_seller_pinned_item_ids).compact_blank.uniq
+  end
+
+  def top_seller_pins_within_row
+    return if top_seller_pinned_item_ids.size <= TOP_SELLERS_ROW_SIZE
+
+    errors.add(:base, I18n.t("admin.locations.top_sellers.too_many_pins", count: TOP_SELLERS_ROW_SIZE))
+  end
 
   def edit_orders_pin_is_six_digits
     return if @edit_orders_pin_raw.blank?

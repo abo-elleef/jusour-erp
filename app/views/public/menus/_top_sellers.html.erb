@@ -1,0 +1,21 @@
+<%# locals: items:, location:, promos_by_item_id:, ordering: %>
+<%# The "Most popular" row (Menus::TopSellerRow) on the online menu and the
+    call-center order page. Shown under "All" only (public-menu#filterCategory):
+    its cards repeat ones in the full menu below. %>
+<% if items.present? %>
+  <section class="mb-8" data-public-menu-target="topSellersSection" id="top-sellers-section">
+    <div class="mb-3">
+      <h2 class="text-lg font-semibold text-stone-900"><%= t("public.menu.top_sellers") %></h2>
+      <p class="text-sm text-stone-500 mt-0.5"><%= t("public.menu.top_sellers_hint") %></p>
+    </div>
+    <div class="space-y-4">
+      <% items.each do |item| %>
+        <%= render "public/menus/menu_item_card",
+              item: item,
+              location: location,
+              promo: promos_by_item_id&.[](item.id),
+              category: "top", ordering: ordering %>
+      <% end %>
+    </div>
+  </section>
+<% end %>

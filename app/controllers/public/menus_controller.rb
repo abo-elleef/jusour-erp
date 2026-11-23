@@ -17,6 +17,7 @@ module Public
       @menu_items = menu.menu_items
       @combos = menu.combos
       @promos_by_item_id = menu.promos_by_item_id
+      @top_seller_items = Menus::TopSellerRow.call(location: @location, channel: :public, menu_items: @menu_items)
       @accepting_orders = @location.accepting_online_orders?
       return unless @accepting_orders
 
