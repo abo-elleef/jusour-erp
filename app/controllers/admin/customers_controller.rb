@@ -245,10 +245,30 @@ module Admin
         limit: TAB_PAGE_SIZE)
     end
 
+    # Orders tab columns the user can sort by (?sort=&dir=), newest first by
+    # default. "date" is when the order was placed (drafts: when opened), the
+    # same time the table shows. Order number is not sortable: it resets daily
+    # per branch, so date already gives its order.
+    ORDER_TAB_SORTS = {
+      "date" => "COALESCE(orders.placed_at, orders.created_at)",
+      "location" => "locations.name",
+      "order_type" => "orders.order_type",
+      "items" => "(SELECT COUNT(*) FROM order_items oi WHERE oi.order_id = orders.id)",
+      "discount" => "orders.discount_cents",
+      "total" => "COALESCE(orders.total_cents, 0)",
+      "status" => "orders.status"
+    }.freeze
+
     def load_orders_tab
+      @orders_sort = ORDER_TAB_SORTS.key?(params[:sort]) ? params[:sort] : "date"
+      @orders_direction = params[:dir] == "asc" ? "asc" : "desc"
+      sort_sql = ORDER_TAB_SORTS.fetch(@orders_sort)
+
       @orders_pagy, @orders = pagy(:offset, @customer.orders
+        .left_joins(:location)
         .includes(:location, :delivery_area, :payments, :order_items, :order_discounts)
-        .order(created_at: :desc), limit: TAB_PAGE_SIZE)
+        .order(Arel.sql("#{sort_sql} #{@orders_direction} NULLS LAST, orders.created_at DESC, orders.id DESC")),
+        limit: TAB_PAGE_SIZE)
     end
 
     def load_loyalty_tab

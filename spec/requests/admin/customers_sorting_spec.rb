@@ -34,4 +34,40 @@ RSpec.describe "Admin customers index sorting", type: :request do
     expect(response).to have_http_status(:ok)
     expect(response.body.index("High Spend")).to be < response.body.index("Low Spend")
   end
+
+  describe "orders tab" do
+    let(:customer) { create(:customer, company: company, name: "Buyer", email: nil, phone: "01055555555") }
+    let(:frame_headers) { { "Turbo-Frame" => Admin::CustomersController::TAB_FRAME } }
+
+    it "shows each order's location in its own column and sorts by it" do
+      zamalek = create(:location, company: company, name: "Zamalek Branch")
+      abbas = create(:location, company: company, name: "Abbas Branch")
+      create(:order, user: owner, company: company, customer: customer, location: zamalek, order_number: "Z-1")
+      create(:order, user: owner, company: company, customer: customer, location: abbas, order_number: "A-1")
+
+      get admin_customer_path(customer), params: { tab: "orders", sort: "location", dir: "asc" }, headers: frame_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(I18n.t("customers.show.order_location"))
+      expect(response.body.index("Abbas Branch")).to be < response.body.index("Zamalek Branch")
+    end
+
+    it "sorts orders by total" do
+      create(:order, user: owner, company: company, customer: customer, order_number: "SMALL-1", total_cents: 10_00)
+      create(:order, user: owner, company: company, customer: customer, order_number: "BIG-1", total_cents: 90_00)
+
+      get admin_customer_path(customer), params: { tab: "orders", sort: "total", dir: "desc" }, headers: frame_headers
+
+      expect(response.body.index("BIG-1")).to be < response.body.index("SMALL-1")
+    end
+
+    it "ignores an unknown sort column" do
+      create(:order, user: owner, company: company, customer: customer, order_number: "ONLY-1")
+
+      get admin_customer_path(customer), params: { tab: "orders", sort: "drop table", dir: "asc" }, headers: frame_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("ONLY-1")
+    end
+  end
 end
