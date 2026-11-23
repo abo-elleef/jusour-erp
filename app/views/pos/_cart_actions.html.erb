@@ -85,6 +85,17 @@
           </div>
         <% end %>
       </dialog>
+    <% elsif order.persisted? && order.order_items.any? && order.needs_pickup_customer? %>
+      <%# A pickup order at a branch that asks for the customer: Place order (F8)
+          asks for the phone (or a skip reason) first. Charge (F9) opens the same
+          popup (pos#openPayment). %>
+      <button type="button"
+              class="<%= pos_cart_outlined_btn_class %>"
+              data-pos-shortcut="place-order"
+              data-testid="place-order-pickup"
+              onclick="const d=document.getElementById('pickup-customer-dialog'); window.Stimulus.getControllerForElementAndIdentifier(d, 'pickup-customer').open('place')">
+        <%= t("pos.cart.place_order") %> <kbd class="pos-key-hint">F8</kbd>
+      </button>
     <% elsif order.persisted? && order.order_items.any? %>
       <%= button_to pos_submit_path, method: :patch,
             form: { data: { turbo_frame: "_top", controller: "submit-once", action: "submit->submit-once#guard" } },
@@ -104,6 +115,9 @@
       <%= t("pos.cart.charge", amount: format_money(order.amount_due_cents)) %>
       <kbd class="pos-key-hint pos-key-hint--dark">F9</kbd>
     </button>
+    <% end %>
+    <% if order.persisted? && order.order_items.any? && !order.editing_placed? && order.needs_pickup_customer? %>
+      <%= render "pos/pickup_customer_dialog", order: order %>
     <% end %>
   </div>
 </div>

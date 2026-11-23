@@ -8,6 +8,8 @@ module Accounting
   # - by_cashier: orders, net sales, average ticket and discount rate per cashier,
   #               next to the voids and refunds each person performed
   # - exceptions: every void and refund in the range, with who did it and why
+  # - pickup_capture: per cashier, how many pickup orders carried a customer, and
+  #               why the rest did not (Location#pickup_customer_prompt skip reasons)
   #
   # Sales use the same definition as Accounting::SalesReportService (completed
   # orders in the business-day range, net = subtotal − discounts), so the totals
@@ -20,6 +22,7 @@ module Accounting
 
     BRANCH_SORTS = %w[name orders net_sales avg_ticket].freeze
     CASHIER_SORTS = %w[name orders net_sales avg_ticket discount_rate voids refunds].freeze
+    PICKUP_SORTS = %w[name orders captured capture_rate skipped].freeze
     EXCEPTION_SORTS = {
       "created_at" => "order_events.created_at",
       "kind"       => "order_events.event_type",
@@ -44,6 +47,14 @@ module Accounting
                             keyword_init: true) do
       def avg_ticket_cents = orders.positive? ? net_cents / orders : 0
       def discount_rate = gross_cents.positive? ? discount_cents * 100.0 / gross_cents : 0.0
+    end
+
+    # skipped: { reason => count } for Order::CUSTOMER_SKIP_REASONS. no_reason:
+    # neither a customer nor a reason (the branch was not asking yet, or an offline
+    # order with no phone).
+    PickupRow = Struct.new(:user_id, :name, :orders, :captured, :skipped, :no_reason, keyword_init: true) do
+      def skipped_total = skipped.values.sum
+      def capture_rate = orders.positive? ? captured * 100.0 / orders : nil
     end
 
     def initialize(start_date, end_date, location_id: nil)
@@ -95,6 +106,32 @@ module Accounting
       end
 
       sort_rows(rows, sort, direction, CASHIER_SORTS, cashier_sort_value)
+    end
+
+    # [rows, totals]. Same order population as the other tabs (completed orders in
+    # the range), pickup only, so void / cancelled / draft never count.
+    def pickup_capture(sort: "capture_rate", direction: "asc")
+      reasons = Order::CUSTOMER_SKIP_REASONS
+      reason_counts = reasons.map do |reason|
+        Arel.sql(ActiveRecord::Base.sanitize_sql_array(
+          ["COUNT(*) FILTER (WHERE orders.customer_id IS NULL AND orders.customer_skip_reason = ?)", reason]
+        ))
+      end
+      grouped = completed_orders.where(order_type: "pickup").group(:user_id)
+        .pluck(:user_id, Arel.sql("COUNT(*)"), Arel.sql("COUNT(orders.customer_id)"), *reason_counts)
+
+      names = User.where(id: grouped.map(&:first).compact).pluck(:id, :name).to_h
+      rows = grouped.map do |user_id, orders, captured, *skips|
+        skipped = reasons.zip(skips.map(&:to_i)).to_h
+        PickupRow.new(user_id: user_id, name: names[user_id], orders: orders.to_i, captured: captured.to_i,
+                      skipped: skipped, no_reason: orders.to_i - captured.to_i - skipped.values.sum)
+      end
+      totals = PickupRow.new(
+        orders: rows.sum(&:orders), captured: rows.sum(&:captured), no_reason: rows.sum(&:no_reason),
+        skipped: reasons.index_with { |r| rows.sum { |row| row.skipped[r] } }
+      )
+
+      [sort_rows(rows, sort, direction, PICKUP_SORTS, pickup_sort_value, default: "capture_rate"), totals]
     end
 
     # Totals for the exceptions tab header: counts and value of voids and
@@ -169,8 +206,14 @@ module Accounting
         "discount_rate" => :discount_rate.to_proc, "voids" => :voids.to_proc, "refunds" => :refunds.to_proc }
     end
 
-    def sort_rows(rows, sort, direction, allowed, extractors)
-      key = allowed.include?(sort) ? sort : allowed.fetch(allowed.index("net_sales"))
+    def pickup_sort_value
+      { "name" => :name.to_proc >> ->(v) { v.to_s.downcase }, "orders" => :orders.to_proc,
+        "captured" => :captured.to_proc, "capture_rate" => ->(row) { row.capture_rate || -1 },
+        "skipped" => :skipped_total.to_proc }
+    end
+
+    def sort_rows(rows, sort, direction, allowed, extractors, default: "net_sales")
+      key = allowed.include?(sort) ? sort : default
       sorted = rows.sort_by { |row| [extractors.fetch(key).call(row), row.name.to_s.downcase] }
       direction == "asc" ? sorted : sorted.reverse
     end

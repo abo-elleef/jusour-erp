@@ -66,6 +66,7 @@ Rails.application.routes.draw do
   patch "pos/workstation", to: "pos#set_workstation", as: :pos_set_workstation
   patch "pos/submit", to: "pos#submit"
   patch "pos/attach_customer", to: "pos#attach_customer"
+  patch "pos/pickup_customer", to: "pos#pickup_customer"
   patch "pos/fulfillment", to: "pos#update_fulfillment", as: :pos_update_fulfillment
   patch "pos/notes", to: "pos#update_notes", as: :pos_update_notes
   post "pos/split", to: "pos#split"

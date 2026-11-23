@@ -10,6 +10,18 @@ export default class extends Controller {
 
   connect() {
     this.highlightCategory("all")
+    this.openPaymentFromUrl()
+  }
+
+  // Back from the pickup phone popup on the Charge path: open the payment modal
+  // through the Charge button, so the amounts are synced as on a normal F9.
+  openPaymentFromUrl() {
+    const url = new URL(window.location.href)
+    if (url.searchParams.get("open_payment") !== "1") return
+    url.searchParams.delete("open_payment")
+    window.history.replaceState(window.history.state, "", url)
+    const charge = document.querySelector("[data-pos-shortcut='charge']:not([disabled])")
+    if (charge) setTimeout(() => charge.click(), 0)
   }
 
   filterCategory(event) {
@@ -54,6 +66,13 @@ export default class extends Controller {
   }
 
   openPayment(event) {
+    // A pickup order at a branch that asks for the customer: the phone popup comes
+    // first, and the register reopens on this modal afterwards (?open_payment=1).
+    const pickupDialog = document.getElementById("pickup-customer-dialog")
+    if (pickupDialog) {
+      this.application.getControllerForElementAndIdentifier(pickupDialog, "pickup-customer")?.open("charge")
+      return
+    }
     const btn = event?.currentTarget
     if (btn) {
       const amountCents = parseInt(btn.dataset.amountCents, 10)

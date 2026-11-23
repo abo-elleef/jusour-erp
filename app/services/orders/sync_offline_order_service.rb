@@ -57,7 +57,7 @@ module Orders
       validate_delivery! if order_type == "delivery"
 
       Order.transaction do
-        customer = delivery_customer if order_type == "delivery"
+        customer = order_customer
         order = Order.create!(
           user: cashier,
           customer: customer,
@@ -296,10 +296,17 @@ module Orders
     # system, not a second record. Two registers can meet the same new number in the
     # same minute; the loser of that race finds the winner's record instead of failing
     # an order the customer has already paid for.
-    def delivery_customer
+    #
+    # Delivery always has a phone (validate_delivery!). A pickup order brings one
+    # only when its branch asks for the customer and the cashier typed it; a blank
+    # phone stays a customer-less order (offline never blocks on it).
+    def order_customer
+      return if order_type == "table"
+      return if order_type == "pickup" && (customer_phone.blank? || !location&.pickup_customer_prompt?)
+
       customer = Customer.find_by(phone: customer_phone) || Customer.find_by(phone_secondary: customer_phone)
       customer ||= create_customer
-      remember_address(customer)
+      remember_address(customer) if order_type == "delivery"
       customer
     end
 

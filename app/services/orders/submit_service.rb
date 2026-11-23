@@ -21,6 +21,14 @@ module Orders
       if order.delivery? && order.delivery_address.blank?
         raise InvalidFulfillment, I18n.t("order.submit.errors.delivery_address_required")
       end
+      # Branches that ask for the customer on pickup (Location#pickup_customer_prompt):
+      # the register's phone popup normally gets there first; this is the safety
+      # net. Register orders only, and only before they are first placed: offline,
+      # online and call-center orders bring their own customer details, and an
+      # order placed before the branch switched this on is not held up on re-place.
+      if order.source == "pos" && order.draft? && order.needs_pickup_customer?
+        raise InvalidFulfillment, I18n.t("order.submit.errors.pickup_customer_required")
+      end
     end
 
     def initialize(order, dispatch_production: true)

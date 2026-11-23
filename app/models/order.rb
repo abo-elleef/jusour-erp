@@ -14,6 +14,9 @@ class Order < ApplicationRecord
   # Where the order was keyed in: the register, the offline register (synced
   # later), or a customer's self-order from the public menu.
   SOURCES = %w[pos offline online call_center].freeze
+  # Why a pickup order went out with no customer, when its branch asks for one
+  # (Location#pickup_customer_prompt). Picked by the cashier on the phone popup.
+  CUSTOMER_SKIP_REASONS = %w[refused in_a_hurry other].freeze
 
   # Advisory-lock namespace, so order numbering can never contend with another
   # part of the app that reaches for an advisory lock of its own.
@@ -71,6 +74,7 @@ class Order < ApplicationRecord
   validates :order_type, presence: true, inclusion: { in: ORDER_TYPES }
   validates :source, inclusion: { in: SOURCES }
   validates :delivery_fee_cents, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
+  validates :customer_skip_reason, inclusion: { in: CUSTOMER_SKIP_REASONS }, allow_nil: true
 
   before_validation :assign_business_date, on: :create
   before_validation :assign_order_number, unless: :unnumbered?
@@ -389,6 +393,19 @@ class Order < ApplicationRecord
     order_type == "table"
   end
 
+  # A pickup order at a branch that asks for the customer, with neither a
+  # customer nor a skip reason yet: the cashier is asked for the phone before it
+  # is placed or charged (Orders::SubmitService.validate_fulfillment!).
+  def needs_pickup_customer?
+    pickup? && customer_id.nil? && customer_skip_reason.blank? && location&.pickup_customer_prompt?
+  end
+
+  def customer_skip_reason_label
+    return if customer_skip_reason.blank?
+
+    I18n.t("order.customer_skip_reasons.#{customer_skip_reason}")
+  end
+
   def order_type_label
     I18n.t("order.types.#{order_type}", default: order_type.humanize)
   end
@@ -520,6 +537,8 @@ class Order < ApplicationRecord
 
   def clear_fulfillment_fields_for_type
     self.table_number = nil unless table?
+    # A skip reason only means something on a customer-less pickup order.
+    self.customer_skip_reason = nil if customer_id.present? || !pickup?
     return if delivery?
 
     self.delivery_address = nil

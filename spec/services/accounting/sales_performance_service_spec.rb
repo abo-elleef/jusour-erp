@@ -137,4 +137,42 @@ RSpec.describe Accounting::SalesPerformanceService do
       expect(service.exceptions.to_a).to be_empty
     end
   end
+
+  describe "#pickup_capture" do
+    let(:customer) { create(:customer, company: company, phone: "01000000009") }
+
+    it "counts pickup orders with a customer, skips by reason, and the rest, per cashier" do
+      sale(user: cashier, location: branch_a).update_columns(customer_id: customer.id)
+      sale(user: cashier, location: branch_a).update_columns(customer_skip_reason: "refused")
+      sale(user: cashier, location: branch_a).update_columns(customer_skip_reason: "in_a_hurry")
+      sale(user: cashier, location: branch_a)
+      sale(user: other_cashier, location: branch_b).update_columns(customer_id: customer.id)
+      sale(user: cashier, location: branch_a, type: "table")
+      sale(user: cashier, location: branch_a, status: "cancelled")
+
+      rows, totals = service.pickup_capture(sort: "name", direction: "asc")
+
+      amal, bassem = rows
+      expect(amal.name).to eq("Amal")
+      expect(amal.orders).to eq(4)
+      expect(amal.captured).to eq(1)
+      expect(amal.skipped).to eq("refused" => 1, "in_a_hurry" => 1, "other" => 0)
+      expect(amal.no_reason).to eq(1)
+      expect(amal.capture_rate).to eq(25.0)
+      expect(bassem.capture_rate).to eq(100.0)
+      expect(totals.orders).to eq(5)
+      expect(totals.captured).to eq(2)
+    end
+
+    it "lists the lowest capture first by default and honours the branch filter" do
+      sale(user: cashier, location: branch_a)
+      sale(user: other_cashier, location: branch_b).update_columns(customer_id: customer.id)
+
+      rows, = service.pickup_capture
+      expect(rows.map(&:name)).to eq(%w[Amal Bassem])
+
+      rows, = service(location_id: branch_b.id).pickup_capture
+      expect(rows.map(&:name)).to eq(%w[Bassem])
+    end
+  end
 end
