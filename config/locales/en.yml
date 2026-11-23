@@ -6353,8 +6353,8 @@ en:
       no_area: "No area picked"
       chart_title: "Top %{count} delivery areas"
       chart_other:
-        one: "Other area (%{count})"
-        other: "Other areas (%{count})"
+        one: "%{count} other area"
+        other: "%{count} other areas"
       chart_metrics:
         orders: "Orders"
         fees: "Delivery fees"

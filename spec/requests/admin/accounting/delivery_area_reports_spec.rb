@@ -148,10 +148,20 @@ RSpec.describe "Admin::Accounting delivery area report", type: :request do
 
       labels = chart_data.map(&:first)
       expect(labels.first(10)).to eq((1..10).map { |i| "Area #{format('%02d', i)}" })
-      expect(labels[10]).to include("(2)")              # Area 11 + Area 12
+      expect(labels[10]).to eq(I18n.t("accounting.delivery_area_reports.chart_other", count: 2, locale: :ar)) # Area 11 + Area 12
       expect(chart_data[10].last).to eq(3)               # 2 + 1 orders
       expect(chart_data.last).to eq([I18n.t("accounting.delivery_area_reports.no_area", locale: :ar), 2])
       expect(labels).not_to include("Quiet zone")         # areas with no orders stay out
+    end
+
+    it "names a single leftover area instead of lumping it into other" do
+      areas = (1..11).map { |i| DeliveryArea.create!(company: company, location: branch, name: "Area #{format('%02d', i)}", fee_cents: 1_000) }
+      areas.each_with_index { |a, i| (11 - i).times { delivery(area: a, fee: 1_000, food: 5_000) } }
+
+      get admin_accounting_delivery_area_reports_path(range)
+
+      expect(chart_data.map(&:first)).to eq((1..11).map { |i| "Area #{format('%02d', i)}" })
+      expect(chart_data.last.last).to eq(1)
     end
 
     it "switches to delivery fees" do

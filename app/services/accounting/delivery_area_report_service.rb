@@ -57,17 +57,18 @@ module Accounting
     CHART_TOP = 10
 
     # Bars for the chart above the table: the top areas by the metric, every
-    # other area with orders in one "other" bar, and "No area" last. Each entry is
+    # other area with orders in one "other" bar, and "No area" last. A single
+    # leftover area gets its own named bar: lumping one area hides its name. Each entry is
     # { label:, value:, kind: :area | :other | :no_area, count: (areas in :other) }.
     # Areas with nothing are left out: 50 empty bars say nothing.
     def chart_bars(rows, metric: "orders", top: CHART_TOP)
       value = ->(r) { metric == "fees" ? r.fee_cents / 100.0 : r.orders }
       named = rows.select { |r| r.area && r.orders.positive? }
                   .sort_by { |r| [-value.call(r), r.area.display_name.to_s.downcase] }
-      top_rows = named.first(top)
+      top_rows = named.size == top + 1 ? named : named.first(top)
       with_branch = top_rows.map { |r| r.area.location_id }.uniq.size > 1
       bars = top_rows.map { |r| { label: chart_label(r, with_branch), value: value.call(r), kind: :area } }
-      rest = named.drop(top)
+      rest = named.drop(top_rows.size)
       if rest.any?
         bars << { label: nil, value: rest.sum { |r| value.call(r) }, kind: :other, count: rest.size }
       end

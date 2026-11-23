@@ -88,7 +88,11 @@
                       chartkick_bar_data_value: @chart_bars.map { |b| [bar_label.call(b), b[:value]] }.to_json,
                       chartkick_bar_options_value: {
                         dataset: { backgroundColor: colors, borderColor: colors, borderRadius: 6, barPercentage: 0.8 },
-                        library: { plugins: { legend: { display: false } } }
+                        library: {
+                          plugins: { legend: { display: false }, barValueLabels: { display: true } },
+                          # Room past the longest bar for its number.
+                          layout: { padding: { right: 72 } }
+                        }
                       }.to_json } %>
       </section>
     <% end %>

@@ -6476,12 +6476,12 @@ ar:
       no_area: "بدون منطقة"
       chart_title: "أعلى %{count} مناطق توصيل"
       chart_other:
-        zero: "مناطق أخرى (%{count})"
-        one: "منطقة أخرى (%{count})"
-        two: "منطقتان أخريان (%{count})"
-        few: "مناطق أخرى (%{count})"
-        many: "مناطق أخرى (%{count})"
-        other: "مناطق أخرى (%{count})"
+        zero: "لا مناطق أخرى"
+        one: "منطقة أخرى واحدة"
+        two: "منطقتان أخريان"
+        few: "%{count} مناطق أخرى"
+        many: "%{count} منطقة أخرى"
+        other: "%{count} منطقة أخرى"
       chart_metrics:
         orders: "الطلبات"
         fees: "رسوم التوصيل"
