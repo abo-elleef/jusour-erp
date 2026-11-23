@@ -33,8 +33,8 @@ module OnlineOrderParams
   end
 
   # Checkout preview: prices the cart and the delivery fee, saves nothing.
-  # over_limit: a message when the total is over what this checkout may send.
-  def render_quote(location, over_limit: ->(_total_cents) {})
+  # limits: extra keys for the total (see Public::OnlineOrdersController#checkout_limits).
+  def render_quote(location, limits: ->(_total_cents) { {} })
     area = location.delivery_areas.active.find_by(id: params[:delivery_area_id]) if params[:fulfillment] == "delivery"
     result = Orders::QuoteService.call(location: location, items: cart_items, delivery_fee_cents: area&.fee_cents.to_i)
     render json: {
@@ -43,14 +43,14 @@ module OnlineOrderParams
       subtotal: helpers.format_money(result.subtotal_cents - result.discount_cents),
       delivery_fee: helpers.format_money(result.delivery_fee_cents),
       total: helpers.format_money(result.total_cents),
-      over_limit: over_limit.call(result.total_cents)
+      **limits.call(result.total_cents)
     }
   end
 
   def online_order_error_message(result)
     key = "public.online_order.errors.#{result.error}"
     case result.error
-    when :too_large then t(key, max: helpers.format_money(result.details["max_cents"]))
+    when :too_large, :prepay_required then t(key, max: helpers.format_money(result.details["max_cents"]))
     when :bad_items then t(key, count: result.details.size)
     else t(key, default: t("public.online_order.errors.generic"))
     end

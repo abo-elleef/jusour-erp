@@ -60,7 +60,8 @@
       <ul class="divide-y divide-stone-100" data-online-order-target="lines"
           data-empty-text="<%= t("public.online_order.empty_cart") %>"
           data-remove-text="<%= t("public.online_order.remove") %>"></ul>
-      <%# Filled from the quote when the total is over the branch's online maximum. %>
+      <%# Filled from the quote when the total is over the branch's pay-first amount
+          and the branch offers no "pay before ordering" method, so it can't be sent. %>
       <p class="hidden rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
          data-online-order-target="limitWarning" role="alert"></p>
 
@@ -141,6 +142,10 @@
       <% else %>
         <fieldset class="space-y-2">
           <legend class="mb-2 text-sm font-semibold text-stone-900"><%= t("public.online_order.payment.title") %></legend>
+          <%# Filled from the quote when the total is over the branch's pay-first
+              amount: only the "pay before ordering" methods stay on offer. %>
+          <p class="hidden mb-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+             data-online-order-target="prepayNote" role="status"></p>
           <% @payment_methods.each_with_index do |method, index| %>
             <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-stone-300 px-3 py-3 has-[:checked]:border-amber-600 has-[:checked]:bg-amber-50">
               <input type="radio" name="payment_method" value="<%= method.payment_method %>" <%= "checked" if index.zero? %>

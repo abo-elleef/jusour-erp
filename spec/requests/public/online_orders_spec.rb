@@ -64,15 +64,28 @@ RSpec.describe "Public self-ordering", type: :request do
     expect(response.body.index("online-ordering-closed")).to be < response.body.index("public-menu-grid")
   end
 
-  it "warns in the checkout quote when the total is over the online maximum" do
+  it "holds the checkout above the pay-first amount when the branch has no pay-first method" do
     branch.update!(online_max_order_cents: 10_000)
     quote_path = public_online_order_quote_path(company_slug: company.slug, location_slug: branch.slug)
 
     post quote_path, params: { items: [{ menu_item_id: item.id, quantity: 2 }], fulfillment: "pickup" }, as: :json
-    expect(response.parsed_body["over_limit"]).to be_nil # exactly the max is allowed
+    expect(response.parsed_body["over_limit"]).to be_nil # exactly the amount allows every method
+    expect(response.parsed_body["prepay_only"]).to be_nil
 
     post quote_path, params: { items: [{ menu_item_id: item.id, quantity: 3 }], fulfillment: "pickup" }, as: :json
     expect(response.parsed_body["over_limit"]).to include("100")
+  end
+
+  it "switches the checkout to pay-first methods above the amount" do
+    branch.online_payment_methods.create!(payment_method: "cash", enabled: true)
+    branch.online_payment_methods.create!(payment_method: "instapay", enabled: true, requires_proof: true)
+    branch.update!(online_max_order_cents: 10_000)
+    quote_path = public_online_order_quote_path(company_slug: company.slug, location_slug: branch.slug)
+
+    post quote_path, params: { items: [{ menu_item_id: item.id, quantity: 2 }], fulfillment: "delivery", delivery_area_id: area.id }, as: :json
+    expect(response.parsed_body["prepay_only"]).to be(true) # 100 + 15 delivery is over 100
+    expect(response.parsed_body["prepay_note"]).to include("100")
+    expect(response.parsed_body["over_limit"]).to be_nil
   end
 
   it "quotes the cart from database prices" do

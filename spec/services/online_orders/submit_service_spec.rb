@@ -87,7 +87,7 @@ RSpec.describe OnlineOrders::SubmitService do
     expect(submit(phone: "01099999999").error).to eq(:too_many_requests)
   end
 
-  it "refuses orders above the branch maximum" do
+  it "refuses cash above the pay-first amount when the branch has no pay-first method" do
     branch.update!(online_max_order_cents: 9_000)
 
     expect(submit.error).to eq(:too_large)

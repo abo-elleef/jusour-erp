@@ -12,7 +12,7 @@ export default class extends Controller {
     "itemDialog", "itemName", "itemPrice", "itemGroups", "itemNote", "itemError", "itemQuantity",
     "cartBar", "cartCount",
     "checkoutDialog", "checkoutForm", "lines", "deliveryFields", "feeRow",
-    "subtotal", "fee", "total", "checkoutError", "sendButton", "limitWarning",
+    "subtotal", "fee", "total", "checkoutError", "sendButton", "limitWarning", "prepayNote",
     "proofFields", "payToLabel", "payTo", "proofInput", "proofPreview"
   ]
 
@@ -344,7 +344,10 @@ export default class extends Controller {
   }
 
   async refreshQuote() {
-    if (this.cart.length === 0) return this.showLimit(null)
+    if (this.cart.length === 0) {
+      this.applyPrepayOnly(false)
+      return this.showLimit(null)
+    }
     const form = this.checkoutFormTarget
     const body = {
       items: this.cartPayload(),
@@ -361,6 +364,7 @@ export default class extends Controller {
       this.totalTarget.textContent = quote.total
       this.renderPayTo()
       this.showLimit(quote.over_limit)
+      this.applyPrepayOnly(Boolean(quote.prepay_only), quote.prepay_note)
       const areaPicked = this.checkoutFormTarget.elements.delivery_area_id?.value
       this.feeTarget.textContent = body.fulfillment === "delivery" && !areaPicked
         ? this.feeTarget.dataset.chooseText
@@ -380,6 +384,30 @@ export default class extends Controller {
 
   prepaid() {
     return this.selectedPayment()?.dataset.prepaid === "true"
+  }
+
+  // Over the branch's pay-first amount (food plus delivery fee) only the "pay
+  // before ordering" methods are offered: the others are hidden and, if one was
+  // picked, the first pay-first method is picked instead. Under it, all come back.
+  // The server refuses a pay-on-receipt method over the amount anyway.
+  applyPrepayOnly(prepayOnly, note) {
+    const radios = [...this.checkoutFormTarget.querySelectorAll("input[name=payment_method][type=radio]")]
+    if (radios.length === 0) return
+    radios.forEach((radio) => {
+      const blocked = prepayOnly && radio.dataset.prepaid !== "true"
+      radio.disabled = blocked
+      radio.closest("label")?.classList.toggle("hidden", blocked)
+    })
+    const selected = radios.find((radio) => radio.checked)
+    if (!selected || selected.disabled) {
+      const first = radios.find((radio) => !radio.disabled)
+      if (first) first.checked = true
+    }
+    if (this.hasPrepayNoteTarget) {
+      if (prepayOnly && note) this.showError(this.prepayNoteTarget, note)
+      else this.hideError(this.prepayNoteTarget)
+    }
+    this.paymentChanged()
   }
 
   // A "pay before ordering" method shows where to transfer and asks for the screenshot.
@@ -536,8 +564,9 @@ export default class extends Controller {
     })
   }
 
-  // Over the branch's online maximum: say so up front and hold the Send button.
-  // The server refuses it anyway; this only saves the customer typing their details.
+  // Over the branch's pay-first amount with no pay-first method on offer: say so
+  // up front and hold the Send button. The server refuses it anyway; this only
+  // saves the customer typing their details.
   showLimit(message) {
     this.overLimit = Boolean(message)
     if (message) this.showError(this.limitWarningTarget, message)
