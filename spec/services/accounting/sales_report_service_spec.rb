@@ -98,6 +98,27 @@ RSpec.describe Accounting::SalesReportService do
       expect(hours[9]).to eq(count: 0, sales_cents: 0)
     end
 
+    it "groups orders by business-day weekday and placed hour" do
+      saturday = Date.new(2026, 11, 21)
+      sale = lambda do |at, cents|
+        order = create(:order, user: user, company: company, status: "completed",
+          subtotal_cents: cents, discount_cents: 0, tax_cents: 0, tip_cents: 0, total_cents: cents, created_at: at)
+        create(:order_item, order: order, menu_item: menu_item, quantity: 1, unit_price_cents: cents)
+      end
+      sale.call(Time.zone.local(2026, 11, 21, 13, 10), 1000)
+      sale.call(Time.zone.local(2026, 11, 21, 13, 50), 500)
+      sale.call(Time.zone.local(2026, 11, 22, 1, 30), 700) # after midnight: still Saturday's business day
+      sale.call(Time.zone.local(2026, 11, 22, 13, 0), 900) # Sunday
+
+      cells = described_class.new(saturday, saturday + 1).call[:weekday_hour_distribution]
+
+      expect(cells).to eq(
+        [6, 13] => { count: 2, sales_cents: 1500 },
+        [6, 1] => { count: 1, sales_cents: 700 },
+        [0, 13] => { count: 1, sales_cents: 900 }
+      )
+    end
+
     it "charts daily net sales instead of order totals with tax and tips" do
       order = create(:order, user: user, company: company, status: "completed",
         subtotal_cents: 1000, discount_cents: 0, tax_cents: 80, tip_cents: 100, total_cents: 1180,

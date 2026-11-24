@@ -1,0 +1,63 @@
+<%# Hour × weekday grid (SalesReportsController#prepare_weekday_heatmap).
+    Each cell is shaded by its share of the busiest cell for the metric shown. %>
+<% scope = "accounting.sales_reports" %>
+<% day_names = t("date.day_names") %>
+<% if heatmap[:hours].empty? %>
+  <p class="text-sm text-gray-500 py-6 text-center"><%= t("#{scope}.heatmap_empty") %></p>
+<% else %>
+  <div data-controller="tabs" data-tabs-storage-key-value="sales-report-heatmap-metric" data-testid="weekday-heatmap">
+    <div class="flex justify-end mb-3">
+      <div class="flex rounded-xl bg-gray-100 p-1 text-xs font-semibold">
+        <% [["orders", t("#{scope}.heatmap_orders")], ["sales", t("#{scope}.heatmap_sales")]].each do |name, label| %>
+          <button type="button" class="px-3 py-1 rounded-lg border-b-2 border-transparent text-gray-500"
+                  data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="<%= name %>"><%= label %></button>
+        <% end %>
+      </div>
+    </div>
+    <% [["orders", :avg_count, heatmap[:max_count]], ["sales", :avg_sales_cents, heatmap[:max_sales_cents]]].each do |metric, key, max| %>
+      <%# A cell with some sales but under the shown precision reads "<0.1" / "<1", not "0". %>
+      <% show = ->(v) {
+           if metric == "orders"
+             v.positive? && v < 0.05 ? "<0.1" : number_with_precision(v, precision: 1, strip_insignificant_zeros: true)
+           else
+             v.positive? && v < 50 ? "<1" : number_with_delimiter((v / 100.0).round)
+           end
+         } %>
+      <div data-tab-panel="<%= metric %>" data-tabs-target="panel" <%= "hidden" unless metric == "orders" %> class="overflow-x-auto">
+        <table class="text-xs border-separate" style="border-spacing: 2px" data-testid="weekday-heatmap-<%= metric %>">
+          <thead>
+            <tr class="text-gray-500">
+              <th class="p-1 text-start font-semibold"><%= t("#{scope}.heatmap_day") %></th>
+              <% heatmap[:hours].each do |hour| %>
+                <th class="p-1 font-medium leading-tight"><%= hour_axis_label(hour) %></th>
+              <% end %>
+              <th class="p-1 ps-3 text-end font-semibold whitespace-nowrap"><%= t("#{scope}.heatmap_per_day") %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% heatmap[:rows].each do |row| %>
+              <tr data-testid="weekday-heatmap-row">
+                <th class="p-1 pe-3 text-start font-semibold text-gray-700 whitespace-nowrap">
+                  <%= day_names[row[:wday]] %>
+                  <span class="block text-[10px] font-normal text-gray-400"><%= t("#{scope}.heatmap_days", count: row[:days]) %></span>
+                </th>
+                <% row[:cells].each do |cell| %>
+                  <% value = cell[key] %>
+                  <% alpha = max.positive? ? (value / max) : 0 %>
+                  <td class="px-1 py-1.5 text-center tabular-nums rounded-md <%= alpha > 0.55 ? 'text-white font-semibold' : 'text-gray-700' %>"
+                      style="background-color: <%= value.positive? ? "rgba(217, 119, 6, #{(0.08 + alpha * 0.87).round(2)})" : '#f9fafb' %>"
+                      title="<%= t("#{scope}.heatmap_cell", day: day_names[row[:wday]], hour: hour_range_label(cell[:hour]),
+                                   orders: number_with_precision(cell[:avg_count], precision: 1, strip_insignificant_zeros: true),
+                                   sales: format_amount(cell[:avg_sales_cents].round), total: cell[:count], days: row[:days]) %>">
+                    <%= value.positive? ? show.call(value) : "" %>
+                  </td>
+                <% end %>
+                <td class="p-1 ps-3 text-end tabular-nums font-semibold text-gray-900"><%= show.call(row[key]) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
+  </div>
+<% end %>

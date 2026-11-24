@@ -15,6 +15,7 @@ module Admin
         prepare_items
         prepare_comparison
         prepare_orders_by_hour
+        prepare_weekday_heatmap
 
         respond_to do |format|
           format.html { prepare_note_counts }
@@ -122,6 +123,41 @@ module Admin
             share_percent: total.positive? ? (h[:sales_cents] * 100.0 / total).round(1) : 0
           }
         end
+      end
+
+      # Hour × weekday grid for the trend card. Rows run Saturday → Friday (the
+      # app's week); columns are the hours in business-day order, trimmed to the
+      # first and last hour that had any order. Each cell is the average per
+      # day: the total divided by how many of that weekday the range holds, so a
+      # range with three Fridays and two Saturdays still compares fairly.
+      WEEKDAYS_SAT_FIRST = [6, 0, 1, 2, 3, 4, 5].freeze
+
+      def prepare_weekday_heatmap
+        cells = @report[:weekday_hour_distribution]
+        start = BusinessDay.start_hour.to_i
+        ordered = (0..23).map { |i| (start + i) % 24 }
+        busy = ordered.each_index.select { |i| cells.keys.any? { |(_, h)| h == ordered[i] } }
+        hours = busy.empty? ? [] : ordered[busy.first..busy.last]
+        days = (@start_date..@end_date).group_by(&:wday).transform_values(&:size)
+
+        rows = WEEKDAYS_SAT_FIRST.map do |wday|
+          n = days.fetch(wday, 0)
+          values = hours.map do |hour|
+            c = cells.fetch([wday, hour], { count: 0, sales_cents: 0 })
+            { hour: hour, count: c[:count], sales_cents: c[:sales_cents],
+              avg_count: n.positive? ? c[:count].to_f / n : 0.0,
+              avg_sales_cents: n.positive? ? c[:sales_cents].to_f / n : 0.0 }
+          end
+          { wday: wday, days: n, cells: values,
+            avg_count: values.sum { |v| v[:avg_count] }, avg_sales_cents: values.sum { |v| v[:avg_sales_cents] } }
+        end
+
+        all = rows.flat_map { |r| r[:cells] }
+        @heatmap = {
+          hours: hours, rows: rows,
+          max_count: all.map { |v| v[:avg_count] }.max.to_f,
+          max_sales_cents: all.map { |v| v[:avg_sales_cents] }.max.to_f
+        }
       end
 
       # The PDF and CSV follow the page: same view, category filter and sort,

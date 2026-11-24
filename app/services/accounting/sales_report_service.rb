@@ -25,6 +25,7 @@ module Accounting
         by_item: by_item,
         by_payment_method: by_payment_method,
         hourly_distribution: hourly_distribution,
+        weekday_hour_distribution: weekday_hour_distribution,
         daily_totals: daily_totals,
         daily_order_counts: daily_order_counts
       }
@@ -209,6 +210,23 @@ module Accounting
       sales = hours.sum(Arel.sql(RevenueCalculator::ORDER_NET_SALES))
       (0..23).to_h { |h| [h, { count: counts.fetch(h, 0), sales_cents: sales.fetch(h, 0).to_i }] }
     end
+
+    # Per weekday and hour, summed over the range: { [wday, hour] => { count:, sales_cents: } }.
+    # The weekday is the order's business day (0 = Sunday, as Date#wday), so a
+    # 01:00 order after a Thursday night counts on Thursday; the hour is when it
+    # was placed, in the app's time zone, as in hourly_distribution. Only cells
+    # with orders are present.
+    def weekday_hour_distribution
+      zone = connection_quote(Time.zone.tzinfo.identifier)
+      wday = "EXTRACT(DOW FROM orders.business_date)::int"
+      hour = "EXTRACT(HOUR FROM (orders.placed_at AT TIME ZONE 'UTC') AT TIME ZONE #{zone})::int"
+      completed_orders.where.not(placed_at: nil)
+        .group(Arel.sql(wday), Arel.sql(hour))
+        .pluck(Arel.sql(wday), Arel.sql(hour), Arel.sql("COUNT(*)"), Arel.sql("SUM(#{RevenueCalculator::ORDER_NET_SALES})"))
+        .to_h { |d, h, count, sales| [[d, h], { count: count.to_i, sales_cents: sales.to_i }] }
+    end
+
+    def connection_quote(value) = Order.connection.quote(value)
 
     # Per business day, every day of the range present (zero when nothing sold).
     def daily_totals
