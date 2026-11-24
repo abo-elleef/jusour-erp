@@ -42,6 +42,8 @@ module AccountingNav
           description: "accounting.delivery_area_reports.description" },
         { controller: "food_costs",           label: "accounting.nav.food_cost",     path: :admin_accounting_food_costs_path,                          permission: "accounting:reports", feature: :menu,
           description: "accounting.food_costs.description" },
+        { controller: "menu_engineering",     label: "accounting.nav.menu_engineering", path: :admin_accounting_menu_engineering_index_path,          permission: "accounting:reports", feature: :menu,
+          description: "accounting.menu_engineering.description" },
         { controller: "usage_reports",        label: "accounting.nav.usage",         path: :admin_accounting_usage_reports_path,                       permission: "accounting:reports", feature: :menu,
           description: "accounting.usage_reports.description" },
         { controller: "tax_reports",          label: "accounting.nav.tax",           path: :admin_accounting_tax_reports_path,                         permission: "accounting:reports", feature: :menu,
