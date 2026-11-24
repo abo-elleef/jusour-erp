@@ -429,4 +429,29 @@ RSpec.describe Orders::SyncOfflineOrderService do
       expect(order.errors[:table_number]).to be_present
     end
   end
+
+  describe "at a branch that makes the delivery area compulsory" do
+    before do
+      branch.update!(require_delivery_area: true)
+      DeliveryArea.create!(company: company, location: branch, name: "Zamalek", fee_cents: 3_000)
+    end
+
+    it "still takes an offline delivery with no area, and flags it for a manager" do
+      result = described_class.call(user: cashier,
+                                    payload: payload(order_type: "delivery", customer_name: "Mona", customer_phone: "01012345678",
+                                                     delivery_address: "12 Nile St"))
+
+      expect(result).to be_success
+      expect(result.order.status).to eq("submitted")
+      expect(result.order.delivery_area).to be_nil
+      entry = AuditLogEntry.find_by(action: "order.offline_no_delivery_area")
+      expect(entry.record).to eq(result.order)
+    end
+
+    it "flags nothing for a pickup order" do
+      described_class.call(user: cashier, payload: payload)
+
+      expect(AuditLogEntry.where(action: "order.offline_no_delivery_area")).to be_empty
+    end
+  end
 end

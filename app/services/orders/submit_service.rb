@@ -21,6 +21,12 @@ module Orders
       if order.delivery? && order.delivery_address.blank?
         raise InvalidFulfillment, I18n.t("order.submit.errors.delivery_address_required")
       end
+      # Branches that make the delivery area compulsory (Location#require_delivery_area).
+      # Checked on every place and re-place, and again before any money is taken
+      # (Pos::PaymentsController#require_delivery_area!).
+      if order.needs_delivery_area?
+        raise InvalidFulfillment, I18n.t("order.submit.errors.delivery_area_required")
+      end
       # Branches that ask for the customer on pickup (Location#pickup_customer_prompt):
       # the register's phone popup normally gets there first; this is the safety
       # net. Register orders only, and only before they are first placed: offline,

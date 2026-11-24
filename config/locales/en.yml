@@ -835,6 +835,7 @@ en:
       errors:
         table_number_required: "Table number is required for table orders."
         delivery_address_required: "Delivery address is required for delivery orders."
+        delivery_area_required: "Pick the delivery area for this delivery order."
         pickup_customer_required: "Enter the customer's phone, or skip with a reason."
 
   user:
@@ -4250,9 +4251,11 @@ en:
       customer_required_for_delivery: "Select a customer first to enter a delivery address."
       area: "Delivery area"
       area_search: "Type to search areas…"
+      save_area: "Save area"
       fee_prompt_title: "Delivery fee"
       fee_prompt_hint: "Type this order's delivery fee, or press Enter for free delivery."
       fee_prompt_area_hint: "Search the delivery area to fill in its fee, or type the fee. Leave both empty for free delivery."
+      fee_prompt_area_required_hint: "Search the delivery area; its fee fills in and you can still change it. A fee of 0 means free delivery."
     tables:
       title: "Tables"
       summary: "%{busy} busy · %{free} free"
@@ -4831,6 +4834,8 @@ en:
         free_table_on_payment_hint: "Table service only. On: paying the whole order frees its table right away; the order stays open for the kitchen and is completed as usual. Off: the table stays busy until the cashier completes the order."
         pickup_customer_prompt: "Ask for the customer on pickup orders"
         pickup_customer_prompt_hint: "On: Place order and Charge ask for the customer's phone on a pickup order with no customer. The cashier can skip with a reason; skips show on the Sales performance report."
+        require_delivery_area: "Delivery orders must have a delivery area"
+        require_delivery_area_hint: "On: the register will not place or take money for a delivery order until the cashier picks its area. Only applies once the branch has active delivery areas. Offline orders are never held up."
         public_menu_enabled: "Public menu"
         public_menu_enabled_hint: "When enabled, customers can browse this branch's menu at the public link."
         default_production_location: "Default production location"
@@ -6534,11 +6539,6 @@ en:
       trend: "Sales trend"
       by_day: "By day"
       by_hour: "By hour"
-      top_items: "Top %{shown} of %{total} items by revenue"
-      show_all_items: "Show all %{count} items"
-      units_count: "%{count} sold"
-      by_category_and_item: "Sales by category & item"
-      category_item: "Category / item"
       by_weekday_hour: "Hour × weekday"
       heatmap_hint: "Average per day for each weekday and hour, Saturday first. Darker = busier."
       heatmap_orders: "Orders"
@@ -6548,6 +6548,11 @@ en:
       heatmap_days: "%{count} days"
       heatmap_empty: "No orders in this range."
       heatmap_cell: "%{day}, %{hour}: %{orders} orders and %{sales} a day on average (%{total} orders over %{days} days)"
+      top_items: "Top %{shown} of %{total} items by revenue"
+      show_all_items: "Show all %{count} items"
+      units_count: "%{count} sold"
+      by_category_and_item: "Sales by category & item"
+      category_item: "Category / item"
       uncategorized: "Uncategorized"
       view_grouped: "By category"
       view_flat: "Flat list"
@@ -7646,6 +7651,9 @@ en:
       cash_collected:
         one: "Collected %{amount} in cash for %{count} order."
         other: "Collected %{amount} in cash for %{count} orders."
+      collect_missing_area:
+        one: "%{count} delivery order was not collected: it has no delivery area. Open it and pick the area."
+        other: "%{count} delivery orders were not collected: they have no delivery area. Open each and pick the area."
       collect_drafts_first:
         one: "Finish your draft first: open it to charge it, or delete it."
         other: "Finish your %{count} drafts first: open each to charge it, or delete it."

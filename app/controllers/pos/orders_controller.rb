@@ -45,14 +45,18 @@ module Pos
 
       result = Payments::BulkCashCollectService.call(orders: shift_outstanding_orders, user: current_user)
 
+      # Delivery orders with no area (where the branch makes it compulsory) are
+      # left for the cashier to open and pick the area.
+      missing_area = (t("flash.pos.collect_missing_area", count: result.missing_area.size) if result.missing_area.any?)
       if result.any?
         redirect_to pos_orders_path(order_type: @filter_type),
                     notice: t("flash.pos.cash_collected",
                               count: result.settled.size,
-                              amount: helpers.format_money(result.collected_cents))
+                              amount: helpers.format_money(result.collected_cents)),
+                    **(missing_area ? { alert: missing_area } : {})
       else
         redirect_to pos_orders_path(order_type: @filter_type),
-                    alert: t("flash.pos.nothing_to_collect")
+                    alert: missing_area || t("flash.pos.nothing_to_collect")
       end
     end
 
@@ -193,12 +197,18 @@ module Pos
       @order = Order.find(params[:id])
       authorize @order, @order.draft? ? :update? : :record_payment?
 
-      cents = Order.delivery_fee_cents_from(params[:delivery_fee_pounds].to_s)
-      alert = if cents.negative?
-                t("flash.pos.negative_delivery_fee")
-              elsif !@order.apply_delivery_fee!(cents)
-                t("flash.pos.delivery_fee_locked")
-              end
+      # The area can be picked here too, even once the fee is locked by a part
+      # payment: it is only a record of where the order went.
+      alert = save_picked_delivery_area(@order)
+      # Absent when the modal only sent the area (fee already locked).
+      unless alert || params[:delivery_fee_pounds].nil?
+        cents = Order.delivery_fee_cents_from(params[:delivery_fee_pounds].to_s)
+        alert = if cents.negative?
+                  t("flash.pos.negative_delivery_fee")
+                elsif !@order.apply_delivery_fee!(cents)
+                  t("flash.pos.delivery_fee_locked")
+                end
+      end
 
       if params[:checkout].present? || alert
         redirect_back fallback_location: pos_order_path(@order, from: params[:from]),
@@ -298,6 +308,18 @@ module Pos
     end
 
     private
+
+    # Saves the delivery area sent with the payment modal's fee form. Returns an
+    # error message, or nil when nothing was sent or it saved.
+    def save_picked_delivery_area(order)
+      area_id = params[:delivery_area_id].presence
+      return nil if area_id.nil? || !order.delivery?
+      return nil if order.update(delivery_area_id: area_id)
+
+      message = order.errors.full_messages.to_sentence
+      order.restore_attributes
+      message
+    end
 
     def outstanding_orders
       @filter_type ||= begin

@@ -10,7 +10,10 @@ module Payments
   # settled one at a time rather than in a single transaction: if the tenth fails,
   # the nine already collected are real money that must stay recorded.
   class BulkCashCollectService
-    Result = Struct.new(:settled, :skipped, :collected_cents, keyword_init: true) do
+    # missing_area: delivery orders left alone because their branch makes the
+    # delivery area compulsory and none was picked (Order#needs_delivery_area?).
+    # Also counted in skipped.
+    Result = Struct.new(:settled, :skipped, :missing_area, :collected_cents, keyword_init: true) do
       def any?
         settled.any?
       end
@@ -28,11 +31,18 @@ module Payments
     def call
       settled = []
       skipped = []
+      missing_area = []
       collected = 0
 
       @orders.each do |order|
         due = order.amount_due_cents
         next skipped << order unless due.positive?
+
+        if order.needs_delivery_area?
+          skipped << order
+          missing_area << order
+          next
+        end
 
         begin
           settle!(order, due)
@@ -44,7 +54,7 @@ module Payments
         end
       end
 
-      Result.new(settled: settled, skipped: skipped, collected_cents: collected)
+      Result.new(settled: settled, skipped: skipped, missing_area: missing_area, collected_cents: collected)
     end
 
     private

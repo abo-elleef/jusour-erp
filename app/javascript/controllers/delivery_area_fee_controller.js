@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus"
 
-// The Place order fee popup: picking a delivery area puts its fee into the fee
+// The Place order fee popup and the payment modal: picking a delivery area puts its fee into the fee
 // box and moves the cursor there, so the cashier can change it or press Enter to
 // place the order. Clearing the area leaves the typed fee alone.
 export default class extends Controller {
@@ -14,6 +14,8 @@ export default class extends Controller {
     if (!area || !this.hasFeeTarget) return
 
     this.feeTarget.value = area.fee
+    // Lets listeners re-price (the payment modal's amount due).
+    this.feeTarget.dispatchEvent(new Event("input", { bubbles: true }))
     this.feeTarget.focus()
     this.feeTarget.select()
   }

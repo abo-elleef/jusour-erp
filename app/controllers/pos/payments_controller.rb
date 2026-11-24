@@ -8,6 +8,8 @@ module Pos
     before_action :set_order
     before_action :authorize_payment!
     before_action :require_open_drawer_for_payment!, only: :create
+    # The area picked in the payment modal is saved first, so the check below sees it.
+    before_action :apply_picked_delivery_area!, only: :create
     # Not on capture_stripe: by then the card is charged, and refusing would lose it.
     before_action :require_submittable_order!, only: %i[create stripe_intent]
 
@@ -103,11 +105,28 @@ module Pos
       # An unlocked placed order is mid-edit: the kitchen has the old version. It is
       # placed again first, so the money and the tickets agree.
       return refuse_unsubmittable_order(t("flash.pos.finish_editing_first")) if @order.editing_placed?
+      # Placed orders too: an order placed before the branch made the area
+      # compulsory (or by a path that skips it) is caught when its money is taken.
+      if @order.needs_delivery_area?
+        return refuse_unsubmittable_order(t("order.submit.errors.delivery_area_required"))
+      end
       return unless @order.draft?
 
       Orders::SubmitService.validate_fulfillment!(@order)
     rescue Orders::SubmitService::InvalidFulfillment => e
       refuse_unsubmittable_order(e.message)
+    end
+
+    # The delivery area picked at the top of the payment modal (sent with every
+    # payment form). Only a record of the choice: the fee rides separately.
+    def apply_picked_delivery_area!
+      area_id = params[:delivery_area_id].presence
+      return if area_id.nil? || !@order.delivery? || @order.delivery_area_id.to_s == area_id.to_s
+      return if @order.update(delivery_area_id: area_id)
+
+      message = @order.errors.full_messages.to_sentence
+      @order.restore_attributes
+      refuse_unsubmittable_order(message)
     end
 
     def refuse_unsubmittable_order(message)

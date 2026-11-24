@@ -191,6 +191,25 @@ export default class extends Controller {
     event.preventDefault()
     this.setValue(item.dataset.value)
     this.close()
+    this.swallowFollowingClick()
+  }
+
+  // The pick happens on mousedown and the menu hides at once, so the mouseup
+  // lands on whatever was under it. A click whose press and release hit
+  // different elements is fired on their common ancestor — inside a <dialog>
+  // that is often the dialog itself, which our "click the backdrop to close"
+  // handlers read as a click outside, closing the popup the cashier is using.
+  // Swallow that one click. The next mousedown drops the guard, so a click
+  // that never came (mouse released outside the window) cannot eat a later one.
+  swallowFollowingClick() {
+    const swallow = (event) => {
+      event.stopPropagation()
+      event.preventDefault()
+      window.removeEventListener("mousedown", release, true)
+    }
+    const release = () => window.removeEventListener("click", swallow, true)
+    window.addEventListener("click", swallow, { capture: true, once: true })
+    window.addEventListener("mousedown", release, { capture: true, once: true })
   }
 
   setValue(value) {
