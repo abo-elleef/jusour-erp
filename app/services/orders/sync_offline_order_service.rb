@@ -88,6 +88,7 @@ module Orders
         order.submit!
         discard_replaced_draft(order)
         flag_table_clash(order)
+        flag_missing_delivery_area(order)
         order.reload
       end
     end
@@ -162,6 +163,22 @@ module Orders
           other_order_id: other.id,
           other_order_number: other.order_number
         }
+      )
+    end
+
+    # Offline mode has no delivery area picker, and an outage is no time to turn a
+    # paid sale away, so a branch that makes the area compulsory
+    # (Location#require_delivery_area) still takes the order. This entry tells a
+    # manager which offline deliveries came in with no area.
+    def flag_missing_delivery_area(order)
+      return unless order.delivery? && order.delivery_area_id.nil? && location.require_delivery_area?
+      return unless location.delivery_areas.active.exists?
+
+      AuditLogEntry.record!(
+        action: "order.offline_no_delivery_area",
+        record: order,
+        user: cashier,
+        changes_snapshot: { offline_number: order.offline_number, delivery_address: order.delivery_address }
       )
     end
 

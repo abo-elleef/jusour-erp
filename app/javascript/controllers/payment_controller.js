@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["tipInput", "tipHidden", "terminalStatus", "deliveryFee", "due", "amount"]
+  static targets = ["tipInput", "tipHidden", "terminalStatus", "deliveryFee", "deliveryArea", "due", "amount"]
   static values = { orderTotal: Number, baseDue: Number, dueTemplate: String }
 
   // Runs for any of the payment forms (submit events bubble to the modal root).
@@ -22,6 +22,17 @@ export default class extends Controller {
       input.value = (this.deliveryFeeCents() / 100).toFixed(2)
       input.dataset.deliveryFee = "1"
       form.appendChild(input)
+    }
+
+    // The delivery area picked at the top rides along too, so the cashier can
+    // pick it and pay in one go (branches that make the area compulsory).
+    if (this.hasDeliveryAreaTarget && this.deliveryAreaTarget.value) {
+      const area = document.createElement("input")
+      area.type = "hidden"
+      area.name = "delivery_area_id"
+      area.value = this.deliveryAreaTarget.value
+      area.dataset.deliveryFee = "1"
+      form.appendChild(area)
     }
   }
 

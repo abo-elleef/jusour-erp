@@ -190,6 +190,20 @@ RSpec.describe "Admin::Locations", type: :request do
       patch admin_location_path(location), params: { location: { free_table_on_payment: "1" } }
       expect(location.reload.free_table_on_payment).to be true
     end
+
+    it "switches the compulsory delivery area on and off (off by default)" do
+      location = create(:location, company: company)
+      expect(location.require_delivery_area).to be false
+
+      get edit_admin_location_path(location)
+      expect(response.body).to include("location[require_delivery_area]")
+
+      patch admin_location_path(location), params: { location: { require_delivery_area: "1" } }
+      expect(location.reload.require_delivery_area).to be true
+
+      patch admin_location_path(location), params: { location: { require_delivery_area: "0" } }
+      expect(location.reload.require_delivery_area).to be false
+    end
   end
 
   describe "DELETE /admin/locations/:id" do

@@ -400,6 +400,18 @@ class Order < ApplicationRecord
     pickup? && customer_id.nil? && customer_skip_reason.blank? && location&.pickup_customer_prompt?
   end
 
+  # A register delivery order with no delivery area, at a branch that makes the
+  # area compulsory (Location#require_delivery_area) and has areas to pick from:
+  # it cannot be placed or charged until the cashier picks one
+  # (Orders::SubmitService.validate_fulfillment!, Pos::PaymentsController).
+  # Register orders only: online and call-center requests already require an
+  # area when they are sent, and offline orders (taken during an outage) are
+  # never held up by it — they are synced as they are.
+  def needs_delivery_area?
+    delivery? && delivery_area_id.nil? && source == "pos" &&
+      location&.require_delivery_area? && location.delivery_areas.active.exists?
+  end
+
   def customer_skip_reason_label
     return if customer_skip_reason.blank?
 

@@ -102,6 +102,15 @@ export default class extends Controller {
       }
     }
     document.getElementById("payment-modal")?.classList.remove("hidden")
+    // A delivery order its branch will not charge without an area: start in the
+    // area search (Enter picks, then the fee box; the cash amount is a Tab away).
+    if (document.querySelector("#payment-modal [data-testid='payment-area-required']")) {
+      const area = document.querySelector("#payment-modal [data-testid='payment-area-picker'] input[type='text']")
+      if (area) {
+        area.focus()
+        return
+      }
+    }
     // Keyboard path: the cash amount is ready to type over; Enter then lands on
     // the highlighted Pay cash button (enter-next) and a second Enter pays.
     const cash = document.querySelector("#payment-modal input[name='amount_pounds']")
