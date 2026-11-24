@@ -64,7 +64,7 @@ module ApplicationHelper
     controller_names.include?(controller.controller_name)
   end
 
-  ACCOUNTING_REPORTS_GROUP       = %w[dashboard sales_reports delivery_area_reports food_costs usage_reports tax_reports budgets financial_statements].freeze
+  ACCOUNTING_REPORTS_GROUP       = %w[dashboard sales_reports delivery_area_reports food_costs menu_engineering usage_reports tax_reports budgets financial_statements].freeze
   ACCOUNTING_SETUP_GROUP         = %w[expense_categories income_categories discount_rules audit_log].freeze
   ACCOUNTING_TRANSACTIONS_GROUP  = %w[expenses incomes shift_logs monthly_payroll attendance late_penalties cash_drawer digital_wallet_day_closes business_days].freeze
   ACCOUNTING_LEDGERS_GROUP       = %w[treasuries journal_entries chart_of_accounts fixed_assets partners loans].freeze

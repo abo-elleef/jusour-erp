@@ -1,0 +1,210 @@
+<% content_for :title, t("accounting.menu_engineering.title") %>
+<% scope = "accounting.menu_engineering" %>
+<% svc = ::Accounting::MenuEngineeringService %>
+<% th = "p-3 text-end whitespace-nowrap" %>
+<% colors = { "star" => "#16a34a", "plowhorse" => "#2563eb", "puzzle" => "#d97706", "dog" => "#dc2626", "no_cost" => "#9ca3af" } %>
+<% chip_tones = { "star" => "border-green-200 bg-green-50 text-green-800", "plowhorse" => "border-blue-200 bg-blue-50 text-blue-800",
+                  "puzzle" => "border-amber-200 bg-amber-50 text-amber-800", "dog" => "border-red-200 bg-red-50 text-red-800",
+                  "no_cost" => "border-gray-200 bg-gray-50 text-gray-700" } %>
+<% sort_link = ->(label, key, default_dir: "desc") {
+     active = @sort == key
+     next_dir = active ? (@direction == "asc" ? "desc" : "asc") : default_dir
+     link_to admin_accounting_menu_engineering_index_path(request.query_parameters.merge("sort" => key, "dir" => next_dir)),
+             class: "inline-flex items-center gap-1 hover:text-gray-900 #{active ? 'text-gray-900' : 'text-gray-500'}" do
+       safe_join([label, tag.span(active ? (@direction == "asc" ? "↑" : "↓") : "", class: "text-amber-600")])
+     end
+   } %>
+<% class_path = ->(klass) { admin_accounting_menu_engineering_index_path(request.query_parameters.except("class").merge(klass ? { "class" => klass } : {})) } %>
+<% result = @result %>
+<% total_items = result.counts.values.sum %>
+
+<div class="max-w-full">
+  <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-gray-900"><%= t("#{scope}.title") %></h1>
+      <p class="text-gray-600 text-sm mt-1"><%= t("#{scope}.description") %></p>
+    </div>
+    <div class="flex items-center gap-2 print:hidden">
+      <button type="button" onclick="window.print()"
+              class="inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors">
+        <%= t("#{scope}.print") %>
+      </button>
+      <%= link_to t("actions.export_csv"), admin_accounting_menu_engineering_index_path(request.query_parameters.merge(format: :csv)),
+            class: "inline-flex items-center gap-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 px-4 py-2.5 rounded-xl border border-gray-200 transition-colors" %>
+    </div>
+  </div>
+
+  <div class="print:hidden">
+    <%= render "admin/accounting/date_range_form",
+          extra_fields: "admin/accounting/menu_engineering/filters", extra_keys: %i[location_id category_id] %>
+  </div>
+  <p class="hidden print:block text-sm text-gray-700 mb-4">
+    <%= t("accounting.shared.date_range_value", start: l(@start_date, format: :long), end: l(@end_date, format: :long)) %>
+    <% if @location %> · <%= @location.name %><% end %>
+    <% if @category %> · <%= @category.name %><% end %>
+  </p>
+
+  <%# One chip per class: the count and what to do about it. Clicking narrows the
+      table; the counts always cover the whole filter so they never jump. %>
+  <section class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6" data-testid="menu-engineering-classes">
+    <% (svc::CLASSES + [svc::NO_COST]).each do |klass| %>
+      <% next if klass == svc::NO_COST && result.counts[klass].zero? %>
+      <%= link_to class_path.call(@klass == klass ? nil : klass),
+            class: "block rounded-2xl border p-4 transition-shadow hover:shadow-sm #{chip_tones[klass]} #{'ring-2 ring-offset-1 ring-gray-900' if @klass == klass}",
+            data: { testid: "class-chip-#{klass}" } do %>
+        <div class="flex items-center justify-between gap-2">
+          <span class="text-sm font-semibold"><%= t("#{scope}.classes.#{klass}.name") %></span>
+          <span class="text-2xl font-bold tabular-nums"><%= result.counts[klass] %></span>
+        </div>
+        <p class="text-xs mt-1 opacity-80"><%= t("#{scope}.classes.#{klass}.hint") %></p>
+      <% end %>
+    <% end %>
+  </section>
+
+  <% plotted = result.rows.select(&:mix_pct) %>
+  <% if plotted.any? %>
+    <section class="rounded-2xl border border-gray-200 bg-white p-5 mb-6 break-inside-avoid" data-testid="menu-engineering-chart">
+      <div class="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+        <h2 class="text-sm font-semibold text-gray-900"><%= t("#{scope}.chart_title") %></h2>
+        <p class="text-xs text-gray-500 print:hidden"><%= t("#{scope}.chart_hint") %></p>
+      </div>
+      <%
+        w = 720.0; h = 380.0; left = 64.0; right = 16.0; top = 16.0; bottom = 44.0
+        pw = w - left - right; ph = h - top - bottom
+        x_max = [plotted.map(&:mix_pct).max, result.popularity_threshold_pct].max * 1.1
+        x_max = 1.0 if x_max <= 0
+        margins = plotted.map(&:unit_margin_cents) + [result.avg_unit_margin_cents]
+        y_min = [margins.min, 0].min.to_f
+        y_max = margins.max.to_f
+        span = y_max - y_min
+        span = [y_max.abs, 100.0].max if span.zero?
+        y_max += span * 0.1
+        y_min -= span * 0.05 if y_min.negative?
+        sx = ->(v) { (left + (v / x_max) * pw).round(1) }
+        sy = ->(v) { (top + ph - ((v - y_min) / (y_max - y_min)) * ph).round(1) }
+        tx = sx.call(result.popularity_threshold_pct)
+        ty = sy.call(result.avg_unit_margin_cents)
+      %>
+      <div dir="ltr">
+        <svg viewBox="0 0 <%= w.to_i %> <%= h.to_i %>" class="w-full h-auto" role="img" aria-label="<%= t("#{scope}.chart_title") %>">
+          <%# Quadrant tints, from the two thresholds. %>
+          <rect x="<%= tx %>" y="<%= top %>" width="<%= (left + pw - tx).round(1) %>" height="<%= (ty - top).round(1) %>" fill="<%= colors['star'] %>" fill-opacity="0.06" />
+          <rect x="<%= tx %>" y="<%= ty %>" width="<%= (left + pw - tx).round(1) %>" height="<%= (top + ph - ty).round(1) %>" fill="<%= colors['plowhorse'] %>" fill-opacity="0.06" />
+          <rect x="<%= left %>" y="<%= top %>" width="<%= (tx - left).round(1) %>" height="<%= (ty - top).round(1) %>" fill="<%= colors['puzzle'] %>" fill-opacity="0.06" />
+          <rect x="<%= left %>" y="<%= ty %>" width="<%= (tx - left).round(1) %>" height="<%= (top + ph - ty).round(1) %>" fill="<%= colors['dog'] %>" fill-opacity="0.06" />
+          <g font-size="12" font-weight="600">
+            <text x="<%= left + pw - 6 %>" y="<%= top + 16 %>" text-anchor="end" fill="<%= colors['star'] %>"><%= t("#{scope}.classes.star.name") %></text>
+            <text x="<%= left + pw - 6 %>" y="<%= top + ph - 8 %>" text-anchor="end" fill="<%= colors['plowhorse'] %>"><%= t("#{scope}.classes.plowhorse.name") %></text>
+            <text x="<%= left + 6 %>" y="<%= top + 16 %>" fill="<%= colors['puzzle'] %>"><%= t("#{scope}.classes.puzzle.name") %></text>
+            <text x="<%= left + 6 %>" y="<%= top + ph - 8 %>" fill="<%= colors['dog'] %>"><%= t("#{scope}.classes.dog.name") %></text>
+          </g>
+          <%# Axes and thresholds. %>
+          <line x1="<%= left %>" y1="<%= top + ph %>" x2="<%= left + pw %>" y2="<%= top + ph %>" stroke="#d1d5db" />
+          <line x1="<%= left %>" y1="<%= top %>" x2="<%= left %>" y2="<%= top + ph %>" stroke="#d1d5db" />
+          <% if y_min.negative? %>
+            <line x1="<%= left %>" y1="<%= sy.call(0) %>" x2="<%= left + pw %>" y2="<%= sy.call(0) %>" stroke="#e5e7eb" />
+          <% end %>
+          <line x1="<%= tx %>" y1="<%= top %>" x2="<%= tx %>" y2="<%= top + ph %>" stroke="#6b7280" stroke-dasharray="4 4" />
+          <line x1="<%= left %>" y1="<%= ty %>" x2="<%= left + pw %>" y2="<%= ty %>" stroke="#6b7280" stroke-dasharray="4 4" />
+          <g font-size="11" fill="#6b7280">
+            <text x="<%= tx %>" y="<%= top + ph + 16 %>" text-anchor="middle"><%= number_with_precision(result.popularity_threshold_pct, precision: 1) %>%</text>
+            <text x="<%= left + pw %>" y="<%= top + ph + 16 %>" text-anchor="end"><%= number_with_precision(x_max, precision: 1) %>%</text>
+            <text x="<%= left %>" y="<%= top + ph + 16 %>" text-anchor="middle">0%</text>
+            <text x="<%= left - 6 %>" y="<%= ty + 4 %>" text-anchor="end"><%= format_amount(result.avg_unit_margin_cents) %></text>
+            <text x="<%= left + pw / 2 %>" y="<%= h - 6 %>" text-anchor="middle" font-weight="600"><%= t("#{scope}.chart_x") %></text>
+            <text x="14" y="<%= top + ph / 2 %>" text-anchor="middle" font-weight="600" transform="rotate(-90 14 <%= top + ph / 2 %>)"><%= t("#{scope}.chart_y") %></text>
+          </g>
+          <%# One dot per item, linked to the item. %>
+          <% plotted.each do |row| %>
+            <a href="<%= admin_menu_item_path(row.menu_item_id) %>" data-turbo-frame="_top">
+              <circle cx="<%= sx.call(row.mix_pct) %>" cy="<%= sy.call(row.unit_margin_cents) %>" r="6"
+                      fill="<%= colors[row.klass] %>" fill-opacity="0.8" stroke="#fff" stroke-width="1.5">
+                <title><%= row.name %> — <%= t("#{scope}.classes.#{row.klass}.name") %> · <%= t("#{scope}.columns.mix") %> <%= number_with_precision(row.mix_pct, precision: 1) %>% · <%= t("#{scope}.columns.unit_margin") %> <%= format_amount(row.unit_margin_cents) %></title>
+              </circle>
+            </a>
+          <% end %>
+        </svg>
+      </div>
+      <p class="text-xs text-gray-500 mt-2">
+        <%= t("#{scope}.thresholds", mix: number_with_precision(result.popularity_threshold_pct, precision: 1),
+                                    margin: format_amount(result.avg_unit_margin_cents)) %>
+      </p>
+    </section>
+  <% end %>
+
+  <% if @category.nil? && total_items.positive? %>
+    <p class="text-xs text-gray-500 mb-3 print:hidden"><%= t("#{scope}.category_hint") %></p>
+  <% end %>
+
+  <% if @klass %>
+    <div class="flex items-center gap-2 mb-3 print:hidden">
+      <span class="text-sm text-gray-600"><%= t("#{scope}.columns.class") %>:</span>
+      <span class="text-sm font-semibold"><%= t("#{scope}.classes.#{@klass}.name") %></span>
+      <%= link_to t("#{scope}.all_classes"), class_path.call(nil), class: "text-sm text-amber-700 hover:underline" %>
+    </div>
+  <% end %>
+
+  <section class="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-xs font-semibold uppercase tracking-wide">
+          <tr>
+            <th class="p-3 ps-5 text-start"><%= sort_link.call(t("#{scope}.columns.item"), "name", default_dir: "asc") %></th>
+            <th class="p-3 text-start"><%= sort_link.call(t("#{scope}.columns.category"), "category", default_dir: "asc") %></th>
+            <th class="p-3 text-start text-gray-500"><%= t("#{scope}.columns.class") %></th>
+            <th class="<%= th %>"><%= sort_link.call(t("#{scope}.columns.units"), "units") %></th>
+            <th class="<%= th %>"><%= sort_link.call(t("#{scope}.columns.mix"), "mix") %></th>
+            <th class="<%= th %>"><%= sort_link.call(t("#{scope}.columns.avg_price"), "avg_price") %></th>
+            <th class="<%= th %>"><%= sort_link.call(t("#{scope}.columns.unit_cost"), "unit_cost") %></th>
+            <th class="<%= th %>"><%= sort_link.call(t("#{scope}.columns.unit_margin"), "unit_margin") %></th>
+            <th class="<%= th %>"><%= sort_link.call(t("#{scope}.columns.total_margin"), "total_margin") %></th>
+            <th class="<%= th %> pe-5"><%= sort_link.call(t("#{scope}.columns.food_cost_pct"), "food_cost_pct") %></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% result.rows.each do |row| %>
+            <tr data-testid="menu-engineering-row">
+              <td class="p-3 ps-5 font-medium text-gray-900">
+                <%= link_to row.name, admin_menu_item_path(row.menu_item_id), class: "hover:underline", data: { turbo_frame: "_top" } %>
+              </td>
+              <td class="p-3 text-gray-600"><%= row.category_name || t("#{scope}.no_category") %></td>
+              <td class="p-3">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-xs font-semibold <%= chip_tones[row.klass] %>">
+                  <span class="h-2 w-2 rounded-full" style="background: <%= colors[row.klass] %>"></span>
+                  <%= t("#{scope}.classes.#{row.klass}.name") %>
+                </span>
+              </td>
+              <td class="<%= th %> tabular-nums"><%= number_with_delimiter(row.units) %></td>
+              <td class="<%= th %> tabular-nums"><%= row.mix_pct ? "#{number_with_precision(row.mix_pct, precision: 1)}%" : "—" %></td>
+              <td class="<%= th %> tabular-nums"><%= format_amount(row.avg_price_cents) %></td>
+              <td class="<%= th %> tabular-nums"><%= row.costed? ? format_amount(row.unit_cost_cents) : "—" %></td>
+              <td class="<%= th %> tabular-nums font-semibold <%= 'text-red-700' if row.unit_margin_cents.negative? %>"><%= format_amount(row.unit_margin_cents) %></td>
+              <td class="<%= th %> tabular-nums <%= 'text-red-700' if row.margin_cents.negative? %>"><%= format_amount(row.margin_cents) %></td>
+              <td class="<%= th %> pe-5 tabular-nums"><%= row.costed? ? "#{row.food_cost_pct}%" : "—" %></td>
+            </tr>
+          <% end %>
+          <% if result.rows.empty? %>
+            <tr><td colspan="10" class="p-6 text-center text-sm text-gray-500"><%= t("#{scope}.empty") %></td></tr>
+          <% end %>
+        </tbody>
+        <% if result.rows.any? %>
+          <% totals = result.totals %>
+          <tfoot class="bg-gray-50 font-semibold" data-testid="menu-engineering-totals">
+            <tr>
+              <td class="p-3 ps-5" colspan="3"><%= t("#{scope}.total") %></td>
+              <td class="<%= th %> tabular-nums"><%= number_with_delimiter(totals[:units]) %></td>
+              <td class="<%= th %>"></td>
+              <td class="<%= th %> tabular-nums"><%= format_amount(totals[:units].positive? ? totals[:sales_cents] / totals[:units] : 0) %></td>
+              <td class="<%= th %> tabular-nums"><%= format_amount(totals[:units].positive? ? totals[:cost_cents] / totals[:units] : 0) %></td>
+              <td class="<%= th %> tabular-nums"><%= format_amount(totals[:units].positive? ? totals[:margin_cents] / totals[:units] : 0) %></td>
+              <td class="<%= th %> tabular-nums"><%= format_amount(totals[:margin_cents]) %></td>
+              <td class="<%= th %> pe-5 tabular-nums"><%= totals[:food_cost_pct] %>%</td>
+            </tr>
+          </tfoot>
+        <% end %>
+      </table>
+    </div>
+  </section>
+
+  <p class="text-xs text-gray-500 mt-3"><%= t("#{scope}.notes") %></p>
+</div>

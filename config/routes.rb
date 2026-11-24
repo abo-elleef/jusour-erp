@@ -354,6 +354,7 @@ Rails.application.routes.draw do
       resources :sales_performance, only: [:index]
       resources :delivery_area_reports, only: [:index]
       resources :food_costs, only: [:index]
+      resources :menu_engineering, only: [:index]
       resources :usage_reports, only: [:index]
       resources :category_analysis, only: [:index]
       resources :expense_categories do
