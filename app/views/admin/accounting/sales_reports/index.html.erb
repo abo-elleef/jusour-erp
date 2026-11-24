@@ -161,10 +161,11 @@
         <h2 class="text-sm font-semibold text-gray-900"><%= t("accounting.sales_reports.trend") %></h2>
         <p class="text-xs text-gray-500 mt-0.5" data-tab-panel="day" data-tabs-target="panel"><%= t("accounting.sales_reports.daily_totals_hint") %></p>
         <p class="text-xs text-gray-500 mt-0.5" data-tab-panel="hour" data-tabs-target="panel" hidden><%= t("accounting.sales_reports.hourly_hint") %></p>
+        <p class="text-xs text-gray-500 mt-0.5" data-tab-panel="heatmap" data-tabs-target="panel" hidden><%= t("accounting.sales_reports.heatmap_hint") %></p>
       </div>
       <div class="flex flex-wrap items-center gap-3">
         <div class="flex gap-1 text-sm font-semibold">
-          <% [["day", t("accounting.sales_reports.by_day")], ["hour", t("accounting.sales_reports.by_hour")]].each do |name, label| %>
+          <% [["day", t("accounting.sales_reports.by_day")], ["hour", t("accounting.sales_reports.by_hour")], ["heatmap", t("accounting.sales_reports.by_weekday_hour")]].each do |name, label| %>
             <button type="button" class="px-3 py-1.5 border-b-2 border-transparent text-gray-500"
                     data-tabs-target="tab" data-action="tabs#switch" data-tabs-name-param="<%= name %>"><%= label %></button>
           <% end %>
@@ -263,6 +264,11 @@
           </table>
         </div>
       </div>
+    </div>
+    <%# Hour × weekday: the same grid in Chart and Table view (the numbers are
+        in the cells). Orders / Net sales is its own switch, remembered apart. %>
+    <div data-tab-panel="heatmap" data-tabs-target="panel" hidden>
+      <%= render "weekday_heatmap", heatmap: @heatmap %>
     </div>
   </section>
 
