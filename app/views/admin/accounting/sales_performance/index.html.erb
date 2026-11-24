@@ -58,6 +58,7 @@
               <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.orders"), "orders") %></th>
               <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.net_sales"), "net_sales") %></th>
               <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.avg_ticket"), "avg_ticket") %></th>
+              <th class="<%= th %>"><%= sort_link.call(t("accounting.sales_performance.items_per_order"), "items_per_order") %></th>
               <th class="<%= th %> pe-5 text-gray-500"><%= t("accounting.sales_performance.discounts") %></th>
             </tr>
           </thead>
@@ -74,17 +75,18 @@
                 <% ::Accounting::SalesPerformanceService::ORDER_TYPES.each do |type| %>
                   <td class="<%= th %> tabular-nums">
                     <%= format_amount(row.by_type[type][:net_cents]) %>
-                    <span class="block text-xs text-gray-400"><%= row.by_type[type][:orders] %></span>
+                    <%= render "type_detail", cell: row.by_type[type] %>
                   </td>
                 <% end %>
                 <td class="<%= th %> tabular-nums"><%= row.orders %></td>
                 <td class="<%= th %> tabular-nums font-semibold"><%= format_amount(row.net_cents) %></td>
                 <td class="<%= th %> tabular-nums"><%= format_amount(row.avg_ticket_cents) %></td>
+                <td class="<%= th %> tabular-nums" data-testid="items-per-order"><%= number_with_precision(row.items_per_order, precision: 1) %></td>
                 <td class="<%= th %> pe-5 tabular-nums text-red-700"><%= format_amount(row.discount_cents) %></td>
               </tr>
             <% end %>
             <% if @rows.empty? %>
-              <tr><td colspan="8" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_performance.empty") %></td></tr>
+              <tr><td colspan="9" class="p-6 text-center text-sm text-gray-500"><%= t("accounting.sales_performance.empty") %></td></tr>
             <% end %>
           </tbody>
           <% if @rows.any? %>
@@ -94,12 +96,13 @@
                 <% ::Accounting::SalesPerformanceService::ORDER_TYPES.each do |type| %>
                   <td class="<%= th %> tabular-nums">
                     <%= format_amount(@totals[:by_type][type][:net_cents]) %>
-                    <span class="block text-xs text-gray-400 font-normal"><%= @totals[:by_type][type][:orders] %></span>
+                    <%= render "type_detail", cell: @totals[:by_type][type] %>
                   </td>
                 <% end %>
                 <td class="<%= th %> tabular-nums"><%= @totals[:orders] %></td>
                 <td class="<%= th %> tabular-nums"><%= format_amount(@totals[:net_cents]) %></td>
                 <td class="<%= th %> tabular-nums"><%= format_amount(@totals[:orders].positive? ? @totals[:net_cents] / @totals[:orders] : 0) %></td>
+                <td class="<%= th %> tabular-nums" data-testid="items-per-order-total"><%= number_with_precision(::Accounting::SalesPerformanceService.items_per_order(@totals[:items], @totals[:orders]), precision: 1) %></td>
                 <td class="<%= th %> pe-5 tabular-nums text-red-700"><%= format_amount(@totals[:discount_cents]) %></td>
               </tr>
             </tfoot>

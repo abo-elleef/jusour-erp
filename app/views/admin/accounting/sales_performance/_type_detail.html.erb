@@ -1,0 +1,8 @@
+<%# Under an order type's net sales: its order count and items per order. A type
+    with no orders shows nothing, so the eye goes to the types that sold. %>
+<% if cell[:orders].positive? %>
+  <span class="block text-xs text-gray-400 font-normal" data-testid="type-detail">
+    <%= t("accounting.sales_performance.type_detail", count: cell[:orders],
+          items: number_with_precision(::Accounting::SalesPerformanceService.items_per_order(cell[:items], cell[:orders]), precision: 1)) %>
+  </span>
+<% end %>

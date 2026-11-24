@@ -6430,6 +6430,10 @@ en:
       orders: "Orders"
       net_sales: "Net sales"
       avg_ticket: "Avg ticket"
+      items_per_order: "Items / order"
+      type_detail:
+        one: "%{count} order · %{items} items each"
+        other: "%{count} orders · %{items} items each"
       discounts: "Discounts"
       discount_rate: "Discount %"
       total: "Total"

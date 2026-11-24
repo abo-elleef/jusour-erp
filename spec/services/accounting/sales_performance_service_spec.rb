@@ -33,12 +33,36 @@ RSpec.describe Accounting::SalesPerformanceService do
       maadi = rows.first
       expect(maadi.orders).to eq(2)
       expect(maadi.net_cents).to eq(2800)
-      expect(maadi.by_type["table"]).to eq(orders: 1, net_cents: 1800)
-      expect(maadi.by_type["delivery"]).to eq(orders: 1, net_cents: 1000)
-      expect(maadi.by_type["pickup"]).to eq(orders: 0, net_cents: 0)
+      expect(maadi.by_type["table"]).to eq(orders: 1, net_cents: 1800, items: 0)
+      expect(maadi.by_type["delivery"]).to eq(orders: 1, net_cents: 1000, items: 0)
+      expect(maadi.by_type["pickup"]).to eq(orders: 0, net_cents: 0, items: 0)
       expect(maadi.avg_ticket_cents).to eq(1400)
       expect(totals[:net_cents]).to eq(3300)
       expect(totals[:orders]).to eq(3)
+    end
+
+    it "counts items per order per branch and order type, ignoring non-completed orders" do
+      item = create(:menu_item, company: company)
+      table = sale(user: cashier, location: branch_a, type: "table")
+      create(:order_item, order: table, menu_item: item, quantity: 3)
+      create(:order_item, order: table, menu_item: item, quantity: 2)
+      pickup = sale(user: cashier, location: branch_a, type: "pickup")
+      create(:order_item, order: pickup, menu_item: item, quantity: 1)
+      cancelled = sale(user: cashier, location: branch_a, type: "pickup", status: "cancelled")
+      create(:order_item, order: cancelled, menu_item: item, quantity: 9)
+      other = sale(user: cashier, location: branch_b, type: "delivery")
+      create(:order_item, order: other, menu_item: item, quantity: 4)
+
+      rows, totals = service.by_branch(sort: "name", direction: "asc")
+
+      maadi = rows.first
+      expect(maadi.items).to eq(6)
+      expect(maadi.items_per_order).to eq(3.0)
+      expect(maadi.by_type["table"][:items]).to eq(5)
+      expect(maadi.by_type["pickup"][:items]).to eq(1)
+      expect(totals[:items]).to eq(10)
+      expect(described_class.items_per_order(totals[:items], totals[:orders])).to eq(3.33)
+      expect(service.by_branch(sort: "items_per_order", direction: "desc").first.first.name).to eq("Zamalek")
     end
 
     it "agrees with the Sales report on net sales" do

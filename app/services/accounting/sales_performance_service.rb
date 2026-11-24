@@ -20,7 +20,7 @@ module Accounting
     ORDER_TYPES = Order::ORDER_TYPES
     EXCEPTION_KINDS = %w[void refund].freeze
 
-    BRANCH_SORTS = %w[name orders net_sales avg_ticket].freeze
+    BRANCH_SORTS = %w[name orders net_sales avg_ticket items_per_order].freeze
     CASHIER_SORTS = %w[name orders net_sales avg_ticket discount_rate voids refunds].freeze
     PICKUP_SORTS = %w[name orders captured capture_rate skipped].freeze
     EXCEPTION_SORTS = {
@@ -39,9 +39,14 @@ module Accounting
             ELSE #{REFUND_AMOUNT_SQL} END)
     SQL
 
-    BranchRow = Struct.new(:location_id, :name, :orders, :net_cents, :discount_cents, :by_type, keyword_init: true) do
+    # items: units sold (order line quantities: menu items and combos; modifiers
+    # are part of their item, not items of their own).
+    BranchRow = Struct.new(:location_id, :name, :orders, :net_cents, :discount_cents, :items, :by_type, keyword_init: true) do
       def avg_ticket_cents = orders.positive? ? net_cents / orders : 0
+      def items_per_order = SalesPerformanceService.items_per_order(items, orders)
     end
+
+    def self.items_per_order(items, orders) = orders.positive? ? (items.to_f / orders).round(2) : 0.0
 
     CashierRow = Struct.new(:user_id, :name, :orders, :gross_cents, :net_cents, :discount_cents, :voids, :refunds,
                             keyword_init: true) do
@@ -70,16 +75,22 @@ module Accounting
         .pluck(:location_id, :order_type, Arel.sql("COUNT(*)"),
                Arel.sql("SUM(#{RevenueCalculator::ORDER_NET_SALES})"), Arel.sql("SUM(orders.discount_cents)"))
 
+      items = OrderItem.joins(:order).merge(completed_orders).group("orders.location_id", "orders.order_type")
+        .sum(:quantity)
+
       names = Location.where(id: grouped.map(&:first).compact).pluck(:id, :name).to_h
       rows = grouped.group_by(&:first).map do |location_id, parts|
-        by_type = ORDER_TYPES.index_with { { orders: 0, net_cents: 0 } }
+        by_type = ORDER_TYPES.index_with { { orders: 0, net_cents: 0, items: 0 } }
         parts.each do |_, type, count, net, _|
-          by_type[type] = { orders: count.to_i, net_cents: net.to_i } if by_type.key?(type)
+          next unless by_type.key?(type)
+
+          by_type[type] = { orders: count.to_i, net_cents: net.to_i, items: items.fetch([location_id, type], 0).to_i }
         end
         BranchRow.new(
           location_id: location_id, name: names[location_id],
           orders: parts.sum { |p| p[2].to_i }, net_cents: parts.sum { |p| p[3].to_i },
-          discount_cents: parts.sum { |p| p[4].to_i }, by_type: by_type
+          discount_cents: parts.sum { |p| p[4].to_i },
+          items: parts.sum { |_, type, *| items.fetch([location_id, type], 0).to_i }, by_type: by_type
         )
       end
 
@@ -189,15 +200,18 @@ module Accounting
         orders: rows.sum(&:orders),
         net_cents: rows.sum(&:net_cents),
         discount_cents: rows.sum(&:discount_cents),
+        items: rows.sum(&:items),
         by_type: ORDER_TYPES.index_with do |type|
-          { orders: rows.sum { |r| r.by_type[type][:orders] }, net_cents: rows.sum { |r| r.by_type[type][:net_cents] } }
+          { orders: rows.sum { |r| r.by_type[type][:orders] }, net_cents: rows.sum { |r| r.by_type[type][:net_cents] },
+            items: rows.sum { |r| r.by_type[type][:items] } }
         end
       }
     end
 
     def branch_sort_value
       { "name" => :name.to_proc >> ->(v) { v.to_s.downcase }, "orders" => :orders.to_proc,
-        "net_sales" => :net_cents.to_proc, "avg_ticket" => :avg_ticket_cents.to_proc }
+        "net_sales" => :net_cents.to_proc, "avg_ticket" => :avg_ticket_cents.to_proc,
+        "items_per_order" => :items_per_order.to_proc }
     end
 
     def cashier_sort_value
